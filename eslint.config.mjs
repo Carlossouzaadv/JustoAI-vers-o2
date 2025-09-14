@@ -19,6 +19,23 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules: {
+      // Configurações para melhor suporte a Unicode/UTF-8
+      'no-irregular-whitespace': 'off', // Permite espaços especiais
+      'no-misleading-character-class': 'off', // Permite caracteres especiais em regex
+
+      // Regras específicas para emojis e símbolos
+      'no-unused-vars': ['warn', {
+        varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT)$',
+        argsIgnorePattern: '^_'
+      }],
+
+      // Permite strings com caracteres especiais
+      'quotes': ['error', 'single', {
+        avoidEscape: true,
+        allowTemplateLiterals: true
+      }],
+    },
   },
 ];
 

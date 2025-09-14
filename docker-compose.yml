@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Next.js Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - supabase-db
+    networks:
+      - justoai-network
+
+  # Supabase Local Setup
+  supabase-db:
+    image: supabase/postgres:15.1.0.147
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - supabase_db_data:/var/lib/postgresql/data
+    networks:
+      - justoai-network
+
+  # Supabase Studio (opcional para desenvolvimento local)
+  supabase-studio:
+    image: supabase/studio:20231103-4fefea6
+    ports:
+      - "3001:3000"
+    environment:
+      SUPABASE_URL: http://localhost:8000
+      SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      STUDIO_PG_META_URL: http://localhost:8080
+    depends_on:
+      - supabase-db
+    networks:
+      - justoai-network
+
+volumes:
+  supabase_db_data:
+
+networks:
+  justoai-network:
+    driver: bridge

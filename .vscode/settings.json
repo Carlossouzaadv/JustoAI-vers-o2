@@ -1,0 +1,45 @@
+{
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": true,
+  "files.defaultLanguage": "typescript",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.suggest.autoImports": true,
+  "files.associations": {
+    "*.css": "css",
+    "*.scss": "scss",
+    "*.ts": "typescript",
+    "*.tsx": "typescriptreact"
+  },
+  "editor.unicodeHighlight.allowedCharacters": {
+    "✓": true,
+    "✗": true,
+    "⚠": true,
+    "ℹ": true,
+    "⏳": true,
+    "→": true,
+    "←": true,
+    "↑": true,
+    "↓": true,
+    "⚙": true,
+    "★": true,
+    "☆": true,
+    "♥": true,
+    "♡": true,
+    "✉": true,
+    "●": true,
+    "○": true,
+    "■": true,
+    "□": true
+  },
+  "editor.unicodeHighlight.nonBasicASCII": false,
+  "editor.unicodeHighlight.invisibleCharacters": false,
+  "editor.unicodeHighlight.ambiguousCharacters": false
+}

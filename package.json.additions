@@ -1,0 +1,101 @@
+// ================================
+// DEPENDÊNCIAS PARA GERAÇÃO DE RELATÓRIOS
+// ================================
+
+// Adicionar ao package.json existente:
+
+{
+  "dependencies": {
+    "puppeteer": "^21.5.2",
+    "puppeteer-core": "^21.5.2"
+  },
+  "devDependencies": {
+    "@types/puppeteer": "^7.0.4"
+  }
+}
+
+// ================================
+// COMANDOS DE INSTALAÇÃO
+// ================================
+
+// Execute estes comandos no terminal:
+// npm install puppeteer@^21.5.2 puppeteer-core@^21.5.2
+// npm install --save-dev @types/puppeteer@^7.0.4
+
+// ================================
+// CONFIGURAÇÃO ADICIONAL PRISMA
+// ================================
+
+// Adicionar ao schema.prisma na tabela workspace:
+/*
+
+model ReportCustomization {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  profileName   String
+  isDefault     Boolean  @default(false)
+
+  // Branding
+  companyName     String
+  companyAddress  String?
+  companyPhone    String?
+  companyEmail    String?
+  companyWebsite  String?
+
+  // Cores
+  primaryColor    String   @default("#1E40AF")
+  secondaryColor  String   @default("#64748B")
+  accentColor     String   @default("#10B981")
+  backgroundColor String   @default("#FFFFFF")
+  textColor       String   @default("#1F2937")
+
+  // Logo
+  logoUrl       String?
+  logoBase64    String?
+  logoWidth     Int?      @default(80)
+  logoHeight    Int?      @default(60)
+  logoPosition  String    @default("left") // left, center, right
+
+  // Header
+  headerText          String?
+  headerHeight        Int?    @default(60)
+  showCompanyInfo     Boolean @default(true)
+  showGenerationInfo  Boolean @default(true)
+
+  // Footer
+  footerText       String?
+  footerHeight     Int?    @default(30)
+  showPageNumbers  Boolean @default(true)
+  showGeneratedBy  Boolean @default(true)
+
+  // Watermark
+  watermark         String?
+  watermarkOpacity  Float?  @default(0.05)
+  watermarkRotation Int?    @default(-45)
+
+  // Typography
+  fontSize   Int    @default(12)
+  fontFamily String @default("Segoe UI")
+  lineHeight Float  @default(1.4)
+
+  // Margins (em mm)
+  marginTop    Int @default(20)
+  marginRight  Int @default(15)
+  marginBottom Int @default(20)
+  marginLeft   Int @default(15)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, profileName])
+  @@index([workspaceId, isDefault])
+  @@map("report_customizations")
+}
+
+// Adicionar também à model Workspace:
+reportCustomizations ReportCustomization[]
+
+*/

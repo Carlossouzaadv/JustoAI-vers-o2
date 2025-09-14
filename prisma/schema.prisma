@@ -1,0 +1,1078 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// WORKSPACES (Multi-tenant)
+// ================================
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logoUrl     String?
+  plan        Plan     @default(FREE)
+  status      Status   @default(ACTIVE)
+  settings    Json?    // Configurações específicas do workspace
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users              UserWorkspace[]
+  clients            Client[]
+  cases              Case[]
+  reportSchedules    ReportSchedule[]
+  aiCache            AiCache[]
+  monitoredProcesses MonitoredProcess[]
+  processBatchUploads ProcessBatchUpload[]
+  systemImports      SystemImport[]
+  mappingTemplates   SystemMappingTemplate[]
+  systemSyncs        SystemSync[]
+  reportCustomizations ReportCustomization[]
+
+  @@map("workspaces")
+}
+
+model User {
+  id       String  @id @default(cuid())
+  email    String  @unique
+  name     String?
+  avatar   String?
+  role     Role    @default(USER)
+  status   Status  @default(ACTIVE)
+  settings Json?
+
+  // Auth fields (Supabase)
+  supabaseId String  @unique
+  emailVerified Boolean @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLoginAt DateTime?
+
+  // Relations
+  workspaces       UserWorkspace[]
+  createdCases     Case[]         @relation("CaseCreatedBy")
+  assignedCases    Case[]         @relation("CaseAssignedTo")
+  caseEvents       CaseEvent[]
+
+  @@map("users")
+}
+
+model UserWorkspace {
+  id          String           @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole    @default(MEMBER)
+  status      Status           @default(ACTIVE)
+  permissions Json?            // Permissões específicas
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("user_workspaces")
+}
+
+// ================================
+// CLIENTS
+// ================================
+model Client {
+  id          String      @id @default(cuid())
+  workspaceId String
+  name        String
+  email       String?
+  phone       String?
+  document    String?     // CPF/CNPJ
+  type        ClientType  @default(INDIVIDUAL)
+  status      Status      @default(ACTIVE)
+
+  // Address
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  country     String?     @default("BR")
+
+  // Additional info
+  notes       String?
+  metadata    Json?       // Campos customizados
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  cases             Case[]
+  importedDataItems ImportedDataItem[]
+
+  @@map("clients")
+}
+
+// ================================
+// CASES
+// ================================
+model Case {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  clientId     String
+  number       String     @unique // Número do processo
+  title        String
+  description  String?
+  type         CaseType   @default(CIVIL)
+  status       CaseStatus @default(ACTIVE)
+  priority     Priority   @default(MEDIUM)
+
+  // Relacionamentos internos
+  createdById  String
+  assignedToId String?
+
+  // Valores
+  claimValue   Decimal?   @db.Decimal(15, 2)
+  fee          Decimal?   @db.Decimal(15, 2)
+  feeType      FeeType    @default(FIXED)
+
+  // Datas importantes
+  filingDate   DateTime?  // Data de distribuição
+  dueDate      DateTime?  // Prazo importante
+  closedAt     DateTime?  // Data de encerramento
+
+  // Metadados
+  tags         String[]   // Tags para categorização
+  metadata     Json?      // Campos customizados
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspace           Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  client              Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy           User                  @relation("CaseCreatedBy", fields: [createdById], references: [id])
+  assignedTo          User?                 @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
+  events              CaseEvent[]
+  documents           CaseDocument[]
+  analysisVersions    CaseAnalysisVersion[]
+  monitoredProcesses  MonitoredProcess[]
+  importedDataItems   ImportedDataItem[]
+
+  @@map("cases")
+}
+
+// ================================
+// CASE EVENTS
+// ================================
+model CaseEvent {
+  id          String    @id @default(cuid())
+  caseId      String
+  userId      String
+  type        EventType @default(NOTE)
+  title       String
+  description String?
+  metadata    Json?     // Dados específicos do evento
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  eventDate DateTime @default(now()) // Data que o evento ocorreu (pode ser diferente da criação)
+
+  // Relations
+  case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user              User               @relation(fields: [userId], references: [id])
+  importedDataItems ImportedDataItem[]
+
+  @@map("case_events")
+}
+
+// ================================
+// CASE DOCUMENTS
+// ================================
+model CaseDocument {
+  id           String       @id @default(cuid())
+  caseId       String
+  name         String
+  originalName String
+  type         DocumentType @default(OTHER)
+  mimeType     String
+  size         Int          // Em bytes
+  url          String       // URL no Supabase Storage
+  path         String       // Caminho completo no storage
+
+  // Metadados do documento
+  pages        Int?         // Número de páginas (se aplicável)
+  extractedText String?     // Texto extraído via OCR/PDF
+  summary      String?      // Resumo gerado por IA
+  tags         String[]     // Tags para categorização
+
+  // Status de processamento
+  processed    Boolean      @default(false)
+  ocrStatus    ProcessStatus @default(PENDING)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  importedDataItems ImportedDataItem[]
+
+  @@map("case_documents")
+}
+
+// ================================
+// CASE ANALYSIS (AI) - Melhorado para PDF Upload
+// ================================
+model CaseAnalysisVersion {
+  id          String   @id @default(cuid())
+  caseId      String
+  version     Int      // Versão da análise (auto-incrementa)
+
+  // Tipo da análise
+  analysisType String  @default("GENERAL") // PDF_UPLOAD, MANUAL_ANALYSIS, etc
+
+  // Dados extraídos do PDF
+  extractedData Json?  // Resultado do PDFProcessor
+  aiAnalysis    Json?  // Resultado da análise IA (Gemini)
+
+  // Modelo usado e metadados
+  modelUsed     String  @default("gemini-1.5-flash") // gemini-1.5-flash, gemini-1.5-pro, etc
+  confidence    Float   @default(0.85) // Confiança da análise (0-1)
+  processingTime Int    @default(0) // Tempo de processamento em ms
+  costEstimate  Float   @default(0.0) // Custo estimado em USD
+
+  // Metadados específicos do PDF
+  metadata      Json?   // file_size_mb, extracted_fields_count, etc
+
+  // Status e error handling
+  status      ProcessStatus @default(COMPLETED)
+  error       String?  // Mensagem de erro se houver
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, version])
+  @@map("case_analysis_versions")
+}
+
+// ================================
+// REPORT SCHEDULES
+// ================================
+model ReportSchedule {
+  id          String         @id @default(cuid())
+  workspaceId String
+  name        String
+  description String?
+  type        ReportType     @default(CASE_SUMMARY)
+
+  // Configuração do schedule
+  frequency   Frequency      @default(WEEKLY)
+  dayOfWeek   Int?           // 0-6 (domingo-sábado)
+  dayOfMonth  Int?           // 1-31
+  time        String?        // HH:MM formato
+  timezone    String?        @default("America/Sao_Paulo")
+
+  // Filtros do relatório
+  filters     Json?          // Filtros específicos (status, tipo de caso, etc)
+  recipients  String[]       // Emails que receberão o relatório
+
+  // Status
+  enabled     Boolean        @default(true)
+  lastRun     DateTime?
+  nextRun     DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("report_schedules")
+}
+
+// ================================
+// AI CACHE (Para economia)
+// ================================
+model AiCache {
+  id          String   @id @default(cuid())
+  workspaceId String
+  cacheKey    String   // Hash do prompt + parâmetros
+  type        CacheType @default(ANALYSIS)
+
+  // Input
+  prompt      String
+  parameters  Json?    // Parâmetros da chamada (model, temperature, etc)
+
+  // Output
+  result      Json     // Resultado da IA
+  model       String   // Modelo usado
+  tokens      Int?     // Tokens consumidos
+  cost        Decimal? @db.Decimal(10, 4)
+
+  // Cache metadata
+  hits        Int      @default(0) // Quantas vezes foi usado
+  lastUsed    DateTime @default(now())
+  expiresAt   DateTime // Data de expiração
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, cacheKey])
+  @@index([expiresAt])
+  @@map("ai_cache")
+}
+
+// ================================
+// ENUMS
+// ================================
+enum Plan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Role {
+  ADMIN
+  USER
+  VIEWER
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum ClientType {
+  INDIVIDUAL
+  COMPANY
+  GOVERNMENT
+  NGO
+}
+
+enum CaseType {
+  CIVIL
+  CRIMINAL
+  LABOR
+  FAMILY
+  COMMERCIAL
+  ADMINISTRATIVE
+  CONSTITUTIONAL
+  TAX
+  OTHER
+}
+
+enum CaseStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+  ARCHIVED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum FeeType {
+  FIXED
+  HOURLY
+  SUCCESS_FEE
+  MIXED
+}
+
+enum EventType {
+  NOTE
+  CALL
+  MEETING
+  EMAIL
+  DOCUMENT_RECEIVED
+  DOCUMENT_SENT
+  HEARING
+  DEADLINE
+  PAYMENT
+  OTHER
+}
+
+enum DocumentType {
+  CONTRACT
+  PETITION
+  MOTION
+  EVIDENCE
+  CORRESPONDENCE
+  COURT_ORDER
+  JUDGMENT
+  APPEAL
+  AGREEMENT
+  INVOICE
+  OTHER
+}
+
+enum ProcessStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AnalysisType {
+  GENERAL
+  RISK_ASSESSMENT
+  DOCUMENT_REVIEW
+  CASE_STRATEGY
+  PRECEDENT_RESEARCH
+  CONTRACT_ANALYSIS
+  COMPLIANCE_CHECK
+}
+
+enum ReportType {
+  CASE_SUMMARY
+  FINANCIAL
+  PRODUCTIVITY
+  DEADLINE_ALERTS
+  CUSTOM
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum CacheType {
+  ANALYSIS
+  DOCUMENT_SUMMARY
+  PRECEDENT_SEARCH
+  RISK_ASSESSMENT
+  CONTRACT_REVIEW
+}
+
+// ================================
+// MONITORAMENTO DE PROCESSOS (Via 2)
+// ================================
+
+// Processos monitorados via API (Judit/Codilo)
+model MonitoredProcess {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  caseId         String?   // Pode estar ou não vinculado a um caso
+
+  // Dados básicos do processo
+  processNumber  String    // Número único do processo (formato unificado)
+  court          String    // Tribunal/Vara
+  clientName     String    // Nome do cliente
+
+  // Dados extraídos da API
+  processData    Json?     // Dados completos da API (parties, subject, etc)
+
+  // Status do monitoramento
+  monitoringStatus MonitoringStatus @default(ACTIVE)
+  lastSync         DateTime?
+  syncFrequency    SyncFrequency    @default(DAILY)
+
+  // Configurações de alerta
+  alertsEnabled    Boolean          @default(true)
+  alertRecipients  String[]         // Emails para receber alertas
+
+  // Metadados
+  source           ProcessSource    @default(JUDIT_API)
+  extractionMethod ExtractionMethod @default(API)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  case              Case?               @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  movements         ProcessMovement[]
+  alerts            ProcessAlert[]
+  syncLogs          ProcessSyncLog[]
+
+  @@unique([workspaceId, processNumber])
+  @@map("monitored_processes")
+}
+
+// Movimentações/andamentos do processo
+model ProcessMovement {
+  id                String   @id @default(cuid())
+  monitoredProcessId String
+
+  // Dados da movimentação
+  date              DateTime
+  type              String   // Tipo da movimentação
+  description       String   // Descrição completa
+  category          MovementCategory @default(OTHER)
+
+  // Classificação automática
+  importance        Priority @default(MEDIUM)
+  requiresAction    Boolean  @default(false)
+  deadline          DateTime?
+
+  // Dados brutos da API
+  rawData           Json?
+
+  // AI Analysis
+  aiSummary         String?  // Resumo gerado por IA
+  aiTags            String[] // Tags automáticas
+
+  // Status
+  read              Boolean  @default(false)
+  archived          Boolean  @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  monitoredProcess  MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+  alerts           ProcessAlert[]
+
+  @@map("process_movements")
+}
+
+// Alertas gerados para movimentações importantes
+model ProcessAlert {
+  id                 String    @id @default(cuid())
+  monitoredProcessId String
+  movementId         String?   // Pode ser para uma movimentação específica
+
+  // Dados do alerta
+  title              String
+  message            String
+  type               AlertType @default(MOVEMENT)
+  severity           Priority  @default(MEDIUM)
+
+  // Status
+  sent               Boolean   @default(false)
+  sentAt             DateTime?
+  read               Boolean   @default(false)
+  readAt             DateTime?
+
+  // Destinatários
+  recipients         String[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+  movement           ProcessMovement? @relation(fields: [movementId], references: [id], onDelete: SetNull)
+
+  @@map("process_alerts")
+}
+
+// Log de sincronizações com APIs externas
+model ProcessSyncLog {
+  id                 String     @id @default(cuid())
+  monitoredProcessId String
+
+  // Dados da sincronização
+  syncType           SyncType   @default(FULL)
+  status             SyncStatus @default(SUCCESS)
+
+  // Resultados
+  newMovements       Int        @default(0)
+  updatedMovements   Int        @default(0)
+  errors             String[]
+
+  // Metadados
+  duration           Int        @default(0) // ms
+  apiSource          ProcessSource @default(JUDIT_API)
+
+  // Timestamps
+  startedAt  DateTime
+  finishedAt DateTime?
+
+  // Relations
+  monitoredProcess MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+
+  @@map("process_sync_logs")
+}
+
+// Uploads em lote via Excel
+model ProcessBatchUpload {
+  id          String       @id @default(cuid())
+  workspaceId String
+
+  // Dados do arquivo
+  fileName    String
+  filePath    String
+  fileSize    Int
+
+  // Status do processamento
+  status      BatchStatus  @default(PROCESSING)
+  totalRows   Int          @default(0)
+  processed   Int          @default(0)
+  successful  Int          @default(0)
+  failed      Int          @default(0)
+
+  // Resultados
+  errors      Json?        // Array de erros por linha
+  summary     Json?        // Resumo do processamento
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("process_batch_uploads")
+}
+
+// ================================
+// NOVOS ENUMS PARA MONITORAMENTO
+// ================================
+
+enum MonitoringStatus {
+  ACTIVE
+  PAUSED
+  STOPPED
+  ERROR
+}
+
+enum SyncFrequency {
+  HOURLY
+  DAILY
+  WEEKLY
+  MANUAL
+}
+
+enum ProcessSource {
+  JUDIT_API
+  CODILO_API
+  MANUAL_INPUT
+  EXCEL_UPLOAD
+}
+
+enum ExtractionMethod {
+  API
+  WEB_SCRAPING
+  MANUAL
+}
+
+enum MovementCategory {
+  HEARING
+  DECISION
+  PETITION
+  DOCUMENT_REQUEST
+  DEADLINE
+  NOTIFICATION
+  APPEAL
+  SETTLEMENT
+  OTHER
+}
+
+enum AlertType {
+  MOVEMENT
+  DEADLINE
+  ERROR
+  SYNC_FAILURE
+  IMPORTANT_DECISION
+}
+
+enum SyncType {
+  FULL
+  INCREMENTAL
+  MANUAL
+}
+
+enum SyncStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  TIMEOUT
+}
+
+enum BatchStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ================================
+// IMPORTAÇÃO DE SISTEMAS EXTERNOS (Via 3)
+// ================================
+
+// Importações de sistemas jurídicos externos
+model SystemImport {
+  id          String         @id @default(cuid())
+  workspaceId String
+
+  // Dados do arquivo importado
+  fileName      String
+  filePath      String
+  fileSize      Int
+  originalHash  String       // Hash do arquivo original para detectar duplicatas
+
+  // Sistema de origem
+  sourceSystem  SourceSystem @default(UNKNOWN)
+  systemVersion String?      // Versão do sistema de origem
+  detectedFormat String?     // Formato detectado automaticamente
+
+  // Status da importação
+  status       ImportStatus  @default(ANALYZING)
+  progress     Int          @default(0) // Progresso em %
+
+  // Análise automática do arquivo
+  columnMapping Json?        // Mapeamento de colunas detectado
+  dataPreview   Json?        // Preview dos primeiros dados
+  validation    Json?        // Resultados de validação
+
+  // Resultados da importação
+  totalRows    Int          @default(0)
+  processedRows Int         @default(0)
+  successfulRows Int        @default(0)
+  failedRows   Int          @default(0)
+  skippedRows  Int          @default(0)
+
+  // Dados importados
+  importedCases      Int    @default(0)
+  importedClients    Int    @default(0)
+  importedEvents     Int    @default(0)
+  importedDocuments  Int    @default(0)
+
+  // Log de erros e avisos
+  errors     Json?    // Array de erros encontrados
+  warnings   Json?    // Array de avisos
+  summary    Json?    // Resumo da importação
+
+  // Configurações de importação
+  importSettings Json? // Configurações específicas da importação
+  overwriteData  Boolean @default(false) // Se deve sobrescrever dados existentes
+
+  // Timestamps
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  importedItems ImportedDataItem[]
+
+  @@map("system_imports")
+}
+
+// Items de dados importados (para rastreamento)
+model ImportedDataItem {
+  id             String    @id @default(cuid())
+  systemImportId String
+
+  // Identificação do item
+  originalId     String?   // ID original no sistema de origem
+  dataType       ImportedDataType
+  status         ImportItemStatus @default(IMPORTED)
+
+  // Dados do item original
+  originalData   Json      // Dados originais do CSV/Excel
+  mappedData     Json?     // Dados após mapeamento
+
+  // Relacionamento com entidades criadas
+  caseId         String?
+  clientId       String?
+  eventId        String?
+  documentId     String?
+
+  // Metadados
+  lineNumber     Int       // Linha no arquivo original
+  importOrder    Int       // Ordem de importação
+
+  // Validação
+  validationErrors Json?   // Erros de validação específicos
+  warnings         Json?   // Avisos específicos
+
+  // Timestamps
+  importedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  systemImport SystemImport @relation(fields: [systemImportId], references: [id], onDelete: Cascade)
+  case         Case?        @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  client       Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  event        CaseEvent?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  document     CaseDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@map("imported_data_items")
+}
+
+// Template de mapeamento para sistemas
+model SystemMappingTemplate {
+  id           String       @id @default(cuid())
+  workspaceId  String
+
+  // Identificação do template
+  name         String       // Nome do template (ex: "Projuris Padrão")
+  description  String?
+  sourceSystem SourceSystem
+  version      String       @default("1.0")
+
+  // Template de mapeamento
+  columnMappings Json        // Mapeamentos de colunas
+  fieldMappings  Json        // Mapeamentos de campos
+  transformRules Json?       // Regras de transformação de dados
+
+  // Configurações
+  isDefault    Boolean      @default(false)
+  isActive     Boolean      @default(true)
+
+  // Metadados
+  usageCount   Int          @default(0)
+  lastUsedAt   DateTime?
+
+  // Timestamps
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, name])
+  @@map("system_mapping_templates")
+}
+
+// Sincronização com sistemas externos
+model SystemSync {
+  id          String         @id @default(cuid())
+  workspaceId String
+
+  // Sistema e configuração
+  sourceSystem   SourceSystem
+  syncType       SyncType     @default(FULL)
+  syncMode       SyncMode     @default(IMPORT_ONLY)
+
+  // Configuração da sincronização
+  schedule       SyncSchedule @default(MANUAL)
+  lastSync       DateTime?
+  nextSync       DateTime?
+
+  // Status
+  isActive       Boolean      @default(true)
+  currentStatus  SyncStatus   @default(SUCCESS)
+
+  // Configurações específicas
+  syncSettings   Json?        // Configurações específicas do sistema
+  filterCriteria Json?        // Critérios de filtro
+
+  // Estatísticas
+  totalSyncs     Int          @default(0)
+  successfulSyncs Int         @default(0)
+  failedSyncs    Int          @default(0)
+
+  // Timestamps
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Relations
+  workspace  Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  syncLogs   SystemSyncLog[]
+
+  @@map("system_syncs")
+}
+
+// Log de sincronizações
+model SystemSyncLog {
+  id           String     @id @default(cuid())
+  systemSyncId String
+
+  // Dados da sincronização
+  syncType     SyncType   @default(FULL)
+  status       SyncStatus @default(SUCCESS)
+
+  // Resultados
+  itemsChecked   Int      @default(0)
+  itemsCreated   Int      @default(0)
+  itemsUpdated   Int      @default(0)
+  itemsSkipped   Int      @default(0)
+  itemsFailed    Int      @default(0)
+
+  // Metadados
+  duration       Int      @default(0) // ms
+  errors         Json?    // Array de erros
+  summary        Json?    // Resumo da sincronização
+
+  // Timestamps
+  startedAt      DateTime
+  finishedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  systemSync SystemSync @relation(fields: [systemSyncId], references: [id], onDelete: Cascade)
+
+  @@map("system_sync_logs")
+}
+
+// ================================
+// NOVOS ENUMS PARA IMPORTAÇÃO
+// ================================
+
+enum SourceSystem {
+  PROJURIS
+  LEGAL_ONE
+  ASTREA
+  CP_PRO
+  SAJ
+  ESAJ
+  PJE
+  THEMIS
+  ADVBOX
+  JUSBRASIL
+  UNKNOWN
+}
+
+enum ImportStatus {
+  ANALYZING
+  MAPPING
+  VALIDATING
+  IMPORTING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ImportedDataType {
+  CASE
+  CLIENT
+  EVENT
+  DOCUMENT
+  LAWYER
+  CONTACT
+  FINANCIAL
+  DEADLINE
+  OTHER
+}
+
+enum ImportItemStatus {
+  IMPORTED
+  UPDATED
+  SKIPPED
+  FAILED
+  DUPLICATE
+}
+
+enum SyncMode {
+  IMPORT_ONLY
+  BIDIRECTIONAL
+  EXPORT_ONLY
+}
+
+enum SyncSchedule {
+  MANUAL
+  DAILY
+  WEEKLY
+  MONTHLY
+  REAL_TIME
+}
+
+// ================================
+// REPORT CUSTOMIZATIONS
+// ================================
+model ReportCustomization {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  profileName   String
+  isDefault     Boolean  @default(false)
+
+  // Branding
+  companyName     String
+  companyAddress  String?
+  companyPhone    String?
+  companyEmail    String?
+  companyWebsite  String?
+
+  // Cores
+  primaryColor    String   @default("#1E40AF")
+  secondaryColor  String   @default("#64748B")
+  accentColor     String   @default("#10B981")
+  backgroundColor String   @default("#FFFFFF")
+  textColor       String   @default("#1F2937")
+
+  // Logo
+  logoUrl       String?
+  logoBase64    String?
+  logoWidth     Int?      @default(80)
+  logoHeight    Int?      @default(60)
+  logoPosition  String    @default("left") // left, center, right
+
+  // Header
+  headerText          String?
+  headerHeight        Int?    @default(60)
+  showCompanyInfo     Boolean @default(true)
+  showGenerationInfo  Boolean @default(true)
+
+  // Footer
+  footerText       String?
+  footerHeight     Int?    @default(30)
+  showPageNumbers  Boolean @default(true)
+  showGeneratedBy  Boolean @default(true)
+
+  // Watermark
+  watermark         String?
+  watermarkOpacity  Float?  @default(0.05)
+  watermarkRotation Int?    @default(-45)
+
+  // Typography
+  fontSize   Int    @default(12)
+  fontFamily String @default("Segoe UI")
+  lineHeight Float  @default(1.4)
+
+  // Margins (em mm)
+  marginTop    Int @default(20)
+  marginRight  Int @default(15)
+  marginBottom Int @default(20)
+  marginLeft   Int @default(15)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, profileName])
+  @@index([workspaceId, isDefault])
+  @@map("report_customizations")
+}
