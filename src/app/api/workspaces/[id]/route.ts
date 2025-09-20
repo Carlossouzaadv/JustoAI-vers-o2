@@ -16,7 +16,7 @@ import {
 } from '@/lib/validations'
 
 interface RouteContext {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // GET /api/workspaces/[id] - Get workspace details
@@ -30,7 +30,7 @@ async function GET(request: NextRequest, { params }: RouteContext) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  const workspaceId = params.id
+  const { id: workspaceId } = await params
 
   // Access check
   const { hasAccess, error: accessError } = await requireWorkspaceAccess(user.id, workspaceId)
@@ -100,7 +100,7 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  const workspaceId = params.id
+  const { id: workspaceId } = await params
 
   // Access check
   const { hasAccess, error: accessError } = await requireWorkspaceAccess(user.id, workspaceId)
@@ -166,7 +166,7 @@ async function DELETE(request: NextRequest, { params }: RouteContext) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  const workspaceId = params.id
+  const { id: workspaceId } = await params
 
   // Access check
   const { hasAccess, error: accessError } = await requireWorkspaceAccess(user.id, workspaceId)

@@ -155,7 +155,7 @@ export class AiCacheManager {
       });
 
       if (dbResult) {
-        const data = JSON.parse(dbResult.cachedValue);
+        const data = dbResult.result;
 
         // Recolocar nos caches superiores
         this.setInMemory(cacheKey, data);
@@ -170,7 +170,7 @@ export class AiCacheManager {
         // Atualizar hit count
         await prisma.aiCache.update({
           where: { id: dbResult.id },
-          data: { hitCount: { increment: 1 } }
+          data: { hits: { increment: 1 } }
         });
 
         this.stats.postgres_hits++;
@@ -226,13 +226,14 @@ export class AiCacheManager {
         data: {
           workspaceId: metadata?.workspaceId || 'default',
           cacheKey: cacheKey,
-          cachedValue: JSON.stringify(value),
+          type: 'ANALYSIS',
+          prompt: analysisType,
+          result: value,
           model: metadata?.model || 'unknown',
-          analysisType: analysisType,
-          complexityScore: metadata?.complexity_score,
-          tokensSaved: metadata?.tokens_saved || 0,
+          tokens: metadata?.tokens_saved || 0,
+          cost: 0.001,
           expiresAt: expiresAt,
-          hitCount: 0
+          hits: 0
         }
       });
 
@@ -404,7 +405,7 @@ export class AiCacheManager {
           }
         },
         _sum: {
-          tokensSaved: true
+          tokens: true
         }
       })
     ]);
@@ -422,8 +423,8 @@ export class AiCacheManager {
       },
       postgresql: {
         total_entries: totalEntries,
-        tokens_saved_today: todayStats._sum.tokensSaved || 0,
-        cost_saved_usd: ((todayStats._sum.tokensSaved || 0) / 1_000_000) * 0.30 // Estimativa
+        tokens_saved_today: todayStats._sum.tokens || 0,
+        cost_saved_usd: ((todayStats._sum.tokens || 0) / 1_000_000) * 0.30 // Estimativa
       }
     };
   }
@@ -456,16 +457,16 @@ export class AiCacheManager {
   async getTopSavingEntries(limit: number = 10) {
     return await prisma.aiCache.findMany({
       orderBy: [
-        { hitCount: 'desc' },
-        { tokensSaved: 'desc' }
+        { hits: 'desc' },
+        { tokens: 'desc' }
       ],
       take: limit,
       select: {
         cacheKey: true,
         model: true,
-        analysisType: true,
-        tokensSaved: true,
-        hitCount: true,
+        type: true,
+        tokens: true,
+        hits: true,
         createdAt: true
       }
     });

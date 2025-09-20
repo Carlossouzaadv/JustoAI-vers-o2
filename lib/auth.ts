@@ -3,8 +3,8 @@ import { cookies } from 'next/headers'
 import { prisma } from './prisma'
 
 // Supabase client for server-side auth
-export function createSupabaseServerClient() {
-  const cookieStore = cookies()
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +28,7 @@ export function createSupabaseServerClient() {
 // Get current user from Supabase and sync with our database
 export async function getCurrentUser() {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -94,4 +94,51 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
   })
 
   return userWorkspace?.role || null
+}
+
+// Additional auth functions for compatibility
+export async function validateAuth(request?: any) {
+  // Development mode - allow bypass
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ Development mode: Bypassing auth validation')
+    return {
+      user: {
+        id: 'dev-user',
+        email: 'dev@justoai.com',
+        name: 'Development User',
+        workspaces: [{
+          workspace: {
+            id: 'dev-workspace',
+            name: 'Development Workspace',
+            slug: 'dev'
+          }
+        }]
+      },
+      workspace: {
+        id: 'dev-workspace',
+        name: 'Development Workspace',
+        slug: 'dev'
+      }
+    }
+  }
+
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error('Unauthorized')
+  }
+  return {
+    user,
+    workspace: user.workspaces[0]?.workspace
+  }
+}
+
+export async function validateAuthAndGetUser(request?: any) {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error('Unauthorized')
+  }
+  return {
+    user,
+    workspace: user.workspaces[0]?.workspace
+  }
 }

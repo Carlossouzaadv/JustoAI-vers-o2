@@ -1,0 +1,23 @@
+INSTRUÇÕES PARA CRIAÇÃO DO PRESS KIT COMPLETO
+==================================================
+
+Para criar o arquivo press-kit-complete.zip, inclua os seguintes arquivos:
+
+1. Justo_logo.png (logo oficial)
+2. founder-photo.jpg (foto do fundador)
+3. README.md (informações completas)
+4. press-kit-instructions.txt (este arquivo)
+
+COMO CRIAR O ZIP:
+- Selecione todos os arquivos da pasta press-kit/
+- Clique com botão direito > "Enviar para" > "Pasta compactada"
+- Renomeie para "press-kit-complete.zip"
+
+CONTEÚDO DO PRESS KIT:
+- Texto boilerplate oficial da JustoAI
+- Biografia completa do fundador
+- Logo em alta resolução
+- Foto profissional do fundador
+- Informações de contato para imprensa
+
+Tamanho estimado do arquivo final: ~15.3 MB

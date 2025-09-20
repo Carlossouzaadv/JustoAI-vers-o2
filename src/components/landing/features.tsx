@@ -9,36 +9,36 @@ const features = [
   {
     icon: ICONS.BRAIN,
     title: 'Análise Essencial',
-    description: 'IA analisa automaticamente seus processos e documenta pontos-chave em segundos.',
-    benefits: ['Gemini Flash 8B', 'Análise em 30s', 'Pontos estratégicos'],
+    description: 'Lê e analisa automaticamente seus processos, extraindo pontos-chave e resumos executivos em segundos.',
+    benefits: ['Análise instantânea', 'Economiza horas', 'Pontos estratégicos'],
     color: 'primary',
   },
   {
     icon: ICONS.SHIELD,
     title: 'Análise Estratégica',
-    description: 'Avaliação profunda com recomendações jurídicas e análise de riscos detalhada.',
-    benefits: ['Gemini Flash Pro', 'Recomendações', 'Análise de riscos'],
+    description: 'Avaliação profunda com observações jurídicas e análise de riscos detalhada.',
+    benefits: ['Análise avançada', 'Pense estrategicamente', 'Gestão de riscos'],
     color: 'accent',
   },
   {
     icon: ICONS.CALENDAR,
     title: 'Relatórios Automáticos',
     description: 'Configure uma vez e receba relatórios executivos automaticamente no seu email.',
-    benefits: ['Agendamento', 'Email automático', 'PDF profissional'],
+    benefits: ['Em linguagem simples', 'Email automático', 'PDF profissional'],
     color: 'primary',
   },
   {
     icon: ICONS.MONITOR,
     title: 'Monitoramento 24/7',
     description: 'Acompanhe automaticamente movimentações processuais com alertas inteligentes.',
-    benefits: ['APIs Judit/Codilo', 'Alertas em tempo real', 'Sem trabalho manual'],
+    benefits: ['Integração jurídica', 'Alertas em tempo real', 'Sem trabalho manual'],
     color: 'accent',
   },
   {
     icon: ICONS.UPLOAD,
-    title: 'Integração Completa',
-    description: 'Importe dados de qualquer sistema jurídico. Projuris, Legal One, Astrea e mais.',
-    benefits: ['CSV/Excel', 'Detecção automática', 'Mapeamento inteligente'],
+    title: 'Integração Simplificada',
+    description: 'Migre seus dados em minutos, com trabalho mínimo. Totalmente compatível com Projuris, Legal One, Astrea e os principais sistemas do mercado.',
+    benefits: ['Migração em minutos', 'Trabalho mínimo', 'Compatível com Excel/CSV'],
     color: 'primary',
   },
   {
@@ -67,7 +67,6 @@ const itemVariants = {
     opacity: 1,
     transition: {
       duration: 0.6,
-      ease: 'easeOut',
     },
   },
 };
@@ -87,13 +86,13 @@ export function Features() {
             Recursos Revolucionários
           </Badge>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-primary-800 mb-6">
-            Tudo que você precisa para
-            <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent block">
-              revolucionar sua advocacia
+            <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">
+              Economize 20 horas por semana
             </span>
+            <br />e impressione seus clientes
           </h2>
           <p className="text-lg text-neutral-700 max-w-3xl mx-auto">
-            Nossa plataforma combina o melhor da inteligência artificial com a experiência jurídica
+            Nossa plataforma combina automação inteligente com a experiência jurídica
             para entregar resultados que impressionam seus clientes.
           </p>
         </motion.div>
@@ -136,17 +135,6 @@ export function Features() {
                   ))}
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-neutral-200">
-                  <motion.div
-                    whileHover={{ x: 5 }}
-                    className="flex items-center text-primary-700 font-medium cursor-pointer"
-                  >
-                    Saiba mais
-                    <span className="ml-2 transition-transform group-hover:translate-x-1">
-                      {ICONS.ARROW_RIGHT}
-                    </span>
-                  </motion.div>
-                </div>
               </Card>
             </motion.div>
           ))}
@@ -162,7 +150,7 @@ export function Features() {
         >
           {[
             { value: '20h', label: 'Economizadas por semana' },
-            { value: '98%', label: 'Satisfação dos clientes' },
+            { value: '7 dias', label: 'Trial gratuito' },
             { value: '5min', label: 'Para configurar' },
             { value: '24/7', label: 'Monitoramento automático' },
           ].map((stat, index) => (

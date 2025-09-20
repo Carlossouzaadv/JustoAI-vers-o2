@@ -257,7 +257,6 @@ export async function clearAllQueues() {
 
   await Promise.all(allQueues.map(queue => queue.clean(0, 'completed')));
   await Promise.all(allQueues.map(queue => queue.clean(0, 'failed')));
-  await Promise.all(allQueues.map(queue => queue.clean(0, 'waiting')));
 
   console.log('🧹 All queues cleared');
 }

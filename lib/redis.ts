@@ -23,7 +23,6 @@ const redisConfig = {
     retryDelayOnFailover: 100,
     enableReadyCheck: true,
     lazyConnect: true,
-    maxRetriesPerRequest: 3,
     db: 0,
     // Configurações de produção
     connectTimeout: 10000,

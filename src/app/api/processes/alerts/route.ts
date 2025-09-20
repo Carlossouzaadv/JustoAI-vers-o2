@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, ApiError, validateJson } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { getGlobalAlertManager } from '@/lib/process-alerts';
 import { ICONS } from '@/lib/icons';
 
@@ -174,12 +174,10 @@ export async function GET(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao listar alertas:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -190,7 +188,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { workspace } = await validateAuth(request);
-    const body = await validateJson(request, CreateCustomAlertSchema);
+    const { data: body, error: validationError } = await validateJson(request, CreateCustomAlertSchema);
+    if (validationError) return validationError;
 
     // Verificar se o processo existe e pertence ao workspace
     const process = await prisma.monitoredProcess.findFirst({
@@ -234,21 +233,22 @@ export async function POST(request: NextRequest) {
       title: body.title
     });
 
-    return apiResponse({
-      alert: createdAlert,
-      message: 'Alerta criado com sucesso'
-    }, 201);
+    return NextResponse.json({
+      success: true,
+      data: {
+        alert: createdAlert,
+        message: 'Alerta criado com sucesso'
+      }
+    }, { status: 201 });
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao criar alerta:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -259,7 +259,8 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const { workspace } = await validateAuth(request);
-    const body = await validateJson(request, MarkReadSchema);
+    const { data: body, error: validationError } = await validateJson(request, MarkReadSchema);
+    if (validationError) return validationError;
 
     const alertManager = getGlobalAlertManager();
     const updatedCount = await alertManager.markAlertsAsRead(
@@ -285,12 +286,10 @@ export async function PATCH(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao atualizar alertas:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -362,11 +361,9 @@ export async function DELETE(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao remover alertas:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }

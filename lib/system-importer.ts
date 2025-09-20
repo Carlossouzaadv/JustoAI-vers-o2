@@ -142,7 +142,7 @@ export class SystemImporter {
         fileSize: buffer.length,
         originalHash: fileHash,
         status: 'ANALYZING',
-        importSettings: importOptions
+        importSettings: importOptions as any
       }
     });
 
@@ -411,7 +411,7 @@ export class SystemImporter {
         const validationResult = DataValidator.validateValue(transformedValue, validationRules);
 
         if (!validationResult.isValid) {
-          this.session.errors.push({
+          this.session?.errors.push({
             type: 'VALIDATION_ERROR',
             message: validationResult.errors.join(', '),
             line: lineNumber,
@@ -493,7 +493,7 @@ export class SystemImporter {
             email: data.email,
             phone: data.phone,
             document: data.document,
-            type: this.mapClientType(data.client_type)
+            type: this.mapClientType(data.client_type) ?? 'INDIVIDUAL'
           }
         });
       }
@@ -505,7 +505,7 @@ export class SystemImporter {
           email: data.email,
           phone: data.phone,
           document: data.document,
-          type: this.mapClientType(data.client_type) || 'INDIVIDUAL'
+          type: this.mapClientType(data.client_type) ?? 'INDIVIDUAL'
         }
       });
 
@@ -624,8 +624,8 @@ export class SystemImporter {
     return userWorkspace.userId;
   }
 
-  private mapClientType(value: any): 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO' | null {
-    if (!value) return null;
+  private mapClientType(value: any): 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO' | undefined {
+    if (!value) return undefined;
 
     const mappings: Record<string, any> = {
       'pessoa fisica': 'INDIVIDUAL',
@@ -639,7 +639,7 @@ export class SystemImporter {
       'ngo': 'NGO'
     };
 
-    return mappings[value.toString().toLowerCase()] || null;
+    return mappings[value.toString().toLowerCase()] || undefined;
   }
 
   private mapCaseType(value: any): 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' | null {

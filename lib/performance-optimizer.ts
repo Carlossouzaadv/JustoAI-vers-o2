@@ -406,7 +406,15 @@ export class PerformanceOptimizer {
   }
 
   getPerformanceReport(): {
-    metrics: typeof this.metrics;
+    metrics: {
+      totalReports: number;
+      totalTime: number;
+      averageTime: number;
+      currentThroughput: number;
+      memoryPeakMB: number;
+      gcCount: number;
+      cacheHits: number;
+    };
     config: PerformanceConfig;
     recommendations: string[];
     targetMet: boolean;

@@ -361,8 +361,8 @@ export class ReportCustomizationManager {
    */
   async removeLogo(profileId: string): Promise<void> {
     await this.updateProfile(profileId, {
-      logoUrl: null,
-      logoBase64: null
+      logoUrl: undefined,
+      logoBase64: undefined
     });
 
     console.log(`${ICONS.SUCCESS} Logo removido do perfil: ${profileId}`);

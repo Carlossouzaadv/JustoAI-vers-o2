@@ -7,7 +7,7 @@ export default function ProcessLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   return (
     <div className="space-y-6">

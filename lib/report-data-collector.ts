@@ -5,7 +5,7 @@
 
 import { ICONS } from './icons';
 import prisma from './prisma';
-import { ModelRouter } from './model-router';
+import { AIModelRouter } from './ai-model-router';
 import type {
   ReportData,
   ProcessReportData,
@@ -55,10 +55,10 @@ export interface DataCollectionStats {
 // ================================
 
 export class ReportDataCollector {
-  private modelRouter: ModelRouter;
+  private modelRouter: AIModelRouter;
 
   constructor(apiKey?: string) {
-    this.modelRouter = new ModelRouter(apiKey || process.env.GOOGLE_API_KEY || '');
+    this.modelRouter = new AIModelRouter();
   }
 
   // ================================
@@ -260,9 +260,6 @@ export class ReportDataCollector {
         ...(filters.includeInactiveProcesses ? {} : { monitoringStatus: 'ACTIVE' })
       },
       include: {
-        client: {
-          select: { name: true }
-        },
         movements: {
           orderBy: { date: 'desc' },
           take: 10,
@@ -309,22 +306,19 @@ export class ReportDataCollector {
       return {
         id: process.id,
         number: process.processNumber,
-        client_name: process.client?.name || 'Cliente não informado',
-        subject: process.subject || 'Assunto não informado',
+        client_name: process.clientName || 'Cliente não informado',
+        subject: 'Assunto não informado', // TODO: Extract from processData JSON
         court: process.court || 'Tribunal não informado',
-        status: process.status,
+        status: process.monitoringStatus,
         priority,
         last_movement: lastMovement ? {
           date: lastMovement.date,
           description: lastMovement.description,
           requires_action: lastMovement.requiresAction
         } : undefined,
-        next_deadline: process.nextDeadline,
+        next_deadline: undefined, // TODO: Calculate from movements
         recent_movements: recentMovements.length > 0 ? recentMovements : undefined,
-        financial_info: process.estimatedValue ? {
-          case_value: process.estimatedValue,
-          estimated_duration: process.estimatedDuration || undefined
-        } : undefined
+        financial_info: undefined // TODO: Extract from processData JSON
       } as ProcessReportData;
     });
   }

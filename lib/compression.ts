@@ -121,7 +121,7 @@ export async function compressImage(
 
     // Configurar metadados
     if (!config.preserveMetadata) {
-      sharpInstance = sharpInstance.withMetadata(false);
+      sharpInstance = sharpInstance.withMetadata({});
     }
 
     // Redimensionar se especificado
@@ -147,7 +147,6 @@ export async function compressImage(
       case 'webp':
         sharpInstance = sharpInstance.webp({
           quality: config.quality,
-          progressive: config.progressive,
         });
         break;
 

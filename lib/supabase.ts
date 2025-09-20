@@ -5,6 +5,9 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
+// Re-export createClient for compatibility
+export { createClient }
+
 // Test connection function
 export async function testSupabaseConnection() {
   try {

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, ApiError, validateJson } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { createProcessApiClient } from '@/lib/process-apis';
 import { ICONS } from '@/lib/icons';
 
@@ -36,7 +36,7 @@ const SyncActionSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
@@ -46,7 +46,7 @@ export async function GET(
 
     const process = await prisma.monitoredProcess.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       },
       include: {
@@ -154,12 +154,10 @@ export async function GET(
     console.error(`${ICONS.ERROR} Erro ao buscar processo:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -169,16 +167,17 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
-    const body = await validateJson(request, UpdateProcessSchema);
+    const { data: body, error: validationError } = await validateJson(request, UpdateProcessSchema);
+    if (validationError) return validationError;
 
     // Verificar se processo existe
     const existingProcess = await prisma.monitoredProcess.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       }
     });
@@ -203,7 +202,7 @@ export async function PUT(
 
     // Atualizar processo
     const updatedProcess = await prisma.monitoredProcess.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         ...body,
         updatedAt: new Date()
@@ -220,7 +219,7 @@ export async function PUT(
     });
 
     console.log(`${ICONS.SUCCESS} Processo atualizado:`, {
-      id: params.id,
+      id: (await params).id,
       processNumber: updatedProcess.processNumber,
       changes: Object.keys(body)
     });
@@ -234,12 +233,10 @@ export async function PUT(
     console.error(`${ICONS.ERROR} Erro ao atualizar processo:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -249,16 +246,17 @@ export async function PUT(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
-    const body = await validateJson(request, SyncActionSchema);
+    const { data: body, error: validationError } = await validateJson(request, SyncActionSchema);
+    if (validationError) return validationError;
 
     // Verificar se processo existe
     const process = await prisma.monitoredProcess.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       }
     });
@@ -277,12 +275,10 @@ export async function POST(
     console.error(`${ICONS.ERROR} Erro na ação do processo:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -292,14 +288,14 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
 
     const process = await prisma.monitoredProcess.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       },
       select: {
@@ -315,11 +311,11 @@ export async function DELETE(
 
     // Remover processo (cascade automático)
     await prisma.monitoredProcess.delete({
-      where: { id: params.id }
+      where: { id: (await params).id }
     });
 
     console.log(`${ICONS.SUCCESS} Processo removido:`, {
-      id: params.id,
+      id: (await params).id,
       processNumber: process.processNumber
     });
 
@@ -336,12 +332,10 @@ export async function DELETE(
     console.error(`${ICONS.ERROR} Erro ao remover processo:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 

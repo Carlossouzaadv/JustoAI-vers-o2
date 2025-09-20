@@ -4,6 +4,7 @@ import { useState, createContext, useContext } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import '@/styles/dashboard-animations.css';
 
 // Context para compartilhar estado entre sidebar e página principal
 interface DashboardContextType {

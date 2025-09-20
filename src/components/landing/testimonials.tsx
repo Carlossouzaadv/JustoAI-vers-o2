@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,7 +77,7 @@ const itemVariants = {
     opacity: 1,
     transition: {
       duration: 0.6,
-      ease: 'easeOut',
+      
     },
   },
 };
@@ -96,9 +97,11 @@ export function Testimonials() {
             Depoimentos Reais
           </Badge>
           <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-primary-800 mb-6">
-            Advogados que já
-            <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent block">
-              transformaram sua prática
+            <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">
+              Resultados Reais,
+            </span>
+            <span className="block">
+              Advogados Satisfeitos
             </span>
           </h2>
           <p className="text-lg text-neutral-700 max-w-3xl mx-auto">
@@ -199,7 +202,7 @@ export function Testimonials() {
           className="text-center"
         >
           <h3 className="font-display font-semibold text-xl text-neutral-600 mb-8">
-            Confiado por mais de 200+ escritórios no Brasil
+            Confiado por escritórios em todo o Brasil
           </h3>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center opacity-60">
@@ -231,10 +234,10 @@ export function Testimonials() {
           className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8 text-center"
         >
           {[
-            { value: '200+', label: 'Escritórios ativos' },
-            { value: '50k+', label: 'Processos analisados' },
-            { value: '1M+', label: 'Horas economizadas' },
-            { value: '4.9/5', label: 'Avaliação média' },
+            { value: '100%', label: 'Automação completa' },
+            { value: '20h+', label: 'Economia semanal' },
+            { value: '7 dias', label: 'Trial gratuito' },
+            { value: '24/7', label: 'Suporte ativo' },
           ].map((stat, index) => (
             <motion.div
               key={index}
@@ -268,21 +271,25 @@ export function Testimonials() {
             Comece sua transformação digital hoje mesmo. Teste grátis por 7 dias.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-white text-primary-800 px-8 py-3 rounded-lg font-semibold hover:bg-neutral-100 transition-colors"
-            >
-              Começar Gratuitamente
-              <span className="ml-2">{ICONS.ARROW_RIGHT}</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-800 transition-colors"
-            >
-              {ICONS.PLAY} Ver Demo
-            </motion.button>
+            <Link href="/signup">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-white text-primary-800 px-8 py-3 rounded-lg font-semibold hover:bg-neutral-100 transition-colors"
+              >
+                Começar Gratuitamente
+                <span className="ml-2">{ICONS.ARROW_RIGHT}</span>
+              </motion.button>
+            </Link>
+            <Link href="/onboarding-demo">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-800 transition-colors"
+              >
+                {ICONS.PLAY} Ver Demo
+              </motion.button>
+            </Link>
           </div>
         </motion.div>
       </div>

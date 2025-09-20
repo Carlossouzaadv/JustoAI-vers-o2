@@ -7,7 +7,7 @@
 import { Job } from 'bull';
 import { syncQueue } from '../lib/queues';
 import { prisma } from '../lib/prisma';
-import { processAPIs, ProcessAPIResult } from '../lib/process-apis';
+import { ProcessApiClient, createProcessApiClient } from '../lib/process-apis';
 import { redisUtils } from '../lib/redis';
 import { ICONS } from '../lib/icons';
 
@@ -111,8 +111,39 @@ syncQueue.process('sync-apis', async (job: Job<SyncJobData>) => {
 // === WORKER PROCESSOR - SYNC MANUAL ===
 
 syncQueue.process('manual-sync', async (job: Job<SyncJobData>) => {
-  // Reutiliza a mesma lógica do sync-apis
-  return await syncQueue.process('sync-apis')(job);
+  const startTime = Date.now();
+  console.log(`${ICONS.SYNC} Starting manual sync process...`);
+
+  try {
+    // Usar mesma lógica do sync-apis mas com parâmetros do manual-sync
+    const { workspaceId, processIds, forceUpdate = true } = job.data;
+
+    await job.progress(5);
+
+    // Buscar processos para sincronizar
+    const processes = await getProcessesToSync({
+      workspaceId,
+      processIds,
+      forceUpdate,
+      type: 'manual-sync'
+    });
+
+    console.log(`${ICONS.INFO} Found ${processes.length} processes to sync`);
+    await job.progress(15);
+
+    // Processar em lotes
+    const result = await processBatches(processes, job);
+
+    // Salvar resultado
+    await saveSyncResult(result);
+
+    console.log(`${ICONS.CHECK} Manual sync completed: ${result.updatedCount}/${result.processedCount} processes updated`);
+    return result;
+
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Manual sync failed:`, error);
+    throw error;
+  }
 });
 
 // === FUNÇÕES AUXILIARES ===
@@ -157,12 +188,12 @@ async function getProcessesToSync({
     select: {
       id: true,
       processNumber: true,
-      tribunal: true,
+      court: true,
       workspaceId: true,
-      lastSyncAt: true,
+      lastSync: true,
     },
     orderBy: {
-      lastSyncAt: 'asc' // Processos mais antigos primeiro
+      lastSync: 'asc' // Processos mais antigos primeiro
     },
     take: type === 'full-sync' ? undefined : 500 // Limitar incremental
   });
@@ -270,7 +301,11 @@ async function syncSingleProcess(process: any): Promise<{ updated: boolean; data
     }
 
     // Buscar dados das APIs
-    const apiResult = await processAPIs.searchProcess(process.processNumber, process.tribunal);
+    const apiClient = createProcessApiClient();
+    const apiResult = await apiClient.searchProcess({
+      processNumber: process.processNumber,
+      court: process.court
+    });
 
     if (!apiResult.success || !apiResult.data) {
       throw new Error(`API sync failed: ${apiResult.error}`);
@@ -283,7 +318,7 @@ async function syncSingleProcess(process: any): Promise<{ updated: boolean; data
       // Atualizar timestamp mesmo sem mudanças
       await prisma.monitoredProcess.update({
         where: { id: process.id },
-        data: { lastSyncAt: new Date() }
+        data: { lastSync: new Date() }
       });
 
       // Cache resultado
@@ -321,7 +356,7 @@ function shouldForceSync(process: any): boolean {
  */
 async function checkForChanges(processId: string, apiData: any): Promise<boolean> {
   const currentMovements = await prisma.processMovement.findMany({
-    where: { processId },
+    where: { monitoredProcessId: processId },
     orderBy: { date: 'desc' },
     take: 10,
     select: {
@@ -371,35 +406,36 @@ async function updateProcessWithApiData(processId: string, apiData: any) {
 
     // Processar novas movimentações
     for (const movement of movimentacoes) {
-      await tx.processMovement.upsert({
+      // Verificar se a movimentação já existe
+      const existingMovement = await tx.processMovement.findFirst({
         where: {
-          processId_date_description: {
-            processId,
-            date: new Date(movement.data),
-            description: movement.descricao,
-          }
-        },
-        update: {
-          type: movement.tipo,
-          details: movement.detalhes,
-        },
-        create: {
-          processId,
+          monitoredProcessId: processId,
           date: new Date(movement.data),
-          description: movement.descricao,
-          type: movement.tipo,
-          details: movement.detalhes,
+          description: movement.descricao
         }
       });
+
+      if (!existingMovement) {
+        await tx.processMovement.create({
+          data: {
+            monitoredProcessId: processId,
+            date: new Date(movement.data),
+            description: movement.descricao,
+            type: movement.tipo || 'UNKNOWN'
+          }
+        });
+      }
     }
 
     // Log da sincronização
     await tx.processSyncLog.create({
       data: {
-        processId,
-        syncType: 'API_SYNC',
+        monitoredProcessId: processId,
+        syncType: 'FULL',
         status: 'SUCCESS',
-        details: `Updated with ${movimentacoes.length} movements`,
+        newMovements: movimentacoes.length,
+        startedAt: new Date(),
+        finishedAt: new Date()
       }
     });
   });
@@ -414,22 +450,14 @@ async function saveSyncResult(result: SyncResult, workspaceId?: string) {
   // Cache resultado para dashboard
   await redisUtils.setWithTTL(cacheKey, result, 24 * 60 * 60); // 24 horas
 
-  // Salvar estatísticas no banco (opcional)
-  if (process.env.SAVE_SYNC_STATS === 'true') {
-    await prisma.processSyncLog.create({
-      data: {
-        processId: null, // Log global
-        syncType: 'BATCH_SYNC',
-        status: result.success ? 'SUCCESS' : 'FAILED',
-        details: JSON.stringify({
-          processedCount: result.processedCount,
-          updatedCount: result.updatedCount,
-          errorCount: result.errorCount,
-          duration: result.duration,
-        }),
-      }
-    });
-  }
+  // TODO: Salvar estatísticas no banco (quando tivermos um processo global)
+  // Comentado temporariamente pois ProcessSyncLog requer um monitoredProcessId válido
+  console.log(`${ICONS.CHART} Sync stats:`, {
+    processedCount: result.processedCount,
+    updatedCount: result.updatedCount,
+    errorCount: result.errorCount,
+    duration: result.duration
+  });
 }
 
 // === UTILITY FUNCTIONS ===

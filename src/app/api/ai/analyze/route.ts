@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { ModelRouter } from '@/lib/model-router';
+import { AIModelRouter } from '@/lib/ai-model-router';
 import { getAiCache } from '@/lib/ai-cache-manager';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const router = new ModelRouter(apiKey);
+    const router = new AIModelRouter();
     let result;
 
     // 4. Processar de acordo com o tipo de análise
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Dados inválidos', details: error.errors },
+        { success: false, error: 'Dados inválidos', details: error.issues },
         { status: 400 }
       );
     }

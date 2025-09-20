@@ -24,3 +24,6 @@ export async function disconnectPrisma() {
   await prisma.$disconnect()
   console.log('🔌 Disconnected from database')
 }
+
+// Default export for compatibility
+export default prisma

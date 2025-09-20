@@ -1,0 +1,4 @@
+Cliente,Email,Telefone,Documento,Tipo,Número do Processo,Título do Processo,Área do Direito,Status,Prioridade,Data de Início,Prazo,Valor
+João Silva,joao@email.com,(11) 99999-9999,123.456.789-01,INDIVIDUAL,0001234-56.2024.8.26.0100,Ação de Cobrança,CIVIL,ACTIVE,MEDIUM,01/01/2024,31/12/2024,15000.00
+Maria Santos,maria@empresa.com,(11) 88888-8888,987.654.321-09,INDIVIDUAL,0007890-12.2024.8.26.0100,Processo Trabalhista,LABOR,ACTIVE,HIGH,15/01/2024,15/06/2024,8500.00
+Empresa ABC Ltda,contato@abc.com.br,(11) 77777-7777,12.345.678/0001-90,COMPANY,0005678-90.2024.8.26.0100,Revisão Contratual,CIVIL,ACTIVE,LOW,10/02/2024,10/08/2024,25000.00

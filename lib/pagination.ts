@@ -19,9 +19,9 @@ export const PaginationParamsSchema = z.object({
   page: z.number().min(1),
   limit: z.number().min(1).max(100),
   offset: z.number().min(0),
-  sort?: z.string(),
+  sort: z.string().optional(),
   order: z.enum(['asc', 'desc']),
-  search?: z.string,
+  search: z.string().optional(),
 });
 
 // === TIPOS ===
@@ -247,7 +247,7 @@ export function validatePaginationMiddleware() {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
           error: 'Invalid pagination parameters',
-          details: error.errors,
+          details: error.issues,
         });
       }
 

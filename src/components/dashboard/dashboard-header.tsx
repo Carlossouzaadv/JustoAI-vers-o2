@@ -1,28 +1,52 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ICONS } from '@/lib/icons';
 
 export function DashboardHeader() {
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: ICONS.HOME },
+    { href: '/dashboard/clients', label: 'Clientes', icon: ICONS.CLIENT },
+    { href: '/dashboard/process', label: 'Processos', icon: ICONS.PROCESS },
+    { href: '/dashboard/upload', label: 'Upload PDFs', icon: ICONS.UPLOAD },
+    { href: '/dashboard/reports', label: 'Relatórios', icon: ICONS.REPORTS },
+  ];
+
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center gap-4 px-6">
         <SidebarTrigger />
 
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">Dashboard Principal</h1>
+        <div className="flex-1 flex items-center gap-6">
+          <h1 className="text-lg font-semibold">
+            JustoAI
+          </h1>
+
+          <nav className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant={isActive ? "default" : "ghost"}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    {item.icon}
+                    {item.label}
+                  </Button>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/dashboard/reports'}
-          >
-            {ICONS.REPORTS} Relatórios
-          </Button>
-
           <Button variant="outline" size="sm">
             {ICONS.SETTINGS} Configurações
           </Button>

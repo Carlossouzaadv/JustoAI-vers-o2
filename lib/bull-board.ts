@@ -54,6 +54,7 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
       ],
       favIcon: {
         default: '/favicon.ico',
+        alternative: '/favicon.ico',
       },
     },
   },

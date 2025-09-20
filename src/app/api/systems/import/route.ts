@@ -9,7 +9,7 @@ import { promisify } from 'util';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, ApiError, validateJson } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { createSystemImporter } from '@/lib/system-importer';
 import { createIntelligentParser } from '@/lib/intelligent-parser';
 import { SystemMappings } from '@/lib/system-mappings';
@@ -58,7 +58,7 @@ const ImportRequestSchema = z.object({
   skipDuplicates: z.boolean().default(true),
   validateOnly: z.boolean().default(false),
   batchSize: z.number().min(10).max(1000).default(100),
-  customMappings: z.record(z.string()).optional(),
+  customMappings: z.record(z.string(), z.string()).optional(),
   forceSystem: z.enum(['PROJURIS', 'LEGAL_ONE', 'ASTREA', 'CP_PRO', 'SAJ', 'ESAJ', 'PJE', 'THEMIS', 'ADVBOX']).optional()
 });
 
@@ -103,13 +103,10 @@ export async function POST(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro no upload de sistema:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -246,12 +243,10 @@ export async function GET(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao buscar importações:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -324,12 +319,10 @@ export async function DELETE(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao remover importações:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 

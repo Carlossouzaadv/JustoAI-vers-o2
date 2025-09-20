@@ -16,12 +16,13 @@ const plans = [
     originalPrice: 'R$ 297',
     discount: '50% OFF',
     features: [
-      'Até 50 processos monitorados',
-      'Análise Essencial (IA Flash 8B)',
-      '2 relatórios automáticos/mês',
+      'Até 2 usuários',
+      'Até 100 processos monitorados',
+      'Análise Completa: 25 (1º mês), depois 5/mês',
+      'Análise Essencial e Estratégica ilimitadas',
       'Dashboard básico',
-      'Suporte por email',
-      'Integração via CSV/Excel'
+      'Suporte por Email e Assistente IA',
+      'Importação de dados (CSV/Excel)'
     ],
     cta: 'Começar Grátis',
     popular: false,
@@ -35,13 +36,14 @@ const plans = [
     originalPrice: 'R$ 597',
     discount: '50% OFF',
     features: [
-      'Até 200 processos monitorados',
-      'Análise Essencial + Estratégica',
-      'Relatórios automáticos ilimitados',
+      'Até 5 usuários',
+      'Até 300 processos monitorados',
+      'Análise Completa: 75 (1º mês), depois 15/mês',
+      'Todas as análises de IA',
       'Dashboard completo com timeline',
-      'Suporte prioritário',
+      'Suporte Email, IA e WhatsApp',
       'Integração APIs (Judit/Codilo)',
-      'Personalização de relatórios',
+      'Relatórios personalizados',
       'Alertas inteligentes 24/7'
     ],
     cta: 'Começar Grátis',
@@ -56,9 +58,10 @@ const plans = [
     originalPrice: '',
     discount: '',
     features: [
+      'Usuários ilimitados',
       'Processos ilimitados',
+      'Análises ilimitadas',
       'Todas as análises de IA',
-      'Relatórios personalizados',
       'Dashboard white-label',
       'Suporte dedicado',
       'Integrações customizadas',
@@ -89,7 +92,7 @@ const itemVariants = {
     opacity: 1,
     transition: {
       duration: 0.6,
-      ease: 'easeOut',
+      
     },
   },
 };
@@ -142,9 +145,9 @@ export function Pricing() {
                   : 'border-neutral-200 hover:border-primary-200 hover:shadow-lg'
               }`}>
                 {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-accent-500 text-white px-4 py-1">
-                      Mais Popular
+                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-20">
+                    <Badge className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-4 py-2 shadow-lg border-0 text-sm font-semibold">
+                      ⭐ Mais Popular
                     </Badge>
                   </div>
                 )}
@@ -203,7 +206,7 @@ export function Pricing() {
                 </div>
 
                 <div className="mt-auto">
-                  <Link href={plan.name === 'Enterprise' ? '/contact' : '/dashboard'}>
+                  <Link href={plan.name === 'Enterprise' ? '/contact' : '/signup'}>
                     <Button
                       className={`w-full py-3 text-lg font-semibold transition-all duration-200 ${
                         plan.popular
@@ -285,11 +288,11 @@ export function Pricing() {
             <div className="flex items-center justify-center mb-4">
               <span className="text-2xl mr-3">{ICONS.SHIELD}</span>
               <h4 className="font-display font-bold text-xl text-primary-800">
-                Garantia de 30 dias
+                Teste sem Compromisso
               </h4>
             </div>
             <p className="text-neutral-700">
-              Se não ficar 100% satisfeito, devolvemos seu dinheiro. Sem perguntas.
+              7 dias grátis para testar todas as funcionalidades. Cancele quando quiser, sem taxas.
             </p>
           </div>
         </motion.div>

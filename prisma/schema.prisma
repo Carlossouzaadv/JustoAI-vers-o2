@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,189 +7,151 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ================================
-// WORKSPACES (Multi-tenant)
-// ================================
 model Workspace {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  logoUrl     String?
-  plan        Plan     @default(FREE)
-  status      Status   @default(ACTIVE)
-  settings    Json?    // Configurações específicas do workspace
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  users              UserWorkspace[]
-  clients            Client[]
-  cases              Case[]
-  reportSchedules    ReportSchedule[]
-  aiCache            AiCache[]
-  monitoredProcesses MonitoredProcess[]
-  processBatchUploads ProcessBatchUpload[]
-  systemImports      SystemImport[]
-  mappingTemplates   SystemMappingTemplate[]
-  systemSyncs        SystemSync[]
+  id                   String                  @id @default(cuid())
+  name                 String
+  slug                 String                  @unique
+  description          String?
+  logoUrl              String?
+  plan                 Plan                    @default(FREE)
+  status               Status                  @default(ACTIVE)
+  settings             Json?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  aiCache              AiCache[]
+  cases                Case[]
+  clients              Client[]
+  globalLogs           GlobalLog[]
+  monitoredProcesses   MonitoredProcess[]
+  processBatchUploads  ProcessBatchUpload[]
   reportCustomizations ReportCustomization[]
+  reportExecutions     ReportExecution[]
+  reportSchedules      ReportSchedule[]
+  systemImports        SystemImport[]
+  mappingTemplates     SystemMappingTemplate[]
+  systemSyncs          SystemSync[]
+  users                UserWorkspace[]
+  credits              WorkspaceCredits?
+  creditAllocations    CreditAllocation[]
+  creditTransactions   CreditTransaction[]
+  creditHolds          ScheduledCreditHold[]
+  usageEvents          UsageEvent[]
+  uploadBatches        UploadBatch[]
+  juditTelemetry       JuditTelemetry[]
+  analysisVersions     CaseAnalysisVersion[]
+  analysisJobs         AnalysisJob[]
 
   @@map("workspaces")
 }
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  name     String?
-  avatar   String?
-  role     Role    @default(USER)
-  status   Status  @default(ACTIVE)
-  settings Json?
-
-  // Auth fields (Supabase)
-  supabaseId String  @unique
-  emailVerified Boolean @default(false)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  lastLoginAt DateTime?
-
-  // Relations
-  workspaces       UserWorkspace[]
-  createdCases     Case[]         @relation("CaseCreatedBy")
-  assignedCases    Case[]         @relation("CaseAssignedTo")
-  caseEvents       CaseEvent[]
+  id            String          @id @default(cuid())
+  email         String          @unique
+  name          String?
+  avatar        String?
+  role          Role            @default(USER)
+  status        Status          @default(ACTIVE)
+  settings      Json?
+  supabaseId    String          @unique
+  emailVerified Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  lastLoginAt   DateTime?
+  caseEvents    CaseEvent[]
+  assignedCases Case[]          @relation("CaseAssignedTo")
+  createdCases  Case[]          @relation("CaseCreatedBy")
+  workspaces    UserWorkspace[]
 
   @@map("users")
 }
 
 model UserWorkspace {
-  id          String           @id @default(cuid())
+  id          String        @id @default(cuid())
   userId      String
   workspaceId String
-  role        WorkspaceRole    @default(MEMBER)
-  status      Status           @default(ACTIVE)
-  permissions Json?            // Permissões específicas
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  role        WorkspaceRole @default(MEMBER)
+  status      Status        @default(ACTIVE)
+  permissions Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId])
   @@map("user_workspaces")
 }
 
-// ================================
-// CLIENTS
-// ================================
 model Client {
-  id          String      @id @default(cuid())
-  workspaceId String
-  name        String
-  email       String?
-  phone       String?
-  document    String?     // CPF/CNPJ
-  type        ClientType  @default(INDIVIDUAL)
-  status      Status      @default(ACTIVE)
-
-  // Address
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  country     String?     @default("BR")
-
-  // Additional info
-  notes       String?
-  metadata    Json?       // Campos customizados
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                String             @id @default(cuid())
+  workspaceId       String
+  name              String
+  email             String?
+  phone             String?
+  document          String?
+  type              ClientType         @default(INDIVIDUAL)
+  status            Status             @default(ACTIVE)
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  country           String?            @default("BR")
+  notes             String?
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   cases             Case[]
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   importedDataItems ImportedDataItem[]
 
   @@map("clients")
 }
 
-// ================================
-// CASES
-// ================================
 model Case {
-  id           String     @id @default(cuid())
-  workspaceId  String
-  clientId     String
-  number       String     @unique // Número do processo
-  title        String
-  description  String?
-  type         CaseType   @default(CIVIL)
-  status       CaseStatus @default(ACTIVE)
-  priority     Priority   @default(MEDIUM)
-
-  // Relacionamentos internos
-  createdById  String
-  assignedToId String?
-
-  // Valores
-  claimValue   Decimal?   @db.Decimal(15, 2)
-  fee          Decimal?   @db.Decimal(15, 2)
-  feeType      FeeType    @default(FIXED)
-
-  // Datas importantes
-  filingDate   DateTime?  // Data de distribuição
-  dueDate      DateTime?  // Prazo importante
-  closedAt     DateTime?  // Data de encerramento
-
-  // Metadados
-  tags         String[]   // Tags para categorização
-  metadata     Json?      // Campos customizados
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  workspace           Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  client              Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  createdBy           User                  @relation("CaseCreatedBy", fields: [createdById], references: [id])
-  assignedTo          User?                 @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
-  events              CaseEvent[]
-  documents           CaseDocument[]
-  analysisVersions    CaseAnalysisVersion[]
-  monitoredProcesses  MonitoredProcess[]
-  importedDataItems   ImportedDataItem[]
+  id                 String                @id @default(cuid())
+  workspaceId        String
+  clientId           String
+  number             String                @unique
+  title              String
+  description        String?
+  type               CaseType              @default(CIVIL)
+  status             CaseStatus            @default(ACTIVE)
+  priority           Priority              @default(MEDIUM)
+  createdById        String
+  assignedToId       String?
+  claimValue         Decimal?              @db.Decimal(15, 2)
+  fee                Decimal?              @db.Decimal(15, 2)
+  feeType            FeeType               @default(FIXED)
+  filingDate         DateTime?
+  dueDate            DateTime?
+  closedAt           DateTime?
+  tags               String[]
+  metadata           Json?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  analysisVersions   CaseAnalysisVersion[]
+  documents          CaseDocument[]
+  events             CaseEvent[]
+  assignedTo         User?                 @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
+  client             Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy          User                  @relation("CaseCreatedBy", fields: [createdById], references: [id])
+  workspace          Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  importedDataItems  ImportedDataItem[]
+  monitoredProcesses MonitoredProcess[]
+  timelineEntries    ProcessTimelineEntry[]
 
   @@map("cases")
 }
 
-// ================================
-// CASE EVENTS
-// ================================
 model CaseEvent {
-  id          String    @id @default(cuid())
-  caseId      String
-  userId      String
-  type        EventType @default(NOTE)
-  title       String
-  description String?
-  metadata    Json?     // Dados específicos do evento
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  eventDate DateTime @default(now()) // Data que o evento ocorreu (pode ser diferente da criação)
-
-  // Relations
+  id                String             @id @default(cuid())
+  caseId            String
+  userId            String
+  type              EventType          @default(NOTE)
+  title             String
+  description       String?
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  eventDate         DateTime           @default(now())
   case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
   user              User               @relation(fields: [userId], references: [id])
   importedDataItems ImportedDataItem[]
@@ -200,155 +159,475 @@ model CaseEvent {
   @@map("case_events")
 }
 
-// ================================
-// CASE DOCUMENTS
-// ================================
 model CaseDocument {
-  id           String       @id @default(cuid())
-  caseId       String
-  name         String
-  originalName String
-  type         DocumentType @default(OTHER)
-  mimeType     String
-  size         Int          // Em bytes
-  url          String       // URL no Supabase Storage
-  path         String       // Caminho completo no storage
-
-  // Metadados do documento
-  pages        Int?         // Número de páginas (se aplicável)
-  extractedText String?     // Texto extraído via OCR/PDF
-  summary      String?      // Resumo gerado por IA
-  tags         String[]     // Tags para categorização
-
-  // Status de processamento
-  processed    Boolean      @default(false)
-  ocrStatus    ProcessStatus @default(PENDING)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
+  id                String             @id @default(cuid())
+  caseId            String
+  name              String
+  originalName      String
+  type              DocumentType       @default(OTHER)
+  mimeType          String
+  size              Int
+  url               String
+  path              String
+  pages             Int?
+  extractedText     String?
+  summary           String?
+  tags              String[]
+  processed         Boolean            @default(false)
+  ocrStatus         ProcessStatus      @default(PENDING)
+  // NOVOS CAMPOS PARA DEDUPLICAÇÃO E ANÁLISE
+  textSha           String?            // SHA256 do conteúdo binário do arquivo
+  isDuplicate       Boolean            @default(false)
+  originalDocumentId String?           // Referência ao documento original se for duplicata
+  cleanText         String?            // Texto limpo e normalizado (AI-friendly)
+  textExtractedAt   DateTime?          // Timestamp da extração de texto
+  analysisVersion   String?            // Versão da análise/modelo usado
+  analysisKey       String?            // Chave para cache de análise
+  workerId          String?            // ID do worker que processou
+  costEstimate      Float?             // Estimativa de custo da análise
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  originalDocument  CaseDocument?      @relation("DocumentDuplicate", fields: [originalDocumentId], references: [id])
+  duplicates        CaseDocument[]     @relation("DocumentDuplicate")
   importedDataItems ImportedDataItem[]
 
+  @@index([textSha]) // Índice para busca rápida de duplicatas
+  @@index([analysisKey]) // Índice para cache de análise
   @@map("case_documents")
 }
 
-// ================================
-// CASE ANALYSIS (AI) - Melhorado para PDF Upload
-// ================================
 model CaseAnalysisVersion {
-  id          String   @id @default(cuid())
-  caseId      String
-  version     Int      // Versão da análise (auto-incrementa)
-
-  // Tipo da análise
-  analysisType String  @default("GENERAL") // PDF_UPLOAD, MANUAL_ANALYSIS, etc
-
-  // Dados extraídos do PDF
-  extractedData Json?  // Resultado do PDFProcessor
-  aiAnalysis    Json?  // Resultado da análise IA (Gemini)
-
-  // Modelo usado e metadados
-  modelUsed     String  @default("gemini-1.5-flash") // gemini-1.5-flash, gemini-1.5-pro, etc
-  confidence    Float   @default(0.85) // Confiança da análise (0-1)
-  processingTime Int    @default(0) // Tempo de processamento em ms
-  costEstimate  Float   @default(0.0) // Custo estimado em USD
-
-  // Metadados específicos do PDF
-  metadata      Json?   // file_size_mb, extracted_fields_count, etc
-
-  // Status e error handling
-  status      ProcessStatus @default(COMPLETED)
-  error       String?  // Mensagem de erro se houver
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  id             String        @id @default(cuid())
+  caseId         String
+  version        Int
+  status         ProcessStatus @default(COMPLETED)
+  error          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  aiAnalysis     Json?
+  analysisType   String        @default("GENERAL")
+  confidence     Float         @default(0.85)
+  costEstimate   Float         @default(0.0)
+  extractedData  Json?
+  metadata       Json?
+  modelUsed      String        @default("gemini-1.5-flash")
+  processingTime Int           @default(0)
+  case           Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@unique([caseId, version])
   @@map("case_analysis_versions")
 }
 
-// ================================
-// REPORT SCHEDULES
-// ================================
+model ProcessTimelineEntry {
+  id                String             @id @default(cuid())
+  caseId            String
+  contentHash       String             // Hash do conteúdo normalizado para deduplicação
+  eventDate         DateTime           // Data original do andamento
+  eventType         String             // Tipo do evento (ex: "Juntada", "Despacho", "Sentença")
+  description       String             // Descrição do andamento
+  normalizedContent String             // Conteúdo normalizado para comparação
+  source            TimelineSource     // Origem do andamento
+  sourceId          String?            // ID do registro original (documento, API, etc)
+  metadata          Json?              // Metadados específicos da fonte
+  confidence        Float              @default(1.0) // Confiança na extração
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, contentHash]) // Evita duplicatas por hash do conteúdo
+  @@index([eventDate]) // Índice para ordenação cronológica
+  @@map("process_timeline_entries")
+}
+
 model ReportSchedule {
-  id          String         @id @default(cuid())
+  id          String            @id @default(cuid())
   workspaceId String
   name        String
   description String?
-  type        ReportType     @default(CASE_SUMMARY)
-
-  // Configuração do schedule
-  frequency   Frequency      @default(WEEKLY)
-  dayOfWeek   Int?           // 0-6 (domingo-sábado)
-  dayOfMonth  Int?           // 1-31
-  time        String?        // HH:MM formato
-  timezone    String?        @default("America/Sao_Paulo")
-
-  // Filtros do relatório
-  filters     Json?          // Filtros específicos (status, tipo de caso, etc)
-  recipients  String[]       // Emails que receberão o relatório
-
-  // Status
-  enabled     Boolean        @default(true)
+  type        ReportType        @default(CASE_SUMMARY)
+  frequency   Frequency         @default(WEEKLY)
+  dayOfWeek   Int?
+  dayOfMonth  Int?
+  time        String?
+  timezone    String?           @default("America/Sao_Paulo")
+  filters     Json?
+  recipients  String[]
+  enabled     Boolean           @default(true)
   lastRun     DateTime?
   nextRun     DateTime?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  executions  ReportExecution[]
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("report_schedules")
 }
 
-// ================================
-// AI CACHE (Para economia)
-// ================================
 model AiCache {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   workspaceId String
-  cacheKey    String   // Hash do prompt + parâmetros
+  cacheKey    String
   type        CacheType @default(ANALYSIS)
-
-  // Input
   prompt      String
-  parameters  Json?    // Parâmetros da chamada (model, temperature, etc)
-
-  // Output
-  result      Json     // Resultado da IA
-  model       String   // Modelo usado
-  tokens      Int?     // Tokens consumidos
-  cost        Decimal? @db.Decimal(10, 4)
-
-  // Cache metadata
-  hits        Int      @default(0) // Quantas vezes foi usado
-  lastUsed    DateTime @default(now())
-  expiresAt   DateTime // Data de expiração
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parameters  Json?
+  result      Json
+  model       String
+  tokens      Int?
+  cost        Decimal?  @db.Decimal(10, 4)
+  hits        Int       @default(0)
+  lastUsed    DateTime  @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, cacheKey])
   @@index([expiresAt])
   @@map("ai_cache")
 }
 
-// ================================
-// ENUMS
-// ================================
+model MonitoredProcess {
+  id               String            @id @default(cuid())
+  workspaceId      String
+  caseId           String?
+  processNumber    String
+  court            String
+  clientName       String
+  processData      Json?
+  monitoringStatus MonitoringStatus  @default(ACTIVE)
+  lastSync         DateTime?
+  syncFrequency    SyncFrequency     @default(DAILY)
+  alertsEnabled    Boolean           @default(true)
+  alertRecipients  String[]
+  source           ProcessSource     @default(JUDIT_API)
+  extractionMethod ExtractionMethod  @default(API)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  case             Case?             @relation(fields: [caseId], references: [id])
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  alerts           ProcessAlert[]
+  movements        ProcessMovement[]
+  syncLogs         ProcessSyncLog[]
+
+  @@unique([workspaceId, processNumber])
+  @@map("monitored_processes")
+}
+
+model ProcessMovement {
+  id                 String           @id @default(cuid())
+  monitoredProcessId String
+  date               DateTime
+  type               String
+  description        String
+  category           MovementCategory @default(OTHER)
+  importance         Priority         @default(MEDIUM)
+  requiresAction     Boolean          @default(false)
+  deadline           DateTime?
+  rawData            Json?
+  aiSummary          String?
+  aiTags             String[]
+  read               Boolean          @default(false)
+  archived           Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  alerts             ProcessAlert[]
+  monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+
+  @@map("process_movements")
+}
+
+model ProcessAlert {
+  id                 String           @id @default(cuid())
+  monitoredProcessId String
+  movementId         String?
+  title              String
+  message            String
+  type               AlertType        @default(MOVEMENT)
+  severity           Priority         @default(MEDIUM)
+  sent               Boolean          @default(false)
+  sentAt             DateTime?
+  read               Boolean          @default(false)
+  readAt             DateTime?
+  recipients         String[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+  movement           ProcessMovement? @relation(fields: [movementId], references: [id])
+
+  @@map("process_alerts")
+}
+
+model ProcessSyncLog {
+  id                 String           @id @default(cuid())
+  monitoredProcessId String
+  syncType           SyncType         @default(FULL)
+  status             SyncStatus       @default(SUCCESS)
+  newMovements       Int              @default(0)
+  updatedMovements   Int              @default(0)
+  errors             String[]
+  duration           Int              @default(0)
+  apiSource          ProcessSource    @default(JUDIT_API)
+  startedAt          DateTime
+  finishedAt         DateTime?
+  monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+
+  @@map("process_sync_logs")
+}
+
+model ProcessBatchUpload {
+  id          String      @id @default(cuid())
+  workspaceId String
+  fileName    String
+  filePath    String
+  fileSize    Int
+  status      BatchStatus @default(PROCESSING)
+  totalRows   Int         @default(0)
+  processed   Int         @default(0)
+  successful  Int         @default(0)
+  failed      Int         @default(0)
+  errors      Json?
+  summary     Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("process_batch_uploads")
+}
+
+model SystemImport {
+  id                String             @id @default(cuid())
+  workspaceId       String
+  fileName          String
+  filePath          String
+  fileSize          Int
+  originalHash      String
+  sourceSystem      SourceSystem       @default(UNKNOWN)
+  systemVersion     String?
+  detectedFormat    String?
+  status            ImportStatus       @default(ANALYZING)
+  progress          Int                @default(0)
+  columnMapping     Json?
+  dataPreview       Json?
+  validation        Json?
+  totalRows         Int                @default(0)
+  processedRows     Int                @default(0)
+  successfulRows    Int                @default(0)
+  failedRows        Int                @default(0)
+  skippedRows       Int                @default(0)
+  importedCases     Int                @default(0)
+  importedClients   Int                @default(0)
+  importedEvents    Int                @default(0)
+  importedDocuments Int                @default(0)
+  errors            Json?
+  warnings          Json?
+  summary           Json?
+  importSettings    Json?
+  overwriteData     Boolean            @default(false)
+  startedAt         DateTime           @default(now())
+  finishedAt        DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  importedItems     ImportedDataItem[]
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("system_imports")
+}
+
+model ImportedDataItem {
+  id               String           @id @default(cuid())
+  systemImportId   String
+  originalId       String?
+  dataType         ImportedDataType
+  status           ImportItemStatus @default(IMPORTED)
+  originalData     Json
+  mappedData       Json?
+  caseId           String?
+  clientId         String?
+  eventId          String?
+  documentId       String?
+  lineNumber       Int
+  importOrder      Int
+  validationErrors Json?
+  warnings         Json?
+  importedAt       DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  case             Case?            @relation(fields: [caseId], references: [id])
+  client           Client?          @relation(fields: [clientId], references: [id])
+  document         CaseDocument?    @relation(fields: [documentId], references: [id])
+  event            CaseEvent?       @relation(fields: [eventId], references: [id])
+  systemImport     SystemImport     @relation(fields: [systemImportId], references: [id], onDelete: Cascade)
+
+  @@map("imported_data_items")
+}
+
+model SystemMappingTemplate {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  name           String
+  description    String?
+  sourceSystem   SourceSystem
+  version        String       @default("1.0")
+  columnMappings Json
+  fieldMappings  Json
+  transformRules Json?
+  isDefault      Boolean      @default(false)
+  isActive       Boolean      @default(true)
+  usageCount     Int          @default(0)
+  lastUsedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, name])
+  @@map("system_mapping_templates")
+}
+
+model SystemSync {
+  id              String          @id @default(cuid())
+  workspaceId     String
+  sourceSystem    SourceSystem
+  syncType        SyncType        @default(FULL)
+  syncMode        SyncMode        @default(IMPORT_ONLY)
+  schedule        SyncSchedule    @default(MANUAL)
+  lastSync        DateTime?
+  nextSync        DateTime?
+  isActive        Boolean         @default(true)
+  currentStatus   SyncStatus      @default(SUCCESS)
+  syncSettings    Json?
+  filterCriteria  Json?
+  totalSyncs      Int             @default(0)
+  successfulSyncs Int             @default(0)
+  failedSyncs     Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  syncLogs        SystemSyncLog[]
+  workspace       Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("system_syncs")
+}
+
+model SystemSyncLog {
+  id           String     @id @default(cuid())
+  systemSyncId String
+  syncType     SyncType   @default(FULL)
+  status       SyncStatus @default(SUCCESS)
+  itemsChecked Int        @default(0)
+  itemsCreated Int        @default(0)
+  itemsUpdated Int        @default(0)
+  itemsSkipped Int        @default(0)
+  itemsFailed  Int        @default(0)
+  duration     Int        @default(0)
+  errors       Json?
+  summary      Json?
+  startedAt    DateTime
+  finishedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  systemSync   SystemSync @relation(fields: [systemSyncId], references: [id], onDelete: Cascade)
+
+  @@map("system_sync_logs")
+}
+
+model ReportCustomization {
+  id                 String    @id @default(cuid())
+  workspaceId        String
+  profileName        String
+  isDefault          Boolean   @default(false)
+  companyName        String
+  companyAddress     String?
+  companyPhone       String?
+  companyEmail       String?
+  companyWebsite     String?
+  primaryColor       String    @default("#1E40AF")
+  secondaryColor     String    @default("#64748B")
+  accentColor        String    @default("#10B981")
+  backgroundColor    String    @default("#FFFFFF")
+  textColor          String    @default("#1F2937")
+  logoUrl            String?
+  logoBase64         String?
+  logoWidth          Int?      @default(80)
+  logoHeight         Int?      @default(60)
+  logoPosition       String    @default("left")
+  headerText         String?
+  headerHeight       Int?      @default(60)
+  showCompanyInfo    Boolean   @default(true)
+  showGenerationInfo Boolean   @default(true)
+  footerText         String?
+  footerHeight       Int?      @default(30)
+  showPageNumbers    Boolean   @default(true)
+  showGeneratedBy    Boolean   @default(true)
+  watermark          String?
+  watermarkOpacity   Float?    @default(0.05)
+  watermarkRotation  Int?      @default(-45)
+  fontSize           Int       @default(12)
+  fontFamily         String    @default("Segoe UI")
+  lineHeight         Float     @default(1.4)
+  marginTop          Int       @default(20)
+  marginRight        Int       @default(15)
+  marginBottom       Int       @default(20)
+  marginLeft         Int       @default(15)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  workspace          Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, profileName])
+  @@index([workspaceId, isDefault])
+  @@map("report_customizations")
+}
+
+model ReportExecution {
+  id            String          @id @default(cuid())
+  workspaceId   String
+  scheduleId    String?
+  reportType    ReportType      @default(CASE_SUMMARY)
+  parameters    Json?
+  filters       Json?
+  recipients    String[]
+  status        ExecutionStatus @default(RUNNING)
+  result        Json?
+  filePath      String?
+  fileSize      Int?
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime?
+  duration      Int?
+  tokensUsed    Int?            @default(0)
+  estimatedCost Decimal?        @db.Decimal(10, 4)
+  error         String?
+  retryCount    Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  schedule      ReportSchedule? @relation(fields: [scheduleId], references: [id])
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, status])
+  @@index([scheduleId])
+  @@map("report_executions")
+}
+
+model GlobalLog {
+  id          String      @id @default(cuid())
+  workspaceId String?
+  level       LogLevel    @default(INFO)
+  category    LogCategory @default(SYSTEM)
+  message     String
+  data        Json?
+  userId      String?
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+  requestId   String?
+  traceId     String?
+  duration    Int?
+  createdAt   DateTime    @default(now())
+  workspace   Workspace?  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, level])
+  @@index([category, createdAt])
+  @@index([userId])
+  @@map("global_logs")
+}
+
 enum Plan {
   FREE
   BASIC
@@ -401,6 +680,7 @@ enum CaseStatus {
   CLOSED
   ARCHIVED
   CANCELLED
+  UNASSIGNED // Novo status para processos não atribuídos
 }
 
 enum Priority {
@@ -487,185 +767,6 @@ enum CacheType {
   CONTRACT_REVIEW
 }
 
-// ================================
-// MONITORAMENTO DE PROCESSOS (Via 2)
-// ================================
-
-// Processos monitorados via API (Judit/Codilo)
-model MonitoredProcess {
-  id             String    @id @default(cuid())
-  workspaceId    String
-  caseId         String?   // Pode estar ou não vinculado a um caso
-
-  // Dados básicos do processo
-  processNumber  String    // Número único do processo (formato unificado)
-  court          String    // Tribunal/Vara
-  clientName     String    // Nome do cliente
-
-  // Dados extraídos da API
-  processData    Json?     // Dados completos da API (parties, subject, etc)
-
-  // Status do monitoramento
-  monitoringStatus MonitoringStatus @default(ACTIVE)
-  lastSync         DateTime?
-  syncFrequency    SyncFrequency    @default(DAILY)
-
-  // Configurações de alerta
-  alertsEnabled    Boolean          @default(true)
-  alertRecipients  String[]         // Emails para receber alertas
-
-  // Metadados
-  source           ProcessSource    @default(JUDIT_API)
-  extractionMethod ExtractionMethod @default(API)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  workspace         Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  case              Case?               @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  movements         ProcessMovement[]
-  alerts            ProcessAlert[]
-  syncLogs          ProcessSyncLog[]
-
-  @@unique([workspaceId, processNumber])
-  @@map("monitored_processes")
-}
-
-// Movimentações/andamentos do processo
-model ProcessMovement {
-  id                String   @id @default(cuid())
-  monitoredProcessId String
-
-  // Dados da movimentação
-  date              DateTime
-  type              String   // Tipo da movimentação
-  description       String   // Descrição completa
-  category          MovementCategory @default(OTHER)
-
-  // Classificação automática
-  importance        Priority @default(MEDIUM)
-  requiresAction    Boolean  @default(false)
-  deadline          DateTime?
-
-  // Dados brutos da API
-  rawData           Json?
-
-  // AI Analysis
-  aiSummary         String?  // Resumo gerado por IA
-  aiTags            String[] // Tags automáticas
-
-  // Status
-  read              Boolean  @default(false)
-  archived          Boolean  @default(false)
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  monitoredProcess  MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
-  alerts           ProcessAlert[]
-
-  @@map("process_movements")
-}
-
-// Alertas gerados para movimentações importantes
-model ProcessAlert {
-  id                 String    @id @default(cuid())
-  monitoredProcessId String
-  movementId         String?   // Pode ser para uma movimentação específica
-
-  // Dados do alerta
-  title              String
-  message            String
-  type               AlertType @default(MOVEMENT)
-  severity           Priority  @default(MEDIUM)
-
-  // Status
-  sent               Boolean   @default(false)
-  sentAt             DateTime?
-  read               Boolean   @default(false)
-  readAt             DateTime?
-
-  // Destinatários
-  recipients         String[]
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
-  movement           ProcessMovement? @relation(fields: [movementId], references: [id], onDelete: SetNull)
-
-  @@map("process_alerts")
-}
-
-// Log de sincronizações com APIs externas
-model ProcessSyncLog {
-  id                 String     @id @default(cuid())
-  monitoredProcessId String
-
-  // Dados da sincronização
-  syncType           SyncType   @default(FULL)
-  status             SyncStatus @default(SUCCESS)
-
-  // Resultados
-  newMovements       Int        @default(0)
-  updatedMovements   Int        @default(0)
-  errors             String[]
-
-  // Metadados
-  duration           Int        @default(0) // ms
-  apiSource          ProcessSource @default(JUDIT_API)
-
-  // Timestamps
-  startedAt  DateTime
-  finishedAt DateTime?
-
-  // Relations
-  monitoredProcess MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
-
-  @@map("process_sync_logs")
-}
-
-// Uploads em lote via Excel
-model ProcessBatchUpload {
-  id          String       @id @default(cuid())
-  workspaceId String
-
-  // Dados do arquivo
-  fileName    String
-  filePath    String
-  fileSize    Int
-
-  // Status do processamento
-  status      BatchStatus  @default(PROCESSING)
-  totalRows   Int          @default(0)
-  processed   Int          @default(0)
-  successful  Int          @default(0)
-  failed      Int          @default(0)
-
-  // Resultados
-  errors      Json?        // Array de erros por linha
-  summary     Json?        // Resumo do processamento
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@map("process_batch_uploads")
-}
-
-// ================================
-// NOVOS ENUMS PARA MONITORAMENTO
-// ================================
-
 enum MonitoringStatus {
   ACTIVE
   PAUSED
@@ -733,223 +834,6 @@ enum BatchStatus {
   CANCELLED
 }
 
-// ================================
-// IMPORTAÇÃO DE SISTEMAS EXTERNOS (Via 3)
-// ================================
-
-// Importações de sistemas jurídicos externos
-model SystemImport {
-  id          String         @id @default(cuid())
-  workspaceId String
-
-  // Dados do arquivo importado
-  fileName      String
-  filePath      String
-  fileSize      Int
-  originalHash  String       // Hash do arquivo original para detectar duplicatas
-
-  // Sistema de origem
-  sourceSystem  SourceSystem @default(UNKNOWN)
-  systemVersion String?      // Versão do sistema de origem
-  detectedFormat String?     // Formato detectado automaticamente
-
-  // Status da importação
-  status       ImportStatus  @default(ANALYZING)
-  progress     Int          @default(0) // Progresso em %
-
-  // Análise automática do arquivo
-  columnMapping Json?        // Mapeamento de colunas detectado
-  dataPreview   Json?        // Preview dos primeiros dados
-  validation    Json?        // Resultados de validação
-
-  // Resultados da importação
-  totalRows    Int          @default(0)
-  processedRows Int         @default(0)
-  successfulRows Int        @default(0)
-  failedRows   Int          @default(0)
-  skippedRows  Int          @default(0)
-
-  // Dados importados
-  importedCases      Int    @default(0)
-  importedClients    Int    @default(0)
-  importedEvents     Int    @default(0)
-  importedDocuments  Int    @default(0)
-
-  // Log de erros e avisos
-  errors     Json?    // Array de erros encontrados
-  warnings   Json?    // Array de avisos
-  summary    Json?    // Resumo da importação
-
-  // Configurações de importação
-  importSettings Json? // Configurações específicas da importação
-  overwriteData  Boolean @default(false) // Se deve sobrescrever dados existentes
-
-  // Timestamps
-  startedAt   DateTime  @default(now())
-  finishedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
-  workspace     Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  importedItems ImportedDataItem[]
-
-  @@map("system_imports")
-}
-
-// Items de dados importados (para rastreamento)
-model ImportedDataItem {
-  id             String    @id @default(cuid())
-  systemImportId String
-
-  // Identificação do item
-  originalId     String?   // ID original no sistema de origem
-  dataType       ImportedDataType
-  status         ImportItemStatus @default(IMPORTED)
-
-  // Dados do item original
-  originalData   Json      // Dados originais do CSV/Excel
-  mappedData     Json?     // Dados após mapeamento
-
-  // Relacionamento com entidades criadas
-  caseId         String?
-  clientId       String?
-  eventId        String?
-  documentId     String?
-
-  // Metadados
-  lineNumber     Int       // Linha no arquivo original
-  importOrder    Int       // Ordem de importação
-
-  // Validação
-  validationErrors Json?   // Erros de validação específicos
-  warnings         Json?   // Avisos específicos
-
-  // Timestamps
-  importedAt DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Relations
-  systemImport SystemImport @relation(fields: [systemImportId], references: [id], onDelete: Cascade)
-  case         Case?        @relation(fields: [caseId], references: [id], onDelete: SetNull)
-  client       Client?      @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  event        CaseEvent?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  document     CaseDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
-
-  @@map("imported_data_items")
-}
-
-// Template de mapeamento para sistemas
-model SystemMappingTemplate {
-  id           String       @id @default(cuid())
-  workspaceId  String
-
-  // Identificação do template
-  name         String       // Nome do template (ex: "Projuris Padrão")
-  description  String?
-  sourceSystem SourceSystem
-  version      String       @default("1.0")
-
-  // Template de mapeamento
-  columnMappings Json        // Mapeamentos de colunas
-  fieldMappings  Json        // Mapeamentos de campos
-  transformRules Json?       // Regras de transformação de dados
-
-  // Configurações
-  isDefault    Boolean      @default(false)
-  isActive     Boolean      @default(true)
-
-  // Metadados
-  usageCount   Int          @default(0)
-  lastUsedAt   DateTime?
-
-  // Timestamps
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  // Relations
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-
-  @@unique([workspaceId, name])
-  @@map("system_mapping_templates")
-}
-
-// Sincronização com sistemas externos
-model SystemSync {
-  id          String         @id @default(cuid())
-  workspaceId String
-
-  // Sistema e configuração
-  sourceSystem   SourceSystem
-  syncType       SyncType     @default(FULL)
-  syncMode       SyncMode     @default(IMPORT_ONLY)
-
-  // Configuração da sincronização
-  schedule       SyncSchedule @default(MANUAL)
-  lastSync       DateTime?
-  nextSync       DateTime?
-
-  // Status
-  isActive       Boolean      @default(true)
-  currentStatus  SyncStatus   @default(SUCCESS)
-
-  // Configurações específicas
-  syncSettings   Json?        // Configurações específicas do sistema
-  filterCriteria Json?        // Critérios de filtro
-
-  // Estatísticas
-  totalSyncs     Int          @default(0)
-  successfulSyncs Int         @default(0)
-  failedSyncs    Int          @default(0)
-
-  // Timestamps
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  // Relations
-  workspace  Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  syncLogs   SystemSyncLog[]
-
-  @@map("system_syncs")
-}
-
-// Log de sincronizações
-model SystemSyncLog {
-  id           String     @id @default(cuid())
-  systemSyncId String
-
-  // Dados da sincronização
-  syncType     SyncType   @default(FULL)
-  status       SyncStatus @default(SUCCESS)
-
-  // Resultados
-  itemsChecked   Int      @default(0)
-  itemsCreated   Int      @default(0)
-  itemsUpdated   Int      @default(0)
-  itemsSkipped   Int      @default(0)
-  itemsFailed    Int      @default(0)
-
-  // Metadados
-  duration       Int      @default(0) // ms
-  errors         Json?    // Array de erros
-  summary        Json?    // Resumo da sincronização
-
-  // Timestamps
-  startedAt      DateTime
-  finishedAt     DateTime?
-  createdAt      DateTime @default(now())
-
-  // Relations
-  systemSync SystemSync @relation(fields: [systemSyncId], references: [id], onDelete: Cascade)
-
-  @@map("system_sync_logs")
-}
-
-// ================================
-// NOVOS ENUMS PARA IMPORTAÇÃO
-// ================================
-
 enum SourceSystem {
   PROJURIS
   LEGAL_ONE
@@ -1008,71 +892,395 @@ enum SyncSchedule {
   REAL_TIME
 }
 
-// ================================
-// REPORT CUSTOMIZATIONS
-// ================================
-model ReportCustomization {
-  id            String   @id @default(cuid())
-  workspaceId   String
-  profileName   String
-  isDefault     Boolean  @default(false)
+enum ExecutionStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
 
-  // Branding
-  companyName     String
-  companyAddress  String?
-  companyPhone    String?
-  companyEmail    String?
-  companyWebsite  String?
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+  FATAL
+}
 
-  // Cores
-  primaryColor    String   @default("#1E40AF")
-  secondaryColor  String   @default("#64748B")
-  accentColor     String   @default("#10B981")
-  backgroundColor String   @default("#FFFFFF")
-  textColor       String   @default("#1F2937")
+enum LogCategory {
+  SYSTEM
+  USER_ACTION
+  API_CALL
+  SYNC
+  REPORT
+  AUTH
+  UPLOAD
+  ANALYSIS
+  MONITORING
+}
 
-  // Logo
-  logoUrl       String?
-  logoBase64    String?
-  logoWidth     Int?      @default(80)
-  logoHeight    Int?      @default(60)
-  logoPosition  String    @default("left") // left, center, right
+enum TimelineSource {
+  DOCUMENT_UPLOAD // Extraído de documento PDF
+  API_JUDIT       // Obtido via API Judit
+  MANUAL_ENTRY    // Inserido manualmente
+  SYSTEM_IMPORT   // Importado de sistema externo
+  AI_EXTRACTION   // Extraído por IA
+}
 
-  // Header
-  headerText          String?
-  headerHeight        Int?    @default(60)
-  showCompanyInfo     Boolean @default(true)
-  showGenerationInfo  Boolean @default(true)
+// ================================================================
+// SISTEMA UNIFICADO DE CRÉDITOS
+// ================================================================
 
-  // Footer
-  footerText       String?
-  footerHeight     Int?    @default(30)
-  showPageNumbers  Boolean @default(true)
-  showGeneratedBy  Boolean @default(true)
+model WorkspaceCredits {
+  id                          String    @id @default(cuid())
+  workspaceId                 String    @unique
+  reportCreditsBalance        Decimal   @default(0) @db.Decimal(10, 2)
+  fullCreditsBalance          Decimal   @default(0) @db.Decimal(10, 2)
+  reportCreditsRolloverCap    Decimal   @default(36) @db.Decimal(10, 2)
+  fullCreditsRolloverCap      Decimal   @default(50) @db.Decimal(10, 2)
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+  workspace                   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  // Watermark
-  watermark         String?
-  watermarkOpacity  Float?  @default(0.05)
-  watermarkRotation Int?    @default(-45)
+  @@map("workspace_credits")
+}
 
-  // Typography
-  fontSize   Int    @default(12)
-  fontFamily String @default("Segoe UI")
-  lineHeight Float  @default(1.4)
+model CreditAllocation {
+  id                String             @id @default(cuid())
+  workspaceId       String
+  type              CreditAllocationType
+  amount            Decimal            @db.Decimal(10, 2)
+  remainingAmount   Decimal            @db.Decimal(10, 2)
+  expiresAt         DateTime?
+  sourceDescription String?
+  createdAt         DateTime           @default(now())
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transactions      CreditTransaction[]
 
-  // Margins (em mm)
-  marginTop    Int @default(20)
-  marginRight  Int @default(15)
-  marginBottom Int @default(20)
-  marginLeft   Int @default(15)
+  @@index([workspaceId, expiresAt, createdAt])
+  @@index([expiresAt])
+  @@map("credit_allocations")
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model CreditTransaction {
+  id               String            @id @default(cuid())
+  workspaceId      String
+  allocationId     String?
+  type             CreditTransactionType
+  creditCategory   CreditCategory
+  amount           Decimal           @db.Decimal(10, 2)
+  reason           String
+  metadata         Json              @default("{}")
+  createdAt        DateTime          @default(now())
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  allocation       CreditAllocation? @relation(fields: [allocationId], references: [id], onDelete: SetNull)
 
-  // Relacionamentos
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  @@index([workspaceId, createdAt])
+  @@index([allocationId])
+  @@map("credit_transactions")
+}
 
-  @@unique([workspaceId, profileName])
-  @@index([workspaceId, isDefault])
-  @@map("report_customizations")
+model ScheduledCreditHold {
+  id                      String    @id @default(cuid())
+  workspaceId             String
+  reportId                String
+  reportCreditsReserved   Decimal   @default(0) @db.Decimal(10, 2)
+  fullCreditsReserved     Decimal   @default(0) @db.Decimal(10, 2)
+  expiresAt               DateTime
+  createdAt               DateTime  @default(now())
+  workspace               Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([expiresAt])
+  @@map("scheduled_credit_holds")
+}
+
+model UsageEvent {
+  id                String        @id @default(cuid())
+  workspaceId       String
+  eventType         String
+  resourceType      String
+  resourceId        String?
+  reportCreditsCost Decimal       @default(0) @db.Decimal(10, 2)
+  fullCreditsCost   Decimal       @default(0) @db.Decimal(10, 2)
+  status            UsageStatus   @default(COMPLETED)
+  metadata          Json          @default("{}")
+  createdAt         DateTime      @default(now())
+  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("usage_events")
+}
+
+model PlanConfiguration {
+  id                         String   @id @default(cuid())
+  planName                   String   @unique
+  monitorLimit               Int
+  reportCreditsMonth         Decimal  @db.Decimal(10, 2)
+  fullCreditsMonth           Decimal  @db.Decimal(10, 2)
+  firstMonthFullBonus        Decimal  @db.Decimal(10, 2)
+  firstMonthBonusExpiryDays  Int      @default(90)
+  fullRolloverCap            Decimal  @db.Decimal(10, 2)
+  reportRolloverCap          Decimal  @db.Decimal(10, 2)
+  tier1Processes             Int      @default(5)
+  tier1CreditCost            Decimal  @default(0.25) @db.Decimal(10, 2)
+  tier2Processes             Int      @default(12)
+  tier2CreditCost            Decimal  @default(0.5) @db.Decimal(10, 2)
+  tier3Processes             Int      @default(25)
+  tier3CreditCost            Decimal  @default(1.0) @db.Decimal(10, 2)
+  fullCreditPerBatch         Int      @default(10)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  @@map("plan_configurations")
+}
+
+// Enums para o sistema de créditos
+enum CreditAllocationType {
+  MONTHLY
+  BONUS
+  PACK
+}
+
+enum CreditTransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum CreditCategory {
+  REPORT
+  FULL
+}
+
+enum UsageStatus {
+  COMPLETED
+  FAILED
+  INSUFFICIENT_CREDITS
+}
+
+// ================================================================
+// UPLOAD BATCH SYSTEM MODELS
+// ================================================================
+
+model UploadBatch {
+  id           String               @id @default(cuid())
+  workspaceId  String
+  fileName     String
+  filePath     String?
+  fileSize     BigInt
+  status       UploadBatchStatus    @default(PROCESSING)
+  totalRows    Int                  @default(0)
+  processed    Int                  @default(0)
+  successful   Int                  @default(0)
+  failed       Int                  @default(0)
+  errors       Json                 @default("[]")
+  summary      Json                 @default("{}")
+  config       Json                 @default("{}")
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rows         UploadBatchRow[]
+  events       UploadBatchEvent[]
+  telemetry    JuditTelemetry[]
+
+  @@index([workspaceId, createdAt])
+  @@index([status, createdAt])
+  @@map("upload_batch")
+}
+
+model UploadBatchRow {
+  id           String            @id @default(cuid())
+  batchId      String
+  rowIndex     Int
+  rowData      Json
+  status       UploadRowStatus   @default(PENDING)
+  processId    String?
+  errorMessage Json?
+  retryCount   Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  batch        UploadBatch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, rowIndex])
+  @@index([batchId, status])
+  @@map("upload_batch_row")
+}
+
+model UploadBatchEvent {
+  id        String      @id @default(cuid())
+  batchId   String
+  eventType String
+  payload   Json
+  createdAt DateTime    @default(now())
+  batch     UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("upload_batch_events")
+}
+
+model JuditTelemetry {
+  id                String       @id @default(cuid())
+  workspaceId       String
+  batchId           String?
+  processNumber     String
+  tribunal          String
+  success           Boolean
+  responseTimeMs    Int?
+  docsRetrieved     Int          @default(0)
+  movementsCount    Int          @default(0)
+  partiesCount      Int          @default(0)
+  errorCode         String?
+  errorMessage      String?
+  retryCount        Int          @default(0)
+  rateLimitHit      Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  batch             UploadBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([batchId, createdAt])
+  @@index([success, createdAt])
+  @@map("judit_telemetry")
+}
+
+// Enums para upload batch system
+enum UploadBatchStatus {
+  PROCESSING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum UploadRowStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  SKIPPED
+  CANCELLED
+}
+
+// ================================================================
+// DEEPEN ANALYSIS SYSTEM MODELS
+// ================================================================
+
+model CaseAnalysisVersion {
+  id                   String                @id @default(cuid())
+  processId            String
+  workspaceId          String
+  versionNumber        Int
+  analysisType         AnalysisType
+  modelUsed            String
+  fullCreditsUsed      Decimal               @default(0) @db.Decimal(10, 2)
+  fastCreditsUsed      Decimal               @default(0) @db.Decimal(10, 2)
+  summaryJson          Json                  @default("{}")
+  insightsJson         Json?
+  confidenceScore      Decimal?              @db.Decimal(3, 2)
+  reportUrl            String?
+  sourceFilesMetadata  Json                  @default("[]")
+  analysisKey          String?               @db.VarChar(64)
+  processingTimeMs     Int?
+  createdBy            String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  status               AnalysisStatus        @default(PENDING)
+  errorMessage         String?
+  workspace            Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  jobs                 AnalysisJob[]
+
+  @@unique([processId, versionNumber])
+  @@index([processId, versionNumber])
+  @@index([workspaceId, createdAt])
+  @@index([analysisKey])
+  @@index([status, createdAt])
+  @@map("case_analysis_versions")
+}
+
+model AnalysisJob {
+  id                String                @id @default(cuid())
+  processId         String
+  workspaceId       String
+  analysisKey       String                @db.VarChar(64)
+  status            JobStatus             @default(QUEUED)
+  lockToken         String?               @db.VarChar(128)
+  lockAcquiredAt    DateTime?
+  lockExpiresAt     DateTime?
+  analysisType      AnalysisType
+  modelHint         String                @default("gemini-1.5-flash")
+  filesMetadata     Json                  @default("[]")
+  progress          Int                   @default(0)
+  resultVersionId   String?
+  createdAt         DateTime              @default(now())
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  workerId          String?
+  retryCount        Int                   @default(0)
+  metadata          Json                  @default("{}")
+  workspace         Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  resultVersion     CaseAnalysisVersion?  @relation(fields: [resultVersionId], references: [id])
+
+  @@index([analysisKey])
+  @@index([status, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([lockExpiresAt])
+  @@map("analysis_jobs")
+}
+
+model AnalysisCache {
+  id                 String    @id @default(cuid())
+  analysisKey        String    @unique @db.VarChar(64)
+  resultData         Json
+  modelUsed          String
+  analysisType       String
+  processId          String
+  lastMovementDate   DateTime?
+  createdAt          DateTime  @default(now())
+  expiresAt          DateTime?
+  accessCount        Int       @default(0)
+  lastAccessedAt     DateTime  @default(now())
+  compressed         Boolean   @default(false)
+  dataSizeBytes      Int       @default(0)
+
+  @@index([analysisKey])
+  @@index([processId, createdAt])
+  @@index([expiresAt])
+  @@map("analysis_cache")
+}
+
+model ProcessMovementsTracking {
+  id                 String   @id @default(cuid())
+  processId          String   @unique
+  lastMovementDate   DateTime
+  movementsHash      String?  @db.VarChar(64)
+  movementsCount     Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([processId])
+  @@index([lastMovementDate])
+  @@map("process_movements_tracking")
+}
+
+// Enums para sistema de análise
+enum AnalysisType {
+  FAST
+  FULL
+}
+
+enum AnalysisStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
 }

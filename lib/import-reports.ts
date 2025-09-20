@@ -110,7 +110,7 @@ export class ImportReportGenerator {
     period: ReportPeriod = 'LAST_30_DAYS',
     customPeriod?: { startDate: Date; endDate: Date }
   ): Promise<ImportReport> {
-    console.log(`${ICONS.CHART} Gerando relatório de importação:`, {
+    console.log(`${ICONS.CHARTS} Gerando relatório de importação:`, {
       type,
       period,
       workspace: workspaceId
@@ -357,7 +357,7 @@ export class ImportReportGenerator {
 
     const mostActiveSystem = Object.entries(systemCounts)
       .reduce((most, [system, count]) =>
-        count > (most[1] || 0) ? [system, count] : most,
+        (count as number) > ((most[1] as number) || 0) ? [system, count as number] : most,
         ['', 0] as [string, number]
       )[0];
 
@@ -560,7 +560,7 @@ export class ImportReportGenerator {
 
     const peakDay = Object.entries(dayCounts)
       .reduce((peak, [day, count]) =>
-        count > (peak[1] || 0) ? [day, count] : peak,
+        (count as number) > ((peak[1] as number) || 0) ? [day, count as number] : peak,
         ['', 0] as [string, number]
       );
 

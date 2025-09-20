@@ -1,9 +1,9 @@
 // app/api/documents/[id]/analyze/route.ts - Analisar documento específico
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase';
 import { PrismaClient } from '@prisma/client';
-import { ModelRouter } from '@/lib/model-router';
+import { AIModelRouter } from '@/lib/ai-model-router';
 import { PDFProcessor } from '@/lib/pdf-processor';
+import { requireAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
@@ -15,21 +15,14 @@ const analyzeSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 1. Verificar autenticação
-    const supabase = createClient();
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { user, error: authError } = await requireAuth(request);
+    if (authError) return authError;
 
-    if (authError || !session) {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      );
-    }
-
-    const documentId = params.id;
+    const { id: documentId } = await params;
     const body = await request.json();
     const { forceReanalysis, customFields } = analyzeSchema.parse(body);
 
@@ -39,9 +32,9 @@ export async function POST(
         id: documentId,
         case: {
           workspace: {
-            userWorkspaces: {
+            users: {
               some: {
-                userId: session.user.id
+                userId: user.id
               }
             }
           }
@@ -92,21 +85,18 @@ export async function POST(
 
     // 4. Inicializar processadores
     const pdfProcessor = new PDFProcessor(prisma);
-    const modelRouter = new ModelRouter(
-      process.env.GOOGLE_API_KEY!,
-      process.env.GOOGLE_CLOUD_PROJECT_ID
-    );
+    const modelRouter = new AIModelRouter();
 
     // 5. Reprocessar PDF se necessário
     let pdfResult: any = null;
 
-    if (document.fileType === 'PDF' && document.filePath) {
+    if (document.mimeType === 'application/pdf' && document.path) {
       const extractFields = customFields?.length
         ? customFields
         : pdfProcessor.getDefaultExtractionFields();
 
       pdfResult = await pdfProcessor.processComplete({
-        pdf_path: document.filePath,
+        pdf_path: document.path,
         extract_fields: extractFields,
         custom_fields: customFields
       });
@@ -124,13 +114,15 @@ export async function POST(
       );
     }
 
-    // 6. Análise IA com routing inteligente
+    // 6. Análise IA ESTRATÉGICA COMPLETA (sempre cobra dos créditos completos)
+    // Esta função "Aprofundar Análise" sempre utiliza analyzeStrategic (não analyzeEssential)
+    // para fornecer insights detalhados e deve ser cobrada dos créditos de análise completa
     let aiAnalysis = null;
     let routingInfo = null;
 
     if (pdfResult?.texto_ai_friendly) {
       try {
-        const analysisResult = await modelRouter.analyzeDocument(
+        const analysisResult = await modelRouter.analyzeStrategic(
           pdfResult.texto_ai_friendly,
           pdfResult.file_size_mb || 0
         );
@@ -184,10 +176,10 @@ export async function POST(
     await prisma.caseEvent.create({
       data: {
         caseId: document.caseId,
-        userId: session.user.id,
-        type: 'ANALYSIS_COMPLETED',
+        userId: user.id,
+        type: 'OTHER',
         title: `Análise v${nextVersion} concluída`,
-        description: `Documento "${document.fileName}" foi ${forceReanalysis ? 'reanalisado' : 'analisado'} com ${routingInfo?.final_tier || 'modelo padrão'}.`,
+        description: `Documento "${document.name}" foi ${forceReanalysis ? 'reanalisado' : 'analisado'} com ${routingInfo?.final_tier || 'modelo padrão'}.`,
         metadata: {
           documentId: document.id,
           analysisVersionId: analysisVersion.id,
@@ -243,21 +235,14 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // 1. Verificar autenticação
-    const supabase = createClient();
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const { user, error: authError } = await requireAuth(request);
+    if (authError) return authError;
 
-    if (authError || !session) {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      );
-    }
-
-    const documentId = params.id;
+    const { id: documentId } = await params;
 
     // 2. Buscar documento e análises
     const document = await prisma.caseDocument.findFirst({
@@ -265,9 +250,9 @@ export async function GET(
         id: documentId,
         case: {
           workspace: {
-            userWorkspaces: {
+            users: {
               some: {
-                userId: session.user.id
+                userId: user.id
               }
             }
           }
@@ -313,10 +298,10 @@ export async function GET(
     return NextResponse.json({
       document: {
         id: document.id,
-        fileName: document.fileName,
-        fileType: document.fileType,
-        fileSize: document.fileSize,
-        status: document.status,
+        fileName: document.name,
+        fileType: document.type,
+        fileSize: document.size,
+        status: document.ocrStatus,
         createdAt: document.createdAt
       },
       case: {

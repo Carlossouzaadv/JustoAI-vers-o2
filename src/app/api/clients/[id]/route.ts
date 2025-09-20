@@ -16,7 +16,7 @@ import {
 } from '@/lib/validations'
 
 interface RouteContext {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // GET /api/clients/[id] - Get client details
@@ -30,7 +30,7 @@ async function GET(request: NextRequest, { params }: RouteContext) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  const clientId = params.id
+  const { id: clientId } = await params
 
   // Get client
   const client = await prisma.client.findUnique({
@@ -94,7 +94,7 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  const clientId = params.id
+  const { id: clientId } = await params
 
   // Get existing client
   const existingClient = await prisma.client.findUnique({
@@ -171,7 +171,7 @@ async function DELETE(request: NextRequest, { params }: RouteContext) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  const clientId = params.id
+  const { id: clientId } = await params
 
   // Get existing client
   const existingClient = await prisma.client.findUnique({

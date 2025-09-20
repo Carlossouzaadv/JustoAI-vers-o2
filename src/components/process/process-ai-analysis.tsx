@@ -7,6 +7,22 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { UsageAlert } from '@/components/ui/usage-alert';
+import {
+  SubscriptionPlan,
+  UsageStats,
+  canPerformAction,
+  formatLimitMessage,
+  getAnalysisRemaining,
+  getPlanLimits
+} from '@/lib/subscription-limits';
 import { ICONS } from '@/lib/icons';
 
 interface AIAnalysisVersion {
@@ -57,6 +73,18 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
   const [selectedVersion, setSelectedVersion] = useState<AIAnalysisVersion | null>(null);
   const [generating, setGenerating] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Mock user plan and usage - in real app, this would come from user context
+  const [userPlan] = useState<SubscriptionPlan>('professional');
+  const [userUsage] = useState<UsageStats>({
+    currentUsers: 3,
+    currentProcesses: 45,
+    completeAnalysisUsed: 12,
+    completeAnalysisRemaining: 3,
+    isFirstMonth: false,
+    resetDate: '2025-02-01T00:00:00Z'
+  });
 
   useEffect(() => {
     loadAnalyses();
@@ -194,16 +222,15 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
     }
   };
 
-  const generateNewAnalysis = async (type: AIAnalysisVersion['analysisType']) => {
+  const generateNewAnalysis = async (level: 'FAST' | 'FULL') => {
     try {
       setGenerating(true);
 
-      const response = await fetch(`/api/ai/analyze`, {
+      const response = await fetch(`/api/process/${processId}/analysis`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          processId,
-          analysisType: type,
+          level: level,
           includeDocuments: true,
           includeTimeline: true
         })
@@ -218,8 +245,8 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
           version: analyses.length + 1,
           createdAt: new Date().toISOString(),
           status: 'generating',
-          analysisType: type,
-          model: result.model || 'gemini-flash',
+          analysisType: level === 'FULL' ? 'complete' : 'strategic',
+          model: level === 'FULL' ? 'gemini-pro' : 'gemini-flash',
           progress: 0
         };
 
@@ -237,11 +264,12 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
           });
         }, 500);
 
-        // Simular conclusão após algum tempo
+        // Simular conclusão após algum tempo (FULL demora mais)
+        const processingTime = level === 'FULL' ? 12000 : 6000;
         setTimeout(() => {
           clearInterval(progressInterval);
           loadAnalyses(); // Recarregar para pegar análise completa
-        }, 8000);
+        }, processingTime);
 
       } else {
         throw new Error('Erro ao gerar análise');
@@ -312,27 +340,12 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
 
             <div className="flex gap-2">
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => generateNewAnalysis('essential')}
+                onClick={() => setShowUpgradeModal(true)}
                 disabled={generating}
+                variant="default"
               >
-                Essencial
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => generateNewAnalysis('strategic')}
-                disabled={generating}
-              >
-                Estratégica
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => generateNewAnalysis('complete')}
-                disabled={generating}
-              >
-                {generating ? `${ICONS.LOADING} Gerando...` : 'Análise Completa'}
+                {generating ? `${ICONS.LOADING} Gerando...` : `${ICONS.STAR} Aprofundar Análise`}
               </Button>
             </div>
           </div>
@@ -343,31 +356,31 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
             <div className="text-center py-8 text-muted-foreground">
               <span className="text-4xl mb-4 block">{ICONS.STAR}</span>
               <h3 className="text-lg font-medium mb-2">Nenhuma análise encontrada</h3>
-              <p className="text-sm mb-4">Gere sua primeira análise por IA</p>
-              <Button onClick={() => generateNewAnalysis('essential')}>
-                {ICONS.STAR} Análise Essencial
+              <p className="text-sm mb-4">Gere sua primeira análise estratégica por IA</p>
+              <Button onClick={() => setShowUpgradeModal(true)} variant="default">
+                {ICONS.STAR} Gerar Análise Estratégica
               </Button>
             </div>
           ) : (
             <>
-              {/* Seletor de versões */}
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {analyses.map((analysis) => (
-                  <Button
-                    key={analysis.id}
-                    variant={selectedVersion?.id === analysis.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedVersion(analysis)}
+              {/* Análise atual + histórico discreto */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Badge
+                    variant={getAnalysisTypeColor(selectedVersion.analysisType)}
+                    className="text-sm"
                   >
-                    <Badge
-                      variant={getAnalysisTypeColor(analysis.analysisType)}
-                      className="mr-2 text-xs"
-                    >
-                      {getAnalysisTypeLabel(analysis.analysisType)}
-                    </Badge>
-                    v{analysis.version}
+                    {getAnalysisTypeLabel(selectedVersion.analysisType)}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    Versão {selectedVersion.version} • {new Date(selectedVersion.createdAt).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                {analyses.length > 1 && (
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    Ver Histórico ({analyses.length - 1} anterior{analyses.length > 2 ? 'es' : ''})
                   </Button>
-                ))}
+                )}
               </div>
 
               {/* Conteúdo da análise selecionada */}
@@ -623,7 +636,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
                       <span className="text-4xl mb-4 block">{ICONS.ERROR}</span>
                       <h3 className="text-lg font-medium mb-2">Erro na Análise</h3>
                       <p className="text-sm mb-4">Não foi possível gerar a análise</p>
-                      <Button onClick={() => generateNewAnalysis(selectedVersion.analysisType)}>
+                      <Button onClick={() => generateNewAnalysis('strategic')}>
                         Tentar Novamente
                       </Button>
                     </div>
@@ -634,6 +647,112 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
           )}
         </CardContent>
       </Card>
+      {/* Modal de Aprofundar Análise - FAST vs FULL */}
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Aprofundar Análise</DialogTitle>
+            <DialogDescription>
+              Escolha o tipo de análise que melhor atende às suas necessidades
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Usage Alert */}
+            <UsageAlert
+              plan={userPlan}
+              usage={userUsage}
+              onUpgrade={() => window.open('/pricing', '_blank')}
+              className="mb-4"
+            />
+
+            <div className="space-y-3">
+              {/* OPÇÃO A: FAST - Documentos existentes */}
+              <Button
+                className="w-full justify-start h-auto p-4 text-left"
+                variant="outline"
+                onClick={() => {
+                  generateNewAnalysis('FAST');
+                  setShowUpgradeModal(false);
+                }}
+              >
+                <div className="w-full">
+                  <div className="font-medium flex items-center gap-2 mb-2">
+                    <Badge variant="default" className="text-xs">FAST</Badge>
+                    <span className="text-sm">Usar documentos já existentes</span>
+                    <Badge variant="secondary" className="text-xs ml-auto">DEFAULT</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Análise baseada nos documentos já anexados ao processo. Resultado rápido usando Flash 8B/Flash.
+                  </p>
+                  <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
+                    <p className="text-xs text-yellow-700">
+                      ⚠️ Para um melhor resultado, o ideal é subir o PDF completo do processo (opção FULL)
+                    </p>
+                  </div>
+                </div>
+              </Button>
+
+              {/* OPÇÃO B: FULL - Upload de cópia integral */}
+              <Button
+                className="w-full justify-start h-auto p-4 text-left"
+                variant="outline"
+                disabled={!canPerformAction(userPlan, 'complete_analysis', userUsage).allowed}
+                onClick={() => {
+                  const canPerform = canPerformAction(userPlan, 'complete_analysis', userUsage);
+                  if (canPerform.allowed) {
+                    // TODO: Implementar upload de arquivo integral
+                    generateNewAnalysis('FULL');
+                    setShowUpgradeModal(false);
+                  }
+                }}
+              >
+                <div className="w-full">
+                  <div className="font-medium flex items-center gap-2 mb-2">
+                    <Badge variant="destructive" className="text-xs">FULL</Badge>
+                    <span className="text-sm">Fazer upload de cópia integral</span>
+                    {canPerformAction(userPlan, 'complete_analysis', userUsage).allowed ? (
+                      <Badge variant="secondary" className="text-xs ml-auto">
+                        {getAnalysisRemaining(userPlan, userUsage)} restante{getAnalysisRemaining(userPlan, userUsage) !== 1 ? 's' : ''}
+                      </Badge>
+                    ) : (
+                      <Badge variant="destructive" className="text-xs ml-auto">Limite atingido</Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Upload do PDF completo do processo + análise com Gemini Pro. Resultado mais completo e preciso.
+                  </p>
+                  <div className="bg-green-50 p-2 rounded border border-green-200">
+                    <p className="text-xs text-green-700">
+                      ✓ Análise mais detalhada • ✓ Modelo avançado • ✓ Maior precisão
+                    </p>
+                  </div>
+                  {!canPerformAction(userPlan, 'complete_analysis', userUsage).allowed && (
+                    <div className="bg-red-50 p-2 rounded border border-red-200 mt-2">
+                      <p className="text-xs text-red-700">
+                        {canPerformAction(userPlan, 'complete_analysis', userUsage).reason}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </Button>
+            </div>
+
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-2">
+                <span className="text-blue-600">{ICONS.INFO}</span>
+                <div className="text-xs text-blue-700">
+                  <p className="font-medium">Plano Atual: {getPlanLimits(userPlan).name}</p>
+                  <p>{formatLimitMessage(userPlan, userUsage)}</p>
+                  {userUsage.isFirstMonth && (
+                    <p className="text-green-700 mt-1">✨ Primeiro mês com créditos extras!</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

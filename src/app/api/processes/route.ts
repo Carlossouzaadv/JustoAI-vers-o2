@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, ApiError, validateJson } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import {
   createProcessApiClient,
   validateProcessNumber,
@@ -73,6 +73,93 @@ export async function GET(request: NextRequest) {
     });
 
     const offset = (query.page - 1) * query.limit;
+
+    // Development mode - return mock data
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️ Development mode: Returning mock processes data')
+      const mockProcesses = [
+        {
+          id: '1',
+          processNumber: '1234567-89.2024.8.26.0001',
+          court: '1ª Vara Cível Central',
+          clientName: 'João Silva',
+          monitoringStatus: 'ACTIVE',
+          syncFrequency: 'DAILY',
+          alertsEnabled: true,
+          alertRecipients: ['admin@escritorio.com'],
+          caseId: 'case-1',
+          lastSync: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+          lastSyncStatus: 'SUCCESS',
+          errorCount: 0,
+          createdAt: new Date('2024-01-15'),
+          updatedAt: new Date(),
+          workspaceId: 'dev-workspace'
+        },
+        {
+          id: '2',
+          processNumber: '9876543-21.2024.8.26.0002',
+          court: '1ª Vara de Família',
+          clientName: 'Maria Santos',
+          monitoringStatus: 'ACTIVE',
+          syncFrequency: 'DAILY',
+          alertsEnabled: true,
+          alertRecipients: ['admin@escritorio.com'],
+          caseId: 'case-2',
+          lastSync: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
+          lastSyncStatus: 'SUCCESS',
+          errorCount: 0,
+          createdAt: new Date('2024-01-10'),
+          updatedAt: new Date(),
+          workspaceId: 'dev-workspace'
+        },
+        {
+          id: '3',
+          processNumber: '5555555-55.2024.5.02.0001',
+          court: '2ª Vara do Trabalho',
+          clientName: 'Empresa ABC Ltda',
+          monitoringStatus: 'PAUSED',
+          syncFrequency: 'WEEKLY',
+          alertsEnabled: false,
+          alertRecipients: [],
+          caseId: 'case-3',
+          lastSync: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+          lastSyncStatus: 'SUCCESS',
+          errorCount: 0,
+          createdAt: new Date('2023-12-01'),
+          updatedAt: new Date(),
+          workspaceId: 'dev-workspace'
+        }
+      ]
+
+      let filteredProcesses = mockProcesses
+      if (query.search) {
+        filteredProcesses = mockProcesses.filter(process =>
+          process.processNumber.toLowerCase().includes(query.search!.toLowerCase()) ||
+          process.clientName.toLowerCase().includes(query.search!.toLowerCase()) ||
+          process.court.toLowerCase().includes(query.search!.toLowerCase())
+        )
+      }
+
+      if (query.status) {
+        filteredProcesses = filteredProcesses.filter(process => process.monitoringStatus === query.status)
+      }
+
+      const startIndex = offset
+      const endIndex = startIndex + query.limit
+      const paginatedProcesses = filteredProcesses.slice(startIndex, endIndex)
+
+      return NextResponse.json({
+        success: true,
+        data: paginatedProcesses,
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total: filteredProcesses.length,
+          pages: Math.ceil(filteredProcesses.length / query.limit)
+        },
+        message: `${ICONS.SUCCESS} ${filteredProcesses.length} processos encontrados (mock data)`
+      })
+    }
 
     // Construir filtros
     const where: any = {
@@ -184,13 +271,10 @@ export async function GET(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao listar processos:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -201,7 +285,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { user, workspace } = await validateAuth(request);
-    const body = await validateJson(request, CreateProcessSchema);
+    const { data: body, error: validationError } = await validateJson(request, CreateProcessSchema);
+    if (validationError) return validationError;
 
     // Normalizar e validar número do processo
     const normalizedNumber = normalizeProcessNumber(body.processNumber);
@@ -317,23 +402,23 @@ export async function POST(request: NextRequest) {
       initialMovements: initialMovements.length
     });
 
-    return apiResponse({
-      process: monitoredProcess,
-      initialMovements: initialMovements.length,
+    return NextResponse.json({
+      success: true,
+      data: {
+        process: monitoredProcess,
+        initialMovements: initialMovements.length
+      },
       message: 'Processo adicionado ao monitoramento com sucesso'
-    }, 201);
+    }, { status: 201 });
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao criar processo monitorado:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -397,11 +482,9 @@ export async function DELETE(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao remover processos:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }

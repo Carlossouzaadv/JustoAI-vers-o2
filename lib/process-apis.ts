@@ -16,12 +16,6 @@ export interface ProcessApiConfig {
     apiKey: string;
     enabled: boolean;
   };
-  codilo?: {
-    baseUrl: string;
-    username: string;
-    password: string;
-    enabled: boolean;
-  };
 }
 
 export interface ProcessSearchParams {
@@ -35,7 +29,7 @@ export interface ProcessSearchParams {
 
 export interface ProcessApiResponse {
   success: boolean;
-  source: 'JUDIT_API' | 'CODILO_API';
+  source: 'JUDIT_API';
   data?: ProcessData;
   error?: string;
   cached?: boolean;
@@ -143,18 +137,7 @@ export class ProcessApiClient {
       }
     }
 
-    // Fallback para Codilo API
-    if (this.config.codilo?.enabled) {
-      try {
-        const result = await this.searchCodiloApi(params);
-        if (result.success && result.data) {
-          this.setCache(cacheKey, result.data);
-          return result;
-        }
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Erro na Codilo API:`, error);
-      }
-    }
+    // Sem APIs de fallback disponíveis
 
     return {
       success: false,
@@ -279,107 +262,6 @@ export class ProcessApiClient {
     };
   }
 
-  // ================================
-  // IMPLEMENTAÇÃO CODILO API
-  // ================================
-
-  private async searchCodiloApi(params: ProcessSearchParams): Promise<ProcessApiResponse> {
-    if (!this.config.codilo?.enabled || !this.config.codilo.username) {
-      throw new Error('Codilo API não configurada');
-    }
-
-    // Implementação específica da Codilo API
-    // (estrutura similar à Judit, mas com autenticação e endpoints diferentes)
-
-    const authUrl = `${this.config.codilo.baseUrl}/auth/login`;
-    const consultaUrl = `${this.config.codilo.baseUrl}/processo/consultar`;
-
-    // 1. Autenticar
-    const authResponse = await fetch(authUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        usuario: this.config.codilo.username,
-        senha: this.config.codilo.password
-      })
-    });
-
-    if (!authResponse.ok) {
-      throw new Error(`Codilo Auth Error: ${authResponse.status}`);
-    }
-
-    const { token } = await authResponse.json();
-
-    // 2. Consultar processo
-    const response = await fetch(consultaUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        numeroProcesso: params.processNumber,
-        tribunal: params.court,
-        incluirMovimentacoes: params.includeMovements ?? true
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Codilo API Error: ${response.status}`);
-    }
-
-    const apiData = await response.json();
-
-    return {
-      success: true,
-      source: 'CODILO_API',
-      data: this.parseCodiloResponse(apiData)
-    };
-  }
-
-  private parseCodiloResponse(apiData: any): ProcessData {
-    // Estrutura similar à Judit, mas adaptada para formato da Codilo
-    return {
-      processNumber: apiData.numeroProcesso || '',
-      court: apiData.orgaoJulgador || '',
-      subject: apiData.classeAssunto || '',
-      value: apiData.valorCausa ? parseFloat(apiData.valorCausa) : undefined,
-      distributionDate: apiData.dataAutuacao ? new Date(apiData.dataAutuacao) : undefined,
-      status: apiData.situacao || 'EM_ANDAMENTO',
-
-      parties: {
-        plaintiffs: (apiData.poloAtivo || []).map((p: any) => ({
-          name: p.pessoa?.nome || '',
-          document: p.pessoa?.documento || '',
-          type: 'PLAINTIFF' as const
-        })),
-        defendants: (apiData.poloPassivo || []).map((p: any) => ({
-          name: p.pessoa?.nome || '',
-          document: p.pessoa?.documento || '',
-          type: 'DEFENDANT' as const
-        })),
-        lawyers: (apiData.advogados || []).map((a: any) => ({
-          name: a.nome || '',
-          oabNumber: a.numeroOAB || '',
-          oabState: a.ufOAB || '',
-          represents: a.parte || ''
-        }))
-      },
-
-      movements: (apiData.movimentacoes || []).map((m: any) => ({
-        date: new Date(m.dataHora),
-        type: m.nome || '',
-        description: m.textoMovimentacao || '',
-        category: this.categorizeMovement(m.nome, m.textoMovimentacao),
-        importance: this.assessMovementImportance(m.nome, m.textoMovimentacao),
-        requiresAction: this.requiresAction(m.nome, m.textoMovimentacao)
-      })),
-
-      lastUpdate: new Date(),
-      dataSource: 'CODILO_API',
-      consultationId: apiData.identificador || `codilo_${Date.now()}`
-    };
-  }
 
   // ================================
   // UTILITÁRIOS DE ANÁLISE
@@ -481,12 +363,6 @@ export function createProcessApiClient(): ProcessApiClient {
       baseUrl: process.env.JUDIT_API_URL || 'https://api.judit.com.br',
       apiKey: process.env.JUDIT_API_KEY || '',
       enabled: !!process.env.JUDIT_API_KEY
-    },
-    codilo: {
-      baseUrl: process.env.CODILO_API_URL || 'https://api.codilo.com.br',
-      username: process.env.CODILO_USERNAME || '',
-      password: process.env.CODILO_PASSWORD || '',
-      enabled: !!(process.env.CODILO_USERNAME && process.env.CODILO_PASSWORD)
     }
   };
 

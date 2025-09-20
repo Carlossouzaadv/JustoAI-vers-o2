@@ -32,7 +32,7 @@ const generateReportSchema = z.object({
     priorities: z.array(z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])).optional(),
     courts: z.array(z.string()).optional(),
     include_inactive: z.boolean().default(false)
-  }).default({}),
+  }).default({ include_inactive: false }),
 
   // Opções de geração
   options: z.object({
@@ -43,7 +43,15 @@ const generateReportSchema = z.object({
     days_for_updates: z.number().min(1).max(90).default(7),
     format: z.enum(['A4', 'Letter']).default('A4'),
     orientation: z.enum(['portrait', 'landscape']).default('portrait')
-  }).default({}),
+  }).default({
+    include_charts: true,
+    include_ai_insights: true,
+    include_financial_data: false,
+    max_processes: 1000,
+    days_for_updates: 7,
+    format: 'A4',
+    orientation: 'portrait'
+  }),
 
   // Para batch processing
   batch: z.object({
@@ -164,7 +172,7 @@ export async function POST(req: NextRequest) {
     console.log(`${ICONS.SUCCESS} Relatório gerado em ${generationTime}ms (${Math.round(pdfBuffer.length / 1024)}KB)`);
 
     // 7. Retornar PDF como resposta
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -180,7 +188,7 @@ export async function POST(req: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Dados inválidos', details: error.errors },
+        { success: false, error: 'Dados inválidos', details: error.issues },
         { status: 400 }
       );
     }
@@ -288,7 +296,7 @@ export async function PUT(req: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Dados inválidos', details: error.errors },
+        { success: false, error: 'Dados inválidos', details: error.issues },
         { status: 400 }
       );
     }

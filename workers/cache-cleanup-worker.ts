@@ -382,7 +382,7 @@ async function cleanupDatabaseRecords(result: CleanupResult) {
     // 1. Limpar logs antigos
     const { count: deletedLogs } = await prisma.processSyncLog.deleteMany({
       where: {
-        createdAt: { lt: cutoffDate },
+        startedAt: { lt: cutoffDate },
         status: 'SUCCESS' // Manter logs de erro por mais tempo
       }
     });
@@ -401,12 +401,8 @@ async function cleanupDatabaseRecords(result: CleanupResult) {
     result.details.databaseCleanup.expiredSessions = deletedSessions;
 
     // 3. Limpar análises temporárias antigas
-    const { count: deletedTempAnalysis } = await prisma.caseAnalysisVersion.deleteMany({
-      where: {
-        createdAt: { lt: tempAnalysisCutoff },
-        isTemporary: true // Assumindo que existe campo para marcar temporárias
-      }
-    });
+    // Note: isTemporary field doesn't exist in schema, skipping this cleanup
+    const deletedTempAnalysis = 0;
     result.details.databaseCleanup.tempAnalysis = deletedTempAnalysis;
 
     result.databaseRecordsDeleted = deletedLogs + deletedSessions + deletedTempAnalysis;

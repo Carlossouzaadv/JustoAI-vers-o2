@@ -64,7 +64,7 @@ const scheduleFormSchema = z.object({
   deliveryTime: z.string().min(1, 'Horário é obrigatório'),
   recipientEmail: z.string().email('E-mail inválido').optional(),
   recipientPhone: z.string().optional(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 type ReportScheduleForm = z.infer<typeof scheduleFormSchema>;
@@ -205,7 +205,7 @@ export function ReportScheduleDialog({
         )}
       </DialogTrigger>
 
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {ICONS.CALENDAR} Agendar Relatório Executivo
@@ -390,7 +390,7 @@ export function ReportScheduleDialog({
                         </FormDescription>
                       </div>
 
-                      <div className="space-y-3 max-h-64 overflow-y-auto border rounded-md p-3">
+                      <div className="space-y-3 max-h-64 overflow-y-auto border rounded-md p-4 bg-gray-50">
                         {availableProcesses.map((process) => (
                           <FormField
                             key={process.id}
@@ -446,53 +446,45 @@ export function ReportScheduleDialog({
               </div>
             </div>
 
-            {/* Preview do Custo */}
+            {/* Preview da Configuração */}
             {selectedProcesses.length > 0 && (
-              <Card>
+              <Card className="bg-blue-50 border-blue-200">
                 <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    {ICONS.MONEY} Preview de Custo Estimado
+                  <CardTitle className="text-base flex items-center gap-2 text-blue-800">
+                    {ICONS.INFO} Resumo da Configuração
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
-                    <div>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div className="p-3 bg-white rounded-md">
                       <p className="text-2xl font-bold text-blue-600">
                         {selectedProcesses.length}
                       </p>
-                      <p className="text-sm text-muted-foreground">Processos</p>
+                      <p className="text-sm text-muted-foreground">Processos Selecionados</p>
                     </div>
 
-                    <div>
-                      <p className="text-2xl font-bold text-green-600">
-                        ${costEstimate.perReport.toFixed(3)}
+                    <div className="p-3 bg-white rounded-md">
+                      <p className="text-lg font-bold text-green-600">
+                        {getFrequencyLabel(watchedValues.frequency || 'weekly').split(' ')[0]}
                       </p>
-                      <p className="text-sm text-muted-foreground">Por relatório</p>
+                      <p className="text-sm text-muted-foreground">Frequência</p>
                     </div>
 
-                    <div>
-                      <p className="text-2xl font-bold text-purple-600">
-                        ${costEstimate.monthly.toFixed(2)}
+                    <div className="p-3 bg-white rounded-md">
+                      <p className="text-lg font-bold text-purple-600">
+                        {watchedValues.deliveryTime || '07:00'}
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        Por mês ({getFrequencyLabel(watchedValues.frequency || 'weekly')})
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-2xl font-bold text-orange-600">
-                        ~{costEstimate.tokensEstimate.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Tokens/relatório</p>
+                      <p className="text-sm text-muted-foreground">Horário de Entrega</p>
                     </div>
                   </div>
 
-                  <div className="mt-4 p-3 bg-muted rounded-md">
-                    <p className="text-sm">
-                      <strong>Configuração:</strong> {getReportTypeLabel(watchedValues.reportType || 'updates')} • {' '}
-                      {getFrequencyLabel(watchedValues.frequency || 'weekly')} • {' '}
-                      Entrega às {watchedValues.deliveryTime || '07:00'} via {watchedValues.deliveryMethod === 'email' ? 'E-mail' : 'WhatsApp'}
-                    </p>
+                  <div className="p-4 bg-white rounded-md border-l-4 border-blue-500">
+                    <p className="text-sm font-medium text-blue-800 mb-2">Configuração do Relatório:</p>
+                    <div className="space-y-1 text-sm text-blue-700">
+                      <p>• <strong>Tipo:</strong> {getReportTypeLabel(watchedValues.reportType || 'updates')}</p>
+                      <p>• <strong>Frequência:</strong> {getFrequencyLabel(watchedValues.frequency || 'weekly')}</p>
+                      <p>• <strong>Entrega:</strong> {watchedValues.deliveryMethod === 'email' ? 'E-mail' : 'WhatsApp'} às {watchedValues.deliveryTime || '07:00'}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

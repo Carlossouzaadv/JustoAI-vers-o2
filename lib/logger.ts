@@ -128,13 +128,13 @@ const productionFormat = winston.format.combine(
   winston.format.json(),
   winston.format.printf((info) => {
     const logEntry: StructuredLog = {
-      level: info.level,
-      message: info.message,
-      timestamp: info.timestamp,
+      level: info.level as string,
+      message: info.message as string,
+      timestamp: info.timestamp as string,
       service: LOG_CONFIG.service,
       environment: LOG_CONFIG.environment,
-      context: info.context,
-      metadata: info.metadata,
+      context: (info as any).context,
+      metadata: (info as any).metadata,
     };
 
     // Incluir stack trace para erros
@@ -264,7 +264,7 @@ export const dbLogger = logger.child({ component: 'database' });
 /**
  * Log estruturado com contexto
  */
-export function logWithContext(
+function logWithContext(
   level: keyof typeof LOG_CONFIG.levels,
   message: string,
   context?: LogContext,
@@ -276,7 +276,7 @@ export function logWithContext(
 /**
  * Log de erro com stack trace
  */
-export function logError(
+function logError(
   message: string,
   error: Error | string,
   context?: LogContext
@@ -298,7 +298,7 @@ export function logError(
 /**
  * Log de performance
  */
-export function logPerformance(
+function logPerformance(
   operation: string,
   duration: number,
   context?: LogContext,
@@ -317,7 +317,7 @@ export function logPerformance(
 /**
  * Log de request HTTP
  */
-export function logHttpRequest(
+function logHttpRequest(
   method: string,
   url: string,
   statusCode: number,
@@ -340,7 +340,7 @@ export function logHttpRequest(
 /**
  * Log de operação AI
  */
-export function logAIOperation(
+function logAIOperation(
   operation: string,
   model: string,
   tokens?: number,
@@ -361,7 +361,7 @@ export function logAIOperation(
 /**
  * Log de operação de banco
  */
-export function logDatabaseOperation(
+function logDatabaseOperation(
   operation: string,
   table: string,
   duration?: number,
@@ -382,7 +382,7 @@ export function logDatabaseOperation(
 /**
  * Middleware Express para logging de requests
  */
-export function requestLoggingMiddleware() {
+function requestLoggingMiddleware() {
   return (req: any, res: any, next: any) => {
     const startTime = Date.now();
 
@@ -418,7 +418,7 @@ export function requestLoggingMiddleware() {
 /**
  * Middleware para capturar erros não tratados
  */
-export function errorLoggingMiddleware() {
+function errorLoggingMiddleware() {
   return (err: any, req: any, res: any, next: any) => {
     logError(
       `Unhandled error in ${req.method} ${req.originalUrl || req.url}`,
@@ -448,7 +448,7 @@ function generateRequestId(): string {
 /**
  * Sanitiza dados sensíveis dos logs
  */
-export function sanitizeLogData(data: any): any {
+function sanitizeLogData(data: any): any {
   if (!data || typeof data !== 'object') return data;
 
   const sensitiveFields = [
@@ -474,7 +474,7 @@ export function sanitizeLogData(data: any): any {
 /**
  * Função para criar logger filho com contexto específico
  */
-export function createChildLogger(component: string, context?: LogContext) {
+function createChildLogger(component: string, context?: LogContext) {
   return logger.child({
     component,
     defaultContext: context,
@@ -484,7 +484,7 @@ export function createChildLogger(component: string, context?: LogContext) {
 /**
  * Health check do sistema de logging
  */
-export function loggerHealthCheck() {
+function loggerHealthCheck() {
   try {
     logger.info('Logger health check', {
       context: { healthCheck: true },

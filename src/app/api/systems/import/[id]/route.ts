@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, ApiError, validateJson } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { ICONS } from '@/lib/icons';
 
 // ================================
@@ -25,7 +25,7 @@ const ActionSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
@@ -35,7 +35,7 @@ export async function GET(
 
     const systemImport = await prisma.systemImport.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       },
       include: {
@@ -66,7 +66,7 @@ export async function GET(
     if (systemImport.status === 'IMPORTING' || systemImport.status === 'VALIDATING') {
       const itemStats = await prisma.importedDataItem.groupBy({
         by: ['status'],
-        where: { systemImportId: params.id },
+        where: { systemImportId: (await params).id },
         _count: true
       });
 
@@ -135,7 +135,7 @@ export async function GET(
           ? (systemImport.failedRows / systemImport.processedRows) * 100
           : 0,
         estimatedTimeRemaining: systemImport.status === 'IMPORTING' && systemImport.progress > 0
-          ? this.calculateEstimatedTime(systemImport)
+          ? calculateEstimatedTime(systemImport)
           : null,
         liveStats
       },
@@ -148,7 +148,7 @@ export async function GET(
       } : undefined,
 
       // Ações disponíveis
-      availableActions: this.getAvailableActions(systemImport.status)
+      availableActions: getAvailableActions(systemImport.status)
     };
 
     return apiResponse(response);
@@ -157,12 +157,10 @@ export async function GET(
     console.error(`${ICONS.ERROR} Erro ao buscar status da importação:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -172,15 +170,16 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
-    const body = await validateJson(request, ActionSchema);
+    const { data: body, error: validationError } = await validateJson(request, ActionSchema);
+    if (validationError) return validationError;
 
     const systemImport = await prisma.systemImport.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       }
     });
@@ -191,13 +190,13 @@ export async function POST(
 
     switch (body.action) {
       case 'cancel':
-        return await this.handleCancelImport(systemImport, body.force);
+        return await handleCancelImport(systemImport, body.force);
 
       case 'retry':
-        return await this.handleRetryImport(systemImport, body.force);
+        return await handleRetryImport(systemImport, body.force);
 
       case 'delete':
-        return await this.handleDeleteImport(systemImport, body.force);
+        return await handleDeleteImport(systemImport, body.force);
 
       default:
         throw new ApiError('Ação não suportada', 400);
@@ -207,12 +206,10 @@ export async function POST(
     console.error(`${ICONS.ERROR} Erro ao executar ação:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -222,22 +219,23 @@ export async function POST(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
 
     const UpdateConfigSchema = z.object({
-      customMappings: z.record(z.string()).optional(),
-      transformRules: z.record(z.any()).optional(),
-      importSettings: z.record(z.any()).optional()
+      customMappings: z.record(z.string(), z.string()).optional(),
+      transformRules: z.record(z.string(), z.any()).optional(),
+      importSettings: z.record(z.string(), z.any()).optional()
     });
 
-    const body = await validateJson(request, UpdateConfigSchema);
+    const { data: body, error: validationError } = await validateJson(request, UpdateConfigSchema);
+    if (validationError) return validationError;
 
     const systemImport = await prisma.systemImport.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       }
     });
@@ -251,7 +249,7 @@ export async function PUT(
     }
 
     const updatedImport = await prisma.systemImport.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         importSettings: {
           ...(systemImport.importSettings as any || {}),
@@ -264,7 +262,7 @@ export async function PUT(
     });
 
     console.log(`${ICONS.SUCCESS} Configurações da importação atualizadas:`, {
-      id: params.id,
+      id: (await params).id,
       fileName: systemImport.fileName
     });
 
@@ -283,12 +281,10 @@ export async function PUT(
     console.error(`${ICONS.ERROR} Erro ao atualizar configurações:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -298,7 +294,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { workspace } = await validateAuth(request);
@@ -308,7 +304,7 @@ export async function DELETE(
 
     const systemImport = await prisma.systemImport.findFirst({
       where: {
-        id: params.id,
+        id: (await params).id,
         workspaceId: workspace.id
       },
       include: {
@@ -342,11 +338,11 @@ export async function DELETE(
     if (keepData) {
       // Remover apenas o registro da importação, manter dados importados
       await prisma.systemImport.delete({
-        where: { id: params.id }
+        where: { id: (await params).id }
       });
 
       console.log(`${ICONS.SUCCESS} Registro de importação removido (dados mantidos):`, {
-        id: params.id,
+        id: (await params).id,
         fileName: systemImport.fileName
       });
 
@@ -364,11 +360,11 @@ export async function DELETE(
       // TODO: Implementar remoção dos dados importados
       // Por segurança, por enquanto apenas remove o registro
       await prisma.systemImport.delete({
-        where: { id: params.id }
+        where: { id: (await params).id }
       });
 
       console.log(`${ICONS.SUCCESS} Importação removida completamente:`, {
-        id: params.id,
+        id: (await params).id,
         fileName: systemImport.fileName
       });
 
@@ -387,12 +383,10 @@ export async function DELETE(
     console.error(`${ICONS.ERROR} Erro ao remover importação:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 

@@ -196,11 +196,9 @@ async function main() {
   await prisma.caseAnalysisVersion.create({
     data: {
       caseId: case1.id,
-      userId: lawyerUser.id,
       version: 1,
-      type: 'RISK_ASSESSMENT',
-      prompt: 'Analise os riscos deste caso de cobrança considerando a documentação apresentada',
-      result: {
+      analysisType: 'RISK_ASSESSMENT',
+      aiAnalysis: {
         riskLevel: 'LOW',
         successProbability: 0.85,
         recommendations: [
@@ -210,11 +208,10 @@ async function main() {
         ],
         timeEstimate: '6-8 meses'
       },
-      summary: 'Caso com baixo risco e alta probabilidade de sucesso',
-      model: 'gpt-4',
-      tokens: 1250,
-      cost: 0.025,
-      duration: 3200
+      modelUsed: 'gemini-1.5-flash',
+      confidence: 0.85,
+      processingTime: 1250,
+      costEstimate: 0.025
     }
   })
 

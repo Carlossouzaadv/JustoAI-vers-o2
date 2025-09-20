@@ -64,7 +64,7 @@ export function useIntersectionObserver({
   return {
     isInView,
     entry,
-    ref: elementRef,
+    ref: elementRef as React.RefObject<HTMLElement>,
   };
 }
 

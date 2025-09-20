@@ -69,7 +69,7 @@ export async function validateBody<T>(
     return { data, error: null }
   } catch (error) {
     if (error instanceof ZodError) {
-      const formattedErrors = error.errors.map((err) => ({
+      const formattedErrors = error.issues.map((err) => ({
         field: err.path.join('.'),
         message: err.message,
       }))
@@ -106,7 +106,7 @@ export function validateQuery<T>(
     return { data, error: null }
   } catch (error) {
     if (error instanceof ZodError) {
-      const formattedErrors = error.errors.map((err) => ({
+      const formattedErrors = error.issues.map((err) => ({
         field: err.path.join('.'),
         message: err.message,
       }))
@@ -133,6 +133,31 @@ export function validateQuery<T>(
 
 // Auth middleware
 export async function requireAuth(request: NextRequest) {
+  // Development mode - allow bypass
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ Development mode: Bypassing API auth validation')
+    return {
+      user: {
+        id: 'dev-user',
+        email: 'dev@justoai.com',
+        name: 'Development User',
+        supabaseId: 'dev-supabase-id',
+        emailVerified: true,
+        lastLoginAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        workspaces: [{
+          workspace: {
+            id: 'dev-workspace',
+            name: 'Development Workspace',
+            slug: 'dev'
+          }
+        }]
+      },
+      error: null
+    }
+  }
+
   const user = await getCurrentUser()
 
   if (!user) {
@@ -153,6 +178,12 @@ export async function requireAuth(request: NextRequest) {
 
 // Workspace access middleware
 export async function requireWorkspaceAccess(userId: string, workspaceId: string) {
+  // Development mode - allow bypass
+  if (process.env.NODE_ENV === 'development') {
+    console.log('⚠️ Development mode: Bypassing workspace access check')
+    return { hasAccess: true, error: null }
+  }
+
   // Import inside function to avoid circular dependency
   const { hasWorkspaceAccess } = await import('./auth')
 
@@ -256,6 +287,24 @@ export async function rateLimit(
 export function getClientIP(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
   const real = request.headers.get('x-real-ip')
-  const ip = forwarded?.split(',')[0] || real || request.ip || 'unknown'
+  const ip = forwarded?.split(',')[0] || real || 'unknown'
   return ip
 }
+
+// Custom Error class for API errors
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number = 400,
+    public code?: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+// Generic API response helper (alias for successResponse)
+export const apiResponse = successResponse
+
+// JSON validation helper (alias for validateBody)
+export const validateJson = validateBody

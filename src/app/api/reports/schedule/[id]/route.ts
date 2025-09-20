@@ -25,11 +25,11 @@ const updateScheduleSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { user, workspace } = await validateAuthAndGetUser(req);
-    const scheduleId = params.id;
+    const { id: scheduleId } = await params;
 
     // TODO: Buscar do banco de dados
     // Dados simulados
@@ -86,11 +86,11 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { user, workspace } = await validateAuthAndGetUser(req);
-    const scheduleId = params.id;
+    const { id: scheduleId } = await params;
 
     const body = await req.json();
     const validatedData = updateScheduleSchema.parse(body);
@@ -123,7 +123,7 @@ export async function PATCH(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Dados inválidos', details: error.errors },
+        { success: false, error: 'Dados inválidos', details: error.issues },
         { status: 400 }
       );
     }
@@ -141,11 +141,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { user, workspace } = await validateAuthAndGetUser(req);
-    const scheduleId = params.id;
+    const { id: scheduleId } = await params;
 
     // TODO: Implementar exclusão no banco
     console.log(`${ICONS.DELETE} Excluindo agendamento: ${scheduleId}`);
@@ -170,11 +170,11 @@ export async function DELETE(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { user, workspace } = await validateAuthAndGetUser(req);
-    const scheduleId = params.id;
+    const { id: scheduleId } = await params;
 
     const body = await req.json();
     const { action } = body;

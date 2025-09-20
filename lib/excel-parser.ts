@@ -506,7 +506,7 @@ export class ExcelProcessParser {
 
   private normalizeColumnName(columnName: string): string {
     const normalized = columnName.toLowerCase().trim();
-    return EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING[normalized] || normalized;
+    return (EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING as any)[normalized] || normalized;
   }
 
   private buildResult(totalRows: number, validRows: ExcelProcessRow[], errors: ExcelRowError[]): ExcelParseResult {

@@ -16,8 +16,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "JustoAI - Transforme sua Advocacia com Inteligência Artificial",
-  description: "Transformamos advogados em consultores estratégicos, eliminando 20 horas semanais de trabalho manual e criando relatórios que impressionam e fidelizam clientes.",
+  title: "JustoAI: Relatórios Jurídicos Automáticos para Advogados",
+  description: "Economize 20h por semana com nossa plataforma de automação jurídica. Crie relatórios executivos, analise processos e impressione seus clientes. Teste grátis.",
   keywords: "advocacia, inteligência artificial, automação jurídica, relatórios automatizados, análise de processos",
   authors: [{ name: "JustoAI" }],
   creator: "JustoAI",
@@ -65,10 +65,28 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${inter.variable} ${poppins.variable}`}>
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" href="/Justo_logo.png" />
+        <link rel="apple-touch-icon" href="/Justo_logo.png" />
         <meta name="theme-color" content="#0A2A5B" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "JustoAI",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "Web",
+              "description": "Plataforma de automação jurídica que cria relatórios executivos e analisa processos para advogados, economizando tempo e melhorando a comunicação com clientes.",
+              "offers": {
+                "@type": "Offer",
+                "price": "147.00",
+                "priceCurrency": "BRL"
+              }
+            })
+          }}
+        />
       </head>
       <body className={`font-sans antialiased bg-white text-neutral-900`}>
         {children}

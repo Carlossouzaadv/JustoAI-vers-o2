@@ -19,6 +19,18 @@ services:
       - /app/.next
     depends_on:
       - supabase-db
+      - redis
+    networks:
+      - justoai-network
+
+  # Redis for Background Jobs
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
     networks:
       - justoai-network
 
@@ -53,6 +65,7 @@ services:
 
 volumes:
   supabase_db_data:
+  redis_data:
 
 networks:
   justoai-network:

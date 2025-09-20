@@ -25,7 +25,6 @@ const itemVariants = {
     opacity: 1,
     transition: {
       duration: 0.6,
-      ease: 'easeOut',
     },
   },
 };
@@ -45,7 +44,6 @@ export function Hero() {
         transition={{
           duration: 6,
           repeat: Infinity,
-          ease: 'easeInOut',
         }}
         className="absolute top-1/4 left-10 w-16 h-16 bg-accent-500/10 rounded-full blur-xl"
       />
@@ -57,7 +55,6 @@ export function Hero() {
         transition={{
           duration: 8,
           repeat: Infinity,
-          ease: 'easeInOut',
         }}
         className="absolute bottom-1/4 right-10 w-24 h-24 bg-primary-500/10 rounded-full blur-xl"
       />
@@ -81,43 +78,34 @@ export function Hero() {
 
               <motion.h1
                 variants={itemVariants}
-                className="font-display font-bold text-4xl sm:text-5xl lg:text-6xl xl:text-7xl leading-tight text-primary-800 mb-6"
+                className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl xl:text-5xl leading-tight text-primary-800 mb-6"
               >
-                Transforme sua
-                <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent block">
-                  Advocacia
+                <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">
+                  Relatórios Automáticos que
                 </span>
-                com Inteligência Artificial
+                <br />
+                <span className="text-primary-800">Impressionam Seus Clientes</span>
               </motion.h1>
 
               <motion.p
                 variants={itemVariants}
                 className="text-lg sm:text-xl lg:text-2xl text-neutral-700 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0"
               >
-                Elimine <strong className="text-primary-800">20 horas semanais</strong> de trabalho manual
-                e crie relatórios que <strong className="text-accent-600">impressionam e fidelizam</strong> seus clientes.
+                Relatórios executivos automáticos na linguagem que seu cliente entende. Elimine <strong className="text-primary-800">20 horas semanais</strong> de trabalho manual e <strong className="text-accent-600">fidelize seus clientes</strong> com transparência total.
               </motion.p>
 
               <motion.div
                 variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12"
+                className="mb-12"
               >
-                <Link href="/dashboard">
-                  <Button
-                    size="lg"
-                    className="bg-primary-800 hover:bg-primary-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 w-full sm:w-auto"
-                  >
-                    Começar Gratuitamente
-                    <span className="ml-2">{ICONS.ARROW_RIGHT}</span>
-                  </Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-primary-200 text-primary-800 hover:bg-primary-50 px-8 py-4 text-lg font-semibold w-full sm:w-auto"
-                >
-                  {ICONS.PLAY} Ver Demo (2 min)
-                </Button>
+                <div className="text-center lg:text-left">
+                  <p className="text-lg font-medium text-primary-700 mb-2">
+                    {ICONS.STAR} Experimente gratuitamente
+                  </p>
+                  <p className="text-neutral-600">
+                    Configure sua conta em 5 minutos e comece a gerar relatórios automáticos hoje mesmo.
+                  </p>
+                </div>
               </motion.div>
 
               <motion.div
@@ -134,7 +122,7 @@ export function Hero() {
                 </div>
                 <div className="flex items-center">
                   <span className="text-accent-500 mr-2">{ICONS.CHECK}</span>
-                  Suporte em português
+                  Cancele quando quiser
                 </div>
               </motion.div>
             </div>
@@ -142,9 +130,9 @@ export function Hero() {
             {/* Hero Image/Dashboard Preview */}
             <motion.div
               variants={itemVariants}
-              className="relative"
+              className="relative w-full max-w-2xl mx-auto"
             >
-              <div className="relative bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden transform rotate-2 hover:rotate-0 transition-transform duration-500">
+              <div className="relative bg-white rounded-xl shadow-2xl border border-neutral-200 overflow-hidden transform rotate-1 hover:rotate-0 transition-transform duration-500">
                 <div className="bg-gradient-to-r from-primary-800 to-primary-700 p-4">
                   <div className="flex items-center space-x-2">
                     <div className="w-3 h-3 bg-red-400 rounded-full"></div>
@@ -157,27 +145,44 @@ export function Hero() {
                 </div>
                 <div className="p-6 bg-gradient-to-br from-neutral-50 to-neutral-100">
                   <div className="space-y-4">
+                    {/* Header do Relatório */}
                     <div className="flex items-center justify-between">
-                      <div className="h-4 bg-primary-200 rounded w-1/3"></div>
-                      <div className="h-4 bg-accent-200 rounded w-1/4"></div>
+                      <div className="text-sm font-bold text-primary-800">RELATÓRIO EXECUTIVO</div>
+                      <div className="text-sm text-accent-600 font-medium">Processo #1234567</div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="h-16 bg-white rounded-lg shadow border border-neutral-200 flex items-center justify-center">
-                        <div className="text-2xl">{ICONS.DOCUMENT}</div>
+
+                    {/* Status Cards */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-white rounded-lg shadow p-3">
+                        <div className="text-xs text-neutral-600">Status</div>
+                        <div className="text-sm font-bold text-accent-600">Em Análise</div>
                       </div>
-                      <div className="h-16 bg-white rounded-lg shadow border border-neutral-200 flex items-center justify-center">
-                        <div className="text-2xl">{ICONS.CHART}</div>
+                      <div className="bg-white rounded-lg shadow p-3">
+                        <div className="text-xs text-neutral-600">Prazo</div>
+                        <div className="text-sm font-bold text-primary-800">15 dias</div>
                       </div>
-                      <div className="h-16 bg-white rounded-lg shadow border border-neutral-200 flex items-center justify-center">
-                        <div className="text-2xl">{ICONS.CLOCK}</div>
+                      <div className="bg-white rounded-lg shadow p-3">
+                        <div className="text-xs text-neutral-600">Risco</div>
+                        <div className="text-sm font-bold text-orange-600">Médio</div>
                       </div>
                     </div>
-                    <div className="h-32 bg-white rounded-lg shadow border border-neutral-200 p-4">
-                      <div className="space-y-2">
-                        <div className="h-3 bg-neutral-200 rounded w-full"></div>
-                        <div className="h-3 bg-neutral-200 rounded w-3/4"></div>
-                        <div className="h-3 bg-neutral-200 rounded w-1/2"></div>
-                        <div className="h-3 bg-accent-200 rounded w-2/3"></div>
+
+                    {/* Conteúdo do Relatório */}
+                    <div className="bg-white rounded-lg shadow p-4 space-y-3">
+                      <div>
+                        <div className="text-sm font-semibold text-primary-800 mb-2">RESUMO EXECUTIVO</div>
+                        <div className="h-2 bg-neutral-200 rounded w-full mb-1"></div>
+                        <div className="h-2 bg-neutral-200 rounded w-4/5 mb-1"></div>
+                        <div className="h-2 bg-neutral-200 rounded w-3/4"></div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-accent-600 mb-2">PRÓXIMOS PASSOS</div>
+                        <div className="h-2 bg-accent-100 rounded w-5/6 mb-1"></div>
+                        <div className="h-2 bg-accent-100 rounded w-3/4"></div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-neutral-100">
+                        <div className="text-sm text-neutral-500">Atualizado agora</div>
+                        <div className="text-sm text-accent-600 font-medium">📧 Enviado ao cliente</div>
                       </div>
                     </div>
                   </div>
@@ -193,21 +198,10 @@ export function Hero() {
               >
                 <div className="text-center">
                   <div className="text-2xl font-bold text-accent-600">20h</div>
-                  <div className="text-xs text-neutral-600">economizadas/semana</div>
+                  <div className="text-sm text-neutral-600">economizadas/semana</div>
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 1.2, duration: 0.5 }}
-                className="absolute -bottom-6 -right-6 bg-white rounded-xl shadow-lg border border-neutral-200 p-4"
-              >
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary-800">98%</div>
-                  <div className="text-xs text-neutral-600">satisfação</div>
-                </div>
-              </motion.div>
             </motion.div>
           </div>
         </motion.div>
@@ -221,11 +215,11 @@ export function Hero() {
         className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
       >
         <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          animate={{ y: [0, 10] }}
+          transition={{ duration: 1, repeat: Infinity, repeatType: "reverse", type: "spring" }}
           className="text-neutral-400 cursor-pointer"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
         </motion.div>

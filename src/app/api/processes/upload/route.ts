@@ -8,7 +8,7 @@ import multer from 'multer';
 import { promisify } from 'util';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, ApiError } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError } from '@/lib/api-utils';
 import {
   ExcelProcessParser,
   createProductionParser,
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         processed: 0,
         successful: 0,
         failed: parseResult.errors.filter(e => e.tipo === 'ERROR').length,
-        errors: parseResult.errors,
+        errors: JSON.parse(JSON.stringify(parseResult.errors)),
         summary: {
           parseResult: parseResult.summary,
           timestamp: new Date().toISOString()
@@ -105,12 +105,14 @@ export async function POST(request: NextRequest) {
         data: { status: 'FAILED' }
       });
 
-      return apiResponse({
+      return NextResponse.json({
         success: false,
-        batchId: batchUpload.id,
-        parseResult,
+        data: {
+          batchId: batchUpload.id,
+          parseResult
+        },
         message: `Parse falhou: ${parseResult.errors.length} erros encontrados`
-      }, 400);
+      }, { status: 400 });
     }
 
     // Processar linhas válidas em background
@@ -129,13 +131,10 @@ export async function POST(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro no upload:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 
@@ -152,7 +151,7 @@ export async function GET(request: NextRequest) {
       const generator = new ExcelTemplateGenerator();
       const templateBuffer = await generator.generateTemplate();
 
-      return new NextResponse(templateBuffer, {
+      return new NextResponse(templateBuffer as unknown as BodyInit, {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': 'attachment; filename="template_processos.xlsx"'
@@ -202,12 +201,10 @@ export async function GET(request: NextRequest) {
     console.error(`${ICONS.ERROR} Erro ao processar GET:`, error);
 
     if (error instanceof ApiError) {
-      return apiResponse({ error: error.message }, error.statusCode);
+      return errorResponse(error.message, error.status);
     }
 
-    return apiResponse({
-      error: 'Erro interno do servidor'
-    }, 500);
+    return errorResponse('Erro interno do servidor', 500);
   }
 }
 

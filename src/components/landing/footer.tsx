@@ -10,8 +10,7 @@ const footerLinks = {
     { name: 'Recursos', href: '#features' },
     { name: 'Como Funciona', href: '#how-it-works' },
     { name: 'Preços', href: '#pricing' },
-    { name: 'Demo', href: '/demo' },
-    { name: 'Roadmap', href: '/roadmap' },
+    { name: 'Demo', href: '/onboarding-demo' },
   ],
   company: [
     { name: 'Sobre nós', href: '/about' },
@@ -22,10 +21,8 @@ const footerLinks = {
   ],
   support: [
     { name: 'Central de Ajuda', href: '/help' },
-    { name: 'Documentação', href: '/docs' },
-    { name: 'Suporte Técnico', href: '/support' },
-    { name: 'Status', href: '/status' },
     { name: 'Contato', href: '/contact' },
+    { name: 'Reportar um Problema', href: 'mailto:suporte@justoai.com.br?subject=Reporte%20de%20Instabilidade' },
   ],
   legal: [
     { name: 'Termos de Uso', href: '/terms' },
@@ -38,9 +35,7 @@ const footerLinks = {
 
 const socialLinks = [
   { name: 'LinkedIn', href: 'https://linkedin.com/company/justoai', icon: ICONS.LINKEDIN },
-  { name: 'Twitter', href: 'https://twitter.com/justoai', icon: ICONS.TWITTER },
-  { name: 'YouTube', href: 'https://youtube.com/@justoai', icon: ICONS.YOUTUBE },
-  { name: 'Instagram', href: 'https://instagram.com/justoai', icon: ICONS.INSTAGRAM },
+  { name: 'Instagram', href: 'https://www.instagram.com/justo.ai/', icon: ICONS.INSTAGRAM },
 ];
 
 export function Footer() {
@@ -52,12 +47,13 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center space-x-3 mb-6">
-              <div className="relative w-10 h-10">
+              <div className="w-10 h-10">
                 <Image
                   src="/logo+nome.png"
                   alt="JustoAI"
-                  fill
-                  className="object-contain brightness-0 invert"
+                  width={40}
+                  height={40}
+                  className="object-contain w-full h-full"
                 />
               </div>
               <span className="font-display font-bold text-2xl">
@@ -67,7 +63,7 @@ export function Footer() {
 
             <p className="text-primary-200 text-lg leading-relaxed mb-6">
               Transformamos advogados em consultores estratégicos, eliminando 20 horas semanais
-              de trabalho manual com inteligência artificial.
+              de trabalho manual com automação inteligente.
             </p>
 
             <div className="space-y-4">
@@ -78,14 +74,8 @@ export function Footer() {
                 </a>
               </div>
               <div className="flex items-center text-primary-200">
-                <span className="mr-3">{ICONS.PHONE}</span>
-                <a href="tel:+5511999999999" className="hover:text-white transition-colors">
-                  (11) 99999-9999
-                </a>
-              </div>
-              <div className="flex items-center text-primary-200">
                 <span className="mr-3">{ICONS.LOCATION}</span>
-                <span>São Paulo, SP - Brasil</span>
+                <span>Rio de Janeiro, RJ - Brasil</span>
               </div>
             </div>
 
@@ -181,10 +171,10 @@ export function Footer() {
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div>
               <h3 className="font-display font-bold text-2xl mb-2">
-                Fique por dentro das novidades
+                Insights para Advogados de Alta Performance
               </h3>
               <p className="text-primary-200">
-                Receba dicas exclusivas sobre automação jurídica e atualizações do produto.
+                Receba quinzenalmente nossas melhores estratégias de gestão, automação e prospecção de clientes. Sem spam.
               </p>
             </div>
             <div className="flex gap-4">
@@ -215,10 +205,6 @@ export function Footer() {
               <div className="flex items-center space-x-2 text-primary-200">
                 <span>{ICONS.SHIELD}</span>
                 <span className="text-sm">SSL Seguro</span>
-              </div>
-              <div className="flex items-center space-x-2 text-primary-200">
-                <span>{ICONS.SHIELD}</span>
-                <span className="text-sm">ISO 27001</span>
               </div>
             </div>
             <div className="text-primary-200 text-sm">
