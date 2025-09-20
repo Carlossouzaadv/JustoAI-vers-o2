@@ -444,19 +444,30 @@ export default function UploadPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Arquivos ({files.length})</h2>
             <Button
-              onClick={uploadFiles}
-              disabled={isUploading || !documentType}
-              className="flex items-center gap-2"
+              onClick={() => {
+                if (documentType === 'excel-batch' && !showExcelPreview) {
+                  // For Excel, show preview first
+                  if (files.length > 0 && !excelValidation) {
+                    validateExcelFile(files[0].file);
+                  }
+                } else {
+                  uploadFiles();
+                }
+              }}
+              disabled={isUploading || !documentType || (documentType === 'excel-batch' && showExcelPreview)}
+              className={`flex items-center gap-2 ${
+                documentType === 'excel-batch' ? 'bg-green-600 hover:bg-green-700' : ''
+              }`}
             >
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Processando...
+                  {documentType === 'excel-batch' ? 'Processando planilha...' : 'Processando...'}
                 </>
               ) : (
                 <>
-                  {ICONS.AI}
-                  Analisar com IA
+                  {documentType === 'excel-batch' ? '📊' : ICONS.AI}
+                  {documentType === 'excel-batch' ? 'Pré-visualizar Planilha' : 'Analisar com IA'}
                 </>
               )}
             </Button>

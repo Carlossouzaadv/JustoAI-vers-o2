@@ -653,9 +653,8 @@ model GlobalLog {
 
 enum Plan {
   FREE
-  BASIC
-  PRO
-  ENTERPRISE
+  STARTER
+  PROFESSIONAL
 }
 
 enum Status {

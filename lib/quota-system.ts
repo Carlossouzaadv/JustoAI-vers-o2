@@ -34,17 +34,13 @@ const PLAN_LIMITS: Record<Plan, QuotaLimits> = {
     reportsMonthlyLimit: 5,
     reportProcessesLimit: 50
   },
-  BASIC: {
+  STARTER: {
     reportsMonthlyLimit: 20,
     reportProcessesLimit: 100
   },
-  PRO: {
+  PROFESSIONAL: {
     reportsMonthlyLimit: 50,
     reportProcessesLimit: 300
-  },
-  ENTERPRISE: {
-    reportsMonthlyLimit: 200,
-    reportProcessesLimit: 1000
   }
 };
 
@@ -258,10 +254,9 @@ export class QuotaSystem {
    */
   private getUpgradeOptions(currentPlan: Plan): string[] {
     const upgrades: Record<Plan, string[]> = {
-      FREE: ['BASIC - 20 relatórios/mês', 'PRO - 50 relatórios/mês'],
-      BASIC: ['PRO - 50 relatórios/mês', 'ENTERPRISE - 200 relatórios/mês'],
-      PRO: ['ENTERPRISE - 200 relatórios/mês'],
-      ENTERPRISE: ['Contate suporte para limites customizados']
+      FREE: ['STARTER - 20 relatórios/mês', 'PROFESSIONAL - 50 relatórios/mês'],
+      STARTER: ['PROFESSIONAL - 50 relatórios/mês'],
+      PROFESSIONAL: ['Contate suporte para limites customizados']
     };
 
     return upgrades[currentPlan] || [];

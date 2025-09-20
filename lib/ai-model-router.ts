@@ -919,7 +919,7 @@ ${schemaJson}`;
   }
 
   /**
-   * Processa com modelo específico (chama API Python da v1)
+   * Processa com modelo específico usando Gemini API real
    */
   private async processWithModel(
     text: string,
@@ -927,35 +927,49 @@ ${schemaJson}`;
     analysisType: string
   ): Promise<any> {
     try {
-      const response = await fetch('http://localhost:8000/api/ai/analyze-with-routing', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text,
-          forced_model: modelTier,
-          analysis_type: analysisType,
-          cache_enabled: true
-        })
+      const { getGeminiClient } = await import('./gemini-client');
+      const { ICONS } = await import('./icons');
+
+      console.log(`${ICONS.PROCESS} Processando com Gemini ${modelTier} para análise ${analysisType}`);
+
+      const geminiClient = getGeminiClient();
+      const config = this.getProcessingConfig({
+        totalScore: 0,
+        factors: { documentType: 0, textLength: 0, legalComplexity: 0, structuralComplexity: 0, filesizeComplexity: 0 },
+        recommendedTier: modelTier,
+        confidence: 0.9
+      }, 'legal');
+
+      // Generate prompt based on analysis type
+      const prompt = this.buildAnalysisPrompt(text, analysisType, config.promptTemplate);
+
+      // Call real Gemini API
+      const geminiResponse = await geminiClient.generateJsonContent(prompt, {
+        model: modelTier,
+        maxTokens: config.maxTokens,
+        temperature: config.temperature
       });
 
-      if (!response.ok) {
-        throw new Error(`API Python retornou erro: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      // Adicionar informações de routing
-      result._routing_info = {
-        ...result._routing_info,
-        final_tier: modelTier,
-        analysis_type: analysisType,
-        cost_estimate: this.calculateCost(this.estimateTokens(text), 2000, modelTier),
-        cached: false,
-        timestamp: new Date().toISOString()
+      // Add routing information to the response
+      const result = {
+        ...geminiResponse,
+        _routing_info: {
+          final_tier: modelTier,
+          analysis_type: analysisType,
+          cost_estimate: this.calculateCost(
+            this.estimateTokens(text),
+            geminiResponse.metadados_analise?.tokens_utilizados || 2000,
+            modelTier
+          ),
+          cached: false,
+          timestamp: new Date().toISOString(),
+          model_used: this.modelMappings?.[modelTier] || modelTier,
+          prompt_tokens: this.estimateTokens(prompt),
+          completion_tokens: geminiResponse.metadados_analise?.tokens_utilizados || 2000
+        }
       };
 
+      console.log(`${ICONS.SUCCESS} Análise ${analysisType} concluída com ${modelTier}`);
       return result;
 
     } catch (error) {
@@ -974,4 +988,61 @@ ${schemaJson}`;
       throw error;
     }
   }
+
+  /**
+   * Build analysis prompt based on type and template
+   */
+  private buildAnalysisPrompt(text: string, analysisType: string, promptTemplate: string): string {
+    const context = {
+      analysis_type: analysisType,
+      document_text: text,
+      timestamp: new Date().toISOString()
+    };
+
+    switch (analysisType) {
+      case 'essential':
+        return `${promptTemplate}
+
+TEXTO DO DOCUMENTO:
+${text}
+
+ANÁLISE SOLICITADA: Extrair informações essenciais para identificação rápida do processo.
+RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
+
+      case 'strategic':
+        return `${promptTemplate}
+
+TEXTO DO DOCUMENTO:
+${text}
+
+ANÁLISE SOLICITADA: Análise estratégica completa com avaliação de riscos e recomendações.
+RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
+
+      case 'report':
+        return `${promptTemplate}
+
+DADOS DO RELATÓRIO:
+${text}
+
+ANÁLISE SOLICITADA: Gerar relatório formatado baseado nos dados fornecidos.
+RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
+
+      default:
+        return `${promptTemplate}
+
+TEXTO DO DOCUMENTO:
+${text}
+
+RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
+    }
+  }
+
+  /**
+   * Model mappings for Gemini API
+   */
+  private readonly modelMappings: Record<ModelTier, string> = {
+    [ModelTier.LITE]: 'gemini-1.5-flash-8b',
+    [ModelTier.BALANCED]: 'gemini-1.5-flash',
+    [ModelTier.PRO]: 'gemini-1.5-pro'
+  };
 }

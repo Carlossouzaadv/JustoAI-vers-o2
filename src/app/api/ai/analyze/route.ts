@@ -5,8 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { AIModelRouter } from '@/lib/ai-model-router';
-import { getAiCache } from '@/lib/ai-cache-manager';
+import { getRealAnalysisService } from '@/lib/real-analysis-service';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
 
@@ -30,7 +29,7 @@ const analyzeSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    console.log(`${ICONS.PROCESS} Nova requisição de análise IA`);
+    console.log(`${ICONS.PROCESS} Nova requisição de análise IA (Gemini Real)`);
 
     // 1. Autenticação
     const { user, workspace } = await validateAuthAndGetUser(req);
@@ -39,68 +38,67 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validatedData = analyzeSchema.parse(body);
 
-    // 3. Setup do router
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
+    // 3. Setup do serviço de análise real
+    const analysisService = getRealAnalysisService();
+
+    // 4. Preparar dados para análise
+    const analysisRequest = {
+      text: validatedData.text,
+      analysisType: validatedData.analysis_type,
+      fileSizeMB: validatedData.file_size_mb || 0,
+      workspaceId: workspace.id,
+      forceRefresh: validatedData.force_refresh || false,
+      metadata: {
+        documentType: validatedData.report_type || undefined,
+        userId: user.id,
+        sourceFile: body.source_file || undefined
+      }
+    };
+
+    console.log(`${ICONS.INFO} Processando análise ${validatedData.analysis_type} com Gemini API`);
+
+    // 5. Executar análise com Gemini real
+    const result = await analysisService.analyze(analysisRequest);
+
+    if (!result.success) {
+      console.error(`${ICONS.ERROR} Análise falhou: ${result.error}`);
       return NextResponse.json(
-        { success: false, error: 'Google API Key não configurada' },
+        {
+          success: false,
+          error: result.error || 'Falha na análise',
+          metadata: result.metadata
+        },
         { status: 500 }
       );
     }
 
-    const router = new AIModelRouter();
-    let result;
-
-    // 4. Processar de acordo com o tipo de análise
-    switch (validatedData.analysis_type) {
-      case 'essential':
-        console.log(`${ICONS.INFO} Processando análise ESSENCIAL (Flash 8B + Cache)`);
-        result = await router.analyzeEssential(
-          validatedData.text,
-          workspace.id
-        );
-        break;
-
-      case 'strategic':
-        console.log(`${ICONS.INFO} Processando análise ESTRATÉGICA (Routing por complexidade + Cache)`);
-        result = await router.analyzeStrategic(
-          validatedData.text,
-          validatedData.file_size_mb,
-          workspace.id
-        );
-        break;
-
-      case 'report':
-        console.log(`${ICONS.INFO} Processando RELATÓRIO (Flash + Cache)`);
-        const reportData = validatedData.report_data || { text: validatedData.text };
-        result = await router.generateReport(
-          reportData,
-          validatedData.report_type || 'general',
-          workspace.id
-        );
-        break;
-
-      default:
-        return NextResponse.json(
-          { success: false, error: 'Tipo de análise não suportado' },
-          { status: 400 }
-        );
-    }
-
-    // 5. Resposta com informações de cache
-    console.log(`${ICONS.SUCCESS} Análise concluída: ${validatedData.analysis_type}`);
+    // 6. Resposta de sucesso
+    console.log(`${ICONS.SUCCESS} Análise concluída: ${validatedData.analysis_type} - Modelo: ${result.metadata.modelUsed}`);
 
     return NextResponse.json({
       success: true,
-      data: result,
+      data: result.data,
       analysis_type: validatedData.analysis_type,
+
+      // Compatibilidade com formato anterior
       cache_info: {
-        cached: result._routing_info?.cached || false,
-        tokens_saved: result._routing_info?.tokens_saved || 0,
-        model_used: result._routing_info?.final_tier,
-        complexity_score: result._routing_info?.complexity_score
+        cached: result.metadata.cached,
+        tokens_saved: result.metadata.cached ? result.metadata.tokenUsage.total : 0,
+        model_used: result.metadata.modelUsed,
+        complexity_score: result.metadata.complexity.score
       },
-      timestamp: new Date().toISOString()
+
+      // Informações detalhadas do Gemini
+      gemini_info: {
+        model_used: result.metadata.modelUsed,
+        processing_time_ms: result.metadata.processingTime,
+        token_usage: result.metadata.tokenUsage,
+        cost_estimate: result.metadata.cost,
+        complexity_analysis: result.metadata.complexity,
+        cached: result.metadata.cached
+      },
+
+      timestamp: result.metadata.timestamp
     });
 
   } catch (error) {
@@ -110,6 +108,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Dados inválidos', details: error.issues },
         { status: 400 }
+      );
+    }
+
+    // Erro específico do Gemini
+    if (error.code && error.error) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Gemini API Error: ${error.error}`,
+          code: error.code,
+          retryable: error.retryable || false
+        },
+        { status: error.code === 429 ? 429 : 500 }
       );
     }
 
@@ -126,26 +137,68 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    console.log(`${ICONS.INFO} Requisição de estatísticas de cache`);
+    console.log(`${ICONS.INFO} Requisição de estatísticas da análise Gemini`);
 
     // 1. Autenticação
     await validateAuthAndGetUser(req);
 
-    // 2. Obter estatísticas
-    const cache = getAiCache();
-    const stats = await cache.getStats();
-    const topSaving = await cache.getTopSavingEntries(10);
+    // 2. Obter estatísticas do serviço real
+    const analysisService = getRealAnalysisService();
+    const serviceStats = analysisService.getStats();
+    const rateLimitStatus = analysisService.getRateLimitStatus();
+
+    // 3. Teste de conectividade
+    const connectionTest = await analysisService.testConnection();
+
+    // 4. Obter estatísticas de cache (se disponível)
+    let cacheStats = null;
+    try {
+      const { getAiCache } = await import('@/lib/ai-cache-manager');
+      const cache = getAiCache();
+      cacheStats = await cache.getStats();
+    } catch (error) {
+      console.warn(`${ICONS.WARNING} Cache stats not available:`, error);
+    }
 
     return NextResponse.json({
       success: true,
-      cache_stats: stats,
-      top_saving_entries: topSaving,
+
+      // Estatísticas do serviço de análise
+      analysis_service: {
+        total_analyses: serviceStats.totalAnalyses,
+        analyses_by_type: serviceStats.analysesByType,
+        analyses_by_model: serviceStats.analysesByModel,
+        total_tokens_used: serviceStats.totalTokensUsed,
+        total_cost_usd: serviceStats.totalCostUSD,
+        average_processing_time_ms: serviceStats.averageProcessingTime,
+        cache_hit_rate: serviceStats.cacheHitRate,
+        error_rate: serviceStats.errorRate
+      },
+
+      // Status de rate limiting do Gemini
+      gemini_rate_limits: rateLimitStatus,
+
+      // Teste de conectividade
+      connectivity: {
+        gemini_api_status: connectionTest.success ? 'connected' : 'failed',
+        latency_ms: connectionTest.latency,
+        model_tested: connectionTest.model
+      },
+
+      // Estatísticas de cache (compatibilidade)
+      cache_stats: cacheStats,
+
+      // Recomendações baseadas nas estatísticas
       recommendations: {
-        cache_hit_rate: stats.memory.hit_rate,
-        tokens_saved_today: stats.postgresql.tokens_saved_today,
-        estimated_cost_saved_usd: stats.postgresql.cost_saved_usd,
-        cache_efficiency: stats.memory.hit_rate > 50 ? 'excellent' : stats.memory.hit_rate > 20 ? 'good' : 'needs_improvement'
-      }
+        cache_hit_rate: serviceStats.cacheHitRate,
+        performance_level: serviceStats.averageProcessingTime < 5000 ? 'excellent' :
+                          serviceStats.averageProcessingTime < 10000 ? 'good' : 'needs_improvement',
+        error_rate_level: serviceStats.errorRate < 0.05 ? 'excellent' :
+                         serviceStats.errorRate < 0.1 ? 'good' : 'needs_improvement',
+        cost_efficiency: serviceStats.totalCostUSD / Math.max(serviceStats.totalAnalyses, 1)
+      },
+
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {

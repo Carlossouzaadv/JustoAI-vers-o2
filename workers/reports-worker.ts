@@ -11,6 +11,7 @@ import PDFGenerator from '../lib/pdf-generator';
 import { ReportDataCollector } from '../lib/report-data-collector';
 import { redisUtils } from '../lib/redis';
 import { addNotificationJob } from '../lib/queues';
+import { addIndividualReportJob } from './individual-reports-worker';
 import { ICONS } from '../lib/icons';
 
 // === TIPOS E INTERFACES ===

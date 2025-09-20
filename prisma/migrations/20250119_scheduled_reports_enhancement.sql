@@ -127,16 +127,14 @@ SELECT
     w."plan",
     CASE w."plan"
         WHEN 'FREE' THEN 5
-        WHEN 'BASIC' THEN 20
-        WHEN 'PRO' THEN 50
-        WHEN 'ENTERPRISE' THEN 200
+        WHEN 'STARTER' THEN 20
+        WHEN 'PROFESSIONAL' THEN 50
         ELSE 5
     END as reports_monthly_limit,
     CASE w."plan"
         WHEN 'FREE' THEN 50
-        WHEN 'BASIC' THEN 100
-        WHEN 'PRO' THEN 300
-        WHEN 'ENTERPRISE' THEN 1000
+        WHEN 'STARTER' THEN 100
+        WHEN 'PROFESSIONAL' THEN 300
         ELSE 50
     END as report_processes_limit
 FROM "workspaces" w

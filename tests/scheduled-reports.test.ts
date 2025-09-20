@@ -69,7 +69,7 @@ describe('QuotaSystem - Unit Tests', () => {
       mockPrisma.workspaceQuota.findUnique.mockResolvedValue({
         id: 'quota-1',
         workspaceId: 'workspace-1',
-        plan: 'PRO',
+        plan: 'PROFESSIONAL',
         reportsMonthlyLimit: 50,
         reportProcessesLimit: 300,
         reportsUsedThisMonth: 10,
@@ -91,7 +91,7 @@ describe('QuotaSystem - Unit Tests', () => {
       mockPrisma.workspaceQuota.findUnique.mockResolvedValue({
         id: 'quota-1',
         workspaceId: 'workspace-1',
-        plan: 'BASIC',
+        plan: 'STARTER',
         reportsMonthlyLimit: 20,
         reportProcessesLimit: 100,
         reportsUsedThisMonth: 20,
@@ -112,7 +112,7 @@ describe('QuotaSystem - Unit Tests', () => {
       mockPrisma.workspaceQuota.findUnique.mockResolvedValue({
         id: 'quota-1',
         workspaceId: 'workspace-1',
-        plan: 'PRO',
+        plan: 'PROFESSIONAL',
         reportsMonthlyLimit: 50,
         reportProcessesLimit: 300,
         reportsUsedThisMonth: 42,
@@ -132,7 +132,7 @@ describe('QuotaSystem - Unit Tests', () => {
       mockPrisma.workspaceQuota.findUnique.mockResolvedValue({
         id: 'quota-1',
         workspaceId: 'workspace-1',
-        plan: 'BASIC',
+        plan: 'STARTER',
         reportsMonthlyLimit: 20,
         reportProcessesLimit: 100,
         reportsUsedThisMonth: 5,
@@ -536,7 +536,7 @@ export function createMockQuota(overrides: any = {}) {
   return {
     id: 'quota-123',
     workspaceId: 'workspace-456',
-    plan: 'PRO',
+    plan: 'PROFESSIONAL',
     reportsMonthlyLimit: 50,
     reportProcessesLimit: 300,
     reportsUsedThisMonth: 15,

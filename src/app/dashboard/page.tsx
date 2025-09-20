@@ -12,6 +12,8 @@ import { useDashboard } from './layout';
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { UsageAlert } from '@/components/ui/usage-alert';
+import CreditsCard from '@/components/dashboard/credits-card';
+import UsageBanner from '@/components/dashboard/usage-banner';
 import {
   SubscriptionPlan,
   UsageStats,
@@ -89,6 +91,7 @@ export default function DashboardPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(3);
   const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
   const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
+  const [workspaceId] = useState('ws-current'); // Mock workspace ID - in real app, get from context
 
   // Mock user plan and usage - in real app, this would come from user context
   const [userPlan] = useState<SubscriptionPlan>('professional');
@@ -418,17 +421,31 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Usage Alert */}
+      {/* Usage Banner - Telemetria e Alertas */}
+      <UsageBanner
+        workspaceId={workspaceId}
+        onUpgrade={() => window.open('/pricing', '_blank')}
+        onBuyCredits={() => window.open('/pricing?tab=credits', '_blank')}
+      />
+
+      {/* Usage Alert - Limites de Plano */}
       <UsageAlert
         plan={userPlan}
         usage={userUsage}
         onUpgrade={() => window.open('/pricing', '_blank')}
       />
 
-      {/* Seção 1: Ações Imediatas e Alertas Críticos */}
+      {/* Seção 1: Créditos e Ações Imediatas */}
       <section>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Card de Alerta - À Esquerda */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Card de Créditos */}
+          <CreditsCard
+            workspaceId={workspaceId}
+            onBuyCredits={() => window.open('/pricing?tab=credits', '_blank')}
+            className="lg:col-span-1"
+          />
+
+          {/* Card de Alerta - Centro */}
           <Card
             className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
             onClick={() => {
@@ -449,9 +466,10 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Botões de Ação Rápida - À Direita */}
+          {/* Botões de Ação Rápida - Direita */}
           <div className="grid grid-cols-2 gap-4">
-            <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+            <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                  onClick={() => window.location.href = '/dashboard/upload'}>
               <CardContent className="p-6">
                 <div className="text-center space-y-2">
                   <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.UPLOAD}</div>
@@ -461,7 +479,8 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group">
+            <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
+                  onClick={() => window.location.href = '/dashboard/clients'}>
               <CardContent className="p-6">
                 <div className="text-center space-y-2">
                   <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.CLIENT}</div>

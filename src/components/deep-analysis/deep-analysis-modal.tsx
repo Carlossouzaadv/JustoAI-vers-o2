@@ -59,6 +59,12 @@ export function DeepAnalysisModal({
     needed: number;
     sufficient: boolean;
   } | null>(null);
+  const [cacheStatus, setCacheStatus] = useState<{
+    hasCachedAnalysis: boolean;
+    lastAnalysisDate: string | null;
+    cacheAge: string | null;
+    documentsChanged: boolean;
+  } | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles: UploadedFile[] = acceptedFiles.map(file => ({
@@ -138,6 +144,19 @@ export function DeepAnalysisModal({
     }
   };
 
+  const checkCacheStatus = async () => {
+    try {
+      const response = await fetch(`/api/process/${processId}/analysis/cache-status?workspaceId=${workspaceId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setCacheStatus(data.cacheStatus);
+      }
+    } catch (error) {
+      console.error('Error checking cache status:', error);
+    }
+  };
+
   const startAnalysis = async () => {
     setIsProcessing(true);
     setError(null);
@@ -171,16 +190,24 @@ export function DeepAnalysisModal({
     });
 
     setProgress(50);
-    setProcessingStep('Processando análise...');
-
     const result = await response.json();
+
+    if (result.fromCache) {
+      setProcessingStep('Carregando análise do cache...');
+      setProgress(80);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Short delay for UX
+    } else {
+      setProcessingStep('Processando nova análise...');
+      setProgress(70);
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate processing
+    }
 
     if (!result.success) {
       throw new Error(result.error || 'Erro na análise FAST');
     }
 
     setProgress(100);
-    setProcessingStep('Análise concluída!');
+    setProcessingStep(result.fromCache ? 'Análise carregada do cache!' : 'Análise concluída!');
 
     setTimeout(() => {
       onAnalysisComplete?.(result.data);
@@ -246,6 +273,7 @@ export function DeepAnalysisModal({
     setProcessingStep('');
     setError(null);
     setCredits(null);
+    setCacheStatus(null);
   };
 
   const handleClose = () => {
@@ -255,12 +283,15 @@ export function DeepAnalysisModal({
     }
   };
 
-  // Update credits when analysis type or files change
+  // Update credits and cache status when analysis type or files change
   React.useEffect(() => {
     if (isOpen) {
       estimateCredits();
+      if (analysisType === 'FAST') {
+        checkCacheStatus();
+      }
     }
-  }, [analysisType, uploadedFiles.length, selectedExistingFiles.length, useExistingFiles, isOpen]);
+  }, [analysisType, uploadedFiles.length, selectedExistingFiles.length, useExistingFiles, isOpen, processId]);
 
   const canStartAnalysis = () => {
     if (isProcessing) return false;
@@ -350,6 +381,11 @@ export function DeepAnalysisModal({
                       <div>{ICONS.SUCCESS} Sem custo de créditos</div>
                       <div>{ICONS.SUCCESS} Resultado em segundos</div>
                       <div>{ICONS.SUCCESS} Modelo: Gemini Flash</div>
+                      {cacheStatus?.hasCachedAnalysis && (
+                        <div className="text-blue-600 font-medium">
+                          {ICONS.SUCCESS} Cache disponível - resultado instantâneo
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -416,32 +452,86 @@ export function DeepAnalysisModal({
               </Card>
             )}
 
-            {/* File Selection */}
+            {/* Cache Status and File Selection for FAST */}
             {analysisType === 'FAST' && (
-              <Card className="p-4">
-                <h3 className="font-medium mb-3">Documentos existentes ({existingDocuments.length})</h3>
-                {existingDocuments.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <div>{ICONS.DOCUMENT}</div>
-                    <div className="mt-2">Nenhum documento anexado a este processo</div>
-                    <div className="text-sm">Faça upload de documentos primeiro ou use análise FULL</div>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {existingDocuments.map(doc => (
-                      <div key={doc.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                        <span>{ICONS.DOCUMENT}</span>
-                        <div className="flex-1">
-                          <div className="font-medium text-sm">{doc.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {(doc.size / 1024).toFixed(1)} KB • {new Date(doc.uploadedAt).toLocaleDateString()}
+              <div className="space-y-4">
+                {/* Cache Status */}
+                {cacheStatus && (
+                  <Card className={`p-4 ${
+                    cacheStatus.hasCachedAnalysis ? 'border-green-200 bg-green-50' : 'border-gray-200'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-1 ${
+                        cacheStatus.hasCachedAnalysis ? 'text-green-600' : 'text-gray-500'
+                      }`}>
+                        {cacheStatus.hasCachedAnalysis ? ICONS.SUCCESS : ICONS.INFO}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm mb-1">Status do Cache</h4>
+                        {cacheStatus.hasCachedAnalysis ? (
+                          <div className="space-y-1">
+                            <p className="text-sm text-green-700">
+                              ✅ Análise em cache disponível - resultado instantâneo
+                            </p>
+                            {cacheStatus.lastAnalysisDate && (
+                              <p className="text-xs text-green-600">
+                                Última análise: {new Date(cacheStatus.lastAnalysisDate).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                                {cacheStatus.cacheAge && ` (${cacheStatus.cacheAge})`}
+                              </p>
+                            )}
+                            {cacheStatus.documentsChanged && (
+                              <p className="text-xs text-orange-600">
+                                ⚠️ Documentos foram alterados desde a última análise
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="text-sm text-gray-600">
+                              Nenhuma análise em cache - será processada nova análise
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Primeira análise deste processo levará alguns segundos
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {/* Documents List */}
+                <Card className="p-4">
+                  <h3 className="font-medium mb-3">Documentos existentes ({existingDocuments.length})</h3>
+                  {existingDocuments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <div>{ICONS.DOCUMENT}</div>
+                      <div className="mt-2">Nenhum documento anexado a este processo</div>
+                      <div className="text-sm">Faça upload de documentos primeiro ou use análise FULL</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {existingDocuments.map(doc => (
+                        <div key={doc.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded">
+                          <span>{ICONS.DOCUMENT}</span>
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">{doc.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {(doc.size / 1024).toFixed(1)} KB • {new Date(doc.uploadedAt).toLocaleDateString('pt-BR')}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </Card>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              </div>
             )}
 
             {analysisType === 'FULL' && (
