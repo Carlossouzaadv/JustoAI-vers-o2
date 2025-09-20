@@ -40,6 +40,9 @@ model Workspace {
   juditTelemetry       JuditTelemetry[]
   analysisVersions     CaseAnalysisVersion[]
   analysisJobs         AnalysisJob[]
+  quota                WorkspaceQuota?
+  reportCache          ReportCache[]
+  reportTemplates      ReportTemplate[]
 
   @@map("workspaces")
 }
@@ -241,25 +244,34 @@ model ProcessTimelineEntry {
 }
 
 model ReportSchedule {
-  id          String            @id @default(cuid())
-  workspaceId String
-  name        String
-  description String?
-  type        ReportType        @default(CASE_SUMMARY)
-  frequency   Frequency         @default(WEEKLY)
-  dayOfWeek   Int?
-  dayOfMonth  Int?
-  time        String?
-  timezone    String?           @default("America/Sao_Paulo")
-  filters     Json?
-  recipients  String[]
-  enabled     Boolean           @default(true)
-  lastRun     DateTime?
-  nextRun     DateTime?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-  executions  ReportExecution[]
-  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(cuid())
+  workspaceId          String
+  name                 String
+  description          String?
+  type                 ReportType        @default(CASE_SUMMARY)
+  frequency            Frequency         @default(WEEKLY)
+  dayOfWeek            Int?
+  dayOfMonth           Int?
+  time                 String?
+  timezone             String?           @default("America/Sao_Paulo")
+  filters              Json?
+  recipients           String[]
+  enabled              Boolean           @default(true)
+  lastRun              DateTime?
+  nextRun              DateTime?
+  audienceType         AudienceType      @default(CLIENTE)
+  outputFormats        OutputFormat[]    @default([PDF])
+  processesLimit       Int               @default(100)
+  processIds           String[]          @default([])
+  distributionHash     Int?
+  executionWindowStart String?           @default("23:00")
+  executionWindowEnd   String?           @default("04:00")
+  monthlyQuotaUsed     Int               @default(0)
+  lastQuotaReset       DateTime          @default(now())
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  executions           ReportExecution[]
+  workspace            Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("report_schedules")
 }
@@ -577,31 +589,42 @@ model ReportCustomization {
 }
 
 model ReportExecution {
-  id            String          @id @default(cuid())
-  workspaceId   String
-  scheduleId    String?
-  reportType    ReportType      @default(CASE_SUMMARY)
-  parameters    Json?
-  filters       Json?
-  recipients    String[]
-  status        ExecutionStatus @default(RUNNING)
-  result        Json?
-  filePath      String?
-  fileSize      Int?
-  startedAt     DateTime        @default(now())
-  completedAt   DateTime?
-  duration      Int?
-  tokensUsed    Int?            @default(0)
-  estimatedCost Decimal?        @db.Decimal(10, 4)
-  error         String?
-  retryCount    Int             @default(0)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  schedule      ReportSchedule? @relation(fields: [scheduleId], references: [id])
-  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                    String          @id @default(cuid())
+  workspaceId           String
+  scheduleId            String?
+  reportType            ReportType      @default(CASE_SUMMARY)
+  parameters            Json?
+  filters               Json?
+  recipients            String[]
+  status                ExecutionStatus @default(AGENDADO)
+  result                Json?
+  filePath              String?
+  fileSize              Int?
+  startedAt             DateTime        @default(now())
+  completedAt           DateTime?
+  duration              Int?
+  tokensUsed            Int?            @default(0)
+  estimatedCost         Decimal?        @db.Decimal(10, 4)
+  error                 String?
+  retryCount            Int             @default(0)
+  audienceType          AudienceType    @default(CLIENTE)
+  outputFormats         OutputFormat[]  @default([PDF])
+  processCount          Int             @default(0)
+  cacheKey              String?
+  cacheHit              Boolean         @default(false)
+  quotaConsumed         Int             @default(1)
+  scheduledFor          DateTime?
+  fileUrls              Json?
+  lastMovementTimestamp DateTime?
+  deltaDataOnly         Boolean         @default(false)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  schedule              ReportSchedule? @relation(fields: [scheduleId], references: [id])
+  workspace             Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, status])
   @@index([scheduleId])
+  @@index([scheduledFor, status])
   @@map("report_executions")
 }
 
@@ -748,6 +771,8 @@ enum ReportType {
   PRODUCTIVITY
   DEADLINE_ALERTS
   CUSTOM
+  COMPLETO
+  NOVIDADES
 }
 
 enum Frequency {
@@ -1283,4 +1308,81 @@ enum JobStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+// Enums para sistema de relatórios agendados
+enum ExecutionStatus {
+  AGENDADO
+  EM_PROCESSAMENTO
+  CONCLUIDO
+  FALHOU
+  CANCELADO
+}
+
+enum AudienceType {
+  CLIENTE
+  DIRETORIA
+  USO_INTERNO
+}
+
+enum OutputFormat {
+  PDF
+  DOCX
+}
+
+// Tabelas para sistema de relatórios avançado
+model WorkspaceQuota {
+  id                     String   @id @default(cuid())
+  workspaceId            String   @unique
+  plan                   Plan     @default(FREE)
+  reportsMonthlyLimit    Int      @default(20)
+  reportProcessesLimit   Int      @default(100)
+  reportsUsedThisMonth   Int      @default(0)
+  quotaResetDate         DateTime @default(now())
+  overrideLimits         Json?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  workspace              Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_quotas")
+}
+
+model ReportCache {
+  id                     String       @id @default(cuid())
+  cacheKey               String       @unique
+  workspaceId            String
+  reportType             ReportType
+  processIds             String[]
+  audienceType           AudienceType
+  lastMovementTimestamp  DateTime
+  cachedData             Json
+  fileUrls               Json?
+  createdAt              DateTime     @default(now())
+  expiresAt              DateTime
+  workspace              Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([cacheKey])
+  @@index([expiresAt])
+  @@index([lastMovementTimestamp])
+  @@map("report_cache")
+}
+
+model ReportTemplate {
+  id               String    @id @default(cuid())
+  workspaceId      String
+  name             String
+  description      String?
+  templateType     String    @default("DEFAULT") // 'DEFAULT', 'CUSTOM_HEADER_FOOTER', 'FULL_TEMPLATE'
+  headerContent    String?
+  footerContent    String?
+  templateFileUrl  String?
+  styles           Json?
+  isDefault        Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, name])
+  @@map("report_templates")
 }
