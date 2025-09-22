@@ -5,7 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getJuditApiClient } from '@/lib/judit-api-client';
-import { processMonitorQueue, addMonitoringJob, getMonitoringStats } from '@/workers/process-monitor-worker';
+import { processMonitorQueue, addMonitoringJob, getMonitoringStats } from '../../../../workers/process-monitor-worker';
 import { telemetry } from '@/lib/monitoring-telemetry';
 import { ICONS } from '@/lib/icons';
 
