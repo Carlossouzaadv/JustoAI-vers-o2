@@ -435,12 +435,28 @@ export class OpsAlerts {
 
   private async sendEmailAlert(alert: AlertEvent): Promise<void> {
     try {
-      // TODO: Implementar envio de email via SendGrid/SES
-      console.log(`${ICONS.EMAIL} Email alert (simulated):`, {
+      const { getEmailService } = await import('../email-service');
+      const emailService = getEmailService();
+
+      const result = await emailService.sendNotification({
         to: ALERT_CONFIG.EMAIL_TO,
         subject: `[${alert.severity.toUpperCase()}] ${alert.title}`,
-        message: alert.message
+        template: 'system-notification',
+        data: {
+          subject: `[${alert.severity.toUpperCase()}] ${alert.title}`,
+          message: alert.message,
+          severity: alert.severity,
+          timestamp: alert.timestamp,
+          metadata: alert.metadata
+        },
+        priority: alert.severity === 'critical' ? 'high' : 'normal'
       });
+
+      if (result.success) {
+        console.log(`${ICONS.SUCCESS} Email alert enviado: ${result.messageId}`);
+      } else {
+        console.error(`${ICONS.ERROR} Falha ao enviar email alert: ${result.error}`);
+      }
 
     } catch (error) {
       console.error(`${ICONS.ERROR} Failed to send email alert:`, error);

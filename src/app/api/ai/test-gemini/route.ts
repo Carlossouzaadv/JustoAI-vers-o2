@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       text: testText,
       analysisType: 'essential' as const,
       fileSizeMB: 0,
-      workspaceId: 'test-workspace',
+      workspaceId: undefined, // Don't use workspace for tests
       forceRefresh: true,
       metadata: {
         documentType: 'test',

@@ -125,20 +125,23 @@ export class PDFProcessor {
   }
 
   /**
-   * Método primário - implementação básica para agora
+   * Método primário - extração real com pdf-parse
    */
   private async extractWithPrimary(buffer: Buffer): Promise<string> {
     try {
-      // TODO: Implementar com pdf-parse ou similar
-      // Por enquanto, simulação para desenvolvimento
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const pdfParse = (await import('pdf-parse')).default;
 
-      // Simula extração bem-sucedida para PDFs válidos
-      if (buffer.length > 1000) {
-        return 'Texto extraído simulado do PDF. Este seria o conteúdo real extraído usando pdf-parse ou biblioteca similar.';
+      const startTime = Date.now();
+      const pdfData = await pdfParse(buffer);
+      const extractionTime = Date.now() - startTime;
+
+      console.log(`📄 PDF extraído com pdf-parse: ${pdfData.text.length} chars em ${extractionTime}ms`);
+
+      if (!pdfData.text || pdfData.text.trim().length === 0) {
+        throw new Error('PDF não contém texto extraível');
       }
 
-      return '';
+      return pdfData.text;
     } catch (error) {
       console.error('❌ Erro no método primário:', error);
       return '';
@@ -244,12 +247,17 @@ export class PDFProcessor {
    */
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
-      // Implementação básica de metadados
+      const pdfParse = (await import('pdf-parse')).default;
+      const pdfData = await pdfParse(buffer);
+
+      // Detectar imagens verificando se há discrepância entre páginas e texto
+      const hasImages = this.detectImagesInPDF(buffer, pdfData);
+
       return {
-        pages: Math.ceil(buffer.length / 50000), // Estimativa grosseira
+        pages: pdfData.numpages,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
-        hasText: buffer.length > 1000, // Estimativa básica
-        hasImages: false // TODO: Implementar detecção de imagens se necessário
+        hasText: pdfData.text && pdfData.text.trim().length > 0,
+        hasImages
       };
     } catch {
       return {
@@ -340,26 +348,72 @@ export class PDFProcessor {
   }
 
   /**
+   * Detecta presença de imagens no PDF
+   */
+  private detectImagesInPDF(buffer: Buffer, pdfData: any): boolean {
+    try {
+      // Estratégias para detectar imagens:
+
+      // 1. Verificar se há muitas páginas com pouco texto
+      const avgTextPerPage = pdfData.text.length / pdfData.numpages;
+      if (avgTextPerPage < 100) { // Menos de 100 chars por página sugere imagens
+        return true;
+      }
+
+      // 2. Verificar padrões binários que indicam imagens no PDF
+      const bufferStr = buffer.toString('binary');
+      const imagePatterns = ['/Image', '/DCTDecode', '/JPXDecode', '/FlateDecode'];
+      const hasImageMarkers = imagePatterns.some(pattern => bufferStr.includes(pattern));
+
+      // 3. Verificar tamanho do arquivo vs quantidade de texto
+      const textDensity = pdfData.text.length / buffer.length;
+      if (textDensity < 0.01) { // Muito pouco texto para o tamanho do arquivo
+        return true;
+      }
+
+      return hasImageMarkers;
+    } catch (error) {
+      console.error('Erro ao detectar imagens:', error);
+      return false;
+    }
+  }
+
+  /**
    * Salva resultado da análise no banco com versionamento
    */
   async saveAnalysisVersion(
     caseId: string,
     analysisResult: PDFAnalysisResult,
     modelUsed: string,
-    aiAnalysis: any
+    aiAnalysis: any,
+    processingTime: number = 0
   ) {
     try {
+      // Implementar incremento correto da versão
+      const lastVersion = await this.prisma.caseAnalysisVersion.findFirst({
+        where: { caseId },
+        orderBy: { version: 'desc' }
+      });
+
+      const nextVersion = (lastVersion?.version || 0) + 1;
+
+      // Calcular confidence baseado na qualidade da extração
+      const confidence = this.calculateExtractionConfidence(analysisResult);
+
+      // Calcular custo baseado no modelo usado
+      const costEstimate = this.calculateModelCost(modelUsed, analysisResult.extraction.text.length);
+
       const version = await this.prisma.caseAnalysisVersion.create({
         data: {
           caseId,
-          version: 1, // TODO: implementar incremento correto
+          version: nextVersion,
           analysisType: 'PDF_UPLOAD',
           extractedData: analysisResult as any,
           aiAnalysis,
           modelUsed,
-          confidence: 0.85, // TODO: calcular baseado na qualidade da extração
-          processingTime: 0, // TODO: medir tempo real
-          costEstimate: 0.001, // TODO: calcular baseado no modelo usado
+          confidence,
+          processingTime,
+          costEstimate,
           metadata: {
             file_size_mb: analysisResult.file_size_mb,
             extracted_fields_count: analysisResult.extracted_fields.length,
@@ -374,6 +428,59 @@ export class PDFProcessor {
       console.error('Erro ao salvar versão da análise:', error);
       throw error;
     }
+  }
+
+  /**
+   * Calcula confidence baseado na qualidade da extração
+   */
+  private calculateExtractionConfidence(analysisResult: PDFAnalysisResult): number {
+    let confidence = 0.5; // Base de 50%
+
+    // Incrementar baseado na qualidade da extração
+    if (analysisResult.extraction.success) {
+      confidence += 0.2;
+    }
+
+    // Incrementar baseado na qualidade do texto
+    switch (analysisResult.extraction.quality) {
+      case 'high':
+        confidence += 0.3;
+        break;
+      case 'medium':
+        confidence += 0.2;
+        break;
+      case 'low':
+        confidence += 0.1;
+        break;
+    }
+
+    // Incrementar baseado na quantidade de campos extraídos
+    const fieldsExtracted = analysisResult.extracted_fields.filter(f => f.value && f.value.trim()).length;
+    const totalFields = analysisResult.extracted_fields.length;
+    const fieldRatio = fieldsExtracted / totalFields;
+    confidence += fieldRatio * 0.2;
+
+    return Math.min(Math.max(confidence, 0.1), 0.99); // Entre 10% e 99%
+  }
+
+  /**
+   * Calcula custo baseado no modelo e quantidade de texto
+   */
+  private calculateModelCost(modelUsed: string, textLength: number): number {
+    // Custos estimados por 1k tokens (em dólares)
+    const modelCosts: Record<string, number> = {
+      'gemini-1.5-flash-8b': 0.000075,
+      'gemini-1.5-flash': 0.00015,
+      'gemini-1.5-pro': 0.0025,
+      'gpt-4': 0.03,
+      'gpt-3.5-turbo': 0.002
+    };
+
+    // Estimar tokens (1 token ≈ 4 caracteres)
+    const estimatedTokens = Math.ceil(textLength / 4);
+    const costPerKToken = modelCosts[modelUsed] || 0.001;
+
+    return (estimatedTokens / 1000) * costPerKToken;
   }
 
   /**

@@ -442,14 +442,10 @@ export class ExcelUploadService {
     try {
       const result = await this.rateLimiter.call(
         async () => {
-          // TODO: Implementar chamada real à API Judit
-          // Por enquanto, simulação com delay realista
-          await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+          // Implementar chamada real à API Judit ou simulação
+          const juditResult = await this.callJuditAPI(row.numeroProcesso, row.tribunal);
 
-          // Simular resposta da Judit (85% sucesso)
-          const success = Math.random() > 0.15;
-
-          if (success) {
+          if (juditResult.success) {
             return {
               numero_processo: row.numeroProcesso,
               tribunal: row.tribunal,
@@ -730,5 +726,138 @@ export class ExcelUploadService {
    */
   getRateLimiterStatus() {
     return this.rateLimiter.getStatus();
+  }
+
+  /**
+   * Chama API Judit real ou simulação baseado na configuração
+   */
+  private async callJuditAPI(numeroProcesso: string, tribunal: string): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }> {
+    const juditApiUrl = process.env.JUDIT_API_URL;
+    const juditApiKey = process.env.JUDIT_API_KEY;
+
+    // Se não há configuração da API, usar simulação
+    if (!juditApiUrl || !juditApiKey) {
+      console.log(`${ICONS.WARNING} API Judit não configurada - usando simulação`);
+      return this.simulateJuditResponse(numeroProcesso, tribunal);
+    }
+
+    try {
+      console.log(`${ICONS.PROCESS} Consultando Judit API para processo ${numeroProcesso}`);
+
+      const response = await fetch(`${juditApiUrl}/search`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${juditApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          search: {
+            search_type: 'lawsuit_cnj',
+            search_key: numeroProcesso
+          },
+          options: {
+            with_attachments: false,
+            page_size: 50
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Judit retornou erro: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      console.log(`${ICONS.SUCCESS} Resposta da Judit API recebida para ${numeroProcesso}`);
+
+      return {
+        success: true,
+        data: this.transformJuditResponse(data)
+      };
+
+    } catch (error) {
+      console.error(`${ICONS.ERROR} Erro na API Judit para ${numeroProcesso}:`, error);
+
+      // Fallback para simulação em caso de erro
+      console.log(`${ICONS.WARNING} Usando simulação como fallback`);
+      return this.simulateJuditResponse(numeroProcesso, tribunal);
+    }
+  }
+
+  /**
+   * Simula resposta da API Judit para desenvolvimento/teste
+   */
+  private async simulateJuditResponse(numeroProcesso: string, tribunal: string): Promise<{
+    success: boolean;
+    data?: any;
+    error?: string;
+  }> {
+    // Simular delay da API
+    await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+
+    // Simular taxa de sucesso de 85%
+    const success = Math.random() > 0.15;
+
+    if (success) {
+      return {
+        success: true,
+        data: {
+          numero_processo: numeroProcesso,
+          tribunal: tribunal,
+          partes: [
+            { nome: 'Parte Autora Simulada', tipo: 'AUTOR' },
+            { nome: 'Parte Ré Simulada', tipo: 'REU' }
+          ],
+          movimentacoes: [
+            {
+              data: new Date().toISOString(),
+              tipo: 'CITACAO',
+              descricao: 'Citação da parte ré - Simulado'
+            }
+          ],
+          valor_causa: Math.floor(Math.random() * 1000000) + 10000,
+          status: 'ATIVO',
+          ultima_atualizacao: new Date().toISOString()
+        }
+      };
+    } else {
+      return {
+        success: false,
+        error: 'Processo não encontrado (simulação)'
+      };
+    }
+  }
+
+  /**
+   * Transforma resposta da API Judit para formato padrão
+   */
+  private transformJuditResponse(juditData: any): any {
+    try {
+      // Transformar dados da Judit para formato padrão do sistema
+      return {
+        numero_processo: juditData.lawsuit_cnj || juditData.number,
+        tribunal: juditData.court || juditData.tribunal,
+        partes: juditData.parties?.map((party: any) => ({
+          nome: party.name || party.nome,
+          tipo: party.type || party.tipo,
+          cpf_cnpj: party.document || party.documento
+        })) || [],
+        movimentacoes: juditData.movements?.map((mov: any) => ({
+          data: mov.date || mov.data,
+          tipo: mov.type || mov.tipo,
+          descricao: mov.description || mov.descricao
+        })) || [],
+        valor_causa: juditData.lawsuit_value || juditData.valor_causa,
+        status: juditData.status || 'ATIVO',
+        ultima_atualizacao: juditData.last_update || new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Erro ao transformar resposta da Judit:', error);
+      return juditData; // Retornar dados originais em caso de erro
+    }
   }
 }

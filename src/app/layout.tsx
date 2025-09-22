@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
+import { CookieConsentProvider } from '@/contexts/cookie-consent-context';
+import { CookieBanner } from '@/components/ui/cookie-banner';
 
 const inter = Inter({
   subsets: ["latin"],
@@ -89,7 +91,10 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans antialiased bg-white text-neutral-900`}>
-        {children}
+        <CookieConsentProvider>
+          {children}
+          <CookieBanner />
+        </CookieConsentProvider>
       </body>
     </html>
   );

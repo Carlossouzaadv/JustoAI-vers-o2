@@ -40,7 +40,8 @@ export const signupSchema = z.object({
   confirmPassword: z.string(),
   acceptedTerms: z
     .boolean()
-    .refine(val => val === true, 'Você deve aceitar os termos de uso'),
+    .refine(val => val === true, 'Você deve aceitar os Termos de Uso e Política de Privacidade para continuar'),
+  marketingConsent: z.boolean().optional(),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Senhas não coincidem',
   path: ['confirmPassword'],

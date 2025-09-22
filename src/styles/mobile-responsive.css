@@ -1,0 +1,346 @@
+/* ================================================================
+ * UTILITÁRIOS CSS PARA RESPONSIVIDADE MOBILE - JUSTOAI V2
+ * ================================================================
+ * Classes CSS específicas para melhorar a experiência mobile
+ */
+
+/* Prevenir zoom no iOS quando inputs são focados */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important; /* Previne zoom no iOS */
+  }
+}
+
+/* Touch-friendly elements */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
+}
+
+/* Smooth scrolling para navegação interna */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Melhorar legibilidade de texto em mobile */
+.mobile-text {
+  line-height: 1.6;
+  font-size: clamp(14px, 2.5vw, 16px);
+}
+
+.mobile-heading {
+  line-height: 1.2;
+  font-size: clamp(24px, 6vw, 48px);
+}
+
+/* Container responsivo com padding adequado */
+.mobile-container {
+  padding-left: clamp(16px, 4vw, 24px);
+  padding-right: clamp(16px, 4vw, 24px);
+}
+
+/* Grid responsivo com gaps apropriados */
+.mobile-grid {
+  display: grid;
+  gap: clamp(16px, 4vw, 32px);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Cards com espaçamento mobile-friendly */
+.mobile-card {
+  padding: clamp(16px, 4vw, 24px);
+  border-radius: clamp(8px, 2vw, 16px);
+}
+
+/* Botões com touch targets adequados */
+.mobile-button {
+  min-height: 48px;
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-button:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Navigation mobile */
+.mobile-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+}
+
+/* Menu mobile overlay */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+}
+
+/* Menu mobile panel */
+.mobile-menu-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  background-color: white;
+  z-index: 50;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Form mobile optimizations */
+.mobile-form-field {
+  margin-bottom: 24px;
+}
+
+.mobile-form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.mobile-form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px; /* Previne zoom no iOS */
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  transition: border-color 0.2s ease;
+}
+
+.mobile-form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Error states */
+.mobile-form-input--error {
+  border-color: #ef4444;
+}
+
+.mobile-form-error {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #ef4444;
+}
+
+/* Loading states */
+.mobile-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.mobile-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: mobile-spin 1s linear infinite;
+}
+
+@keyframes mobile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Safe area insets for notch devices */
+.mobile-safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scroll snap for carousels */
+.mobile-carousel {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.mobile-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-carousel-item {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+/* Improved focus styles for keyboard navigation */
+.mobile-focus-visible:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-button {
+    border: 2px solid currentColor;
+  }
+
+  .mobile-form-input {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .mobile-button:active {
+    transform: none;
+  }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .mobile-form-input {
+    background-color: #1f2937;
+    border-color: #4b5563;
+    color: white;
+  }
+
+  .mobile-form-label {
+    color: #f3f4f6;
+  }
+
+  .mobile-menu-panel {
+    background-color: #1f2937;
+  }
+}
+
+/* Print styles */
+@media print {
+  .mobile-nav,
+  .mobile-button,
+  .mobile-menu-overlay,
+  .mobile-menu-panel {
+    display: none !important;
+  }
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.skip-to-content:focus {
+  top: 6px;
+}
+
+/* Mobile-specific utilities */
+@media screen and (max-width: 640px) {
+  .mobile-hidden {
+    display: none !important;
+  }
+
+  .mobile-full-width {
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+
+  .mobile-center {
+    text-align: center !important;
+  }
+
+  .mobile-padding {
+    padding: 1rem !important;
+  }
+
+  .mobile-margin {
+    margin: 1rem !important;
+  }
+}
+
+/* Tablet-specific utilities */
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .tablet-hidden {
+    display: none !important;
+  }
+
+  .tablet-grid-2 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .tablet-padding {
+    padding: 1.5rem !important;
+  }
+}
+
+/* Desktop-specific utilities */
+@media screen and (min-width: 1025px) {
+  .desktop-hidden {
+    display: none !important;
+  }
+
+  .desktop-grid-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .desktop-padding {
+    padding: 2rem !important;
+  }
+}

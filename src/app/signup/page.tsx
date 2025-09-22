@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PasswordInput } from '@/components/ui/password-input';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { ConsentCheckbox, MarketingConsent } from '@/components/ui/consent-checkbox';
 import { ICONS } from '../../../lib/icons';
 import { signupSchema, type SignupFormData } from '../../../lib/validations/auth';
 import { createClient } from '@supabase/supabase-js';
@@ -42,6 +43,18 @@ export default function SignupPage() {
     defaultValue: ''
   });
 
+  const { field: termsField } = useController({
+    name: 'acceptedTerms',
+    control,
+    defaultValue: false
+  });
+
+  const { field: marketingField } = useController({
+    name: 'marketingConsent',
+    control,
+    defaultValue: false
+  });
+
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     setAuthError('');
@@ -55,6 +68,8 @@ export default function SignupPage() {
           data: {
             name: data.name,
             phone: data.phone,
+            marketingConsent: data.marketingConsent || false,
+            consentDate: new Date().toISOString(),
           },
         },
       });
@@ -253,27 +268,24 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <div className="flex items-center">
-              <input
-                {...register('acceptedTerms')}
+            {/* Consentimento obrigatório LGPD */}
+            <div className="space-y-4">
+              <ConsentCheckbox
                 id="acceptedTerms"
-                type="checkbox"
-                className="h-4 w-4 text-accent-600 focus:ring-accent-500 border-neutral-300 rounded"
+                checked={termsField.value}
+                onChange={termsField.onChange}
+                error={errors.acceptedTerms?.message}
+                variant="both"
+                required={true}
               />
-              <label htmlFor="acceptedTerms" className="ml-2 block text-sm text-neutral-900">
-                Aceito os{' '}
-                <Link href="/terms" className="text-accent-600 hover:text-accent-500">
-                  Termos de Uso
-                </Link>{' '}
-                e{' '}
-                <Link href="/privacy" className="text-accent-600 hover:text-accent-500">
-                  Política de Privacidade
-                </Link>
-              </label>
+
+              {/* Consentimento opcional para marketing */}
+              <MarketingConsent
+                id="marketingConsent"
+                checked={marketingField.value}
+                onChange={marketingField.onChange}
+              />
             </div>
-            {errors.acceptedTerms && (
-              <p className="text-sm text-red-600">{errors.acceptedTerms.message}</p>
-            )}
 
             <div>
               <Button

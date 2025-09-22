@@ -39,3 +39,42 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Development and Documentation files (moved to separate folder)
+/logs/
+/pids/
+/uploads/
+/docs/
+/__tests__/
+/tests/
+/frontend-landing/
+*_REPORT.md
+PROJECT_FILES_DOCUMENTATION.md
+IMPLEMENTATION_SUMMARY.md
+performance-report.json
+jest.config.js
+playwright.config.ts
+package.json.additions
+
+# Temporary files
+*.log
+/tmp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+
+# Prisma backups
+/prisma/migrations/*.sql.bak
+
+# Bull dashboard data
+/bull-board/
+
+# Cache directories
+.cache/
+.parcel-cache/

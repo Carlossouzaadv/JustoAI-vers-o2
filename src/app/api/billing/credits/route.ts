@@ -527,18 +527,46 @@ export async function PUT(request: NextRequest) {
 
 async function handlePaymentWebhook(payload: any): Promise<NextResponse> {
   try {
-    // TODO: Implementar webhook real de pagamento
+    const { getPaymentWebhookHandler } = await import('@/lib/payment-webhook-handler');
+    const webhookHandler = getPaymentWebhookHandler();
+
     console.log(`${ICONS.WEBHOOK} Payment webhook received:`, payload);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Webhook processado'
-    });
+    // Extrair informações do header (seria necessário no request real)
+    const provider = payload.provider || 'custom';
+    const headers = payload.headers || {};
+    const rawBody = JSON.stringify(payload);
+
+    // Processar webhook
+    const result = await webhookHandler.processWebhook(provider, headers, rawBody);
+
+    if (result.success) {
+      console.log(`${ICONS.SUCCESS} Webhook processado: ${result.transactionId}`, {
+        creditsAdded: result.creditsAdded
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Webhook processado com sucesso',
+        transactionId: result.transactionId,
+        creditsAdded: result.creditsAdded
+      });
+    } else {
+      console.error(`${ICONS.ERROR} Falha no processamento do webhook:`, result.error);
+
+      return NextResponse.json(
+        {
+          error: result.error,
+          shouldRetry: result.shouldRetry
+        },
+        { status: result.shouldRetry ? 500 : 400 }
+      );
+    }
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Payment webhook failed:`, error);
     return NextResponse.json(
-      { error: 'Erro no webhook' },
+      { error: 'Erro interno no webhook' },
       { status: 500 }
     );
   }

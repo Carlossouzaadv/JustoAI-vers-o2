@@ -7,6 +7,8 @@ import { PrismaClient } from '@prisma/client';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
 import { ICONS } from './icons';
+import { getGeminiClient } from './gemini-client';
+import { ModelTier } from './ai-model-router';
 
 const prisma = new PrismaClient();
 
@@ -584,17 +586,76 @@ export class DeepAnalysisService {
   }
 
   /**
-   * Processa análise em background (placeholder)
+   * Processa análise em background com Gemini Pro
    */
   async processAnalysisInBackground(jobId: string): Promise<void> {
     console.log(`${ICONS.PROCESS} Iniciando processamento background para job: ${jobId}`);
 
-    // TODO: Implementar worker real com Gemini Pro
-    // Por enquanto, simulação
-
     try {
-      // Simular processamento
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Buscar job no banco
+      const job = await prisma.analysisJob.findUnique({
+        where: { id: jobId },
+        include: {
+          process: {
+            include: {
+              documents: true
+            }
+          }
+        }
+      });
+
+      if (!job || !job.process) {
+        throw new Error(`Job ou processo não encontrado: ${jobId}`);
+      }
+
+      // Atualizar progresso para em processamento
+      await prisma.analysisJob.update({
+        where: { id: jobId },
+        data: { status: 'PROCESSING', progress: 25 }
+      });
+
+      // Extrair texto dos documentos
+      const documentTexts = job.process.documents.map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        text: doc.extractedText || 'Texto não extraído'
+      }));
+
+      // Atualizar progresso
+      await prisma.analysisJob.update({
+        where: { id: jobId },
+        data: { progress: 50 }
+      });
+
+      // Preparar prompt para análise completa com Gemini Pro
+      const analysisPrompt = this.buildDeepAnalysisPrompt(job.process, documentTexts);
+
+      // Usar Gemini Pro para análise completa
+      const geminiClient = getGeminiClient();
+      const analysisResult = await geminiClient.generateJsonContent(analysisPrompt, {
+        model: ModelTier.PRO,
+        maxTokens: 8000,
+        temperature: 0.2
+      });
+
+      // Atualizar progresso
+      await prisma.analysisJob.update({
+        where: { id: jobId },
+        data: { progress: 75 }
+      });
+
+      // Salvar resultado da análise
+      await prisma.analysis.create({
+        data: {
+          processId: job.processId,
+          type: job.analysisType,
+          version: this.generateAnalysisVersion(),
+          result: analysisResult,
+          tokensUsed: analysisResult.metadata?.tokensUsed || 0,
+          model: 'gemini-1.5-pro',
+          createdAt: new Date()
+        }
+      });
 
       // Marcar job como concluído
       await prisma.analysisJob.update({
@@ -606,7 +667,7 @@ export class DeepAnalysisService {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Job processado com sucesso: ${jobId}`);
+      console.log(`${ICONS.SUCCESS} Job processado com sucesso com Gemini Pro: ${jobId}`);
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro no processamento background:`, error);
 
@@ -618,5 +679,71 @@ export class DeepAnalysisService {
         }
       });
     }
+  }
+
+  /**
+   * Constrói prompt para análise profunda com Gemini Pro
+   */
+  private buildDeepAnalysisPrompt(process: any, documentTexts: any[]): string {
+    return `
+Você é um especialista em análise jurídica. Analise o processo judicial a seguir e forneça uma análise completa e detalhada.
+
+**INFORMAÇÕES DO PROCESSO:**
+- Número: ${process.number || 'Não informado'}
+- Título: ${process.title || 'Não informado'}
+- Status: ${process.status || 'Não informado'}
+- Cliente: ${process.clientName || 'Não informado'}
+
+**DOCUMENTOS ANALISADOS:**
+${documentTexts.map((doc, index) => `
+${index + 1}. **${doc.name}**
+${doc.text.substring(0, 4000)}${doc.text.length > 4000 ? '...' : ''}
+`).join('\n')}
+
+**INSTRUÇÕES:**
+Analise os documentos e forneça uma análise jurídica completa seguindo esta estrutura JSON:
+
+{
+  "resumo_executivo": "Resumo geral do processo em 2-3 parágrafos",
+  "situacao_atual": "Status atual do processo e última movimentação",
+  "pontos_criticos": [
+    "Lista de pontos que merecem atenção especial"
+  ],
+  "proximos_passos": [
+    "Ações recomendadas e prazos importantes"
+  ],
+  "analise_juridica": {
+    "fundamentos": "Fundamentos jurídicos identificados",
+    "jurisprudencia": "Jurisprudência aplicável se identificada",
+    "riscos": "Riscos processuais identificados",
+    "oportunidades": "Oportunidades processuais identificadas"
+  },
+  "timeline": [
+    {
+      "data": "YYYY-MM-DD",
+      "evento": "Descrição do evento",
+      "relevancia": "ALTA|MEDIA|BAIXA"
+    }
+  ],
+  "recomendacoes": [
+    "Lista de recomendações específicas para o caso"
+  ],
+  "metadata": {
+    "confidencia": 0.85,
+    "tokensUsed": 1500,
+    "analysisDate": "${new Date().toISOString()}"
+  }
+}
+
+Retorne apenas o JSON válido, sem texto adicional.`;
+  }
+
+  /**
+   * Gera versão única para análise
+   */
+  private generateAnalysisVersion(): string {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const random = Math.random().toString(36).substring(2, 8);
+    return `v${timestamp}-${random}`;
   }
 }

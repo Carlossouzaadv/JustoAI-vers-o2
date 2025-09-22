@@ -228,16 +228,50 @@ export class ProcessAlertManager {
 
     console.log(`${ICONS.MAIL} Enviando notificações para alerta: ${alert.title}`);
 
-    // Por enquanto, apenas marcar como "enviado" (integração com email será implementada depois)
-    await prisma.processAlert.update({
-      where: { id: alertId },
-      data: {
-        sent: true,
-        sentAt: new Date()
-      }
-    });
+    try {
+      const { getEmailService } = await import('./email-service');
+      const emailService = getEmailService();
 
-    // TODO: Integrar com sistema de email (Resend, SendGrid, etc.)
+      // Enviar email para cada recipient
+      const emailPromises = alert.recipients.map(async (recipient: string) => {
+        const processInfo = alert.monitoredProcess?.processNumber || 'Número não disponível';
+
+        return emailService.sendProcessAlert(
+          recipient,
+          processInfo,
+          alert.title,
+          alert.description,
+          alert.severity === 'high' ? 'high' : alert.severity === 'medium' ? 'medium' : 'low'
+        );
+      });
+
+      const results = await Promise.allSettled(emailPromises);
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+
+      console.log(`${ICONS.SUCCESS} ${successCount}/${alert.recipients.length} emails enviados com sucesso`);
+
+      // Marcar como enviado
+      await prisma.processAlert.update({
+        where: { id: alertId },
+        data: {
+          sent: true,
+          sentAt: new Date()
+        }
+      });
+
+    } catch (error) {
+      console.error(`${ICONS.ERROR} Erro ao enviar notificações:`, error);
+
+      // Marcar como falha no envio
+      await prisma.processAlert.update({
+        where: { id: alertId },
+        data: {
+          sent: false,
+          sentAt: new Date()
+        }
+      });
+    }
+
     // TODO: Integrar com webhooks para sistemas externos
     // TODO: Implementar rate limiting para evitar spam
   }

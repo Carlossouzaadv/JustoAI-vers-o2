@@ -219,12 +219,18 @@ export class AiCacheManager {
 
     // NÍVEL 3: PostgreSQL (persistente)
     try {
+      // Skip PostgreSQL cache if no workspaceId (e.g., for tests)
+      if (!metadata?.workspaceId) {
+        console.log(`⚠️ Pulando cache PostgreSQL: sem workspaceId`);
+        return;
+      }
+
       const expiresAt = new Date();
       expiresAt.setSeconds(expiresAt.getSeconds() + this.config.postgres_ttl);
 
       await prisma.aiCache.create({
         data: {
-          workspaceId: metadata?.workspaceId || 'default',
+          workspaceId: metadata.workspaceId,
           cacheKey: cacheKey,
           type: 'ANALYSIS',
           prompt: analysisType,

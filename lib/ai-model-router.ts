@@ -522,6 +522,7 @@ export class AIModelRouter {
 
   /**
    * Gera prompts otimizados por modelo usando Schema Base Unificado
+   * ATUALIZADO: Inclui análise multi-frentes para processos complexos
    */
   private getOptimizedPrompt(tier: ModelTier, documentType: string): string {
     const schemaJson = this.getUnifiedSchemaForPrompt();
@@ -578,7 +579,325 @@ ${schemaJson}`;
   }
 
   /**
+   * NOVO: Gera prompts especializados para análise multi-frentes de processos complexos
+   * Organiza análise por frentes de discussão paralelas
+   */
+  getMultiFrontAnalysisPrompt(tier: ModelTier, processData: any): string {
+    const basePrompt = this.getOptimizedPrompt(tier, 'legal');
+
+    return `${basePrompt}
+
+=== ANÁLISE MULTI-FRENTES PARA PROCESSOS COMPLEXOS ===
+
+OBJETIVO ESPECÍFICO:
+Processos judiciais complexos frequentemente têm múltiplas questões acontecendo simultaneamente.
+Sua tarefa é identificar e organizar as diferentes frentes de discussão ativas no processo.
+
+INSTRUÇÕES ESPECIAIS PARA MULTI-FRENTES:
+1. Identifique todas as frentes de discussão paralelas (ex: penhora, suspensão, recursos, execução, mérito)
+2. Para cada frente identificada, determine:
+   - Status atual específico (ex: aguardando decisão, suspenso, em andamento)
+   - Próximos passos esperados para essa frente
+   - Prazos correndo (especificando qual parte e qual ação)
+   - Última movimentação relevante para essa frente
+
+ESTRUTURA ADICIONAL NO JSON:
+Inclua uma seção "frentes_discussao" no JSON de resposta:
+
+"frentes_discussao": [
+  {
+    "nome_frente": "string", // Ex: "Execução Principal", "Recurso de Apelação", "Penhora de Bens"
+    "status_atual": "string", // Ex: "Aguardando decisão", "Suspenso", "Em andamento"
+    "proximos_passos": "string", // Próxima ação esperada
+    "prazos_correndo": {
+      "existe_prazo": boolean,
+      "parte_responsavel": "string | null",
+      "acao_prazo": "string | null",
+      "data_limite": "string | null"
+    },
+    "ultima_movimentacao": {
+      "data": "string",
+      "tipo": "string",
+      "resumo": "string"
+    },
+    "nivel_prioridade": "Alta | Média | Baixa"
+  }
+],
+"resumo_executivo_frentes": "string" // Resumo das principais frentes ativas
+
+DETECÇÃO AUTOMÁTICA DE FRENTES COMUNS:
+- Mérito principal (discussão de fundo)
+- Execução/cumprimento de sentença
+- Recursos (apelação, agravo, embargos)
+- Medidas cautelares
+- Questões processuais (competência, nulidades)
+- Penhora e avaliação de bens
+- Suspensão/sobrestamento
+- Perícias e provas
+
+PRIORIZAÇÃO:
+- Alta: Prazos fatais correndo, decisões iminentes
+- Média: Andamentos em curso sem urgência
+- Baixa: Questões pendentes sem prazo definido`;
+  }
+
+  /**
+   * NOVO: Gera prompts para relatórios executivos organizados por frentes
+   * Adapta linguagem conforme público-alvo
+   */
+  getExecutiveReportPrompt(
+    tier: ModelTier,
+    processesData: any[],
+    audience: 'Cliente' | 'Diretoria' | 'Uso Interno' = 'Cliente',
+    reportType: 'COMPLETO' | 'NOVIDADES' = 'COMPLETO'
+  ): string {
+
+    const audienceInstructions = this.getAudienceInstructions(audience);
+    const reportTypeInstructions = this.getReportTypeInstructions(reportType);
+
+    return `Você é um analista jurídico especializado em relatórios executivos para ${audience.toLowerCase()}.
+
+${audienceInstructions}
+
+${reportTypeInstructions}
+
+=== ESTRUTURA OBRIGATÓRIA DO RELATÓRIO ===
+
+Organize o relatório seguindo EXATAMENTE esta estrutura:
+
+1. RESUMO EXECUTIVO GERAL
+   - Panorama geral dos processos
+   - Principais destaques do período
+   - Alertas de alta prioridade
+
+2. ANÁLISE POR FRENTES DE DISCUSSÃO
+   Para cada processo, identifique as frentes ativas e organize por tema:
+
+   2.1 FRENTE: EXECUÇÃO E COBRANÇA
+   - Processos em fase de execução
+   - Status de penhoras e arrestos
+   - Valores em cobrança
+   - Próximos passos e prazos
+
+   2.2 FRENTE: RECURSOS E REVISÕES
+   - Recursos em tramitação
+   - Decisões aguardando análise
+   - Prazos recursais correndo
+
+   2.3 FRENTE: QUESTÕES PROCESSUAIS
+   - Incidentes processuais
+   - Questões de competência
+   - Nulidades e vícios
+
+   2.4 FRENTE: MEDIDAS CAUTELARES
+   - Liminares e antecipações de tutela
+   - Bloqueios e sequestros
+   - Status e eficácia das medidas
+
+3. CALENDÁRIO DE AÇÕES PRIORITÁRIAS
+   - Prazos fatais nos próximos 30 dias
+   - Ações recomendadas por prioridade
+   - Responsável por cada ação
+
+4. INDICADORES QUANTITATIVOS
+   - Total de processos ativos por frente
+   - Valores envolvidos por categoria
+   - Taxa de sucesso por tipo de ação
+
+FORMATO DE SAÍDA:
+Retorne em JSON com esta estrutura:
+
+{
+  "resumo_executivo": "string",
+  "frentes_discussao": [
+    {
+      "nome_frente": "string",
+      "processos_envolvidos": ["string"],
+      "situacao_geral": "string",
+      "pontos_atencao": ["string"],
+      "proximas_acoes": ["string"],
+      "prazos_criticos": [
+        {
+          "processo": "string",
+          "acao": "string",
+          "prazo": "string",
+          "responsavel": "string"
+        }
+      ]
+    }
+  ],
+  "calendario_acoes": [
+    {
+      "data_limite": "string",
+      "acao": "string",
+      "processo": "string",
+      "prioridade": "Alta|Média|Baixa",
+      "responsavel": "string"
+    }
+  ],
+  "indicadores": {
+    "total_processos": number,
+    "processos_por_frente": {},
+    "valores_totais": {},
+    "alertas_urgencia": number
+  },
+  "recomendacoes_estrategicas": ["string"],
+  "observacoes_periodo": "string"
+}`;
+  }
+
+  /**
+   * NOVO: Instruções específicas por público-alvo
+   */
+  private getAudienceInstructions(audience: 'Cliente' | 'Diretoria' | 'Uso Interno'): string {
+    switch (audience) {
+      case 'Cliente':
+        return `PÚBLICO-ALVO: CLIENTE
+LINGUAGEM: Acessível e didática, evitando excesso de jargão jurídico
+FOCO: Impactos práticos, próximos passos, custos e benefícios
+DETALHAMENTO: Médio, explicando conceitos quando necessário
+TERMINOLOGIA: Use termos como "processo", "recurso", "decisão judicial" em linguagem clara`;
+
+      case 'Diretoria':
+        return `PÚBLICO-ALVO: DIRETORIA EXECUTIVA
+LINGUAGEM: Corporativa e objetiva, focada em resultados
+FOCO: KPIs, riscos empresariais, impactos financeiros, decisões estratégicas
+DETALHAMENTO: Alto nível, priorizando métricas e indicadores
+TERMINOLOGIA: Use linguagem executiva, comparando com indicadores de performance`;
+
+      case 'Uso Interno':
+        return `PÚBLICO-ALVO: EQUIPE JURÍDICA INTERNA
+LINGUAGEM: Técnica e precisa, pode usar jargão jurídico específico
+FOCO: Aspectos técnicos, fundamentação legal, estratégias processuais
+DETALHAMENTO: Completo, incluindo nuances e aspectos técnicos
+TERMINOLOGIA: Use terminologia jurídica técnica sem simplificações`;
+
+      default:
+        return 'PÚBLICO-ALVO: GENÉRICO\nLINGUAGEM: Equilibrada entre técnica e acessível';
+    }
+  }
+
+  /**
+   * NOVO: Instruções específicas por tipo de relatório
+   */
+  private getReportTypeInstructions(reportType: 'COMPLETO' | 'NOVIDADES'): string {
+    switch (reportType) {
+      case 'COMPLETO':
+        return `TIPO DE RELATÓRIO: ANÁLISE COMPLETA
+ESCOPO: Análise abrangente de todos os aspectos dos processos
+CONTEÚDO: Status geral, histórico relevante, análise de risco, projeções
+ESTRUTURA: Visão 360° de cada frente de discussão
+PROFUNDIDADE: Máxima, incluindo contexto histórico e projeções futuras`;
+
+      case 'NOVIDADES':
+        return `TIPO DE RELATÓRIO: DELTA/NOVIDADES
+ESCOPO: Foque APENAS nas mudanças desde o último relatório
+CONTEÚDO: Novas movimentações, alterações de status, prazos que surgiram/venceram
+ESTRUTURA: Organize por "o que mudou" em cada frente
+PROFUNDIDADE: Focada no delta, comparando com situação anterior
+INSTRUÇÃO ESPECIAL: Se não houve movimentação significativa em uma frente, mencione brevemente e passe para a próxima`;
+
+      default:
+        return 'TIPO: Relatório padrão com análise equilibrada';
+    }
+  }
+
+  /**
+   * NOVO: Prompt para análise de situações específicas por frente
+   * Útil para quando há uma situação específica que precisa ser analisada
+   */
+  getSpecificSituationPrompt(
+    tier: ModelTier,
+    processNumber: string,
+    situation: string,
+    questionType: 'status' | 'proximos_passos' | 'prazos' | 'analise_completa' = 'analise_completa'
+  ): string {
+
+    const basePrompt = this.getOptimizedPrompt(tier, 'legal');
+    const questionInstructions = this.getQuestionTypeInstructions(questionType);
+
+    return `${basePrompt}
+
+=== ANÁLISE DE SITUAÇÃO ESPECÍFICA ===
+
+PROCESSO: ${processNumber}
+SITUAÇÃO ATUAL: ${situation}
+
+${questionInstructions}
+
+INSTRUÇÕES ESPECÍFICAS:
+1. Analise a situação descrita no contexto do processo judicial
+2. Identifique a frente de discussão principal afetada
+3. Determine o impacto em outras frentes paralelas
+4. Forneça uma análise direcionada conforme o tipo de questionamento
+
+ESTRUTURA DE RESPOSTA:
+{
+  "situacao_analisada": "${situation}",
+  "frente_principal_afetada": "string",
+  "frentes_secundarias_impactadas": ["string"],
+  "analise_situacao": {
+    "status_atual": "string",
+    "implicacoes_juridicas": "string",
+    "riscos_identificados": ["string"],
+    "oportunidades": ["string"]
+  },
+  "proximos_passos": [
+    {
+      "acao": "string",
+      "prazo": "string | null",
+      "responsavel": "string",
+      "prioridade": "Alta|Média|Baixa"
+    }
+  ],
+  "impacto_outras_frentes": [
+    {
+      "frente": "string",
+      "tipo_impacto": "Positivo|Negativo|Neutro",
+      "descricao": "string"
+    }
+  ],
+  "recomendacoes_especificas": ["string"]
+}`;
+  }
+
+  /**
+   * NOVO: Instruções específicas por tipo de questionamento
+   */
+  private getQuestionTypeInstructions(questionType: 'status' | 'proximos_passos' | 'prazos' | 'analise_completa'): string {
+    switch (questionType) {
+      case 'status':
+        return `FOCO: STATUS ATUAL
+OBJETIVO: Determinar exatamente em que pé está a situação descrita
+DETALHAMENTO: Estado atual, última movimentação relevante, pessoas envolvidas
+PROFUNDIDADE: Factual e preciso sobre o momento presente`;
+
+      case 'proximos_passos':
+        return `FOCO: PRÓXIMOS PASSOS
+OBJETIVO: Identificar as ações necessárias e próximas etapas
+DETALHAMENTO: Cronograma de ações, responsabilidades, prazos
+PROFUNDIDADE: Prático e orientado a ação`;
+
+      case 'prazos':
+        return `FOCO: PRAZOS E URGÊNCIAS
+OBJETIVO: Identificar todos os prazos correndo e suas implicações
+DETALHAMENTO: Datas limite, consequências do não cumprimento, responsáveis
+PROFUNDIDADE: Temporal e orientado a compliance`;
+
+      case 'analise_completa':
+        return `FOCO: ANÁLISE ABRANGENTE
+OBJETIVO: Visão 360° da situação e suas ramificações
+DETALHAMENTO: Status, passos, prazos, riscos, oportunidades, estratégia
+PROFUNDIDADE: Completa e estratégica`;
+
+      default:
+        return 'FOCO: Análise equilibrada da situação apresentada';
+    }
+  }
+
+  /**
    * Retorna o schema unificado em formato JSON para os prompts
+   * ATUALIZADO: Inclui seção de frentes de discussão
    */
   private getUnifiedSchemaForPrompt(): string {
     return JSON.stringify({
@@ -622,6 +941,11 @@ ${schemaJson}`;
         ultimo_andamento: "objeto com data, tipo, resumo",
         principais_andamentos: "Array de objetos com data, tipo, resumo",
         prazos_pendentes: "Array de objetos | null"
+      },
+      frentes_discussao: {
+        frentes_ativas: "Array de objetos com nome_frente, status_atual, proximos_passos, prazos_correndo",
+        resumo_executivo_frentes: "string",
+        prioridades_identificadas: "Array de strings"
       },
       analise_estrategica: {
         tese_juridica_central: "string | null",

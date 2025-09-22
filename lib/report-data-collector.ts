@@ -303,11 +303,15 @@ export class ReportDataCollector {
         priority = 'MEDIUM';
       }
 
+      // Extrair dados do processData JSON
+      const processData = this.parseProcessData(process.processData);
+      const nextDeadline = this.calculateNextDeadline(process.movements);
+
       return {
         id: process.id,
         number: process.processNumber,
         client_name: process.clientName || 'Cliente não informado',
-        subject: 'Assunto não informado', // TODO: Extract from processData JSON
+        subject: processData.subject || process.title || 'Assunto não informado',
         court: process.court || 'Tribunal não informado',
         status: process.monitoringStatus,
         priority,
@@ -316,11 +320,157 @@ export class ReportDataCollector {
           description: lastMovement.description,
           requires_action: lastMovement.requiresAction
         } : undefined,
-        next_deadline: undefined, // TODO: Calculate from movements
+        next_deadline: nextDeadline,
         recent_movements: recentMovements.length > 0 ? recentMovements : undefined,
-        financial_info: undefined // TODO: Extract from processData JSON
+        financial_info: processData.financialInfo
       } as ProcessReportData;
     });
+  }
+
+  // ================================
+  // MÉTODOS AUXILIARES
+  // ================================
+
+  /**
+   * Extrai dados estruturados do processData JSON
+   */
+  private parseProcessData(processData: any): {
+    subject?: string;
+    financialInfo?: {
+      valor_principal?: number;
+      multas?: number;
+      total?: number;
+      currency?: string;
+    };
+  } {
+    try {
+      if (!processData || typeof processData !== 'object') {
+        return {};
+      }
+
+      // Tentar extrair assunto
+      const subject = processData.assunto ||
+                     processData.subject ||
+                     processData.titulo ||
+                     processData.descricao;
+
+      // Tentar extrair informações financeiras
+      const financialInfo = this.extractFinancialInfo(processData);
+
+      return {
+        subject: subject?.toString().trim(),
+        financialInfo
+      };
+    } catch (error) {
+      console.error('Erro ao analisar processData:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Extrai informações financeiras do processData
+   */
+  private extractFinancialInfo(data: any): any {
+    try {
+      const financial: any = {};
+
+      // Buscar valores em diferentes formatos
+      const possibleFields = [
+        'valor_principal', 'valorPrincipal', 'valor', 'value',
+        'multas', 'multa', 'penalties', 'fine',
+        'total', 'valor_total', 'valorTotal'
+      ];
+
+      for (const field of possibleFields) {
+        const value = data[field];
+        if (value && (typeof value === 'number' || typeof value === 'string')) {
+          const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')) : value;
+          if (!isNaN(numericValue) && numericValue > 0) {
+            if (field.includes('principal') || field === 'valor' || field === 'value') {
+              financial.valor_principal = numericValue;
+            } else if (field.includes('multa') || field.includes('fine') || field.includes('penalties')) {
+              financial.multas = numericValue;
+            } else if (field.includes('total')) {
+              financial.total = numericValue;
+            }
+          }
+        }
+      }
+
+      // Calcular total se não fornecido
+      if (!financial.total && (financial.valor_principal || financial.multas)) {
+        financial.total = (financial.valor_principal || 0) + (financial.multas || 0);
+      }
+
+      // Adicionar moeda padrão
+      if (Object.keys(financial).length > 0) {
+        financial.currency = data.currency || data.moeda || 'BRL';
+      }
+
+      return Object.keys(financial).length > 0 ? financial : undefined;
+    } catch (error) {
+      console.error('Erro ao extrair informações financeiras:', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Calcula próximo prazo baseado nas movimentações
+   */
+  private calculateNextDeadline(movements: any[]): { date: Date; description: string; days_remaining: number } | undefined {
+    try {
+      if (!movements || movements.length === 0) {
+        return undefined;
+      }
+
+      const now = new Date();
+      const upcomingDeadlines: Array<{ date: Date; description: string; days_remaining: number }> = [];
+
+      for (const movement of movements) {
+        // Buscar por padrões de prazo na descrição
+        const description = movement.description || '';
+        const deadlinePatterns = [
+          /prazo.*?(\d{1,2}).*?dias?/i,
+          /prazo.*?até.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
+          /vencimento.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
+          /manifestar.*?(\d{1,2}).*?dias?/i
+        ];
+
+        for (const pattern of deadlinePatterns) {
+          const match = description.match(pattern);
+          if (match) {
+            let deadlineDate: Date | null = null;
+
+            if (match[1].includes('/')) {
+              // Data específica
+              deadlineDate = new Date(match[1].split('/').reverse().join('-'));
+            } else {
+              // Número de dias
+              const days = parseInt(match[1]);
+              deadlineDate = new Date(movement.date);
+              deadlineDate.setDate(deadlineDate.getDate() + days);
+            }
+
+            if (deadlineDate && deadlineDate > now) {
+              const daysRemaining = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              upcomingDeadlines.push({
+                date: deadlineDate,
+                description: `Prazo para ${description.substring(0, 50)}...`,
+                days_remaining: daysRemaining
+              });
+            }
+          }
+        }
+      }
+
+      // Retornar o prazo mais próximo
+      upcomingDeadlines.sort((a, b) => a.date.getTime() - b.date.getTime());
+      return upcomingDeadlines[0];
+
+    } catch (error) {
+      console.error('Erro ao calcular próximo prazo:', error);
+      return undefined;
+    }
   }
 
   // ================================

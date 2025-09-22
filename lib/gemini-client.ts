@@ -78,9 +78,12 @@ export class GeminiClient {
       maxTokens: config.maxTokens || 3000,
       temperature: config.temperature || 0.1,
       topP: config.topP || 0.95,
-      topK: config.topK || 40, // Gemini API limit is 40, not 64
+      topK: Math.min(config.topK || 40, 40), // Ensure topK never exceeds 40
       ...config
     };
+
+    // Force topK to be within valid range after spread
+    finalConfig.topK = Math.min(finalConfig.topK || 40, 40);
 
     await this.checkRateLimit(finalConfig.model);
 

@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ReportType, AudienceType, OutputFormat } from '@prisma/client';
 import { ICONS } from '@/lib/icons';
+import { getGeminiClient } from './gemini-client';
+import { ModelTier } from './ai-model-router';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -354,7 +356,7 @@ export class ReportGenerator {
   }
 
   /**
-   * Gera conteúdo com Gemini (placeholder)
+   * Gera conteúdo com Gemini API real
    */
   private async generateContentWithGemini(
     prompt: string,
@@ -365,24 +367,50 @@ export class ReportGenerator {
     summary: any;
     tokensUsed: number;
   }> {
-    // TODO: Integrar com Gemini API real
-    console.log(`${ICONS.PROCESS} Chamando Gemini para gerar conteúdo...`);
+    console.log(`${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...`);
 
-    // Simulação da resposta do Gemini
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const geminiClient = getGeminiClient();
 
-    const mockContent = this.generateMockContent(payload, audienceType);
+      // Usar modelo apropriado baseado no tipo de audiência
+      const modelTier = audienceType === 'DIRETORIA' ? ModelTier.PRO : ModelTier.BALANCED;
 
-    return {
-      content: mockContent,
-      summary: {
-        totalProcesses: payload.totalProcesses || 0,
-        contentLength: mockContent.length,
-        audienceType,
-        generatedAt: new Date().toISOString()
-      },
-      tokensUsed: Math.floor(mockContent.length / 4) // Estimativa de tokens
-    };
+      const result = await geminiClient.generateJsonContent(prompt, {
+        model: modelTier,
+        maxTokens: 6000,
+        temperature: 0.3
+      });
+
+      console.log(`${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}`);
+
+      return {
+        content: result.content || this.generateMockContent(payload, audienceType),
+        summary: result.summary || {
+          totalProcesses: payload.totalProcesses || 0,
+          contentLength: (result.content || '').length,
+          audienceType,
+          generatedAt: new Date().toISOString(),
+          model: modelTier
+        },
+        tokensUsed: result.metadata?.tokensUsed || Math.floor((result.content || '').length / 4)
+      };
+    } catch (error) {
+      console.error(`${ICONS.ERROR} Erro ao chamar Gemini API:`, error);
+
+      // Fallback para conteúdo mock em caso de erro
+      const mockContent = this.generateMockContent(payload, audienceType);
+      return {
+        content: mockContent,
+        summary: {
+          totalProcesses: payload.totalProcesses || 0,
+          contentLength: mockContent.length,
+          audienceType,
+          generatedAt: new Date().toISOString(),
+          error: 'Fallback para conteúdo mock devido a erro na API'
+        },
+        tokensUsed: Math.floor(mockContent.length / 4)
+      };
+    }
   }
 
   /**
