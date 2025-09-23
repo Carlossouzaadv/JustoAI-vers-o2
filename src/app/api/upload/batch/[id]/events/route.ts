@@ -5,8 +5,8 @@
 // Server-Sent Events para progresso em tempo real
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../lib/prisma';
-import { ICONS } from '../../../../../../lib/icons';
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
 
 export async function GET(
   request: NextRequest,

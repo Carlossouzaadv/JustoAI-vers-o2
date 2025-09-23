@@ -4,8 +4,8 @@
 // Endpoint para acompanhar progresso do processamento
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '../../../../../../lib/prisma';
-import { ICONS } from '../../../../../../lib/icons';
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
 
 /**
  * GET /api/upload/batch/{id}/status

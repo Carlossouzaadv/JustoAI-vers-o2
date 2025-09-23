@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { ICONS } from '../../../../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 const prisma = new PrismaClient();
 

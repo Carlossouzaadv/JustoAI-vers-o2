@@ -4,8 +4,8 @@
 // Stream de progresso em tempo real via SSE
 
 import { NextRequest } from 'next/server';
-import { getWebSocketManager, generateConnectionId } from '../../../../../../lib/websocket-manager';
-import { ICONS } from '../../../../../../lib/icons';
+import { getWebSocketManager, generateConnectionId } from '@/lib/websocket-manager';
+import { ICONS } from '@/lib/icons';
 
 /**
  * GET /api/upload/batch/{id}/stream

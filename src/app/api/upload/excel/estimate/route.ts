@@ -4,9 +4,9 @@
 // Endpoint para calcular estimativa sem processar arquivo
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ExcelUploadService } from '../../../../../lib/excel-upload-service';
-import { prisma } from '../../../../../lib/prisma';
-import { ICONS } from '../../../../../lib/icons';
+import { ExcelUploadService } from '@/lib/excel-upload-service';
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
 
 const uploadService = new ExcelUploadService();
 

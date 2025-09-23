@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils'
-import { CreditSystem } from '@/lib/credit-system'
+import { getCreditManager } from '@/lib/credit-system'
 import { ICONS } from '@/lib/icons'
 
 // Purchase request validation schema
@@ -89,7 +89,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   console.log(`${ICONS.PROCESS} Processing credit purchase: ${packType} for workspace ${workspaceId}`)
 
   try {
-    const creditSystem = new CreditSystem()
+    const creditSystem = getCreditManager()
 
     // Get pack configuration
     const packConfig = CREDIT_PACKS[packType]

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { successResponse, errorResponse, validateQuery, requireAuth, withErrorHandler, paginatedResponse } from '@/lib/api-utils'
-import { CreditSystem } from '@/lib/credit-system'
+import { getCreditManager } from '@/lib/credit-system'
 import { ICONS } from '@/lib/icons'
 
 // Query params validation schema
@@ -37,7 +37,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   console.log(`${ICONS.PROCESS} Fetching credit history for workspace ${workspaceId} (page ${pageNum}, limit ${limitNum})`)
 
   try {
-    const creditSystem = new CreditSystem()
+    const creditSystem = getCreditManager()
 
     // Build filters
     const filters: any = { workspaceId }

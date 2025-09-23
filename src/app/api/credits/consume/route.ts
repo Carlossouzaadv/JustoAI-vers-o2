@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils'
-import { CreditSystem } from '@/lib/credit-system'
+import { getCreditManager } from '@/lib/credit-system'
 import { ICONS } from '@/lib/icons'
 
 // Consumption request validation schema
@@ -34,7 +34,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   console.log(`${ICONS.PROCESS} Processing credit consumption: ${reportCredits} report + ${fullCredits} full credits for workspace ${workspaceId}`)
 
   try {
-    const creditSystem = new CreditSystem()
+    const creditSystem = getCreditManager()
 
     // Check available credits first
     const balance = await creditSystem.getWorkspaceCredits(workspaceId)
@@ -135,7 +135,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   const analysisType = searchParams.get('analysisType') || 'FAST' // FAST or FULL
 
   try {
-    const creditSystem = new CreditSystem()
+    const creditSystem = getCreditManager()
 
     let estimatedCost = { reportCredits: 0, fullCredits: 0 }
 

@@ -6,8 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '../../../../../../lib/prisma';
-import { ICONS } from '../../../../../../lib/icons';
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
 
 // Schema de validação para ações de controle
 const controlSchema = z.object({

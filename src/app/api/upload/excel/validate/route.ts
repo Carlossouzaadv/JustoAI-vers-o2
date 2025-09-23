@@ -5,9 +5,9 @@
 // Validação local rápida com preview de 10 linhas + resumo amigável
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ExcelUploadService } from '../../../../../lib/excel-upload-service';
-import { prisma } from '../../../../../lib/prisma';
-import { ICONS } from '../../../../../lib/icons';
+import { ExcelUploadService } from '@/lib/excel-upload-service';
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
 
 const uploadService = new ExcelUploadService();
 

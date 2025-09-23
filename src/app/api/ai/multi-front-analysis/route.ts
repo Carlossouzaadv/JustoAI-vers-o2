@@ -4,8 +4,8 @@
 // Endpoint para testar e usar os novos prompts de análise multi-frentes
 
 import { NextRequest, NextResponse } from 'next/server';
-import { AIModelRouter, ModelTier } from '../../../../lib/ai-model-router';
-import PromptsMaestros from '../../../../lib/prompts-maestros';
+import { AIModelRouter, ModelTier } from '@/lib/ai-model-router';
+import PromptsMaestros from '@/lib/prompts-maestros';
 
 export async function POST(request: NextRequest) {
   try {

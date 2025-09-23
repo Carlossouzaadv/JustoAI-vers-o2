@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
-import { CreditSystem } from '@/lib/credit-system';
+import { getCreditManager } from '@/lib/credit-system';
 import { ICONS } from '@/lib/icons';
 
 // Schema de validação
@@ -34,7 +34,7 @@ export const POST = withErrorHandler(async (
 
   try {
     const analysisService = new DeepAnalysisService();
-    const creditSystem = new CreditSystem();
+    const creditSystem = getCreditManager();
 
     // Parse multipart form data
     const formData = await request.formData();

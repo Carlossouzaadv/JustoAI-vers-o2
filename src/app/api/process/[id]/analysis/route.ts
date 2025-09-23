@@ -5,9 +5,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getAnalysisCacheManager } from '../../../../../lib/analysis-cache';
-import { CreditSystem } from '../../../../../lib/credit-system';
-import { ICONS } from '../../../../../lib/icons';
+import { getAnalysisCacheManager } from '@/lib/analysis-cache';
+import { getCreditManager } from '@/lib/credit-system';
+import { ICONS } from '@/lib/icons';
 
 const prisma = new PrismaClient();
 const cacheManager = getAnalysisCacheManager();
@@ -98,7 +98,7 @@ export async function POST(
     );
 
     // 5. Calcular custos de crédito (antes do cache hit para logs)
-    const creditSystem = new CreditSystem();
+    const creditSystem = getCreditManager(prisma);
     const processCount = documentHashes.length || 1; // Pelo menos 1 processo
 
     let reportCreditsRequired = 0;
@@ -346,7 +346,7 @@ async function processAnalysisInBackground(
     );
 
     // Log usage event
-    const creditSystem = new CreditSystem();
+    const creditSystem = getCreditManager(prisma);
     await creditSystem.logUsageEvent({
       workspaceId,
       eventType: 'analysis_completed',
@@ -379,7 +379,7 @@ async function processAnalysisInBackground(
     });
 
     // Log failed usage event
-    const creditSystem = new CreditSystem();
+    const creditSystem = getCreditManager(prisma);
     await creditSystem.logUsageEvent({
       workspaceId,
       eventType: 'analysis_failed',

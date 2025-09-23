@@ -4,9 +4,9 @@
 // Implementa upload de Excel conforme especificação completa
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ExcelUploadService, DEFAULT_CONFIG } from '../../../../lib/excel-upload-service';
-import { prisma } from '../../../../lib/prisma';
-import { ICONS } from '../../../../lib/icons';
+import { ExcelUploadService, DEFAULT_CONFIG } from '@/lib/excel-upload-service';
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
 
 const uploadService = new ExcelUploadService();
 
