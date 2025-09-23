@@ -3,6 +3,17 @@
 // ================================================================
 // Implementa extração em cascata, limpeza avançada e otimização de IA
 
+import { promises as fs } from 'fs';
+import { prisma } from './prisma';
+
+// Type declaration for pdf-parse
+interface PDFData {
+  text: string;
+  numpages: number;
+  info: any;
+  metadata: any;
+}
+
 export interface ExtractionResult {
   text: string;
   method: 'primary' | 'fallback' | 'ocr';
@@ -45,6 +56,7 @@ export interface PDFAnalysisResult {
   file_size_mb?: number;
   tokenReduction?: number;
   processingMethod?: string;
+  extraction?: ExtractionResult;
 }
 
 export interface ProcessCompleteOptions {
@@ -56,9 +68,13 @@ export interface ProcessCompleteOptions {
 export class PDFProcessor {
   private readonly MIN_TEXT_LENGTH = 100;
   private readonly MAX_EXTRACTION_TIME = 60000; // 60 segundos
+  private readonly apiUrl: string;
+  private readonly prisma: typeof prisma;
 
   constructor() {
     // Construtor simplificado - não depende mais de Prisma ou API externa
+    this.apiUrl = process.env.PDF_API_URL || 'http://localhost:8000';
+    this.prisma = prisma;
   }
 
   /**
@@ -129,7 +145,7 @@ export class PDFProcessor {
    */
   private async extractWithPrimary(buffer: Buffer): Promise<string> {
     try {
-      const pdfParse = (await import('pdf-parse')).default;
+      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
 
       const startTime = Date.now();
       const pdfData = await pdfParse(buffer);
@@ -247,7 +263,7 @@ export class PDFProcessor {
    */
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
-      const pdfParse = (await import('pdf-parse')).default;
+      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
       const pdfData = await pdfParse(buffer);
 
       // Detectar imagens verificando se há discrepância entre páginas e texto
@@ -256,7 +272,7 @@ export class PDFProcessor {
       return {
         pages: pdfData.numpages,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
-        hasText: pdfData.text && pdfData.text.trim().length > 0,
+        hasText: !!(pdfData.text && pdfData.text.trim().length > 0),
         hasImages
       };
     } catch {
@@ -389,6 +405,16 @@ export class PDFProcessor {
     processingTime: number = 0
   ) {
     try {
+      // Get the case to obtain workspaceId
+      const case_ = await this.prisma.case.findUnique({
+        where: { id: caseId },
+        select: { workspaceId: true }
+      });
+
+      if (!case_) {
+        throw new Error(`Case not found: ${caseId}`);
+      }
+
       // Implementar incremento correto da versão
       const lastVersion = await this.prisma.caseAnalysisVersion.findFirst({
         where: { caseId },
@@ -401,11 +427,12 @@ export class PDFProcessor {
       const confidence = this.calculateExtractionConfidence(analysisResult);
 
       // Calcular custo baseado no modelo usado
-      const costEstimate = this.calculateModelCost(modelUsed, analysisResult.extraction.text.length);
+      const costEstimate = this.calculateModelCost(modelUsed, analysisResult.extraction?.text.length || 0);
 
       const version = await this.prisma.caseAnalysisVersion.create({
         data: {
           caseId,
+          workspaceId: case_.workspaceId,
           version: nextVersion,
           analysisType: 'PDF_UPLOAD',
           extractedData: analysisResult as any,
@@ -437,12 +464,12 @@ export class PDFProcessor {
     let confidence = 0.5; // Base de 50%
 
     // Incrementar baseado na qualidade da extração
-    if (analysisResult.extraction.success) {
+    if (analysisResult.extraction?.success) {
       confidence += 0.2;
     }
 
     // Incrementar baseado na qualidade do texto
-    switch (analysisResult.extraction.quality) {
+    switch (analysisResult.extraction?.quality) {
       case 'high':
         confidence += 0.3;
         break;
@@ -455,7 +482,7 @@ export class PDFProcessor {
     }
 
     // Incrementar baseado na quantidade de campos extraídos
-    const fieldsExtracted = analysisResult.extracted_fields.filter(f => f.value && f.value.trim()).length;
+    const fieldsExtracted = analysisResult.extracted_fields.filter(f => f && f.trim()).length;
     const totalFields = analysisResult.extracted_fields.length;
     const fieldRatio = fieldsExtracted / totalFields;
     confidence += fieldRatio * 0.2;

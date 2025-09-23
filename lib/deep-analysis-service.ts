@@ -3,12 +3,13 @@
 // ================================================================
 // Serviço para análise FAST/FULL com cache, versioning e Redis locks
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, AnalysisType, JobStatus } from '@prisma/client';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
 import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
+
 
 const prisma = new PrismaClient();
 
@@ -16,14 +17,13 @@ const prisma = new PrismaClient();
 const redis = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
-  retryDelayOnFailover: 100,
   maxRetriesPerRequest: 3
 });
 
 export interface AnalysisKeyParams {
   processId: string;
   documentHashes: string[];
-  analysisType: 'FAST' | 'FULL';
+  analysisType: AnalysisType;
   modelVersion: string;
   promptSignature?: string;
 }
@@ -40,8 +40,8 @@ export interface ProcessDocument {
 export interface AnalysisVersionParams {
   processId: string;
   workspaceId: string;
-  versionNumber: number;
-  analysisType: 'FAST' | 'FULL';
+  version: number;
+  analysisType: AnalysisType;
   modelUsed: string;
   fullCreditsUsed?: number;
   fastCreditsUsed?: number;
@@ -54,7 +54,7 @@ export interface AnalysisJobParams {
   processId: string;
   workspaceId: string;
   analysisKey: string;
-  analysisType: 'FAST' | 'FULL';
+  analysisType: AnalysisType;
   modelHint: string;
   filesMetadata: ProcessDocument[];
   resultVersionId: string;
@@ -97,9 +97,9 @@ export class DeepAnalysisService {
    */
   async getProcessDocuments(processId: string): Promise<ProcessDocument[]> {
     try {
-      const documents = await prisma.document.findMany({
+      const documents = await prisma.caseDocument.findMany({
         where: {
-          processId: processId
+          caseId: processId
         },
         select: {
           id: true,
@@ -128,10 +128,10 @@ export class DeepAnalysisService {
    */
   async getProcessDocumentsByIds(processId: string, fileIds: string[]): Promise<ProcessDocument[]> {
     try {
-      const documents = await prisma.document.findMany({
+      const documents = await prisma.caseDocument.findMany({
         where: {
           id: { in: fileIds },
-          processId: processId
+          caseId: processId
         },
         select: {
           id: true,
@@ -178,10 +178,10 @@ export class DeepAnalysisService {
         const fileHash = createHash('sha256').update(buffer).digest('hex');
 
         // Verificar se arquivo já existe (deduplicação)
-        const existingDoc = await prisma.document.findFirst({
+        const existingDoc = await prisma.caseDocument.findFirst({
           where: {
-            hash: fileHash,
-            processId
+            textSha: fileHash,
+            caseId: processId
           }
         });
 
@@ -202,21 +202,20 @@ export class DeepAnalysisService {
         const textSha = createHash('sha256').update(cleanText).digest('hex');
 
         // Salvar documento no banco
-        const savedDoc = await prisma.document.create({
+        const savedDoc = await prisma.caseDocument.create({
           data: {
-            processId,
+            caseId: processId,
             name: file.name,
-            type: 'PDF',
-            hash: fileHash,
-            textSha,
-            cleanText,
+            originalName: file.name,
+            type: 'OTHER',
+            mimeType: file.type || 'application/octet-stream',
             size: file.size,
-            uploadedBy: userId,
-            metadata: {
-              originalName: file.name,
-              mimeType: file.type,
-              uploadDate: new Date().toISOString()
-            }
+            url: `/uploads/${processId}/${fileHash}`,
+            path: `/uploads/${processId}/${fileHash}`,
+            textSha: fileHash,
+            cleanText,
+            extractedText: extractedText,
+            textExtractedAt: new Date()
           }
         });
 
@@ -300,7 +299,7 @@ export class DeepAnalysisService {
   private async getLastProcessMovement(processId: string): Promise<Date | null> {
     try {
       const lastMovement = await prisma.processMovement.findFirst({
-        where: { processId },
+        where: { monitoredProcessId: processId },
         orderBy: { date: 'desc' },
         select: { date: true }
       });
@@ -409,7 +408,7 @@ export class DeepAnalysisService {
       const job = await prisma.analysisJob.findFirst({
         where: {
           analysisKey,
-          status: { in: ['QUEUED', 'RUNNING'] }
+          status: { in: [JobStatus.QUEUED, JobStatus.RUNNING] }
         },
         orderBy: { createdAt: 'desc' }
       });
@@ -429,7 +428,7 @@ export class DeepAnalysisService {
       const job = await prisma.analysisJob.findFirst({
         where: {
           resultVersionId: versionId,
-          status: { in: ['QUEUED', 'RUNNING'] }
+          status: { in: [JobStatus.QUEUED, JobStatus.RUNNING] }
         }
       });
 
@@ -494,12 +493,12 @@ export class DeepAnalysisService {
   async getNextVersionNumber(processId: string): Promise<number> {
     try {
       const lastVersion = await prisma.caseAnalysisVersion.findFirst({
-        where: { processId },
-        orderBy: { versionNumber: 'desc' },
-        select: { versionNumber: true }
+        where: { caseId: processId },
+        orderBy: { version: 'desc' },
+        select: { version: true }
       });
 
-      return (lastVersion?.versionNumber || 0) + 1;
+      return (lastVersion?.version || 0) + 1;
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao obter próximo número de versão:`, error);
       return 1;
@@ -513,16 +512,13 @@ export class DeepAnalysisService {
     try {
       const version = await prisma.caseAnalysisVersion.create({
         data: {
-          processId: params.processId,
+          caseId: params.processId,
           workspaceId: params.workspaceId,
-          versionNumber: params.versionNumber,
+          version: params.version,
           analysisType: params.analysisType,
           modelUsed: params.modelUsed,
-          fullCreditsUsed: params.fullCreditsUsed || 0,
-          fastCreditsUsed: params.fastCreditsUsed || 0,
           analysisKey: params.analysisKey,
-          sourceFilesMetadata: params.sourceFilesMetadata,
-          createdBy: params.createdBy,
+          extractedData: params.sourceFilesMetadata,
           status: 'PENDING'
         }
       });
@@ -547,11 +543,11 @@ export class DeepAnalysisService {
           analysisKey: params.analysisKey,
           analysisType: params.analysisType,
           modelHint: params.modelHint,
-          filesMetadata: params.filesMetadata,
+          filesMetadata: JSON.stringify(params.filesMetadata),
           resultVersionId: params.resultVersionId,
           lockToken: params.lockToken,
           metadata: params.metadata || {},
-          status: 'QUEUED'
+          status: JobStatus.QUEUED
         }
       });
 
@@ -568,7 +564,7 @@ export class DeepAnalysisService {
    */
   async getLastAnalysis(processId: string, analysisType?: string): Promise<any | null> {
     try {
-      const where: any = { processId };
+      const where: any = { caseId: processId };
       if (analysisType) {
         where.analysisType = analysisType;
       }
@@ -594,28 +590,35 @@ export class DeepAnalysisService {
     try {
       // Buscar job no banco
       const job = await prisma.analysisJob.findUnique({
-        where: { id: jobId },
-        include: {
-          process: {
-            include: {
-              documents: true
-            }
-          }
-        }
+        where: { id: jobId }
       });
 
-      if (!job || !job.process) {
-        throw new Error(`Job ou processo não encontrado: ${jobId}`);
+      if (!job) {
+        throw new Error(`Job não encontrado: ${jobId}`);
       }
+
+      // Buscar documentos do processo
+      const documents = await prisma.caseDocument.findMany({
+        where: { caseId: job.processId },
+        select: {
+          id: true,
+          name: true,
+          extractedText: true
+        }
+      });
 
       // Atualizar progresso para em processamento
       await prisma.analysisJob.update({
         where: { id: jobId },
-        data: { status: 'PROCESSING', progress: 25 }
+        data: {
+          status: JobStatus.RUNNING,
+          progress: 25,
+          startedAt: new Date()
+        }
       });
 
       // Extrair texto dos documentos
-      const documentTexts = job.process.documents.map(doc => ({
+      const documentTexts = documents.map(doc => ({
         id: doc.id,
         name: doc.name,
         text: doc.extractedText || 'Texto não extraído'
@@ -627,8 +630,13 @@ export class DeepAnalysisService {
         data: { progress: 50 }
       });
 
+      // Buscar informações do processo
+      const processInfo = await prisma.monitoredProcess.findFirst({
+        where: { id: job.processId }
+      });
+
       // Preparar prompt para análise completa com Gemini Pro
-      const analysisPrompt = this.buildDeepAnalysisPrompt(job.process, documentTexts);
+      const analysisPrompt = this.buildDeepAnalysisPrompt(processInfo, documentTexts);
 
       // Usar Gemini Pro para análise completa
       const geminiClient = getGeminiClient();
@@ -645,15 +653,14 @@ export class DeepAnalysisService {
       });
 
       // Salvar resultado da análise
-      await prisma.analysis.create({
+      await prisma.caseAnalysisVersion.update({
+        where: { id: job.resultVersionId || '' },
         data: {
-          processId: job.processId,
-          type: job.analysisType,
-          version: this.generateAnalysisVersion(),
-          result: analysisResult,
-          tokensUsed: analysisResult.metadata?.tokensUsed || 0,
-          model: 'gemini-1.5-pro',
-          createdAt: new Date()
+          aiAnalysis: analysisResult,
+          status: JobStatus.COMPLETED,
+          modelUsed: 'gemini-1.5-pro',
+          processingTime: Date.now() - (job.startedAt?.getTime() || Date.now()),
+          confidence: analysisResult.metadata?.confidencia || 0.85
         }
       });
 
@@ -661,7 +668,7 @@ export class DeepAnalysisService {
       await prisma.analysisJob.update({
         where: { id: jobId },
         data: {
-          status: 'COMPLETED',
+          status: JobStatus.COMPLETED,
           progress: 100,
           finishedAt: new Date()
         }
@@ -674,7 +681,7 @@ export class DeepAnalysisService {
       await prisma.analysisJob.update({
         where: { id: jobId },
         data: {
-          status: 'FAILED',
+          status: JobStatus.FAILED,
           finishedAt: new Date()
         }
       });
@@ -689,10 +696,10 @@ export class DeepAnalysisService {
 Você é um especialista em análise jurídica. Analise o processo judicial a seguir e forneça uma análise completa e detalhada.
 
 **INFORMAÇÕES DO PROCESSO:**
-- Número: ${process.number || 'Não informado'}
-- Título: ${process.title || 'Não informado'}
-- Status: ${process.status || 'Não informado'}
-- Cliente: ${process.clientName || 'Não informado'}
+- Número: ${process?.processNumber || 'Não informado'}
+- Tribunal: ${process?.court || 'Não informado'}
+- Cliente: ${process?.clientName || 'Não informado'}
+- Status do Monitoramento: ${process?.monitoringStatus || 'Não informado'}
 
 **DOCUMENTOS ANALISADOS:**
 ${documentTexts.map((doc, index) => `

@@ -443,7 +443,7 @@ export class ExcelUploadService {
       const result = await this.rateLimiter.call(
         async () => {
           // Implementar chamada real à API Judit ou simulação
-          const juditResult = await this.callJuditAPI(row.numeroProcesso, row.tribunal);
+          const juditResult = await this.callJuditAPISimple(row.numeroProcesso, row.tribunal);
 
           if (juditResult.success) {
             return {
@@ -731,7 +731,7 @@ export class ExcelUploadService {
   /**
    * Chama API Judit real ou simulação baseado na configuração
    */
-  private async callJuditAPI(numeroProcesso: string, tribunal: string): Promise<{
+  private async callJuditAPISimple(numeroProcesso: string, tribunal: string): Promise<{
     success: boolean;
     data?: any;
     error?: string;

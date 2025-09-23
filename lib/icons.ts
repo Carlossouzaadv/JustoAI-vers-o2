@@ -85,7 +85,10 @@ export const ICONS = {
   DATABASE: '🗄️',
   WORKER: '⚙️',
   BATCH: '📦',
-  GENERATE: '⚡'
+  GENERATE: '⚡',
+  TELEMETRY: '📊',
+  COST: '💰',
+  ALERT: '🚨'
 } as const;
 
 export const UI_TEXT = {

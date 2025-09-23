@@ -190,6 +190,7 @@ export interface UnifiedProcessSchema {
     confianca_geral: number; // 0-1
     observacoes_ia: string | null;
     campos_nao_encontrados: string[] | null;
+    tipo_documento_detectado?: string;
   };
 }
 
@@ -1218,6 +1219,7 @@ PROFUNDIDADE: Completa e estratégica`;
       {
         totalScore: 0,
         factors: {
+          documentType: 0,
           textLength: 0,
           legalComplexity: 0,
           structuralComplexity: 0,

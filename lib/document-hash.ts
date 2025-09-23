@@ -4,7 +4,7 @@
 // Utilitário para calcular hash SHA256 de documentos e implementar
 // lógica de deduplicação conforme especificação
 
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { ICONS } from './icons';
 
 export interface DocumentHashResult {

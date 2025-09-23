@@ -240,8 +240,8 @@ export class ProcessAlertManager {
           recipient,
           processInfo,
           alert.title,
-          alert.description,
-          alert.severity === 'high' ? 'high' : alert.severity === 'medium' ? 'medium' : 'low'
+          alert.message,
+          alert.severity === 'HIGH' ? 'high' : alert.severity === 'MEDIUM' ? 'medium' : 'low'
         );
       });
 

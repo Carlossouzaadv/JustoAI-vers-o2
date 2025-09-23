@@ -35,7 +35,6 @@ export class AnalysisCacheManager {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
       enableReadyCheck: false,
       lazyConnect: true
     });
@@ -292,17 +291,26 @@ export class AnalysisCacheManager {
    */
   async getCacheStats(): Promise<any> {
     try {
-      const [analysisKeys, textKeys, memory] = await Promise.all([
+      const [analysisKeys, textKeys] = await Promise.all([
         this.redis.keys('analysis:*'),
-        this.redis.keys('text:*'),
-        this.redis.memory('usage')
+        this.redis.keys('text:*')
       ]);
+
+      // Try to get memory usage, fallback to 0 if not supported
+      let memoryInfo = 0;
+      try {
+        memoryInfo = await this.redis.call('MEMORY', 'USAGE') as number;
+      } catch (error) {
+        console.warn('Redis MEMORY USAGE command not supported, using fallback');
+      }
+
+      const memoryUsageBytes = memoryInfo || 0;
 
       return {
         analysis_entries: analysisKeys.length,
         text_entries: textKeys.length,
-        memory_usage_bytes: memory,
-        memory_usage_mb: Math.round(memory / (1024 * 1024)),
+        memory_usage_bytes: memoryUsageBytes,
+        memory_usage_mb: Math.round(memoryUsageBytes / (1024 * 1024)),
         ttl_config: {
           text_cache_days: this.TEXT_CACHE_TTL / (24 * 60 * 60),
           analysis_cache_days: this.ANALYSIS_CACHE_TTL / (24 * 60 * 60),

@@ -203,6 +203,7 @@ model CaseDocument {
 model CaseAnalysisVersion {
   id             String        @id @default(cuid())
   caseId         String
+  workspaceId    String
   version        Int
   status         ProcessStatus @default(COMPLETED)
   error          String?
@@ -216,9 +217,13 @@ model CaseAnalysisVersion {
   metadata       Json?
   modelUsed      String        @default("gemini-1.5-flash")
   processingTime Int           @default(0)
+  analysisKey    String?       @db.VarChar(64)
   case           Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  jobs           AnalysisJob[]
 
   @@unique([caseId, version])
+  @@index([analysisKey])
   @@map("case_analysis_versions")
 }
 
@@ -917,6 +922,7 @@ enum SyncSchedule {
 }
 
 enum ExecutionStatus {
+  AGENDADO
   RUNNING
   COMPLETED
   FAILED
@@ -1187,42 +1193,7 @@ enum UploadRowStatus {
   CANCELLED
 }
 
-// ================================================================
-// DEEPEN ANALYSIS SYSTEM MODELS
-// ================================================================
-
-model CaseAnalysisVersion {
-  id                   String                @id @default(cuid())
-  processId            String
-  workspaceId          String
-  versionNumber        Int
-  analysisType         AnalysisType
-  modelUsed            String
-  fullCreditsUsed      Decimal               @default(0) @db.Decimal(10, 2)
-  fastCreditsUsed      Decimal               @default(0) @db.Decimal(10, 2)
-  summaryJson          Json                  @default("{}")
-  insightsJson         Json?
-  confidenceScore      Decimal?              @db.Decimal(3, 2)
-  reportUrl            String?
-  sourceFilesMetadata  Json                  @default("[]")
-  analysisKey          String?               @db.VarChar(64)
-  processingTimeMs     Int?
-  createdBy            String?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  status               AnalysisStatus        @default(PENDING)
-  errorMessage         String?
-  workspace            Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  jobs                 AnalysisJob[]
-
-  @@unique([processId, versionNumber])
-  @@index([processId, versionNumber])
-  @@index([workspaceId, createdAt])
-  @@index([analysisKey])
-  @@index([status, createdAt])
-  @@map("case_analysis_versions")
-}
-
+// Missing models that were accidentally removed
 model AnalysisJob {
   id                String                @id @default(cuid())
   processId         String
@@ -1253,83 +1224,6 @@ model AnalysisJob {
   @@map("analysis_jobs")
 }
 
-model AnalysisCache {
-  id                 String    @id @default(cuid())
-  analysisKey        String    @unique @db.VarChar(64)
-  resultData         Json
-  modelUsed          String
-  analysisType       String
-  processId          String
-  lastMovementDate   DateTime?
-  createdAt          DateTime  @default(now())
-  expiresAt          DateTime?
-  accessCount        Int       @default(0)
-  lastAccessedAt     DateTime  @default(now())
-  compressed         Boolean   @default(false)
-  dataSizeBytes      Int       @default(0)
-
-  @@index([analysisKey])
-  @@index([processId, createdAt])
-  @@index([expiresAt])
-  @@map("analysis_cache")
-}
-
-model ProcessMovementsTracking {
-  id                 String   @id @default(cuid())
-  processId          String   @unique
-  lastMovementDate   DateTime
-  movementsHash      String?  @db.VarChar(64)
-  movementsCount     Int      @default(0)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([processId])
-  @@index([lastMovementDate])
-  @@map("process_movements_tracking")
-}
-
-// Enums para sistema de análise
-enum AnalysisType {
-  FAST
-  FULL
-}
-
-enum AnalysisStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-enum JobStatus {
-  QUEUED
-  RUNNING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-
-// Enums para sistema de relatórios agendados
-enum ExecutionStatus {
-  AGENDADO
-  EM_PROCESSAMENTO
-  CONCLUIDO
-  FALHOU
-  CANCELADO
-}
-
-enum AudienceType {
-  CLIENTE
-  DIRETORIA
-  USO_INTERNO
-}
-
-enum OutputFormat {
-  PDF
-  DOCX
-}
-
-// Tabelas para sistema de relatórios avançado
 model WorkspaceQuota {
   id                     String   @id @default(cuid())
   workspaceId            String   @unique
@@ -1385,3 +1279,45 @@ model ReportTemplate {
   @@unique([workspaceId, name])
   @@map("report_templates")
 }
+
+model AnalysisCache {
+  id                 String    @id @default(cuid())
+  analysisKey        String    @unique @db.VarChar(64)
+  resultData         Json
+  modelUsed          String
+  analysisType       String
+  processId          String
+  lastMovementDate   DateTime?
+  createdAt          DateTime  @default(now())
+  expiresAt          DateTime?
+  accessCount        Int       @default(0)
+  lastAccessedAt     DateTime  @default(now())
+  compressed         Boolean   @default(false)
+  dataSizeBytes      Int       @default(0)
+
+  @@index([analysisKey])
+  @@index([processId, createdAt])
+  @@index([expiresAt])
+  @@map("analysis_cache")
+}
+
+// Missing enums
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AudienceType {
+  CLIENTE
+  DIRETORIA
+  USO_INTERNO
+}
+
+enum OutputFormat {
+  PDF
+  DOCX
+}
+

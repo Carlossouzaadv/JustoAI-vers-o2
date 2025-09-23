@@ -368,7 +368,7 @@ export class AiCacheManager {
     // Limpeza da memória a cada 5 minutos
     setInterval(() => {
       const now = Date.now();
-      for (const [key, entry] of this.memoryCache.entries()) {
+      for (const [key, entry] of Array.from(this.memoryCache.entries())) {
         if (entry.expires < now) {
           this.memoryCache.delete(key);
         }

@@ -633,7 +633,7 @@ export class JuditApiClient {
         }
 
         // Handle server errors that should be retried
-        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status)) {
+        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status as any)) {
           const errorText = await response.text();
           const error = new Error(`HTTP ${response.status}: ${errorText}`);
           (error as any).retryable = true;
@@ -642,7 +642,7 @@ export class JuditApiClient {
         }
 
         // Handle client errors that should NOT be retried
-        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status)) {
+        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status as any)) {
           const errorText = await response.text();
           const error = new Error(`HTTP ${response.status}: ${errorText}`);
           (error as any).retryable = false;
@@ -828,10 +828,6 @@ export class JuditApiClient {
       chunks.push(array.slice(i, i + size));
     }
     return chunks;
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   // ================================================================

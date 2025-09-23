@@ -206,7 +206,7 @@ export class ReportScheduler {
     await prisma.reportExecution.update({
       where: { id: executionId },
       data: {
-        status: 'EM_PROCESSAMENTO',
+        status: 'RUNNING',
         startedAt: new Date()
       }
     });
@@ -237,7 +237,7 @@ export class ReportScheduler {
       await prisma.reportExecution.update({
         where: { id: executionId },
         data: {
-          status: 'CONCLUIDO',
+          status: 'COMPLETED',
           completedAt: new Date(),
           duration: Date.now() - execution.startedAt.getTime(),
           result: result.summary,
@@ -258,7 +258,7 @@ export class ReportScheduler {
       await prisma.reportExecution.update({
         where: { id: executionId },
         data: {
-          status: 'FALHOU',
+          status: 'FAILED',
           completedAt: new Date(),
           duration: Date.now() - execution.startedAt.getTime(),
           error: error instanceof Error ? error.message : 'Erro desconhecido',
@@ -377,7 +377,7 @@ export class ReportScheduler {
       data: {
         workspaceId,
         scheduleId,
-        status: 'FALHOU',
+        status: 'FAILED',
         error,
         quotaConsumed: 0,
         startedAt: new Date(),
@@ -407,7 +407,7 @@ export class ReportScheduler {
           lt: cutoffDate
         },
         status: {
-          in: ['CONCLUIDO', 'FALHOU', 'CANCELADO']
+          in: ['COMPLETED', 'FAILED', 'CANCELLED']
         }
       }
     });
@@ -457,7 +457,7 @@ export class ReportScheduler {
             gte: today,
             lt: tomorrow
           },
-          status: 'CONCLUIDO'
+          status: 'COMPLETED'
         }
       })
     ]);

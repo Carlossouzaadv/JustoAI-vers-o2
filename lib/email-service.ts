@@ -55,7 +55,7 @@ export class EmailService {
    * Send email notification using predefined templates
    */
   async sendNotification(notification: EmailNotification): Promise<EmailResult> {
-    console.log(`${ICONS.EMAIL} Enviando notificação por email...`);
+    console.log(`${ICONS.MAIL} Enviando notificação por email...`);
 
     if (!this.apiKey) {
       console.log(`${ICONS.WARNING} Simulando envio de email (API key não configurada)`);

@@ -6,7 +6,7 @@
 import sharp from 'sharp';
 import { existsSync, createReadStream, createWriteStream } from 'fs';
 import { promises as fs } from 'fs';
-import path from 'path';
+import * as path from 'path';
 import { createGunzip, createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 

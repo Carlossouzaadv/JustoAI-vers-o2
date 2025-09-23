@@ -6,7 +6,7 @@
 import { prisma } from './prisma';
 import { getEmailService } from './email-service';
 import { ICONS } from './icons';
-import crypto from 'crypto';
+import { randomUUID } from 'crypto';
 
 export interface PaymentWebhookPayload {
   provider: 'stripe' | 'mercadopago' | 'pagseguro' | 'pix' | 'custom';
@@ -45,7 +45,7 @@ export class PaymentWebhookHandler {
     headers: Record<string, string>,
     rawBody: string
   ): Promise<PaymentProcessingResult> {
-    console.log(`${ICONS.WEBHOOK} Processando webhook de pagamento: ${provider}`);
+    console.log(`${ICONS.SYNC} Processando webhook de pagamento: ${provider}`);
 
     try {
       // Verificar assinatura do webhook se configurada
@@ -93,8 +93,13 @@ export class PaymentWebhookHandler {
 
     try {
       // Verificar se transação já foi processada
-      const existingTransaction = await prisma.transaction.findUnique({
-        where: { externalId: payload.transactionId }
+      const existingTransaction = await prisma.creditTransaction.findFirst({
+        where: {
+          metadata: {
+            path: ['externalId'],
+            equals: payload.transactionId
+          }
+        }
       });
 
       if (existingTransaction) {
@@ -102,7 +107,7 @@ export class PaymentWebhookHandler {
         return {
           success: true,
           transactionId: payload.transactionId,
-          creditsAdded: existingTransaction.credits
+          creditsAdded: Math.abs(Number(existingTransaction.amount))
         };
       }
 
@@ -113,7 +118,10 @@ export class PaymentWebhookHandler {
       }
 
       const user = await prisma.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
+        include: {
+          workspaces: true
+        }
       });
 
       if (!user) {
@@ -124,43 +132,45 @@ export class PaymentWebhookHandler {
       const credits = this.calculateCreditsFromAmount(payload.amount, payload.metadata?.planId);
 
       // Criar transação no banco
-      const transaction = await prisma.transaction.create({
+      const transaction = await prisma.creditTransaction.create({
         data: {
-          id: crypto.randomUUID(),
-          userId: userId,
-          type: 'CREDIT_PURCHASE',
-          amount: payload.amount,
-          credits: credits,
-          status: 'COMPLETED',
-          provider: payload.provider.toUpperCase(),
-          externalId: payload.transactionId,
-          metadata: payload.metadata || {},
-          createdAt: new Date()
-        }
-      });
-
-      // Atualizar saldo de créditos do usuário
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          credits: {
-            increment: credits
+          id: randomUUID(),
+          workspaceId: user.workspaces[0]?.workspaceId || '',
+          type: 'CREDIT',
+          creditCategory: 'FULL',
+          amount: credits,
+          reason: `Compra via ${payload.provider} - ${payload.transactionId}`,
+          metadata: {
+            ...payload.metadata,
+            externalId: payload.transactionId,
+            provider: payload.provider.toUpperCase(),
+            paymentAmount: payload.amount,
+            status: 'COMPLETED'
           }
         }
       });
 
-      // Registrar movimentação de créditos
-      await prisma.creditMovement.create({
-        data: {
-          id: crypto.randomUUID(),
-          userId: userId,
-          amount: credits,
-          type: 'PURCHASE',
-          description: `Compra via ${payload.provider} - ${payload.transactionId}`,
-          transactionId: transaction.id,
-          createdAt: new Date()
-        }
+      // Atualizar saldo de créditos do workspace
+      const userWorkspace = await prisma.userWorkspace.findFirst({
+        where: { userId: userId }
       });
+
+      if (userWorkspace) {
+        await prisma.workspaceCredits.upsert({
+          where: { workspaceId: userWorkspace.workspaceId },
+          create: {
+            workspaceId: userWorkspace.workspaceId,
+            fullCreditsBalance: credits
+          },
+          update: {
+            fullCreditsBalance: {
+              increment: credits
+            }
+          }
+        });
+      }
+
+      // A transação já é registrada como movimentação de créditos
 
       console.log(`${ICONS.SUCCESS} ${credits} créditos adicionados para usuário ${userId}`);
 
@@ -199,21 +209,31 @@ export class PaymentWebhookHandler {
     try {
       const userId = payload.metadata?.userId;
       if (userId) {
-        // Registrar falha no banco
-        await prisma.transaction.create({
-          data: {
-            id: crypto.randomUUID(),
-            userId: userId,
-            type: 'CREDIT_PURCHASE',
-            amount: payload.amount,
-            credits: 0,
-            status: 'FAILED',
-            provider: payload.provider.toUpperCase(),
-            externalId: payload.transactionId,
-            metadata: payload.metadata || {},
-            createdAt: new Date()
-          }
+        // Buscar workspace do usuário
+        const userWorkspace = await prisma.userWorkspace.findFirst({
+          where: { userId: userId }
         });
+
+        if (userWorkspace) {
+          // Registrar falha no banco
+          await prisma.creditTransaction.create({
+            data: {
+              id: randomUUID(),
+              workspaceId: userWorkspace.workspaceId,
+              type: 'CREDIT',
+              creditCategory: 'FULL',
+              amount: 0,
+              reason: `Falha na compra via ${payload.provider} - ${payload.transactionId}`,
+              metadata: {
+                ...payload.metadata,
+                externalId: payload.transactionId,
+                provider: payload.provider.toUpperCase(),
+                paymentAmount: payload.amount,
+                status: 'FAILED'
+              }
+            }
+          });
+        }
 
         // Aqui poderia enviar email de falha ou notificação
       }
@@ -237,20 +257,30 @@ export class PaymentWebhookHandler {
     try {
       const userId = payload.metadata?.userId;
       if (userId) {
-        await prisma.transaction.create({
-          data: {
-            id: crypto.randomUUID(),
-            userId: userId,
-            type: 'CREDIT_PURCHASE',
-            amount: payload.amount,
-            credits: 0,
-            status: 'PENDING',
-            provider: payload.provider.toUpperCase(),
-            externalId: payload.transactionId,
-            metadata: payload.metadata || {},
-            createdAt: new Date()
-          }
+        // Buscar workspace do usuário
+        const userWorkspace = await prisma.userWorkspace.findFirst({
+          where: { userId: userId }
         });
+
+        if (userWorkspace) {
+          await prisma.creditTransaction.create({
+            data: {
+              id: randomUUID(),
+              workspaceId: userWorkspace.workspaceId,
+              type: 'CREDIT',
+              creditCategory: 'FULL',
+              amount: 0,
+              reason: `Pagamento pendente via ${payload.provider} - ${payload.transactionId}`,
+              metadata: {
+                ...payload.metadata,
+                externalId: payload.transactionId,
+                provider: payload.provider.toUpperCase(),
+                paymentAmount: payload.amount,
+                status: 'PENDING'
+              }
+            }
+          });
+        }
       }
 
       return {
@@ -267,43 +297,48 @@ export class PaymentWebhookHandler {
    * Handle refunded payment
    */
   private async handlePaymentRefunded(payload: PaymentWebhookPayload): Promise<PaymentProcessingResult> {
-    console.log(`${ICONS.REFUND} Processando reembolso: ${payload.transactionId}`);
+    console.log(`${ICONS.MONEY} Processando reembolso: ${payload.transactionId}`);
 
     try {
       // Buscar transação original
-      const originalTransaction = await prisma.transaction.findUnique({
-        where: { externalId: payload.transactionId }
+      const originalTransaction = await prisma.creditTransaction.findFirst({
+        where: {
+          metadata: {
+            path: ['externalId'],
+            equals: payload.transactionId
+          }
+        }
       });
 
-      if (originalTransaction && originalTransaction.status === 'COMPLETED') {
-        // Remover créditos do usuário
-        await prisma.user.update({
-          where: { id: originalTransaction.userId },
+      if (originalTransaction && originalTransaction.metadata && (originalTransaction.metadata as any).status === 'COMPLETED') {
+        // Remover créditos do workspace
+        await prisma.workspaceCredits.update({
+          where: { workspaceId: originalTransaction.workspaceId },
           data: {
-            credits: {
-              decrement: originalTransaction.credits
+            fullCreditsBalance: {
+              decrement: Math.abs(Number(originalTransaction.amount))
             }
           }
         });
 
-        // Atualizar status da transação
-        await prisma.transaction.update({
-          where: { id: originalTransaction.id },
-          data: { status: 'REFUNDED' }
-        });
-
-        // Registrar movimentação de créditos
-        await prisma.creditMovement.create({
+        // Criar nova transação de reembolso
+        await prisma.creditTransaction.create({
           data: {
-            id: crypto.randomUUID(),
-            userId: originalTransaction.userId,
-            amount: -originalTransaction.credits,
-            type: 'REFUND',
-            description: `Reembolso - ${payload.transactionId}`,
-            transactionId: originalTransaction.id,
-            createdAt: new Date()
+            id: randomUUID(),
+            workspaceId: originalTransaction.workspaceId,
+            type: 'DEBIT',
+            creditCategory: 'FULL',
+            amount: Math.abs(Number(originalTransaction.amount)),
+            reason: `Reembolso - ${payload.transactionId}`,
+            metadata: {
+              originalTransactionId: originalTransaction.id,
+              externalId: payload.transactionId,
+              status: 'REFUNDED'
+            }
           }
         });
+
+        // A transação de débito já registra a movimentação
       }
 
       return {
@@ -413,7 +448,7 @@ export class PaymentWebhookHandler {
    */
   private verifyWebhookSignature(provider: string, headers: Record<string, string>, body: string): boolean {
     // Por enquanto, sempre válido - implementar verificação real conforme provider
-    console.log(`${ICONS.SECURITY} Verificando assinatura do webhook ${provider}...`);
+    console.log(`${ICONS.SHIELD} Verificando assinatura do webhook ${provider}...`);
 
     // TODO: Implementar verificação real de assinatura para cada provider
     // Stripe: usar stripe.webhooks.constructEvent

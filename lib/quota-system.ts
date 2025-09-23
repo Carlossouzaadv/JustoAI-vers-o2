@@ -297,7 +297,7 @@ export class QuotaSystem {
       where: {
         workspaceId,
         createdAt: { gte: monthStart },
-        status: 'CONCLUIDO'
+        status: 'COMPLETED'
       }
     });
 

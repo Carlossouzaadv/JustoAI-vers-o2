@@ -6,6 +6,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ICONS } from './icons';
 
+
 // Tipos principais
 export interface CreditCost {
   reportCredits: number;
@@ -145,10 +146,10 @@ export class CreditManager {
       const fullCreditsHeld = Number(holds._sum.fullCreditsReserved || 0);
 
       return {
-        reportCreditsBalance: Number(credits.reportCreditsBalance),
-        fullCreditsBalance: Number(credits.fullCreditsBalance),
-        reportCreditsAvailable: Number(credits.reportCreditsBalance) - reportCreditsHeld,
-        fullCreditsAvailable: Number(credits.fullCreditsBalance) - fullCreditsHeld,
+        reportCreditsBalance: Number(credits?.reportCreditsBalance || 0),
+        fullCreditsBalance: Number(credits?.fullCreditsBalance || 0),
+        reportCreditsAvailable: Number(credits?.reportCreditsBalance || 0) - reportCreditsHeld,
+        fullCreditsAvailable: Number(credits?.fullCreditsBalance || 0) - fullCreditsHeld,
         reportCreditsHeld,
         fullCreditsHeld
       };
@@ -480,7 +481,7 @@ export class CreditManager {
         ]
       });
 
-      return allocations.map(allocation => ({
+      return allocations.map((allocation: any) => ({
         type: allocation.type as 'MONTHLY' | 'BONUS' | 'PACK',
         amount: Number(allocation.amount),
         remaining: Number(allocation.remainingAmount),
@@ -576,7 +577,7 @@ export class CreditManager {
           fullCreditsToAdd,
           'MONTHLY',
           `Alocação mensal ${planName}`,
-          null // Nunca expira
+          undefined // Nunca expira
         );
 
         // Log de rollover se aplicável
