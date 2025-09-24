@@ -1,6 +1,22 @@
 import type { NextConfig } from "next";
 
+// Import polyfill patch that overrides require
+require('./self-polyfill-patch.js');
+
 const nextConfig: NextConfig = {
+  // Fix multiple lockfiles warning
+  outputFileTracingRoot: __dirname,
+
+  // Server runtime configuration
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+  },
+
+  // Public runtime configuration
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+  },
+
   // ESLint config - ignore during builds for now (system functional)
   eslint: {
     ignoreDuringBuilds: true,
@@ -10,6 +26,17 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  // Temporarily disable features that might cause build issues
+  output: 'standalone',
+
+  // Disable static optimization
+  generateBuildId: async () => {
+    return 'build-id-' + Date.now()
+  },
+
+  // Skip static generation during build
+  // (experimental config will be set later in the config)
 
   // ======================================
   // OTIMIZAÇÕES DE PERFORMANCE
@@ -143,6 +170,83 @@ const nextConfig: NextConfig = {
 
   // Configuração de webpack para minificação
   webpack: (config, { dev, isServer }) => {
+    config.plugins = config.plugins || [];
+    const webpack = require('webpack');
+
+    // Define global and self appropriately for each environment
+    if (isServer) {
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'self': 'global',
+          'global': 'global'
+        })
+      );
+
+      // Add a banner that injects polyfill at the beginning (this works!)
+      config.plugins.push(
+        new webpack.BannerPlugin({
+          banner: 'if(typeof global !== "undefined" && !global.self) global.self = global;',
+          raw: true,
+          entryOnly: true
+        })
+      );
+    } else {
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          'global': 'globalThis'
+        })
+      );
+    }
+
+    // Excluir módulos server-only do bundle do cliente
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        os: false,
+        crypto: false,
+        stream: false,
+        util: false,
+        url: false,
+        querystring: false,
+        http: false,
+        https: false,
+        zlib: false,
+        net: false,
+        tls: false,
+        child_process: false,
+        readline: false,
+        events: false,
+      };
+
+      // Excluir pacotes específicos que causam problemas no cliente
+      config.externals = [
+        ...config.externals || [],
+        'puppeteer',
+        'puppeteer-core',
+        'sharp',
+        'bull',
+        'ioredis',
+        'compression',
+        'multer',
+        'pdf-parse',
+        'pdf2pic',
+        'winston',
+        'winston-daily-rotate-file',
+        'bcryptjs',
+        '@prisma/client',
+        'prisma'
+      ];
+
+      // Adicionar plugin para ignorar módulos problemáticos
+      config.plugins.push(
+        new webpack.IgnorePlugin({
+          resourceRegExp: /^(puppeteer|puppeteer-core|sharp|bull|ioredis|compression|multer|pdf-parse|pdf2pic|winston|winston-daily-rotate-file|bcryptjs|@prisma\/client|prisma)$/,
+        })
+      );
+    }
+
     // Apenas em produção
     if (!dev) {
       // Minificação adicional de CSS

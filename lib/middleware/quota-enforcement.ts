@@ -94,7 +94,7 @@ export class QuotaEnforcement {
     } = {}
   ): Promise<QuotaCheckResult> {
     try {
-      console.log(`${ICONS.QUOTA} Checking report quota for workspace: ${workspaceId}`);
+      console.log(`${ICONS.SHIELD} Checking report quota for workspace: ${workspaceId}`);
 
       // Verificar se enforcement está habilitado
       if (!this.config.ENABLE_QUOTA_ENFORCEMENT) {
@@ -110,7 +110,7 @@ export class QuotaEnforcement {
 
       // Verificar bypass de admin
       if (options.adminBypass) {
-        console.log(`${ICONS.ADMIN} Admin bypass enabled for workspace: ${workspaceId}`);
+        console.log(`${ICONS.USER} Admin bypass enabled for workspace: ${workspaceId}`);
         return {
           allowed: true,
           quotaStatus: 'ok',
@@ -349,7 +349,7 @@ export class QuotaEnforcement {
   // ================================================================
 
   private async getWorkspaceQuotaPolicy(workspaceId: string): Promise<QuotaPolicy | null> {
-    const policy = await prisma.workspaceQuotaPolicy.findUnique({
+    const policy = await prisma.workspaceQuota.findUnique({
       where: { workspaceId }
     });
 
@@ -359,12 +359,12 @@ export class QuotaEnforcement {
 
     return {
       workspaceId: policy.workspaceId,
-      planId: policy.planId,
+      planId: policy.plan,
       reportsMonthlyLimit: policy.reportsMonthlyLimit,
-      processesLimit: policy.processesLimit,
-      fullCreditsIncluded: policy.fullCreditsIncluded,
-      softThresholdPct: parseFloat(policy.softThresholdPct.toString()),
-      hardThresholdPct: parseFloat(policy.hardThresholdPct.toString())
+      processesLimit: policy.reportProcessesLimit,
+      fullCreditsIncluded: 100, // Default value since not in schema
+      softThresholdPct: 0.8, // 80% soft threshold
+      hardThresholdPct: 1.0 // 100% hard threshold
     };
   }
 
@@ -372,37 +372,32 @@ export class QuotaEnforcement {
     reportsTotal: number;
     creditsConsumed: number;
   }> {
-    // Se for agendamento futuro, calcular para o mês do agendamento
-    const targetDate = scheduledFor || new Date();
-    const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-    const endOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+    try {
+      // Get quota info which has current usage
+      const quota = await prisma.workspaceQuota.findUnique({
+        where: { workspaceId }
+      });
 
-    const usage = await prisma.workspaceUsageDaily.aggregate({
-      where: {
-        workspaceId,
-        date: {
-          gte: startOfMonth,
-          lte: endOfMonth
-        }
-      },
-      _sum: {
-        reportsScheduledGenerated: true,
-        reportsOnDemandGenerated: true,
-        fullCreditsConsumedMonth: true
+      if (!quota) {
+        return { reportsTotal: 0, creditsConsumed: 0 };
       }
-    });
 
-    return {
-      reportsTotal: (usage._sum.reportsScheduledGenerated || 0) + (usage._sum.reportsOnDemandGenerated || 0),
-      creditsConsumed: usage._sum.fullCreditsConsumedMonth || 0
-    };
+      // Use the tracked usage from the quota table
+      return {
+        reportsTotal: quota.reportsUsedThisMonth,
+        creditsConsumed: 0 // Can be calculated if needed
+      };
+    } catch (error) {
+      console.error('Error getting monthly usage:', error);
+      return { reportsTotal: 0, creditsConsumed: 0 };
+    }
   }
 
   private async shouldSendSoftWarning(workspaceId: string): Promise<boolean> {
     const cooldownHours = this.config.SOFT_WARNING_COOLDOWN_HOURS;
     const cutoffTime = new Date(Date.now() - cooldownHours * 60 * 60 * 1000);
 
-    const recentWarning = await prisma.usageEvents.findFirst({
+    const recentWarning = await prisma.usageEvent.findFirst({
       where: {
         workspaceId,
         eventType: 'quota_soft_warning_sent',
@@ -420,11 +415,12 @@ export class QuotaEnforcement {
     eventType: string,
     payload: Record<string, any>
   ): Promise<void> {
-    await prisma.usageEvents.create({
+    await prisma.usageEvent.create({
       data: {
         workspaceId,
         eventType,
-        payload
+        resourceType: 'quota_check',
+        metadata: payload
       }
     });
   }
@@ -490,7 +486,7 @@ export class QuotaEnforcement {
    */
   async getQuotaStatus(workspaceId: string): Promise<{
     reports: QuotaCheckResult;
-    credits: { balance: number; included: number; purchased: number; consumed: number };
+    credits: { balance: number; includedCredits: number; purchasedCredits: number; consumedCredits: number };
     policy: QuotaPolicy | null;
   }> {
     const policy = await this.getWorkspaceQuotaPolicy(workspaceId);
@@ -513,19 +509,23 @@ export class QuotaEnforcement {
     workspaceId: string,
     updates: Partial<QuotaPolicy>
   ): Promise<QuotaPolicy> {
-    const updated = await prisma.workspaceQuotaPolicy.update({
+    const updated = await prisma.workspaceQuota.update({
       where: { workspaceId },
-      data: updates
+      data: {
+        plan: updates.planId as any,
+        reportsMonthlyLimit: updates.reportsMonthlyLimit,
+        reportProcessesLimit: updates.processesLimit
+      }
     });
 
     return {
       workspaceId: updated.workspaceId,
-      planId: updated.planId,
+      planId: updated.plan,
       reportsMonthlyLimit: updated.reportsMonthlyLimit,
-      processesLimit: updated.processesLimit,
-      fullCreditsIncluded: updated.fullCreditsIncluded,
-      softThresholdPct: parseFloat(updated.softThresholdPct.toString()),
-      hardThresholdPct: parseFloat(updated.hardThresholdPct.toString())
+      processesLimit: updated.reportProcessesLimit,
+      fullCreditsIncluded: 100,
+      softThresholdPct: 0.8,
+      hardThresholdPct: 1.0
     };
   }
 

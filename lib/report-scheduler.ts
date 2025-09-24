@@ -68,7 +68,7 @@ export class ReportScheduler {
           console.log(`${ICONS.WARNING} Quota excedida para workspace ${schedule.workspaceId}: ${quotaValidation.error}`);
 
           // Criar execução com status de erro
-          await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation.error);
+          await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation.error || 'Quota excedida');
           errors++;
           continue;
         }

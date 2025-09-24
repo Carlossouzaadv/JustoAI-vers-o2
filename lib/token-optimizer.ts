@@ -4,7 +4,7 @@
 // Combina PDF processing, text cleaning e AI routing para máxima economia
 
 import { PDFProcessor, ExtractionResult, PDFValidationResult } from './pdf-processor';
-import { TextCleaner, CleaningResult, CleaningOptions } from './text-cleaner';
+import { TextCleaner, CleaningResult } from './text-cleaner';
 import { AIModelRouter, ComplexityScore, ModelTier, ProcessingConfig, ModelCosts } from './ai-model-router';
 
 export interface OptimizationResult {
@@ -88,14 +88,11 @@ export class TokenOptimizer {
 
       // ETAPA 3: Limpeza inteligente de texto
       console.log('🧹 Aplicando limpeza inteligente...');
-      const cleaningOptions: CleaningOptions = {
-        documentType: options.documentType,
-        aggressiveness: options.aggressiveness,
-        preserveStructure: options.preserveStructure,
-        customPatterns: options.customPatterns
+      const cleaningData = this.textCleaner.cleanLegalDocument(extractionResult.text);
+      const cleaningResult: CleaningResult = {
+        originalText: extractionResult.text,
+        ...cleaningData
       };
-
-      const cleaningResult = await this.textCleaner.cleanText(extractionResult.text, cleaningOptions);
 
       console.log(`🎯 Texto limpo: ${cleaningResult.reductionPercentage}% de redução`);
 

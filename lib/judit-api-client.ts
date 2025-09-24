@@ -664,7 +664,7 @@ export class JuditApiClient {
         clearTimeout(timeoutId);
 
         // Handle timeout
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           const timeoutError = new Error('Request timeout');
           (timeoutError as any).retryable = true;
           (timeoutError as any).isTimeout = true;
@@ -711,7 +711,7 @@ export class JuditApiClient {
         }
 
         console.warn(`${ICONS.WARNING} Attempt ${attempt} failed, retrying in ${delay}ms:`, {
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           attempt,
           maxAttempts: JUDIT_CONFIG.MAX_RETRY_ATTEMPTS,
           delay

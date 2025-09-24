@@ -163,7 +163,7 @@ export class DOCXTemplateEngine {
   /**
    * Gera estilos do documento
    */
-  private generateStyles(customization: DOCXCustomization) {
+  private generateStyles(customization: DOCXCustomization): any {
     const primaryColorHex = customization.primaryColor.replace('#', '');
     const accentColorHex = customization.accentColor.replace('#', '');
 
@@ -181,7 +181,7 @@ export class DOCXTemplateEngine {
             font: 'Segoe UI',
           },
           paragraph: {
-            alignment: AlignmentType.CENTER,
+            alignment: 'center' as const,
             spacing: {
               after: 400,
             },
@@ -207,7 +207,7 @@ export class DOCXTemplateEngine {
               bottom: {
                 color: accentColorHex,
                 space: 1,
-                style: BorderStyle.SINGLE,
+                style: 'single' as const,
                 size: 6,
               },
             },
@@ -246,14 +246,14 @@ export class DOCXTemplateEngine {
               after: 200,
             },
             shading: {
-              type: 'clear',
+              type: 'clear' as const,
               color: accentColorHex + '20', // 20% opacity
             },
             border: {
               left: {
                 color: accentColorHex,
                 space: 4,
-                style: BorderStyle.SINGLE,
+                style: 'single' as const,
                 size: 12,
               },
             },
@@ -353,7 +353,9 @@ export class DOCXTemplateEngine {
       }
       footerElements.push(
         new TextRun({ text: 'Página ' }),
-        new PageNumber(),
+        new TextRun({
+          children: [PageNumber.CURRENT]
+        })
       );
     }
 
@@ -767,7 +769,7 @@ export class DOCXTemplateEngine {
    * Retorna descrição da audiência
    */
   private getAudienceDescription(audienceType: string): string {
-    const audienceMap = {
+    const audienceMap: { [key: string]: string } = {
       'CLIENTE': 'Relatório para Cliente',
       'DIRETORIA': 'Resumo Executivo para Diretoria',
       'USO_INTERNO': 'Relatório Técnico Interno'

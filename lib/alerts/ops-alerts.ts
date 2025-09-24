@@ -49,6 +49,8 @@ interface AlertEvent {
   channels: string[];
   sentAt: Date;
   acknowledged: boolean;
+  timestamp: Date;
+  metadata?: Record<string, any>;
 }
 
 // ================================================================
@@ -231,7 +233,9 @@ export class OpsAlerts {
         message,
         channels,
         sentAt: new Date(),
-        acknowledged: false
+        acknowledged: false,
+        timestamp: new Date(),
+        metadata: {}
       };
 
       await this.sendAlert(alert as AlertEvent);
@@ -261,7 +265,7 @@ export class OpsAlerts {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const hardBlockedEvents = await prisma.usageEvents.count({
+    const hardBlockedEvents = await prisma.usageEvent.count({
       where: {
         workspaceId,
         eventType: 'quota_hard_blocked',
@@ -329,7 +333,9 @@ export class OpsAlerts {
         context,
         channels: rule.channels.map(c => c.type),
         sentAt: new Date(),
-        acknowledged: false
+        acknowledged: false,
+        timestamp: new Date(),
+        metadata: context.metadata
       };
 
       // Enviar alerta
@@ -446,8 +452,8 @@ export class OpsAlerts {
           subject: `[${alert.severity.toUpperCase()}] ${alert.title}`,
           message: alert.message,
           severity: alert.severity,
-          timestamp: alert.timestamp,
-          metadata: alert.metadata
+          timestamp: alert.sentAt,
+          metadata: alert.context.metadata
         },
         priority: alert.severity === 'critical' ? 'high' : 'normal'
       });
@@ -466,7 +472,7 @@ export class OpsAlerts {
   private async sendSentryAlert(alert: AlertEvent): Promise<void> {
     try {
       // TODO: Integrar com Sentry SDK
-      console.log(`${ICONS.SENTRY} Sentry alert (simulated):`, {
+      console.log(`${ICONS.ALERT} Sentry alert (simulated):`, {
         level: alert.severity,
         message: alert.title,
         extra: alert.context
@@ -480,7 +486,7 @@ export class OpsAlerts {
   private async sendWebhookAlert(alert: AlertEvent): Promise<void> {
     try {
       // TODO: Implementar webhook genérico
-      console.log(`${ICONS.WEBHOOK} Webhook alert (simulated):`, alert);
+      console.log(`${ICONS.ALERT} Webhook alert (simulated):`, alert);
 
     } catch (error) {
       console.error(`${ICONS.ERROR} Failed to send webhook alert:`, error);
@@ -554,27 +560,28 @@ export class OpsAlerts {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const [todayUsage, weeklyUsage] = await Promise.all([
-      prisma.workspaceUsageDaily.findUnique({
+      prisma.usageEvent.findFirst({
         where: {
-          workspaceId_date: {
-            workspaceId,
-            date: new Date(today)
+          workspaceId,
+          createdAt: {
+            gte: new Date(today),
+            lt: new Date(new Date(today).getTime() + 24 * 60 * 60 * 1000)
           }
         }
       }),
-      prisma.workspaceUsageDaily.findMany({
+      prisma.usageEvent.findMany({
         where: {
           workspaceId,
-          date: {
+          createdAt: {
             gte: sevenDaysAgo
           }
         }
       })
     ]);
 
-    const todayBilling = todayUsage?.billingEstimatedCost ? parseFloat(todayUsage.billingEstimatedCost.toString()) : 0;
+    const todayBilling = (todayUsage?.metadata as any)?.billingEstimatedCost ? parseFloat((todayUsage?.metadata as any)?.billingEstimatedCost?.toString() || '0') : 0;
     const avgDaily = weeklyUsage.length > 0 ?
-      weeklyUsage.reduce((sum, day) => sum + parseFloat(day.billingEstimatedCost?.toString() || '0'), 0) / weeklyUsage.length :
+      weeklyUsage.reduce((sum: number, day: any) => sum + parseFloat((day.metadata as any)?.billingEstimatedCost?.toString() || '0'), 0) / weeklyUsage.length :
       0;
 
     return { today: todayBilling, avgDaily };
@@ -594,11 +601,12 @@ export class OpsAlerts {
 
   private async saveAlertEvent(alert: AlertEvent): Promise<void> {
     try {
-      await prisma.usageEvents.create({
+      await prisma.usageEvent.create({
         data: {
           workspaceId: alert.workspaceId || '',
           eventType: 'ops_alert_sent',
-          payload: {
+          resourceType: 'alert',
+          metadata: {
             alertId: alert.id,
             ruleId: alert.ruleId,
             severity: alert.severity,
@@ -631,7 +639,7 @@ export class OpsAlerts {
     const ruleIndex = this.rules.findIndex(r => r.id === ruleId);
     if (ruleIndex >= 0) {
       this.rules[ruleIndex] = { ...this.rules[ruleIndex], ...updates };
-      console.log(`${ICONS.UPDATE} Alert rule updated: ${ruleId}`);
+      console.log(`${ICONS.EDIT} Alert rule updated: ${ruleId}`);
     }
   }
 

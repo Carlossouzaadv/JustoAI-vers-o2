@@ -229,7 +229,7 @@ export class ReportGenerator {
         name: process.case?.client?.name || 'Cliente não informado',
         type: process.case?.client?.type || 'INDIVIDUAL'
       },
-      status: process.status,
+      status: process.monitoringStatus,
       lastMovement: process.movements[0] ? {
         date: process.movements[0].date,
         description: process.movements[0].description
@@ -238,8 +238,8 @@ export class ReportGenerator {
         date: mov.date,
         description: mov.description,
         type: mov.type || 'MOVIMENTO'
-      })),
-      summary: process.summary || undefined
+      }))
+      // summary não está disponível no modelo MonitoredProcess
     }));
   }
 
@@ -474,15 +474,25 @@ ${clientLanguage ?
         }
       });
 
-      return defaultTemplate || null;
+      return defaultTemplate ? {
+        ...defaultTemplate,
+        headerContent: defaultTemplate.headerContent || undefined,
+        footerContent: defaultTemplate.footerContent || undefined
+      } : null;
     }
 
-    return await prisma.reportTemplate.findFirst({
+    const template = await prisma.reportTemplate.findFirst({
       where: {
         id: templateId,
         workspaceId
       }
     });
+
+    return template ? {
+      ...template,
+      headerContent: template.headerContent || undefined,
+      footerContent: template.footerContent || undefined
+    } : null;
   }
 
   /**

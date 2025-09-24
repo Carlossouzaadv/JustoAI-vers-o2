@@ -196,12 +196,9 @@ export class ReportCacheManager {
       expired = expiredResult.count;
 
       // 2. Remover entradas órfãs (workspace inexistente)
-      const orphanedEntries = await prisma.reportCache.findMany({
-        where: {
-          workspace: { is: null }
-        },
-        select: { id: true }
-      });
+      // Com onDelete: Cascade no schema, entradas órfãs são removidas automaticamente
+      // Então vamos pular esta verificação
+      const orphanedEntries: { id: string }[] = [];
 
       if (orphanedEntries.length > 0) {
         const orphanedResult = await prisma.reportCache.deleteMany({

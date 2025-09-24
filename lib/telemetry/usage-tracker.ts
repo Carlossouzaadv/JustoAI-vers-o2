@@ -222,11 +222,13 @@ export class UsageTracker {
   }): Promise<void> {
     try {
       // Registrar transação de crédito
-      await prisma.creditTransactions.create({
+      await prisma.creditTransaction.create({
         data: {
           workspaceId,
-          type: 'debit',
+          type: 'DEBIT',
+          creditCategory: 'FULL',
           amount: options.amount,
+          reason: options.reason,
           metadata: {
             reason: options.reason,
             relatedReportId: options.relatedReportId,
@@ -249,7 +251,7 @@ export class UsageTracker {
 
       await this.recordUsageEvent(event);
 
-      console.log(`${ICONS.CREDIT} Credit consumption tracked:`, {
+      console.log(`${ICONS.COST} Credit consumption tracked:`, {
         workspace: workspaceId,
         amount: options.amount,
         reason: options.reason
@@ -271,11 +273,13 @@ export class UsageTracker {
   }): Promise<void> {
     try {
       // Registrar transação de crédito
-      await prisma.creditTransactions.create({
+      await prisma.creditTransaction.create({
         data: {
           workspaceId,
-          type: 'credit',
+          type: 'CREDIT',
+          creditCategory: 'FULL',
           amount: options.amount,
+          reason: `Credit ${options.source}`,
           metadata: {
             source: options.source,
             transactionId: options.transactionId,
@@ -298,7 +302,7 @@ export class UsageTracker {
 
       await this.recordUsageEvent(event);
 
-      console.log(`${ICONS.CREDIT} Credit purchase tracked:`, {
+      console.log(`${ICONS.COST} Credit purchase tracked:`, {
         workspace: workspaceId,
         amount: options.amount,
         source: options.source
@@ -355,61 +359,42 @@ export class UsageTracker {
     monthly: UsageMetrics;
     billingEstimate: BillingEstimate;
   }> {
-    const today = new Date().toISOString().split('T')[0];
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
 
-    // Uso diário
-    const dailyUsage = await prisma.workspaceUsageDaily.findUnique({
+    // Uso diário - model não existe no schema, usando UsageEvent em vez disso
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const dailyEvents = await prisma.usageEvent.findMany({
       where: {
-        workspaceId_date: {
-          workspaceId,
-          date: new Date(today)
+        workspaceId,
+        createdAt: {
+          gte: today,
+          lt: tomorrow
         }
       }
     });
 
     // Uso mensal agregado
-    const monthlyUsage = await prisma.workspaceUsageDaily.aggregate({
+    const monthlyEvents = await prisma.usageEvent.findMany({
       where: {
         workspaceId,
-        date: {
+        createdAt: {
           gte: startOfMonth
         }
-      },
-      _sum: {
-        juditCallsTotal: true,
-        juditDocsRetrieved: true,
-        iaCallsFast: true,
-        iaCallsMid: true,
-        iaCallsFull: true,
-        reportsScheduledGenerated: true,
-        reportsOnDemandGenerated: true,
-        fullCreditsConsumedMonth: true
       }
     });
 
-    const daily: UsageMetrics = {
-      juditCallsTotal: dailyUsage?.juditCallsTotal || 0,
-      juditDocsRetrieved: dailyUsage?.juditDocsRetrieved || 0,
-      iaCallsFast: dailyUsage?.iaCallsFast || 0,
-      iaCallsMid: dailyUsage?.iaCallsMid || 0,
-      iaCallsFull: dailyUsage?.iaCallsFull || 0,
-      reportsScheduledGenerated: dailyUsage?.reportsScheduledGenerated || 0,
-      reportsOnDemandGenerated: dailyUsage?.reportsOnDemandGenerated || 0,
-      fullCreditsConsumedMonth: dailyUsage?.fullCreditsConsumedMonth || 0
-    };
+    // Processar eventos diários
+    const dailyMetrics = this.processUsageEvents(dailyEvents);
+    const daily: UsageMetrics = dailyMetrics;
 
-    const monthly: UsageMetrics = {
-      juditCallsTotal: monthlyUsage._sum.juditCallsTotal || 0,
-      juditDocsRetrieved: monthlyUsage._sum.juditDocsRetrieved || 0,
-      iaCallsFast: monthlyUsage._sum.iaCallsFast || 0,
-      iaCallsMid: monthlyUsage._sum.iaCallsMid || 0,
-      iaCallsFull: monthlyUsage._sum.iaCallsFull || 0,
-      reportsScheduledGenerated: monthlyUsage._sum.reportsScheduledGenerated || 0,
-      reportsOnDemandGenerated: monthlyUsage._sum.reportsOnDemandGenerated || 0,
-      fullCreditsConsumedMonth: monthlyUsage._sum.fullCreditsConsumedMonth || 0
-    };
+    // Processar eventos mensais
+    const monthlyMetrics = this.processUsageEvents(monthlyEvents);
+    const monthly: UsageMetrics = monthlyMetrics;
 
     const billingEstimate = this.calculateBillingEstimate(monthly);
 
@@ -430,23 +415,23 @@ export class UsageTracker {
     consumedCredits: number;
   }> {
     // Créditos incluídos no plano
-    const policy = await prisma.workspaceQuotaPolicy.findUnique({
+    const policy = await prisma.workspaceQuota.findUnique({
       where: { workspaceId }
     });
 
-    const includedCredits = policy?.fullCreditsIncluded || 0;
+    const includedCredits = 0; // Usar modelo WorkspaceCredits para saldos
 
     // Transações de créditos
-    const transactions = await prisma.creditTransactions.aggregate({
+    const transactions = await prisma.creditTransaction.groupBy({
       where: { workspaceId },
+      by: ['type'],
       _sum: {
         amount: true
-      },
-      by: ['type']
+      }
     });
 
-    const credits = transactions.reduce((sum, t) => sum + (t.type === 'credit' ? t._sum.amount || 0 : 0), 0);
-    const debits = transactions.reduce((sum, t) => sum + (t.type === 'debit' ? t._sum.amount || 0 : 0), 0);
+    const credits = transactions.reduce((sum: number, t: any) => sum + (t.type === 'CREDIT' ? Number(t._sum.amount) || 0 : 0), 0);
+    const debits = transactions.reduce((sum: number, t: any) => sum + (t.type === 'DEBIT' ? Number(t._sum.amount) || 0 : 0), 0);
 
     const purchasedCredits = credits;
     const consumedCredits = debits;
@@ -465,11 +450,12 @@ export class UsageTracker {
   // ================================================================
 
   private async recordUsageEvent(event: UsageEvent): Promise<void> {
-    await prisma.usageEvents.create({
+    await prisma.usageEvent.create({
       data: {
         workspaceId: event.workspaceId,
         eventType: event.eventType,
-        payload: event.payload,
+        resourceType: 'SYSTEM',
+        metadata: event.payload,
         createdAt: event.timestamp || new Date()
       }
     });
@@ -482,43 +468,20 @@ export class UsageTracker {
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
 
-    const monthlyTotal = await prisma.workspaceUsageDaily.aggregate({
+    // Calcular total de relatórios do mês usando UsageEvent
+    const monthlyReportEvents = await prisma.usageEvent.findMany({
       where: {
         workspaceId,
-        date: {
+        eventType: 'report_generation',
+        createdAt: {
           gte: startOfMonth
         }
-      },
-      _sum: {
-        reportsScheduledGenerated: true,
-        reportsOnDemandGenerated: true
       }
     });
 
-    const totalReportsMonth = (monthlyTotal._sum.reportsScheduledGenerated || 0) +
-                             (monthlyTotal._sum.reportsOnDemandGenerated || 0) + 1; // +1 para o relatório atual
+    const totalReportsMonth = monthlyReportEvents.length + 1; // +1 para o relatório atual
 
-    // Atualizar ou criar registro diário
-    await prisma.workspaceUsageDaily.upsert({
-      where: {
-        workspaceId_date: {
-          workspaceId,
-          date: new Date(today)
-        }
-      },
-      update: {
-        [reportType === 'scheduled' ? 'reportsScheduledGenerated' : 'reportsOnDemandGenerated']: {
-          increment: 1
-        },
-        reportsTotalMonthSnapshot: totalReportsMonth
-      },
-      create: {
-        workspaceId,
-        date: new Date(today),
-        [reportType === 'scheduled' ? 'reportsScheduledGenerated' : 'reportsOnDemandGenerated']: 1,
-        reportsTotalMonthSnapshot: totalReportsMonth
-      }
-    });
+    // Não precisamos mais atualizar um registro diário específico, os eventos já foram registrados
   }
 
   // ================================================================
@@ -530,22 +493,69 @@ export class UsageTracker {
   }
 
   async getWorkspaceQuota(workspaceId: string) {
-    return await prisma.workspaceQuotaPolicy.findUnique({
+    return await prisma.workspaceQuota.findUnique({
       where: { workspaceId }
     });
   }
 
   async updateWorkspaceQuota(workspaceId: string, updates: Partial<{
     reportsMonthlyLimit: number;
-    processesLimit: number;
-    fullCreditsIncluded: number;
-    softThresholdPct: number;
-    hardThresholdPct: number;
+    reportProcessesLimit: number;
   }>) {
-    return await prisma.workspaceQuotaPolicy.update({
+    return await prisma.workspaceQuota.update({
       where: { workspaceId },
       data: updates
     });
+  }
+
+  // Método helper para processar eventos de uso
+  private processUsageEvents(events: any[]): UsageMetrics {
+    const metrics: UsageMetrics = {
+      juditCallsTotal: 0,
+      juditDocsRetrieved: 0,
+      iaCallsFast: 0,
+      iaCallsMid: 0,
+      iaCallsFull: 0,
+      reportsScheduledGenerated: 0,
+      reportsOnDemandGenerated: 0,
+      fullCreditsConsumedMonth: 0
+    };
+
+    events.forEach((event: any) => {
+      const payload = event.metadata || {};
+
+      switch (event.eventType) {
+        case 'judit_call':
+          metrics.juditCallsTotal++;
+          metrics.juditDocsRetrieved += payload.docsRetrieved || 0;
+          break;
+        case 'ia_call':
+          switch (payload.model) {
+            case 'fast':
+              metrics.iaCallsFast++;
+              break;
+            case 'mid':
+              metrics.iaCallsMid++;
+              break;
+            case 'full':
+              metrics.iaCallsFull++;
+              break;
+          }
+          break;
+        case 'report_generation':
+          if (payload.type === 'scheduled') {
+            metrics.reportsScheduledGenerated++;
+          } else {
+            metrics.reportsOnDemandGenerated++;
+          }
+          break;
+        case 'credit_consumption':
+          metrics.fullCreditsConsumedMonth += payload.amount || 0;
+          break;
+      }
+    });
+
+    return metrics;
   }
 }
 

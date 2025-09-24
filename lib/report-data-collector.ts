@@ -311,7 +311,7 @@ export class ReportDataCollector {
         id: process.id,
         number: process.processNumber,
         client_name: process.clientName || 'Cliente não informado',
-        subject: processData.subject || process.title || 'Assunto não informado',
+        subject: processData.subject || 'Assunto não informado',
         court: process.court || 'Tribunal não informado',
         status: process.monitoringStatus,
         priority,

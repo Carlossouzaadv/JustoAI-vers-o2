@@ -2,7 +2,7 @@
 // MOTOR DE TEMPLATES PDF - Geração Profissional
 // ================================================================
 
-import puppeteer from 'puppeteer';
+import puppeteer, { Browser, PDFOptions } from 'puppeteer';
 import { ICONS } from '@/lib/icons';
 import path from 'path';
 import fs from 'fs/promises';
@@ -45,7 +45,7 @@ export interface PDFGenerationResult {
 }
 
 export class PDFTemplateEngine {
-  private browser: puppeteer.Browser | null = null;
+  private browser: Browser | null = null;
 
   /**
    * Inicializa o browser Puppeteer
@@ -108,7 +108,7 @@ export class PDFTemplateEngine {
       });
 
       // Configurações do PDF
-      const pdfOptions: puppeteer.PDFOptions = {
+      const pdfOptions: PDFOptions = {
         path: outputPath,
         format: 'A4',
         margin: {
