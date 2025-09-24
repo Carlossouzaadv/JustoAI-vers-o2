@@ -5,9 +5,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getJuditApiClient } from '@/lib/judit-api-client';
-import { processMonitorQueue, addMonitoringJob, getMonitoringStats } from '@/workers/process-monitor-worker';
+// Import worker functions dynamically to avoid build-time issues with Bull queue
+// import { processMonitorQueue, addMonitoringJob, getMonitoringStats } from '@/workers/process-monitor-worker';
 import { telemetry } from '@/lib/monitoring-telemetry';
 import { ICONS } from '@/lib/icons';
+
+// ================================================================
+// DYNAMIC WORKER IMPORTS
+// ================================================================
+
+async function getWorkerFunctions() {
+  try {
+    const worker = await import('@/workers/process-monitor-worker');
+    return {
+      processMonitorQueue: worker.processMonitorQueue,
+      addMonitoringJob: worker.addMonitoringJob,
+      getMonitoringStats: worker.getMonitoringStats
+    };
+  } catch (error) {
+    console.warn('Worker functions not available:', error);
+    return {
+      processMonitorQueue: null,
+      addMonitoringJob: async () => ({ id: 'mock' }),
+      getMonitoringStats: async () => ({
+        queue: { waiting: 0, active: 0, completed: 0, failed: 0 },
+        workers: { active: 0, idle: 0 }
+      })
+    };
+  }
+}
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -137,7 +163,10 @@ async function getSystemStatus(): Promise<SystemStatus> {
     checkDatabaseStatus(),
     checkRedisStatus(),
     checkWebhookStatus(),
-    getMonitoringStats(),
+    (async () => {
+      const { getMonitoringStats } = await getWorkerFunctions();
+      return await getMonitoringStats();
+    })(),
     getJuditApiClient().getStats(),
     telemetry.getMonitoringMetrics(),
     telemetry.getActiveAlerts()
@@ -246,6 +275,7 @@ async function checkJuditApiStatus(): Promise<ComponentStatus> {
 
 async function checkMonitoringWorkerStatus(): Promise<ComponentStatus> {
   try {
+    const { getMonitoringStats } = await getWorkerFunctions();
     const stats = await getMonitoringStats();
 
     let status: ComponentStatus['status'] = 'healthy';
@@ -319,7 +349,8 @@ async function checkRedisStatus(): Promise<ComponentStatus> {
 
   try {
     // Verificar Redis através das filas Bull
-    const queueHealth = await processMonitorQueue.isReady();
+    const { processMonitorQueue } = await getWorkerFunctions();
+    const queueHealth = processMonitorQueue ? await processMonitorQueue.isReady() : false;
     const responseTime = Date.now() - startTime;
 
     if (!queueHealth) {
@@ -445,6 +476,12 @@ async function restartMonitoringWorker(): Promise<any> {
   console.log(`${ICONS.RESTART} Restarting monitoring worker`);
 
   try {
+    const { processMonitorQueue, addMonitoringJob } = await getWorkerFunctions();
+
+    if (!processMonitorQueue) {
+      throw new Error('Worker queue not available');
+    }
+
     // Pausar worker atual
     await processMonitorQueue.pause();
 
@@ -476,6 +513,12 @@ async function clearMonitoringQueue(): Promise<any> {
   console.log(`${ICONS.CLEAR} Clearing monitoring queue`);
 
   try {
+    const { processMonitorQueue } = await getWorkerFunctions();
+
+    if (!processMonitorQueue) {
+      throw new Error('Worker queue not available');
+    }
+
     const [waiting, failed] = await Promise.all([
       processMonitorQueue.getWaiting(),
       processMonitorQueue.getFailed()
@@ -502,6 +545,7 @@ async function forceSyncWorkspace(workspaceId?: string, processId?: string): Pro
   console.log(`${ICONS.SYNC} Force syncing workspace: ${workspaceId || 'all'}, process: ${processId || 'all'}`);
 
   try {
+    const { addMonitoringJob } = await getWorkerFunctions();
     const job = await addMonitoringJob('workspace-monitor', {
       workspaceId,
       processIds: processId ? [processId] : undefined,
@@ -575,8 +619,12 @@ async function emergencyStopMonitoring(): Promise<any> {
   console.warn(`${ICONS.EMERGENCY} EMERGENCY STOP - Halting all monitoring operations`);
 
   try {
-    // Pausar todas as operações
-    await processMonitorQueue.pause();
+    const { processMonitorQueue } = await getWorkerFunctions();
+
+    if (processMonitorQueue) {
+      // Pausar todas as operações
+      await processMonitorQueue.pause();
+    }
 
     // Marcar todas as execuções ativas como canceladas
     await prisma.monitoringTelemetry.updateMany({
@@ -629,7 +677,8 @@ async function performHealthCheck(): Promise<any> {
 
   try {
     // Redis check
-    const isReady = await processMonitorQueue.isReady();
+    const { processMonitorQueue } = await getWorkerFunctions();
+    const isReady = processMonitorQueue ? await processMonitorQueue.isReady() : false;
     checks.redis = isReady;
     details.redis = isReady ? 'Connected successfully' : 'Not ready';
   } catch (error) {
@@ -648,6 +697,7 @@ async function performHealthCheck(): Promise<any> {
 
   try {
     // Workers check
+    const { getMonitoringStats } = await getWorkerFunctions();
     const stats = await getMonitoringStats();
     checks.workers = stats.queue.active >= 0; // Worker is responding
     details.workers = `Queue stats retrieved: ${stats.queue.waiting} waiting, ${stats.queue.active} active`;

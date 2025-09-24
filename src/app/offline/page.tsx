@@ -3,12 +3,7 @@
 // ================================================================
 // Página exibida quando o usuário está offline
 
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'Offline - JustoAI',
-  description: 'Você está offline. Verifique sua conexão com a internet.',
-};
+'use client';
 
 export default function OfflinePage() {
   return (
