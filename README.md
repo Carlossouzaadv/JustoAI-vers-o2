@@ -240,7 +240,7 @@ npm install
 
 # 3. Configure variáveis de ambiente
 cp .env.example .env.local
-# Edite .env.local com suas credenciais
+# Edite .env.local com suas credenciais (veja seção abaixo)
 
 # 4. Setup do banco de dados
 npm run db:generate  # Gera Prisma Client
@@ -250,6 +250,69 @@ npm run db:seed      # (Opcional) Seed com dados de teste
 # 5. Inicie o ambiente de desenvolvimento
 npm run dev          # Servidor Next.js (porta 3000)
 ```
+
+### 🔧 Configuração de Variáveis de Ambiente
+
+#### 1. Copiar Template
+
+```bash
+cp .env.example .env.local
+```
+
+#### 2. Preencher Credenciais
+
+Abra o arquivo `.env.local` e configure cada variável:
+
+**Configurações de Banco de Dados** (Supabase)
+- `DATABASE_URL`: URL de conexão PostgreSQL com pooling
+- `DIRECT_URL`: URL direta para migrations
+- `NEXT_PUBLIC_SUPABASE_URL`: URL do projeto Supabase
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Chave pública do Supabase
+- `SUPABASE_SERVICE_ROLE_KEY`: Chave privada (⚠️ NUNCA exponha)
+
+**Chaves de API de IA**
+- `GOOGLE_API_KEY`: Para Google Gemini AI ([obter aqui](https://makersuite.google.com/app/apikey))
+- `ANTHROPIC_API_KEY`: Para Claude AI ([obter aqui](https://console.anthropic.com/))
+
+**Autenticação**
+- `NEXTAUTH_SECRET`: Gere com `openssl rand -base64 32`
+- `NEXTAUTH_URL`: URL da aplicação (ex: http://localhost:3000)
+
+**Email (Resend ou SMTP)**
+- `SMTP_HOST`: Servidor SMTP
+- `SMTP_PORT`: Porta (587 para TLS, 465 para SSL)
+- `SMTP_USER`: Usuário do serviço
+- `SMTP_PASSWORD`: Senha ou API key
+- `FROM_EMAIL`: Email remetente
+
+**Redis & Background Jobs**
+- `REDIS_HOST`: Host do Redis (localhost para dev)
+- `REDIS_PORT`: Porta do Redis (padrão 6379)
+- `REDIS_PASSWORD`: Senha (vazio se sem auth)
+- `BULL_BOARD_ACCESS_TOKEN`: Gere com `openssl rand -hex 32`
+
+#### 3. ⚠️ IMPORTANTE - Segurança
+
+**NUNCA commite arquivos com valores reais:**
+- ✅ `.env.example` pode ser commitado (só templates)
+- ❌ `.env.local` NUNCA deve ser commitado
+- ❌ `.env` NUNCA deve ser commitado
+- ❌ Qualquer arquivo com chaves reais
+
+**Se você acidentalmente commitou secrets:**
+1. Remova do Git: `git rm --cached .env.local`
+2. **REVOGUE imediatamente** todas as chaves expostas:
+   - Supabase: Gere novas chaves no dashboard
+   - Google AI: Revogue e crie nova API key
+   - Anthropic: Revogue e crie nova API key
+   - Resend: Gere nova API key
+3. Atualize `.env.local` com novas credenciais
+4. Commit a remoção: `git commit -m "Remove .env.local - security fix"`
+
+**Rotação de Chaves:**
+- Rotacione chaves de API periodicamente (a cada 90 dias)
+- Use chaves diferentes para desenvolvimento e produção
+- Considere usar um secrets manager (AWS Secrets Manager, HashiCorp Vault)
 
 ### Docker Setup (Recomendado)
 
@@ -442,8 +505,32 @@ justoai-v2/
 - ✅ **SQL Injection**: Prisma ORM previne injeções
 - ✅ **XSS Protection**: React escapa automaticamente
 - ✅ **HTTPS**: Forçado via headers de segurança
+- ✅ **Secrets Management**: `.env.local` excluído do Git, template `.env.example` fornecido
 - ⚠️ **CORS**: Configurar origens permitidas (atualmente aberto)
-- ⚠️ **Secrets**: Remover do Git (usar secrets manager)
+
+### ⚠️ ATENÇÃO: Rotação de Chaves Necessária
+
+Se você está configurando este projeto pela primeira vez e o arquivo `.env.local` já continha chaves reais que foram commitadas anteriormente:
+
+**AÇÃO IMEDIATA NECESSÁRIA:**
+1. ✅ `.env.local` foi removido do tracking do Git
+2. ✅ `.gitignore` foi configurado para prevenir futuros commits
+3. ⚠️ **VOCÊ DEVE** revogar e regenerar TODAS as chaves de API que estavam no arquivo:
+   - **Supabase**: Dashboard → Settings → API → Reset keys
+   - **Google AI**: [Google AI Studio](https://makersuite.google.com/app/apikey) → Delete old key → Create new
+   - **Anthropic**: [Console Anthropic](https://console.anthropic.com/) → Delete old key → Create new
+   - **Resend**: Dashboard → API Keys → Revoke → Create new
+   - **NextAuth**: Gere novo secret com `openssl rand -base64 32`
+   - **Bull Board**: Gere novo token com `openssl rand -hex 32`
+
+### Boas Práticas de Segurança
+
+- 📋 Use o arquivo `.env.example` como template
+- 🔄 Rotacione chaves de API a cada 90 dias
+- 🔐 Use diferentes credenciais para dev/staging/prod
+- 🚫 NUNCA commite arquivos `.env*` com valores reais
+- 📊 Monitore logs de acesso à API para detectar uso indevido
+- 🔒 Considere usar um secrets manager (AWS Secrets Manager, Vault) para produção
 
 ---
 
