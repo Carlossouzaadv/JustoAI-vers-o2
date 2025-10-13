@@ -49,25 +49,17 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from standalone build
-# Next.js standalone creates nested directory structure
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone/justoai-v2/.next ./.next
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Copy entire standalone build (simpler and more reliable)
+# Next.js standalone includes everything needed to run
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./justoai-v2/.next/static
+COPY --from=builder /app/public ./justoai-v2/public
 
-# Copy package.json and server.js from standalone
-COPY --from=builder /app/.next/standalone/justoai-v2/package.json ./package.json
-COPY --from=builder /app/.next/standalone/justoai-v2/server.js ./server.js
-
-# Copy node_modules from standalone (only production deps)
-COPY --from=builder /app/.next/standalone/justoai-v2/node_modules ./node_modules
+# Copy Prisma client
+COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
 
 # NOTE: Deliberadamente NÃO copiando workers/scripts para reduzir uso de CPU
 # Workers serão habilitados em service separado posteriormente se necessário
-# COPY --from=builder /app/workers ./workers
-# COPY --from=builder /app/scripts ./scripts
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app
@@ -84,5 +76,5 @@ ENV HOSTNAME "0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start server
-CMD ["node", "server.js"]
+# Start server from standalone directory
+CMD ["node", "justoai-v2/server.js"]
