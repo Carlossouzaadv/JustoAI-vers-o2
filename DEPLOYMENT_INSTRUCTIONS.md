@@ -151,32 +151,32 @@ You have two options:
 ```
 NODE_ENV=production
 NEXT_PUBLIC_APP_URL=https://justoaiv2.vercel.app
-DATABASE_URL=postgresql://postgres.overbsbivbuevmyltyet:Nuwjjr$3@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres:Nuwjjr$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres
-NEXT_PUBLIC_SUPABASE_URL=https://overbsbivbuevmyltyet.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZXJic2JpdmJ1ZXZteWx0eWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzczNzY1NTQsImV4cCI6MjA1Mjk1MjU1NH0.RMqYVPWEhH5xMTuUxdBVGPxK_AuZYRDmBiKuCWIL3zw
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZXJic2JpdmJ1ZXZteWx0eWV0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNzM3NjU1NCwiZXhwIjoyMDUyOTUyNTU0fQ.T-LkBqgJNqXXVpGQG1ycQZ9h_sT0JW5wvBkPKvLHNLk
-REDIS_HOST=accepted-cobra-23421.upstash.io
+DATABASE_URL=postgresql://postgres.xxxxx:YOUR_PASSWORD@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...YOUR_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...YOUR_SERVICE_ROLE_KEY
+REDIS_HOST=your-redis.upstash.io
 REDIS_PORT=6379
-REDIS_PASSWORD=AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE
-REDIS_URL=rediss://default:AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE@accepted-cobra-23421.upstash.io:6379
-UPSTASH_REDIS_REST_URL=https://accepted-cobra-23421.upstash.io
-UPSTASH_REDIS_REST_TOKEN=AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE
+REDIS_PASSWORD=YOUR_REDIS_PASSWORD
+REDIS_URL=rediss://default:YOUR_REDIS_PASSWORD@your-redis.upstash.io:6379
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=YOUR_REDIS_TOKEN
 NEXTAUTH_URL=https://justoaiv2.vercel.app
-NEXTAUTH_SECRET=Jk3m9Wp2Lq7Xz5Rt8Yn4Cv6Bx1Mf3Gh9Kp2Wd7Qs5Vt8Hn4Jx6Lc1Rf3Zp9Mn
-GOOGLE_API_KEY=AIzaSyBepx-oedsAOION2hvIbR5fYzUaU1Zs3kM
+NEXTAUTH_SECRET=YOUR_NEXTAUTH_SECRET
+GOOGLE_API_KEY=AIzaSy...YOUR_GOOGLE_API_KEY
 SMTP_HOST=smtp.resend.com
 SMTP_PORT=465
 SMTP_USER=resend
-SMTP_PASSWORD=re_9xwwqQ9R_EcjRQuA6eD9Aj1xHmgAo8Tvz
+SMTP_PASSWORD=re_...YOUR_RESEND_API_KEY
 FROM_EMAIL=noreply@justoai.com.br
 ALLOWED_ORIGINS=https://justoaiv2.vercel.app,https://www.justoai.com.br,https://app.justoai.com.br
-SENTRY_DSN=https://8a6efddb7bab038e0d0601edd41ea152@o4510178719039488.ingest.us.sentry.io/4510179104456704
+SENTRY_DSN=https://...YOUR_SENTRY_DSN
 SENTRY_ENVIRONMENT=production
 SENTRY_RELEASE=justoai-v2@1.0.0
-BULL_BOARD_ACCESS_TOKEN=7d8f3e9c2a1b4f6e8d3c7a9b2e1f4d6c8a3b7e2f9d1c4a6e8b3d7f2a9c1e4b6d
+BULL_BOARD_ACCESS_TOKEN=YOUR_BULL_BOARD_TOKEN
 
-(Continue with all variables from .env.production...)
+⚠️ GET REAL VALUES FROM YOUR .env.production FILE (NOT IN GIT)
 ```
 
 **See full list in:** `.env.production`

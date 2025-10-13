@@ -82,8 +82,10 @@ NEXT_PUBLIC_API_URL=https://justoai-vers-o2-production.up.railway.app
 NEXT_PUBLIC_APP_URL=https://justoai-v2.vercel.app
 
 # Supabase (for authentication)
-NEXT_PUBLIC_SUPABASE_URL=https://overbsbivbuevmyltyet.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZXJic2JpdmJ1ZXZteWx0eWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzczNzY1NTQsImV4cCI6MjA1Mjk1MjU1NH0.RMqYVPWEhH5xMTuUxdBVGPxK_AuZYRDmBiKuCWIL3zw
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...YOUR_SUPABASE_ANON_KEY
+
+⚠️ GET REAL VALUES FROM YOUR .env.production FILE OR RAILWAY ENV VARS
 
 # Feature Flags
 NEXT_PUBLIC_CLASSIC_DASHBOARD_ENABLED=true
