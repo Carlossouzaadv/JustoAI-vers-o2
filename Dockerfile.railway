@@ -49,17 +49,25 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files
+# Copy necessary files from standalone build
+# Next.js standalone creates nested directory structure
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/standalone/justoai-v2/.next ./.next
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/workers ./workers
-COPY --from=builder /app/scripts ./scripts
 
-# Copy package.json for worker scripts
-COPY --from=builder /app/package.json ./package.json
+# Copy package.json and server.js from standalone
+COPY --from=builder /app/.next/standalone/justoai-v2/package.json ./package.json
+COPY --from=builder /app/.next/standalone/justoai-v2/server.js ./server.js
+
+# Copy node_modules from standalone (only production deps)
+COPY --from=builder /app/.next/standalone/justoai-v2/node_modules ./node_modules
+
+# NOTE: Deliberadamente NÃO copiando workers/scripts para reduzir uso de CPU
+# Workers serão habilitados em service separado posteriormente se necessário
+# COPY --from=builder /app/workers ./workers
+# COPY --from=builder /app/scripts ./scripts
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app
