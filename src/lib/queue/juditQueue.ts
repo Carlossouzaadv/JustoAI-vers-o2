@@ -30,6 +30,34 @@ export interface JuditOnboardingJobResult {
 // CONFIGURAÇÃO REDIS
 // ================================================================
 
+// Check if Redis should be disabled (for Railway without Redis)
+const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+
+// Mock Queue class for when Redis is disabled
+class MockQueue {
+  name: string;
+
+  constructor(name: string) {
+    this.name = name;
+    if (REDIS_DISABLED) {
+      console.log(`[JUDIT QUEUE] Running in MOCK mode (Redis disabled)`);
+    }
+  }
+
+  async add() { return { id: 'mock-' + Date.now(), data: {} } as any; }
+  async getJob() { return null; }
+  async getActive() { return []; }
+  async getWaiting() { return []; }
+  async getWaitingCount() { return 0; }
+  async getActiveCount() { return 0; }
+  async getCompletedCount() { return 0; }
+  async getFailedCount() { return 0; }
+  async getDelayedCount() { return 0; }
+  async clean() { return []; }
+  async close() { return; }
+  on() { return this; }
+}
+
 const redisConfig = {
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
@@ -38,8 +66,8 @@ const redisConfig = {
   enableReadyCheck: false,
 };
 
-// Criar conexão Redis
-const connection = new IORedis(redisConfig);
+// Criar conexão Redis apenas se não estiver desabilitado
+const connection = REDIS_DISABLED ? null : new IORedis(redisConfig);
 
 // ================================================================
 // QUEUE CONFIGURATION
@@ -67,13 +95,15 @@ const QUEUE_CONFIG = {
 // QUEUE INSTANCE
 // ================================================================
 
-export const juditOnboardingQueue = new Queue<JuditOnboardingJobData, JuditOnboardingJobResult>(
-  QUEUE_CONFIG.name,
-  {
-    connection,
-    defaultJobOptions: QUEUE_CONFIG.defaultJobOptions,
-  }
-);
+export const juditOnboardingQueue = REDIS_DISABLED
+  ? (new MockQueue(QUEUE_CONFIG.name) as any)
+  : new Queue<JuditOnboardingJobData, JuditOnboardingJobResult>(
+      QUEUE_CONFIG.name,
+      {
+        connection: connection!,
+        defaultJobOptions: QUEUE_CONFIG.defaultJobOptions,
+      }
+    );
 
 // ================================================================
 // QUEUE OPERATIONS
@@ -200,37 +230,44 @@ export async function cleanQueue(options?: {
 // EVENTOS DA FILA (para logging/monitoring)
 // ================================================================
 
-juditOnboardingQueue.on('error', (error) => {
-  console.error('[JUDIT QUEUE] Erro na fila:', error);
-});
-
-juditOnboardingQueue.on('waiting', (jobId) => {
-  console.log(`[JUDIT QUEUE] Job ${jobId} aguardando processamento`);
-});
-
-juditOnboardingQueue.on('active', (job) => {
-  console.log(`[JUDIT QUEUE] Job ${job.id} iniciado - CNJ: ${job.data.cnj}`);
-});
-
-juditOnboardingQueue.on('completed', (job, result) => {
-  console.log(`[JUDIT QUEUE] Job ${job.id} concluído - CNJ: ${job.data.cnj}`, {
-    success: result.success,
-    duration: `${(result.duration / 1000).toFixed(2)}s`,
+if (!REDIS_DISABLED) {
+  juditOnboardingQueue.on('error', (error) => {
+    console.error('[JUDIT QUEUE] Erro na fila:', error);
   });
-});
 
-juditOnboardingQueue.on('failed', (job, error) => {
-  console.error(`[JUDIT QUEUE] Job ${job?.id} falhou - CNJ: ${job?.data.cnj}`, error.message);
-});
+  juditOnboardingQueue.on('waiting', (jobId) => {
+    console.log(`[JUDIT QUEUE] Job ${jobId} aguardando processamento`);
+  });
+
+  juditOnboardingQueue.on('active', (job) => {
+    console.log(`[JUDIT QUEUE] Job ${job.id} iniciado - CNJ: ${job.data.cnj}`);
+  });
+
+  juditOnboardingQueue.on('completed', (job, result) => {
+    console.log(`[JUDIT QUEUE] Job ${job.id} concluído - CNJ: ${job.data.cnj}`, {
+      success: result.success,
+      duration: `${(result.duration / 1000).toFixed(2)}s`,
+    });
+  });
+
+  juditOnboardingQueue.on('failed', (job, error) => {
+    console.error(`[JUDIT QUEUE] Job ${job?.id} falhou - CNJ: ${job?.data.cnj}`, error.message);
+  });
+}
 
 // ================================================================
 // GRACEFUL SHUTDOWN
 // ================================================================
 
 async function gracefulShutdown() {
+  if (REDIS_DISABLED) {
+    console.log('[JUDIT QUEUE] Mock mode - nothing to shutdown');
+    return;
+  }
+
   console.log('[JUDIT QUEUE] Encerrando fila...');
   await juditOnboardingQueue.close();
-  await connection.quit();
+  await connection?.quit();
   console.log('[JUDIT QUEUE] Fila encerrada com sucesso');
 }
 
