@@ -7,7 +7,7 @@
 ```powershell
 # PowerShell (recomendado)
 cd "C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\justoai-v2"
-$env:DATABASE_URL="postgresql://postgres:Nuwjjr`$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres"
+$env:DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres"
 npx prisma generate
 npx prisma migrate deploy
 npx prisma migrate status
@@ -16,11 +16,13 @@ npx prisma migrate status
 ```cmd
 # CMD (alternativa)
 cd C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\justoai-v2
-set DATABASE_URL=postgresql://postgres:Nuwjjr$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres
+set DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres
 npx prisma generate
 npx prisma migrate deploy
 npx prisma migrate status
 ```
+
+⚠️ **Get the real DATABASE_URL from your `.env.production` file**
 
 **Resultado esperado:** `Database schema is up to date!`
 
@@ -183,27 +185,30 @@ Se o script não funcionar, configure manualmente:
 ```
 NODE_ENV=production
 NEXT_PUBLIC_APP_URL=https://justoaiv2.vercel.app
-DATABASE_URL=postgresql://postgres.overbsbivbuevmyltyet:Nuwjjr$3@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres:Nuwjjr$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres
-NEXT_PUBLIC_SUPABASE_URL=https://overbsbivbuevmyltyet.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZXJic2JpdmJ1ZXZteWx0eWV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzczNzY1NTQsImV4cCI6MjA1Mjk1MjU1NH0.RMqYVPWEhH5xMTuUxdBVGPxK_AuZYRDmBiKuCWIL3zw
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92ZXJic2JpdmJ1ZXZteWx0eWV0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNzM3NjU1NCwiZXhwIjoyMDUyOTUyNTU0fQ.T-LkBqgJNqXXVpGQG1ycQZ9h_sT0JW5wvBkPKvLHNLk
-REDIS_HOST=accepted-cobra-23421.upstash.io
+DATABASE_URL=postgresql://postgres.xxxxx:YOUR_PASSWORD@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...YOUR_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...YOUR_SERVICE_ROLE_KEY
+REDIS_HOST=your-redis.upstash.io
 REDIS_PORT=6379
-REDIS_PASSWORD=AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE
-REDIS_URL=rediss://default:AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE@accepted-cobra-23421.upstash.io:6379
+REDIS_PASSWORD=YOUR_REDIS_PASSWORD
+REDIS_URL=rediss://default:YOUR_REDIS_PASSWORD@your-redis.upstash.io:6379
 NEXTAUTH_URL=https://justoaiv2.vercel.app
-NEXTAUTH_SECRET=Jk3m9Wp2Lq7Xz5Rt8Yn4Cv6Bx1Mf3Gh9Kp2Wd7Qs5Vt8Hn4Jx6Lc1Rf3Zp9Mn
-GOOGLE_API_KEY=AIzaSyBepx-oedsAOION2hvIbR5fYzUaU1Zs3kM
+NEXTAUTH_SECRET=YOUR_NEXTAUTH_SECRET_HERE
+GOOGLE_API_KEY=AIzaSy...YOUR_GOOGLE_API_KEY
 SMTP_HOST=smtp.resend.com
 SMTP_PORT=465
 SMTP_USER=resend
-SMTP_PASSWORD=re_9xwwqQ9R_EcjRQuA6eD9Aj1xHmgAo8Tvz
+SMTP_PASSWORD=re_...YOUR_RESEND_API_KEY
 FROM_EMAIL=noreply@justoai.com.br
 ALLOWED_ORIGINS=https://justoaiv2.vercel.app,https://www.justoai.com.br,https://app.justoai.com.br
-SENTRY_DSN=https://8a6efddb7bab038e0d0601edd41ea152@o4510178719039488.ingest.us.sentry.io/4510179104456704
-BULL_BOARD_ACCESS_TOKEN=7d8f3e9c2a1b4f6e8d3c7a9b2e1f4d6c8a3b7e2f9d1c4a6e8b3d7f2a9c1e4b6d
+SENTRY_DSN=https://...YOUR_SENTRY_DSN
+BULL_BOARD_ACCESS_TOKEN=YOUR_BULL_BOARD_TOKEN
 ```
+
+⚠️ **SECURITY WARNING:** Never commit real API keys to Git!
+📋 Get values from your `.env.production` file (NOT committed to Git)
 
 Continue com as outras variáveis de `.env.production`...
 
@@ -213,7 +218,7 @@ Continue com as outras variáveis de `.env.production`...
 
 ```powershell
 # 1. Migrações
-$env:DATABASE_URL="postgresql://postgres:Nuwjjr`$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres"
+$env:DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres"
 npx prisma migrate deploy
 
 # 2. RLS (Supabase SQL Editor)
@@ -255,7 +260,7 @@ vercel logs --follow
 
 ```powershell
 # Use crase (`) para escapar o $ no PowerShell
-$env:DATABASE_URL="postgresql://postgres:Nuwjjr`$3@db..."
+$env:DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.xxxxx.supabase.co:5432/postgres"
 ```
 
 ### **Se o Git Bash funcionar melhor:**
