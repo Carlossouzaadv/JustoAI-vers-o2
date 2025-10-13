@@ -35,34 +35,67 @@ const redisConfig = {
 const isDevelopment = process.env.NODE_ENV === 'development';
 const config = isDevelopment ? redisConfig.development : redisConfig.production;
 
-// Cliente Redis principal
-export const redis = new Redis(config);
+// Lazy initialization - só cria conexão quando necessário
+let redisInstance: Redis | null = null;
+let bullRedisInstance: Redis | null = null;
 
-// Cliente Redis para Bull Queue (separado para melhor isolamento)
-export const bullRedis = new Redis({
-  ...config,
-  db: 1, // Use DB 1 para Bull Queue
+/**
+ * Get Redis client (lazy initialization)
+ * Só cria a conexão quando realmente necessário, não durante build
+ */
+export function getRedis(): Redis {
+  if (!redisInstance) {
+    redisInstance = new Redis(config);
+
+    redisInstance.on('connect', () => {
+      console.log('✅ Redis connected successfully');
+    });
+
+    redisInstance.on('error', (error) => {
+      console.error('❌ Redis connection error:', error);
+    });
+
+    redisInstance.on('ready', () => {
+      console.log('🟢 Redis ready to accept commands');
+    });
+  }
+
+  return redisInstance;
+}
+
+/**
+ * Get Bull Redis client (lazy initialization)
+ */
+export function getBullRedis(): Redis {
+  if (!bullRedisInstance) {
+    bullRedisInstance = new Redis({
+      ...config,
+      db: 1, // Use DB 1 para Bull Queue
+    });
+
+    bullRedisInstance.on('connect', () => {
+      console.log('✅ Bull Redis connected successfully');
+    });
+
+    bullRedisInstance.on('error', (error) => {
+      console.error('❌ Bull Redis connection error:', error);
+    });
+  }
+
+  return bullRedisInstance;
+}
+
+// Exports para compatibilidade (lazy)
+export const redis = new Proxy({} as Redis, {
+  get(_target, prop) {
+    return getRedis()[prop as keyof Redis];
+  }
 });
 
-// Event handlers para logs
-redis.on('connect', () => {
-  console.log('✅ Redis connected successfully');
-});
-
-redis.on('error', (error) => {
-  console.error('❌ Redis connection error:', error);
-});
-
-redis.on('ready', () => {
-  console.log('🟢 Redis ready to accept commands');
-});
-
-bullRedis.on('connect', () => {
-  console.log('✅ Bull Redis connected successfully');
-});
-
-bullRedis.on('error', (error) => {
-  console.error('❌ Bull Redis connection error:', error);
+export const bullRedis = new Proxy({} as Redis, {
+  get(_target, prop) {
+    return getBullRedis()[prop as keyof Redis];
+  }
 });
 
 // Utility functions para cache
@@ -72,14 +105,14 @@ export const redisUtils = {
    */
   async setWithTTL(key: string, value: any, ttlSeconds: number = 3600) {
     const serialized = JSON.stringify(value);
-    await redis.setex(key, ttlSeconds, serialized);
+    await getRedis().setex(key, ttlSeconds, serialized);
   },
 
   /**
    * Get com parse automático
    */
   async get(key: string) {
-    const value = await redis.get(key);
+    const value = await getRedis().get(key);
     if (!value) return null;
 
     try {
@@ -93,9 +126,9 @@ export const redisUtils = {
    * Delete keys por pattern
    */
   async deletePattern(pattern: string) {
-    const keys = await redis.keys(pattern);
+    const keys = await getRedis().keys(pattern);
     if (keys.length > 0) {
-      await redis.del(...keys);
+      await getRedis().del(...keys);
     }
     return keys.length;
   },
@@ -105,7 +138,7 @@ export const redisUtils = {
    */
   async healthCheck() {
     try {
-      const ping = await redis.ping();
+      const ping = await getRedis().ping();
       return ping === 'PONG';
     } catch {
       return false;
@@ -117,8 +150,8 @@ export const redisUtils = {
    */
   async getStats() {
     try {
-      const info = await redis.info('memory');
-      const keyspace = await redis.info('keyspace');
+      const info = await getRedis().info('memory');
+      const keyspace = await getRedis().info('keyspace');
 
       return {
         memory: info,

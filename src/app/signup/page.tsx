@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering - não fazer SSG desta página
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import { useForm, useController } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';

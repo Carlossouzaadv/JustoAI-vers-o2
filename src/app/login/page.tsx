@@ -1,5 +1,8 @@
 'use client';
 
+// Force dynamic rendering - não fazer SSG desta página
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
