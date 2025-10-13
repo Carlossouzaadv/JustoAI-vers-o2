@@ -1,0 +1,24 @@
+# Code Owners for JustoAI V2
+
+# Default owners for everything in the repo
+* @justoai/core-team
+
+# Frontend components
+/src/components/ @justoai/frontend-team
+
+# API routes
+/src/app/api/ @justoai/backend-team
+
+# Database schemas
+/prisma/ @justoai/backend-team
+
+# Tests
+**/__tests__/ @justoai/qa-team
+*.test.ts @justoai/qa-team
+*.test.tsx @justoai/qa-team
+
+# CI/CD
+/.github/ @justoai/devops-team
+
+# Documentation
+*.md @justoai/docs-team

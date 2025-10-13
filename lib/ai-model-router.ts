@@ -46,7 +46,7 @@ export interface UnifiedProcessSchema {
   identificacao_basica: {
     numero_processo: string | null;
     tipo_processual: string | null;
-    esfera: "Federal" | "Estadual" | "Municipal" | "Trabalhista" | null;
+    esfera: 'Federal' | 'Estadual' | 'Municipal' | 'Trabalhista' | null;
     orgao_instancia: string | null;
     comarca: string | null;
     vara: string | null;
@@ -58,13 +58,13 @@ export interface UnifiedProcessSchema {
     parte_principal: {
       nome: string | null;
       cpf_cnpj: string | null;
-      tipo: "Física" | "Jurídica" | null;
+      tipo: 'Física' | 'Jurídica' | null;
       qualificacao: string | null; // Ex: Exequente, Autor, Reclamante
     };
     parte_contraria: {
       nome: string | null;
       cpf_cnpj: string | null;
-      tipo: "Física" | "Jurídica" | null;
+      tipo: 'Física' | 'Jurídica' | null;
       qualificacao: string | null; // Ex: Executado, Réu, Reclamado
     };
     outras_partes: Array<{
@@ -164,7 +164,7 @@ export interface UnifiedProcessSchema {
   // ========== SEÇÃO F: ANÁLISE DE RISCO E ESTRATÉGIA ==========
   analise_estrategica: {
     tese_juridica_central: string | null;
-    risco_classificacao: "Provável" | "Possível" | "Remoto" | null;
+    risco_classificacao: 'Provável' | 'Possível' | 'Remoto' | null;
     risco_justificativa: string | null;
     oportunidades_processuais: string[] | null;
     recomendacoes_estrategicas: string[] | null;
@@ -575,7 +575,7 @@ SCHEMA DE SAÍDA:
 ${schemaJson}`;
 
       default:
-        return "Você é um assistente jurídico especializado em análise de documentos.";
+        return 'Você é um assistente jurídico especializado em análise de documentos.';
     }
   }
 
@@ -903,71 +903,71 @@ PROFUNDIDADE: Completa e estratégica`;
   private getUnifiedSchemaForPrompt(): string {
     return JSON.stringify({
       identificacao_basica: {
-        numero_processo: "string | null",
-        tipo_processual: "string | null",
-        esfera: "Federal | Estadual | Municipal | Trabalhista | null",
-        orgao_instancia: "string | null",
-        comarca: "string | null",
-        vara: "string | null",
-        juiz_responsavel: "string | null"
+        numero_processo: 'string | null',
+        tipo_processual: 'string | null',
+        esfera: 'Federal | Estadual | Municipal | Trabalhista | null',
+        orgao_instancia: 'string | null',
+        comarca: 'string | null',
+        vara: 'string | null',
+        juiz_responsavel: 'string | null'
       },
       partes_envolvidas: {
         parte_principal: {
-          nome: "string | null",
-          cpf_cnpj: "string | null",
-          tipo: "Física | Jurídica | null",
-          qualificacao: "string | null"
+          nome: 'string | null',
+          cpf_cnpj: 'string | null',
+          tipo: 'Física | Jurídica | null',
+          qualificacao: 'string | null'
         },
         parte_contraria: {
-          nome: "string | null",
-          cpf_cnpj: "string | null",
-          tipo: "Física | Jurídica | null",
-          qualificacao: "string | null"
+          nome: 'string | null',
+          cpf_cnpj: 'string | null',
+          tipo: 'Física | Jurídica | null',
+          qualificacao: 'string | null'
         },
-        outras_partes: "Array<{nome, cpf_cnpj, qualificacao}> | null"
+        outras_partes: 'Array<{nome, cpf_cnpj, qualificacao}> | null'
       },
       valores_financeiros: {
-        valor_principal: "number | null",
-        multas: "number | null",
-        juros: "number | null",
-        encargos_legais: "number | null",
-        valor_total: "number | null",
-        valor_atualizado_em: "string | null",
-        observacoes_valores: "string | null"
+        valor_principal: 'number | null',
+        multas: 'number | null',
+        juros: 'number | null',
+        encargos_legais: 'number | null',
+        valor_total: 'number | null',
+        valor_atualizado_em: 'string | null',
+        observacoes_valores: 'string | null'
       },
-      campos_especializados: "Objeto específico baseado no tipo de processo identificado",
+      campos_especializados: 'Objeto específico baseado no tipo de processo identificado',
       situacao_processual: {
-        situacao_atual: "string | null",
-        fase_processual: "string | null",
-        ultimo_andamento: "objeto com data, tipo, resumo",
-        principais_andamentos: "Array de objetos com data, tipo, resumo",
-        prazos_pendentes: "Array de objetos | null"
+        situacao_atual: 'string | null',
+        fase_processual: 'string | null',
+        ultimo_andamento: 'objeto com data, tipo, resumo',
+        principais_andamentos: 'Array de objetos com data, tipo, resumo',
+        prazos_pendentes: 'Array de objetos | null'
       },
       frentes_discussao: {
-        frentes_ativas: "Array de objetos com nome_frente, status_atual, proximos_passos, prazos_correndo",
-        resumo_executivo_frentes: "string",
-        prioridades_identificadas: "Array de strings"
+        frentes_ativas: 'Array de objetos com nome_frente, status_atual, proximos_passos, prazos_correndo',
+        resumo_executivo_frentes: 'string',
+        prioridades_identificadas: 'Array de strings'
       },
       analise_estrategica: {
-        tese_juridica_central: "string | null",
-        risco_classificacao: "Provável | Possível | Remoto | null",
-        risco_justificativa: "string | null",
-        oportunidades_processuais: "Array<string> | null",
-        recomendacoes_estrategicas: "Array<string> | null",
-        pontos_atencao: "Array<string> | null",
-        precedentes_relevantes: "Array<string> | null"
+        tese_juridica_central: 'string | null',
+        risco_classificacao: 'Provável | Possível | Remoto | null',
+        risco_justificativa: 'string | null',
+        oportunidades_processuais: 'Array<string> | null',
+        recomendacoes_estrategicas: 'Array<string> | null',
+        pontos_atencao: 'Array<string> | null',
+        precedentes_relevantes: 'Array<string> | null'
       },
       documentos_relacionados: {
-        documentos_anexos: "Array de objetos | null",
-        certidoes_pendentes: "Array<string> | null",
-        documentos_solicitados: "Array<string> | null"
+        documentos_anexos: 'Array de objetos | null',
+        certidoes_pendentes: 'Array<string> | null',
+        documentos_solicitados: 'Array<string> | null'
       },
       metadados_analise: {
-        data_analise: "string",
-        modelo_utilizado: "string",
-        confianca_geral: "number 0-1",
-        observacoes_ia: "string | null",
-        campos_nao_encontrados: "Array<string> | null"
+        data_analise: 'string',
+        modelo_utilizado: 'string',
+        confianca_geral: 'number 0-1',
+        observacoes_ia: 'string | null',
+        campos_nao_encontrados: 'Array<string> | null'
       }
     }, null, 2);
   }

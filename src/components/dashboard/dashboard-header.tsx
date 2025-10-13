@@ -33,7 +33,7 @@ export function DashboardHeader() {
               return (
                 <Link key={item.href} href={item.href}>
                   <Button
-                    variant={isActive ? "default" : "ghost"}
+                    variant={isActive ? 'default' : 'ghost'}
                     size="sm"
                     className="flex items-center gap-2"
                   >

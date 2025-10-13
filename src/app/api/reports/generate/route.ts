@@ -223,7 +223,7 @@ export async function PUT(req: NextRequest) {
 
     for (const job of validatedData.jobs) {
       // Obter customização
-      let customizationProfile = job.customization_profile_id ?
+      const customizationProfile = job.customization_profile_id ?
         await customizationManager.getProfileById(job.customization_profile_id) :
         await customizationManager.getDefaultProfile(workspace.id);
 

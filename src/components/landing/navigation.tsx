@@ -145,7 +145,7 @@ export function Navigation() {
                 aria-expanded={isMobileMenuOpen}
               >
                 <motion.div
-                  animate={isMobileMenuOpen ? "open" : "closed"}
+                  animate={isMobileMenuOpen ? 'open' : 'closed'}
                   className="w-6 h-6 flex flex-col justify-center items-center"
                 >
                   <motion.span

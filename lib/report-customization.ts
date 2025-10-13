@@ -324,8 +324,8 @@ export class ReportCustomizationManager {
       const logoBase64 = `data:${mimeType};base64,${logoFile.toString('base64')}`;
 
       // Detectar dimensões (implementação básica)
-      let width = 80;
-      let height = 60;
+      const width = 80;
+      const height = 60;
 
       // Para PNG/JPEG, poderia usar uma lib para detectar dimensões reais
       // Por simplicidade, usando valores padrão

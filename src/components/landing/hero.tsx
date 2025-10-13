@@ -238,7 +238,7 @@ export function Hero() {
       >
         <motion.div
           animate={{ y: [0, 10] }}
-          transition={{ duration: 1, repeat: Infinity, repeatType: "reverse", type: "spring" }}
+          transition={{ duration: 1, repeat: Infinity, repeatType: 'reverse', type: 'spring' }}
           className="text-neutral-400 cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -14,7 +14,7 @@ import { ICONS } from '@/lib/icons';
 // ================================
 
 const analyzeSchema = z.object({
-  text: z.string().min(1, "Texto é obrigatório"),
+  text: z.string().min(1, 'Texto é obrigatório'),
   analysis_type: z.enum(['essential', 'strategic', 'report']),
   file_size_mb: z.number().optional().default(0),
   workspace_id: z.string().optional(),
@@ -112,15 +112,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Erro específico do Gemini
-    if (error.code && error.error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && 'error' in error) {
+      const geminiError = error as { code?: number; error?: string; retryable?: boolean };
       return NextResponse.json(
         {
           success: false,
-          error: `Gemini API Error: ${error.error}`,
-          code: error.code,
-          retryable: error.retryable || false
+          error: `Gemini API Error: ${geminiError.error}`,
+          code: geminiError.code,
+          retryable: geminiError.retryable || false
         },
-        { status: error.code === 429 ? 429 : 500 }
+        { status: geminiError.code === 429 ? 429 : 500 }
       );
     }
 
@@ -225,6 +226,7 @@ export async function DELETE(req: NextRequest) {
     // TODO: Verificar se user é admin do workspace
 
     // 2. Limpar cache
+    const { getAiCache } = await import('@/lib/ai-cache-manager');
     const cache = getAiCache();
     await cache.clearAll();
 

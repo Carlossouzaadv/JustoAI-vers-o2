@@ -1,45 +1,23 @@
 {
-  "files.encoding": "utf8",
-  "files.autoGuessEncoding": true,
-  "files.defaultLanguage": "typescript",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "emmet.includeLanguages": {
-    "typescript": "html",
-    "typescriptreact": "html"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "jest.autoRun": "off",
+  "jest.showCoverageOnLoad": false,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/coverage": true
   },
-  "typescript.preferences.importModuleSpecifier": "relative",
-  "typescript.suggest.autoImports": true,
-  "files.associations": {
-    "*.css": "css",
-    "*.scss": "scss",
-    "*.ts": "typescript",
-    "*.tsx": "typescriptreact"
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/coverage": true
   },
-  "editor.unicodeHighlight.allowedCharacters": {
-    "✓": true,
-    "✗": true,
-    "⚠": true,
-    "ℹ": true,
-    "⏳": true,
-    "→": true,
-    "←": true,
-    "↑": true,
-    "↓": true,
-    "⚙": true,
-    "★": true,
-    "☆": true,
-    "♥": true,
-    "♡": true,
-    "✉": true,
-    "●": true,
-    "○": true,
-    "■": true,
-    "□": true
-  },
-  "editor.unicodeHighlight.nonBasicASCII": false,
-  "editor.unicodeHighlight.invisibleCharacters": false,
-  "editor.unicodeHighlight.ambiguousCharacters": false
+  "jest.jestCommandLine": "npm test --"
 }

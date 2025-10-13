@@ -131,6 +131,10 @@ model Case {
   metadata           Json?
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
+
+  // Relacionamento com Processo JUDIT (opcional)
+  processoId         String?               @unique
+
   analysisVersions   CaseAnalysisVersion[]
   documents          CaseDocument[]
   events             CaseEvent[]
@@ -141,6 +145,7 @@ model Case {
   importedDataItems  ImportedDataItem[]
   monitoredProcesses MonitoredProcess[]
   timelineEntries    ProcessTimelineEntry[]
+  processo           Processo?             @relation(fields: [processoId], references: [id])
 
   @@map("cases")
 }
@@ -655,6 +660,134 @@ model GlobalLog {
   @@index([userId])
   @@map("global_logs")
 }
+
+// ================================================================
+// INTEGRAÇÃO JUDIT API
+// ================================================================
+
+model Processo {
+  id                String   @id @default(cuid())
+  numeroCnj         String   @unique
+  dadosCompletos    Json?    // Armazena a resposta completa da JUDIT
+  dataOnboarding    DateTime @default(now())
+  ultimaAtualizacao DateTime @updatedAt
+
+  // Relacionamentos
+  requisicoes       JuditRequest[]
+  monitoramento     JuditMonitoring?
+  case              Case?    // Relacionamento opcional com Case existente
+
+  @@index([numeroCnj])
+  @@map("processos")
+}
+
+model JuditRequest {
+  id         String   @id @default(cuid())
+  requestId  String   @unique // O request_id retornado pela JUDIT
+  status     String   // ex: "pending", "completed", "failed"
+  finalidade String   // ex: "ONBOARDING", "BUSCA_ANEXOS"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([processoId, status])
+  @@map("judit_requests")
+}
+
+model JuditMonitoring {
+  id         String  @id @default(cuid())
+  trackingId String  @unique // O tracking_id retornado pela JUDIT
+  tipo       String  @default("UNIVERSAL") // "UNIVERSAL" ou "ANEXOS"
+  ativo      Boolean @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  processoId String   @unique
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  @@index([trackingId])
+  @@index([ativo])
+  @@map("judit_monitoring")
+}
+
+// ================================================================
+// OBSERVABILITY & COST TRACKING
+// ================================================================
+
+model JuditCostTracking {
+  id                  String              @id @default(cuid())
+  workspaceId         String?             // Opcional para rastrear por workspace
+  operationType       JuditOperationType  // Tipo de operação
+  numeroCnj           String?             // CNJ do processo (se aplicável)
+
+  // Custos em reais (BRL)
+  searchCost          Decimal             @default(0.69) @db.Decimal(10, 4) // Custo base da busca
+  attachmentsCost     Decimal             @default(0) @db.Decimal(10, 4)    // Custo de anexos
+  totalCost           Decimal             @db.Decimal(10, 4)                 // Custo total
+
+  // Métricas de recursos
+  documentsRetrieved  Int                 @default(0)  // Número de documentos baixados
+  movementsCount      Int                 @default(0)  // Número de movimentações
+  apiCallsCount       Int                 @default(1)  // Número de chamadas à API
+
+  // Tempos de resposta (em ms)
+  durationMs          Int?                // Duração total da operação
+
+  // Metadata
+  requestId           String?             // ID da requisição JUDIT
+  trackingId          String?             // ID de tracking JUDIT
+  jobId               String?             // ID do job na fila (se aplicável)
+  status              String              @default("success") // success, failed, timeout
+  errorMessage        String?             // Mensagem de erro (se houver)
+
+  // Timestamps
+  createdAt           DateTime            @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([operationType, createdAt])
+  @@index([numeroCnj])
+  @@index([createdAt])
+  @@map("judit_cost_tracking")
+}
+
+model JuditAlert {
+  id              String          @id @default(cuid())
+  workspaceId     String?         // Opcional
+  alertType       JuditAlertType  // Tipo de alerta
+  severity        AlertSeverity   @default(MEDIUM)
+
+  // Detalhes do alerta
+  title           String
+  message         String
+  errorCode       String?
+
+  // Contexto
+  numeroCnj       String?
+  requestId       String?
+  trackingId      String?
+  jobId           String?
+  metadata        Json?           // Dados adicionais
+
+  // Estado
+  resolved        Boolean         @default(false)
+  resolvedAt      DateTime?
+  notified        Boolean         @default(false)
+  notifiedAt      DateTime?
+
+  createdAt       DateTime        @default(now())
+
+  @@index([workspaceId, resolved, severity])
+  @@index([alertType, resolved])
+  @@index([createdAt])
+  @@map("judit_alerts")
+}
+
+// ================================================================
+// ENUMS
+// ================================================================
 
 enum Plan {
   FREE
@@ -1319,5 +1452,33 @@ enum AudienceType {
 enum OutputFormat {
   PDF
   DOCX
+}
+
+// ================================================================
+// JUDIT OBSERVABILITY ENUMS
+// ================================================================
+
+enum JuditOperationType {
+  ONBOARDING          // Consulta inicial completa com anexos
+  MONITORING_CHECK    // Verificação de monitoramento (low-cost)
+  ATTACHMENT_FETCH    // Busca de anexos após análise de keywords
+  MANUAL_SEARCH       // Busca manual disparada pelo usuário
+}
+
+enum JuditAlertType {
+  API_ERROR           // Erro na API
+  RATE_LIMIT          // Rate limit atingido
+  CIRCUIT_BREAKER     // Circuit breaker aberto
+  HIGH_COST           // Custo alto detectado
+  TIMEOUT             // Timeout na operação
+  ATTACHMENT_TRIGGER  // Trigger de busca de anexos
+  MONITORING_FAILED   // Falha no monitoramento
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 

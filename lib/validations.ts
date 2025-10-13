@@ -9,7 +9,7 @@ const idSchema = z.string().cuid()
 const emailSchema = z.string().email()
 const phoneSchema = z.string().min(10).max(20).optional()
 const slugSchema = z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, {
-  message: "Slug must contain only lowercase letters, numbers, and hyphens"
+  message: 'Slug must contain only lowercase letters, numbers, and hyphens'
 })
 
 // Workspace schemas
@@ -131,7 +131,7 @@ const processNumberSchema = z.string().min(15).max(30).refine(
     const normalized = value.replace(/\D/g, '');
     return normalized.length >= 15 && normalized.length <= 20;
   },
-  { message: "Número do processo deve ter formato CNJ válido" }
+  { message: 'Número do processo deve ter formato CNJ válido' }
 );
 
 // Monitored Process schemas

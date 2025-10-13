@@ -39,6 +39,80 @@ const caseQuerySchema = z.object({
   workspaceId: z.string().cuid().optional(),
 })
 
+/**
+ * @swagger
+ * /api/cases:
+ *   get:
+ *     summary: Listar casos jurídicos
+ *     description: Retorna lista paginada de casos jurídicos com filtros e busca
+ *     tags:
+ *       - Casos
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - $ref: '#/components/parameters/SearchParam'
+ *       - name: status
+ *         in: query
+ *         description: Filtrar por status
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, SUSPENDED, CLOSED, ARCHIVED, CANCELLED]
+ *       - name: type
+ *         in: query
+ *         description: Filtrar por tipo de caso
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [CIVIL, CRIMINAL, LABOR, FAMILY, TAX, ADMINISTRATIVE]
+ *       - name: priority
+ *         in: query
+ *         description: Filtrar por prioridade
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [LOW, MEDIUM, HIGH, URGENT]
+ *       - name: clientId
+ *         in: query
+ *         description: Filtrar por cliente
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - name: workspaceId
+ *         in: query
+ *         description: ID do workspace para filtrar
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Lista de casos retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Case'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *                 message:
+ *                   type: string
+ *                   example: "Found 50 cases"
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // GET /api/cases - List cases
 async function GET(request: NextRequest) {
   // Rate limiting
@@ -149,6 +223,92 @@ async function GET(request: NextRequest) {
   )
 }
 
+/**
+ * @swagger
+ * /api/cases:
+ *   post:
+ *     summary: Criar novo caso jurídico
+ *     description: Cria um novo caso jurídico associado a um cliente
+ *     tags:
+ *       - Casos
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - workspaceId
+ *               - clientId
+ *               - title
+ *               - type
+ *             properties:
+ *               workspaceId:
+ *                 type: string
+ *                 format: uuid
+ *               clientId:
+ *                 type: string
+ *                 format: uuid
+ *               title:
+ *                 type: string
+ *                 example: "Ação de Cobrança"
+ *                 maxLength: 200
+ *               description:
+ *                 type: string
+ *                 example: "Descrição detalhada do caso"
+ *               processNumber:
+ *                 type: string
+ *                 example: "1234567-89.2024.8.26.0001"
+ *               type:
+ *                 type: string
+ *                 enum: [CIVIL, CRIMINAL, LABOR, FAMILY, TAX, ADMINISTRATIVE]
+ *                 example: CIVIL
+ *               status:
+ *                 type: string
+ *                 enum: [ACTIVE, SUSPENDED, CLOSED, ARCHIVED, CANCELLED]
+ *                 default: ACTIVE
+ *               priority:
+ *                 type: string
+ *                 enum: [LOW, MEDIUM, HIGH, URGENT]
+ *                 default: MEDIUM
+ *               value:
+ *                 type: number
+ *                 example: 50000.00
+ *               startDate:
+ *                 type: string
+ *                 format: date-time
+ *               expectedEndDate:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Caso criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Case'
+ *                 message:
+ *                   type: string
+ *                   example: "Case \"Ação de Cobrança\" created successfully"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         description: Cliente não encontrado
+ *       409:
+ *         description: Caso com este número de processo já existe
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 // POST /api/cases - Create case
 async function POST(request: NextRequest) {
   // Rate limiting (stricter for creates)

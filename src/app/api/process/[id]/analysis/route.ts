@@ -22,9 +22,9 @@ interface AnalysisRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const processId = params.id;
+  const { id: processId } = await params;
 
   try {
     console.log(`${ICONS.PROCESS} Iniciando análise para processo: ${processId}`);

@@ -9,6 +9,9 @@ import { ReportGenerator } from '../lib/report-generator';
 import { ICONS } from '../lib/icons';
 import { createHash } from 'crypto';
 
+// Imports do Prisma
+import { ExecutionStatus } from '@prisma/client';
+
 // Interfaces para o worker
 interface IndividualReportJobData {
   type: 'scheduled-individual-report';
@@ -100,17 +103,17 @@ individualReportsQueue.process(
         throw new Error(`Execução não encontrada: ${reportExecutionId}`);
       }
 
-      if (reportExecution.status !== 'AGENDADO') {
+      if (reportExecution.status !== ExecutionStatus.AGENDADO) {
         throw new Error(`Status inválido para execução: ${reportExecution.status}`);
       }
 
       await job.progress(10);
 
-      // 3. Atualizar status para EM_PROCESSAMENTO
+      // 3. Atualizar status para RUNNING
       await prisma.reportExecution.update({
         where: { id: reportExecutionId },
         data: {
-          status: 'EM_PROCESSAMENTO',
+          status: ExecutionStatus.RUNNING,
           startedAt: new Date()
         }
       });
@@ -160,7 +163,7 @@ individualReportsQueue.process(
         await prisma.reportExecution.update({
           where: { id: reportExecutionId },
           data: {
-            status: 'CONCLUIDO',
+            status: ExecutionStatus.COMPLETED,
             completedAt: new Date(),
             duration: Date.now() - startTime,
             fileUrls: cacheResult.fileUrls,
@@ -213,7 +216,7 @@ individualReportsQueue.process(
       await prisma.reportExecution.update({
         where: { id: reportExecutionId },
         data: {
-          status: 'CONCLUIDO',
+          status: ExecutionStatus.COMPLETED,
           completedAt: new Date(),
           duration: Date.now() - startTime,
           fileUrls: reportResult.fileUrls,
@@ -273,7 +276,7 @@ individualReportsQueue.process(
       await prisma.reportExecution.update({
         where: { id: reportExecutionId },
         data: {
-          status: 'FALHOU',
+          status: ExecutionStatus.FAILED,
           completedAt: new Date(),
           duration: Date.now() - startTime,
           error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -418,7 +421,7 @@ export async function individualReportsWorkerHealthCheck() {
 
     const pendingExecutions = await prisma.reportExecution.count({
       where: {
-        status: 'AGENDADO',
+        status: ExecutionStatus.AGENDADO,
         scheduledFor: {
           lte: new Date(Date.now() + 24 * 60 * 60 * 1000) // Próximas 24h
         }
@@ -463,7 +466,7 @@ export async function cleanupIndividualReportsQueue(): Promise<{
     // Limpar execuções órfãs (agendadas há mais de 48h sem job correspondente)
     const orphanedExecutions = await prisma.reportExecution.findMany({
       where: {
-        status: 'AGENDADO',
+        status: ExecutionStatus.AGENDADO,
         scheduledFor: {
           lt: new Date(Date.now() - 48 * 60 * 60 * 1000)
         }
@@ -476,7 +479,7 @@ export async function cleanupIndividualReportsQueue(): Promise<{
           id: { in: orphanedExecutions.map(e => e.id) }
         },
         data: {
-          status: 'CANCELADO',
+          status: ExecutionStatus.CANCELLED,
           completedAt: new Date(),
           error: 'Cancelado automaticamente - timeout de agendamento'
         }

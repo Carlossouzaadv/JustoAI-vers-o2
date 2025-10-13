@@ -88,7 +88,15 @@ export const ICONS = {
   GENERATE: '⚡',
   TELEMETRY: '📊',
   COST: '💰',
-  ALERT: '🚨'
+  ALERT: '🚨',
+  ADMIN: '👑',
+  CREDIT: '💳',
+  WEBHOOK: '🔗',
+  RESTART: '🔄',
+  RESET: '↩️',
+  STOP: '⏹️',
+  EMERGENCY: '🆘',
+  HEALTH: '💚'
 } as const;
 
 export const UI_TEXT = {

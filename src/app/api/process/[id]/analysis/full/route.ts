@@ -22,9 +22,9 @@ const fullAnalysisSchema = z.object({
 
 export const POST = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
-  const processId = params.id;
+  const { id: processId } = await params;
 
   // Auth check
   const { user, error: authError } = await requireAuth(request);

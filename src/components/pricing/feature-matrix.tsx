@@ -25,28 +25,39 @@ interface FeatureMatrixProps {
 }
 
 export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixProps) {
-  const renderFeatureValue = (value: string, planId: string) => {
-    // Handle boolean-like values
-    if (value === '✓' || value.toLowerCase() === 'sim') {
+  const renderFeatureValue = (value: any, planId: string) => {
+    // Handle boolean values
+    if (value === true) {
       return <Check className="w-4 h-4 text-green-500 mx-auto" />;
     }
-    if (value === '✗' || value.toLowerCase() === 'não') {
+    if (value === false) {
+      return <X className="w-4 h-4 text-gray-400 mx-auto" />;
+    }
+
+    // Convert to string for further processing
+    const stringValue = String(value);
+
+    // Handle boolean-like string values
+    if (stringValue === '✓' || stringValue.toLowerCase() === 'sim') {
+      return <Check className="w-4 h-4 text-green-500 mx-auto" />;
+    }
+    if (stringValue === '✗' || stringValue.toLowerCase() === 'não') {
       return <X className="w-4 h-4 text-gray-400 mx-auto" />;
     }
 
     // Handle special values
-    if (value.toLowerCase().includes('ilimitado')) {
+    if (stringValue.toLowerCase().includes('ilimitado')) {
       return (
         <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
-          {value}
+          {stringValue}
         </Badge>
       );
     }
 
-    if (value.toLowerCase().includes('personalizado')) {
+    if (stringValue.toLowerCase().includes('personalizado')) {
       return (
         <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
-          {value}
+          {stringValue}
         </Badge>
       );
     }
@@ -54,7 +65,7 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
     // Regular text values
     return (
       <span className={`text-sm ${planId === 'professional' ? 'font-medium' : ''}`}>
-        {value}
+        {stringValue}
       </span>
     );
   };

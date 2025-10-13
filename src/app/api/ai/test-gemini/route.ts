@@ -55,11 +55,12 @@ export async function GET(req: NextRequest) {
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro no teste Gemini:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Unknown error',
+        error: errorMessage || 'Unknown error',
         timestamp: new Date().toISOString()
       },
       { status: 500 }
@@ -105,11 +106,12 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro no teste de análise:`, error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Unknown error',
+        error: errorMessage || 'Unknown error',
         timestamp: new Date().toISOString()
       },
       { status: 500 }
@@ -141,10 +143,11 @@ async function testModel(geminiClient: any, model: ModelTier) {
     };
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
       model,
-      error: error.message || 'Unknown error',
+      error: errorMessage || 'Unknown error',
       latency_ms: Date.now() - startTime
     };
   }
@@ -179,9 +182,10 @@ Retorne APENAS o JSON, sem nenhum texto adicional.`;
     };
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
-      error: error.message || 'Unknown error',
+      error: errorMessage || 'Unknown error',
       latency_ms: Date.now() - startTime
     };
   }

@@ -235,7 +235,7 @@ function ProfileStep({ profile, setProfile }: { profile: UserProfile; setProfile
           {roles.map((role) => (
             <Button
               key={role}
-              variant={profile.role === role ? "default" : "outline"}
+              variant={profile.role === role ? 'default' : 'outline'}
               className="text-sm"
               onClick={() => setProfile({ ...profile, role })}
             >
@@ -253,7 +253,7 @@ function ProfileStep({ profile, setProfile }: { profile: UserProfile; setProfile
           {caseTypes.map((type) => (
             <Button
               key={type}
-              variant={profile.caseTypes.includes(type) ? "default" : "outline"}
+              variant={profile.caseTypes.includes(type) ? 'default' : 'outline'}
               className="text-sm"
               onClick={() => toggleCaseType(type)}
             >

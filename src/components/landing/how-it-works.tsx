@@ -174,7 +174,7 @@ export function HowItWorks() {
                         </div>
                         <motion.div
                           animate={{ width: ['0%', '100%'] }}
-                          transition={{ duration: 2, repeat: Infinity, type: "spring" }}
+                          transition={{ duration: 2, repeat: Infinity, type: 'spring' }}
                           className="h-2 bg-accent-500 rounded"
                         />
                         <div className="text-center text-sm text-neutral-600">
@@ -242,7 +242,7 @@ export function HowItWorks() {
                           <div className="h-2 bg-neutral-200 rounded overflow-hidden">
                             <motion.div
                               animate={{ width: ['0%', '87%'] }}
-                              transition={{ duration: 2, repeat: Infinity, type: "spring" }}
+                              transition={{ duration: 2, repeat: Infinity, type: 'spring' }}
                               className="h-full bg-gradient-to-r from-primary-500 to-accent-500"
                             />
                           </div>
@@ -313,7 +313,7 @@ export function HowItWorks() {
                         <motion.div
                           initial={{ scale: 0.8, opacity: 0.7 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          transition={{ duration: 0.8, repeat: Infinity, repeatType: "reverse" }}
+                          transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse' }}
                           className="text-center"
                         >
                           <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 border border-green-300 rounded-full">

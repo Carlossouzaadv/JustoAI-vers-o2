@@ -166,7 +166,7 @@ export function FAQ() {
                   height: openItems.includes(index) ? 'auto' : 0,
                   opacity: openItems.includes(index) ? 1 : 0,
                 }}
-                transition={{ duration: 0.3, type: "spring" }}
+                transition={{ duration: 0.3, type: 'spring' }}
                 className="overflow-hidden"
               >
                 <div className="px-6 pb-6">

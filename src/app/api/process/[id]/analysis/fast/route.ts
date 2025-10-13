@@ -20,9 +20,9 @@ const fastAnalysisSchema = z.object({
 
 export const POST = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
-  const processId = params.id;
+  const { id: processId } = await params;
 
   // Auth check
   const { user, error: authError } = await requireAuth(request);
@@ -189,9 +189,9 @@ export const POST = withErrorHandler(async (
 // GET endpoint para verificar status da análise
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
-  const processId = params.id;
+  const { id: processId } = await params;
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');
 

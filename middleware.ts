@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { addCorsHeaders, createPreflightResponse, validateCorsOrigin } from './lib/cors'
+import { addSecurityHeaders } from './lib/security-headers'
 
 export async function middleware(request: NextRequest) {
   // Create response
@@ -38,6 +40,19 @@ export async function middleware(request: NextRequest) {
 
   // Protected API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    const origin = request.headers.get('origin')
+
+    // Handle preflight requests first
+    if (request.method === 'OPTIONS') {
+      return createPreflightResponse(origin)
+    }
+
+    // Validar origem CORS
+    const corsError = validateCorsOrigin(request)
+    if (corsError) {
+      return corsError
+    }
+
     // Skip auth for public endpoints
     const publicEndpoints = [
       '/api/health',
@@ -63,20 +78,12 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Add CORS headers for API routes
-    response.headers.set('Access-Control-Allow-Origin', '*')
-    response.headers.set(
-      'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, OPTIONS'
-    )
-    response.headers.set(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization'
-    )
+    // Add secure CORS headers
+    addCorsHeaders(response, origin)
 
-    // Handle preflight requests
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 200, headers: response.headers })
+    // Add security headers if enabled
+    if (process.env.SECURITY_HEADERS_ENABLED !== 'false') {
+      response = addSecurityHeaders(response)
     }
 
     return response

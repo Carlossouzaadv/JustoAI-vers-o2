@@ -11,9 +11,9 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const processId = params.id;
+  const { id: processId } = await params;
 
   try {
     console.log(`${ICONS.SEARCH} Buscando histórico de versões para processo: ${processId}`);
@@ -222,9 +222,9 @@ function summarizeChanges(current: any, previous: any) {
  */
 export async function GET_VERSION(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
-  const { id: processId, versionId } = params;
+  const { id: processId, versionId } = await params;
 
   try {
     const version = await prisma.caseAnalysisVersion.findFirst({

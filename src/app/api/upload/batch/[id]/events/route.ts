@@ -7,12 +7,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { createSSECorsHeaders } from '@/lib/cors';
+import { addSSESecurityHeaders } from '@/lib/security-headers';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const batchId = params.id;
+  const { id: batchId } = await params;
 
   console.log(`${ICONS.PROCESS} Iniciando SSE para batch: ${batchId}`);
 
@@ -160,16 +162,15 @@ export async function GET(
       }
     });
 
-    return new NextResponse(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Cache-Control'
-      }
-    });
+    // Obter origem da requisição
+    const origin = request.headers.get('origin');
+
+    // Configurar headers SSE seguros
+    const headers = createSSECorsHeaders(origin);
+    addSSESecurityHeaders(headers);
+    headers.set('Access-Control-Allow-Methods', 'GET');
+
+    return new NextResponse(readable, { headers });
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao configurar SSE:`, error);

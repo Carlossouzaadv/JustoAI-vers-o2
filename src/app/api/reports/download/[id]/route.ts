@@ -12,12 +12,12 @@ import path from 'path';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   const { user, error: authError } = await requireAuth(request);
   if (authError) return authError;
 
-  const reportId = params.id;
+  const { id: reportId } = await params;
   const { searchParams } = new URL(request.url);
   const format = searchParams.get('format') || 'PDF';
   const workspaceId = searchParams.get('workspaceId');

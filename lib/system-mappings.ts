@@ -784,7 +784,7 @@ export class SystemMappings {
     // Calcular score para cada sistema
     Object.entries(this.mappings).forEach(([systemName, mapping]) => {
       let score = 0;
-      let totalColumns = mapping.columnMappings.length;
+      const totalColumns = mapping.columnMappings.length;
 
       if (totalColumns === 0) {
         systemScores[systemName as SourceSystem] = 0;

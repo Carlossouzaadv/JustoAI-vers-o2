@@ -26,7 +26,7 @@ export default function OptimizedImage({
   const [isLoading, setIsLoading] = useState(true);
 
   // Gerar sources para diferentes formatos
-  const baseName = src.replace(/\.[^/.]+$/, "");
+  const baseName = src.replace(/\.[^/.]+$/, '');
 
   return (
     <picture className={className}>
@@ -71,7 +71,7 @@ export default function OptimizedImage({
 
 // Lista de imagens otimizadas disponíveis
 export const optimizedImages = [
-  "founder-photo",
-  "Justo_logo",
-  "logo+nome"
+  'founder-photo',
+  'Justo_logo',
+  'logo+nome'
 ];

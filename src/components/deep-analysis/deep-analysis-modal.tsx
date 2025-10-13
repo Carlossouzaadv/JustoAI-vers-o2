@@ -540,14 +540,14 @@ export function DeepAnalysisModal({
                   {/* Toggle between existing and new files */}
                   <div className="flex items-center gap-4">
                     <Button
-                      variant={useExistingFiles ? "default" : "outline"}
+                      variant={useExistingFiles ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setUseExistingFiles(true)}
                     >
                       Usar documentos existentes
                     </Button>
                     <Button
-                      variant={!useExistingFiles ? "default" : "outline"}
+                      variant={!useExistingFiles ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setUseExistingFiles(false)}
                     >

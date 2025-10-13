@@ -6,6 +6,8 @@
 import { NextRequest } from 'next/server';
 import { getWebSocketManager, generateConnectionId } from '@/lib/websocket-manager';
 import { ICONS } from '@/lib/icons';
+import { createSSECorsHeaders } from '@/lib/cors';
+import { addSSESecurityHeaders } from '@/lib/security-headers';
 
 /**
  * GET /api/upload/batch/{id}/stream
@@ -13,9 +15,9 @@ import { ICONS } from '@/lib/icons';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const batchId = params.id;
+  const { id: batchId } = await params;
 
   if (!batchId) {
     return new Response('Batch ID é obrigatório', { status: 400 });
@@ -23,14 +25,12 @@ export async function GET(
 
   console.log(`${ICONS.PROCESS} Nova conexão SSE para batch: ${batchId}`);
 
-  // Configurar headers SSE
-  const headers = new Headers({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Cache-Control'
-  });
+  // Obter origem da requisição
+  const origin = request.headers.get('origin');
+
+  // Configurar headers SSE seguros
+  const headers = createSSECorsHeaders(origin);
+  addSSESecurityHeaders(headers);
 
   // Criar stream personalizado
   const stream = new ReadableStream({
@@ -103,13 +103,13 @@ export async function GET(
 /**
  * OPTIONS - CORS preflight
  */
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const headers = createSSECorsHeaders(origin);
+  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+
   return new Response(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Cache-Control'
-    }
+    headers
   });
 }

@@ -579,7 +579,7 @@ async function extractBasicProcessData(cleanText: string): Promise<any> {
   // Heurísticas simples para extrair dados básicos
   const lines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
-  let title = 'Processo Jurídico';
+  const title = 'Processo Jurídico';
   let description = '';
   let claimValue: number | null = null;
 

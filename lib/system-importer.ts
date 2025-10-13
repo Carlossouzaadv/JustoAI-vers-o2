@@ -564,7 +564,7 @@ export class SystemImporter {
       }
     } else {
       // Criar usuário padrão se não existir
-      let userId = await this.getDefaultUserId();
+      const userId = await this.getDefaultUserId();
 
       await prisma.case.create({
         data: {

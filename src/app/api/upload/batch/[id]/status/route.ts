@@ -13,10 +13,10 @@ import { ICONS } from '@/lib/icons';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const batchId = params.id;
+    const { id: batchId } = await params;
 
     if (!batchId) {
       return NextResponse.json(
@@ -130,10 +130,10 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const batchId = params.id;
+    const { id: batchId } = await params;
 
     console.log(`${ICONS.PROCESS} Cancelando batch: ${batchId}`);
 

@@ -9,7 +9,7 @@ export function FloatingChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
-      text: "Olá! Sou o assistente virtual da JustoAI. Como posso ajudar você a usar a plataforma hoje?",
+      text: 'Olá! Sou o assistente virtual da JustoAI. Como posso ajudar você a usar a plataforma hoje?',
       isBot: true,
       timestamp: new Date()
     }
@@ -17,11 +17,11 @@ export function FloatingChat() {
   const [inputValue, setInputValue] = useState('');
 
   const quickQuestions = [
-    "Como criar minha conta?",
-    "Como fazer upload de processos?",
-    "Como configurar relatórios?",
-    "Quais formatos são suportados?",
-    "Como importar dados do Excel?"
+    'Como criar minha conta?',
+    'Como fazer upload de processos?',
+    'Como configurar relatórios?',
+    'Quais formatos são suportados?',
+    'Como importar dados do Excel?'
   ];
 
   const handleSendMessage = (message: string) => {
@@ -64,14 +64,14 @@ export function FloatingChat() {
     }
 
     if (lowerMessage.includes('formato') || lowerMessage.includes('arquivo')) {
-      return "Suportamos arquivos PDF, imagens (JPG, PNG) para upload de processos e planilhas Excel/CSV para importação de dados.";
+      return 'Suportamos arquivos PDF, imagens (JPG, PNG) para upload de processos e planilhas Excel/CSV para importação de dados.';
     }
 
     if (lowerMessage.includes('excel') || lowerMessage.includes('csv') || lowerMessage.includes('importar')) {
       return "Para importar dados do Excel/CSV, prepare uma planilha com as colunas: número do processo, cliente, status e data. Use a seção 'Integrações' no dashboard.";
     }
 
-    return "Obrigado pela pergunta! Para respostas mais detalhadas, recomendo verificar nossa Central de Ajuda ou entrar em contato com nosso suporte em suporte@justoai.com.br";
+    return 'Obrigado pela pergunta! Para respostas mais detalhadas, recomendo verificar nossa Central de Ajuda ou entrar em contato com nosso suporte em suporte@justoai.com.br';
   };
 
   return (

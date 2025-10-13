@@ -55,6 +55,95 @@ const QuerySchema = z.object({
 // GET - LISTAR PROCESSOS MONITORADOS
 // ================================
 
+/**
+ * @swagger
+ * /api/processes:
+ *   get:
+ *     summary: Listar processos monitorados
+ *     description: Retorna lista paginada de processos jurídicos em monitoramento com filtros, busca e ordenação
+ *     tags:
+ *       - Processos
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/PageParam'
+ *       - $ref: '#/components/parameters/LimitParam'
+ *       - $ref: '#/components/parameters/SearchParam'
+ *       - name: status
+ *         in: query
+ *         description: Filtrar por status do monitoramento
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [ACTIVE, PAUSED, STOPPED, ERROR]
+ *       - name: court
+ *         in: query
+ *         description: Filtrar por tribunal/vara
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: hasCase
+ *         in: query
+ *         description: Filtrar processos com ou sem caso associado
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *       - name: sortBy
+ *         in: query
+ *         description: Campo para ordenação
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, processNumber, clientName, lastSync]
+ *           default: createdAt
+ *       - $ref: '#/components/parameters/SortOrderParam'
+ *     responses:
+ *       200:
+ *         description: Lista de processos retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     processes:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Process'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *                     stats:
+ *                       type: object
+ *                       properties:
+ *                         total:
+ *                           type: integer
+ *                           example: 100
+ *                         byStatus:
+ *                           type: object
+ *                           properties:
+ *                             ACTIVE:
+ *                               type: integer
+ *                               example: 80
+ *                             PAUSED:
+ *                               type: integer
+ *                               example: 15
+ *                             STOPPED:
+ *                               type: integer
+ *                               example: 3
+ *                             ERROR:
+ *                               type: integer
+ *                               example: 2
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function GET(request: NextRequest) {
   try {
     const { workspace } = await validateAuth(request);
@@ -73,93 +162,6 @@ export async function GET(request: NextRequest) {
     });
 
     const offset = (query.page - 1) * query.limit;
-
-    // Development mode - return mock data
-    if (process.env.NODE_ENV === 'development') {
-      console.log('⚠️ Development mode: Returning mock processes data')
-      const mockProcesses = [
-        {
-          id: '1',
-          processNumber: '1234567-89.2024.8.26.0001',
-          court: '1ª Vara Cível Central',
-          clientName: 'João Silva',
-          monitoringStatus: 'ACTIVE',
-          syncFrequency: 'DAILY',
-          alertsEnabled: true,
-          alertRecipients: ['admin@escritorio.com'],
-          caseId: 'case-1',
-          lastSync: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-          lastSyncStatus: 'SUCCESS',
-          errorCount: 0,
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date(),
-          workspaceId: 'dev-workspace'
-        },
-        {
-          id: '2',
-          processNumber: '9876543-21.2024.8.26.0002',
-          court: '1ª Vara de Família',
-          clientName: 'Maria Santos',
-          monitoringStatus: 'ACTIVE',
-          syncFrequency: 'DAILY',
-          alertsEnabled: true,
-          alertRecipients: ['admin@escritorio.com'],
-          caseId: 'case-2',
-          lastSync: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4 hours ago
-          lastSyncStatus: 'SUCCESS',
-          errorCount: 0,
-          createdAt: new Date('2024-01-10'),
-          updatedAt: new Date(),
-          workspaceId: 'dev-workspace'
-        },
-        {
-          id: '3',
-          processNumber: '5555555-55.2024.5.02.0001',
-          court: '2ª Vara do Trabalho',
-          clientName: 'Empresa ABC Ltda',
-          monitoringStatus: 'PAUSED',
-          syncFrequency: 'WEEKLY',
-          alertsEnabled: false,
-          alertRecipients: [],
-          caseId: 'case-3',
-          lastSync: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-          lastSyncStatus: 'SUCCESS',
-          errorCount: 0,
-          createdAt: new Date('2023-12-01'),
-          updatedAt: new Date(),
-          workspaceId: 'dev-workspace'
-        }
-      ]
-
-      let filteredProcesses = mockProcesses
-      if (query.search) {
-        filteredProcesses = mockProcesses.filter(process =>
-          process.processNumber.toLowerCase().includes(query.search!.toLowerCase()) ||
-          process.clientName.toLowerCase().includes(query.search!.toLowerCase()) ||
-          process.court.toLowerCase().includes(query.search!.toLowerCase())
-        )
-      }
-
-      if (query.status) {
-        filteredProcesses = filteredProcesses.filter(process => process.monitoringStatus === query.status)
-      }
-
-      const startIndex = offset
-      const endIndex = startIndex + query.limit
-      const paginatedProcesses = filteredProcesses.slice(startIndex, endIndex)
-
-      return NextResponse.json({
-        success: true,
-        data: paginatedProcesses,
-        pagination: {
-          page: query.page,
-          limit: query.limit,
-          total: filteredProcesses.length,
-          pages: Math.ceil(filteredProcesses.length / query.limit)
-        },
-        message: `${ICONS.SUCCESS} ${filteredProcesses.length} processos encontrados (mock data)`
-      })
-    }
 
     // Construir filtros
     const where: any = {
@@ -282,6 +284,105 @@ export async function GET(request: NextRequest) {
 // POST - CRIAR NOVO PROCESSO MONITORADO
 // ================================
 
+/**
+ * @swagger
+ * /api/processes:
+ *   post:
+ *     summary: Criar novo processo monitorado
+ *     description: Adiciona um novo processo jurídico ao monitoramento, opcionalmente buscando dados iniciais da API externa
+ *     tags:
+ *       - Processos
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - processNumber
+ *               - court
+ *               - clientName
+ *             properties:
+ *               processNumber:
+ *                 type: string
+ *                 example: "1234567-89.2024.8.26.0001"
+ *                 description: Número do processo no formato CNJ
+ *               court:
+ *                 type: string
+ *                 example: "1ª Vara Cível Central"
+ *                 description: Tribunal ou vara do processo
+ *               clientName:
+ *                 type: string
+ *                 example: "João Silva"
+ *                 description: Nome do cliente associado ao processo
+ *               caseId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: ID do caso jurídico a associar (opcional)
+ *               syncFrequency:
+ *                 type: string
+ *                 enum: [HOURLY, DAILY, WEEKLY, MANUAL]
+ *                 default: DAILY
+ *                 description: Frequência de sincronização com a API externa
+ *               alertsEnabled:
+ *                 type: boolean
+ *                 default: true
+ *                 description: Habilitar alertas para este processo
+ *               alertRecipients:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: email
+ *                 default: []
+ *                 example: ["admin@escritorio.com"]
+ *                 description: Lista de emails para receber alertas
+ *               fetchInitialData:
+ *                 type: boolean
+ *                 default: true
+ *                 description: Buscar dados iniciais do processo na API externa
+ *     responses:
+ *       201:
+ *         description: Processo criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     process:
+ *                       $ref: '#/components/schemas/Process'
+ *                     initialMovements:
+ *                       type: integer
+ *                       example: 15
+ *                       description: Número de movimentações iniciais importadas
+ *                 message:
+ *                   type: string
+ *                   example: "Processo adicionado ao monitoramento com sucesso"
+ *       400:
+ *         $ref: '#/components/responses/ValidationError'
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       409:
+ *         description: Processo já está sendo monitorado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               error: "Conflito"
+ *               message: "Processo já está sendo monitorado neste workspace"
+ *               statusCode: 409
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function POST(request: NextRequest) {
   try {
     const { user, workspace } = await validateAuth(request);
@@ -426,6 +527,81 @@ export async function POST(request: NextRequest) {
 // DELETE - REMOVER PROCESSOS EM LOTE
 // ================================
 
+/**
+ * @swagger
+ * /api/processes:
+ *   delete:
+ *     summary: Remover processos em lote
+ *     description: Remove um ou mais processos do monitoramento por IDs ou números de processo
+ *     tags:
+ *       - Processos
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: ids
+ *         in: query
+ *         description: IDs dos processos separados por vírgula
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "uuid1,uuid2,uuid3"
+ *       - name: processNumbers
+ *         in: query
+ *         description: Números dos processos separados por vírgula
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: "1234567-89.2024.8.26.0001,9876543-21.2024.8.26.0002"
+ *     responses:
+ *       200:
+ *         description: Processos removidos com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     deleted:
+ *                       type: integer
+ *                       example: 3
+ *                       description: Quantidade de processos removidos
+ *                     processes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           processNumber:
+ *                             type: string
+ *                           clientName:
+ *                             type: string
+ *                     message:
+ *                       type: string
+ *                       example: "3 processos removidos do monitoramento"
+ *       400:
+ *         description: Parâmetros inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               error: "Requisição inválida"
+ *               message: "IDs ou números de processo devem ser fornecidos"
+ *               statusCode: 400
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
 export async function DELETE(request: NextRequest) {
   try {
     const { workspace } = await validateAuth(request);
@@ -438,7 +614,7 @@ export async function DELETE(request: NextRequest) {
       throw new ApiError('IDs ou números de processo devem ser fornecidos', 400);
     }
 
-    let where: any = {
+    const where: any = {
       workspaceId: workspace.id
     };
 

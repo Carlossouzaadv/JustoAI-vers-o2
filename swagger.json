@@ -1,0 +1,1650 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "JustoAI V2 API",
+    "version": "2.0.0",
+    "description": "API completa da plataforma JustoAI V2 para gestão jurídica com IA",
+    "contact": {
+      "name": "Equipe JustoAI",
+      "email": "dev@justoai.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor de Desenvolvimento"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Verificação de saúde do sistema"
+    },
+    {
+      "name": "Processos",
+      "description": "Gerenciamento de processos jurídicos"
+    },
+    {
+      "name": "Clientes",
+      "description": "Gerenciamento de clientes"
+    },
+    {
+      "name": "Casos",
+      "description": "Gerenciamento de casos jurídicos"
+    }
+  ],
+  "paths": {
+    "/api/cases": {
+      "get": {
+        "summary": "Listar casos jurídicos",
+        "description": "Retorna lista paginada de casos jurídicos com filtros e busca",
+        "tags": [
+          "Casos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/SearchParam"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "SUSPENDED",
+                "CLOSED",
+                "ARCHIVED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filtrar por tipo de caso",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CIVIL",
+                "CRIMINAL",
+                "LABOR",
+                "FAMILY",
+                "TAX",
+                "ADMINISTRATIVE"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "description": "Filtrar por prioridade",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "URGENT"
+              ]
+            }
+          },
+          {
+            "name": "clientId",
+            "in": "query",
+            "description": "Filtrar por cliente",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "in": "query",
+            "description": "ID do workspace para filtrar",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de casos retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Case"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Found 50 cases"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar novo caso jurídico",
+        "description": "Cria um novo caso jurídico associado a um cliente",
+        "tags": [
+          "Casos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "workspaceId",
+                  "clientId",
+                  "title",
+                  "type"
+                ],
+                "properties": {
+                  "workspaceId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string",
+                    "example": "Ação de Cobrança",
+                    "maxLength": 200
+                  },
+                  "description": {
+                    "type": "string",
+                    "example": "Descrição detalhada do caso"
+                  },
+                  "processNumber": {
+                    "type": "string",
+                    "example": "1234567-89.2024.8.26.0001"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "CIVIL",
+                      "CRIMINAL",
+                      "LABOR",
+                      "FAMILY",
+                      "TAX",
+                      "ADMINISTRATIVE"
+                    ],
+                    "example": "CIVIL"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "SUSPENDED",
+                      "CLOSED",
+                      "ARCHIVED",
+                      "CANCELLED"
+                    ],
+                    "default": "ACTIVE"
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "LOW",
+                      "MEDIUM",
+                      "HIGH",
+                      "URGENT"
+                    ],
+                    "default": "MEDIUM"
+                  },
+                  "value": {
+                    "type": "number",
+                    "example": 50000
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "expectedEndDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Caso criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Case"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Case \"Ação de Cobrança\" created successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "description": "Cliente não encontrado"
+          },
+          "409": {
+            "description": "Caso com este número de processo já existe"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/clients": {
+      "get": {
+        "summary": "Listar clientes",
+        "description": "Retorna lista paginada de clientes com filtros e busca",
+        "tags": [
+          "Clientes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/SearchParam"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "SUSPENDED"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filtrar por tipo",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INDIVIDUAL",
+                "BUSINESS"
+              ]
+            }
+          },
+          {
+            "name": "workspaceId",
+            "in": "query",
+            "description": "ID do workspace para filtrar",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de clientes retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Client"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Found 25 clients"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "429": {
+            "description": "Limite de requisições excedido"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar novo cliente",
+        "description": "Cria um novo cliente no workspace especificado",
+        "tags": [
+          "Clientes"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "workspaceId",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "João Silva",
+                    "description": "Nome do cliente"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "joao@email.com"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "example": "(11) 99999-9999"
+                  },
+                  "document": {
+                    "type": "string",
+                    "example": "123.456.789-00",
+                    "description": "CPF ou CNPJ"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "INDIVIDUAL",
+                      "BUSINESS"
+                    ],
+                    "example": "INDIVIDUAL"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "INACTIVE",
+                      "SUSPENDED"
+                    ],
+                    "default": "ACTIVE"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "ID do workspace"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cliente criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Client"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Client \"João Silva\" created successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "409": {
+            "description": "Cliente com este documento já existe"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Verificar saúde do sistema",
+        "description": "Endpoint de health check que verifica o status da API, conexão com banco de dados e estatísticas básicas do sistema",
+        "tags": [
+          "Health"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Sistema saudável e operacional",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "examples": {
+                  "healthy": {
+                    "summary": "Sistema saudável",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "status": "healthy",
+                        "timestamp": "2024-01-15T10:30:00.000Z",
+                        "version": "2.0.0",
+                        "database": {
+                          "connected": true,
+                          "stats": {
+                            "workspaces": 25,
+                            "users": 150,
+                            "clients": 500,
+                            "cases": 1200
+                          }
+                        },
+                        "environment": "development"
+                      }
+                    }
+                  },
+                  "unhealthy": {
+                    "summary": "Sistema com problemas",
+                    "value": {
+                      "success": true,
+                      "data": {
+                        "status": "unhealthy",
+                        "timestamp": "2024-01-15T10:30:00.000Z",
+                        "version": "2.0.0",
+                        "error": "Database connection failed",
+                        "environment": "development"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/processes": {
+      "get": {
+        "summary": "Listar processos monitorados",
+        "description": "Retorna lista paginada de processos jurídicos em monitoramento com filtros, busca e ordenação",
+        "tags": [
+          "Processos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/SearchParam"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status do monitoramento",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "PAUSED",
+                "STOPPED",
+                "ERROR"
+              ]
+            }
+          },
+          {
+            "name": "court",
+            "in": "query",
+            "description": "Filtrar por tribunal/vara",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasCase",
+            "in": "query",
+            "description": "Filtrar processos com ou sem caso associado",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                true,
+                false
+              ]
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "Campo para ordenação",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "createdAt",
+                "processNumber",
+                "clientName",
+                "lastSync"
+              ],
+              "default": "createdAt"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/SortOrderParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de processos retornada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "processes": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Process"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        },
+                        "stats": {
+                          "type": "object",
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "example": 100
+                            },
+                            "byStatus": {
+                              "type": "object",
+                              "properties": {
+                                "ACTIVE": {
+                                  "type": "integer",
+                                  "example": 80
+                                },
+                                "PAUSED": {
+                                  "type": "integer",
+                                  "example": 15
+                                },
+                                "STOPPED": {
+                                  "type": "integer",
+                                  "example": 3
+                                },
+                                "ERROR": {
+                                  "type": "integer",
+                                  "example": 2
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Criar novo processo monitorado",
+        "description": "Adiciona um novo processo jurídico ao monitoramento, opcionalmente buscando dados iniciais da API externa",
+        "tags": [
+          "Processos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "processNumber",
+                  "court",
+                  "clientName"
+                ],
+                "properties": {
+                  "processNumber": {
+                    "type": "string",
+                    "example": "1234567-89.2024.8.26.0001",
+                    "description": "Número do processo no formato CNJ"
+                  },
+                  "court": {
+                    "type": "string",
+                    "example": "1ª Vara Cível Central",
+                    "description": "Tribunal ou vara do processo"
+                  },
+                  "clientName": {
+                    "type": "string",
+                    "example": "João Silva",
+                    "description": "Nome do cliente associado ao processo"
+                  },
+                  "caseId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "ID do caso jurídico a associar (opcional)"
+                  },
+                  "syncFrequency": {
+                    "type": "string",
+                    "enum": [
+                      "HOURLY",
+                      "DAILY",
+                      "WEEKLY",
+                      "MANUAL"
+                    ],
+                    "default": "DAILY",
+                    "description": "Frequência de sincronização com a API externa"
+                  },
+                  "alertsEnabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Habilitar alertas para este processo"
+                  },
+                  "alertRecipients": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "email"
+                    },
+                    "default": [],
+                    "example": [
+                      "admin@escritorio.com"
+                    ],
+                    "description": "Lista de emails para receber alertas"
+                  },
+                  "fetchInitialData": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Buscar dados iniciais do processo na API externa"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Processo criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "process": {
+                          "$ref": "#/components/schemas/Process"
+                        },
+                        "initialMovements": {
+                          "type": "integer",
+                          "example": 15,
+                          "description": "Número de movimentações iniciais importadas"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Processo adicionado ao monitoramento com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "409": {
+            "description": "Processo já está sendo monitorado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": "Conflito",
+                  "message": "Processo já está sendo monitorado neste workspace",
+                  "statusCode": 409
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remover processos em lote",
+        "description": "Remove um ou mais processos do monitoramento por IDs ou números de processo",
+        "tags": [
+          "Processos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "description": "IDs dos processos separados por vírgula",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "uuid1,uuid2,uuid3"
+            }
+          },
+          {
+            "name": "processNumbers",
+            "in": "query",
+            "description": "Números dos processos separados por vírgula",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "1234567-89.2024.8.26.0001,9876543-21.2024.8.26.0002"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Processos removidos com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "deleted": {
+                          "type": "integer",
+                          "example": 3,
+                          "description": "Quantidade de processos removidos"
+                        },
+                        "processes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "processNumber": {
+                                "type": "string"
+                              },
+                              "clientName": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "3 processos removidos do monitoramento"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "success": false,
+                  "error": "Requisição inválida",
+                  "message": "IDs ou números de processo devem ser fornecidos",
+                  "statusCode": 400
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/api/swagger": {
+      "get": {
+        "summary": "Retorna a especificação OpenAPI em JSON",
+        "description": "Endpoint que retorna o documento OpenAPI completo em formato JSON",
+        "tags": [
+          "Documentation"
+        ],
+        "responses": {
+          "200": {
+            "description": "Especificação OpenAPI em JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/workspaces": {
+      "get": {
+        "summary": "Listar workspaces",
+        "description": "Retorna lista de workspaces do usuário autenticado",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de workspaces",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Workspace"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/api/workspaces/{id}": {
+      "get": {
+        "summary": "Obter detalhes do workspace",
+        "description": "Retorna informações detalhadas de um workspace específico",
+        "tags": [
+          "Workspaces"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do workspace",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workspace"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/api/credits/balance": {
+      "get": {
+        "summary": "Consultar saldo de créditos",
+        "description": "Retorna o saldo atual de créditos do workspace",
+        "tags": [
+          "Créditos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saldo de créditos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "balance": {
+                          "type": "number",
+                          "example": 1500.5,
+                          "description": "Saldo atual de créditos"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "example": "BRL"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/api/credits/history": {
+      "get": {
+        "summary": "Histórico de créditos",
+        "description": "Retorna histórico de consumo e compra de créditos",
+        "tags": [
+          "Créditos"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Tipo de transação",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PURCHASE",
+                "CONSUMPTION",
+                "REFUND",
+                "BONUS"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Histórico de créditos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "PURCHASE",
+                              "CONSUMPTION",
+                              "REFUND",
+                              "BONUS"
+                            ]
+                          },
+                          "amount": {
+                            "type": "number",
+                            "example": 100
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/api/reports/generate": {
+      "post": {
+        "summary": "Gerar relatório",
+        "description": "Gera um novo relatório baseado nos parâmetros fornecidos",
+        "tags": [
+          "Relatórios"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "format"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "PROCESS_SUMMARY",
+                      "CLIENT_REPORT",
+                      "CASE_ANALYSIS",
+                      "FINANCIAL"
+                    ],
+                    "description": "Tipo de relatório"
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": [
+                      "PDF",
+                      "DOCX",
+                      "XLSX"
+                    ],
+                    "description": "Formato do relatório"
+                  },
+                  "filters": {
+                    "type": "object",
+                    "properties": {
+                      "dateFrom": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "dateTo": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "clientIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "caseIds": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Relatório gerado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reportId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "PROCESSING"
+                        },
+                        "downloadUrl": {
+                          "type": "string",
+                          "format": "uri",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Relatório em processamento"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/api/ai/analyze": {
+      "post": {
+        "summary": "Análise com IA",
+        "description": "Executa análise de documentos ou processos utilizando inteligência artificial",
+        "tags": [
+          "IA"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "content"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "DOCUMENT",
+                      "PROCESS",
+                      "CASE"
+                    ],
+                    "description": "Tipo de análise"
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Conteúdo a ser analisado (texto ou ID do documento)"
+                  },
+                  "options": {
+                    "type": "object",
+                    "properties": {
+                      "deepAnalysis": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Realizar análise profunda (consome mais créditos)"
+                      },
+                      "language": {
+                        "type": "string",
+                        "default": "pt-BR"
+                      },
+                      "includeRecommendations": {
+                        "type": "boolean",
+                        "default": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Análise concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "analysisId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "summary": {
+                          "type": "string"
+                        },
+                        "insights": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "recommendations": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "confidence": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "example": 0.95
+                        },
+                        "creditsConsumed": {
+                          "type": "number",
+                          "example": 10.5
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "402": {
+            "description": "Créditos insuficientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/upload/excel": {
+      "post": {
+        "summary": "Upload de arquivo Excel",
+        "description": "Faz upload de planilha Excel para importação em lote de processos",
+        "tags": [
+          "Upload"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Arquivo Excel (.xlsx ou .xls)"
+                  },
+                  "workspaceId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Upload realizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "batchId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "totalRows": {
+                          "type": "integer",
+                          "example": 150
+                        },
+                        "validRows": {
+                          "type": "integer",
+                          "example": 145
+                        },
+                        "invalidRows": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "PROCESSING"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/api/analytics": {
+      "get": {
+        "summary": "Analytics do sistema",
+        "description": "Retorna métricas e estatísticas do workspace",
+        "tags": [
+          "Analytics"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "description": "Período para análise",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "default": "month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas retornadas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalProcesses": {
+                          "type": "integer",
+                          "example": 250
+                        },
+                        "activeProcesses": {
+                          "type": "integer",
+                          "example": 180
+                        },
+                        "totalClients": {
+                          "type": "integer",
+                          "example": 75
+                        },
+                        "totalCases": {
+                          "type": "integer",
+                          "example": 320
+                        },
+                        "creditsConsumed": {
+                          "type": "number",
+                          "example": 1250.5
+                        },
+                        "aiAnalysisCount": {
+                          "type": "integer",
+                          "example": 450
+                        },
+                        "reportCount": {
+                          "type": "integer",
+                          "example": 85
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}

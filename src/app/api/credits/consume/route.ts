@@ -137,7 +137,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   try {
     const creditSystem = getCreditManager()
 
-    let estimatedCost = { reportCredits: 0, fullCredits: 0 }
+    const estimatedCost = { reportCredits: 0, fullCredits: 0 }
 
     if (analysisType === 'FAST') {
       // Calculate micro-tier pricing for report credits

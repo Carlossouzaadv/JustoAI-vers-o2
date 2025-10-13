@@ -12,9 +12,9 @@ import { ICONS } from '@/lib/icons';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
-  const processId = params.id;
+  const { id: processId } = await params;
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');
   const includeContent = searchParams.get('includeContent') === 'true';

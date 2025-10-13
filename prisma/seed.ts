@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Plan } from '@prisma/client'
 import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()
@@ -14,7 +14,7 @@ async function main() {
       name: 'ACME Law Firm',
       slug: 'acme-law-firm',
       description: 'Escritório de advocacia especializado em direito empresarial',
-      plan: 'PRO',
+      plan: Plan.PROFESSIONAL,
       settings: {
         theme: 'light',
         language: 'pt-BR',

@@ -70,8 +70,9 @@ export interface JuditApiStats {
 // ================================================================
 
 const JUDIT_CONFIG = {
-  BASE_URL: process.env.JUDIT_API_URL || 'https://requests.prod.judit.io',
-  TRACKING_URL: process.env.JUDIT_TRACKING_URL || 'https://tracking.prod.judit.io',
+  // URLs de Serviço
+  REQUESTS_SERVICE_URL: process.env.JUDIT_REQUESTS_URL || 'https://requests.prod.judit.io',
+  TRACKING_SERVICE_URL: process.env.JUDIT_TRACKING_URL || 'https://tracking.prod.judit.io',
   API_KEY: process.env.JUDIT_API_KEY || '',
 
   // Rate Limiting (180 requests/minute global)
@@ -319,7 +320,7 @@ export class JuditApiClient {
       await this.rateLimiter.waitForTokens(1);
 
       const startTime = Date.now();
-      const response = await this.makeRequest('POST', '/tracking', {
+      const response = await this.makeRequest('POST', 'tracking', '/tracking', {
         process_cnj: processNumber,
         recurrence: '1 day',
         callback_url: callbackUrl,
@@ -349,7 +350,7 @@ export class JuditApiClient {
       await this.rateLimiter.waitForTokens(1);
 
       const startTime = Date.now();
-      const response = await this.makeRequest('GET', '/tracking');
+      const response = await this.makeRequest('GET', 'tracking', '/tracking');
 
       this.updateStats(true, Date.now() - startTime);
 
@@ -365,7 +366,7 @@ export class JuditApiClient {
       await this.rateLimiter.waitForTokens(1);
 
       const startTime = Date.now();
-      await this.makeRequest('DELETE', `/tracking/${trackingId}`);
+      await this.makeRequest('DELETE', 'tracking', `/tracking/${trackingId}`);
 
       this.updateStats(true, Date.now() - startTime);
     });
@@ -458,7 +459,7 @@ export class JuditApiClient {
         }
       };
 
-      const response = await this.makeRequest('POST', '/requests', requestData);
+      const response = await this.makeRequest('POST', 'requests', '/requests', requestData);
       const responseTime = Date.now() - startTime;
 
       this.updateStats(true, responseTime);
@@ -501,7 +502,7 @@ export class JuditApiClient {
         await this.rateLimiter.waitForTokens(1);
 
         const startTime = Date.now();
-        const response = await this.makeRequest('GET', `/responses?request_id=${requestId}&page_size=100`);
+        const response = await this.makeRequest('GET', 'requests', `/responses?request_id=${requestId}&page_size=100`);
         const responseTime = Date.now() - startTime;
 
         this.updateStats(true, responseTime);
@@ -589,11 +590,59 @@ export class JuditApiClient {
   // UTILIDADES PRIVADAS
   // ================================================================
 
-  private async makeRequest(method: string, path: string, data?: any): Promise<any> {
+  /**
+   * Método genérico POST
+   */
+  async post<T = any>(serviceUrl: 'requests' | 'tracking', endpoint: string, data: any): Promise<T> {
+    return await this.makeRequest('POST', serviceUrl, endpoint, data);
+  }
+
+  /**
+   * Método genérico GET
+   */
+  async get<T = any>(serviceUrl: 'requests' | 'tracking', endpoint: string): Promise<T> {
+    return await this.makeRequest('GET', serviceUrl, endpoint);
+  }
+
+  /**
+   * Método genérico DELETE
+   */
+  async delete<T = any>(serviceUrl: 'requests' | 'tracking', endpoint: string): Promise<T> {
+    return await this.makeRequest('DELETE', serviceUrl, endpoint);
+  }
+
+  // ================================================================
+  // MÉTODOS PRIVADOS DE REQUISIÇÃO
+  // ================================================================
+
+  /**
+   * Headers padrão para requisições JUDIT
+   */
+  private getDefaultHeaders(attempt: number = 1): Record<string, string> {
+    if (!JUDIT_CONFIG.API_KEY) {
+      throw new Error('JUDIT_API_KEY não configurada. Configure a variável de ambiente JUDIT_API_KEY.');
+    }
+
+    return {
+      'Content-Type': 'application/json',
+      'api-key': JUDIT_CONFIG.API_KEY,
+      'User-Agent': 'JustoAI/2.0',
+      'X-Request-Attempt': attempt.toString()
+    };
+  }
+
+  private async makeRequest(
+    method: string,
+    serviceUrl: 'requests' | 'tracking',
+    endpoint: string,
+    data?: any
+  ): Promise<any> {
     return await this.executeWithRetry(async (attempt: number) => {
-      const url = path.startsWith('/tracking')
-        ? `${JUDIT_CONFIG.TRACKING_URL}${path}`
-        : `${JUDIT_CONFIG.BASE_URL}${path}`;
+      const baseUrl = serviceUrl === 'tracking'
+        ? JUDIT_CONFIG.TRACKING_SERVICE_URL
+        : JUDIT_CONFIG.REQUESTS_SERVICE_URL;
+
+      const url = `${baseUrl}${endpoint}`;
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), JUDIT_CONFIG.TIMEOUT_MS);
@@ -601,12 +650,7 @@ export class JuditApiClient {
       try {
         const options: RequestInit = {
           method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${JUDIT_CONFIG.API_KEY}`,
-            'User-Agent': 'JustoAI/1.0',
-            'X-Request-Attempt': attempt.toString()
-          },
+          headers: this.getDefaultHeaders(attempt),
           signal: controller.signal
         };
 

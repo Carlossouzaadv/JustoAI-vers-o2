@@ -1,360 +1,345 @@
 {
   "meta": {
-    "title": "Planos e Preços — JustoAI | Relatórios e Monitoramento Jurídico",
-    "description": "Planos para escritórios: monitoramento, relatórios automáticos e análises jurídicas. Comece com 7 dias grátis.",
-    "currency": "BRL",
+    "title": "Planos e Preços | JustoAI - Gestão Jurídica Inteligente",
+    "description": "Escolha o plano ideal para seu escritório. Teste grátis por 7 dias, sem cartão de crédito.",
     "annual_discount_pct": 0.15
+  },
+  "copy": {
+    "hero": {
+      "headline": "Planos transparentes",
+      "subheadline": "Escolha o plano ideal para o seu escritório. Sem taxas ocultas, sem surpresas."
+    },
+    "disclaimers": {
+      "reports": "* Relatórios estão sujeitos a limites de fair-use conforme o plano contratado.",
+      "taxes": "** Valores não incluem impostos conforme legislação vigente.",
+      "fifo": "*** Créditos expiram seguindo a regra FIFO (primeiro a entrar, primeiro a sair)."
+    }
   },
   "plans": [
     {
       "id": "starter",
       "name": "Starter",
-      "subtitle": "Ideal para escritórios pequenos",
-      "price_monthly": 499,
-      "price_annual": 5089,
-      "popular": false,
+      "subtitle": "Para pequenos escritórios começando com automação",
+      "price_monthly": 297,
+      "price_annual": 250.45,
       "trial_days": 7,
-      "features": {
-        "users": {
-          "limit": 2,
-          "description": "Até 2 usuários"
-        },
-        "processes": {
-          "limit": 100,
-          "description": "Monitoramento de até 100 processos"
-        },
-        "reports_monthly": {
-          "limit": 20,
-          "description": "Até 20 relatórios por mês"
-        },
-        "full_credits_first_month": {
-          "limit": 25,
-          "description": "25 créditos de análises completas no 1º mês"
-        },
-        "full_credits_monthly": {
-          "limit": 5,
-          "description": "5 créditos de análises completas por mês"
-        },
-        "customization": {
-          "included": true,
-          "description": "Logo e cores do escritório nos relatórios"
-        },
-        "support": {
-          "channels": ["email", "ia_assistant"],
-          "description": "Suporte por email e assistente IA"
-        },
-        "integrations": {
-          "included": false,
-          "description": "Integrações básicas"
-        },
-        "sla": {
-          "included": false,
-          "description": "SLA padrão"
-        }
-      },
-      "limits": {
-        "report_processes_limit": 100,
-        "soft_threshold_pct": 0.80,
-        "hard_threshold_pct": 1.00
-      },
+      "popular": false,
+      "custom_pricing": false,
       "highlighted_features": [
-        "Monitoramento diário de processos",
-        "Relatórios automatizados em PDF e DOCX",
-        "Análises profundas com crédito controlado",
-        "Dados processuais confiáveis"
-      ]
+        "Até 50 processos monitorados",
+        "20 relatórios/mês",
+        "36 créditos de relatório/mês",
+        "12 análises completas/mês",
+        "Suporte por email"
+      ],
+      "features": {
+        "processes": 50,
+        "reports_monthly": 20,
+        "report_credits": 36,
+        "full_credits": 12,
+        "users": 3,
+        "support": "email"
+      }
     },
     {
       "id": "professional",
       "name": "Professional",
-      "subtitle": "Para escritórios em crescimento",
-      "price_monthly": 1199,
-      "price_annual": 12229,
-      "popular": true,
+      "subtitle": "Para escritórios em crescimento que precisam de mais poder",
+      "price_monthly": 697,
+      "price_annual": 592.45,
       "trial_days": 7,
-      "features": {
-        "users": {
-          "limit": 5,
-          "description": "Até 5 usuários"
-        },
-        "processes": {
-          "limit": 300,
-          "description": "Monitoramento de até 300 processos"
-        },
-        "reports_monthly": {
-          "limit": 50,
-          "description": "Até 50 relatórios por mês"
-        },
-        "full_credits_first_month": {
-          "limit": 75,
-          "description": "75 créditos de análises completas no 1º mês"
-        },
-        "full_credits_monthly": {
-          "limit": 15,
-          "description": "15 créditos de análises completas por mês"
-        },
-        "customization": {
-          "included": true,
-          "description": "Personalização completa de relatórios"
-        },
-        "support": {
-          "channels": ["email", "whatsapp", "ia_assistant"],
-          "description": "Suporte prioritário por email e WhatsApp"
-        },
-        "integrations": {
-          "included": true,
-          "description": "Integrações avançadas"
-        },
-        "sla": {
-          "included": true,
-          "description": "SLA de 8 horas úteis"
-        }
-      },
-      "limits": {
-        "report_processes_limit": 300,
-        "soft_threshold_pct": 0.80,
-        "hard_threshold_pct": 1.00
-      },
+      "popular": true,
+      "custom_pricing": false,
       "highlighted_features": [
-        "Tudo do Starter +",
-        "Suporte prioritário por WhatsApp",
-        "Integrações avançadas",
-        "SLA garantido"
-      ]
+        "Até 200 processos monitorados",
+        "60 relatórios/mês",
+        "120 créditos de relatório/mês",
+        "40 análises completas/mês",
+        "Usuários ilimitados",
+        "Suporte prioritário",
+        "Relatórios personalizados",
+        "API access"
+      ],
+      "features": {
+        "processes": 200,
+        "reports_monthly": 60,
+        "report_credits": 120,
+        "full_credits": 40,
+        "users": -1,
+        "support": "priority",
+        "custom_reports": true,
+        "api_access": true
+      }
     },
     {
       "id": "enterprise",
       "name": "Enterprise",
-      "subtitle": "Para grandes escritórios",
+      "subtitle": "Para grandes escritórios com necessidades personalizadas",
       "price_monthly": null,
       "price_annual": null,
-      "custom_pricing": true,
-      "popular": false,
       "trial_days": 14,
-      "contact_sales": true,
-      "features": {
-        "users": {
-          "unlimited": true,
-          "description": "Usuários ilimitados"
-        },
-        "processes": {
-          "unlimited": true,
-          "description": "Monitoramento personalizado"
-        },
-        "reports_monthly": {
-          "unlimited": true,
-          "description": "Relatórios ilimitados"
-        },
-        "full_credits_first_month": {
-          "custom": true,
-          "description": "Créditos conforme contrato"
-        },
-        "full_credits_monthly": {
-          "custom": true,
-          "description": "Créditos conforme contrato"
-        },
-        "customization": {
-          "included": true,
-          "description": "Personalização completa + marca branca"
-        },
-        "support": {
-          "channels": ["dedicated", "phone", "email", "whatsapp"],
-          "description": "Suporte dedicado 24/7"
-        },
-        "integrations": {
-          "included": true,
-          "custom": true,
-          "description": "Integrações customizadas"
-        },
-        "sla": {
-          "included": true,
-          "custom": true,
-          "description": "SLA personalizado"
-        }
-      },
-      "limits": {
-        "report_processes_limit": null,
-        "custom": true
-      },
+      "popular": false,
+      "custom_pricing": true,
       "highlighted_features": [
-        "Solução completa personalizada",
+        "Processos ilimitados",
+        "Relatórios ilimitados",
+        "Créditos personalizados",
+        "Análises ilimitadas",
+        "Usuários ilimitados",
         "Suporte dedicado 24/7",
-        "Integrações sob medida",
-        "SLA personalizado"
-      ]
-    }
-  ],
-  "credit_packs": [
-    {
-      "id": "small_analysis",
-      "name": "Pacote Pequeno - Análises",
-      "description": "10 Análises completas",
-      "credits": 10,
-      "price": 79,
-      "type": "analysis",
-      "popular": false
-    },
-    {
-      "id": "small_reports",
-      "name": "Pacote Pequeno - Relatórios",
-      "description": "10 Relatórios executivos",
-      "credits": 10,
-      "price": 79,
-      "type": "reports",
-      "popular": false
-    },
-    {
-      "id": "medium_analysis",
-      "name": "Pacote Médio - Análises",
-      "description": "50 Análises completas",
-      "credits": 50,
-      "price": 299,
-      "type": "analysis",
-      "popular": true,
-      "savings": "Economize R$ 96"
-    }
-  ],
-  "faq": [
-    {
-      "question": "O que é um crédito de Análise completa?",
-      "answer": "Créditos de Análises completas são usados para análises profundas que exigem processamento extra via nossa IA. Cada análise completa consome 1 crédito e gera insights detalhados sobre documentos jurídicos."
-    },
-    {
-      "question": "Relatórios são ilimitados?",
-      "answer": "Não. Para proteção da plataforma, aplicamos limites por plano (fair-use). O plano Starter permite até 20 relatórios por mês, Professional até 50. Você pode comprar pacotes extras ou fazer upgrade do plano."
-    },
-    {
-      "question": "Como funciona o desconto anual?",
-      "answer": "Assinando anualmente, você economiza 15% em relação ao pagamento mensal. O valor é cobrado à vista no início do período anual."
-    },
-    {
-      "question": "Posso cancelar a qualquer momento?",
-      "answer": "Sim, você pode cancelar sua assinatura a qualquer momento. Para planos anuais, não há reembolso proporcional, mas o acesso permanece até o final do período contratado."
-    },
-    {
-      "question": "O que acontece se eu exceder os limites?",
-      "answer": "Ao atingir 80% do limite, você recebe um aviso. Ao atingir 100%, algumas funcionalidades ficam bloqueadas até renovar o período ou fazer upgrade do plano."
-    },
-    {
-      "question": "Há período de teste gratuito?",
-      "answer": "Sim! Todos os planos incluem 7 dias de teste gratuito (Enterprise tem 14 dias). Não é necessário cartão de crédito para começar."
+        "Treinamento personalizado",
+        "Integrações customizadas",
+        "SLA garantido"
+      ],
+      "features": {
+        "processes": -1,
+        "reports_monthly": -1,
+        "report_credits": -1,
+        "full_credits": -1,
+        "users": -1,
+        "support": "dedicated",
+        "custom_reports": true,
+        "api_access": true,
+        "sla": true,
+        "training": true
+      }
     }
   ],
   "features_matrix": {
     "categories": [
       {
-        "name": "Usuários e Acessos",
-        "features": [
-          {
-            "name": "Usuários simultâneos",
-            "starter": "2",
-            "professional": "5",
-            "enterprise": "Ilimitado"
-          },
-          {
-            "name": "Perfis de acesso",
-            "starter": "Básico",
-            "professional": "Avançado",
-            "enterprise": "Personalizado"
-          }
-        ]
-      },
-      {
         "name": "Monitoramento",
-        "features": [
-          {
-            "name": "Processos monitorados",
-            "starter": "100",
-            "professional": "300",
-            "enterprise": "Ilimitado"
-          },
-          {
-            "name": "Frequência de atualizações",
-            "starter": "Diária",
-            "professional": "Diária",
-            "enterprise": "Tempo real"
-          }
-        ]
-      },
+      "features": [
+        {
+          "name": "Processos monitorados",
+          "starter": "50",
+          "professional": "200",
+          "enterprise": "Ilimitado"
+        },
+        {
+          "name": "Sincronização automática",
+          "starter": true,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Alertas em tempo real",
+          "starter": true,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Integração com tribunais",
+          "starter": "Básica",
+          "professional": "Completa",
+          "enterprise": "Personalizada"
+        }
+      ]
+    },
       {
         "name": "Relatórios",
-        "features": [
-          {
-            "name": "Relatórios mensais",
-            "starter": "20",
-            "professional": "50",
-            "enterprise": "Ilimitados"
-          },
-          {
-            "name": "Formatos de exportação",
-            "starter": "PDF, DOCX",
-            "professional": "PDF, DOCX, Excel",
-            "enterprise": "Todos + Customizados"
-          },
-          {
-            "name": "Agendamento automático",
-            "starter": "✓",
-            "professional": "✓",
-            "enterprise": "✓"
-          }
-        ]
-      },
+      "features": [
+        {
+          "name": "Relatórios mensais",
+          "starter": "20",
+          "professional": "60",
+          "enterprise": "Ilimitado"
+        },
+        {
+          "name": "Créditos de relatório/mês",
+          "starter": "36",
+          "professional": "120",
+          "enterprise": "Personalizado"
+        },
+        {
+          "name": "Análises completas/mês",
+          "starter": "12",
+          "professional": "40",
+          "enterprise": "Ilimitado"
+        },
+        {
+          "name": "Personalização de marca",
+          "starter": false,
+          "professional": true,
+          "enterprise": true
+        }
+      ]
+    },
       {
-        "name": "Análises IA",
-        "features": [
-          {
-            "name": "Análises rápidas",
-            "starter": "Ilimitadas",
-            "professional": "Ilimitadas",
-            "enterprise": "Ilimitadas"
-          },
-          {
-            "name": "Análises completas (1º mês)",
-            "starter": "25 créditos",
-            "professional": "75 créditos",
-            "enterprise": "Personalizado"
-          },
-          {
-            "name": "Análises completas (mensal)",
-            "starter": "5 créditos",
-            "professional": "15 créditos",
-            "enterprise": "Personalizado"
-          }
-        ]
-      },
+        "name": "Inteligência Artificial",
+      "features": [
+        {
+          "name": "Análise de documentos",
+          "starter": true,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Resumos automáticos",
+          "starter": true,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Extração de dados",
+          "starter": "Básica",
+          "professional": "Avançada",
+          "enterprise": "Personalizada"
+        },
+        {
+          "name": "Modelos de IA dedicados",
+          "starter": false,
+          "professional": false,
+          "enterprise": true
+        }
+      ]
+    },
+      {
+        "name": "Colaboração",
+      "features": [
+        {
+          "name": "Usuários incluídos",
+          "starter": "3",
+          "professional": "Ilimitado",
+          "enterprise": "Ilimitado"
+        },
+        {
+          "name": "Permissões granulares",
+          "starter": false,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Workspaces múltiplos",
+          "starter": false,
+          "professional": false,
+          "enterprise": true
+        }
+      ]
+    },
       {
         "name": "Suporte",
-        "features": [
-          {
-            "name": "Canais de suporte",
-            "starter": "Email + IA",
-            "professional": "Email + WhatsApp",
-            "enterprise": "Dedicado 24/7"
-          },
-          {
-            "name": "SLA de resposta",
-            "starter": "48h úteis",
-            "professional": "8h úteis",
-            "enterprise": "Personalizado"
-          }
-        ]
+      "features": [
+        {
+          "name": "Suporte por email",
+          "starter": true,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Suporte prioritário",
+          "starter": false,
+          "professional": true,
+          "enterprise": true
+        },
+        {
+          "name": "Suporte 24/7",
+          "starter": false,
+          "professional": false,
+          "enterprise": true
+        },
+        {
+          "name": "Gerente de conta dedicado",
+          "starter": false,
+          "professional": false,
+          "enterprise": true
+        }
+      ]
       }
     ]
   },
-  "copy": {
-    "hero": {
-      "headline": "Planos que crescem com seu escritório",
-      "subheadline": "Gestão de processos, monitoramento e relatórios que falam o idioma do seu cliente — sem complicação técnica."
+  "credit_packs": [
+    {
+      "id": "pack-reports-small",
+      "name": "Pacote Pequeno - Relatórios",
+      "description": "Para necessidades pontuais de relatórios",
+      "credits": 20,
+      "price": 97,
+      "type": "reports",
+      "popular": false
     },
-    "cta": {
-      "primary_prefix": "Assinar —",
-      "secondary": "Ver planos completos",
-      "trial": "Teste grátis por"
+    {
+      "id": "pack-reports-medium",
+      "name": "Pacote Médio - Relatórios",
+      "description": "Melhor custo-benefício em relatórios",
+      "credits": 50,
+      "price": 197,
+      "type": "reports",
+      "savings": "15%",
+      "popular": true
     },
-    "disclaimers": {
-      "reports": "*Relatórios mensais limitados por plano. Créditos de Análises completas são usados para análises profundas que exigem processamento extra — veja FAQ.",
-      "taxes": "**Valores exibidos sem impostos aplicáveis.",
-      "fifo": "***Créditos são consumidos por ordem de expiração (FIFO)."
+    {
+      "id": "pack-reports-large",
+      "name": "Pacote Grande - Relatórios",
+      "description": "Máxima economia em relatórios",
+      "credits": 120,
+      "price": 397,
+      "type": "reports",
+      "savings": "25%",
+      "popular": false
+    },
+    {
+      "id": "pack-analysis-small",
+      "name": "Pacote Pequeno - Análises",
+      "description": "Para análises IA pontuais",
+      "credits": 5,
+      "price": 97,
+      "type": "analysis",
+      "popular": false
+    },
+    {
+      "id": "pack-analysis-medium",
+      "name": "Pacote Médio - Análises",
+      "description": "Melhor custo-benefício em análises",
+      "credits": 15,
+      "price": 197,
+      "type": "analysis",
+      "savings": "15%",
+      "popular": false
+    },
+    {
+      "id": "pack-analysis-large",
+      "name": "Pacote Grande - Análises",
+      "description": "Máxima economia em análises",
+      "credits": 40,
+      "price": 397,
+      "type": "analysis",
+      "savings": "25%",
+      "popular": false
     }
-  }
+  ],
+  "faq": [
+    {
+      "question": "O que são créditos de análise completa?",
+      "answer": "Créditos de análises completas são usados para análises profundas de processos que exigem processamento extra via nossa IA. Cada análise completa consome 1 crédito e inclui extração avançada de dados, análise de riscos, e insights detalhados."
+    },
+    {
+      "question": "Os relatórios são realmente ilimitados?",
+      "answer": "Para proteção da plataforma e garantia de qualidade, aplicamos limites de fair-use por plano. No plano Starter são 20 relatórios/mês, no Professional 60 relatórios/mês. O plano Enterprise tem limites personalizados conforme acordo."
+    },
+    {
+      "question": "Como funciona o desconto anual?",
+      "answer": "Assinando anualmente, você economiza 15% em relação ao pagamento mensal. O valor é cobrado uma única vez no ano, e você pode cancelar a qualquer momento com reembolso proporcional."
+    },
+    {
+      "question": "Posso cancelar a qualquer momento?",
+      "answer": "Sim! Você pode cancelar sua assinatura a qualquer momento sem multas ou taxas adicionais. Se cancelar um plano anual, fazemos o reembolso proporcional dos meses não utilizados."
+    },
+    {
+      "question": "O que acontece com meus créditos não utilizados?",
+      "answer": "Créditos de relatório podem acumular até 36 créditos (Starter) ou 120 créditos (Professional). Créditos de análise completa podem acumular até 50 (Starter) ou mais conforme o plano. Créditos expiram seguindo a regra FIFO."
+    },
+    {
+      "question": "Posso adicionar mais usuários?",
+      "answer": "No plano Starter, você tem 3 usuários incluídos. Nos planos Professional e Enterprise, usuários são ilimitados. Você pode gerenciar permissões e acessos pelo painel administrativo."
+    },
+    {
+      "question": "Como funciona o teste gratuito?",
+      "answer": "Oferecemos 7 dias de teste gratuito nos planos Starter e Professional, e 14 dias no Enterprise. Não é necessário cartão de crédito para começar. Você tem acesso completo a todas as funcionalidades do plano durante o período de teste."
+    },
+    {
+      "question": "Posso mudar de plano depois?",
+      "answer": "Sim! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento. Em caso de upgrade, o valor é ajustado proporcionalmente. Em caso de downgrade, o ajuste é aplicado no próximo ciclo de cobrança."
+    }
+  ]
 }

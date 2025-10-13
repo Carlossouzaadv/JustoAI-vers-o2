@@ -1,0 +1,36 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "JustoAI V2 API",
+    "version": "2.0.0",
+    "description": "API completa da plataforma JustoAI V2 para gestão jurídica com IA",
+    "contact": {
+      "name": "Equipe JustoAI",
+      "email": "dev@justoai.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor de Desenvolvimento"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Verificação de saúde do sistema"
+    },
+    {
+      "name": "Processos",
+      "description": "Gerenciamento de processos jurídicos"
+    },
+    {
+      "name": "Clientes",
+      "description": "Gerenciamento de clientes"
+    },
+    {
+      "name": "Casos",
+      "description": "Gerenciamento de casos jurídicos"
+    }
+  ]
+}

@@ -12,10 +12,10 @@ import { ICONS } from '@/lib/icons';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: { id: string; version: string } }
+  { params }: { params: Promise<{ id: string; version: string }> }
 ) => {
-  const processId = params.id;
-  const versionNumber = parseInt(params.version);
+  const { id: processId, version } = await params;
+  const versionNumber = parseInt(version);
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');
 

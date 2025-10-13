@@ -36,6 +36,24 @@ const itemVariants = {
 export function Pricing() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
+  // Safety check for data
+  if (!pricingData || !pricingData.plans || !pricingData.copy) {
+    return (
+      <section id="pricing" className="py-24 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Erro ao carregar preços
+            </h2>
+            <p className="text-gray-600">
+              Por favor, tente novamente mais tarde.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const formatPrice = (price: number | null) => {
     if (!price) return null;
     return new Intl.NumberFormat('pt-BR', {
