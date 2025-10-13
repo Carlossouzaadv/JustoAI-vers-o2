@@ -56,10 +56,12 @@ npm run db:reset
 1. **Configure a URL do banco no `.env.local`:**
 ```env
 # Supabase Database URL
-DATABASE_URL="postgresql://postgres.xxxxx:Nuwjjr$3@aws-1-sa-east-1.pooler.supabase.com:6543/postgres"
+DATABASE_URL="postgresql://postgres.xxxxx:YOUR_PASSWORD@aws-1-sa-east-1.pooler.supabase.com:6543/postgres"
 
 # Direct URL for migrations (optional)
-DIRECT_URL="postgresql://postgres.xxxxx:Nuwjjr$3@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+DIRECT_URL="postgresql://postgres.xxxxx:YOUR_PASSWORD@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+
+# Get the real password from your Supabase dashboard
 ```
 
 2. **Gere o cliente Prisma:**
