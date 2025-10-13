@@ -25,7 +25,7 @@ Criei o arquivo `.env.production` com TODAS as suas credenciais reais:
 cd "C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\justoai-v2"
 
 # 2. Configure variável temporária (Windows PowerShell)
-$env:DATABASE_URL="postgresql://postgres:Nuwjjr$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres"
+$env:DATABASE_URL="postgresql://postgres:Nuwjjr$3@db.xxxxx.supabase.co:5432/postgres"
 
 # 3. Gere o Prisma Client
 npx prisma generate
@@ -49,7 +49,7 @@ npx prisma migrate status
 **Agora que as tabelas existem, podemos aplicar o RLS.**
 
 1. Vá para Supabase SQL Editor:
-   https://supabase.com/dashboard/project/overbsbivbuevmyltyet/sql/new
+   https://supabase.com/dashboard/project/xxxxx/sql/new
 
 2. Abra o arquivo localmente:
    `deploy-scripts/03-configure-supabase.sql`
@@ -247,7 +247,7 @@ git push origin main
    https://justoai.sentry.io/issues/
 
 3. **Supabase Dashboard:**
-   https://supabase.com/dashboard/project/overbsbivbuevmyltyet
+   https://supabase.com/dashboard/project/xxxxx
 
 ---
 
@@ -271,7 +271,7 @@ Se você está no Windows CMD em vez de PowerShell:
 
 ```cmd
 # Configurar DATABASE_URL
-set DATABASE_URL=postgresql://postgres:Nuwjjr$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres
+set DATABASE_URL=postgresql://postgres:Nuwjjr$3@db.xxxxx.supabase.co:5432/postgres
 
 # Aplicar migrações
 npx prisma migrate deploy

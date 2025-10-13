@@ -18,7 +18,7 @@ Abra **PowerShell** e execute:
 
 ```powershell
 cd "C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\justoai-v2"
-$env:DATABASE_URL="postgresql://postgres:Nuwjjr`$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres"
+$env:DATABASE_URL="postgresql://postgres:Nuwjjr`$3@db.xxxxx.supabase.co:5432/postgres"
 npx prisma generate
 npx prisma migrate deploy
 ```
@@ -29,7 +29,7 @@ npx prisma migrate deploy
 
 ### **🔒 PASSO 2: Configurar RLS (5 minutos)**
 
-1. Abra: https://supabase.com/dashboard/project/overbsbivbuevmyltyet/sql/new
+1. Abra: https://supabase.com/dashboard/project/xxxxx/sql/new
 
 2. Abra o arquivo local: `deploy-scripts/03-configure-supabase.sql`
 
@@ -146,7 +146,7 @@ start https://justoaiv2.vercel.app
 
 ```powershell
 # Tente com o CMD em vez de PowerShell
-set DATABASE_URL=postgresql://postgres:Nuwjjr$3@db.overbsbivbuevmyltyet.supabase.co:5432/postgres
+set DATABASE_URL=postgresql://postgres:Nuwjjr$3@db.xxxxx.supabase.co:5432/postgres
 npx prisma migrate deploy
 ```
 
