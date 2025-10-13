@@ -2,6 +2,8 @@
 // DEEP ANALYSIS SERVICE
 // ================================================================
 // Serviço para análise FAST/FULL com cache, versioning e Redis locks
+//
+// EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
 import { PrismaClient, AnalysisType, JobStatus } from '@prisma/client';
 import { createHash } from 'crypto';
@@ -9,16 +11,24 @@ import { Redis } from 'ioredis';
 import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
+import { getRedis } from './redis';
 
 
 const prisma = new PrismaClient();
 
-// Redis connection
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: 3
-});
+// Check if Redis should be disabled (for Railway without Redis)
+const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+
+// Redis connection - use mock if disabled
+const redis = REDIS_DISABLED
+  ? getRedis() // Returns MockRedis when disabled
+  : new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
+      enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
+      reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
+    });
 
 export interface AnalysisKeyParams {
   processId: string;

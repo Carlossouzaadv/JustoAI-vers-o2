@@ -3,10 +3,16 @@
 // ================================================================
 // Implementa cache inteligente com TTL configurável e lock Redis
 // para evitar double-processing conforme especificação
+//
+// EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
 import Redis from 'ioredis';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
+import { getRedis } from './redis';
+
+// Check if Redis should be disabled (for Railway without Redis)
+const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
 
 export interface AnalysisCacheResult {
   hit: boolean;
@@ -31,21 +37,29 @@ export class AnalysisCacheManager {
   private readonly LOCK_TTL = 300; // 5 minutos para lock
 
   constructor() {
-    this.redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: false,
-      lazyConnect: true
-    });
+    // Use mock Redis if disabled, otherwise create real connection
+    if (REDIS_DISABLED) {
+      console.warn('⚠️ Analysis cache Redis is disabled - using mock client');
+      this.redis = getRedis(); // Returns MockRedis when disabled
+    } else {
+      this.redis = new Redis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
+        enableReadyCheck: false,
+        lazyConnect: true,
+        enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
+        reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
+      });
 
-    this.redis.on('error', (error) => {
-      console.error(`${ICONS.ERROR} Redis connection error:`, error);
-    });
+      this.redis.on('error', (error) => {
+        console.error(`${ICONS.ERROR} Redis connection error:`, error);
+      });
 
-    this.redis.on('connect', () => {
-      console.log(`${ICONS.SUCCESS} Redis connected for analysis cache`);
-    });
+      this.redis.on('connect', () => {
+        console.log(`${ICONS.SUCCESS} Redis connected for analysis cache`);
+      });
+    }
   }
 
   /**
