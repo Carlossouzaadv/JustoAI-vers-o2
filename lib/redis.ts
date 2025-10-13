@@ -1,9 +1,14 @@
 /**
  * Redis Client Configuration
  * Configuração otimizada para desenvolvimento local e produção
+ *
+ * EMERGENCY MODE: Se REDIS_DISABLED=true, retorna mock sem tentar conectar
  */
 
 import Redis from 'ioredis';
+
+// Check if Redis should be disabled (for Railway without Redis)
+const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
 
 // Configuração Redis baseada no ambiente
 const redisConfig = {
@@ -13,7 +18,9 @@ const redisConfig = {
     retryDelayOnFailover: 100,
     enableReadyCheck: false,
     lazyConnect: true,
-    maxRetriesPerRequest: null,
+    maxRetriesPerRequest: 1, // Limit retries to prevent infinite loops
+    enableOfflineQueue: false, // Don't queue commands when disconnected
+    reconnectOnError: null, // Don't reconnect automatically
     db: 0,
   },
   production: {
@@ -24,11 +31,13 @@ const redisConfig = {
     enableReadyCheck: true,
     lazyConnect: true,
     db: 0,
-    // Configurações de produção
-    connectTimeout: 10000,
-    commandTimeout: 5000,
-    retryDelayOnError: 50,
-    maxRetriesPerRequest: 3,
+    // Configurações de produção com limites agressivos
+    connectTimeout: 5000,
+    commandTimeout: 3000,
+    retryDelayOnError: 100,
+    maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
+    enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
+    reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
   }
 };
 
@@ -40,10 +49,33 @@ let redisInstance: Redis | null = null;
 let bullRedisInstance: Redis | null = null;
 
 /**
- * Get Redis client (lazy initialization)
- * Só cria a conexão quando realmente necessário, não durante build
+ * Mock Redis client for when Redis is disabled
+ * Returns a no-op client that doesn't try to connect
  */
-export function getRedis(): Redis {
+class MockRedis {
+  async get() { return null; }
+  async set() { return 'OK'; }
+  async setex() { return 'OK'; }
+  async del() { return 0; }
+  async keys() { return []; }
+  async ping() { return 'PONG'; }
+  async info() { return ''; }
+  on() { return this; }
+  connect() { return Promise.resolve(); }
+  disconnect() { return Promise.resolve(); }
+  quit() { return Promise.resolve(); }
+}
+
+/**
+ * Get Redis client (lazy initialization)
+ * Returns mock if Redis is disabled to prevent connection attempts
+ */
+export function getRedis(): any {
+  if (REDIS_DISABLED) {
+    console.warn('⚠️ Redis is disabled - using mock client');
+    return new MockRedis();
+  }
+
   if (!redisInstance) {
     redisInstance = new Redis(config);
 
@@ -52,7 +84,7 @@ export function getRedis(): Redis {
     });
 
     redisInstance.on('error', (error) => {
-      console.error('❌ Redis connection error:', error);
+      console.error('❌ Redis connection error:', error.message);
     });
 
     redisInstance.on('ready', () => {
@@ -65,8 +97,14 @@ export function getRedis(): Redis {
 
 /**
  * Get Bull Redis client (lazy initialization)
+ * Returns mock if Redis is disabled
  */
-export function getBullRedis(): Redis {
+export function getBullRedis(): any {
+  if (REDIS_DISABLED) {
+    console.warn('⚠️ Bull Redis is disabled - using mock client');
+    return new MockRedis();
+  }
+
   if (!bullRedisInstance) {
     bullRedisInstance = new Redis({
       ...config,
@@ -78,23 +116,23 @@ export function getBullRedis(): Redis {
     });
 
     bullRedisInstance.on('error', (error) => {
-      console.error('❌ Bull Redis connection error:', error);
+      console.error('❌ Bull Redis connection error:', error.message);
     });
   }
 
   return bullRedisInstance;
 }
 
-// Exports para compatibilidade (lazy)
-export const redis = new Proxy({} as Redis, {
+// Exports para compatibilidade (lazy with disabled check)
+export const redis = new Proxy({} as any, {
   get(_target, prop) {
-    return getRedis()[prop as keyof Redis];
+    return getRedis()[prop];
   }
 });
 
-export const bullRedis = new Proxy({} as Redis, {
+export const bullRedis = new Proxy({} as any, {
   get(_target, prop) {
-    return getBullRedis()[prop as keyof Redis];
+    return getBullRedis()[prop];
   }
 });
 
