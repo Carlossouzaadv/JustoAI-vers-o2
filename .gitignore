@@ -38,6 +38,9 @@ yarn-error.log*
 .env.production
 .env.production.local
 .env*.local
+.env.*.local
+.secrets
+.secret
 
 # API Keys and Secrets
 *.key
@@ -55,7 +58,10 @@ next-env.d.ts
 /logs/
 /pids/
 /uploads/
+# Allow documentation files but ignore generated docs
 /docs/
+!/docs/railway_workers_setup.md
+!/docs/SECURITY_README.md
 /__tests__/
 /tests/
 /frontend-landing/
