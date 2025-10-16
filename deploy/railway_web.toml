@@ -1,0 +1,170 @@
+# Railway Configuration - Web Service (Backend API)
+#
+# This is a template configuration for the JustoAI web service on Railway.
+# Used for reference - actual configuration is set in Railway Dashboard.
+#
+# How to use:
+# 1. Keep this file as documentation and reference
+# 2. Configure actual settings in Railway Dashboard UI:
+#    https://railway.app/project/[your-project-id]
+# 3. Set environment variables via Railway Dashboard (not via file)
+#
+# IMPORTANT: Do NOT commit secrets or API keys to this file
+#
+
+[build]
+# Build command for Next.js
+builder = "dockerfile"
+# Or configure in Railway Dashboard for Next.js auto-detection
+dockerfile = "Dockerfile.railway"
+
+[deploy]
+# Service should auto-restart on failure
+restartPolicyMaxRetries = 5
+restartPolicySleep = 10  # seconds
+
+# Memory allocation
+memory = "256MB"  # Start with 256MB, can scale to 512MB or higher
+
+# Startup timeout
+startupTimeout = 120  # seconds
+
+[networking]
+# Railway will automatically handle networking
+# No need to configure ports here
+port = 3000  # Internal port (exposed via railway.app domain)
+
+[healthCheck]
+# Endpoint to check if service is healthy
+path = "/api/health"
+interval = 30  # seconds
+timeout = 10   # seconds
+successThreshold = 1
+failureThreshold = 3
+
+[environment]
+# IMPORTANT: These are references only. Set actual values in Railway Dashboard.
+#
+# Production environment
+NODE_ENV = "production"
+
+# Next.js specific
+NEXT_PUBLIC_APP_URL = "https://justoai-v2.vercel.app"  # Frontend URL
+NEXT_PUBLIC_API_URL = "https://[your-railway-domain].railway.app"  # This service
+
+# Database configuration (set via Railway Dashboard secrets)
+# DATABASE_URL = "postgresql://user:password@host:port/database?sslmode=require"
+# DIRECT_URL = "postgresql://user:password@host:port/database"
+
+# Supabase configuration (set via Railway Dashboard secrets)
+# NEXT_PUBLIC_SUPABASE_URL = "https://your-project.supabase.co"
+# NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJ..."
+
+# Redis configuration (set via Railway Dashboard secrets)
+# REDIS_URL = "rediss://default:password@host:port"
+# REDIS_DISABLED = "false"
+
+# API Keys (set via Railway Dashboard secrets)
+# GOOGLE_API_KEY = "your_google_api_key"
+# Do NOT set JUDIT_API_KEY here - it's only for workers service
+
+# Email configuration (set via Railway Dashboard secrets)
+# SMTP_HOST = "smtp.resend.com"
+# SMTP_PORT = "587"
+# SMTP_USER = "resend"
+# SMTP_PASSWORD = "your_resend_api_key"
+# FROM_EMAIL = "noreply@justoai.com"
+
+# CORS configuration
+ALLOWED_ORIGINS = "https://justoai-v2.vercel.app,https://localhost:3000"
+
+# Logging
+LOG_LEVEL = "info"
+
+# Feature flags
+NEXT_PUBLIC_CLASSIC_DASHBOARD_ENABLED = "true"
+NEXT_PUBLIC_PRO_FEATURES_ENABLED = "true"
+NEXT_PUBLIC_PROCESS_MONITORING_ENABLED = "true"
+
+[scripts]
+# Pre-deployment checks
+preDeployCheck = "npm run deploy:check"
+
+# Database migrations
+preDeploy = "npm run db:migrate:prod"
+
+# Post-deployment health check
+postDeploy = "curl https://[your-railway-domain]/api/health"
+
+---
+
+## Web Service Configuration Checklist
+
+### Environment Variables to Set in Railway Dashboard
+
+Essential for production:
+- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `DIRECT_URL` - Direct database connection
+- [ ] `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anon key
+- [ ] `REDIS_URL` - Upstash Redis URL (starts with rediss://)
+- [ ] `GOOGLE_API_KEY` - Google Gemini API key
+- [ ] `SMTP_PASSWORD` - Resend API key for emails
+- [ ] `NEXTAUTH_SECRET` - Generated with `openssl rand -base64 32`
+
+Recommended for production:
+- [ ] `LOG_LEVEL` - Set to "info" or "warn"
+- [ ] `ALLOWED_ORIGINS` - Your frontend domain
+- [ ] `NODE_ENV` - Set to "production"
+
+### Deployment Settings in Railway Dashboard
+
+Build & Deploy:
+- [ ] Builder: Dockerfile
+- [ ] Dockerfile Path: Dockerfile.railway
+- [ ] Auto Deploy: ON
+- [ ] Restart Policy: on-failure
+
+Memory & Performance:
+- [ ] Memory: 256MB (minimum)
+- [ ] Can scale to 512MB if needed
+- [ ] CPU scales automatically with memory
+
+### Health Monitoring
+
+Check endpoint:
+```bash
+curl https://[your-railway-domain]/api/health
+```
+
+Expected response (200 OK):
+```json
+{
+  "success": true,
+  "status": "healthy",
+  "database": "connected",
+  "redis": "connected"
+}
+```
+
+### Logs & Monitoring
+
+View logs:
+1. Railway Dashboard → Select web service → Logs
+2. Filter by level (ERROR, WARN, INFO)
+3. Search for specific patterns
+
+### Cost Optimization
+
+Web service costs:
+- Idle (~0 requests): $5-7/month
+- Active (high traffic): $10-20/month
+- No auto-sleep (always running)
+
+If running tests, can temporarily:
+- Reduce memory to 128MB (saves $1-2)
+- Scale back up for production
+
+---
+
+Last Updated: 2025-10-16

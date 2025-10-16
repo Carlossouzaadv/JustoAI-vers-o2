@@ -1,0 +1,325 @@
+# Railway Configuration - Workers Service
+#
+# This is a template configuration for the JustoAI workers service on Railway.
+# Used for reference - actual configuration is set in Railway Dashboard.
+#
+# How to use:
+# 1. Keep this file as documentation and reference
+# 2. Configure actual settings in Railway Dashboard UI:
+#    https://railway.app/project/[your-project-id] → New Service
+# 3. Set environment variables via Railway Dashboard (not via file)
+#
+# IMPORTANT: Do NOT commit secrets or API keys to this file
+#
+
+[build]
+# Use Dockerfile.workers for this service
+builder = "dockerfile"
+dockerfile = "Dockerfile.workers"
+
+[deploy]
+# Service should auto-restart on failure
+restartPolicyMaxRetries = 5
+restartPolicySleep = 10  # seconds
+
+# Memory allocation for workers
+memory = "256MB"  # Sufficient for queue processing
+
+# Startup timeout
+startupTimeout = 120  # seconds
+
+# Auto-sleep configuration (COST OPTIMIZATION!)
+autosleepEnabled = true
+autosleepIdleMinutes = 5  # Sleep after 5 minutes of inactivity
+autosleepRestartOnActivity = true  # Auto-wake when jobs arrive
+
+[networking]
+# Workers don't expose HTTP endpoints (background service)
+# Internal communication via Redis
+port = 3000  # Unused, but required for Railway
+
+[monitoring]
+# Monitor logs for worker activity
+logLevel = "info"
+
+# Alert if worker crashes
+alertOnCrash = true
+alertEmail = "your-email@example.com"  # Configure in Railway Dashboard
+
+[environment]
+# IMPORTANT: These are references only. Set actual values in Railway Dashboard.
+#
+# Application
+NODE_ENV = "production"
+
+# Critical: Database configuration (set via Railway Dashboard secrets)
+# DATABASE_URL = "postgresql://user:password@host:port/database?sslmode=require"
+# DIRECT_URL = "postgresql://user:password@host:port/database"
+
+# Critical: Redis configuration (set via Railway Dashboard secrets)
+# REDIS_URL = "rediss://default:password@host:port"
+# REDIS_DISABLED = "false"
+
+# CRITICAL: JUDIT API Configuration
+# IMPORTANT: ONLY set JUDIT_API_KEY in this service, NOT in web service
+# JUDIT_API_BASE_URL = "https://api.judit.ai/v1"
+# JUDIT_API_KEY = "your_judit_api_key"  # Set via Railway secrets!
+
+# APIs (shared with web service)
+# GOOGLE_API_KEY = "your_google_api_key"
+
+# Worker configuration
+WORKER_CONCURRENCY = "2"  # Number of concurrent jobs (2-4 recommended)
+WORKER_TIMEOUT = "300000"  # 5 minutes (ms)
+WORKER_BACKOFF_DELAY = "1000"  # Initial backoff delay (ms)
+WORKER_MAX_ATTEMPTS = "3"  # Retry failed jobs 3 times
+
+# Logging
+LOG_LEVEL = "info"
+
+# Job retention (auto-cleanup old jobs)
+JOB_REMOVE_ON_COMPLETE = "true"
+JOB_RETENTION_DAYS = "7"  # Keep job history for 7 days
+
+[scripts]
+# Pre-startup checks
+preStart = "npx tsx scripts/test-judit-connection.ts"
+
+# Run stress test before production
+preDeployCheck = "npx tsx scripts/stress-test-judit.ts"
+
+---
+
+## Workers Service Configuration Checklist
+
+### Environment Variables to Set in Railway Dashboard
+
+CRITICAL (Service won't work without these):
+- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `DIRECT_URL` - Direct database connection
+- [ ] `REDIS_URL` - Upstash Redis URL (starts with rediss://)
+- [ ] `JUDIT_API_KEY` - JUDIT API key (⚠️ ONLY in workers!)
+- [ ] `JUDIT_API_BASE_URL` - JUDIT API endpoint
+
+Recommended for production:
+- [ ] `GOOGLE_API_KEY` - For AI analysis backup
+- [ ] `LOG_LEVEL` - "info" or "warn"
+- [ ] `WORKER_CONCURRENCY` - 2-4 (depends on memory)
+- [ ] `NODE_ENV` - "production"
+
+Optional (advanced tuning):
+- [ ] `WORKER_TIMEOUT` - Job timeout (default: 5 minutes)
+- [ ] `WORKER_MAX_ATTEMPTS` - Retry count (default: 3)
+- [ ] `JOB_RETENTION_DAYS` - Keep job history (default: 7)
+
+### Deployment Settings in Railway Dashboard
+
+Build & Deploy:
+- [ ] Builder: Dockerfile
+- [ ] Dockerfile Path: Dockerfile.workers
+- [ ] Auto Deploy: ON
+- [ ] Restart Policy: on-failure
+
+Memory & Performance:
+- [ ] Memory: 256MB (recommended)
+- [ ] Can reduce to 128MB for testing
+- [ ] Increase to 512MB if processing heavy jobs
+
+Auto-sleep (COST OPTIMIZATION):
+- [ ] Enable Auto-sleep: ON
+- [ ] Idle timeout: 5 minutes
+- [ ] Auto-wake on activity: ON
+
+### Monitoring Logs
+
+View logs:
+1. Railway Dashboard → Select workers service → Logs
+2. Filter by level (ERROR, WARN, INFO)
+3. Look for startup messages:
+   ```
+   🚀 INICIANDO JUDIT ONBOARDING WORKER
+   ✅ Connected to Redis
+   ✅ Worker initialized
+   ```
+
+### Health Monitoring
+
+The worker writes health information to logs:
+
+Healthy state:
+```
+[WORKER] Starting juditOnboardingWorker
+[QUEUE] Connected to Redis
+[QUEUE] Listening for jobs on queue: judit-onboarding
+```
+
+Problem indicators:
+```
+[ERROR] Cannot connect to Redis
+[ERROR] JUDIT_API_KEY not configured
+[ERROR] Failed to connect to database
+```
+
+### Cost Optimization
+
+Workers service costs depend on activity:
+
+**Idle State (auto-sleep enabled):**
+- Cost: ~$0/month
+- CPU: 0 (sleeping)
+- Memory: Not allocated
+
+**Processing State:**
+- Cost: ~$2-5/month (for moderate load ~100 jobs/day)
+- CPU: 0.1-0.5 vCPU
+- Memory: 200-256MB
+
+**High Load (1000+ jobs/day):**
+- Cost: ~$8-12/month
+- CPU: 1-2 vCPU
+- Memory: 512MB
+
+### Tips for Lower Costs
+
+1. **Enable Auto-sleep**
+   - Reduces cost to near $0 when idle
+   - Jobs trigger immediate wake-up
+   - Warmup time: ~10-15 seconds
+
+2. **Reduce Concurrency if Not Needed**
+   - `WORKER_CONCURRENCY=1` uses less CPU
+   - Takes longer per job but cheaper
+   - Adequate for <100 jobs/day
+
+3. **Monitor Queue Size**
+   - Avoid queuing 10,000+ jobs at once
+   - Batch process if needed
+   - Check `npm run stress-test-judit`
+
+4. **Optimize JUDIT API Calls**
+   - Only fetch attachments when needed
+   - Use keywords for intelligent monitoring
+   - Results in ~96% cost reduction
+
+---
+
+## Startup Flow
+
+When a job arrives or workers service starts:
+
+1. **Service Wakes Up** (~10-15s if auto-sleep was enabled)
+2. **Connect to Redis** - Establish connection to Upstash
+3. **Connect to Database** - Validate Prisma client
+4. **Test JUDIT API** (if `JUDIT_API_KEY` set)
+5. **Start Processing** - Listen for jobs on queue
+6. **Auto-sleep Timer** - After 5 min idle, sleep again (if enabled)
+
+### Troubleshooting Startup
+
+**Problem: Worker stuck in starting**
+- Check logs for connection errors
+- Verify `REDIS_URL` is correct
+- Verify `DATABASE_URL` is accessible
+- Check firewall rules on Railway
+
+**Problem: Worker crashes on startup**
+- Run pre-start check: `npx tsx scripts/test-judit-connection.ts`
+- Review Dockerfile.workers for syntax errors
+- Check npm dependencies installed correctly
+
+---
+
+## Testing Before Production
+
+### 1. Local Test
+
+```bash
+# Test worker locally
+npm run worker:judit
+
+# Should see:
+# 🚀 INICIANDO JUDIT ONBOARDING WORKER
+# ✅ Connected to Redis
+# ✅ Worker listening for jobs
+```
+
+### 2. Connection Test
+
+```bash
+# Test JUDIT API connection
+npx tsx scripts/test-judit-connection.ts
+
+# Should pass if JUDIT_API_KEY is set
+# Should skip if JUDIT_API_KEY is not set (safe!)
+```
+
+### 3. Stress Test
+
+```bash
+# Test queue resilience
+npx tsx scripts/stress-test-judit.ts
+
+# Should add 10 jobs and process them
+# Shows memory usage and performance metrics
+# Safe even without real JUDIT_API_KEY
+```
+
+### 4. Production Test on Railway
+
+```bash
+# Manually trigger a test job via API
+curl -X POST \
+  https://[your-railway-domain]/api/judit/test-job \
+  -H "Content-Type: application/json" \
+  -d '{"cnj": "0000000-00.2023.8.09.0000"}'
+
+# Monitor worker logs
+railway logs --service justoai-workers --follow
+
+# Should see job processing:
+# [WORKER] Processing job: ...
+# [JUDIT] Requesting onboarding for CNJ: ...
+# [WORKER] Job completed successfully
+```
+
+---
+
+## Scaling Strategy
+
+### Low Load (<100 jobs/day)
+
+Settings:
+```
+WORKER_CONCURRENCY=1
+Memory: 128-256MB
+Auto-sleep: Enabled (5 min)
+```
+
+Cost: ~$1-2/month
+
+### Medium Load (100-500 jobs/day)
+
+Settings:
+```
+WORKER_CONCURRENCY=2
+Memory: 256MB
+Auto-sleep: Enabled (5 min)
+```
+
+Cost: ~$3-5/month
+
+### High Load (500+ jobs/day)
+
+Settings:
+```
+WORKER_CONCURRENCY=4-8
+Memory: 512MB
+Auto-sleep: Disabled
+Consider multiple worker instances
+```
+
+Cost: ~$10-20/month
+
+---
+
+Last Updated: 2025-10-16
