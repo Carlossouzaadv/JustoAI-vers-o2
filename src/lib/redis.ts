@@ -8,6 +8,7 @@
 // ================================================================
 
 import IORedis, { Redis, RedisOptions } from 'ioredis';
+import { logger } from '@/lib/observability/logger';
 
 // ================================================================
 // CONFIGURATION
@@ -55,18 +56,28 @@ const getRedisConfig = (): RedisOptions => {
         commandTimeout: 15000, // 15s command timeout (increased for Upstash)
 
         // Retry Strategy (Fail fast, avoid infinite loops)
-        maxRetriesPerRequest: 3, // Max 3 retries per command
+        maxRetriesPerRequest: 5, // Max 5 retries per command (increased for Upstash reliability)
         retryStrategy: (times: number) => {
-          // Exponential backoff: 1s, 2s, 4s, max 10s
-          const delay = Math.min(times * 1000, 10000);
+          // Exponential backoff: 100ms, 200ms, 400ms, ..., max 10s
+          const delay = Math.min(times * 100, 10000);
 
-          // Stop retrying after 5 attempts
-          if (times > 5) {
-            console.error('[REDIS] Max retry attempts reached, giving up');
+          // Stop retrying after 10 attempts
+          if (times > 10) {
+            logger.error(
+              { component: 'redis', retries: times },
+              'Max retry attempts reached for Redis, giving up'
+            );
             return null; // Stop retrying
           }
 
-          console.warn(`[REDIS] Retry attempt ${times}, waiting ${delay}ms`);
+          if (times % 3 === 0) {
+            // Log every 3rd retry to avoid spam
+            logger.warn(
+              { component: 'redis', attempt: times, delay_ms: delay },
+              'Redis retry attempt'
+            );
+          }
+
           return delay;
         },
 
@@ -96,11 +107,22 @@ const getRedisConfig = (): RedisOptions => {
     connectTimeout: 30000,
     commandTimeout: 15000,
 
-    maxRetriesPerRequest: 3,
+    maxRetriesPerRequest: 5,
     retryStrategy: (times: number) => {
-      const delay = Math.min(times * 1000, 10000);
-      if (times > 5) return null;
-      console.warn(`[REDIS] Retry attempt ${times}, waiting ${delay}ms`);
+      const delay = Math.min(times * 100, 10000);
+      if (times > 10) {
+        logger.error(
+          { component: 'redis', retries: times },
+          'Max retry attempts reached for Redis (legacy config)'
+        );
+        return null;
+      }
+      if (times % 3 === 0) {
+        logger.warn(
+          { component: 'redis', attempt: times, delay_ms: delay },
+          'Redis retry attempt (legacy config)'
+        );
+      }
       return delay;
     },
 
@@ -195,22 +217,29 @@ export const getRedisClient = (): Redis | MockRedis => {
 
   // Check if Redis should be disabled
   if (REDIS_DISABLED) {
-    console.warn('[REDIS] ⚠️  Running in MOCK mode (REDIS_DISABLED=true)');
-    console.warn('[REDIS] ⚠️  Workers and queues will NOT function properly!');
+    logger.warn(
+      { component: 'redis', mode: 'mock' },
+      'Running in MOCK mode (REDIS_DISABLED=true) - Workers and queues will NOT function properly'
+    );
     redisClient = new MockRedis();
     return redisClient;
   }
 
   // Check if REDIS_URL is configured
   if (!REDIS_URL && !process.env.REDIS_HOST) {
-    console.warn('[REDIS] ⚠️  No REDIS_URL or REDIS_HOST configured');
-    console.warn('[REDIS] ⚠️  Falling back to MOCK mode for development');
+    logger.warn(
+      { component: 'redis', mode: 'mock' },
+      'No REDIS_URL or REDIS_HOST configured - Falling back to MOCK mode for development'
+    );
     redisClient = new MockRedis();
     return redisClient;
   }
 
   // Create real Redis client
-  console.log('[REDIS] 🚀 Initializing Upstash Redis client...');
+  logger.info(
+    { component: 'redis', config_source: REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT' },
+    'Initializing Redis client'
+  );
 
   const config = getRedisConfig();
   const client = new IORedis(config);
@@ -220,30 +249,48 @@ export const getRedisClient = (): Redis | MockRedis => {
   // ================================================================
 
   client.on('connect', () => {
-    console.log('[REDIS] ✅ Connected to Redis');
+    logger.info({ component: 'redis', event: 'connect' }, 'Connected to Redis');
   });
 
   client.on('ready', () => {
-    console.log('[REDIS] ✅ Redis client ready');
+    logger.info({ component: 'redis', event: 'ready' }, 'Redis client ready');
   });
 
   client.on('error', (error) => {
-    console.error('[REDIS] ❌ Redis error:', error.message);
+    // Check for max retries error
+    const isMaxRetriesError = error.message?.includes('max retries') ||
+      error.message?.includes('Reached the max');
+
+    const level = isMaxRetriesError ? 'warn' : 'error';
+
+    logger[level](
+      {
+        component: 'redis',
+        event: 'error',
+        error_message: error.message,
+        error_code: (error as any).code,
+        is_max_retries: isMaxRetriesError,
+      },
+      `Redis connection error: ${error.message}`
+    );
 
     // Don't crash the application on Redis errors
     // Workers will handle retries, API will continue without cache
   });
 
   client.on('close', () => {
-    console.log('[REDIS] 🔌 Redis connection closed');
+    logger.info({ component: 'redis', event: 'close' }, 'Redis connection closed');
   });
 
   client.on('reconnecting', (timeToReconnect) => {
-    console.log(`[REDIS] 🔄 Reconnecting in ${timeToReconnect}ms...`);
+    logger.info(
+      { component: 'redis', event: 'reconnecting', time_to_reconnect_ms: timeToReconnect },
+      `Reconnecting to Redis in ${timeToReconnect}ms`
+    );
   });
 
   client.on('end', () => {
-    console.log('[REDIS] 🛑 Redis connection ended');
+    logger.info({ component: 'redis', event: 'end' }, 'Redis connection ended');
   });
 
   redisClient = client;
@@ -290,15 +337,18 @@ export const testRedisConnection = async (): Promise<boolean> => {
     const client = getRedisClient();
 
     if (client instanceof MockRedis) {
-      console.log('[REDIS] ⚠️  Using MockRedis - skipping real connection test');
+      logger.warn({ component: 'redis' }, 'Using MockRedis - skipping real connection test');
       return true;
     }
 
     const result = await client.ping();
-    console.log('[REDIS] ✅ Connection test successful:', result);
+    logger.info({ component: 'redis', ping_result: result }, 'Redis connection test successful');
     return result === 'PONG';
   } catch (error) {
-    console.error('[REDIS] ❌ Connection test failed:', error);
+    logger.error(
+      { component: 'redis', error: error instanceof Error ? error.message : String(error) },
+      'Redis connection test failed'
+    );
     return false;
   }
 };
@@ -312,12 +362,15 @@ export const closeRedisConnection = async (): Promise<void> => {
   }
 
   try {
-    console.log('[REDIS] 🔌 Closing Redis connection...');
+    logger.info({ component: 'redis' }, 'Closing Redis connection');
     await redisClient.quit();
     redisClient = null;
-    console.log('[REDIS] ✅ Redis connection closed');
+    logger.info({ component: 'redis' }, 'Redis connection closed successfully');
   } catch (error) {
-    console.error('[REDIS] ❌ Error closing Redis connection:', error);
+    logger.error(
+      { component: 'redis', error: error instanceof Error ? error.message : String(error) },
+      'Error closing Redis connection'
+    );
 
     // Force disconnect
     if (redisClient && 'disconnect' in redisClient) {
