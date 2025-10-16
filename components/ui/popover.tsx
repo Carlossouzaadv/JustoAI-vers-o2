@@ -19,11 +19,17 @@ const PopoverTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<'button'> & { asChild?: boolean }
 >(({ className, children, asChild, ...props }, ref) => {
-  const Comp = asChild ? 'div' : 'button'
+  if (asChild) {
+    return (
+      <div className={className} {...(props as React.ComponentProps<'div'>)}>
+        {children}
+      </div>
+    )
+  }
   return (
-    <Comp ref={ref as any} className={className} {...props}>
+    <button ref={ref} className={className} {...props}>
       {children}
-    </Comp>
+    </button>
   )
 })
 PopoverTrigger.displayName = 'PopoverTrigger'

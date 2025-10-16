@@ -225,7 +225,7 @@ export const MarketingConsent: React.FC<MarketingConsentProps> = ({
 // Hook para usar com react-hook-form
 export const useConsentField = (
   name: string,
-  control: any,
+  control: import('react-hook-form').Control<Record<string, unknown>>,
   required: boolean = true
 ) => {
   const { field, fieldState } = useController({

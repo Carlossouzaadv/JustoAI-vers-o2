@@ -6,6 +6,7 @@
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
+import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import {
   syncQueue,
   reportsQueue,
@@ -13,6 +14,15 @@ import {
   documentProcessingQueue,
   notificationQueue
 } from './queues';
+
+// Augment Express namespace for compatibility
+declare global {
+  namespace Express {
+    interface Request extends ExpressRequest {}
+    interface Response extends ExpressResponse {}
+    interface NextFunction extends ExpressNextFunction {}
+  }
+}
 
 // === CONFIGURAÇÃO DO BULL BOARD ===
 
@@ -66,7 +76,7 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
  * Middleware para proteger o Bull Board
  * Só permite acesso para usuários autenticados e admins
  */
-export function bullBoardAuthMiddleware(req: any, res: any, next: any) {
+export function bullBoardAuthMiddleware(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
   // Em desenvolvimento, permitir acesso direto
   if (process.env.NODE_ENV === 'development') {
     return next();

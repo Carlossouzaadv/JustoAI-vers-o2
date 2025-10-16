@@ -76,15 +76,15 @@ export function ExampleUsage() {
       <div className="space-y-2 border-t pt-4 opacity-50">
         <h3 className="font-semibold text-red-600">❌ Evite (pode quebrar no Windows):</h3>
         <p className="text-sm text-gray-600">
-          // ❌ Emojis diretos:<br/>
-          // const message = "✅ Sucesso!";<br/>
-          // const button = "🔥 Hot";<br/>
-          // const status = "⚠️ Atenção";<br/><br/>
+          {/* ❌ Emojis diretos: */}<br/>
+          {/* const message = "✅ Sucesso!"; */}<br/>
+          {/* const button = "🔥 Hot"; */}<br/>
+          {/* const status = "⚠️ Atenção"; */}<br/><br/>
 
-          // ✅ Use em vez disso:<br/>
-          // const message = `{ICONS.SUCCESS} Sucesso!`;<br/>
-          // const button = `{EMOJIS.FIRE} Hot`;<br/>
-          // const status = `{ICONS.WARNING} Atenção`;
+          {/* ✅ Use em vez disso: */}<br/>
+          {/* const message = `{ICONS.SUCCESS} Sucesso!`; */}<br/>
+          {/* const button = `{EMOJIS.FIRE} Hot`; */}<br/>
+          {/* const status = `{ICONS.WARNING} Atenção`; */}
         </p>
       </div>
     </div>

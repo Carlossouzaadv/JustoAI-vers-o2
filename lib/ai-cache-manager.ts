@@ -12,7 +12,7 @@ import prisma from './prisma';
 
 export interface CacheEntry {
   key: string;
-  value: any;
+  value: unknown;
   metadata: {
     model: string;
     type: 'essential' | 'strategic' | 'report';
@@ -54,7 +54,7 @@ export interface CacheConfig {
 // ================================
 
 export class AiCacheManager {
-  private memoryCache = new Map<string, { data: any; expires: number; hits: number }>();
+  private memoryCache = new Map<string, { data: unknown; expires: number; hits: number }>();
   private config: CacheConfig;
   private stats = {
     memory_hits: 0,
@@ -66,7 +66,7 @@ export class AiCacheManager {
   };
 
   // Cliente Redis opcional (se disponível)
-  private redisClient: any = null;
+  private redisClient: { get: (key: string) => Promise<string | null>; setex: (key: string, ttl: number, value: string) => Promise<void>; flushdb: () => Promise<void> } | null = null;
 
   constructor(config?: Partial<CacheConfig>) {
     this.config = {
@@ -113,7 +113,7 @@ export class AiCacheManager {
   async get(
     key: string,
     analysisType: 'essential' | 'strategic' | 'report' = 'essential'
-  ): Promise<any> {
+  ): Promise<unknown> {
     const cacheKey = this.buildCacheKey(key, analysisType);
 
     // NÍVEL 1: Memória (mais rápido)
@@ -190,7 +190,7 @@ export class AiCacheManager {
    */
   async set(
     key: string,
-    value: any,
+    value: unknown,
     analysisType: 'essential' | 'strategic' | 'report' = 'essential',
     metadata?: {
       model?: string;
@@ -261,11 +261,11 @@ export class AiCacheManager {
   /**
    * Cache para análises essenciais - SEMPRE Gemini Flash 8B
    */
-  async getEssential(textHash: string): Promise<any> {
+  async getEssential(textHash: string): Promise<unknown> {
     return this.get(`essential:${textHash}`, 'essential');
   }
 
-  async setEssential(textHash: string, analysis: any, metadata?: any): Promise<void> {
+  async setEssential(textHash: string, analysis: unknown, metadata?: { model?: string; complexity_score?: number; tokens_saved?: number; workspaceId?: string }): Promise<void> {
     return this.set(`essential:${textHash}`, analysis, 'essential', {
       model: 'gemini-1.5-flash-8b',
       ...metadata
@@ -275,16 +275,16 @@ export class AiCacheManager {
   /**
    * Cache para análises estratégicas - Router por complexidade
    */
-  async getStrategic(textHash: string, complexityScore: number): Promise<any> {
+  async getStrategic(textHash: string, complexityScore: number): Promise<unknown> {
     const tierKey = this.getTierFromComplexity(complexityScore);
     return this.get(`strategic:${tierKey}:${textHash}`, 'strategic');
   }
 
   async setStrategic(
     textHash: string,
-    analysis: any,
+    analysis: unknown,
     complexityScore: number,
-    metadata?: any
+    metadata?: { model?: string; tokens_saved?: number; workspaceId?: string }
   ): Promise<void> {
     const tierKey = this.getTierFromComplexity(complexityScore);
     return this.set(`strategic:${tierKey}:${textHash}`, analysis, 'strategic', {
@@ -296,11 +296,11 @@ export class AiCacheManager {
   /**
    * Cache para relatórios - SEMPRE Gemini Flash
    */
-  async getReport(reportHash: string): Promise<any> {
+  async getReport(reportHash: string): Promise<unknown> {
     return this.get(`report:${reportHash}`, 'report');
   }
 
-  async setReport(reportHash: string, report: any, metadata?: any): Promise<void> {
+  async setReport(reportHash: string, report: unknown, metadata?: { model?: string; tokens_saved?: number; workspaceId?: string }): Promise<void> {
     return this.set(`report:${reportHash}`, report, 'report', {
       model: 'gemini-1.5-flash',
       ...metadata
@@ -340,7 +340,7 @@ export class AiCacheManager {
   // CACHE MEMÓRIA
   // ================================
 
-  private getFromMemory(key: string): any {
+  private getFromMemory(key: string): unknown {
     const entry = this.memoryCache.get(key);
     if (entry && entry.expires > Date.now()) {
       entry.hits++;
@@ -352,7 +352,7 @@ export class AiCacheManager {
     return null;
   }
 
-  private setInMemory(key: string, data: any): void {
+  private setInMemory(key: string, data: unknown): void {
     this.memoryCache.set(key, {
       data,
       expires: Date.now() + this.config.memory_ttl,
@@ -525,12 +525,12 @@ export function generateTextHash(text: string): string {
  */
 export function withCache(
   analysisType: 'essential' | 'strategic' | 'report',
-  keyExtractor: (args: any[]) => string
+  keyExtractor: (args: unknown[]) => string
 ) {
-  return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-    const method = descriptor.value;
+  return function (_target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+    const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (this: unknown, ...args: unknown[]) {
       const cache = getAiCache();
       const key = keyExtractor(args);
 

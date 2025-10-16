@@ -4,7 +4,7 @@ import { getCurrentUser } from './auth'
 import { ICONS } from './icons'
 
 // Standard API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -206,8 +206,8 @@ export async function requireWorkspaceAccess(userId: string, workspaceId: string
 }
 
 // Error handler wrapper
-export function withErrorHandler(handler: Function) {
-  return async (request: NextRequest, context?: any) => {
+export function withErrorHandler(handler: (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>) {
+  return async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     try {
       return await handler(request, context)
     } catch (error) {
@@ -223,8 +223,8 @@ export function withErrorHandler(handler: Function) {
 }
 
 // Method handler helper
-export function withMethods(handlers: Record<string, Function>) {
-  return async (request: NextRequest, context?: any) => {
+export function withMethods(handlers: Record<string, (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>>) {
+  return async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     const method = request.method
     const handler = handlers[method]
 

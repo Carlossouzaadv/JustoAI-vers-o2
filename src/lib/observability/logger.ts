@@ -42,28 +42,48 @@ export const logger = pino({
 
 /**
  * Logger específico para operações da JUDIT API
+ * Prefix: [JUDIT]
  */
-export const juditLogger = logger.child({ module: 'judit-api' });
+export const juditLogger = logger.child({
+  module: 'judit-api',
+  prefix: '[JUDIT]',
+});
 
 /**
  * Logger para operações de queue/worker
+ * Prefix: [QUEUE] or [WORKER] (via child logger)
  */
-export const queueLogger = logger.child({ module: 'queue' });
+export const queueLogger = logger.child({
+  module: 'queue',
+  prefix: '[QUEUE]',
+});
 
 /**
  * Logger para métricas e performance
+ * Prefix: [METRICS]
  */
-export const metricsLogger = logger.child({ module: 'metrics' });
+export const metricsLogger = logger.child({
+  module: 'metrics',
+  prefix: '[METRICS]',
+});
 
 /**
  * Logger para alertas e notificações
+ * Prefix: [ALERTS]
  */
-export const alertLogger = logger.child({ module: 'alerts' });
+export const alertLogger = logger.child({
+  module: 'alerts',
+  prefix: '[ALERTS]',
+});
 
 /**
  * Logger para custos
+ * Prefix: [COSTS]
  */
-export const costLogger = logger.child({ module: 'costs' });
+export const costLogger = logger.child({
+  module: 'costs',
+  prefix: '[COSTS]',
+});
 
 // ================================================================
 // HELPER FUNCTIONS

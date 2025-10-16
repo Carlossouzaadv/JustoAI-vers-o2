@@ -2,59 +2,61 @@
 // JUDIT ONBOARDING WORKER
 // Worker de background para processar onboarding de processos
 // ================================================================
+// Cost-optimized worker with idle-friendly configuration
+// ================================================================
 
 import { Worker, Job } from 'bullmq';
-import IORedis from 'ioredis';
-import { performFullProcessRequest } from '@/lib/services/juditOnboardingService';
+import { getRedisConnection } from '../lib/redis';
+import { performFullProcessRequest } from '../lib/services/juditOnboardingService';
+import { checkConfiguration } from '../lib/services/juditService';
+import { queueLogger, logOperationStart } from '../lib/observability/logger';
 import type {
   JuditOnboardingJobData,
   JuditOnboardingJobResult,
-} from '@/lib/queue/juditQueue';
+} from '../lib/queue/juditQueue';
 
 // ================================================================
 // CONFIGURAÇÃO REDIS
 // ================================================================
 
-const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-};
+const connection = getRedisConnection();
 
-const connection = new IORedis(redisConfig);
+// Prevent worker from starting if Redis is not available
+if (!connection) {
+  console.error('[JUDIT WORKER] ❌ FATAL: Redis connection not available');
+  console.error('[JUDIT WORKER] ❌ Workers cannot run without Redis');
+  console.error('[JUDIT WORKER] ❌ Please configure REDIS_URL environment variable');
+  process.exit(1);
+}
 
 // ================================================================
-// WORKER CONFIGURATION
+// WORKER CONFIGURATION (Cost-Optimized)
 // ================================================================
 
 const WORKER_CONFIG = {
-  concurrency: 3, // Processar até 3 jobs simultaneamente
+  // Concurrency: Process multiple jobs in parallel
+  // Lower = less CPU when active, higher = faster throughput
+  concurrency: parseInt(process.env.WORKER_CONCURRENCY || '2'),
+
+  // Rate Limiter: Respect JUDIT API limits and reduce costs
+  // JUDIT limit: ~60 requests/minute (1 per second safe)
   limiter: {
-    max: 10, // Máximo 10 jobs
-    duration: 60000, // Por minuto (respeitando rate limit da JUDIT)
+    max: 10, // Max 10 jobs
+    duration: 60000, // Per minute (60s)
   },
+
+  // Idle behavior: Worker will consume minimal resources when no jobs
+  // BullMQ automatically sleeps when queue is empty
+  lockDuration: 30000, // 30s lock (default 30s)
+  lockRenewTime: 15000, // Renew lock every 15s
 } as const;
 
 // ================================================================
-// LOGS
+// LOGGER (using structured logging)
 // ================================================================
 
-const log = {
-  info: (message: string, data?: any) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [JUDIT WORKER] ${message}`, data || '');
-  },
-  error: (message: string, error?: any) => {
-    const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] [JUDIT WORKER ERROR] ${message}`, error || '');
-  },
-  success: (message: string, data?: any) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [JUDIT WORKER ✓] ${message}`, data || '');
-  },
-};
+// Using queueLogger with worker context
+const workerLogger = queueLogger.child({ component: 'worker' });
 
 // ================================================================
 // PROCESSOR FUNCTION
@@ -65,11 +67,39 @@ async function processOnboardingJob(
 ): Promise<JuditOnboardingJobResult> {
   const { cnj, workspaceId, userId } = job.data;
 
-  log.info(`Iniciando processamento`, {
-    jobId: job.id,
+  // Check if JUDIT is properly configured before processing
+  const config = checkConfiguration();
+  if (!config.configured) {
+    workerLogger.error({
+      action: 'job_blocked_no_config',
+      job_id: job.id,
+      cnj,
+      error: 'JUDIT API not configured',
+      has_api_key: config.hasApiKey,
+      has_base_url: config.hasBaseUrl,
+    });
+
+    throw new Error('JUDIT_API_KEY not configured. Cannot process job.');
+  }
+
+  // Start operation timer
+  const operation = logOperationStart(workerLogger, 'process_onboarding_job', {
+    job_id: job.id,
     cnj,
-    workspaceId,
-    userId,
+    workspace_id: workspaceId,
+    user_id: userId,
+    attempt: job.attemptsMade + 1,
+    max_attempts: job.opts.attempts || 3,
+  });
+
+  workerLogger.info({
+    action: 'job_start',
+    job_id: job.id,
+    cnj,
+    workspace_id: workspaceId,
+    user_id: userId,
+    attempt: job.attemptsMade + 1,
+    max_attempts: job.opts.attempts || 3,
   });
 
   try {
@@ -82,6 +112,12 @@ async function processOnboardingJob(
     // Atualizar progresso: 20% (iniciando requisição)
     await job.updateProgress(20);
 
+    workerLogger.debug({
+      action: 'calling_judit_service',
+      job_id: job.id,
+      cnj,
+    });
+
     const result = await performFullProcessRequest(cnj, 'ONBOARDING');
 
     const duration = Date.now() - startTime;
@@ -90,12 +126,20 @@ async function processOnboardingJob(
     await job.updateProgress(100);
 
     if (result.success) {
-      log.success(`Onboarding concluído`, {
-        jobId: job.id,
+      operation.finish('success', {
+        processo_id: result.processoId,
+        request_id: result.requestId,
+      });
+
+      workerLogger.info({
+        action: 'job_success',
+        job_id: job.id,
         cnj,
-        processoId: result.processoId,
-        requestId: result.requestId,
-        duration: `${(duration / 1000).toFixed(2)}s`,
+        processo_id: result.processoId,
+        request_id: result.requestId,
+        duration_ms: duration,
+        duration_seconds: (duration / 1000).toFixed(2),
+        attempt: job.attemptsMade + 1,
       });
 
       return {
@@ -106,19 +150,35 @@ async function processOnboardingJob(
         duration,
       };
     } else {
-      log.error(`Onboarding falhou`, {
-        jobId: job.id,
+      operation.finish('failure', {
+        error: result.error,
+      });
+
+      workerLogger.error({
+        action: 'job_failed',
+        job_id: job.id,
         cnj,
         error: result.error,
+        attempt: job.attemptsMade + 1,
+        max_attempts: job.opts.attempts || 3,
       });
 
       throw new Error(result.error || 'Onboarding falhou');
     }
   } catch (error) {
-    log.error(`Erro no processamento`, {
-      jobId: job.id,
+    operation.finish('failure', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    workerLogger.error({
+      action: 'job_error',
+      job_id: job.id,
       cnj,
       error: error instanceof Error ? error.message : String(error),
+      error_stack: error instanceof Error ? error.stack : undefined,
+      attempt: job.attemptsMade + 1,
+      max_attempts: job.opts.attempts || 3,
+      will_retry: (job.attemptsMade + 1) < (job.opts.attempts || 3),
     });
 
     // Re-throw para que o BullMQ possa fazer retry
@@ -148,36 +208,65 @@ export const juditOnboardingWorker = new Worker<
 // ================================================================
 
 juditOnboardingWorker.on('ready', () => {
-  log.success('Worker pronto para processar jobs');
+  workerLogger.info({
+    action: 'worker_ready',
+    message: 'Worker pronto para processar jobs',
+  });
 });
 
 juditOnboardingWorker.on('active', (job) => {
-  log.info(`Job ativo`, {
-    jobId: job.id,
+  workerLogger.info({
+    action: 'job_active',
+    job_id: job.id,
     cnj: job.data.cnj,
+    workspace_id: job.data.workspaceId,
+    attempt: job.attemptsMade + 1,
   });
 });
 
 juditOnboardingWorker.on('completed', (job, result) => {
-  log.success(`Job completado`, {
-    jobId: job.id,
+  workerLogger.info({
+    action: 'job_completed',
+    job_id: job.id,
     cnj: job.data.cnj,
-    processoId: result.processoId,
-    duration: `${(result.duration / 1000).toFixed(2)}s`,
+    processo_id: result.processoId,
+    request_id: result.requestId,
+    duration_ms: result.duration,
+    duration_seconds: (result.duration / 1000).toFixed(2),
+    attempts_made: job.attemptsMade,
   });
 });
 
 juditOnboardingWorker.on('failed', (job, error) => {
-  log.error(`Job falhou`, {
-    jobId: job?.id,
+  const isLastAttempt = job?.attemptsMade === (job?.opts?.attempts || 3);
+
+  workerLogger.error({
+    action: 'job_failed',
+    job_id: job?.id,
     cnj: job?.data.cnj,
-    attempt: job?.attemptsMade,
+    attempts_made: job?.attemptsMade,
+    max_attempts: job?.opts?.attempts || 3,
+    is_last_attempt: isLastAttempt,
     error: error.message,
+    error_stack: error.stack,
   });
+
+  if (isLastAttempt) {
+    workerLogger.error({
+      action: 'job_permanently_failed',
+      job_id: job?.id,
+      cnj: job?.data.cnj,
+      message: 'Job falhou após todas as tentativas',
+    });
+  }
 });
 
 juditOnboardingWorker.on('error', (error) => {
-  log.error('Erro no worker', error);
+  workerLogger.error({
+    action: 'worker_error',
+    error: error.message,
+    error_stack: error.stack,
+  });
 });
 
 // ================================================================
@@ -185,13 +274,32 @@ juditOnboardingWorker.on('error', (error) => {
 // ================================================================
 
 async function gracefulShutdown() {
-  log.info('Encerrando worker...');
+  workerLogger.info({
+    action: 'graceful_shutdown_start',
+    message: 'Encerrando worker...',
+  });
 
-  await juditOnboardingWorker.close();
-  await connection.quit();
+  try {
+    // Close worker (stops accepting new jobs, waits for active jobs)
+    await juditOnboardingWorker.close();
 
-  log.success('Worker encerrado com sucesso');
-  process.exit(0);
+    workerLogger.info({
+      action: 'graceful_shutdown_success',
+      message: 'Worker encerrado com sucesso',
+    });
+
+    // Note: Redis connection is managed centrally by src/lib/redis.ts
+    // It will handle its own shutdown via SIGTERM/SIGINT handlers
+
+    process.exit(0);
+  } catch (error) {
+    workerLogger.error({
+      action: 'graceful_shutdown_error',
+      error: error instanceof Error ? error.message : String(error),
+      error_stack: error instanceof Error ? error.stack : undefined,
+    });
+    process.exit(1);
+  }
 }
 
 process.on('SIGTERM', gracefulShutdown);
@@ -202,14 +310,34 @@ process.on('SIGINT', gracefulShutdown);
 // ================================================================
 
 if (require.main === module) {
-  log.info('========================================');
-  log.info('INICIANDO JUDIT ONBOARDING WORKER');
-  log.info('========================================');
-  log.info('Configuração:', {
-    concurrency: WORKER_CONFIG.concurrency,
-    rateLimitPerMinute: WORKER_CONFIG.limiter.max,
-    redisHost: redisConfig.host,
-    redisPort: redisConfig.port,
+  // Check configuration on startup
+  const config = checkConfiguration();
+
+  workerLogger.info({
+    action: 'worker_startup',
+    message: '🚀 INICIANDO JUDIT ONBOARDING WORKER',
+    configuration: {
+      concurrency: WORKER_CONFIG.concurrency,
+      rate_limit_per_minute: WORKER_CONFIG.limiter.max,
+      lock_duration_seconds: WORKER_CONFIG.lockDuration / 1000,
+      redis_connected: connection.status === 'ready',
+      judit_configured: config.configured,
+      judit_has_api_key: config.hasApiKey,
+      judit_base_url: config.baseUrl,
+    },
   });
-  log.info('Aguardando jobs...');
+
+  if (!config.configured) {
+    workerLogger.warn({
+      action: 'worker_startup_warning',
+      message: '⚠️  JUDIT API não configurada - jobs falharão até configuração estar completa',
+      hint: 'Set JUDIT_API_KEY environment variable',
+    });
+  }
+
+  workerLogger.info({
+    action: 'worker_ready',
+    message: '⏳ Aguardando jobs...',
+    hint: 'Worker entrará em modo idle quando não houver jobs (baixo custo)',
+  });
 }

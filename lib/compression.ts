@@ -342,7 +342,7 @@ export async function decompressFileGzip(inputPath: string, outputPath: string):
  * Middleware para compressão automática de uploads
  */
 export function createCompressionMiddleware(options: CompressionOptions = {}) {
-  return async (req: any, res: any, next: any) => {
+  return async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
     // Se há arquivos no upload
     if (req.files || req.file) {
       const files = req.files || [req.file];

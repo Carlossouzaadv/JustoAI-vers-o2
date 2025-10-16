@@ -30,12 +30,12 @@ interface AlertContext {
   quotaLimit: number;
   hardBlockedEvents: number;
   timeframe: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface AlertChannel {
   type: 'slack' | 'email' | 'sentry' | 'webhook';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 interface AlertEvent {
@@ -50,7 +50,7 @@ interface AlertEvent {
   sentAt: Date;
   acknowledged: boolean;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ================================================================
@@ -579,9 +579,14 @@ export class OpsAlerts {
       })
     ]);
 
-    const todayBilling = (todayUsage?.metadata as any)?.billingEstimatedCost ? parseFloat((todayUsage?.metadata as any)?.billingEstimatedCost?.toString() || '0') : 0;
+    const todayMetadata = todayUsage?.metadata as Record<string, unknown> | undefined;
+    const todayBilling = todayMetadata?.billingEstimatedCost ? parseFloat(String(todayMetadata.billingEstimatedCost) || '0') : 0;
+
     const avgDaily = weeklyUsage.length > 0 ?
-      weeklyUsage.reduce((sum: number, day: any) => sum + parseFloat((day.metadata as any)?.billingEstimatedCost?.toString() || '0'), 0) / weeklyUsage.length :
+      weeklyUsage.reduce((sum: number, day) => {
+        const dayMetadata = day.metadata as Record<string, unknown> | undefined;
+        return sum + parseFloat(String(dayMetadata?.billingEstimatedCost) || '0');
+      }, 0) / weeklyUsage.length :
       0;
 
     return { today: todayBilling, avgDaily };

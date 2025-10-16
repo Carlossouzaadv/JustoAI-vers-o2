@@ -583,7 +583,7 @@ ${schemaJson}`;
    * NOVO: Gera prompts especializados para análise multi-frentes de processos complexos
    * Organiza análise por frentes de discussão paralelas
    */
-  getMultiFrontAnalysisPrompt(tier: ModelTier, processData: any): string {
+  getMultiFrontAnalysisPrompt(tier: ModelTier, processData: unknown): string {
     const basePrompt = this.getOptimizedPrompt(tier, 'legal');
 
     return `${basePrompt}
@@ -648,7 +648,7 @@ PRIORIZAÇÃO:
    */
   getExecutiveReportPrompt(
     tier: ModelTier,
-    processesData: any[],
+    processesData: unknown[],
     audience: 'Cliente' | 'Diretoria' | 'Uso Interno' = 'Cliente',
     reportType: 'COMPLETO' | 'NOVIDADES' = 'COMPLETO'
   ): string {
@@ -1000,12 +1000,12 @@ PROFUNDIDADE: Completa e estratégica`;
   /**
    * Determina se deve fazer fallback para modelo mais potente
    */
-  shouldFallback(result: any, originalComplexity: ComplexityScore): boolean {
+  shouldFallback(result: unknown, originalComplexity: ComplexityScore): boolean {
     // Critérios para fallback baseados na qualidade do resultado
     if (!result || typeof result !== 'object') return true;
 
     // Se resultado está muito incompleto
-    const extractedFields = Object.keys(result).length;
+    const extractedFields = Object.keys(result as Record<string, unknown>).length;
     if (extractedFields < 5 && originalComplexity.totalScore > 20) return true;
 
     // Se confiança do modelo original foi baixa
@@ -1020,11 +1020,11 @@ PROFUNDIDADE: Completa e estratégica`;
   async processWithFallback(
     text: string,
     complexity: ComplexityScore,
-    processingFunction: (config: ProcessingConfig) => Promise<any>
-  ): Promise<{ result: any; modelUsed: ModelTier; cost: ModelCosts }> {
+    processingFunction: (config: ProcessingConfig) => Promise<unknown>
+  ): Promise<{ result: unknown; modelUsed: ModelTier; cost: ModelCosts }> {
 
     let config = this.getProcessingConfig(complexity);
-    let result: any;
+    let result: unknown;
     let attempts = 0;
     const maxAttempts = 2;
 
@@ -1105,7 +1105,7 @@ PROFUNDIDADE: Completa e estratégica`;
    * Análise ESSENCIAL - SEMPRE Gemini Flash 8B
    * Cache agressivo (7 dias) para máxima economia
    */
-  async analyzeEssential(text: string, workspaceId?: string): Promise<any> {
+  async analyzeEssential(text: string, workspaceId?: string): Promise<unknown> {
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
@@ -1117,7 +1117,9 @@ PROFUNDIDADE: Completa e estratégica`;
     // 1. Buscar no cache primeiro (CRÍTICO para economia)
     const cached = await cache.getEssential(textHash);
     if (cached) {
-      console.log(`${ICONS.CACHE} Cache HIT - Análise essencial: ${cached._routing_info?.tokens_saved || 0} tokens economizados`);
+      const cachedRecord = cached as Record<string, unknown>;
+      const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
+      console.log(`${ICONS.CACHE} Cache HIT - Análise essencial: ${routingInfo?.tokens_saved || 0} tokens economizados`);
       return cached;
     }
 
@@ -1145,7 +1147,7 @@ PROFUNDIDADE: Completa e estratégica`;
    * Análise ESTRATÉGICA - Router por complexidade
    * Cache por tier para otimização
    */
-  async analyzeStrategic(text: string, fileSizeMb: number = 0, workspaceId?: string): Promise<any> {
+  async analyzeStrategic(text: string, fileSizeMb: number = 0, workspaceId?: string): Promise<unknown> {
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
@@ -1158,7 +1160,9 @@ PROFUNDIDADE: Completa e estratégica`;
     // 1. Buscar no cache por tier
     const cached = await cache.getStrategic(textHash, complexityScore.totalScore);
     if (cached) {
-      console.log(`${ICONS.CACHE} Cache HIT - Análise estratégica: ${cached._routing_info?.tokens_saved || 0} tokens economizados`);
+      const cachedRecord = cached as Record<string, unknown>;
+      const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
+      console.log(`${ICONS.CACHE} Cache HIT - Análise estratégica: ${routingInfo?.tokens_saved || 0} tokens economizados`);
       return cached;
     }
 
@@ -1171,8 +1175,9 @@ PROFUNDIDADE: Completa e estratégica`;
       }
     );
 
-    result.result._routing_info = {
-      ...result.result._routing_info,
+    const resultRecord = result.result as Record<string, unknown>;
+    resultRecord._routing_info = {
+      ...(resultRecord._routing_info as Record<string, unknown> | undefined),
       complexity_score: complexityScore.totalScore,
       complexity_factors: complexityScore.factors,
       reasoning: `Complexity: ${complexityScore.totalScore} points → Model: ${complexityScore.recommendedTier}`
@@ -1194,10 +1199,10 @@ PROFUNDIDADE: Completa e estratégica`;
    * Cache específico para relatórios
    */
   async generateReport(
-    reportData: any,
+    reportData: unknown,
     reportType: string = 'general',
     workspaceId?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
@@ -1209,7 +1214,9 @@ PROFUNDIDADE: Completa e estratégica`;
     // 1. Buscar no cache
     const cached = await cache.getReport(reportHash);
     if (cached) {
-      console.log(`${ICONS.CACHE} Cache HIT - Relatório: ${cached._routing_info?.tokens_saved || 0} tokens economizados`);
+      const cachedRecord = cached as Record<string, unknown>;
+      const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
+      console.log(`${ICONS.CACHE} Cache HIT - Relatório: ${routingInfo?.tokens_saved || 0} tokens economizados`);
       return cached;
     }
 
@@ -1251,7 +1258,7 @@ PROFUNDIDADE: Completa e estratégica`;
     text: string,
     modelTier: ModelTier,
     analysisType: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       const { getGeminiClient } = await import('./gemini-client');
       const { ICONS } = await import('./icons');
@@ -1277,6 +1284,8 @@ PROFUNDIDADE: Completa e estratégica`;
       });
 
       // Add routing information to the response
+      const geminiRecord = geminiResponse as Record<string, unknown>;
+      const metadadosAnalise = geminiRecord.metadados_analise as Record<string, unknown> | undefined;
       const result = {
         ...geminiResponse,
         _routing_info: {
@@ -1284,14 +1293,14 @@ PROFUNDIDADE: Completa e estratégica`;
           analysis_type: analysisType,
           cost_estimate: this.calculateCost(
             this.estimateTokens(text),
-            geminiResponse.metadados_analise?.tokens_utilizados || 2000,
+            Number(metadadosAnalise?.tokens_utilizados) || 2000,
             modelTier
           ),
           cached: false,
           timestamp: new Date().toISOString(),
           model_used: this.modelMappings?.[modelTier] || modelTier,
           prompt_tokens: this.estimateTokens(prompt),
-          completion_tokens: geminiResponse.metadados_analise?.tokens_utilizados || 2000
+          completion_tokens: Number(metadadosAnalise?.tokens_utilizados) || 2000
         }
       };
 

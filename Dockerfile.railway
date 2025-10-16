@@ -42,9 +42,12 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-ENV REDIS_DISABLED true
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# NOTE: REDIS_DISABLED is now controlled via Railway environment variables
+# Set REDIS_DISABLED=true in Railway if you want API-only mode without workers
+# Set REDIS_DISABLED=false (or omit) if you have workers service enabled
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs

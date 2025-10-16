@@ -7,6 +7,7 @@
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
 import Redis from 'ioredis';
+import { createHash } from 'crypto';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { getRedis } from './redis';
@@ -16,7 +17,7 @@ const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.RED
 
 export interface AnalysisCacheResult {
   hit: boolean;
-  data?: any;
+  data?: unknown;
   age?: number; // Idade do cache em segundos
   key: string;
 }
@@ -80,7 +81,7 @@ export class AnalysisCacheManager {
 
     const keyData = sortedTextShas.join('|') + '|' + modelVersion + '|' + promptSignature + '|' + movementDateStr;
 
-    return require('crypto').createHash('sha256').update(keyData).digest('hex');
+    return createHash('sha256').update(keyData).digest('hex');
   }
 
   /**
@@ -152,7 +153,7 @@ export class AnalysisCacheManager {
     textShas: string[],
     modelVersion: string,
     promptSignature: string,
-    analysisResult: any,
+    analysisResult: unknown,
     lastMovementDate?: Date,
     workspaceId?: string
   ): Promise<boolean> {
@@ -303,7 +304,17 @@ export class AnalysisCacheManager {
   /**
    * Estatísticas do cache
    */
-  async getCacheStats(): Promise<any> {
+  async getCacheStats(): Promise<{
+    analysis_entries: number;
+    text_entries: number;
+    memory_usage_bytes: number;
+    memory_usage_mb: number;
+    ttl_config: {
+      text_cache_days: number;
+      analysis_cache_days: number;
+      lock_ttl_minutes: number;
+    };
+  } | null> {
     try {
       const [analysisKeys, textKeys] = await Promise.all([
         this.redis.keys('analysis:*'),
@@ -340,7 +351,7 @@ export class AnalysisCacheManager {
   /**
    * Busca última data de movimentação do processo
    */
-  async getLastMovementDate(processId: string, prisma: any): Promise<Date | null> {
+  async getLastMovementDate(processId: string, prisma: { processMovement: { findFirst: (args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
     try {
       const lastMovement = await prisma.processMovement.findFirst({
         where: {
@@ -366,7 +377,7 @@ export class AnalysisCacheManager {
   /**
    * Busca hashes de texto dos documentos do processo
    */
-  async getProcessDocumentHashes(processId: string, prisma: any): Promise<string[]> {
+  async getProcessDocumentHashes(processId: string, prisma: { caseDocument: { findMany: (args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
     try {
       const documents = await prisma.caseDocument.findMany({
         where: {
@@ -379,8 +390,8 @@ export class AnalysisCacheManager {
       });
 
       return documents
-        .map((doc: any) => doc.textSha)
-        .filter(Boolean)
+        .map((doc) => doc.textSha)
+        .filter((hash): hash is string => Boolean(hash))
         .sort(); // Ordenar para consistência
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao buscar hashes de documentos:`, error);

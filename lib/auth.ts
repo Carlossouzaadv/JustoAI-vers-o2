@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
 
@@ -14,10 +14,10 @@ export async function createSupabaseServerClient() {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieOptions) {
           cookieStore.set({ name, value, ...options })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions) {
           cookieStore.set({ name, value: '', ...options })
         },
       },
@@ -97,7 +97,7 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
 }
 
 // Additional auth functions for compatibility
-export async function validateAuth(request?: any) {
+export async function validateAuth(_request?: Request) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
     console.log('⚠️ Development mode: Bypassing auth validation')
@@ -132,7 +132,7 @@ export async function validateAuth(request?: any) {
   }
 }
 
-export async function validateAuthAndGetUser(request?: any) {
+export async function validateAuthAndGetUser(_request?: Request) {
   const user = await getCurrentUser()
   if (!user) {
     throw new Error('Unauthorized')

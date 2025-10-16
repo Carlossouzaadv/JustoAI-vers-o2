@@ -6,6 +6,16 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import path from 'path';
+import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
+
+// Augment Express namespace for compatibility
+declare global {
+  namespace Express {
+    interface Request extends ExpressRequest {}
+    interface Response extends ExpressResponse {}
+    interface NextFunction extends ExpressNextFunction {}
+  }
+}
 
 // === TIPOS ===
 
@@ -21,7 +31,7 @@ export interface LogContext {
   statusCode?: number;
   duration?: number;
   error?: Error | string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface StructuredLog {
@@ -31,7 +41,7 @@ export interface StructuredLog {
   service: string;
   environment: string;
   context?: LogContext;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // === CONFIGURAÇÕES ===
@@ -127,14 +137,15 @@ const productionFormat = winston.format.combine(
   winston.format.errors({ stack: true }),
   winston.format.json(),
   winston.format.printf((info) => {
+    const infoRecord = info as Record<string, unknown>;
     const logEntry: StructuredLog = {
       level: info.level as string,
       message: info.message as string,
       timestamp: info.timestamp as string,
       service: LOG_CONFIG.service,
       environment: LOG_CONFIG.environment,
-      context: (info as any).context,
-      metadata: (info as any).metadata,
+      context: infoRecord.context as LogContext | undefined,
+      metadata: infoRecord.metadata as Record<string, unknown> | undefined,
     };
 
     // Incluir stack trace para erros
@@ -268,7 +279,7 @@ function logWithContext(
   level: keyof typeof LOG_CONFIG.levels,
   message: string,
   context?: LogContext,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   logger.log(level, message, { context, metadata });
 }
@@ -302,7 +313,7 @@ function logPerformance(
   operation: string,
   duration: number,
   context?: LogContext,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   performanceLogger.info(`${operation} completed`, {
     context: {
@@ -383,15 +394,16 @@ function logDatabaseOperation(
  * Middleware Express para logging de requests
  */
 function requestLoggingMiddleware() {
-  return (req: any, res: any, next: any) => {
+  return (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
     const startTime = Date.now();
 
     // Gerar ID único para request
-    req.requestId = generateRequestId();
+    const reqWithId = req as Express.Request & { requestId: string };
+    reqWithId.requestId = generateRequestId();
 
     // Override do res.end para capturar response
-    const originalEnd = res.end;
-    res.end = function(...args: any[]) {
+    const originalEnd = res.end.bind(res);
+    res.end = function(this: Express.Response, ...args: Parameters<Express.Response['end']>) {
       const duration = Date.now() - startTime;
 
       logHttpRequest(
@@ -400,15 +412,15 @@ function requestLoggingMiddleware() {
         res.statusCode,
         duration,
         {
-          requestId: req.requestId,
-          userId: req.user?.id,
-          workspaceId: req.workspace?.id,
+          requestId: reqWithId.requestId,
+          userId: (req as Express.Request & { user?: { id: string } }).user?.id,
+          workspaceId: (req as Express.Request & { workspace?: { id: string } }).workspace?.id,
           userAgent: req.get('User-Agent'),
-          ip: req.ip || req.connection?.remoteAddress,
+          ip: req.ip || req.socket?.remoteAddress,
         }
       );
 
-      originalEnd.apply(this, args);
+      return originalEnd.apply(this, args) as Express.Response;
     };
 
     next();
@@ -419,18 +431,24 @@ function requestLoggingMiddleware() {
  * Middleware para capturar erros não tratados
  */
 function errorLoggingMiddleware() {
-  return (err: any, req: any, res: any, next: any) => {
+  return (err: Error, req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
+    const reqWithContext = req as Express.Request & {
+      requestId?: string;
+      user?: { id: string };
+      workspace?: { id: string }
+    };
+
     logError(
       `Unhandled error in ${req.method} ${req.originalUrl || req.url}`,
       err,
       {
-        requestId: req.requestId,
-        userId: req.user?.id,
-        workspaceId: req.workspace?.id,
+        requestId: reqWithContext.requestId,
+        userId: reqWithContext.user?.id,
+        workspaceId: reqWithContext.workspace?.id,
         method: req.method,
         url: req.originalUrl || req.url,
         userAgent: req.get('User-Agent'),
-        ip: req.ip || req.connection?.remoteAddress,
+        ip: req.ip || req.socket?.remoteAddress,
       }
     );
 
@@ -448,7 +466,7 @@ function generateRequestId(): string {
 /**
  * Sanitiza dados sensíveis dos logs
  */
-function sanitizeLogData(data: any): any {
+function sanitizeLogData(data: unknown): unknown {
   if (!data || typeof data !== 'object') return data;
 
   const sensitiveFields = [
@@ -456,7 +474,7 @@ function sanitizeLogData(data: any): any {
     'cookie', 'session', 'csrf', 'apikey', 'api_key'
   ];
 
-  const sanitized = { ...data };
+  const sanitized = { ...data as Record<string, unknown> };
 
   for (const [key, value] of Object.entries(sanitized)) {
     const lowerKey = key.toLowerCase();

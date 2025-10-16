@@ -3,8 +3,9 @@
 // Sistema de filas para processamento assíncrono de onboarding
 // ================================================================
 
-import { Queue, Worker, Job } from 'bullmq';
-import IORedis from 'ioredis';
+import { Queue, Job } from 'bullmq';
+import { getRedisConnection } from '../redis';
+import { queueLogger } from '../observability/logger';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -30,21 +31,24 @@ export interface JuditOnboardingJobResult {
 // CONFIGURAÇÃO REDIS
 // ================================================================
 
-// Check if Redis should be disabled (for Railway without Redis)
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+// Get Redis connection from centralized client
+const connection = getRedisConnection();
+const REDIS_DISABLED = connection === null;
 
-// Mock Queue class for when Redis is disabled
+// Mock Queue class for when Redis is disabled (development only)
 class MockQueue {
   name: string;
 
   constructor(name: string) {
     this.name = name;
-    if (REDIS_DISABLED) {
-      console.log(`[JUDIT QUEUE] Running in MOCK mode (Redis disabled)`);
-    }
+    console.warn(`[JUDIT QUEUE] ⚠️  Running in MOCK mode (Redis disabled)`);
+    console.warn(`[JUDIT QUEUE] ⚠️  Queue operations will be simulated only!`);
   }
 
-  async add() { return { id: 'mock-' + Date.now(), data: {} } as any; }
+  async add() {
+    console.log('[JUDIT QUEUE] MOCK: Job added (not really processed)');
+    return { id: 'mock-' + Date.now(), data: {} } as any;
+  }
   async getJob() { return null; }
   async getActive() { return []; }
   async getWaiting() { return []; }
@@ -58,17 +62,6 @@ class MockQueue {
   on() { return this; }
 }
 
-const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD || undefined,
-  maxRetriesPerRequest: null, // Necessário para BullMQ
-  enableReadyCheck: false,
-};
-
-// Criar conexão Redis apenas se não estiver desabilitado
-const connection = REDIS_DISABLED ? null : new IORedis(redisConfig);
-
 // ================================================================
 // QUEUE CONFIGURATION
 // ================================================================
@@ -79,7 +72,7 @@ const QUEUE_CONFIG = {
     attempts: 3, // Tentar até 3 vezes em caso de falha
     backoff: {
       type: 'exponential',
-      delay: 5000, // 5s, 10s, 20s
+      delay: 30000, // 30s, 60s, 120s (increased for better resilience)
     },
     removeOnComplete: {
       age: 24 * 3600, // Manter jobs completos por 24h
@@ -232,26 +225,52 @@ export async function cleanQueue(options?: {
 
 if (!REDIS_DISABLED) {
   juditOnboardingQueue.on('error', (error) => {
-    console.error('[JUDIT QUEUE] Erro na fila:', error);
+    queueLogger.error({
+      action: 'queue_error',
+      error: error.message,
+      error_stack: error.stack,
+    });
   });
 
   juditOnboardingQueue.on('waiting', (jobId) => {
-    console.log(`[JUDIT QUEUE] Job ${jobId} aguardando processamento`);
+    queueLogger.debug({
+      action: 'job_waiting',
+      job_id: jobId,
+    });
   });
 
   juditOnboardingQueue.on('active', (job) => {
-    console.log(`[JUDIT QUEUE] Job ${job.id} iniciado - CNJ: ${job.data.cnj}`);
+    queueLogger.info({
+      action: 'job_active',
+      job_id: job.id,
+      cnj: job.data.cnj,
+      workspace_id: job.data.workspaceId,
+    });
   });
 
   juditOnboardingQueue.on('completed', (job, result) => {
-    console.log(`[JUDIT QUEUE] Job ${job.id} concluído - CNJ: ${job.data.cnj}`, {
+    queueLogger.info({
+      action: 'job_completed',
+      job_id: job.id,
+      cnj: job.data.cnj,
       success: result.success,
-      duration: `${(result.duration / 1000).toFixed(2)}s`,
+      processo_id: result.processoId,
+      request_id: result.requestId,
+      duration_ms: result.duration,
+      duration_seconds: (result.duration / 1000).toFixed(2),
     });
   });
 
   juditOnboardingQueue.on('failed', (job, error) => {
-    console.error(`[JUDIT QUEUE] Job ${job?.id} falhou - CNJ: ${job?.data.cnj}`, error.message);
+    queueLogger.error({
+      action: 'job_failed',
+      job_id: job?.id,
+      cnj: job?.data.cnj,
+      error: error.message,
+      error_stack: error.stack,
+      attempts_made: job?.attemptsMade,
+      max_attempts: job?.opts?.attempts || 3,
+    });
   });
 }
 
@@ -261,14 +280,34 @@ if (!REDIS_DISABLED) {
 
 async function gracefulShutdown() {
   if (REDIS_DISABLED) {
-    console.log('[JUDIT QUEUE] Mock mode - nothing to shutdown');
+    queueLogger.warn({
+      action: 'graceful_shutdown',
+      message: 'Mock mode - nothing to shutdown',
+    });
     return;
   }
 
-  console.log('[JUDIT QUEUE] Encerrando fila...');
-  await juditOnboardingQueue.close();
-  await connection?.quit();
-  console.log('[JUDIT QUEUE] Fila encerrada com sucesso');
+  queueLogger.info({
+    action: 'graceful_shutdown_start',
+    message: 'Encerrando fila...',
+  });
+
+  try {
+    await juditOnboardingQueue.close();
+    queueLogger.info({
+      action: 'graceful_shutdown_success',
+      message: 'Fila encerrada com sucesso',
+    });
+
+    // Note: Redis connection is managed centrally by src/lib/redis.ts
+    // It will handle its own shutdown via SIGTERM/SIGINT handlers
+  } catch (error) {
+    queueLogger.error({
+      action: 'graceful_shutdown_error',
+      error: error instanceof Error ? error.message : String(error),
+      error_stack: error instanceof Error ? error.stack : undefined,
+    });
+  }
 }
 
 process.on('SIGTERM', gracefulShutdown);
