@@ -101,13 +101,22 @@ export function middleware(request: NextRequest) {
   const host = request.headers.get('host');
   const allowedHosts = [
     'localhost:3000',
+    '127.0.0.1:3000',
+    'localhost',
+    '127.0.0.1',
     'justoai.com.br',
     'www.justoai.com.br',
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/https?:\/\//, '')
+    // Allow Railway internal health checks
+    'healthcheck.railway.app',
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/https?:\/\//, ''),
+    process.env.NEXT_PUBLIC_APP_DOMAIN,
   ].filter(Boolean);
 
   if (host && !allowedHosts.some(allowedHost => host.includes(allowedHost))) {
-    console.warn(`[SECURITY] Suspicious host header: ${host} from IP: ${ip}`);
+    // Only warn for non-Railway health checks
+    if (!host.includes('healthcheck.railway')) {
+      console.warn(`[SECURITY] Suspicious host header: ${host} from IP: ${ip}`);
+    }
   }
 
   // Rate limiting básico para APIs sensíveis
