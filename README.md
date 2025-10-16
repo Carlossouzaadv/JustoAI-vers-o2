@@ -704,6 +704,8 @@ node deploy-scripts/03-post-deploy-verify.js
 - **`docs/VERCEL_MONITORING_GUIDE.md`** - Monitoring and observability setup
 - **`docs/POST_DEPLOY_CHECKLIST.md`** - Post-deployment verification checklist
 - **`docs/VERCEL_OPERATIONS_RUNBOOK.md`** - Operations runbook and troubleshooting
+- **`docs/railway_workers_setup.md`** - Complete Railway workers deployment guide
+- **`docs/SECURITY_README.md`** - Security best practices for secrets management
 
 ### Quick Links
 
@@ -713,6 +715,86 @@ node deploy-scripts/03-post-deploy-verify.js
 | [Monitoring Guide](docs/VERCEL_MONITORING_GUIDE.md) | Setup monitoring and health checks |
 | [Operations Runbook](docs/VERCEL_OPERATIONS_RUNBOOK.md) | Troubleshooting and operations |
 | [Post-Deploy Checklist](docs/POST_DEPLOY_CHECKLIST.md) | Verification checklist |
+| [Railway Workers Setup](docs/railway_workers_setup.md) | Deploy workers separately on Railway |
+| [Security Guidelines](docs/SECURITY_README.md) | Secrets management and security best practices |
+
+---
+
+## 🚀 Railway Workers Deployment (Separate Service)
+
+### Quick Overview
+
+JustoAI V2 supports **separate deployment of background workers** on Railway for better cost control and isolation:
+
+```
+Railway Project
+├── Service: justoai-v2 (Web API)
+│   └── Cost: ~$7/month
+│
+└── Service: justoai-workers (Background Jobs)
+    └── Cost: ~$0/month (auto-sleep) to $10/month (active)
+```
+
+### Key Benefits
+
+- ✅ **Cost Optimization**: Workers auto-sleep when idle (~$0/month)
+- ✅ **Isolation**: Worker failures don't affect API availability
+- ✅ **Independent Scaling**: Scale workers separately from API
+- ✅ **Observability**: Monitor each service independently
+- ✅ **Security**: API keys segregated by service
+
+### Getting Started
+
+1. **Read the Complete Guide**: [docs/railway_workers_setup.md](docs/railway_workers_setup.md)
+2. **Check Security**: [docs/SECURITY_README.md](docs/SECURITY_README.md)
+3. **Configure Infrastructure**: [deploy/railway_web.toml](deploy/railway_web.toml) + [deploy/railway_workers.toml](deploy/railway_workers.toml)
+4. **Test Locally**: `npm run worker:judit` or `npm run stress-test-judit`
+
+### Available Worker Scripts
+
+```bash
+# Run worker directly (testing)
+npm run worker:judit
+
+# Run worker with PM2 (production)
+npm run worker:judit:pm2
+
+# Test JUDIT API connection
+npx tsx scripts/test-judit-connection.ts
+
+# Stress test queue/workers
+npm run stress-test-judit
+
+# Generic worker management
+npm run workers:start    # Start all workers
+npm run workers:stop     # Stop all workers
+npm run workers:status   # Check status
+```
+
+### Environment Variables by Service
+
+**Web Service (justoai-v2):**
+- DATABASE_URL, REDIS_URL, GOOGLE_API_KEY, Supabase keys
+- ❌ NOT JUDIT_API_KEY
+
+**Workers Service (justoai-workers):**
+- DATABASE_URL, REDIS_URL, GOOGLE_API_KEY
+- ✅ JUDIT_API_KEY (only here!)
+
+### Cost Expectations
+
+| Scenario | Monthly Cost |
+|----------|-------------|
+| **Idle** (no jobs) | ~$13/month (API $7 + Redis $6) |
+| **Active** (100 jobs/day) | ~$25/month (API $7 + Workers $8 + Redis $10) |
+| **High Load** (1000 jobs/day) | ~$40/month (API $10 + Workers $15 + Redis $15) |
+
+### Infrastructure Stack
+
+- **Web**: Railway (Node.js) + Supabase (PostgreSQL)
+- **Workers**: Railway (separate service) + Upstash Redis
+- **Frontend**: Vercel (Next.js)
+- **Total**: Start at ~$13/month
 
 ### Vercel Configuration Highlights
 
