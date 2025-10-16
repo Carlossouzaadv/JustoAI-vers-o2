@@ -11,12 +11,19 @@
 # - Upstash Redis charges per request (~$0.20/GB)
 # - Estimated idle cost: $2-5/month
 # - Estimated active cost: $10-15/month (100 jobs/day)
+#
+# Optimizations:
+# - npm ci for deterministic builds
+# - Proper layer caching
+# - Security: non-root user, minimal permissions
+# - Slim production image
 # ========================================
 
 FROM node:20-alpine AS base
 
-# Install dependencies for Prisma
-RUN apk add --no-cache libc6-compat openssl
+# Install system dependencies once in base
+RUN apk add --no-cache libc6-compat openssl && \
+    npm install -g npm@latest
 
 # ========================================
 # STAGE 1: Install Dependencies
@@ -25,10 +32,11 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 
-# Install dependencies (production + dev for build)
-RUN npm install --legacy-peer-deps
+# Install dependencies with legacy peer deps support
+# Using npm ci for reproducible, deterministic installs
+RUN npm ci --legacy-peer-deps
 
 # ========================================
 # STAGE 2: Build Application
@@ -56,9 +64,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 workers
+# Create non-root user for security (principle of least privilege)
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 workers
 
 # Copy necessary files from builder
 COPY --from=builder /app/package.json ./
@@ -72,12 +80,17 @@ COPY --from=builder /app/src/workers ./src/workers
 # Copy lib directory (services, queue, redis)
 COPY --from=builder /app/src/lib ./src/lib
 
-# Change ownership
-RUN chown -R workers:nodejs /app
+# Copy Prisma client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Set proper ownership and permissions
+RUN chown -R workers:nodejs /app && \
+    chmod -R 755 /app
 
 USER workers
 
 # Health check (optional - checks if worker process is running)
+# Note: This may fail if no workers are actively running, so it's optional
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
   CMD pgrep -f "juditOnboardingWorker" || exit 1
 
@@ -89,5 +102,5 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
 # You can override this in Railway to run different workers
 CMD ["npx", "tsx", "src/workers/juditOnboardingWorker.ts"]
 
-# Alternative: Run multiple workers
+# Alternative: Run multiple workers (uncomment if needed)
 # CMD ["sh", "-c", "npx tsx src/workers/juditOnboardingWorker.ts & npx tsx src/workers/anotherWorker.ts & wait"]

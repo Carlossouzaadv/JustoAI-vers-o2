@@ -3,30 +3,51 @@
 # ========================================
 # This Dockerfile is optimized for running the backend API + workers on Railway
 # Frontend will be deployed separately on Vercel
+#
+# Optimizations:
+# - Multi-stage build for minimal final image
+# - npm ci instead of npm install for deterministic builds
+# - Proper layer caching for faster rebuilds
+# - Security: non-root user, minimal attack surface
+# - Health check for liveness probes
 
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
+# Install system dependencies once in base
+RUN apk add --no-cache libc6-compat openssl && \
+    npm install -g npm@latest
+
+# ========================================
+# STAGE 1: Install Dependencies
+# ========================================
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies
-COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
+# Copy package files (changes invalidate cache)
+COPY package.json package-lock.json ./
 
-# Rebuild the source code only when needed
+# Install dependencies with legacy peer deps support
+# Using npm ci for reproducible, deterministic installs
+RUN npm ci --legacy-peer-deps
+
+# ========================================
+# STAGE 2: Build Application
+# ========================================
 FROM base AS builder
 WORKDIR /app
+
+# Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source code
 COPY . .
 
 # Set build-time environment variables
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
 
-# Add minimal build-time env vars (valores dummy para build)
-# Valores reais serão injetados em runtime pelo Railway
+# Add minimal build-time env vars (placeholder values for build only)
+# Real values injected at runtime by Railway
 ENV NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-key-for-build-only
 ENV NEXT_PUBLIC_API_URL=http://localhost:3000
@@ -35,10 +56,12 @@ ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Build Next.js - agora deve completar com sucesso
+# Build Next.js application
 RUN npm run build
 
-# Production image, copy all files and run
+# ========================================
+# STAGE 3: Production Runtime
+# ========================================
 FROM base AS runner
 WORKDIR /app
 
@@ -49,9 +72,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Set REDIS_DISABLED=true in Railway if you want API-only mode without workers
 # Set REDIS_DISABLED=false (or omit) if you have workers service enabled
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Create non-root user for security (principle of least privilege)
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 # Copy entire standalone build (simpler and more reliable)
 # Next.js standalone includes everything needed to run
@@ -59,24 +82,29 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./justoai-v2/.next/static
 COPY --from=builder /app/public ./justoai-v2/public
 
-# Copy Prisma client
+# Copy Prisma client and engine for database operations
 COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
 
-# NOTE: Deliberadamente NÃO copiando workers/scripts para reduzir uso de CPU
-# Workers serão habilitados em service separado posteriormente se necessário
+# Copy prisma schema (not needed in production but useful for debugging)
+COPY --from=builder /app/prisma ./prisma
 
-# Change ownership
-RUN chown -R nextjs:nodejs /app
+# NOTE: Deliberately NOT copying workers/scripts to reduce CPU usage
+# Workers will be enabled in separate service via Railway if needed
+
+# Set proper ownership for security
+RUN chown -R nextjs:nodejs /app && \
+    chmod -R 755 /app
 
 USER nextjs
 
-# Expose port (Railway will use $PORT)
+# Expose port (Railway will use $PORT env variable)
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-# Health check
+# Health check for container orchestration
+# Checks if API is responding to health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
