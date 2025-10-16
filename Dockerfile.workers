@@ -2,31 +2,23 @@
 # JustoAI V2 - Workers Dockerfile
 # ========================================
 # Separate service for background workers (BullMQ)
-# Optimized for low idle costs on Railway + Upstash Redis
+# NO NEXT.JS BUILD - Only runs Node.js workers
 #
-# Cost Optimization Strategy:
-# - Minimal base image (alpine)
-# - Only necessary dependencies
-# - Workers idle when no jobs (near-zero CPU)
-# - Upstash Redis charges per request (~$0.20/GB)
-# - Estimated idle cost: $2-5/month
-# - Estimated active cost: $10-15/month (100 jobs/day)
-#
-# Optimizations:
+# Key optimizations:
 # - npm ci for deterministic builds
-# - Proper layer caching
-# - Security: non-root user, minimal permissions
-# - Slim production image
+# - NODE_ENV=production for clean installs
+# - No frontend dependencies installed
+# - Minimal production image
 # ========================================
 
 FROM node:20-alpine AS base
 
-# Install system dependencies once in base
+# Install system dependencies
 RUN apk add --no-cache libc6-compat openssl && \
     npm install -g npm@latest
 
 # ========================================
-# STAGE 1: Install Dependencies
+# STAGE 1: Install Dependencies (Production Only)
 # ========================================
 FROM base AS deps
 WORKDIR /app
@@ -34,73 +26,61 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies with legacy peer deps support
-# Using npm ci for reproducible, deterministic installs
-RUN npm ci --legacy-peer-deps
+# Install dependencies
+# NODE_ENV=production skips devDependencies
+# This prevents frontend tools from being installed
+RUN NODE_ENV=production npm ci --legacy-peer-deps
 
 # ========================================
-# STAGE 2: Build Application
+# STAGE 2: Generate Prisma Client
 # ========================================
-FROM base AS builder
+FROM base AS prisma-gen
 WORKDIR /app
 
-# Copy dependencies from deps stage
+# Copy package and all dependencies
 COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY prisma ./prisma
 
-# Copy source code
-COPY . .
-
-# Generate Prisma Client
+# Generate Prisma Client (needed for database access)
 RUN npx prisma generate
 
-# Build TypeScript workers (if needed)
-# Workers use tsx runtime, so no compilation needed
-
 # ========================================
-# STAGE 3: Production Runner
+# STAGE 3: Production Runtime
 # ========================================
-FROM base AS runner
+FROM base AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Create non-root user for security (principle of least privilege)
+# Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 workers
 
-# Copy necessary files from builder
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/src ./src
-
-# Copy workers directory
-COPY --from=builder /app/src/workers ./src/workers
-
-# Copy lib directory (services, queue, redis)
-COPY --from=builder /app/src/lib ./src/lib
+# Copy production node_modules only
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy Prisma client
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=prisma-gen /app/node_modules/.prisma ./node_modules/.prisma
 
-# Set proper ownership and permissions
-RUN chown -R workers:nodejs /app && \
-    chmod -R 755 /app
+# Copy only what workers need
+COPY package.json ./
+COPY prisma ./prisma
+COPY src/workers ./src/workers
+COPY src/lib ./src/lib
+
+# Set ownership
+RUN chown -R workers:nodejs /app && chmod -R 755 /app
 
 USER workers
 
-# Health check (optional - checks if worker process is running)
-# Note: This may fail if no workers are actively running, so it's optional
+# Health check
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
   CMD pgrep -f "juditOnboardingWorker" || exit 1
 
 # ========================================
-# WORKER STARTUP
+# STARTUP
 # ========================================
 
-# Default: Run JUDIT Onboarding Worker
-# You can override this in Railway to run different workers
+# Run worker directly with tsx (no build needed)
 CMD ["npx", "tsx", "src/workers/juditOnboardingWorker.ts"]
-
-# Alternative: Run multiple workers (uncomment if needed)
-# CMD ["sh", "-c", "npx tsx src/workers/juditOnboardingWorker.ts & npx tsx src/workers/anotherWorker.ts & wait"]
