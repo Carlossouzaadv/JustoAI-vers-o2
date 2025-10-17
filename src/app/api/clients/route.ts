@@ -8,7 +8,6 @@ import {
   validateBody,
   validateQuery,
   requireWorkspaceAccess,
-  withMethods,
   rateLimit,
   getClientIP
 } from '@/lib/api-utils'
@@ -308,7 +307,4 @@ async function POST(request: NextRequest) {
   )
 }
 
-export default withMethods({
-  GET,
-  POST,
-})
+export { GET, POST }
