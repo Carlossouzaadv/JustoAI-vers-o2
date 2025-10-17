@@ -8,39 +8,8 @@
 import Queue from 'bull';
 import { bullRedis } from './redis';
 
-// Check if Redis should be disabled (only in development without REDIS_URL)
-// Uses REDIS_URL as single source of truth for production configuration
-const isDevelopment = process.env.NODE_ENV === 'development';
-const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
-
-/**
- * Mock Queue class for when Redis is disabled
- * Returns a no-op queue that doesn't try to connect
- */
-class MockQueue {
-  name: string;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  async add() { return { id: 'mock', data: {} }; }
-  async process() { return; }
-  async getWaiting() { return []; }
-  async getActive() { return []; }
-  async getCompleted() { return []; }
-  async getFailed() { return []; }
-  async getDelayed() { return []; }
-  async pause() { return; }
-  async resume() { return; }
-  async clean() { return []; }
-  async close() { return; }
-  on() { return this; }
-}
-
 // Configuração base das filas
-// Note: Use bullRedis singleton from lib/redis.ts which handles REDIS_URL correctly
-const queueConfig = REDIS_DISABLED ? {} : {
+const queueConfig = {
   redis: bullRedis,
   defaultJobOptions: {
     removeOnComplete: 100, // Manter últimos 100 jobs completos
@@ -59,48 +28,38 @@ const queueConfig = REDIS_DISABLED ? {} : {
  * Fila para sincronização com APIs externas
  * Executa a cada 6 horas
  */
-export const syncQueue = REDIS_DISABLED
-  ? new MockQueue('API Sync') as any
-  : new Queue('API Sync', queueConfig);
+export const syncQueue = new Queue('API Sync', queueConfig);
 
 /**
  * Fila para geração de relatórios automáticos
  * Executa domingos às 23h
  */
-export const reportsQueue = REDIS_DISABLED
-  ? new MockQueue('Automated Reports') as any
-  : new Queue('Automated Reports', queueConfig);
+export const reportsQueue = new Queue('Automated Reports', queueConfig);
 
 /**
  * Fila para limpeza de cache
  * Executa diariamente
  */
-export const cacheCleanupQueue = REDIS_DISABLED
-  ? new MockQueue('Cache Cleanup') as any
-  : new Queue('Cache Cleanup', queueConfig);
+export const cacheCleanupQueue = new Queue('Cache Cleanup', queueConfig);
 
 /**
  * Fila para processamento de documentos PDF
  * On-demand processing
  */
-export const documentProcessingQueue = REDIS_DISABLED
-  ? new MockQueue('Document Processing') as any
-  : new Queue('Document Processing', queueConfig);
+export const documentProcessingQueue = new Queue('Document Processing', queueConfig);
 
 /**
  * Fila para envio de emails/notificações
  * High priority queue
  */
-export const notificationQueue = REDIS_DISABLED
-  ? new MockQueue('Notifications') as any
-  : new Queue('Notifications', {
-      ...queueConfig,
-      defaultJobOptions: {
-        ...queueConfig.defaultJobOptions,
-        priority: 10, // Alta prioridade
-        attempts: 5,  // Mais tentativas para notificações
-      }
-    });
+export const notificationQueue = new Queue('Notifications', {
+  ...queueConfig,
+  defaultJobOptions: {
+    ...queueConfig.defaultJobOptions,
+    priority: 10, // Alta prioridade
+    attempts: 5,  // Mais tentativas para notificações
+  }
+});
 
 // === CONFIGURAÇÃO DOS WORKERS ===
 

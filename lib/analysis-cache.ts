@@ -6,16 +6,10 @@
 //
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
-import Redis from 'ioredis';
 import { createHash } from 'crypto';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { getRedis } from './redis';
-
-// Check if Redis should be disabled (only in development without REDIS_URL)
-// Uses REDIS_URL as single source of truth for production configuration
-const isDevelopment = process.env.NODE_ENV === 'development';
-const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
 
 export interface AnalysisCacheResult {
   hit: boolean;
@@ -40,13 +34,8 @@ export class AnalysisCacheManager {
   private readonly LOCK_TTL = 300; // 5 minutos para lock
 
   constructor() {
-    // Always use getRedis() which handles both mock (development) and real (production) connections
-    // getRedis() already implements proper error handling and lazy validation
-    if (REDIS_DISABLED) {
-      console.warn('⚠️ Analysis cache Redis is disabled - using mock client (development mode, no REDIS_URL configured)');
-    }
-
-    this.redis = getRedis(); // This returns either real Redis instance or MockRedis depending on REDIS_DISABLED
+    // Use Redis singleton - will connect with REDIS_URL if available
+    this.redis = getRedis();
   }
 
   /**

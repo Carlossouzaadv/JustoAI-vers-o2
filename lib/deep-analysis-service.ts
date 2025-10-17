@@ -16,13 +16,7 @@ import { getRedis } from './redis';
 
 const prisma = new PrismaClient();
 
-// Check if Redis should be disabled (only in development without REDIS_URL)
-// Uses REDIS_URL as single source of truth for production configuration
-const isDevelopment = process.env.NODE_ENV === 'development';
-const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
-
-// Redis connection - always use getRedis() which handles both mock and real connections
-// This ensures proper lazy initialization and prevents connection errors during build
+// Redis connection - will connect with REDIS_URL if available
 const redis = getRedis();
 
 export interface AnalysisKeyParams {
