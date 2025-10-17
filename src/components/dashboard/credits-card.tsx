@@ -5,6 +5,7 @@
 // ================================================================
 
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -79,8 +80,8 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
       setLoading(true);
 
       const [creditsResponse, quotaResponse] = await Promise.all([
-        fetch(`/api/billing/credits?workspaceId=${workspaceId}`, { credentials: 'include' }),
-        fetch(`/api/reports/quota-status?workspaceId=${workspaceId}`, { credentials: 'include' })
+        fetch(getApiUrl(`/api/billing/credits?workspaceId=${workspaceId}`), { credentials: 'include' }),
+        fetch(getApiUrl(`/api/reports/quota-status?workspaceId=${workspaceId}`), { credentials: 'include' })
       ]);
 
       const [creditsData, quotaData] = await Promise.all([

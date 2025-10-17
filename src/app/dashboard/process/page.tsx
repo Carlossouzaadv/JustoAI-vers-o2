@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
 import { useAuth } from '@/contexts/auth-context';
+import { getApiUrl } from '@/lib/api-client';
 
 interface Case {
   id: string;
@@ -77,7 +78,7 @@ export default function ProcessPage() {
       }
 
       try {
-        const response = await fetch(`/api/cases?workspaceId=${workspaceId}&limit=100`, {
+        const response = await fetch(getApiUrl(`/api/cases?workspaceId=${workspaceId}&limit=100`), {
           credentials: 'include'
         });
 

@@ -5,6 +5,7 @@
 // ================================================================
 
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api-client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -100,8 +101,8 @@ export default function UsageBanner({
       setLoading(true);
 
       const [usageResponse, alertsResponse] = await Promise.all([
-        fetch(`/api/telemetry/monthly-usage?workspaceId=${workspaceId}`, { credentials: 'include' }),
-        fetch(`/api/telemetry/active-alerts?workspaceId=${workspaceId}`, { credentials: 'include' })
+        fetch(getApiUrl(`/api/telemetry/monthly-usage?workspaceId=${workspaceId}`), { credentials: 'include' }),
+        fetch(getApiUrl(`/api/telemetry/active-alerts?workspaceId=${workspaceId}`), { credentials: 'include' })
       ]);
 
       const [usageData, alertsData] = await Promise.all([

@@ -29,6 +29,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { ICONS } from '@/lib/icons';
+import { getApiUrl } from '@/lib/api-client';
 
 interface Client {
   id: string;
@@ -59,7 +60,7 @@ export default function ClientsPage() {
   const loadClients = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/clients?limit=1000', {
+      const response = await fetch(getApiUrl('/api/clients?limit=1000'), {
         credentials: 'include'
       });
 

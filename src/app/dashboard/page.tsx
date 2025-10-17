@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ICONS } from '@/lib/icons';
+import { getApiUrl } from '@/lib/api-client';
 import { useDashboard } from './layout';
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
 import { useOnboarding } from '@/hooks/use-onboarding';
@@ -116,7 +117,7 @@ export default function DashboardPage() {
       setLoading(true);
 
       // Carregar dados gerais do dashboard
-      const dashboardResponse = await fetch(`/api/workspaces/${workspaceId}/summary`, {
+      const dashboardResponse = await fetch(getApiUrl(`/api/workspaces/${workspaceId}/summary`), {
         credentials: 'include'
       });
 
@@ -134,7 +135,7 @@ export default function DashboardPage() {
         // Se um cliente está selecionado, buscar nome do cliente
         if (selectedClientId && !selectedClientName) {
           try {
-            const clientResponse = await fetch(`/api/clients/${selectedClientId}`, {
+            const clientResponse = await fetch(getApiUrl(`/api/clients/${selectedClientId}`), {
               credentials: 'include'
             });
             if (clientResponse.ok) {

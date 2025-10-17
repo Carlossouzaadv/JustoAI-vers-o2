@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ICONS } from '@/lib/icons';
+import { getApiUrl } from '@/lib/api-client';
 
 interface ClientActionsButtonProps {
   clientId: string;
@@ -37,7 +38,7 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
   const loadClientProcesses = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/processes?clientId=${clientId}`);
+      const response = await fetch(getApiUrl(`/api/processes?clientId=${clientId}`));
       if (response.ok) {
         const data = await response.json();
         const processOptions: ProcessOption[] = (data.processes || []).map((process: any) => ({

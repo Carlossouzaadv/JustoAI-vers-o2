@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import { getApiUrl } from '@/lib/api-client';
 
 interface UserWithWorkspaces {
   id: string;
@@ -42,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function loadUser() {
       try {
         setLoading(true);
-        const response = await fetch('/api/users/current', {
+        const response = await fetch(getApiUrl('/api/users/current'), {
           credentials: 'include',
         });
 

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS } from '@/lib/icons';
+import { getApiUrl } from '@/lib/api-client';
 import { ClientActionsButton } from './client-actions-button';
 
 interface Client {
@@ -46,8 +47,9 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
     try {
       setLoading(true);
 
-      // Call real API endpoint
-      const response = await fetch('/api/clients?limit=100', {
+      // Call real API endpoint with absolute URL
+      const url = getApiUrl('/api/clients?limit=100');
+      const response = await fetch(url, {
         credentials: 'include'
       });
 
