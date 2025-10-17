@@ -2,47 +2,74 @@
  * Redis Client Configuration
  * Configuração otimizada para desenvolvimento local e produção
  *
- * EMERGENCY MODE: Se REDIS_DISABLED=true, retorna mock sem tentar conectar
+ * CRITICAL: Uses REDIS_URL as single source of truth for Redis configuration.
+ * Falls back to mock client only in development if no REDIS_URL is provided.
+ * In production, missing REDIS_URL throws an error to prevent data loss.
  */
 
 import Redis from 'ioredis';
 
-// Check if Redis should be disabled (for Railway without Redis)
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Configuração Redis baseada no ambiente
-const redisConfig = {
-  development: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    retryDelayOnFailover: 100,
-    enableReadyCheck: false,
-    lazyConnect: true,
-    maxRetriesPerRequest: 1, // Limit retries to prevent infinite loops
-    enableOfflineQueue: false, // Don't queue commands when disconnected
-    reconnectOnError: null, // Don't reconnect automatically
-    db: 0,
-  },
-  production: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    retryDelayOnFailover: 100,
-    enableReadyCheck: true,
-    lazyConnect: true,
-    db: 0,
-    // Configurações de produção com limites agressivos
+// Validate REDIS_URL presence in production
+if (isProduction && !process.env.REDIS_URL) {
+  throw new Error(
+    'REDIS_URL is not defined in the environment! ' +
+    'This is required for production. ' +
+    'Set REDIS_URL in Railway variables with format: ' +
+    'rediss://default:password@host:port (for Upstash) ' +
+    'or redis://default:password@host:port (for Railway Redis)'
+  );
+}
+
+// Check if Redis should be disabled (only in development without REDIS_URL)
+const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
+
+// Build Redis connection config from REDIS_URL
+// If REDIS_URL is provided, parse it and use it exclusively
+let redisConfig: any = {
+  lazyConnect: true,
+  retryDelayOnFailover: 100,
+  enableReadyCheck: isDevelopment ? false : true,
+  db: 0,
+};
+
+if (isProduction) {
+  // Production-specific settings for stability
+  redisConfig = {
+    ...redisConfig,
     connectTimeout: 5000,
     commandTimeout: 3000,
     retryDelayOnError: 100,
     maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
     enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
     reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
-  }
-};
+  };
+} else {
+  // Development-specific settings
+  redisConfig = {
+    ...redisConfig,
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    reconnectOnError: null,
+  };
+}
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const config = isDevelopment ? redisConfig.development : redisConfig.production;
+// Use REDIS_URL if provided, otherwise use fallback for development
+if (process.env.REDIS_URL) {
+  // Parse REDIS_URL - the URL is the primary configuration source
+  // This handles both redis://, rediss:// (Upstash), and other formats
+  redisConfig.url = process.env.REDIS_URL;
+} else if (isDevelopment) {
+  // Fallback to host/port/password only in development
+  // These variables should NOT be used if REDIS_URL is present
+  redisConfig.host = process.env.REDIS_HOST || 'localhost';
+  redisConfig.port = parseInt(process.env.REDIS_PORT || '6379', 10);
+  if (process.env.REDIS_PASSWORD) {
+    redisConfig.password = process.env.REDIS_PASSWORD;
+  }
+}
 
 // Lazy initialization - só cria conexão quando necessário
 let redisInstance: Redis | null = null;
@@ -68,28 +95,41 @@ class MockRedis {
 
 /**
  * Get Redis client (lazy initialization)
- * Returns mock if Redis is disabled to prevent connection attempts
+ * Returns mock if Redis is disabled (development only, no REDIS_URL)
+ * In production, throws error if REDIS_URL is not configured
  */
 export function getRedis(): any {
   if (REDIS_DISABLED) {
-    console.warn('⚠️ Redis is disabled - using mock client');
+    console.warn('⚠️ Redis is disabled - using mock client (development mode, no REDIS_URL configured)');
     return new MockRedis();
   }
 
   if (!redisInstance) {
-    redisInstance = new Redis(config);
+    try {
+      redisInstance = new Redis(redisConfig);
 
-    redisInstance.on('connect', () => {
-      console.log('✅ Redis connected successfully');
-    });
+      redisInstance.on('connect', () => {
+        console.log('✅ Redis connected successfully', {
+          url: process.env.REDIS_URL ? 'configured' : 'not configured',
+          env: process.env.NODE_ENV,
+        });
+      });
 
-    redisInstance.on('error', (error) => {
-      console.error('❌ Redis connection error:', error.message);
-    });
+      redisInstance.on('error', (error) => {
+        console.error('❌ Redis connection error:', {
+          message: error.message,
+          code: error.code,
+          url: process.env.REDIS_URL ? 'configured' : 'not configured',
+        });
+      });
 
-    redisInstance.on('ready', () => {
-      console.log('🟢 Redis ready to accept commands');
-    });
+      redisInstance.on('ready', () => {
+        console.log('🟢 Redis ready to accept commands');
+      });
+    } catch (error) {
+      console.error('❌ Failed to create Redis instance:', error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   return redisInstance;
@@ -97,27 +137,37 @@ export function getRedis(): any {
 
 /**
  * Get Bull Redis client (lazy initialization)
- * Returns mock if Redis is disabled
+ * Returns mock if Redis is disabled (development only, no REDIS_URL)
+ * Uses DB 1 to separate Bull queue data from general cache
  */
 export function getBullRedis(): any {
   if (REDIS_DISABLED) {
-    console.warn('⚠️ Bull Redis is disabled - using mock client');
+    console.warn('⚠️ Bull Redis is disabled - using mock client (development mode, no REDIS_URL configured)');
     return new MockRedis();
   }
 
   if (!bullRedisInstance) {
-    bullRedisInstance = new Redis({
-      ...config,
-      db: 1, // Use DB 1 para Bull Queue
-    });
+    try {
+      bullRedisInstance = new Redis({
+        ...redisConfig,
+        db: 1, // Use DB 1 for Bull Queue (separate from general cache in DB 0)
+      });
 
-    bullRedisInstance.on('connect', () => {
-      console.log('✅ Bull Redis connected successfully');
-    });
+      bullRedisInstance.on('connect', () => {
+        console.log('✅ Bull Redis connected successfully (DB 1)');
+      });
 
-    bullRedisInstance.on('error', (error) => {
-      console.error('❌ Bull Redis connection error:', error.message);
-    });
+      bullRedisInstance.on('error', (error) => {
+        console.error('❌ Bull Redis connection error:', {
+          message: error.message,
+          code: error.code,
+          db: 1,
+        });
+      });
+    } catch (error) {
+      console.error('❌ Failed to create Bull Redis instance:', error instanceof Error ? error.message : String(error));
+      throw error;
+    }
   }
 
   return bullRedisInstance;
