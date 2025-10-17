@@ -37,13 +37,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
+import { useAuth } from '@/contexts/auth-context';
 
 interface Case {
   id: string;
   title: string;
-  processNumber?: string;
+  number?: string;
   type: 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'TAX' | 'ADMINISTRATIVE';
-  status: 'ACTIVE' | 'CONCLUDED' | 'SUSPENDED' | 'APPEALED';
+  status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   client: {
     id: string;
@@ -65,57 +66,42 @@ export default function ProcessPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const { workspaceId } = useAuth();
 
-  // Simulação de dados - substituir por API real
+  // Carregar dados reais da API
   useEffect(() => {
-    const mockCases: Case[] = [
-      {
-        id: '1',
-        title: 'Ação de Cobrança - João Silva',
-        processNumber: '1234567-89.2024.8.26.0001',
-        type: 'CIVIL',
-        status: 'ACTIVE',
-        priority: 'HIGH',
-        client: { id: '1', name: 'João Silva' },
-        createdAt: '2025-01-15',
-        updatedAt: '2025-01-20',
-        _count: { documents: 5, events: 12 }
-      },
-      {
-        id: '2',
-        title: 'Divórcio Consensual - Maria Santos',
-        processNumber: '9876543-21.2024.8.26.0002',
-        type: 'FAMILY',
-        status: 'ACTIVE',
-        priority: 'MEDIUM',
-        client: { id: '2', name: 'Maria Santos' },
-        createdAt: '2025-01-10',
-        updatedAt: '2025-01-18',
-        _count: { documents: 8, events: 6 }
-      },
-      {
-        id: '3',
-        title: 'Ação Trabalhista - Empresa ABC',
-        processNumber: '5555555-55.2024.5.02.0001',
-        type: 'LABOR',
-        status: 'CONCLUDED',
-        priority: 'LOW',
-        client: { id: '3', name: 'Empresa ABC Ltda' },
-        createdAt: '2023-12-01',
-        updatedAt: '2025-01-15',
-        _count: { documents: 15, events: 25 }
+    const loadCases = async () => {
+      if (!workspaceId) {
+        setLoading(false);
+        return;
       }
-    ];
 
-    setTimeout(() => {
-      setCases(mockCases);
-      setLoading(false);
-    }, 1000);
-  }, []);
+      try {
+        const response = await fetch(`/api/cases?workspaceId=${workspaceId}&limit=100`, {
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCases(data.data || []);
+        } else {
+          console.error('Failed to load cases:', response.status);
+          setCases([]); // Empty list on error
+        }
+      } catch (error) {
+        console.error('Error loading cases:', error);
+        setCases([]); // Empty list on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCases();
+  }, [workspaceId]);
 
   const filteredCases = cases.filter(caseItem => {
     const matchesSearch = caseItem.title.toLowerCase().includes(search.toLowerCase()) ||
-      caseItem.processNumber?.includes(search) ||
+      caseItem.number?.includes(search) ||
       caseItem.client.name.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || caseItem.status === statusFilter;
@@ -125,23 +111,25 @@ export default function ProcessPage() {
   });
 
   const getStatusBadge = (status: string) => {
-    const variants = {
+    const variants: Record<string, string> = {
       ACTIVE: 'bg-green-100 text-green-800 border-green-200',
-      CONCLUDED: 'bg-blue-100 text-blue-800 border-blue-200',
+      CLOSED: 'bg-blue-100 text-blue-800 border-blue-200',
       SUSPENDED: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      APPEALED: 'bg-purple-100 text-purple-800 border-purple-200'
+      ARCHIVED: 'bg-gray-100 text-gray-800 border-gray-200',
+      CANCELLED: 'bg-red-100 text-red-800 border-red-200'
     };
 
-    const labels = {
+    const labels: Record<string, string> = {
       ACTIVE: 'Ativo',
-      CONCLUDED: 'Concluído',
+      CLOSED: 'Fechado',
       SUSPENDED: 'Suspenso',
-      APPEALED: 'Em Recurso'
+      ARCHIVED: 'Arquivado',
+      CANCELLED: 'Cancelado'
     };
 
     return (
-      <Badge className={variants[status as keyof typeof variants]}>
-        {labels[status as keyof typeof labels]}
+      <Badge className={variants[status] || 'bg-gray-100 text-gray-800'}>
+        {labels[status] || status}
       </Badge>
     );
   };
@@ -261,9 +249,10 @@ export default function ProcessPage() {
                   <SelectContent>
                     <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="ACTIVE">Ativo</SelectItem>
-                    <SelectItem value="CONCLUDED">Concluído</SelectItem>
+                    <SelectItem value="CLOSED">Fechado</SelectItem>
                     <SelectItem value="SUSPENDED">Suspenso</SelectItem>
-                    <SelectItem value="APPEALED">Em Recurso</SelectItem>
+                    <SelectItem value="ARCHIVED">Arquivado</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -383,7 +372,7 @@ export default function ProcessPage() {
                 <TableCell>
                   <Link href={`/dashboard/process/${caseItem.id}`} className="block hover:bg-neutral-50 transition-colors rounded p-1 -m-1">
                     <div className="font-medium text-primary-800 hover:text-primary-600 cursor-pointer">{caseItem.title}</div>
-                    <div className="text-sm text-neutral-500">{caseItem.processNumber || 'Sem número'}</div>
+                    <div className="text-sm text-neutral-500">{caseItem.number || 'Sem número'}</div>
                   </Link>
                 </TableCell>
                 <TableCell>
