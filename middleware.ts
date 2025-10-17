@@ -84,8 +84,9 @@ export async function middleware(request: NextRequest) {
 
       // Debug logging for authentication issues
       if (!user) {
-        const cookiesList = Array.from(request.cookies.entries())
-          .map(([k, v]) => `${k}=${v.substring(0, 20)}...`)
+        const cookiesList = request.cookies
+          .getAll()
+          .map((cookie) => `${cookie.name}=${cookie.value.substring(0, 20)}...`)
           .join(', ')
 
         console.warn('🔴 Authentication failed:', {

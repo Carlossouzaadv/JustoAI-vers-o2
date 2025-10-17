@@ -22,10 +22,13 @@ export async function GET(request: NextRequest) {
     })
 
     // Check cookies received
-    const cookiesList = Array.from(request.cookies.entries()).map(([name, cookie]) => ({
-      name,
-      value: cookie.value.substring(0, 30) + '...',
-    }))
+    const cookiesList: Array<{ name: string; value: string }> = []
+    request.cookies.getAll().forEach((cookie) => {
+      cookiesList.push({
+        name: cookie.name,
+        value: cookie.value.substring(0, 30) + '...',
+      })
+    })
 
     console.log('🍪 Cookies Received:', {
       count: request.cookies.size,
