@@ -49,10 +49,11 @@ if (process.env.REDIS_URL) {
   console.log('[REDIS] Using REDIS_URL from environment');
   redisConfig.url = process.env.REDIS_URL;
 } else if (isProduction) {
-  // CRITICAL: In production, REDIS_URL MUST be set
-  const errorMsg = 'CRITICAL: REDIS_URL environment variable is not set in production! Queue connections will fail.';
-  console.error('[REDIS]', errorMsg);
-  throw new Error(errorMsg);
+  // In production, use fallback that will fail when connection is attempted (not during build)
+  // This allows the build to complete, but workers won't start
+  console.warn('[REDIS] WARNING: REDIS_URL not set in production, using localhost fallback (will fail at runtime)');
+  redisConfig.host = 'localhost';
+  redisConfig.port = 6379;
 } else {
   // Fallback to individual variables for development/local setup ONLY
   console.log('[REDIS] Using host/port configuration (development mode)');
@@ -72,6 +73,13 @@ let bullRedisInstance: Redis | null = null;
  */
 export function getRedis(): any {
   if (!redisInstance) {
+    // WARN if production without REDIS_URL
+    if (isProduction && !process.env.REDIS_URL) {
+      console.error('[REDIS] 🚨 CRITICAL: Attempting to connect to localhost:6379 in production!');
+      console.error('[REDIS] 🚨 REDIS_URL environment variable is NOT set in Vercel');
+      console.error('[REDIS] 🚨 Action: Go to Vercel Dashboard → Settings → Environment Variables → Add REDIS_URL');
+    }
+
     redisInstance = new Redis(redisConfig);
 
     redisInstance.on('connect', () => {
@@ -80,6 +88,9 @@ export function getRedis(): any {
 
     redisInstance.on('error', (error) => {
       console.error('❌ Redis connection error:', error.message);
+      if (isProduction && !process.env.REDIS_URL && error.message.includes('ECONNREFUSED')) {
+        console.error('[REDIS] 💡 This is because REDIS_URL is not configured in Vercel');
+      }
     });
 
     redisInstance.on('ready', () => {
