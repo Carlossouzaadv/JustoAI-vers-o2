@@ -67,63 +67,17 @@ export async function middleware(request: NextRequest) {
       return corsError
     }
 
-    // Skip auth for public endpoints
-    const publicEndpoints = [
-      '/api/health',
-      '/api/auth/',
-      '/api/debug/',  // Debug endpoints for troubleshooting
-    ]
-
-    const isPublicEndpoint = publicEndpoints.some(endpoint =>
-      request.nextUrl.pathname.startsWith(endpoint)
-    )
-
-    if (!isPublicEndpoint) {
-      // Check authentication for protected API routes
-      const { data: { user }, error } = await supabase.auth.getUser()
-
-      // Debug logging for authentication issues
-      if (!user) {
-        const cookiesList = request.cookies
-          .getAll()
-          .map((cookie) => `${cookie.name}=${cookie.value.substring(0, 20)}...`)
-          .join(', ')
-
-        console.warn('🔴 Authentication failed:', {
-          path: request.nextUrl.pathname,
-          method: request.method,
-          userFound: !!user,
-          error: error?.message,
-          supabaseUrlSet: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-          supabaseKeySet: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-          cookiesCount: request.cookies.size,
-          cookies: cookiesList || 'none',
-          timestamp: new Date().toISOString(),
-        })
-
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Authentication required',
-          },
-          { status: 401 }
-        )
-      }
-
-      // Log successful auth
-      console.log('✅ Authentication successful:', {
-        path: request.nextUrl.pathname,
-        userId: user.id?.substring(0, 8),
-      })
-    }
-
-    // Add secure CORS headers
+    // Add secure CORS headers to all API responses
     addCorsHeaders(response, origin)
 
     // Add security headers if enabled
     if (process.env.SECURITY_HEADERS_ENABLED !== 'false') {
       response = addSecurityHeaders(response)
     }
+
+    // NOTE: Authentication is handled by individual endpoints using getCurrentUser()
+    // This uses next/headers cookies() which is the proper way to read cookies in server functions
+    // Middleware does NOT check auth to avoid double-authentication and cookie conflicts
 
     return response
   }
