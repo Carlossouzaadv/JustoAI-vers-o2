@@ -4,23 +4,35 @@ import { addCorsHeaders, createPreflightResponse, validateCorsOrigin } from './l
 import { addSecurityHeaders } from './lib/security-headers'
 
 export async function middleware(request: NextRequest) {
-  // Create response
+  // Create response - must be updated as middleware runs
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
 
-  // Create Supabase client
+  // Verify environment variables are set
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.error('❌ CRITICAL: Missing Supabase environment variables', {
+      urlSet: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      keySet: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      path: request.nextUrl.pathname,
+      timestamp: new Date().toISOString(),
+    })
+  }
+
+  // Create Supabase client with proper cookie handling
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
     {
       cookies: {
         get(name: string) {
-          return request.cookies.get(name)?.value
+          const value = request.cookies.get(name)?.value
+          return value
         },
         set(name: string, value: string, options: any) {
+          // Set cookies on the response so they're sent back to client
           response.cookies.set({
             name,
             value,
@@ -28,9 +40,11 @@ export async function middleware(request: NextRequest) {
           })
         },
         remove(name: string, options: any) {
+          // Remove cookies from response
           response.cookies.set({
             name,
             value: '',
+            maxAge: 0,
             ...options,
           })
         },
@@ -65,9 +79,26 @@ export async function middleware(request: NextRequest) {
 
     if (!isPublicEndpoint) {
       // Check authentication for protected API routes
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
 
+      // Debug logging for authentication issues
       if (!user) {
+        const cookiesList = Array.from(request.cookies.entries())
+          .map(([k, v]) => `${k}=${v.substring(0, 20)}...`)
+          .join(', ')
+
+        console.warn('🔴 Authentication failed:', {
+          path: request.nextUrl.pathname,
+          method: request.method,
+          userFound: !!user,
+          error: error?.message,
+          supabaseUrlSet: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+          supabaseKeySet: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          cookiesCount: request.cookies.size,
+          cookies: cookiesList || 'none',
+          timestamp: new Date().toISOString(),
+        })
+
         return NextResponse.json(
           {
             success: false,
@@ -76,6 +107,12 @@ export async function middleware(request: NextRequest) {
           { status: 401 }
         )
       }
+
+      // Log successful auth
+      console.log('✅ Authentication successful:', {
+        path: request.nextUrl.pathname,
+        userId: user.id?.substring(0, 8),
+      })
     }
 
     // Add secure CORS headers
