@@ -3,13 +3,21 @@
  * Sistema de filas para processamento assíncrono
  *
  * Uses centralized Redis configuration from src/lib/redis.ts
+ * Lazy-loads Redis connections to avoid connection attempts during build
  */
 
 import Queue from 'bull';
 import { getRedisConnection } from '../src/lib/redis';
 
-// Configuração base das filas
-const queueConfig = {
+// Lazy initialization - queues are created on first use, not on import
+let _syncQueue: Queue.Queue | null = null;
+let _reportsQueue: Queue.Queue | null = null;
+let _cacheCleanupQueue: Queue.Queue | null = null;
+let _documentProcessingQueue: Queue.Queue | null = null;
+let _notificationQueue: Queue.Queue | null = null;
+
+// Helper function to get or create queue config
+const getQueueConfig = () => ({
   redis: getRedisConnection(),
   defaultJobOptions: {
     removeOnComplete: 100, // Manter últimos 100 jobs completos
@@ -20,59 +28,92 @@ const queueConfig = {
       delay: 2000,
     },
   },
-};
+});
 
-// === FILAS PRINCIPAIS ===
+// === FILAS PRINCIPAIS (Lazy Load) ===
 
 /**
  * Fila para sincronização com APIs externas
  * Executa a cada 6 horas
  */
-export const syncQueue = new Queue('API Sync', queueConfig);
+function getSyncQueue() {
+  if (!_syncQueue) {
+    _syncQueue = new Queue('API Sync', getQueueConfig());
+  }
+  return _syncQueue;
+}
 
 /**
  * Fila para geração de relatórios automáticos
  * Executa domingos às 23h
  */
-export const reportsQueue = new Queue('Automated Reports', queueConfig);
+function getReportsQueue() {
+  if (!_reportsQueue) {
+    _reportsQueue = new Queue('Automated Reports', getQueueConfig());
+  }
+  return _reportsQueue;
+}
 
 /**
  * Fila para limpeza de cache
  * Executa diariamente
  */
-export const cacheCleanupQueue = new Queue('Cache Cleanup', queueConfig);
+function getCacheCleanupQueue() {
+  if (!_cacheCleanupQueue) {
+    _cacheCleanupQueue = new Queue('Cache Cleanup', getQueueConfig());
+  }
+  return _cacheCleanupQueue;
+}
 
 /**
  * Fila para processamento de documentos PDF
  * On-demand processing
  */
-export const documentProcessingQueue = new Queue('Document Processing', queueConfig);
+function getDocumentProcessingQueue() {
+  if (!_documentProcessingQueue) {
+    _documentProcessingQueue = new Queue('Document Processing', getQueueConfig());
+  }
+  return _documentProcessingQueue;
+}
 
 /**
  * Fila para envio de emails/notificações
  * High priority queue
  */
-export const notificationQueue = new Queue('Notifications', {
-  ...queueConfig,
-  defaultJobOptions: {
-    ...queueConfig.defaultJobOptions,
-    priority: 10, // Alta prioridade
-    attempts: 5,  // Mais tentativas para notificações
+function getNotificationQueue() {
+  if (!_notificationQueue) {
+    const config = getQueueConfig();
+    _notificationQueue = new Queue('Notifications', {
+      ...config,
+      defaultJobOptions: {
+        ...config.defaultJobOptions,
+        priority: 10, // Alta prioridade
+        attempts: 5,  // Mais tentativas para notificações
+      }
+    });
   }
-});
+  return _notificationQueue;
+}
 
-// === CONFIGURAÇÃO DOS WORKERS ===
+// Helper to get all queues dynamically
+function getAllQueues() {
+  return [
+    getSyncQueue(),
+    getReportsQueue(),
+    getCacheCleanupQueue(),
+    getDocumentProcessingQueue(),
+    getNotificationQueue(),
+  ];
+}
 
-// Array com todas as filas para facilitar gerenciamento
-export const allQueues = [
-  syncQueue,
-  reportsQueue,
-  cacheCleanupQueue,
-  documentProcessingQueue,
-  notificationQueue,
-];
+// Export all queue getters and utility functions
+export const syncQueue = getSyncQueue;
+export const reportsQueue = getReportsQueue;
+export const cacheCleanupQueue = getCacheCleanupQueue;
+export const documentProcessingQueue = getDocumentProcessingQueue;
+export const notificationQueue = getNotificationQueue;
 
-// === JOBS RECORRENTES ===
+// === UTILITY FUNCTIONS ===
 
 /**
  * Configura jobs recorrentes (cron jobs)
@@ -81,7 +122,7 @@ export async function setupRecurringJobs() {
   console.log('🔄 Setting up recurring jobs...');
 
   // Sync APIs - a cada 6 horas
-  await syncQueue.add(
+  await getSyncQueue().add(
     'sync-apis',
     { type: 'full-sync' },
     {
@@ -91,7 +132,7 @@ export async function setupRecurringJobs() {
   );
 
   // Relatórios automáticos - domingos às 23h
-  await reportsQueue.add(
+  await getReportsQueue().add(
     'generate-scheduled-reports',
     { type: 'weekly-reports' },
     {
@@ -101,7 +142,7 @@ export async function setupRecurringJobs() {
   );
 
   // Limpeza de cache - todo dia às 2h
-  await cacheCleanupQueue.add(
+  await getCacheCleanupQueue().add(
     'cleanup-expired-cache',
     { type: 'daily-cleanup' },
     {
@@ -111,7 +152,7 @@ export async function setupRecurringJobs() {
   );
 
   // Limpeza de cache de IA - todo dia às 3h
-  await cacheCleanupQueue.add(
+  await getCacheCleanupQueue().add(
     'cleanup-ai-cache',
     { type: 'ai-cache-cleanup' },
     {
@@ -123,13 +164,11 @@ export async function setupRecurringJobs() {
   console.log('✅ Recurring jobs configured successfully');
 }
 
-// === UTILITY FUNCTIONS ===
-
 /**
  * Adiciona job de sincronização manual
  */
 export async function addSyncJob(workspaceId: string, options = {}) {
-  return await syncQueue.add(
+  return await getSyncQueue().add(
     'manual-sync',
     {
       workspaceId,
@@ -147,7 +186,7 @@ export async function addSyncJob(workspaceId: string, options = {}) {
  * Adiciona job de geração de relatório
  */
 export async function addReportJob(scheduleId: string, options = {}) {
-  return await reportsQueue.add(
+  return await getReportsQueue().add(
     'generate-report',
     {
       scheduleId,
@@ -165,7 +204,7 @@ export async function addReportJob(scheduleId: string, options = {}) {
  * Adiciona job de processamento de documento
  */
 export async function addDocumentProcessingJob(documentId: string, options = {}) {
-  return await documentProcessingQueue.add(
+  return await getDocumentProcessingQueue().add(
     'process-document',
     {
       documentId,
@@ -183,7 +222,7 @@ export async function addDocumentProcessingJob(documentId: string, options = {})
  * Adiciona job de notificação
  */
 export async function addNotificationJob(type: string, data: any, options = {}) {
-  return await notificationQueue.add(
+  return await getNotificationQueue().add(
     'send-notification',
     {
       type,
@@ -203,6 +242,7 @@ export async function addNotificationJob(type: string, data: any, options = {}) 
  * Retorna estatísticas de todas as filas
  */
 export async function getQueuesStats() {
+  const allQueues = getAllQueues();
   const stats = await Promise.all(
     allQueues.map(async (queue) => {
       const [waiting, active, completed, failed, delayed] = await Promise.all([
@@ -232,6 +272,7 @@ export async function getQueuesStats() {
  * Pausa todas as filas
  */
 export async function pauseAllQueues() {
+  const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.pause()));
   console.log('⏸️ All queues paused');
 }
@@ -240,6 +281,7 @@ export async function pauseAllQueues() {
  * Resume todas as filas
  */
 export async function resumeAllQueues() {
+  const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.resume()));
   console.log('▶️ All queues resumed');
 }
@@ -252,13 +294,12 @@ export async function clearAllQueues() {
     throw new Error('Cannot clear queues in production');
   }
 
+  const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.clean(0, 'completed')));
   await Promise.all(allQueues.map(queue => queue.clean(0, 'failed')));
 
   console.log('🧹 All queues cleared');
 }
-
-// === GRACEFUL SHUTDOWN ===
 
 /**
  * Fecha todas as conexões gracefully
@@ -266,6 +307,7 @@ export async function clearAllQueues() {
 export async function closeAllQueues() {
   console.log('🔄 Closing all queues...');
 
+  const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.close()));
 
   const bullRedis = getRedisConnection();
@@ -281,12 +323,12 @@ process.on('SIGINT', closeAllQueues);
 process.on('SIGTERM', closeAllQueues);
 
 export default {
-  syncQueue,
-  reportsQueue,
-  cacheCleanupQueue,
-  documentProcessingQueue,
-  notificationQueue,
-  allQueues,
+  syncQueue: getSyncQueue,
+  reportsQueue: getReportsQueue,
+  cacheCleanupQueue: getCacheCleanupQueue,
+  documentProcessingQueue: getDocumentProcessingQueue,
+  notificationQueue: getNotificationQueue,
+  getAllQueues,
   setupRecurringJobs,
   getQueuesStats,
   pauseAllQueues,

@@ -81,11 +81,9 @@ export async function POST(request: NextRequest) {
         supabaseId: authData.user.id,
         email,
         name: name || email,
-        phone: phone || null,
       },
       update: {
         name: name || email,
-        phone: phone || null,
       },
     })
 
