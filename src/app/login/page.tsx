@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ICONS } from '../../../lib/icons';
@@ -16,38 +15,41 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setAuthError('');
 
     try {
-      // Verify credentials with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Call the server-side login endpoint to set session cookies
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies in request/response
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        console.error('❌ Login error:', error.message);
-        setAuthError(error.message || 'Falha ao entrar. Verifique suas credenciais.');
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('❌ Login error:', data.error);
+        setAuthError(data.error || 'Falha ao entrar. Verifique suas credenciais.');
         setPassword(''); // Clear password on error
         return;
       }
 
-      if (data.user) {
+      if (data.success && data.user) {
         console.log('✅ Login successful:', data.user.id);
+        // Session cookies are now set by the server
         // Redirect to dashboard
         window.location.href = '/dashboard';
       }
     } catch (error) {
       console.error('❌ Unexpected login error:', error);
       setAuthError('Erro inesperado. Tente novamente.');
+      setPassword('');
     } finally {
       setIsLoading(false);
     }
