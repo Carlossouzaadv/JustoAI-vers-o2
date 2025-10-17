@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,12 +43,32 @@ export default function UploadPage() {
   const [showDuplicateConfirmation, setShowDuplicateConfirmation] = useState(false);
   const [detectedProcess, setDetectedProcess] = useState<any>(null);
 
-  // Simulação de casos disponíveis
-  const availableCases = [
-    { id: '1', title: 'Ação de Cobrança - João Silva', client: 'João Silva' },
-    { id: '2', title: 'Divórcio Consensual - Maria Santos', client: 'Maria Santos' },
-    { id: '3', title: 'Ação Trabalhista - Empresa ABC', client: 'Empresa ABC Ltda' }
-  ];
+  // Available cases from API (loaded dynamically)
+  const [availableCases, setAvailableCases] = useState<Array<{ id: string; title: string; client: string }>>([]);
+
+  // Load cases from API on mount
+  useEffect(() => {
+    const loadCases = async () => {
+      try {
+        const response = await fetch('/api/cases');
+        if (response.ok) {
+          const data = await response.json();
+          const cases = data.data || data.cases || [];
+          setAvailableCases(cases.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            client: c.client?.name || 'Unknown'
+          })));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar casos:', error);
+        // If API fails, set empty list - user can still upload without selecting a case
+        setAvailableCases([]);
+      }
+    };
+
+    loadCases();
+  }, []);
 
   // Campos disponíveis para extração
   const availableFields = [
@@ -103,33 +123,24 @@ export default function UploadPage() {
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
-  // AI-based process detection
-  const analyzeDocumentForProcess = async (file: File): Promise<any> => {
-    // Simulate AI analysis delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Mock AI process detection - in real implementation this would analyze the PDF
-    const mockProcessNumbers = ['1234567-89.2024.8.26.0001', '9876543-21.2024.8.26.0002'];
-    const randomProcessNumber = mockProcessNumbers[Math.floor(Math.random() * mockProcessNumbers.length)];
-
-    // Check if this process number matches an existing case
-    const existingCase = availableCases.find(case_ =>
-      case_.title.includes(randomProcessNumber.split('-')[0])
-    );
-
-    if (existingCase && Math.random() > 0.3) { // 70% chance of detecting existing process
-      return {
-        processNumber: randomProcessNumber,
-        existingProcess: existingCase,
-        confidence: 0.95
-      };
+  // Upload file to API
+  const uploadFileToAPI = async (file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (selectedCase) {
+      formData.append('caseId', selectedCase);
     }
 
-    return {
-      processNumber: randomProcessNumber,
-      existingProcess: null,
-      confidence: 0.85
-    };
+    const response = await fetch('/api/documents/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.statusText}`);
+    }
+
+    return response.json();
   };
 
   const uploadFiles = async () => {
@@ -147,79 +158,45 @@ export default function UploadPage() {
         // Atualizar status para uploading
         setFiles(prev => prev.map(f =>
           f.id === fileItem.id
-            ? { ...f, status: 'uploading', progress: 0 }
+            ? { ...f, status: 'uploading', progress: 25 }
             : f
         ));
 
-        // Simular upload
-        for (let progress = 0; progress <= 100; progress += 10) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          setFiles(prev => prev.map(f =>
-            f.id === fileItem.id
-              ? { ...f, progress }
-              : f
-          ));
-        }
+        // Upload file to backend
+        const uploadResponse = await uploadFileToAPI(fileItem.file);
 
         // Atualizar para analyzing
         setFiles(prev => prev.map(f =>
           f.id === fileItem.id
-            ? { ...f, status: 'analyzing', progress: 0 }
+            ? { ...f, status: 'analyzing', progress: 50 }
             : f
         ));
 
-        // AI Analysis with Process Detection
-        const analysisResult = await analyzeDocumentForProcess(fileItem.file);
-
-        // Check if existing process detected
-        if (analysisResult.existingProcess && !selectedCase) {
-          setDetectedProcess(analysisResult.existingProcess);
-          setShowDuplicateConfirmation(true);
-          setFiles(prev => prev.map(f =>
-            f.id === fileItem.id
-              ? { ...f, status: 'pending', progress: 0 }
-              : f
-          ));
-          setIsUploading(false);
-          return;
-        }
-
-        // Continue with analysis progress
-        for (let progress = 0; progress <= 100; progress += 20) {
-          await new Promise(resolve => setTimeout(resolve, 300));
-          setFiles(prev => prev.map(f =>
-            f.id === fileItem.id
-              ? { ...f, progress }
-              : f
-          ));
-        }
-
-        // Resultado simulado
-        const mockResult: AnalysisResult = {
-          documentType: 'Petição Inicial',
-          confidence: 0.92,
-          extractedFields: {
-            process_number: '1234567-89.2024.8.26.0001',
-            parties: ['João Silva (Autor)', 'Maria Santos (Réu)'],
-            dates: ['2024-01-15 (Distribuição)', '2024-02-01 (Prazo)'],
-            values: ['R$ 50.000,00 (Valor da causa)'],
-            court: 'TJSP - 1ª Vara Cível'
-          },
-          summary: 'Ação de cobrança referente a contrato de prestação de serviços não cumprido.',
-          risks: ['Prazo de resposta em 15 dias', 'Necessária comprovação documental'],
-          recommendations: ['Agendar audiência de conciliação', 'Preparar documentos comprobatórios']
+        // The backend will return the analysis result
+        const analysisResult: AnalysisResult = {
+          documentType: uploadResponse.documentType || 'Documento',
+          confidence: uploadResponse.confidence || 0.85,
+          extractedFields: uploadResponse.extractedFields || {},
+          summary: uploadResponse.summary || 'Documento processado com sucesso',
+          risks: uploadResponse.risks || [],
+          recommendations: uploadResponse.recommendations || []
         };
 
         setFiles(prev => prev.map(f =>
           f.id === fileItem.id
-            ? { ...f, status: 'completed', progress: 100, result: mockResult }
+            ? { ...f, status: 'completed', progress: 100, result: analysisResult }
             : f
         ));
 
       } catch (error) {
+        console.error('Erro ao fazer upload:', error);
         setFiles(prev => prev.map(f =>
           f.id === fileItem.id
-            ? { ...f, status: 'error', error: 'Erro no processamento' }
+            ? {
+                ...f,
+                status: 'error',
+                error: error instanceof Error ? error.message : 'Erro no processamento do arquivo'
+              }
             : f
         ));
       }
@@ -444,17 +421,8 @@ export default function UploadPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Arquivos ({files.length})</h2>
             <Button
-              onClick={() => {
-                if (documentType === 'excel-batch' && !showExcelPreview) {
-                  // For Excel, show preview first
-                  if (files.length > 0 && !excelValidation) {
-                    validateExcelFile(files[0].file);
-                  }
-                } else {
-                  uploadFiles();
-                }
-              }}
-              disabled={isUploading || !documentType || (documentType === 'excel-batch' && showExcelPreview)}
+              onClick={uploadFiles}
+              disabled={isUploading || !documentType}
               className={`flex items-center gap-2 ${
                 documentType === 'excel-batch' ? 'bg-green-600 hover:bg-green-700' : ''
               }`}
@@ -462,12 +430,12 @@ export default function UploadPage() {
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {documentType === 'excel-batch' ? 'Processando planilha...' : 'Processando...'}
+                  {'Processando...'}
                 </>
               ) : (
                 <>
                   {documentType === 'excel-batch' ? '📊' : ICONS.AI}
-                  {documentType === 'excel-batch' ? 'Pré-visualizar Planilha' : 'Analisar com IA'}
+                  {'Analisar com IA'}
                 </>
               )}
             </Button>

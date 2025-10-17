@@ -91,17 +91,19 @@ export default function DashboardPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(3);
   const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
   const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
-  const [workspaceId] = useState('ws-current'); // Mock workspace ID - in real app, get from context
 
-  // Mock user plan and usage - in real app, this would come from user context
+  // TODO: Get workspace ID from context/auth
+  const [workspaceId] = useState('');
+
+  // TODO: Get user plan and usage from context/auth
   const [userPlan] = useState<SubscriptionPlan>('professional');
   const [userUsage] = useState<UsageStats>({
-    currentUsers: 3,
-    currentProcesses: 45,
-    completeAnalysisUsed: 12,
-    completeAnalysisRemaining: 3,
+    currentUsers: 0,
+    currentProcesses: 0,
+    completeAnalysisUsed: 0,
+    completeAnalysisRemaining: 0,
     isFirstMonth: false,
-    resetDate: '2025-02-01T00:00:00Z'
+    resetDate: new Date().toISOString()
   });
 
   useEffect(() => {
@@ -114,181 +116,98 @@ export default function DashboardPage() {
 
       // Carregar dados gerais do dashboard
       const dashboardResponse = await fetch('/api/workspaces/current/summary');
-      let summaryData = {
-        totalProcesses: 0,
-        completedAnalysis: 0,
-        partialAnalysis: 0,
-        attentionRequired: 0,
-        recentUpdates: 0,
-        pendingActions: 0,
-      };
 
       if (dashboardResponse.ok) {
         const data = await dashboardResponse.json();
-        summaryData = data.summary || summaryData;
-      }
+        const summary = data.statistics || {
+          totalProcesses: 0,
+          completedAnalysis: 0,
+          partialAnalysis: 0,
+          attentionRequired: 0,
+          recentUpdates: 0,
+          pendingActions: 0,
+        };
 
-      // Se um cliente está selecionado, buscar nome do cliente
-      if (selectedClientId && !selectedClientName) {
-        const clientResponse = await fetch(`/api/clients/${selectedClientId}`);
-        if (clientResponse.ok) {
-          const clientData = await clientResponse.json();
-          const clientName = clientData.client?.name || '';
-          setSelectedClient(selectedClientId, clientName);
+        // Se um cliente está selecionado, buscar nome do cliente
+        if (selectedClientId && !selectedClientName) {
+          try {
+            const clientResponse = await fetch(`/api/clients/${selectedClientId}`);
+            if (clientResponse.ok) {
+              const clientData = await clientResponse.json();
+              const clientName = clientData.client?.name || '';
+              setSelectedClient(selectedClientId, clientName);
+            }
+          } catch (clientError) {
+            console.error('Erro ao carregar nome do cliente:', clientError);
+          }
         }
+
+        // Set dashboard data with real data (may be empty for new accounts)
+        setDashboardData({
+          summary: {
+            totalProcesses: summary.totalCases || 0,
+            completedAnalysis: summary.completedCases || 0,
+            partialAnalysis: summary.partialAnalysis || 0,
+            attentionRequired: summary.attentionRequired || 0,
+            recentUpdates: summary.recentUpdates || 0,
+            pendingActions: summary.pendingActions || 0,
+          },
+          analytics: {
+            successRate: 0,
+            avgProcessingTime: 0,
+            documentsProcessed: summary.documents || 0,
+            monthlyGrowth: 0,
+          },
+          recentActivity: (data.recentActivity || []).map((activity: any) => ({
+            id: activity.id,
+            type: 'upload',
+            message: activity.description || '',
+            timestamp: activity.createdAt || new Date().toISOString()
+          })),
+          ongoingProcesses: []
+        });
+      } else {
+        // API error - set empty dashboard
+        setDashboardData({
+          summary: {
+            totalProcesses: 0,
+            completedAnalysis: 0,
+            partialAnalysis: 0,
+            attentionRequired: 0,
+            recentUpdates: 0,
+            pendingActions: 0,
+          },
+          analytics: {
+            successRate: 0,
+            avgProcessingTime: 0,
+            documentsProcessed: 0,
+            monthlyGrowth: 0,
+          },
+          recentActivity: [],
+          ongoingProcesses: []
+        });
       }
-
-      // Dados de fallback para desenvolvimento
-      setDashboardData({
-        summary: summaryData.totalProcesses > 0 ? summaryData : {
-          totalProcesses: 1247,
-          completedAnalysis: 956,
-          partialAnalysis: 234,
-          attentionRequired: 57,
-          recentUpdates: 23,
-          pendingActions: 12,
-        },
-        analytics: {
-          successRate: 94.5,
-          avgProcessingTime: 2.3,
-          documentsProcessed: 8429,
-          monthlyGrowth: 12.8,
-        },
-        recentActivity: [
-          { id: '1', type: 'upload', message: 'Novo documento enviado - Contrato XYZ.pdf', timestamp: '2025-01-18T10:30:00Z' },
-          { id: '2', type: 'analysis', message: 'Análise completa - Processo ABC123', timestamp: '2025-01-18T10:15:00Z' },
-          { id: '3', type: 'client', message: 'Novo cliente cadastrado: Maria Silva', timestamp: '2025-01-18T09:45:00Z' },
-          { id: '4', type: 'error', message: 'Erro na análise - Documento corrompido', timestamp: '2025-01-18T09:30:00Z' },
-          { id: '5', type: 'analysis', message: 'Análise iniciada - Documento DEF456.pdf', timestamp: '2025-01-18T09:00:00Z' },
-        ],
-        ongoingProcesses: [
-          {
-            id: '1',
-            name: 'Processo_Trabalhista_XYZ.pdf',
-            status: 'processing',
-            client: 'Maria Santos',
-            progress: 65,
-            uploadDate: '2025-01-18T09:15:00Z',
-            priority: 'high',
-            analysisType: 'strategic',
-            submittedBy: 'Dr. Carlos Silva',
-            deadline: '2025-02-15T23:59:59Z'
-          },
-          {
-            id: '2',
-            name: 'Documento_Fiscal_2024.pdf',
-            status: 'waiting',
-            client: 'Carlos Lima',
-            progress: 0,
-            uploadDate: '2025-01-18T10:00:00Z',
-            priority: 'medium',
-            analysisType: 'essential',
-            submittedBy: 'Dra. Ana Costa',
-            deadline: '2025-02-15T23:59:59Z'
-          },
-          {
-            id: '3',
-            name: 'Estatuto_Social_v2.pdf',
-            status: 'processing',
-            client: 'Pedro Oliveira',
-            progress: 30,
-            uploadDate: '2025-01-18T11:00:00Z',
-            priority: 'low',
-            analysisType: 'strategic',
-            submittedBy: 'Dr. João Santos',
-            deadline: '2025-02-15T23:59:59Z'
-          },
-          {
-            id: '4',
-            name: 'Contrato_Prestacao_Servicos.pdf',
-            status: 'waiting',
-            client: 'Ana Costa',
-            progress: 0,
-            uploadDate: '2025-01-18T11:30:00Z',
-            priority: 'high',
-            analysisType: 'essential',
-            submittedBy: 'Dr. Pedro Lima',
-            deadline: '2025-01-19T23:59:59Z' // Prazo vencido para demonstração
-          },
-        ]
-      });
-
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
 
-      // Dados de fallback para desenvolvimento
+      // Set empty dashboard on error
       setDashboardData({
         summary: {
-          totalProcesses: 1247,
-          completedAnalysis: 956,
-          partialAnalysis: 234,
-          attentionRequired: 57,
-          recentUpdates: 23,
-          pendingActions: 12,
+          totalProcesses: 0,
+          completedAnalysis: 0,
+          partialAnalysis: 0,
+          attentionRequired: 0,
+          recentUpdates: 0,
+          pendingActions: 0,
         },
         analytics: {
-          successRate: 94.5,
-          avgProcessingTime: 2.3,
-          documentsProcessed: 8429,
-          monthlyGrowth: 12.8,
+          successRate: 0,
+          avgProcessingTime: 0,
+          documentsProcessed: 0,
+          monthlyGrowth: 0,
         },
-        recentActivity: [
-          { id: '1', type: 'upload', message: 'Novo documento enviado - Contrato XYZ.pdf', timestamp: '2025-01-18T10:30:00Z' },
-          { id: '2', type: 'analysis', message: 'Análise completa - Processo ABC123', timestamp: '2025-01-18T10:15:00Z' },
-          { id: '3', type: 'client', message: 'Novo cliente cadastrado: Maria Silva', timestamp: '2025-01-18T09:45:00Z' },
-          { id: '4', type: 'error', message: 'Erro na análise - Documento corrompido', timestamp: '2025-01-18T09:30:00Z' },
-          { id: '5', type: 'analysis', message: 'Análise iniciada - Documento DEF456.pdf', timestamp: '2025-01-18T09:00:00Z' },
-        ],
-        ongoingProcesses: [
-          {
-            id: '1',
-            name: 'Processo_Trabalhista_XYZ.pdf',
-            status: 'processing',
-            client: 'Maria Santos',
-            progress: 65,
-            uploadDate: '2025-01-18T09:15:00Z',
-            priority: 'high',
-            analysisType: 'strategic',
-            submittedBy: 'Dr. Carlos Silva',
-            deadline: '2025-02-15T23:59:59Z'
-          },
-          {
-            id: '2',
-            name: 'Documento_Fiscal_2024.pdf',
-            status: 'waiting',
-            client: 'Carlos Lima',
-            progress: 0,
-            uploadDate: '2025-01-18T10:00:00Z',
-            priority: 'medium',
-            analysisType: 'essential',
-            submittedBy: 'Dra. Ana Costa',
-            deadline: '2025-02-15T23:59:59Z'
-          },
-          {
-            id: '3',
-            name: 'Estatuto_Social_v2.pdf',
-            status: 'processing',
-            client: 'Pedro Oliveira',
-            progress: 30,
-            uploadDate: '2025-01-18T11:00:00Z',
-            priority: 'low',
-            analysisType: 'strategic',
-            submittedBy: 'Dr. João Santos',
-            deadline: '2025-02-15T23:59:59Z'
-          },
-          {
-            id: '4',
-            name: 'Contrato_Prestacao_Servicos.pdf',
-            status: 'waiting',
-            client: 'Ana Costa',
-            progress: 0,
-            uploadDate: '2025-01-18T11:30:00Z',
-            priority: 'high',
-            analysisType: 'essential',
-            submittedBy: 'Dr. Pedro Lima',
-            deadline: '2025-01-19T23:59:59Z' // Prazo vencido para demonstração
-          },
-        ]
+        recentActivity: [],
+        ongoingProcesses: []
       });
     } finally {
       setLoading(false);

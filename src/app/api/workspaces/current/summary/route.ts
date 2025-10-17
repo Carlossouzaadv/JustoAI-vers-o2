@@ -20,51 +20,6 @@ async function GET(request: NextRequest) {
   if (!user) return authError!
 
   try {
-    // Development mode - return mock data
-    if (process.env.NODE_ENV === 'development') {
-      console.log('⚠️ Development mode: Returning mock workspace summary')
-      const mockSummary = {
-        workspace: {
-          id: 'dev-workspace',
-          name: 'Development Workspace',
-          slug: 'dev'
-        },
-        statistics: {
-          clients: 4,
-          activeCases: 8,
-          closedCases: 12,
-          totalCases: 20,
-          documents: 45,
-          users: 3
-        },
-        recentActivity: [
-          {
-            id: '1',
-            type: 'CASE_CREATED',
-            description: 'Novo processo criado: Ação de Cobrança',
-            case: { id: '1', title: 'Ação de Cobrança - João Silva' },
-            createdAt: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
-          },
-          {
-            id: '2',
-            type: 'DOCUMENT_UPLOADED',
-            description: 'Documento anexado ao processo',
-            case: { id: '2', title: 'Divórcio Consensual - Maria Santos' },
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2) // 2 hours ago
-          },
-          {
-            id: '3',
-            type: 'STATUS_CHANGED',
-            description: 'Status do processo alterado para Em Andamento',
-            case: { id: '3', title: 'Ação Trabalhista - Empresa ABC' },
-            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6) // 6 hours ago
-          }
-        ]
-      }
-
-      return successResponse(mockSummary, 'Workspace summary retrieved successfully (mock data)')
-    }
-
     // Get user's active workspaces
     const userWorkspaces = await prisma.userWorkspace.findMany({
       where: {

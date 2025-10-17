@@ -35,38 +35,6 @@ async function GET(request: NextRequest) {
 
   const { page, limit, search, status } = query
 
-  // Development mode - return mock data
-  if (process.env.NODE_ENV === 'development') {
-    console.log('⚠️ Development mode: Returning mock workspaces data')
-    const mockWorkspaces = [
-      {
-        id: 'dev-workspace',
-        name: 'Development Workspace',
-        slug: 'dev',
-        description: 'Workspace for development and testing',
-        status: 'ACTIVE',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date(),
-        userRole: 'OWNER',
-        userStatus: 'ACTIVE',
-        userJoinedAt: new Date('2024-01-01'),
-        _count: {
-          users: 3,
-          clients: 4,
-          cases: 20
-        }
-      }
-    ]
-
-    return paginatedResponse(
-      mockWorkspaces,
-      page,
-      limit,
-      1,
-      'Found 1 workspace (mock data)'
-    )
-  }
-
   // Build filters
   const where: any = {
     users: {
