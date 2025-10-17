@@ -8,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ReportScheduleDialog } from '@/components/reports/report-schedule-dialog';
 import { ICONS } from '@/lib/icons';
 
 interface ClientActionsButtonProps {
@@ -28,7 +27,6 @@ interface ProcessOption {
 export function ClientActionsButton({ clientId, clientName }: ClientActionsButtonProps) {
   const [processes, setProcesses] = useState<ProcessOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
 
   useEffect(() => {
     if (clientId) {
@@ -59,27 +57,6 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
     }
   };
 
-  const handleScheduleReport = async (schedule: any) => {
-    try {
-      const response = await fetch('/api/reports/schedule', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(schedule)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Agendamento criado:', result);
-        alert('Relatório agendado com sucesso!');
-      } else {
-        throw new Error('Erro ao agendar relatório');
-      }
-    } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao agendar relatório');
-    }
-  };
-
   const handleGenerateInstantReport = async () => {
     try {
       // Navegar para geração de relatório sob demanda
@@ -97,48 +74,26 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
   };
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            {ICONS.REPORTS} Relatórios
-          </Button>
-        </DropdownMenuTrigger>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          {ICONS.REPORTS} Relatórios
+        </Button>
+      </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setScheduleDialogOpen(true)}>
-            {ICONS.CALENDAR} Agendar Relatório Automático
-          </DropdownMenuItem>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setScheduleDialogOpen(true)}>
+          {ICONS.CALENDAR} Agendar Relatório Automático
+        </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={handleGenerateInstantReport}>
-            {ICONS.ROCKET} Gerar Relatório Agora
-          </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleGenerateInstantReport}>
+          {ICONS.ROCKET} Gerar Relatório Agora
+        </DropdownMenuItem>
 
-          <DropdownMenuItem onClick={() => console.log('Ver agendamentos')}>
-            {ICONS.TIME} Ver Agendamentos
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <ReportScheduleDialog
-        clientId={clientId}
-        clientName={clientName}
-        availableProcesses={processes}
-        onSchedule={handleScheduleReport}
-        trigger={
-          <div style={{ display: 'none' }} onClick={() => setScheduleDialogOpen(true)} />
-        }
-      />
-
-      {scheduleDialogOpen && (
-        <ReportScheduleDialog
-          clientId={clientId}
-          clientName={clientName}
-          availableProcesses={processes}
-          onSchedule={handleScheduleReport}
-          trigger={null}
-        />
-      )}
-    </>
+        <DropdownMenuItem onClick={() => console.log('Ver agendamentos')}>
+          {ICONS.TIME} Ver Agendamentos
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
