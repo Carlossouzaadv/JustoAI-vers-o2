@@ -16,8 +16,8 @@ import { getRedisClient } from '../src/lib/redis';
 
 const prisma = new PrismaClient();
 
-// Redis connection - will connect with REDIS_URL if available
-const redis = getRedisClient();
+// Redis connection - lazy initialization (only connect when actually used)
+let redis: any = null;
 
 export interface AnalysisKeyParams {
   processId: string;
@@ -71,6 +71,13 @@ export class DeepAnalysisService {
   private readonly CACHE_TTL = 7 * 24 * 60 * 60; // 7 dias
   private readonly LOCK_TTL = 600; // 10 minutos default
   private readonly FULL_CREDIT_PER_BATCH = parseInt(process.env.FULL_CREDIT_PER_REANALYSIS_BATCH || '10');
+
+  constructor() {
+    // Lazy initialization of Redis connection on first use
+    if (!redis) {
+      redis = getRedisClient();
+    }
+  }
 
   /**
    * Valida se o processo existe e pertence ao workspace
