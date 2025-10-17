@@ -83,7 +83,10 @@ export default function SignupPage() {
       }
 
       if (authData.user) {
-        // Redirect to dashboard
+        // 🔧 FIX: Aguardar 2 segundos antes de redirecionar
+        // Isso permite que getCurrentUser() sincronize o usuário com o banco
+        console.log('✅ Usuário criado no Supabase:', authData.user.id);
+        await new Promise(resolve => setTimeout(resolve, 2000));
         window.location.href = '/dashboard';
       }
     } catch (error) {

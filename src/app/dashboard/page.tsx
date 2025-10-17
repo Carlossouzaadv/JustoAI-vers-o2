@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -91,9 +92,7 @@ export default function DashboardPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(3);
   const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
   const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
-
-  // TODO: Get workspace ID from context/auth
-  const [workspaceId] = useState('');
+  const { workspaceId, loading: authLoading } = useAuth();
 
   // TODO: Get user plan and usage from context/auth
   const [userPlan] = useState<SubscriptionPlan>('professional');
@@ -107,15 +106,19 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    loadDashboardData();
-  }, [selectedClientId]);
+    if (!authLoading && workspaceId) {
+      loadDashboardData();
+    }
+  }, [workspaceId, authLoading, selectedClientId]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
 
       // Carregar dados gerais do dashboard
-      const dashboardResponse = await fetch('/api/workspaces/current/summary');
+      const dashboardResponse = await fetch(`/api/workspaces/${workspaceId}/summary`, {
+        credentials: 'include'
+      });
 
       if (dashboardResponse.ok) {
         const data = await dashboardResponse.json();

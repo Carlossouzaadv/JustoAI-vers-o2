@@ -37,7 +37,7 @@ export async function getCurrentUser() {
     }
 
     // Sync user with our database
-    const dbUser = await prisma.user.upsert({
+    let dbUser = await prisma.user.upsert({
       where: { supabaseId: user.id },
       update: {
         email: user.email!,
@@ -60,6 +60,54 @@ export async function getCurrentUser() {
         }
       }
     })
+
+    // 🔧 FIX: Se não há workspaces, criar um padrão
+    if (!dbUser.workspaces || dbUser.workspaces.length === 0) {
+      console.log('🔧 Creating default workspace for user:', dbUser.id)
+
+      try {
+        const defaultWorkspace = await prisma.workspace.create({
+          data: {
+            name: `${user.user_metadata?.full_name || user.email}'s Workspace`,
+            slug: `workspace-${user.id.substring(0, 8)}`,
+            type: 'ORGANIZATION',
+            description: 'Default workspace created on signup',
+            status: 'ACTIVE',
+            members: {
+              create: {
+                userId: dbUser.id,
+                role: 'OWNER',
+                status: 'ACTIVE',
+              }
+            }
+          },
+          include: {
+            members: {
+              include: {
+                user: true
+              }
+            }
+          }
+        })
+
+        console.log('✅ Default workspace created:', defaultWorkspace.id)
+
+        // Recarregar usuário com workspace
+        dbUser = await prisma.user.findUnique({
+          where: { id: dbUser.id },
+          include: {
+            workspaces: {
+              include: {
+                workspace: true
+              }
+            }
+          }
+        })!
+      } catch (workspaceError) {
+        console.error('Error creating default workspace:', workspaceError)
+        // Continue mesmo se falhar - não quebra o login
+      }
+    }
 
     return dbUser
   } catch (error) {

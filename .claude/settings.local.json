@@ -6,7 +6,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(npx prisma:*)",
       "Bash(npx ts-node:*)",
-      "Bash(npm install)"
+      "Bash(npm install)",
+      "Read(//d/**)"
     ],
     "deny": [],
     "ask": []

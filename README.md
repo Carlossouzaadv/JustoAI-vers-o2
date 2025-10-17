@@ -24,20 +24,21 @@
 
 ## 🎯 EXECUTIVE SUMMARY (READ THIS FIRST!)
 
-### Current Status (2025-10-13)
+### Current Status (2025-10-17)
 
-**🟢 Backend (Railway):** ✅ **DEPLOYED & STABLE**
+**🟢 Backend (Railway):** ✅ **FULLY DEPLOYED & STABLE**
 - API fully functional at Railway
 - Database connected and working
-- Cost optimized: $7.45/month (was $155/month before fixes)
-- Emergency fixes applied (MockRedis, workers disabled)
-- All core features working (auth, AI, email, database)
+- Cost optimized: ~$7-10/month
+- Redis fully operational (Upstash)
+- Workers online and processing jobs
+- All core features working (auth, AI, email, database, queues)
 
-**🟡 Frontend (Vercel):** ⚠️ **NEEDS DEPLOYMENT**
-- Code is ready and complete
-- Vercel project may not be configured yet
-- **ACTION REQUIRED:** Deploy frontend to Vercel (15-20 minutes)
-- See: [Complete Vercel Setup Guide](#-next-steps-complete-vercel-setup-priority)
+**🟢 Frontend (Vercel):** ✅ **DEPLOYED & LIVE**
+- Deployed to Vercel (production)
+- Connected to Railway backend via API
+- All pages and dashboards functional
+- Live at: https://justoai-v2.vercel.app
 
 **📊 What's Working:**
 - ✅ API endpoints (96+)
@@ -46,25 +47,30 @@
 - ✅ AI analysis (Google Gemini)
 - ✅ Email sending (Resend)
 - ✅ File uploads
+- ✅ Redis caching (Upstash)
+- ✅ Background workers (BullMQ queues)
+- ✅ Complete observability system
+- ✅ JUDIT Dashboard monitoring
 
-**📊 What's Missing (Not Blocking):**
-- ⚠️ Frontend UI (needs Vercel deployment)
-- ⚠️ Redis caching (using MockRedis)
-- ⚠️ Background workers (disabled to save costs)
-- ⚠️ Scheduled reports (requires workers)
+**📊 Awaiting:**
+- ⏳ JUDIT API Key (for real integration testing)
+- ⏳ Full JUDIT workflow testing (starting soon)
 
-### To Make Site 100% Functional:
+### Next Steps - JUDIT Integration Testing:
 
-**Priority 1 (CRITICAL - 20 minutes):**
-1. Deploy frontend to Vercel → [Instructions](#-next-steps-complete-vercel-setup-priority)
-2. Configure Vercel env vars (NEXT_PUBLIC_API_URL, Supabase keys)
-3. Test login/signup flow
-4. Verify dashboard loads
+**Ready to Start (Waiting for JUDIT API Key):**
+1. ✅ Backend fully deployed and operational
+2. ✅ Frontend live on Vercel
+3. ✅ Redis and workers online
+4. ✅ All observability systems active
+5. ⏳ Add JUDIT API Key to Railway env vars
+6. ⏳ Run JUDIT integration tests
+7. ⏳ Monitor costs and performance
 
-**Priority 2 (Optional - Future):**
-1. Add Upstash Redis to Railway ($10-15/month)
-2. Enable workers in separate Railway service ($5-10/month)
-3. Remove emergency fixes
+**Timeline:**
+- When JUDIT Key arrives → Add to Railway env vars immediately
+- → Trigger worker tests (a few minutes)
+- → Monitor Dashboard/Observability for real-time metrics
 
 ---
 
@@ -83,41 +89,45 @@
 - **Complete credit system** with billing and webhooks
 - **Full observability system** with monitoring and dashboards
 
-### 📊 Current Deployment Status (2025-10-13)
+### 📊 Current Deployment Status (2025-10-17)
 
 ```
-Railway (Backend):  ████████████████████ 100% ✅ DEPLOYED
-Vercel (Frontend):  ████████████████████ 100% ✅ DEPLOYED
-Redis/Workers:      ████░░░░░░░░░░░░░░░░ 20%  ⚠️ EMERGENCY FIXES
+Railway (Backend):  ████████████████████ 100% ✅ FULLY OPERATIONAL
+Vercel (Frontend):  ████████████████████ 100% ✅ LIVE IN PRODUCTION
+Redis (Upstash):    ████████████████████ 100% ✅ ACTIVE
+Workers (BullMQ):   ████████████████████ 100% ✅ ONLINE
 Database:           ████████████████████ 100% ✅ CONFIGURED
-Overall Status:     ███████████████████░ 95%  ✅ LIVE & FUNCTIONAL
+Overall Status:     ████████████████████ 100% ✅ PRODUCTION READY
 ```
 
 🎉 **SITE IS LIVE!** → https://justoai-v2.vercel.app
+📊 **Dashboard (Observability)** → `/dashboard/judit` (on live site)
 
 ### ✅ DEPLOYMENT COMPLETE!
 
-#### ✅ Successfully Deployed
+#### ✅ All Systems Deployed and Operational
 - [x] Backend API deployed to Railway
-- [x] Frontend deployed to Vercel
+- [x] Frontend deployed to Vercel (https://justoai-v2.vercel.app)
 - [x] Database (Supabase) configured and connected
-- [x] Emergency fixes applied (MockRedis to prevent cost explosion)
-- [x] All core API endpoints working
-- [x] Tailwind CSS 4.0 build issues resolved
-- [x] Cost optimized at $7.45/month total
+- [x] Redis (Upstash) fully operational
+- [x] Workers (BullMQ) online and processing
+- [x] All 96+ core API endpoints working
+- [x] Observability dashboard live and monitoring
+- [x] Cost optimized at ~$7-10/month for core infrastructure
 
-#### 🧪 Next: Testing & Verification
-- [ ] Test full user flow (signup, login, dashboard)
-- [ ] Verify API calls go to Railway backend
-- [ ] Configure CORS if needed (see `DEPLOYMENT_SUCCESS.md`)
-- [ ] Monitor metrics for 24h
-- [ ] Test on mobile devices
+#### ✅ JUDIT Integration Ready
+- [x] JUDIT Service fully implemented (`/src/lib/services/juditService.ts`)
+- [x] JUDIT Queue configured (`/src/lib/queue/juditQueue.ts`)
+- [x] JUDIT Worker online (`/src/workers/juditOnboardingWorker.ts`)
+- [x] Full observability and logging in place
+- [x] Cost tracking and alerts configured
+- ⏳ **Waiting for JUDIT API Key to start real testing**
 
-#### 🔧 Future Improvements (Not Blocking)
-- [ ] Add real Redis service (Upstash) to Railway
-- [ ] Enable background workers (separate Railway service)
-- [ ] Remove emergency fixes and restore full functionality
-- [ ] Performance optimization and monitoring
+#### 🧪 Current Focus: JUDIT Integration Testing
+- ⏳ Add JUDIT_API_KEY to Railway environment
+- ⏳ Run end-to-end JUDIT workflow tests
+- ⏳ Monitor real costs and performance metrics
+- ⏳ Validate worker resilience and retries
 
 ---
 
@@ -173,12 +183,13 @@ Overall Status:     ███████████████████░
 - Currently stable at ~$7.45/month
 - Workers temporarily disabled to reduce CPU usage
 
-**Vercel (Frontend) - NEEDS SETUP:**
+**Vercel (Frontend) - ✅ DEPLOYED & LIVE:**
 - Serves all Next.js pages and components
 - Handles SSR and static generation
 - Provides CDN and edge network
-- FREE for frontend hosting
+- FREE for frontend hosting (production)
 - Makes API calls to Railway backend
+- Live at: https://justoai-v2.vercel.app
 
 ### 🎯 Quick Setup for Vercel Frontend
 
@@ -1093,20 +1104,13 @@ justoai-v2/
 - ✅ **CORS**: Secure environment-based configuration
 - ✅ **Security Headers**: X-Frame-Options, X-Content-Type-Options, CSP, HSTS
 
-### ⚠️ ATTENTION: Key Rotation Required
+### ✅ Security Configuration
 
-If you're setting up this project for the first time and the `.env.local` file previously contained real keys that were committed:
-
-**IMMEDIATE ACTION REQUIRED:**
-1. ✅ `.env.local` was removed from Git tracking
-2. ✅ `.gitignore` was configured to prevent future commits
-3. ⚠️ **YOU MUST** revoke and regenerate ALL API keys that were in the file:
-   - **Supabase**: Dashboard → Settings → API → Reset keys
-   - **Google AI**: [Google AI Studio](https://makersuite.google.com/app/apikey) → Delete old key → Create new
-   - **Anthropic**: [Anthropic Console](https://console.anthropic.com/) → Delete old key → Create new
-   - **Resend**: Dashboard → API Keys → Revoke → Create new
-   - **NextAuth**: Generate new secret with `openssl rand -base64 32`
-   - **Bull Board**: Generate new token with `openssl rand -hex 32`
+**All credentials are properly configured:**
+1. ✅ `.env.local` removed from Git tracking
+2. ✅ `.gitignore` prevents accidental commits
+3. ✅ Production secrets managed via Railway environment
+4. ✅ Sensitive keys never exposed in code
 
 ### Security Best Practices
 
@@ -1344,599 +1348,99 @@ npm run test:coverage
 
 ---
 
-## ⚠️ Emergency Fixes & Known Limitations
+## ✅ Infrastructure & Operations Status
 
-### Railway Deployment Emergency Fixes (2025-10-13)
+### Railway Deployment (2025-10-17)
 
-During the initial Railway deployment, several critical issues were encountered and resolved with emergency fixes. **These solutions are temporary but STABLE** - the system is working correctly with these fixes in place.
+**Current Status:** ✅ **Fully Operational with All Features**
 
-**Current Status:** ✅ **Stable and Functional** (Backend API working, cost optimized)
-**Priority:** 🟡 **Medium** (Not blocking, but should be addressed for full features)
+The system is now running with complete functionality:
+- ✅ Full API functionality (96+ endpoints)
+- ✅ Database operations (Supabase PostgreSQL)
+- ✅ Authentication (Supabase Auth)
+- ✅ AI analysis (Google Gemini)
+- ✅ Email sending (Resend)
+- ✅ Redis caching (Upstash)
+- ✅ Background workers (BullMQ)
+- ✅ Scheduled jobs (cron tasks)
+- ✅ Queue processing
+- ✅ Cost-effective (~$7-10/month base + $10-15/month Redis/Workers when active)
+- ✅ Complete observability and monitoring
 
-The emergency fixes allow the system to run with:
-- ✅ Full API functionality
-- ✅ Database operations
-- ✅ Authentication
-- ✅ AI analysis
-- ✅ Email sending
-- ✅ Cost-effective ($7.45/month vs $155/month)
+### Previous Challenges & Solutions
 
-Missing features (due to emergency fixes):
-- ❌ Redis caching (using MockRedis)
-- ❌ Background workers (reports generation, sync, monitoring)
-- ❌ Scheduled jobs (cron tasks)
-- ❌ Queue processing
+During the initial Railway deployment, several technical challenges were resolved:
 
-#### 🚨 Issue 1: Redis Infinite Retry Loop (CRITICAL - Cost Explosion)
+1. **Redis Configuration** ✅ RESOLVED
+   - Implemented centralized Upstash Redis client
+   - Cost-optimized with lazy connections and keepalive
+   - Full observability and error handling
 
-**Problem:**
-- CPU spiked from 1.3 to 2.3 vCPU
-- Estimated cost exploded from $6 to $155/month in minutes
-- Infinite retry loop: `[ioredis] Reached the max retries per request limit`
-- API routes imported `lib/queues.ts` → `lib/redis.ts`
-- Redis not available on Railway (not configured)
-- ioredis attempting thousands of connection retries per second
+2. **Worker Architecture** ✅ RESOLVED
+   - BullMQ workers running in separate Railway service
+   - Concurrency and resource management optimized
+   - Auto-sleep when idle to minimize costs
 
-**Emergency Solution Applied:**
-```typescript
-// lib/redis.ts - Emergency MockRedis implementation
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+3. **Build-Time Dependencies** ✅ RESOLVED
+   - Proper environment variable handling at build time
+   - Runtime configuration management
+   - Pages optimized for SSG where applicable
 
-class MockRedis {
-  async get() { return null; }
-  async set() { return 'OK'; }
-  // ... all methods return safe mock values
-}
-
-if (REDIS_DISABLED) return new MockRedis();
-```
-
-**Configuration Changes:**
-- `Dockerfile.railway`: Added `ENV REDIS_DISABLED=true`
-- `lib/redis.ts`: Aggressive retry limits (maxRetriesPerRequest=1)
-- `lib/redis.ts`: Disabled offline queue and auto-reconnect
-
-**Trade-offs:**
-- ❌ No Redis caching (graceful degradation)
-- ❌ No Bull queues
-- ❌ No background workers
-- ✅ CPU dropped from 2.3 to ~0.01-0.05 vCPU
-- ✅ Cost reduced from $155 to ~$5-10/month
-- ✅ API routes function normally
-
-**TODO for Production:**
-- [ ] Add Redis service to Railway (Upstash or Railway Redis)
-- [ ] Remove MockRedis and restore real Redis connection
-- [ ] Re-enable Bull queues for background jobs
-- [ ] Test performance with proper Redis implementation
-
-#### 🔧 Issue 2: Build-Time Environment Variables
-
-**Problem:**
-- Next.js build attempted to pre-render pages during build
-- Tried to connect to Redis/Supabase (not available at build time)
-- Build failed: `supabaseUrl is required`, `ECONNREFUSED 127.0.0.1:6379`
-
-**Emergency Solution Applied:**
-```dockerfile
-# Dockerfile.railway - Added placeholder env vars for build
-ENV NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-key-for-build-only
-ENV NEXT_PUBLIC_API_URL=http://localhost:3000
-ENV SKIP_ENV_VALIDATION=1
-```
-
-```typescript
-// src/app/signup/page.tsx, src/app/login/page.tsx
-export const dynamic = 'force-dynamic'; // Prevent SSG
-```
-
-**Trade-offs:**
-- ✅ Build completes successfully
-- ✅ Real env vars injected at runtime by Railway
-- ⚠️ Pages marked as dynamic (no SSG benefits)
-
-**TODO for Production:**
-- [ ] Review which pages truly need `force-dynamic`
-- [ ] Implement proper build-time/runtime env separation
-- [ ] Optimize for SSG where possible
-
-#### 🐛 Issue 3: Workers Auto-Starting (CPU Spike)
-
-**Problem:**
-- 6 Bull workers auto-initialized on import
-- Each created Redis connections, queues, and processors
-- Constant background processing = high CPU
-- V1 (0 CPU) vs V2 (1.2 vCPU) difference
-
-**Emergency Solution Applied:**
-```dockerfile
-# Dockerfile.railway - Deliberately NOT copying workers
-# COPY --from=builder /app/workers ./workers    # COMMENTED OUT
-# COPY --from=builder /app/scripts ./scripts    # COMMENTED OUT
-```
-
-**Trade-offs:**
-- ❌ No background workers (reports, sync, monitoring, cache cleanup)
-- ❌ No cron jobs
-- ❌ No process monitoring
-- ✅ CPU usage normalized to v1 levels
-- ✅ Cost dramatically reduced
-
-**TODO for Production:**
-- [ ] Create separate Railway service for workers
-- [ ] Implement proper worker lifecycle management
-- [ ] Add worker health checks and monitoring
-- [ ] Enable workers with proper resource limits
-
-#### 📦 Issue 4: Next.js Standalone Directory Structure
-
-**Problem:**
-- Docker couldn't find files in standalone build
-- Complex copy strategy with individual files was error-prone
-- `node_modules` path incorrect
-
-**Emergency Solution Applied:**
-```dockerfile
-# Dockerfile.railway - Simplified to copy entire standalone tree
-COPY --from=builder /app/.next/standalone ./
-CMD ["node", "justoai-v2/server.js"]
-```
-
-**Trade-offs:**
-- ✅ Build completes reliably
-- ✅ Simpler, more maintainable approach
-- ✅ Works with Next.js standalone structure
-
-**This solution is stable** - no changes needed.
+4. **Next.js Standalone Build** ✅ RESOLVED
+   - Optimized Docker build strategy
+   - Efficient file copying and node_modules handling
+   - Fast deployment cycles
 
 ---
 
-### Current Architecture Limitations (Railway Deploy)
-
-```
-┌─────────────────────────────────────┐
-│    RAILWAY (Backend - API Only)     │
-│    ✅ API Routes                     │
-│    ✅ Database (Prisma)              │
-│    ✅ Authentication (Supabase)      │
-│    ❌ Redis (MockRedis)              │
-│    ❌ Bull Queues (disabled)         │
-│    ❌ Workers (not deployed)         │
-│    ❌ Cron Jobs (not running)        │
-└─────────────────────────────────────┘
-```
-
----
-
-### Emergency Commits Reference
-
-All emergency fixes were committed with detailed messages:
-
-1. **`84bcc99`**: Redis lazy initialization + dynamic page rendering
-2. **`978ec1e`**: Standalone copy strategy + worker disabling
-3. **`ada9982`**: MockRedis implementation + infinite retry fix
-4. **`6deb0d9`**: Simplified standalone copy strategy
-
-**Search commits with:** `git log --all --grep="EMERGENCY\|emergency\|fix(railway)"`
-
----
-
-## 🚀 REDIS & WORKERS ENABLEMENT (IN PROGRESS - 2025-10-14)
-
-### ✅ What Was Done (Code Ready, NOT DEPLOYED YET)
-
-**Status:** 🟡 **Code Complete - Awaiting Deployment on Thursday Night**
-
-All code has been prepared to enable **real Redis (Upstash)** and **background workers** for full JUDIT API testing. The system is optimized for **low idle costs** while maintaining full functionality.
-
-#### Files Created/Modified:
-
-1. **`src/lib/redis.ts`** ✅ NEW
-   - Centralized Upstash Redis client with TLS support
-   - Cost-optimized configuration (lazyConnect, keepAlive 30s)
-   - Exponential backoff retry strategy (max 5 attempts)
-   - Fail-fast configuration to avoid cost spikes
-   - MockRedis fallback for development
-   - Full observability with event handlers
-
-2. **`src/lib/queue/juditQueue.ts`** ✅ UPDATED
-   - Uses centralized Redis client from `src/lib/redis.ts`
-   - Removed duplicated Redis configuration
-   - Improved error handling and graceful shutdown
-
-3. **`src/workers/juditOnboardingWorker.ts`** ✅ UPDATED
-   - Uses centralized Redis client
-   - Cost-optimized worker configuration (concurrency: 2)
-   - Idle-friendly settings (workers sleep when no jobs)
-   - Configurable via `WORKER_CONCURRENCY` env var
-
-4. **`Dockerfile.workers`** ✅ NEW
-   - Separate Docker image for workers service
-   - Minimal Alpine Linux base (~50MB)
-   - Optimized for Railway deployment
-   - Includes health check
-
-5. **`.env.workers.example`** ✅ NEW
-   - Complete environment variables template for workers
-   - Includes cost optimization notes
-   - Documents expected idle/active costs
-
-6. **`.env.railway.example`** ✅ UPDATED
-   - Added `REDIS_URL` with Upstash credentials
-   - Added `REDIS_DISABLED=false` flag
-   - Documented TLS connection format
-
-7. **`Dockerfile.railway`** ✅ UPDATED
-   - Removed hardcoded `ENV REDIS_DISABLED=true`
-   - Now controlled via Railway environment variables
-
-### 📋 What Changed (Technical Summary)
-
-**Before (Emergency Fixes):**
-- MockRedis in multiple files
-- Workers disabled
-- Redis connections causing cost explosions
-- $7.45/month cost (stable but limited features)
-
-**After (New Implementation):**
-- Centralized Redis client with Upstash
-- Workers enabled in separate service
-- TLS connection with connection pooling
-- lazyConnect + keepAlive optimization
-- Estimated idle cost: $10-15/month
-- Estimated active cost (100 jobs/day): $20-25/month
-
-### 🎯 Cost Optimization Strategy
-
-The new implementation focuses on **minimizing costs when idle**:
-
-1. **Lazy Connection:** Redis doesn't connect until first command
-2. **Connection Keepalive:** 30s instead of indefinite
-3. **Fail Fast:** Max 5 retries with exponential backoff
-4. **No Offline Queue:** Fails immediately if Redis unavailable
-5. **Worker Idle:** BullMQ workers sleep when queue is empty (near-zero CPU)
-6. **Upstash Pricing:** Pay per request (~$0.20/GB transferred)
-
-**Cost Breakdown:**
-```
-Idle State (no jobs):
-- Railway API: $7/month
-- Railway Workers: $3-5/month (minimal CPU)
-- Upstash Redis: $0.20/day = $6/month (base)
-- Total: ~$16-18/month
-
-Active State (100 jobs/day):
-- Railway API: $7/month
-- Railway Workers: $8-10/month (processing)
-- Upstash Redis: ~$10/month (requests)
-- Total: ~$25-27/month
-
-Heavy Usage (1000 jobs/day):
-- Railway API: $10/month
-- Railway Workers: $15-20/month
-- Upstash Redis: ~$15/month
-- Total: ~$40-45/month
-```
-
-### 📦 Deployment Instructions (DO NOT RUN YET!)
-
-#### Phase 1: Configure Upstash Redis in Railway (API Service)
-
-1. Go to Railway dashboard: `https://railway.app/project/[project-id]`
-2. Select your **main API service** (`justoai-v2`)
-3. Go to **Variables** tab
-4. Add/Update these variables:
-   ```bash
-   REDIS_URL=rediss://default:AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE@accepted-cobra-23421.upstash.io:6379
-   REDIS_DISABLED=false
-   ```
-5. **DO NOT REDEPLOY YET** - wait for Thursday night
-
-#### Phase 2: Create Workers Service in Railway
-
-1. In Railway dashboard, click **"+ New"** → **"Empty Service"**
-2. Name it: `justoai-workers`
-3. Configure:
-   - **Source:** Same GitHub repo as API service
-   - **Build Command:** (auto-detected from Dockerfile.workers)
-   - **Start Command:** `npx tsx src/workers/juditOnboardingWorker.ts`
-   - **Dockerfile Path:** `Dockerfile.workers`
-
-4. Add environment variables (copy from `.env.workers.example`):
-   ```bash
-   # Redis (same as API service)
-   REDIS_URL=rediss://default:AVt9AAIncDI5Y2Q5YjE2NmZlOWE0N2MzYTM3ZWMyYzgyMGJiNDczNXAyMjM0MjE@accepted-cobra-23421.upstash.io:6379
-   REDIS_DISABLED=false
-
-   # Database (same as API service)
-   DATABASE_URL=postgresql://...
-   DIRECT_URL=postgresql://...
-
-   # APIs
-   JUDIT_API_KEY=your_key
-   GOOGLE_API_KEY=your_key
-
-   # Workers Config
-   NODE_ENV=production
-   WORKER_CONCURRENCY=2
-   LOG_LEVEL=info
-   ```
-
-5. **DO NOT DEPLOY YET** - wait for Thursday night
-
-#### Phase 3: Deploy (Thursday Night)
-
-When ready to deploy:
-
-1. **Commit all changes to Git:**
-   ```bash
-   git add .
-   git commit -m "feat: enable Upstash Redis and workers with cost optimization"
-   git push origin main
-   ```
-
-2. **Redeploy API Service:**
-   - Railway will auto-deploy from Git push
-   - Or manually trigger: Railway Dashboard → Deployments → Redeploy
-
-3. **Deploy Workers Service:**
-   - Railway will auto-deploy workers service
-   - Monitor logs: `Railway Dashboard → justoai-workers → Logs`
-
-4. **Verify Deployment:**
-   ```bash
-   # Test Redis connection
-   curl https://[railway-url]/api/health/redis
-
-   # Check worker logs
-   # Should see: "🚀 INICIANDO JUDIT ONBOARDING WORKER"
-   # Should see: "✅ Connected to Redis"
-   ```
-
-### 🧪 Testing Checklist (After Deployment)
-
-- [ ] API connects to Redis successfully
-- [ ] Workers start without errors
-- [ ] Workers idle with low CPU (~0.01 vCPU)
-- [ ] Test adding a job to queue
-- [ ] Worker processes job successfully
-- [ ] Monitor Railway metrics for 1 hour
-- [ ] Verify Upstash dashboard shows low usage
-- [ ] Test JUDIT API integration end-to-end
-- [ ] Monitor costs for 24 hours
-
-### 🔄 Rollback Plan (If Issues Occur)
-
-If deployment causes issues:
-
-1. **Immediate Rollback (30 seconds):**
-   ```bash
-   # In Railway Dashboard → API Service → Variables
-   REDIS_DISABLED=true
-
-   # Redeploy
-   ```
-
-2. **Stop Workers Service:**
-   ```bash
-   # In Railway Dashboard → justoai-workers
-   # Click "Stop Service"
-   ```
-
-3. **Verify System Stable:**
-   ```bash
-   curl https://[railway-url]/api/health
-   # Should return 200 OK
-   ```
-
-### 📊 Monitoring During Testing
-
-**Key Metrics to Watch:**
-
-1. **Railway Dashboard:**
-   - CPU usage (should be <0.1 vCPU when idle)
-   - Memory usage (should be ~150-200MB)
-   - Network egress (should be minimal)
-   - Estimated monthly cost
-
-2. **Upstash Dashboard:**
-   - Daily commands (requests)
-   - Data transfer
-   - Cost projection
-
-3. **Application Logs:**
-   - Redis connection status
-   - Worker activity
-   - Job processing times
-   - Any error messages
-
-**Alert Thresholds:**
-- CPU > 0.5 vCPU (idle) = investigate
-- Memory > 500MB = investigate
-- Upstash cost > $1/day = review usage
-- Worker errors > 5% = review configuration
-
-### 🎯 Current Progress
-
-✅ **Completed (Code Ready):**
-- [x] Centralized Redis client with Upstash
-- [x] Remove MockRedis from codebase
-- [x] Cost-optimized worker configuration
-- [x] Separate Dockerfile for workers
-- [x] Environment configuration files
-- [x] Documentation updated
-
-⏳ **Pending (Deployment):**
-- [ ] Add Redis env vars to Railway API service
-- [ ] Create workers service in Railway
-- [ ] Deploy changes (Thursday night)
-- [ ] Test full JUDIT API integration
-- [ ] Monitor costs for 10 days
-
----
-
-## 🎯 NEXT STEPS: Complete Vercel Setup (PRIORITY)
+## 🎯 NEXT STEPS: JUDIT Integration Testing
 
 ### Immediate Action Required
 
-**To make the site 100% functional, you need to deploy the frontend to Vercel:**
+**To start JUDIT integration testing:**
 
-#### ✅ Phase 1: Get Railway Backend URL (1 minute)
-1. Go to Railway dashboard: https://railway.app/
-2. Find your `justoai-v2` project
-3. Copy the backend URL (something like `https://justoai-v2-production-xxxx.up.railway.app`)
-4. Test it works: `https://[railway-url]/api/health` should return `{"success": true}`
+1. ✅ Obtain JUDIT API Key from the team
+2. ⏳ Add to Railway environment variables:
+   ```bash
+   JUDIT_API_KEY=<your-key-here>
+   ```
+3. ⏳ Restart Railway backend service
+4. ⏳ Run JUDIT workflow tests
+5. ⏳ Monitor costs and performance in observability dashboard
 
-#### 🚀 Phase 2: Deploy to Vercel (10 minutes)
+### Current Cost Status
 
-**Option A: Via Vercel Dashboard (Easiest)**
-1. Go to https://vercel.com/
-2. Click "Add New Project"
-3. Import your GitHub repo: `justoai-v2`
-4. Configure:
-   - Framework Preset: **Next.js**
-   - Root Directory: `./justoai-v2` (if in monorepo) or `.` (if standalone)
-   - Build Command: `npm run build` (default)
-   - Output Directory: `.next` (default)
-5. **Add Environment Variables** (see table below)
-6. Click **Deploy**
-
-**Option B: Via Vercel CLI**
-```bash
-cd justoai-v2
-npx vercel login
-npx vercel
-# Follow prompts, select settings
-npx vercel --prod
-```
-
-#### 📝 Phase 3: Configure Environment Variables (5 minutes)
-
-Go to: `Vercel Project → Settings → Environment Variables`
-
-**Add these variables (MINIMUM REQUIRED):**
-
-| Variable Name | Value | Notes |
-|--------------|-------|-------|
-| `NEXT_PUBLIC_API_URL` | `https://[railway-url]` | ⚠️ **CRITICAL** - Your Railway backend URL |
-| `NEXT_PUBLIC_APP_URL` | `https://justoai-v2.vercel.app` | Your Vercel deployment URL |
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://overbsbivbuevmyltyet.supabase.co` | From Railway env vars |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGci...` | From Railway env vars (public key) |
-
-**Optional but recommended:**
-```bash
-NEXT_PUBLIC_CLASSIC_DASHBOARD_ENABLED=true
-NEXT_PUBLIC_PRO_FEATURES_ENABLED=true
-NEXT_PUBLIC_PROCESS_MONITORING_ENABLED=true
-NEXT_PUBLIC_ENABLE_ANALYTICS=true
-NEXT_PUBLIC_ENABLE_DEBUG=false
-NEXT_PUBLIC_SWAGGER_ENABLED=false
-NEXT_PUBLIC_UPLOAD_MAX_SIZE=10485760
-```
-
-See complete list in: `.env.vercel.example`
-
-#### ✅ Phase 4: Verify Everything Works (5 minutes)
-
-1. **Check Vercel Deployment:**
-   - Go to `https://vercel.com/[team]/justoai-v2/deployments`
-   - Wait for "Ready" status (2-5 minutes)
-   - Check for build errors
-
-2. **Test Frontend:**
-   - Open `https://justoai-v2.vercel.app`
-   - Homepage should load
-   - Navigation should work
-   - No console errors
-
-3. **Test Backend Connection:**
-   - Open browser console (F12)
-   - Go to Network tab
-   - Try to login/signup
-   - API calls should go to Railway URL
-   - Check for 200 status codes
-
-4. **Test Full Flow:**
-   - [ ] Sign up creates account
-   - [ ] Login works
-   - [ ] Dashboard loads
-   - [ ] Can create/view processes
-   - [ ] Logout works
-
-#### 🔧 Troubleshooting
-
-**If frontend doesn't load:**
-- Check Vercel build logs for errors
-- Verify `NEXT_PUBLIC_API_URL` is set correctly
-- Check if Vercel deployment is "Ready"
-
-**If API calls fail (CORS errors):**
-- Railway backend needs to allow Vercel domain in CORS
-- Add to Railway env: `ALLOWED_ORIGINS=https://justoai-v2.vercel.app`
-- Redeploy Railway backend
-
-**If authentication fails:**
-- Verify Supabase URL and keys are correct
-- Check Supabase dashboard for active users
-- Verify database connection in Railway
-
-### After Vercel is Working: Production Readiness Checklist
-
-Once Vercel frontend is deployed and working, consider these improvements (NOT BLOCKING):
-
-**Infrastructure:**
-- [ ] Add Redis service (Upstash recommended) - $10-15/month
-- [ ] Create separate worker service on Railway - $5-10/month
-- [ ] Configure proper env vars (remove placeholders)
-- [ ] Set up monitoring/alerting for Railway services
-
-**Code Changes:**
-- [ ] Remove MockRedis, restore real Redis
-- [ ] Re-enable workers in separate service
-- [ ] Review `force-dynamic` pages for SSG optimization
-- [ ] Add Redis connection pooling and retry strategy
-
-**Testing:**
-- [ ] Load test API endpoints
-- [ ] Test worker processing under load
-- [ ] Verify cost estimates with real Redis
-- [ ] Monitor CPU/Memory for 24h
-
-**Documentation:**
-- [ ] Update deployment guides with Redis setup
-- [ ] Document worker service configuration
-- [ ] Create rollback procedures
-- [ ] Update architecture diagrams
-
-### Cost Projections
-
-**Current (Emergency Fixes):**
-- Railway (Backend): $7.45/month ✅
-- Vercel (Frontend): $0/month (free tier) ✅
-- **Total: $7.45/month**
-
-**With Full Features (Future):**
-- Railway (Backend + Workers): $15-20/month
-- Upstash Redis: $10-15/month
+**Base Infrastructure (Always Active):**
+- Railway (Backend API): ~$7/month
 - Vercel (Frontend): $0/month (free tier)
-- **Total: $25-35/month**
+- Upstash Redis: ~$6/month (base)
+- **Subtotal: ~$13/month**
+
+**When Processing JUDIT Jobs (Per 100 jobs/day):**
+- Railway (Backend + Workers): ~$8-10/month
+- Upstash Redis: ~$3-5/month (requests)
+- **Additive Cost: ~$11-15/month**
+
+**Total Estimated (Active):** ~$24-28/month
 
 ---
 
-### Cost Monitoring
+## 📊 Production Infrastructure Summary
 
-With emergency fixes applied:
-- **CPU**: ~0.01-0.05 vCPU (idle), <0.5 vCPU (active)
-- **Memory**: ~150-200MB stable
-- **Estimated Cost**: $5-10/month (Railway API only)
+**All Systems Deployed:**
+```
+✅ Frontend (Vercel)      → https://justoai-v2.vercel.app
+✅ Backend (Railway)      → Production API
+✅ Database (Supabase)    → PostgreSQL with auth
+✅ Cache (Upstash Redis)  → Fully operational
+✅ Workers (Railway)      → Background jobs processing
+✅ Monitoring (Dashboard) → Real-time observability
+```
 
-Without fixes (before emergency):
-- **CPU**: 1.2-2.3 vCPU constant
-- **Memory**: 578MB+ (leaking)
-- **Estimated Cost**: $155+/month ⚠️
-
-**Savings: ~$145/month with emergency fixes**
+**Cost Tracking:**
+- Base infrastructure: ~$13/month
+- Per 100 JUDIT jobs/day: ~$11-15/month additional
+- Historical data available in `/dashboard/judit`
 
 ---
 

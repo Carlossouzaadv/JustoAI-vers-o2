@@ -4,6 +4,7 @@ import './globals.css';
 import { CookieConsentProvider } from '@/contexts/cookie-consent-context';
 import { CookieBanner } from '@/components/ui/cookie-banner';
 import { Providers } from './providers';
+import { AuthProvider } from '@/contexts/auth-context';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -93,10 +94,12 @@ export default function RootLayout({
       </head>
       <body className={`font-sans antialiased bg-white text-neutral-900`}>
         <Providers>
-          <CookieConsentProvider>
-            {children}
-            <CookieBanner />
-          </CookieConsentProvider>
+          <AuthProvider>
+            <CookieConsentProvider>
+              {children}
+              <CookieBanner />
+            </CookieConsentProvider>
+          </AuthProvider>
         </Providers>
       </body>
     </html>
