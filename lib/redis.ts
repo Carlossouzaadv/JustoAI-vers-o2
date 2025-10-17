@@ -12,19 +12,12 @@ import Redis from 'ioredis';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Validate REDIS_URL presence in production
-if (isProduction && !process.env.REDIS_URL) {
-  throw new Error(
-    'REDIS_URL is not defined in the environment! ' +
-    'This is required for production. ' +
-    'Set REDIS_URL in Railway variables with format: ' +
-    'rediss://default:password@host:port (for Upstash) ' +
-    'or redis://default:password@host:port (for Railway Redis)'
-  );
-}
-
 // Check if Redis should be disabled (only in development without REDIS_URL)
+// In production, if REDIS_URL is missing, error will be thrown when Redis is first accessed
 const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
+
+// Track if we've already logged the production Redis warning
+let productionRedisErrorLogged = false;
 
 // Build Redis connection config from REDIS_URL
 // If REDIS_URL is provided, parse it and use it exclusively
@@ -96,12 +89,32 @@ class MockRedis {
 /**
  * Get Redis client (lazy initialization)
  * Returns mock if Redis is disabled (development only, no REDIS_URL)
- * In production, throws error if REDIS_URL is not configured
+ * In production without REDIS_URL, throws error when first accessed (not during build)
  */
 export function getRedis(): any {
   if (REDIS_DISABLED) {
     console.warn('⚠️ Redis is disabled - using mock client (development mode, no REDIS_URL configured)');
     return new MockRedis();
+  }
+
+  // Lazy validation in production - only throw when Redis is actually used
+  if (isProduction && !process.env.REDIS_URL) {
+    if (!productionRedisErrorLogged) {
+      productionRedisErrorLogged = true;
+      const errorMsg = 'REDIS_URL is not defined in the environment! ' +
+        'This is required for production. ' +
+        'Set REDIS_URL in Railway variables with format: ' +
+        'rediss://default:password@host:port (for Upstash) ' +
+        'or redis://default:password@host:port (for Railway Redis)';
+      console.error('❌ Redis configuration error:', errorMsg);
+    }
+    throw new Error(
+      'REDIS_URL is not defined in the environment! ' +
+      'This is required for production. ' +
+      'Set REDIS_URL in Railway variables with format: ' +
+      'rediss://default:password@host:port (for Upstash) ' +
+      'or redis://default:password@host:port (for Railway Redis)'
+    );
   }
 
   if (!redisInstance) {
@@ -139,11 +152,32 @@ export function getRedis(): any {
  * Get Bull Redis client (lazy initialization)
  * Returns mock if Redis is disabled (development only, no REDIS_URL)
  * Uses DB 1 to separate Bull queue data from general cache
+ * In production without REDIS_URL, throws error when first accessed (not during build)
  */
 export function getBullRedis(): any {
   if (REDIS_DISABLED) {
     console.warn('⚠️ Bull Redis is disabled - using mock client (development mode, no REDIS_URL configured)');
     return new MockRedis();
+  }
+
+  // Lazy validation in production - only throw when Bull Redis is actually used
+  if (isProduction && !process.env.REDIS_URL) {
+    if (!productionRedisErrorLogged) {
+      productionRedisErrorLogged = true;
+      const errorMsg = 'REDIS_URL is not defined in the environment! ' +
+        'This is required for production. ' +
+        'Set REDIS_URL in Railway variables with format: ' +
+        'rediss://default:password@host:port (for Upstash) ' +
+        'or redis://default:password@host:port (for Railway Redis)';
+      console.error('❌ Redis configuration error:', errorMsg);
+    }
+    throw new Error(
+      'REDIS_URL is not defined in the environment! ' +
+      'This is required for production. ' +
+      'Set REDIS_URL in Railway variables with format: ' +
+      'rediss://default:password@host:port (for Upstash) ' +
+      'or redis://default:password@host:port (for Railway Redis)'
+    );
   }
 
   if (!bullRedisInstance) {
