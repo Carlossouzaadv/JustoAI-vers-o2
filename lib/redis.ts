@@ -12,6 +12,14 @@ import Redis from 'ioredis';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
+// DEBUG: Log environment configuration
+console.log('[REDIS CONFIG]', {
+  NODE_ENV: process.env.NODE_ENV,
+  REDIS_URL_EXISTS: !!process.env.REDIS_URL,
+  REDIS_HOST: process.env.REDIS_HOST,
+  REDIS_PORT: process.env.REDIS_PORT,
+});
+
 // Build Redis connection config
 // Priority: REDIS_URL > individual variables > defaults
 let redisConfig: any = {
@@ -38,9 +46,16 @@ let redisConfig: any = {
 
 // Use REDIS_URL if provided, otherwise use host/port/password
 if (process.env.REDIS_URL) {
+  console.log('[REDIS] Using REDIS_URL from environment');
   redisConfig.url = process.env.REDIS_URL;
+} else if (isProduction) {
+  // CRITICAL: In production, REDIS_URL MUST be set
+  const errorMsg = 'CRITICAL: REDIS_URL environment variable is not set in production! Queue connections will fail.';
+  console.error('[REDIS]', errorMsg);
+  throw new Error(errorMsg);
 } else {
-  // Fallback to individual variables for development/local setup
+  // Fallback to individual variables for development/local setup ONLY
+  console.log('[REDIS] Using host/port configuration (development mode)');
   redisConfig.host = process.env.REDIS_HOST || 'localhost';
   redisConfig.port = parseInt(process.env.REDIS_PORT || '6379', 10);
   if (process.env.REDIS_PASSWORD) {
