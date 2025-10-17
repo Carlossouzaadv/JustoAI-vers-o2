@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         users: {
           create: {
             userId: user.id,
-            role: 'owner',
+            role: 'OWNER',
           },
         },
       },

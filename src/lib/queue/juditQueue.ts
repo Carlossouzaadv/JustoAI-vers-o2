@@ -31,9 +31,24 @@ export interface JuditOnboardingJobResult {
 // CONFIGURAÇÃO REDIS
 // ================================================================
 
-// Get Redis connection from centralized client
-const connection = getRedisConnection();
-const REDIS_DISABLED = connection === null;
+// Lazy evaluation - don't check Redis during module load
+let _connection: ReturnType<typeof getRedisConnection> | undefined = undefined;
+let _redisDisabled: boolean | undefined = undefined;
+
+function isRedisDisabled(): boolean {
+  if (_redisDisabled === undefined) {
+    _connection = getRedisConnection();
+    _redisDisabled = _connection === null;
+  }
+  return _redisDisabled;
+}
+
+function getConnection() {
+  if (_connection === undefined) {
+    _connection = getRedisConnection();
+  }
+  return _connection;
+}
 
 // Mock Queue class for when Redis is disabled (development only)
 class MockQueue {
@@ -88,15 +103,32 @@ const QUEUE_CONFIG = {
 // QUEUE INSTANCE
 // ================================================================
 
-export const juditOnboardingQueue = REDIS_DISABLED
-  ? (new MockQueue(QUEUE_CONFIG.name) as any)
-  : new Queue<JuditOnboardingJobData, JuditOnboardingJobResult>(
-      QUEUE_CONFIG.name,
-      {
-        connection: connection!,
-        defaultJobOptions: QUEUE_CONFIG.defaultJobOptions,
-      }
-    );
+let _juditOnboardingQueue: Queue<JuditOnboardingJobData, JuditOnboardingJobResult> | MockQueue | null = null;
+
+function getJuditQueue() {
+  if (_juditOnboardingQueue === null) {
+    if (isRedisDisabled()) {
+      _juditOnboardingQueue = new MockQueue(QUEUE_CONFIG.name) as any;
+    } else {
+      _juditOnboardingQueue = new Queue<JuditOnboardingJobData, JuditOnboardingJobResult>(
+        QUEUE_CONFIG.name,
+        {
+          connection: getConnection()!,
+          defaultJobOptions: QUEUE_CONFIG.defaultJobOptions,
+        }
+      );
+    }
+  }
+  return _juditOnboardingQueue;
+}
+
+// Export both getter and lazy property
+export const juditOnboardingQueue = new Proxy({} as any, {
+  get: (target, prop) => {
+    const queue = getJuditQueue();
+    return (queue as any)[prop];
+  },
+});
 
 // ================================================================
 // QUEUE OPERATIONS
@@ -113,7 +145,9 @@ export async function addOnboardingJob(
     priority?: number;
   }
 ): Promise<{ jobId: string }> {
-  const job = await juditOnboardingQueue.add(
+  ensureListeners();
+  const queue = getJuditQueue();
+  const job = await queue.add(
     'onboard-process',
     {
       cnj,
@@ -139,7 +173,8 @@ export async function getJobStatus(jobId: string): Promise<{
   result?: JuditOnboardingJobResult;
   error?: string;
 }> {
-  const job = await juditOnboardingQueue.getJob(jobId);
+  const queue = getJuditQueue();
+  const job = await queue.getJob(jobId);
 
   if (!job) {
     return { status: 'unknown' };
@@ -169,26 +204,29 @@ export async function getJobStatus(jobId: string): Promise<{
  * Lista jobs ativos (processando agora)
  */
 export async function getActiveJobs(): Promise<Job[]> {
-  return await juditOnboardingQueue.getActive();
+  const queue = getJuditQueue();
+  return await queue.getActive();
 }
 
 /**
  * Lista jobs aguardando na fila
  */
 export async function getWaitingJobs(): Promise<Job[]> {
-  return await juditOnboardingQueue.getWaiting();
+  const queue = getJuditQueue();
+  return await queue.getWaiting();
 }
 
 /**
  * Estatísticas da fila
  */
 export async function getQueueStats() {
+  const queue = getJuditQueue();
   const [waiting, active, completed, failed, delayed] = await Promise.all([
-    juditOnboardingQueue.getWaitingCount(),
-    juditOnboardingQueue.getActiveCount(),
-    juditOnboardingQueue.getCompletedCount(),
-    juditOnboardingQueue.getFailedCount(),
-    juditOnboardingQueue.getDelayedCount(),
+    queue.getWaitingCount(),
+    queue.getActiveCount(),
+    queue.getCompletedCount(),
+    queue.getFailedCount(),
+    queue.getDelayedCount(),
   ]);
 
   return {
@@ -208,14 +246,15 @@ export async function cleanQueue(options?: {
   grace?: number; // Tempo em ms para considerar job antigo
   status?: 'completed' | 'failed';
 }) {
+  const queue = getJuditQueue();
   const grace = options?.grace || 24 * 60 * 60 * 1000; // 24h padrão
 
   if (!options?.status || options.status === 'completed') {
-    await juditOnboardingQueue.clean(grace, 1000, 'completed');
+    await queue.clean(grace, 1000, 'completed');
   }
 
   if (!options?.status || options.status === 'failed') {
-    await juditOnboardingQueue.clean(grace, 1000, 'failed');
+    await queue.clean(grace, 1000, 'failed');
   }
 }
 
@@ -223,8 +262,15 @@ export async function cleanQueue(options?: {
 // EVENTOS DA FILA (para logging/monitoring)
 // ================================================================
 
-if (!REDIS_DISABLED) {
-  juditOnboardingQueue.on('error', (error) => {
+// Setup event listeners lazily when queue is first used
+function setupEventListeners() {
+  if (isRedisDisabled()) {
+    return;
+  }
+
+  const queue = getJuditQueue();
+
+  queue.on('error', (error) => {
     queueLogger.error({
       action: 'queue_error',
       error: error.message,
@@ -232,14 +278,14 @@ if (!REDIS_DISABLED) {
     });
   });
 
-  juditOnboardingQueue.on('waiting', (jobId) => {
+  queue.on('waiting', (jobId) => {
     queueLogger.debug({
       action: 'job_waiting',
       job_id: jobId,
     });
   });
 
-  juditOnboardingQueue.on('active', (job) => {
+  queue.on('active', (job) => {
     queueLogger.info({
       action: 'job_active',
       job_id: job.id,
@@ -248,7 +294,7 @@ if (!REDIS_DISABLED) {
     });
   });
 
-  juditOnboardingQueue.on('completed', (job, result) => {
+  queue.on('completed', (job, result) => {
     queueLogger.info({
       action: 'job_completed',
       job_id: job.id,
@@ -261,7 +307,7 @@ if (!REDIS_DISABLED) {
     });
   });
 
-  juditOnboardingQueue.on('failed', (job, error) => {
+  queue.on('failed', (job, error) => {
     queueLogger.error({
       action: 'job_failed',
       job_id: job?.id,
@@ -274,12 +320,21 @@ if (!REDIS_DISABLED) {
   });
 }
 
+// Setup listeners on first use
+let _listenersSetup = false;
+function ensureListeners() {
+  if (!_listenersSetup) {
+    setupEventListeners();
+    _listenersSetup = true;
+  }
+}
+
 // ================================================================
 // GRACEFUL SHUTDOWN
 // ================================================================
 
 async function gracefulShutdown() {
-  if (REDIS_DISABLED) {
+  if (isRedisDisabled()) {
     queueLogger.warn({
       action: 'graceful_shutdown',
       message: 'Mock mode - nothing to shutdown',
@@ -293,7 +348,8 @@ async function gracefulShutdown() {
   });
 
   try {
-    await juditOnboardingQueue.close();
+    const queue = getJuditQueue();
+    await queue.close();
     queueLogger.info({
       action: 'graceful_shutdown_success',
       message: 'Fila encerrada com sucesso',
