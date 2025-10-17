@@ -6,7 +6,7 @@ import { Job, Queue } from 'bull';
 import { prisma } from '../lib/prisma';
 import { usageTracker } from '../lib/telemetry/usage-tracker';
 import { ICONS } from '../lib/icons';
-import Redis from 'ioredis';
+import { getRedis } from '../lib/redis';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -58,15 +58,9 @@ const AGGREGATOR_CONFIG = {
   CLEANUP_OLD_EVENTS_DAYS: 30,
 } as const;
 
-// Criar fila específica para agregação
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-
+// Criar fila específica para agregação usando Redis centralizado
 export const usageAggregatorQueue = new Queue('usage-aggregator', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-  },
+  redis: getRedis(),
   defaultJobOptions: {
     removeOnComplete: 10,
     removeOnFail: 5,

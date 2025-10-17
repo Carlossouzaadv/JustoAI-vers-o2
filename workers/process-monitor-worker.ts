@@ -7,7 +7,7 @@ import { prisma } from '../lib/prisma';
 import { getJuditApiClient } from '../lib/judit-api-client';
 import { ICONS } from '../lib/icons';
 import { Queue } from 'bull';
-import Redis from 'ioredis';
+import { getRedis } from '../lib/redis';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -87,15 +87,9 @@ const MONITOR_CONFIG = {
   COST_PER_ATTACHMENT: 0.25,
 } as const;
 
-// Criar fila específica para monitoramento
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
-
+// Criar fila específica para monitoramento usando Redis centralizado
 export const processMonitorQueue = new Queue('process-monitor', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-  },
+  redis: getRedis(),
   defaultJobOptions: {
     removeOnComplete: 50,
     removeOnFail: 20,

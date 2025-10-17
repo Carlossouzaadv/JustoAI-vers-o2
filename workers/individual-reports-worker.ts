@@ -46,16 +46,10 @@ const INDIVIDUAL_REPORTS_CONFIG = {
 
 // Criar fila específica para relatórios individuais
 import { Queue } from 'bull';
-import Redis from 'ioredis';
-
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+import { getRedis } from '../lib/redis';
 
 export const individualReportsQueue = new Queue('individual-reports', {
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-  },
+  redis: getRedis(),
   defaultJobOptions: {
     removeOnComplete: 50,
     removeOnFail: 20,
