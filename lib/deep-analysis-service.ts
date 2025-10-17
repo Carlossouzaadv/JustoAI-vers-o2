@@ -11,7 +11,7 @@ import { Redis } from 'ioredis';
 import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
-import { getRedis } from './redis';
+import { getRedis } from '../src/lib/redis';
 
 
 const prisma = new PrismaClient();

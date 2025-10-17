@@ -2,15 +2,15 @@
  * Bull Queue Configuration
  * Sistema de filas para processamento assíncrono
  *
- * EMERGENCY MODE: Se REDIS_DISABLED=true, retorna mock queues sem tentar conectar
+ * Uses centralized Redis configuration from src/lib/redis.ts
  */
 
 import Queue from 'bull';
-import { bullRedis } from './redis';
+import { getBullRedis } from '../src/lib/redis';
 
 // Configuração base das filas
 const queueConfig = {
-  redis: bullRedis,
+  redis: getBullRedis(),
   defaultJobOptions: {
     removeOnComplete: 100, // Manter últimos 100 jobs completos
     removeOnFail: 50,      // Manter últimos 50 jobs falhados
@@ -267,7 +267,11 @@ export async function closeAllQueues() {
   console.log('🔄 Closing all queues...');
 
   await Promise.all(allQueues.map(queue => queue.close()));
-  await bullRedis.disconnect();
+
+  const bullRedis = getBullRedis();
+  if (bullRedis) {
+    await bullRedis.disconnect();
+  }
 
   console.log('✅ All queues closed successfully');
 }

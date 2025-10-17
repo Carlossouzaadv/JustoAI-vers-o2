@@ -9,7 +9,7 @@
 import { createHash } from 'crypto';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
-import { getRedis } from './redis';
+import { getRedis } from '../src/lib/redis';
 
 export interface AnalysisCacheResult {
   hit: boolean;
