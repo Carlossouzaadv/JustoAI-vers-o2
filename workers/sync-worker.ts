@@ -8,8 +8,29 @@ import { Job } from 'bull';
 import { syncQueue } from '../lib/queues';
 import { prisma } from '../lib/prisma';
 import { ProcessApiClient, createProcessApiClient } from '../lib/process-apis';
-import { redisUtils } from '../src/lib/redis';
+import { getRedisClient } from '../src/lib/redis';
 import { ICONS } from '../lib/icons';
+
+// Get Redis client instance
+const redis = getRedisClient();
+
+// Utility wrapper for common Redis operations
+const redisUtils = {
+  async get(key: string) {
+    return redis.get(key);
+  },
+  async setWithTTL(key: string, value: any, ttlSeconds: number) {
+    await redis.setex(key, ttlSeconds, typeof value === 'string' ? value : JSON.stringify(value));
+  },
+  async healthCheck() {
+    try {
+      await redis.ping();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
 
 // === TIPOS E INTERFACES ===
 

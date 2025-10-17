@@ -9,10 +9,29 @@ import { reportsQueue } from '../lib/queues';
 import { prisma } from '../lib/prisma';
 import PDFGenerator from '../lib/pdf-generator';
 import { ReportDataCollector } from '../lib/report-data-collector';
-import { redisUtils } from '../src/lib/redis';
+import { getRedisClient } from '../src/lib/redis';
 import { addNotificationJob } from '../lib/queues';
 import { addIndividualReportJob } from './individual-reports-worker';
 import { ICONS } from '../lib/icons';
+
+// Get Redis client and create utility wrapper
+const redis = getRedisClient();
+const redisUtils = {
+  async get(key: string) {
+    return redis.get(key);
+  },
+  async setWithTTL(key: string, value: any, ttlSeconds: number) {
+    await redis.setex(key, ttlSeconds, typeof value === 'string' ? value : JSON.stringify(value));
+  },
+  async healthCheck() {
+    try {
+      await redis.ping();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+};
 
 // === TIPOS E INTERFACES ===
 
