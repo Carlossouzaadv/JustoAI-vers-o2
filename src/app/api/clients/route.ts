@@ -308,4 +308,7 @@ async function POST(request: NextRequest) {
   )
 }
 
-export { GET, POST }
+export default withMethods({
+  GET,
+  POST,
+})
