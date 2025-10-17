@@ -20,6 +20,8 @@ import { createClient } from '@supabase/supabase-js';
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
+
+  // For OAuth signup
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -63,33 +65,37 @@ export default function SignupPage() {
     setAuthError('');
 
     try {
-      // Sign up with Supabase
-      const { data: authData, error } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            name: data.name,
-            phone: data.phone,
-            marketingConsent: data.marketingConsent || false,
-            consentDate: new Date().toISOString(),
-          },
+      // Call our backend API to handle signup
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          phone: data.phone,
+          marketingConsent: data.marketingConsent || false,
+        }),
       });
 
-      if (error) {
-        setAuthError(error.message);
+      if (!response.ok) {
+        const errorData = await response.json();
+        setAuthError(errorData.error || 'Falha ao criar conta. Tente novamente.');
         return;
       }
 
-      if (authData.user) {
-        // 🔧 FIX: Aguardar 2 segundos antes de redirecionar
-        // Isso permite que getCurrentUser() sincronize o usuário com o banco
-        console.log('✅ Usuário criado no Supabase:', authData.user.id);
+      const result = await response.json();
+
+      if (result.success) {
+        console.log('✅ Conta criada com sucesso:', result.user.id);
+        // Aguardar 2 segundos para sincronizar sessão
         await new Promise(resolve => setTimeout(resolve, 2000));
         window.location.href = '/dashboard';
       }
     } catch (error) {
+      console.error('❌ Signup error:', error);
       setAuthError('Erro inesperado. Tente novamente.');
     } finally {
       setIsLoading(false);

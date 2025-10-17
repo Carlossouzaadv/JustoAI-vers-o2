@@ -51,49 +51,32 @@ export default function ClientsPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Simulação de dados - substituir por API real
+  // Load clients from API
   useEffect(() => {
-    const mockClients: Client[] = [
-      {
-        id: '1',
-        name: 'João Silva',
-        email: 'joao@email.com',
-        phone: '(11) 99999-9999',
-        document: '123.456.789-01',
-        type: 'INDIVIDUAL',
-        status: 'ACTIVE',
-        createdAt: '2025-01-15',
-        _count: { cases: 3 }
-      },
-      {
-        id: '2',
-        name: 'Maria Santos',
-        email: 'maria@empresa.com',
-        phone: '(11) 88888-8888',
-        document: '987.654.321-09',
-        type: 'INDIVIDUAL',
-        status: 'ACTIVE',
-        createdAt: '2025-01-10',
-        _count: { cases: 1 }
-      },
-      {
-        id: '3',
-        name: 'Empresa ABC Ltda',
-        email: 'contato@abc.com.br',
-        phone: '(11) 77777-7777',
-        document: '12.345.678/0001-90',
-        type: 'COMPANY',
-        status: 'ACTIVE',
-        createdAt: '2025-01-05',
-        _count: { cases: 5 }
-      }
-    ];
-
-    setTimeout(() => {
-      setClients(mockClients);
-      setLoading(false);
-    }, 1000);
+    loadClients();
   }, []);
+
+  const loadClients = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/clients?limit=1000', {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.data || []);
+      } else {
+        console.error('Failed to load clients:', response.status);
+        setClients([]);
+      }
+    } catch (error) {
+      console.error('Error loading clients:', error);
+      setClients([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(search.toLowerCase()) ||

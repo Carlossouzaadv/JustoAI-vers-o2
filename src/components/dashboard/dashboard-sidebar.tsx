@@ -45,55 +45,36 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
   const loadClients = async () => {
     try {
       setLoading(true);
-      // Using mock data for development - replace with API call when auth is ready
-      const mockClients: Client[] = [
-        {
-          id: '1',
-          name: 'João Silva',
-          email: 'joao@email.com',
-          phone: '(11) 99999-9999',
-          processCount: 3,
-          status: 'active',
-          lastUpdate: '2025-01-15T10:00:00Z',
-          attentionRequired: 1
-        },
-        {
-          id: '2',
-          name: 'Maria Santos',
-          email: 'maria@empresa.com',
-          phone: '(11) 88888-8888',
-          processCount: 1,
-          status: 'active',
-          lastUpdate: '2025-01-10T15:30:00Z'
-        },
-        {
-          id: '3',
-          name: 'Empresa ABC Ltda',
-          email: 'contato@abc.com.br',
-          phone: '(11) 77777-7777',
-          processCount: 5,
-          status: 'active',
-          lastUpdate: '2025-01-05T09:15:00Z',
-          attentionRequired: 2
-        },
-        {
-          id: '4',
-          name: 'Pedro Oliveira',
-          email: 'pedro@advocacia.com',
-          phone: '(11) 66666-6666',
-          processCount: 2,
-          status: 'active',
-          lastUpdate: '2025-01-12T14:20:00Z'
-        }
-      ];
 
-      // Simulate API delay but shorter to improve UX
-      setTimeout(() => {
-        setClients(mockClients);
-        setLoading(false);
-      }, 100);
+      // Call real API endpoint
+      const response = await fetch('/api/clients?limit=100', {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Transform API response to match Client interface
+        const apiClients = (data.data || []).map((apiClient: any) => ({
+          id: apiClient.id,
+          name: apiClient.name,
+          email: apiClient.email,
+          phone: apiClient.phone,
+          processCount: apiClient._count?.cases || 0,
+          status: apiClient.status?.toLowerCase() === 'active' ? 'active' : 'inactive',
+          lastUpdate: apiClient.updatedAt || new Date().toISOString(),
+          attentionRequired: 0, // TODO: Calculate from case alerts
+        }));
+
+        setClients(apiClients);
+      } else {
+        console.error('Failed to load clients:', response.status);
+        setClients([]);
+      }
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
+      setClients([]);
+    } finally {
       setLoading(false);
     }
   };

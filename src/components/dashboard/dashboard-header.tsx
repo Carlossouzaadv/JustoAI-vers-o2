@@ -47,9 +47,11 @@ export function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            {ICONS.SETTINGS} Configurações
-          </Button>
+          <Link href="/dashboard/settings">
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              {ICONS.SETTINGS} Configurações
+            </Button>
+          </Link>
         </div>
       </div>
     </header>

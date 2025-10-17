@@ -7,7 +7,11 @@
       "Bash(npx prisma:*)",
       "Bash(npx ts-node:*)",
       "Bash(npm install)",
-      "Read(//d/**)"
+      "Read(//d/**)",
+      "Bash(dir:*)",
+      "Bash(npm run type-check:*)",
+      "Read(//c/Users/carlo/OneDrive/Desktop/**)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

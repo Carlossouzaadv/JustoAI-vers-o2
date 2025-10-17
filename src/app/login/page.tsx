@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ICONS } from '../../../lib/icons';
@@ -13,16 +14,43 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simular login - integrar com backend posteriormente
-    setTimeout(() => {
+    setAuthError('');
+
+    try {
+      // Verify credentials with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('❌ Login error:', error.message);
+        setAuthError(error.message || 'Falha ao entrar. Verifique suas credenciais.');
+        setPassword(''); // Clear password on error
+        return;
+      }
+
+      if (data.user) {
+        console.log('✅ Login successful:', data.user.id);
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      }
+    } catch (error) {
+      console.error('❌ Unexpected login error:', error);
+      setAuthError('Erro inesperado. Tente novamente.');
+    } finally {
       setIsLoading(false);
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
-    }, 2000);
+    }
   };
 
   return (
@@ -49,6 +77,11 @@ export default function LoginPage() {
 
         {/* Form */}
         <Card className="p-8 shadow-xl border border-neutral-200">
+          {authError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{authError}</p>
+            </div>
+          )}
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-neutral-700">
