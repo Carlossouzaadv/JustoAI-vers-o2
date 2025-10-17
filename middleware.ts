@@ -71,6 +71,7 @@ export async function middleware(request: NextRequest) {
     const publicEndpoints = [
       '/api/health',
       '/api/auth/',
+      '/api/debug/',  // Debug endpoints for troubleshooting
     ]
 
     const isPublicEndpoint = publicEndpoints.some(endpoint =>
