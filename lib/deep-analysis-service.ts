@@ -11,13 +11,13 @@ import { Redis } from 'ioredis';
 import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
-import { getRedis } from '../src/lib/redis';
+import { getRedisClient } from '../src/lib/redis';
 
 
 const prisma = new PrismaClient();
 
 // Redis connection - will connect with REDIS_URL if available
-const redis = getRedis();
+const redis = getRedisClient();
 
 export interface AnalysisKeyParams {
   processId: string;

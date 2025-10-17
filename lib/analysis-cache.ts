@@ -9,7 +9,7 @@
 import { createHash } from 'crypto';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
-import { getRedis } from '../src/lib/redis';
+import { getRedisClient } from '../src/lib/redis';
 
 export interface AnalysisCacheResult {
   hit: boolean;
@@ -35,7 +35,7 @@ export class AnalysisCacheManager {
 
   constructor() {
     // Use Redis singleton - will connect with REDIS_URL if available
-    this.redis = getRedis();
+    this.redis = getRedisClient();
   }
 
   /**
