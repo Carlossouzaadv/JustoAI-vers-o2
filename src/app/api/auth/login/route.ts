@@ -1,12 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
 /**
  * POST /api/auth/login
  *
  * Authenticate user with email and password
  * Sets Supabase session cookies for subsequent authenticated requests
+ * Also ensures user exists in database with a default workspace
  */
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +74,44 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ User logged in:', authData.user.id, 'email:', email)
+
+    // Ensure user exists in database
+    const dbUser = await prisma.user.upsert({
+      where: { supabaseId: authData.user.id },
+      create: {
+        supabaseId: authData.user.id,
+        email: authData.user.email || email,
+        name: authData.user.user_metadata?.name || authData.user.email || 'User',
+      },
+      update: {
+        name: authData.user.user_metadata?.name || authData.user.email || 'User',
+      },
+      include: {
+        workspaces: {
+          include: {
+            workspace: true,
+          },
+        },
+      },
+    })
+
+    // If user has no workspaces, create a default one
+    if (dbUser.workspaces.length === 0) {
+      console.log('📦 Creating default workspace for user:', dbUser.id)
+      const workspace = await prisma.workspace.create({
+        data: {
+          name: `${dbUser.name}'s Workspace`,
+          slug: `workspace-${Date.now()}`,
+          users: {
+            create: {
+              userId: dbUser.id,
+              role: 'OWNER',
+            },
+          },
+        },
+      })
+      console.log('✅ Default workspace created:', workspace.id)
+    }
 
     // The session cookies are automatically set by the Supabase client
     // when we called signInWithPassword above via the cookies handler
