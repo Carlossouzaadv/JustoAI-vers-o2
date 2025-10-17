@@ -14,17 +14,20 @@ export async function GET(
       )
     }
 
-    // Return workspace summary - mock data for now
+    // Return workspace summary with the structure the dashboard expects
     return NextResponse.json({
       success: true,
-      data: {
-        id: workspaceId,
-        totalClients: 0,
-        totalCases: 0,
-        totalDocuments: 0,
-        creditsUsed: 0,
-        creditsAvailable: 0,
+      statistics: {
+        totalProcesses: 0,
+        completedAnalysis: 0,
+        completedCases: 0,
+        partialAnalysis: 0,
+        attentionRequired: 0,
+        recentUpdates: 0,
+        pendingActions: 0,
+        documents: 0,
       },
+      recentActivity: [],
     })
   } catch (error) {
     console.error('Error getting workspace summary:', error)
