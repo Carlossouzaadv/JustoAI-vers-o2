@@ -16,19 +16,14 @@ import { getRedis } from './redis';
 
 const prisma = new PrismaClient();
 
-// Check if Redis should be disabled (for Railway without Redis)
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+// Check if Redis should be disabled (only in development without REDIS_URL)
+// Uses REDIS_URL as single source of truth for production configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
+const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
 
-// Redis connection - use mock if disabled
-const redis = REDIS_DISABLED
-  ? getRedis() // Returns MockRedis when disabled
-  : new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
-      enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
-      reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
-    });
+// Redis connection - always use getRedis() which handles both mock and real connections
+// This ensures proper lazy initialization and prevents connection errors during build
+const redis = getRedis();
 
 export interface AnalysisKeyParams {
   processId: string;

@@ -8,8 +8,10 @@
 import Queue from 'bull';
 import { bullRedis } from './redis';
 
-// Check if Redis should be disabled (for Railway without Redis)
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+// Check if Redis should be disabled (only in development without REDIS_URL)
+// Uses REDIS_URL as single source of truth for production configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
+const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
 
 /**
  * Mock Queue class for when Redis is disabled
@@ -37,16 +39,9 @@ class MockQueue {
 }
 
 // Configuração base das filas
+// Note: Use bullRedis singleton from lib/redis.ts which handles REDIS_URL correctly
 const queueConfig = REDIS_DISABLED ? {} : {
-  redis: {
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    host: process.env.REDIS_HOST || 'localhost',
-    password: process.env.REDIS_PASSWORD,
-    db: 1, // Use DB 1 para Bull Queue
-    maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
-    enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
-    reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
-  },
+  redis: bullRedis,
   defaultJobOptions: {
     removeOnComplete: 100, // Manter últimos 100 jobs completos
     removeOnFail: 50,      // Manter últimos 50 jobs falhados

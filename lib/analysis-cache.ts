@@ -12,8 +12,10 @@ import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { getRedis } from './redis';
 
-// Check if Redis should be disabled (for Railway without Redis)
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true' || !process.env.REDIS_HOST;
+// Check if Redis should be disabled (only in development without REDIS_URL)
+// Uses REDIS_URL as single source of truth for production configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
+const REDIS_DISABLED = isDevelopment && !process.env.REDIS_URL;
 
 export interface AnalysisCacheResult {
   hit: boolean;
@@ -38,29 +40,13 @@ export class AnalysisCacheManager {
   private readonly LOCK_TTL = 300; // 5 minutos para lock
 
   constructor() {
-    // Use mock Redis if disabled, otherwise create real connection
+    // Always use getRedis() which handles both mock (development) and real (production) connections
+    // getRedis() already implements proper error handling and lazy validation
     if (REDIS_DISABLED) {
-      console.warn('⚠️ Analysis cache Redis is disabled - using mock client');
-      this.redis = getRedis(); // Returns MockRedis when disabled
-    } else {
-      this.redis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        maxRetriesPerRequest: 1, // ⚠️ CRITICAL: Limit to 1 retry to prevent CPU spike
-        enableReadyCheck: false,
-        lazyConnect: true,
-        enableOfflineQueue: false, // ⚠️ CRITICAL: Don't queue when offline
-        reconnectOnError: null, // ⚠️ CRITICAL: Don't auto-reconnect on error
-      });
-
-      this.redis.on('error', (error) => {
-        console.error(`${ICONS.ERROR} Redis connection error:`, error);
-      });
-
-      this.redis.on('connect', () => {
-        console.log(`${ICONS.SUCCESS} Redis connected for analysis cache`);
-      });
+      console.warn('⚠️ Analysis cache Redis is disabled - using mock client (development mode, no REDIS_URL configured)');
     }
+
+    this.redis = getRedis(); // This returns either real Redis instance or MockRedis depending on REDIS_DISABLED
   }
 
   /**
