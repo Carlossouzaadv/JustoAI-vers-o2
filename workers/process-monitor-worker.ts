@@ -7,7 +7,7 @@ import { prisma } from '../lib/prisma';
 import { getJuditApiClient } from '../lib/judit-api-client';
 import { ICONS } from '../lib/icons';
 import { Queue } from 'bull';
-import { getRedis } from '../lib/redis';
+import { getRedis } from '../src/lib/redis';
 
 // ================================================================
 // TIPOS E INTERFACES

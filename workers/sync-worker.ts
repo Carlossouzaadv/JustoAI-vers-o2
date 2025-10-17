@@ -8,7 +8,7 @@ import { Job } from 'bull';
 import { syncQueue } from '../lib/queues';
 import { prisma } from '../lib/prisma';
 import { ProcessApiClient, createProcessApiClient } from '../lib/process-apis';
-import { redisUtils } from '../lib/redis';
+import { redisUtils } from '../src/lib/redis';
 import { ICONS } from '../lib/icons';
 
 // === TIPOS E INTERFACES ===

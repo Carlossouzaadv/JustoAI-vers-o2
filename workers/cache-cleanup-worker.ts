@@ -7,7 +7,7 @@
 import { Job } from 'bull';
 import { cacheCleanupQueue } from '../lib/queues';
 import { prisma } from '../lib/prisma';
-import { redis, redisUtils } from '../lib/redis';
+import { redis, redisUtils } from '../src/lib/redis';
 import { ICONS } from '../lib/icons';
 
 // === TIPOS E INTERFACES ===

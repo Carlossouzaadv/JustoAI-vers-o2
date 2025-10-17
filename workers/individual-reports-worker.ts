@@ -46,7 +46,7 @@ const INDIVIDUAL_REPORTS_CONFIG = {
 
 // Criar fila específica para relatórios individuais
 import { Queue } from 'bull';
-import { getRedis } from '../lib/redis';
+import { getRedis } from '../src/lib/redis';
 
 export const individualReportsQueue = new Queue('individual-reports', {
   redis: getRedis(),

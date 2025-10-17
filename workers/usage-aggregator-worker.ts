@@ -6,7 +6,7 @@ import { Job, Queue } from 'bull';
 import { prisma } from '../lib/prisma';
 import { usageTracker } from '../lib/telemetry/usage-tracker';
 import { ICONS } from '../lib/icons';
-import { getRedis } from '../lib/redis';
+import { getRedis } from '../src/lib/redis';
 
 // ================================================================
 // TIPOS E INTERFACES
