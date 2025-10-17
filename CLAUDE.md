@@ -748,3 +748,4 @@ git revert commit-hash             # Create undo commit
 **Last Updated**: 2025-10-16
 **Version**: 1.0
 **Status**: Active - Follow these guidelines for all contributions
+- Este projeto está live. Não usamos mais mocks ou workarounds. Temos que resolver os problemas que aparecem.
