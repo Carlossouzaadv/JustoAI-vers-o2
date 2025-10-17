@@ -134,7 +134,9 @@ export default function DashboardPage() {
         // Se um cliente está selecionado, buscar nome do cliente
         if (selectedClientId && !selectedClientName) {
           try {
-            const clientResponse = await fetch(`/api/clients/${selectedClientId}`);
+            const clientResponse = await fetch(`/api/clients/${selectedClientId}`, {
+              credentials: 'include'
+            });
             if (clientResponse.ok) {
               const clientData = await clientResponse.json();
               const clientName = clientData.client?.name || '';

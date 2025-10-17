@@ -50,7 +50,9 @@ export default function UploadPage() {
   useEffect(() => {
     const loadCases = async () => {
       try {
-        const response = await fetch('/api/cases');
+        const response = await fetch('/api/cases', {
+          credentials: 'include'
+        });
         if (response.ok) {
           const data = await response.json();
           const cases = data.data || data.cases || [];
@@ -134,6 +136,7 @@ export default function UploadPage() {
     const response = await fetch('/api/documents/upload', {
       method: 'POST',
       body: formData,
+      credentials: 'include'
     });
 
     if (!response.ok) {
