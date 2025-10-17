@@ -79,8 +79,8 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
       setLoading(true);
 
       const [creditsResponse, quotaResponse] = await Promise.all([
-        fetch(`/api/billing/credits?workspaceId=${workspaceId}`),
-        fetch(`/api/reports/quota-status?workspaceId=${workspaceId}`)
+        fetch(`/api/billing/credits?workspaceId=${workspaceId}`, { credentials: 'include' }),
+        fetch(`/api/reports/quota-status?workspaceId=${workspaceId}`, { credentials: 'include' })
       ]);
 
       const [creditsData, quotaData] = await Promise.all([
@@ -88,22 +88,51 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
         quotaResponse.json()
       ]);
 
-      if (creditsData.success) {
+      if (creditsData.success && creditsData.data?.balance) {
         setCredits(creditsData.data.balance);
         setUsage({
           reportsThisMonth: creditsData.data.quotaStatus?.reports?.current || 0,
-          creditsThisMonth: creditsData.data.balance.consumedCredits,
+          creditsThisMonth: creditsData.data.balance.consumedCredits || 0,
           estimatedCost: creditsData.data.quotaStatus?.reports?.billingEstimate || 0,
           daysUntilReset: getDaysUntilMonthEnd()
         });
+      } else {
+        // Set default on error
+        setCredits({
+          balance: 0,
+          includedCredits: 0,
+          purchasedCredits: 0,
+          consumedCredits: 0
+        });
       }
 
-      if (quotaData.success) {
-        setQuota(quotaData.quotaStatus.reports);
+      if (quotaData.success && quotaData.data?.quotaStatus?.reports) {
+        setQuota(quotaData.data.quotaStatus.reports);
+      } else {
+        // Set default quota
+        setQuota({
+          current: 0,
+          limit: 50,
+          percentage: 0,
+          status: 'ok'
+        });
       }
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
+      // Set defaults on error
+      setCredits({
+        balance: 0,
+        includedCredits: 0,
+        purchasedCredits: 0,
+        consumedCredits: 0
+      });
+      setQuota({
+        current: 0,
+        limit: 50,
+        percentage: 0,
+        status: 'ok'
+      });
     } finally {
       setLoading(false);
     }
@@ -391,14 +420,29 @@ export function CreditsWidget({ workspaceId, onBuyCredits }: CreditsWidgetProps)
   useEffect(() => {
     const loadCredits = async () => {
       try {
-        const response = await fetch(`/api/billing/credits?workspaceId=${workspaceId}&action=balance`);
+        const response = await fetch(`/api/billing/credits?workspaceId=${workspaceId}&action=balance`, { credentials: 'include' });
         const data = await response.json();
 
-        if (data.success) {
-          setCredits(data.data);
+        if (data.success && data.data?.balance) {
+          setCredits(data.data.balance);
+        } else {
+          // Set default on error
+          setCredits({
+            balance: 0,
+            includedCredits: 0,
+            purchasedCredits: 0,
+            consumedCredits: 0
+          });
         }
       } catch (error) {
         console.error('Erro ao carregar créditos:', error);
+        // Set default on error
+        setCredits({
+          balance: 0,
+          includedCredits: 0,
+          purchasedCredits: 0,
+          consumedCredits: 0
+        });
       } finally {
         setLoading(false);
       }

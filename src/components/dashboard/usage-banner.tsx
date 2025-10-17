@@ -100,8 +100,8 @@ export default function UsageBanner({
       setLoading(true);
 
       const [usageResponse, alertsResponse] = await Promise.all([
-        fetch(`/api/telemetry/monthly-usage?workspaceId=${workspaceId}`),
-        fetch(`/api/telemetry/active-alerts?workspaceId=${workspaceId}`)
+        fetch(`/api/telemetry/monthly-usage?workspaceId=${workspaceId}`, { credentials: 'include' }),
+        fetch(`/api/telemetry/active-alerts?workspaceId=${workspaceId}`, { credentials: 'include' })
       ]);
 
       const [usageData, alertsData] = await Promise.all([
@@ -109,17 +109,24 @@ export default function UsageBanner({
         alertsResponse.json()
       ]);
 
-      if (usageData.success) {
+      if (usageData.success && usageData.data) {
         setUsage(usageData.data);
       }
 
-      if (alertsData.success) {
+      if (alertsData.success && alertsData.alerts) {
         const bannerAlerts = alertsData.alerts.map(alert => convertToAlertBanner(alert));
         setAlerts(bannerAlerts);
       }
 
     } catch (error) {
       console.error('Erro ao carregar dados de uso:', error);
+      // Set default usage on error
+      setUsage({
+        processes: { monitored: 0, limit: 100, percentage: 0 },
+        reports: { used: 0, limit: 50, percentage: 0, status: 'ok' },
+        credits: { consumed: 0, included: 0, purchased: 0, remaining: 100 },
+        api: { juditCalls: 0, estimatedCost: 0 }
+      });
     } finally {
       setLoading(false);
     }
