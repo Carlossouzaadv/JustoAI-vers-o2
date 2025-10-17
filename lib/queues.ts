@@ -6,11 +6,11 @@
  */
 
 import Queue from 'bull';
-import { getBullRedis } from '../src/lib/redis';
+import { getRedisConnection } from '../src/lib/redis';
 
 // Configuração base das filas
 const queueConfig = {
-  redis: getBullRedis(),
+  redis: getRedisConnection(),
   defaultJobOptions: {
     removeOnComplete: 100, // Manter últimos 100 jobs completos
     removeOnFail: 50,      // Manter últimos 50 jobs falhados
@@ -268,7 +268,7 @@ export async function closeAllQueues() {
 
   await Promise.all(allQueues.map(queue => queue.close()));
 
-  const bullRedis = getBullRedis();
+  const bullRedis = getRedisConnection();
   if (bullRedis) {
     await bullRedis.disconnect();
   }

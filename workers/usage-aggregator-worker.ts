@@ -6,7 +6,7 @@ import { Job, Queue } from 'bull';
 import { prisma } from '../lib/prisma';
 import { usageTracker } from '../lib/telemetry/usage-tracker';
 import { ICONS } from '../lib/icons';
-import { getRedis } from '../src/lib/redis';
+import { getRedisClient } from '../src/lib/redis';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -60,7 +60,7 @@ const AGGREGATOR_CONFIG = {
 
 // Criar fila específica para agregação usando Redis centralizado
 export const usageAggregatorQueue = new Queue('usage-aggregator', {
-  redis: getRedis(),
+  redis: getRedisClient(),
   defaultJobOptions: {
     removeOnComplete: 10,
     removeOnFail: 5,

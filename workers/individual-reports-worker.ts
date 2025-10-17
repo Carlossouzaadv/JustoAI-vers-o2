@@ -46,10 +46,10 @@ const INDIVIDUAL_REPORTS_CONFIG = {
 
 // Criar fila específica para relatórios individuais
 import { Queue } from 'bull';
-import { getRedis } from '../src/lib/redis';
+import { getRedisClient } from '../src/lib/redis';
 
 export const individualReportsQueue = new Queue('individual-reports', {
-  redis: getRedis(),
+  redis: getRedisClient(),
   defaultJobOptions: {
     removeOnComplete: 50,
     removeOnFail: 20,
