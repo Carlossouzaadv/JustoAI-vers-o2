@@ -11,13 +11,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Return empty alerts - this endpoint is called from authenticated frontend
+    // Return alerts in the format UsageBanner expects
     return NextResponse.json({
       success: true,
-      data: {
-        count: 0,
-        alerts: [],
-      },
+      alerts: [],
     })
   } catch (error) {
     console.error('Error getting active alerts:', error)
