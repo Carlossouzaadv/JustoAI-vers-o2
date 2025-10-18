@@ -47,7 +47,9 @@
     "deploy:check": "node deploy-scripts/01-pre-deploy-check.js",
     "deploy:test": "node deploy-scripts/04-test-connections.js",
     "deploy:prod": "npm run deploy:check && npm run deploy:test && vercel --prod",
-    "deploy:preview": "npm run deploy:check && vercel"
+    "deploy:preview": "npm run deploy:check && vercel",
+    "check:imports": "madge --circular --extensions ts,tsx src/",
+    "check:all": "npm run type-check && npm run lint && npm run check:imports"
   },
   "dependencies": {
     "@bull-board/express": "^6.12.7",
@@ -67,6 +69,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
+    "@tailwindcss/postcss": "^4",
     "@tanstack/react-query": "^5.90.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/bull": "^3.15.9",
@@ -110,13 +113,12 @@
     "swagger-ui-dist": "^5.29.3",
     "swagger-ui-express": "^5.0.1",
     "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4",
     "tsx": "^4.20.5",
     "winston": "^3.18.3",
     "winston-daily-rotate-file": "^5.0.0",
     "xlsx": "^0.18.5",
-    "zod": "^4.1.8",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4"
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -143,6 +145,7 @@
     "imagemin-webp": "^8.0.0",
     "jest": "^30.1.3",
     "jest-environment-jsdom": "^30.2.0",
+    "madge": "^8.0.0",
     "next-optimized-images": "^2.6.2",
     "node-mocks-http": "^1.17.2",
     "terser-webpack-plugin": "^5.3.14",

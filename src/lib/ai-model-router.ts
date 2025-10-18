@@ -3,39 +3,16 @@
 // ================================================================
 // Implementa roteamento inteligente de modelos baseado em complexidade para economia de custos
 
-export enum ModelTier {
-  LITE = 'gemini-1.5-flash-8b',   // Mais barato (95% economia)
-  BALANCED = 'gemini-1.5-flash',  // Equilibrado
-  PRO = 'gemini-1.5-pro'          // Maior qualidade
-}
+// Import types from ai-model-types to avoid circular dependencies
+export {
+  ModelTier,
+  ComplexityScore,
+  ProcessingConfig,
+  ModelCosts
+} from './ai-model-types';
 
-export interface ComplexityScore {
-  totalScore: number;
-  factors: {
-    documentType: number; // NOVO: Pontuação baseada no tipo de documento
-    textLength: number;
-    legalComplexity: number;
-    structuralComplexity: number;
-    filesizeComplexity: number;
-  };
-  recommendedTier: ModelTier;
-  confidence: number;
-  documentType?: string; // NOVO: Tipo de documento detectado
-}
-
-export interface ProcessingConfig {
-  model: ModelTier;
-  maxTokens: number;
-  temperature: number;
-  promptTemplate: string;
-  fallbackModel?: ModelTier;
-}
-
-export interface ModelCosts {
-  inputTokenCost: number;   // Custo por 1K tokens de entrada
-  outputTokenCost: number;  // Custo por 1K tokens de saída
-  estimatedCost: number;    // Custo estimado total
-}
+// Re-export for backward compatibility
+import { ModelTier, ComplexityScore, ProcessingConfig, ModelCosts } from './ai-model-types';
 
 /**
  * SCHEMA BASE UNIFICADO - Baseado em report_generator.py V1

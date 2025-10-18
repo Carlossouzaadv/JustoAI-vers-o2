@@ -3,34 +3,7 @@
 // ================================================================
 // Direct integration with Google Gemini API for production use
 
-import { ModelTier } from './ai-model-router';
-
-export interface GeminiConfig {
-  apiKey: string;
-  model: ModelTier;
-  maxTokens: number;
-  temperature: number;
-  topP?: number;
-  topK?: number;
-}
-
-export interface GeminiResponse {
-  content: string;
-  usage: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-  model: string;
-  timestamp: string;
-}
-
-export interface GeminiError {
-  error: string;
-  code: number;
-  details?: string;
-  retryable: boolean;
-}
+import { ModelTier, GeminiConfig, GeminiResponse, GeminiError } from './ai-model-types';
 
 /**
  * Real Gemini API Client for production use

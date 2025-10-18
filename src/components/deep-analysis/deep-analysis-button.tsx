@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { DeepAnalysisModal, useDeepAnalysis } from './index';
+import { DeepAnalysisModal } from './deep-analysis-modal';
+import { useDeepAnalysis } from './use-deep-analysis';
 import { ICONS } from '@/lib/icons';
 
 interface DeepAnalysisButtonProps {
