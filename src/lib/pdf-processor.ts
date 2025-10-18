@@ -13,17 +13,17 @@ if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefi
   };
 }
 
-// Import pdfjs-dist (pdf.mjs for Node.js/Vercel compatibility)
+// Import pdfjs-dist with webpack ignore to prevent worker bundling
 let pdfjs: any = null;
 
 async function getPdfJS() {
   if (!pdfjs) {
     try {
-      // Use ESM module (pdf.mjs) - works in Node.js without external worker issues
-      pdfjs = await import('pdfjs-dist/build/pdf.mjs');
+      // Use ESM module with webpackIgnore to prevent worker bundling in Vercel
+      pdfjs = await import(/* webpackIgnore: true */ 'pdfjs-dist/build/pdf.mjs');
     } catch {
-      // Fallback to regular import
-      pdfjs = await import('pdfjs-dist');
+      // Fallback to regular import with webpack ignore
+      pdfjs = await import(/* webpackIgnore: true */ 'pdfjs-dist');
     }
   }
   return pdfjs;
