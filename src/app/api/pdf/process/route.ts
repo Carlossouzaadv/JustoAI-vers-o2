@@ -13,13 +13,15 @@ export async function POST(request: NextRequest) {
     // Dynamically require the PDF extractor at runtime
     // Try multiple possible paths for the file in standalone build
     const possiblePaths = [
-      // Path 1: Relative to current working directory
-      join(process.cwd(), 'src', 'lib', 'pdf-extractor.js'),
-      // Path 2: Absolute path if running from /justoai-v2
-      '/justoai-v2/src/lib/pdf-extractor.js',
-      // Path 3: Relative to process.cwd() with justoai-v2 prefix
+      // Path 1: Standard standalone structure: /app/justoai-v2/src/lib/
+      '/app/justoai-v2/src/lib/pdf-extractor.js',
+      // Path 2: Relative to process.cwd() if in /app
       join(process.cwd(), 'justoai-v2', 'src', 'lib', 'pdf-extractor.js'),
-      // Path 4: Try direct path from root
+      // Path 3: If process.cwd() is /app/justoai-v2
+      join(process.cwd(), 'src', 'lib', 'pdf-extractor.js'),
+      // Path 4: Direct path from app root
+      '/app/src/lib/pdf-extractor.js',
+      // Path 5: Try direct root path (fallback)
       '/src/lib/pdf-extractor.js',
     ];
 
