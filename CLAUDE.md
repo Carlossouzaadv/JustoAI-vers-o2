@@ -437,6 +437,103 @@ curl http://localhost:3000/api/health
 
 ---
 
+## 🗄️ Database & Prisma Commands
+
+### ⚠️ CRITICAL: Environment Setup
+
+Prisma requires **both** `DATABASE_URL` (with pgBouncer) and `DIRECT_URL` (without pgBouncer) in `.env.local`:
+
+```env
+# Connection pooling URL (pgBouncer) - for application queries
+DATABASE_URL=postgresql://username:password@aws-1-xxx.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+# Direct PostgreSQL connection - for migrations (NO pgBouncer!)
+DIRECT_URL=postgresql://username:password@db.xxx.supabase.co:5432/postgres
+```
+
+**⚠️ DO NOT swap these URLs - pgBouncer breaks migrations!**
+
+### Running Prisma Commands with Dotenv
+
+Since Prisma CLI doesn't auto-load `.env.local`, always use this pattern:
+
+```bash
+# CORRECT WAY - Load .env.local before running Prisma
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma <command>', { stdio: 'inherit' })"
+
+# Examples:
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma migrate deploy', { stdio: 'inherit' })"
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma generate', { stdio: 'inherit' })"
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma db push --skip-generate', { stdio: 'inherit' })"
+```
+
+### Common Prisma Operations
+
+```bash
+# Generate Prisma Client after schema changes
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma generate', { stdio: 'inherit' })"
+
+# Deploy pending migrations (production-safe)
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma migrate deploy', { stdio: 'inherit' })"
+
+# Push schema changes directly (development only)
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma db push --skip-generate', { stdio: 'inherit' })"
+
+# Check migration status
+node -e "require('dotenv').config({path: '.env.local'}); const { execSync } = require('child_process'); execSync('npx prisma migrate status', { stdio: 'inherit' })"
+```
+
+### Database Operations via Prisma Client (Node.js)
+
+For operations that need actual code (like checking columns), use Prisma Client directly:
+
+```javascript
+// In a Node.js script or browser console
+const dotenv = require('dotenv');
+dotenv.config({ path: '.env.local' });
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function checkColumn() {
+  try {
+    // Check if column exists
+    const result = await prisma.$queryRaw`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'case_documents'
+      AND column_name = 'isDuplicate'
+    `;
+
+    if (result.length > 0) {
+      console.log('✅ Column exists');
+    } else {
+      console.log('❌ Column missing, adding...');
+      await prisma.$executeRaw`
+        ALTER TABLE "case_documents"
+        ADD COLUMN "isDuplicate" BOOLEAN NOT NULL DEFAULT false
+      `;
+    }
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+checkColumn();
+```
+
+### Troubleshooting Prisma Issues
+
+| Issue | Solution |
+|-------|----------|
+| `Environment variable not found: DIRECT_URL` | Use the `node -e dotenv` pattern above |
+| `P3005: The database schema is not empty` | Use `npx prisma migrate reset` (dev only) or `npx prisma db push` |
+| `P2022: The column X does not exist` | Check if migration was applied. Use Prisma Client query above to verify |
+| `prepared statement does not exist` | Using pgBouncer URL in DIRECT_URL. Swap URLs - pgBouncer goes in DATABASE_URL |
+| Prisma Client out of date | Run `npx prisma generate` after schema changes |
+
+---
+
 ## 🔀 Syncing Branches
 
 ### Keep Branch Up-to-Date with Main
