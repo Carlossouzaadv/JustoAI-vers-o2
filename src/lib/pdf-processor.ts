@@ -6,7 +6,7 @@
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
 
-// Type declaration for pdf-parse
+// Type declaration for pdf-parse extracted data
 interface PDFData {
   text: string;
   numpages: number;
@@ -139,17 +139,19 @@ export class PDFProcessor {
   }
 
   /**
-   * Método primário - extração real com pdf-parse
+   * Método primário - extração real com pdf-parse (fresh install, no corruption)
+   * A corrupção em Vercel foi resolvida forçando --force em npm install (vercel.json)
    */
   private async extractWithPrimary(buffer: Buffer): Promise<string> {
     try {
+      // Dynamic import to avoid webpack bundling issues
       const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
 
       const startTime = Date.now();
       const pdfData = await pdfParse(buffer);
       const extractionTime = Date.now() - startTime;
 
-      console.log(`📄 PDF extraído com pdf-parse: ${pdfData.text.length} chars em ${extractionTime}ms`);
+      console.log(`📄 PDF extraído com pdf-parse (fresh): ${pdfData.text.length} chars em ${extractionTime}ms`);
 
       if (!pdfData.text || pdfData.text.trim().length === 0) {
         throw new Error('PDF não contém texto extraível');
@@ -273,7 +275,8 @@ export class PDFProcessor {
         hasText: !!(pdfData.text && pdfData.text.trim().length > 0),
         hasImages
       };
-    } catch {
+    } catch (error) {
+      console.error('❌ Erro ao extrair metadados:', error);
       return {
         pages: 0,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
@@ -305,13 +308,14 @@ export class PDFProcessor {
   }
 
   /**
-   * Processa PDF completo - Extração local com pdf-parse
+   * Processa PDF completo - Extração local com pdf-parse (fresh install)
    * Extrai texto, normaliza e identifica campos específicos
+   * NOTA: Cache corruption resolvida via vercel.json com --force npm install
    */
   async processComplete(options: ProcessCompleteOptions): Promise<PDFAnalysisResult> {
     try {
       // DEBUG: Log all inputs at start
-      console.log('=== PDF PROCESSOR START ===');
+      console.log('=== PDF PROCESSOR START (pdf-parse fresh) ===');
       console.log('--- OPTIONS RECEIVED ---', JSON.stringify(options, null, 2));
       console.log('--- PDF_PATH TYPE ---', typeof options.pdf_path);
       console.log('--- PDF_PATH VALUE ---', options.pdf_path);
@@ -341,10 +345,13 @@ export class PDFProcessor {
 
       console.log(`📄 Processando PDF localmente: ${file_name} (${file_size_mb.toFixed(2)}MB)`);
 
-      // 3. Extrair texto com pdf-parse
+      // 3. Extrair texto com pdf-parse (fresh install from npm, not corrupted)
+      console.log('--- STARTING PDF-PARSE EXTRACTION ---');
       const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
       const pdfData = await pdfParse(fileBuffer);
       const texto_original = pdfData.text || '';
+
+      console.log('--- PDF EXTRACTION COMPLETE ---', `Total: ${texto_original.length} chars from ${pdfData.numpages} pages`);
 
       if (!texto_original || texto_original.trim().length === 0) {
         console.warn('⚠️ PDF não contém texto extraível');
@@ -380,11 +387,12 @@ export class PDFProcessor {
         processed_at: new Date().toISOString(),
         file_name,
         file_size_mb,
-        processingMethod: 'local'
+        processingMethod: 'local-fresh-pdf-parse'
       };
 
     } catch (error) {
       console.error('❌ Erro ao processar PDF:', error);
+      console.error('--- ERROR STACK ---', error instanceof Error ? error.stack : 'Sem stack trace');
 
       return {
         success: false,
