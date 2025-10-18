@@ -13,8 +13,7 @@ if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefi
   };
 }
 
-// Import pdfjs-dist
-// webpack config prevents .worker.mjs files from being bundled
+// Import pdfjs-dist and disable worker for Node.js
 let pdfjs: any = null;
 
 async function getPdfJS() {
@@ -23,6 +22,12 @@ async function getPdfJS() {
       pdfjs = await import('pdfjs-dist/build/pdf.mjs');
     } catch {
       pdfjs = await import('pdfjs-dist');
+    }
+
+    // CRITICAL: Disable worker IMMEDIATELY after import
+    // This prevents pdfjs from trying to load pdf.worker.mjs dynamically
+    if (pdfjs.GlobalWorkerOptions) {
+      pdfjs.GlobalWorkerOptions.workerSrc = '';  // Empty string = no worker
     }
   }
   return pdfjs;
