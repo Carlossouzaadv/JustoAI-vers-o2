@@ -7,7 +7,7 @@
  */
 
 import Queue from 'bull';
-import { getRedisConnection } from '../src/lib/redis';
+import { getRedisConnection } from './redis';
 
 // Lazy initialization - queues are created on first use, not on import
 let _syncQueue: Queue.Queue | null = null;
