@@ -1,36 +1,103 @@
 // ================================================================
-// PDF PROCESSOR - Adaptado do JustoAI V1 com Economia de Tokens
+// PDF PROCESSOR - Cliente Vercel que chama Railway
 // ================================================================
-// Implementa extração em cascata, limpeza avançada e otimização de IA
+// Este arquivo roda em VERCEL e faz requisições HTTP para Railway
+// O processamento pesado (pdf-parse, pdfjs-dist) acontece no Railway
+// Máximo logging para rastreamento completo
 
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
 
-// Polyfills for Node.js environment (no canvas/DOM)
-if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefined') {
-  (globalThis as any).DOMMatrix = class {
-    constructor(public data: any = null) {}
-  };
+const ICONS = {
+  VERCEL: '⚡',
+  RAILWAY: '🚂',
+  PDF: '📄',
+  API: '🌐',
+  SUCCESS: '✅',
+  ERROR: '❌',
+  LOG: '📝',
+};
+
+// ================================================================
+// CONFIG E LOGGER
+// ================================================================
+function log(prefix: string, message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${prefix} ${message}`, data ? JSON.stringify(data, null, 2) : '');
 }
 
-// Import pdfjs-dist and disable worker for Node.js
-let pdfjs: any = null;
-
-async function getPdfJS() {
-  if (!pdfjs) {
-    try {
-      pdfjs = await import('pdfjs-dist/build/pdf.mjs');
-    } catch {
-      pdfjs = await import('pdfjs-dist');
-    }
-
-    // CRITICAL: Disable worker for Node.js environments
-    // This prevents pdfjs from trying to load pdf.worker.mjs dynamically
-    if (typeof window === 'undefined') {
-      pdfjs.disableWorker = true;
-    }
+// Obter URL base do serviço PDF (Railway ou localhost)
+function getPdfProcessorUrl(): string {
+  // Prioritário: variável de ambiente para Railway em produção
+  if (process.env.PDF_PROCESSOR_URL) {
+    return process.env.PDF_PROCESSOR_URL;
   }
-  return pdfjs;
+
+  // Fallback: localhost para desenvolvimento
+  return process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'http://localhost:3000';
+}
+
+// ================================================================
+// CLIENTE HTTP PARA RAILWAY
+// ================================================================
+async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
+  const startTime = Date.now();
+  const baseUrl = getPdfProcessorUrl();
+  const url = `${baseUrl}/api/pdf/process`;
+
+  log(`${ICONS.VERCEL} ${ICONS.RAILWAY}`, 'Chamando serviço PDF do Railway', {
+    url,
+    fileName,
+    bufferSize: buffer.length,
+  });
+
+  try {
+    // Criar FormData
+    const formData = new FormData();
+    const blob = new Blob([buffer], { type: 'application/pdf' });
+    formData.append('file', blob, fileName);
+
+    // Fazer requisição
+    const callStartTime = Date.now();
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      timeout: 60000, // 60 segundos timeout
+    });
+
+    const callTime = Date.now() - callStartTime;
+
+    log(`${ICONS.VERCEL} ${ICONS.API}`, `Resposta recebida do Railway (${callTime}ms)`, {
+      status: response.status,
+      statusText: response.statusText,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Erro na resposta do Railway', {
+        status: response.status,
+        error: errorText.substring(0, 200),
+      });
+      throw new Error(`Railway retornou status ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+
+    log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Dados extraídos do Railway com sucesso', {
+      originalLength: result.data.originalText.length,
+      cleanedLength: result.data.cleanedText.length,
+      processNumber: result.data.processNumber,
+      metrics: result.data.metrics,
+    });
+
+    return result.data;
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+    log(`${ICONS.VERCEL} ${ICONS.ERROR}`, `Erro ao chamar Railway (${totalTime}ms)`, {
+      error: (error as any)?.message,
+    });
+    throw error;
+  }
 }
 
 // Type declaration for extracted PDF data
@@ -104,19 +171,19 @@ export class PDFProcessor {
 
   /**
    * Extração em cascata - Estratégia principal do V1
-   * 1. Método primário com pdf-parse
+   * 1. Método primário com Railway (pdf-parse ou pdfjs-dist)
    * 2. Fallback se < 100 chars
    * 3. OCR seria implementado com tesseract.js se necessário
    */
-  async extractText(buffer: Buffer): Promise<ExtractionResult> {
-    console.log('🔍 Iniciando extração em cascata...');
+  async extractText(buffer: Buffer, fileName: string = 'document.pdf'): Promise<ExtractionResult> {
+    log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Iniciando extração em cascata');
 
     try {
       // Estratégia 1: Método primário
-      const primaryText = await this.extractWithPrimary(buffer);
+      const primaryText = await this.extractWithPrimary(buffer, fileName);
 
       if (primaryText.length >= this.MIN_TEXT_LENGTH) {
-        console.log('✅ Extração primária bem-sucedida');
+        log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Extração primária bem-sucedida');
         return {
           text: primaryText,
           method: 'primary',
@@ -128,13 +195,13 @@ export class PDFProcessor {
         };
       }
 
-      console.log('⚠️ Texto insuficiente, tentando método alternativo...');
+      log(`${ICONS.VERCEL}`, 'Texto insuficiente, tentando método alternativo...');
 
       // Estratégia 2: Fallback
       const fallbackText = await this.extractWithFallback(buffer);
 
       if (fallbackText.length >= this.MIN_TEXT_LENGTH) {
-        console.log('✅ Extração fallback bem-sucedida');
+        log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Extração fallback bem-sucedida');
         return {
           text: fallbackText,
           method: 'fallback',
@@ -147,7 +214,7 @@ export class PDFProcessor {
       }
 
       // TODO: Estratégia 3: OCR com tesseract.js
-      console.log('❌ Todas as estratégias falharam');
+      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Todas as estratégias falharam');
 
       return {
         text: primaryText || fallbackText || '',
@@ -160,44 +227,27 @@ export class PDFProcessor {
       };
 
     } catch (error) {
-      console.error('❌ Erro na extração de texto:', error);
+      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Erro na extração de texto', {
+        error: (error as any)?.message,
+      });
       throw new Error(`Falha na extração: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   }
 
   /**
-   * Método primário - extração com pdfjs-dist (sem canvas, puro Node.js)
+   * Método primário - Chama Railway para extração de PDF
    */
-  private async extractWithPrimary(buffer: Buffer): Promise<string> {
+  private async extractWithPrimary(buffer: Buffer, fileName: string = 'document.pdf'): Promise<string> {
     try {
-      const startTime = Date.now();
-      const pdfLib = await getPdfJS();
+      log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Iniciando extração primária via Railway');
 
-      // Convert Buffer to Uint8Array (pdfjs-dist requires Uint8Array, not Buffer)
-      const uint8Array = new Uint8Array(buffer);
+      const data = await callRailwayPdfProcessor(buffer, fileName);
+      const fullText = data.cleanedText;
 
-      // Load PDF document
-      const pdf = await pdfLib.getDocument({ data: uint8Array }).promise;
-      let fullText = '';
-
-      // Extract text from each page (no rendering, just text content)
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        try {
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => (item.str || '') + (item.space ? ' ' : ''))
-            .join('')
-            .trim();
-          fullText += pageText + '\n';
-        } catch (pageError) {
-          console.warn(`⚠️ Erro ao extrair página ${pageNum}:`, pageError);
-          // Continue com próximas páginas
-        }
-      }
-
-      const extractionTime = Date.now() - startTime;
-      console.log(`📄 PDF extraído com pdfjs-dist: ${fullText.length} chars em ${extractionTime}ms`);
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Extração primária concluída', {
+        textLength: fullText.length,
+        processNumber: data.processNumber,
+      });
 
       if (!fullText || fullText.trim().length === 0) {
         throw new Error('PDF não contém texto extraível');
@@ -205,7 +255,9 @@ export class PDFProcessor {
 
       return fullText;
     } catch (error) {
-      console.error('❌ Erro no método primário:', error);
+      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Erro no método primário', {
+        error: (error as any)?.message,
+      });
       return '';
     }
   }
@@ -372,67 +424,52 @@ export class PDFProcessor {
   }
 
   /**
-   * Processa PDF completo - Extração com pdfjs-dist (sem canvas, pure Node.js)
+   * Processa PDF completo - Extração via Railway
    * Extrai texto, normaliza e identifica campos específicos
    */
   async processComplete(options: ProcessCompleteOptions): Promise<PDFAnalysisResult> {
+    const processStartTime = Date.now();
+
     try {
-      // DEBUG: Log all inputs at start
-      console.log('=== PDF PROCESSOR START (pdfjs-dist no-canvas) ===');
-      console.log('--- OPTIONS RECEIVED ---', JSON.stringify(options, null, 2));
-      console.log('--- PDF_PATH TYPE ---', typeof options.pdf_path);
-      console.log('--- PDF_PATH VALUE ---', options.pdf_path);
+      log(`${ICONS.VERCEL} ${ICONS.PDF}`, '=== INICIANDO PROCESSAMENTO COMPLETO DO PDF ===');
+      log(`${ICONS.VERCEL}`, 'Opções recebidas', {
+        pdf_path: options.pdf_path,
+        extract_fields: options.extract_fields.slice(0, 3),
+        custom_fields_count: options.custom_fields?.length || 0,
+      });
 
       // 1. Verificar se arquivo existe
-      console.log('--- CHECKING FILE ACCESS ---', options.pdf_path);
+      log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Verificando acesso ao arquivo');
       await fs.access(options.pdf_path);
-      console.log('--- FILE ACCESS OK ---');
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Arquivo acessível');
 
       // 2. Ler arquivo do disco
-      console.log('--- ATTEMPTING TO READ FILE ---', options.pdf_path);
-      let fileBuffer: Buffer;
-      try {
-        fileBuffer = await fs.readFile(options.pdf_path);
-        console.log('--- FILE READ SUCCESS ---', 'Size:', fileBuffer.length, 'bytes');
-      } catch (readError: any) {
-        console.error('=== FILE READ FAILED ===');
-        console.error('--- ERROR DETAILS ---', readError);
-        throw readError;
-      }
+      log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Lendo arquivo do disco', { path: options.pdf_path });
+      const fileBuffer = await fs.readFile(options.pdf_path);
       const stats = await fs.stat(options.pdf_path);
       const file_size_mb = stats.size / (1024 * 1024);
       const file_name = options.pdf_path.split('/').pop() || 'document.pdf';
 
-      console.log(`📄 Processando PDF localmente: ${file_name} (${file_size_mb.toFixed(2)}MB)`);
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Arquivo lido com sucesso', {
+        size_bytes: fileBuffer.length,
+        size_mb: file_size_mb.toFixed(2),
+        file_name,
+      });
 
-      // 3. Extrair texto com pdfjs-dist (text-only, sem canvas)
-      console.log('--- STARTING PDFJS-DIST EXTRACTION ---');
-      const pdfLib = await getPdfJS();
-      // Convert Buffer to Uint8Array (pdfjs-dist requirement)
-      const uint8Array = new Uint8Array(fileBuffer);
-      const pdf = await pdfLib.getDocument({ data: uint8Array }).promise;
-      console.log('--- PDF DOCUMENT LOADED ---', `Pages: ${pdf.numPages}`);
+      // 3. Extrair texto via Railway
+      log(`${ICONS.VERCEL} ${ICONS.RAILWAY}`, 'Iniciando extração de texto via Railway');
+      const railwayData = await callRailwayPdfProcessor(fileBuffer, file_name);
+      const texto_original = railwayData.originalText;
 
-      let texto_original = '';
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        try {
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => (item.str || '') + (item.space ? ' ' : ''))
-            .join('')
-            .trim();
-          texto_original += pageText + '\n';
-          console.log(`--- PAGE ${pageNum} EXTRACTED ---`, `${pageText.length} chars`);
-        } catch (pageError) {
-          console.warn(`⚠️ Erro extraindo página ${pageNum}:`, pageError);
-        }
-      }
-
-      console.log('--- PDF EXTRACTION COMPLETE ---', `Total: ${texto_original.length} chars`);
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Texto extraído do Railway', {
+        original_length: texto_original.length,
+        cleaned_length: railwayData.cleanedText.length,
+        extraction_time_ms: railwayData.metrics.extractionTimeMs,
+        process_number: railwayData.processNumber,
+      });
 
       if (!texto_original || texto_original.trim().length === 0) {
-        console.warn('⚠️ PDF não contém texto extraível');
+        log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'PDF não contém texto extraível');
         return {
           success: false,
           error: 'PDF não contém texto extraível',
@@ -444,16 +481,37 @@ export class PDFProcessor {
         };
       }
 
-      console.log(`✅ Texto extraído: ${texto_original.length} caracteres`);
-
       // 4. Normalizar/limpar texto
+      log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Normalizando texto');
       const texto_limpo = this.normalizeText(texto_original);
-      const texto_ai_friendly = texto_limpo.slice(0, 50000); // Limitar para análise IA
+      const texto_ai_friendly = texto_limpo.slice(0, 50000);
 
-      // 5. Extrair informações básicas conforme os campos solicitados
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Texto normalizado', {
+        normalized_length: texto_limpo.length,
+        ai_friendly_length: texto_ai_friendly.length,
+      });
+
+      // 5. Extrair informações básicas
+      log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Extraindo informações básicas');
       const info_basica = this.extractBasicInfo(texto_original, options.extract_fields);
 
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Informações básicas extraídas', {
+        process_number: info_basica.numero_processo,
+        cpf_found: !!info_basica.cpf_encontrado,
+        cnpj_found: !!info_basica.cnpj_encontrado,
+        values_count: (info_basica.valores_encontrados || []).length,
+        dates_count: (info_basica.datas_encontradas || []).length,
+      });
+
       // 6. Retornar resultado completo
+      const totalTime = Date.now() - processStartTime;
+
+      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, '=== PROCESSAMENTO DO PDF CONCLUÍDO ===', {
+        total_time_ms: totalTime,
+        success: true,
+        text_length: texto_original.length,
+      });
+
       return {
         success: true,
         texto_original,
@@ -465,16 +523,21 @@ export class PDFProcessor {
         processed_at: new Date().toISOString(),
         file_name,
         file_size_mb,
-        processingMethod: 'local-pdfjs-no-canvas'
+        processingMethod: 'railway-http-client'
       };
 
     } catch (error) {
-      console.error('❌ Erro ao processar PDF:', error);
-      console.error('--- ERROR STACK ---', error instanceof Error ? error.stack : 'Sem stack trace');
+      const totalTime = Date.now() - processStartTime;
+
+      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, '=== ERRO AO PROCESSAR PDF ===', {
+        error_message: (error as any)?.message,
+        total_time_ms: totalTime,
+        stack: (error as any)?.stack?.substring(0, 200),
+      });
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: (error as any)?.message || 'Erro desconhecido',
         extracted_fields: options.extract_fields,
         custom_fields: options.custom_fields || [],
         processed_at: new Date().toISOString(),

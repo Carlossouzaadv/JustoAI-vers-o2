@@ -79,26 +79,19 @@ const nextConfig: NextConfig = {
         readline: false,
         events: false,
       };
+    } else {
+      // On server: exclude pdfjs-dist from bundling as it has worker references
+      // pdfjs-dist will be loaded at runtime via require() only on Node.js
+      if (Array.isArray(config.externals)) {
+        config.externals.push('pdfjs-dist');
+      } else if (!config.externals) {
+        config.externals = ['pdfjs-dist'];
+      } else {
+        // If externals is an object or function, wrap it and add our module
+        const existingExternals = config.externals;
+        config.externals = [existingExternals, 'pdfjs-dist'];
+      }
     }
-
-    // Prevent webpack from bundling pdfjs-dist workers
-    // Workers are loaded dynamically at runtime, not needed in bundle
-    config.module.rules.push({
-      test: /pdf\.worker\.mjs$/,
-      type: 'asset/resource',
-      generator: {
-        filename: 'static/chunks/[name][ext]',
-      },
-    });
-
-    // Also handle .worker.js files
-    config.module.rules.push({
-      test: /\.worker\.js$/,
-      type: 'asset/resource',
-      generator: {
-        filename: 'static/chunks/[name][ext]',
-      },
-    });
 
     return config;
   },

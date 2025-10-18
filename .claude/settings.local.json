@@ -1,23 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run build:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npx prisma generate:*)",
-      "Bash(npx prisma:*)",
-      "Bash(npx ts-node:*)",
-      "Bash(npm install)",
-      "Read(//d/**)",
-      "Bash(dir:*)",
-      "Bash(npm run type-check:*)",
-      "Read(//c/Users/carlo/OneDrive/Desktop/**)",
-      "Bash(cat:*)",
-      "Bash(set DATABASE_URL=\"postgresql://postgres.overbsbivbuevmyltyet:Nuwjjr$3@aws-1-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true\")",
-      "Bash(node --require dotenv/config -e \"console.log(process.env.DATABASE_URL)\" dotenv_config_path=.env.local)",
-      "Bash(node -e \"require(''dotenv'').config({path: ''.env.local''}); const { execSync } = require(''child_process''); execSync(''npx prisma migrate status'', { stdio: ''inherit'' })\")",
-      "Bash(node scripts/apply-migrations.js:*)",
-      "Bash(npx tsx:*)",
-      "Bash(find \"D:\\JustoAI-vers-o2\\.next\" -name \"*.js\" -type f -exec grep -l \"T is not defined\\|ReferenceError.*T\" {})"
+      "Read(//d/JustoAI/backend/**)"
     ],
     "deny": [],
     "ask": []
