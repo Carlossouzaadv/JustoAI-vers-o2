@@ -95,16 +95,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(3);
 
-  // Use hooks in try-catch to handle potential provider validation errors
-  let dashboardContext, onboardingContext, authContext;
-  try {
-    dashboardContext = useDashboard();
-  } catch (error) {
-    console.error('DashboardPage: useDashboard hook error -', error);
-    throw new Error('DashboardPage must be used within DashboardLayout');
-  }
-
-  const { selectedClientId, selectedClientName, setSelectedClient } = dashboardContext;
+  // FIXED: Removed try-catch with conditional assignment that caused TDZ violations
+  // during minification. Hook validation happens in useDashboard() itself, so we can
+  // safely call hooks directly. React's error boundary will catch provider errors.
+  const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
   const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
   const { workspaceId, loading: authLoading } = useAuth();
 
