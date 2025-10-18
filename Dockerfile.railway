@@ -87,6 +87,10 @@ COPY --from=builder /app/public ./justoai-v2/public
 # that are NOT included in Next.js standalone build
 COPY --from=builder /app/node_modules ./justoai-v2/node_modules
 
+# Copy lib directory with JS files (pdf-extractor.js, etc)
+# These are needed for runtime require() calls that are NOT bundled
+COPY --from=builder /app/src/lib ./justoai-v2/src/lib
+
 # Copy Prisma client and engine for database operations
 COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
 
