@@ -13,13 +13,13 @@ if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefi
   };
 }
 
-// Import pdfjs-dist (use .mjs without worker configuration for Node.js)
+// Import pdfjs-dist (pdf.mjs for Node.js/Vercel compatibility)
 let pdfjs: any = null;
 
 async function getPdfJS() {
   if (!pdfjs) {
     try {
-      // Try to import pdf.mjs directly (works in Node.js without external worker)
+      // Use ESM module (pdf.mjs) - works in Node.js without external worker issues
       pdfjs = await import('pdfjs-dist/build/pdf.mjs');
     } catch {
       // Fallback to regular import
