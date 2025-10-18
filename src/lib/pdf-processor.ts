@@ -310,11 +310,31 @@ export class PDFProcessor {
    */
   async processComplete(options: ProcessCompleteOptions): Promise<PDFAnalysisResult> {
     try {
+      // DEBUG: Log all inputs at start
+      console.log('=== PDF PROCESSOR START ===');
+      console.log('--- OPTIONS RECEIVED ---', JSON.stringify(options, null, 2));
+      console.log('--- PDF_PATH TYPE ---', typeof options.pdf_path);
+      console.log('--- PDF_PATH VALUE ---', options.pdf_path);
+
       // 1. Verificar se arquivo existe
+      console.log('--- CHECKING FILE ACCESS ---', options.pdf_path);
       await fs.access(options.pdf_path);
+      console.log('--- FILE ACCESS OK ---');
 
       // 2. Ler arquivo do disco
-      const fileBuffer = await fs.readFile(options.pdf_path);
+      console.log('--- ATTEMPTING TO READ FILE ---', options.pdf_path);
+      let fileBuffer: Buffer;
+      try {
+        fileBuffer = await fs.readFile(options.pdf_path);
+        console.log('--- FILE READ SUCCESS ---', 'Size:', fileBuffer.length, 'bytes');
+      } catch (readError: any) {
+        console.error('=== FILE READ FAILED ===');
+        console.error('--- ERROR DETAILS ---', readError);
+        console.error('--- ERROR MESSAGE ---', readError.message);
+        console.error('--- ERROR CODE ---', readError.code);
+        console.error('--- ATTEMPTED PATH ---', options.pdf_path);
+        throw readError;
+      }
       const stats = await fs.stat(options.pdf_path);
       const file_size_mb = stats.size / (1024 * 1024);
       const file_name = options.pdf_path.split('/').pop() || 'document.pdf';

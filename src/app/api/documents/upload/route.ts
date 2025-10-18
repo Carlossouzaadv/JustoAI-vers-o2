@@ -163,13 +163,22 @@ export async function POST(request: NextRequest) {
       await mkdir(tempDir, { recursive: true });
     }
     const tempPath = join(tempDir, `${Date.now()}-${file.name}`);
+    console.log('[DEBUG-UPLOAD] === STARTING PDF PROCESSING ===');
+    console.log('[DEBUG-UPLOAD] Temp dir:', tempDir);
+    console.log('[DEBUG-UPLOAD] PDF path will be:', tempPath);
+    console.log('[DEBUG-UPLOAD] File name:', file.name);
+    console.log('[DEBUG-UPLOAD] Buffer size:', buffer.length, 'bytes');
+
     await writeFile(tempPath, buffer);
+    console.log('[DEBUG-UPLOAD] File written OK to:', tempPath);
 
     const pdfProcessor = new PDFProcessor();
+    console.log('[DEBUG-UPLOAD] Calling processComplete with path:', tempPath);
     const extractionResult = await pdfProcessor.processComplete({
       pdf_path: tempPath,
       extract_fields: ['processo', 'data', 'partes', 'valor']
     });
+    console.log('[DEBUG-UPLOAD] Result:', { success: extractionResult.success, error: extractionResult.error });
 
     if (!extractionResult.success) {
       return NextResponse.json(
