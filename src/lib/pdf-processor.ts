@@ -24,10 +24,10 @@ async function getPdfJS() {
       pdfjs = await import('pdfjs-dist');
     }
 
-    // CRITICAL: Disable worker IMMEDIATELY after import
+    // CRITICAL: Disable worker for Node.js environments
     // This prevents pdfjs from trying to load pdf.worker.mjs dynamically
-    if (pdfjs.GlobalWorkerOptions) {
-      pdfjs.GlobalWorkerOptions.workerSrc = '';  // Empty string = no worker
+    if (typeof window === 'undefined') {
+      pdfjs.disableWorker = true;
     }
   }
   return pdfjs;
