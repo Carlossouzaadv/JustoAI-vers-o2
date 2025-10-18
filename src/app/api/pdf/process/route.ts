@@ -6,12 +6,15 @@
 // Recebe PDF via request, processa, retorna texto extraído
 
 import { NextRequest, NextResponse } from 'next/server';
+import { join } from 'path';
 
 export async function POST(request: NextRequest) {
   try {
-    // Dynamically require the PDF extractor at runtime
+    // Dynamically require the PDF extractor at runtime using absolute path
     // This prevents webpack from bundling it statically
-    const { handlePdfProcessing } = await import('../../../lib/pdf-extractor.js');
+    // Use require() to load CommonJS module at runtime
+    const extractorPath = join(process.cwd(), 'src', 'lib', 'pdf-extractor.js');
+    const { handlePdfProcessing } = require(extractorPath);
 
     const result = await handlePdfProcessing(request);
 
