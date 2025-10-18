@@ -6,7 +6,28 @@
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
 
-// Type declaration for pdf-parse extracted data
+// Polyfills for Node.js environment (no canvas/DOM)
+if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefined') {
+  (globalThis as any).DOMMatrix = class {
+    constructor(public data: any = null) {}
+  };
+}
+
+// Import pdfjs-dist for pure text extraction (no rendering)
+let pdfjs: any = null;
+
+async function getPdfJS() {
+  if (!pdfjs) {
+    pdfjs = await import('pdfjs-dist');
+    // Set worker URL - will use CDN in production
+    if (typeof window === 'undefined') {
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+    }
+  }
+  return pdfjs;
+}
+
+// Type declaration for extracted PDF data
 interface PDFData {
   text: string;
   numpages: number;
@@ -139,25 +160,41 @@ export class PDFProcessor {
   }
 
   /**
-   * Método primário - extração real com pdf-parse (fresh install, no corruption)
-   * A corrupção em Vercel foi resolvida forçando --force em npm install (vercel.json)
+   * Método primário - extração com pdfjs-dist (sem canvas, puro Node.js)
    */
   private async extractWithPrimary(buffer: Buffer): Promise<string> {
     try {
-      // Dynamic import to avoid webpack bundling issues
-      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
-
       const startTime = Date.now();
-      const pdfData = await pdfParse(buffer);
+      const pdfLib = await getPdfJS();
+
+      // Load PDF document
+      const pdf = await pdfLib.getDocument({ data: buffer }).promise;
+      let fullText = '';
+
+      // Extract text from each page (no rendering, just text content)
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        try {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => (item.str || '') + (item.space ? ' ' : ''))
+            .join('')
+            .trim();
+          fullText += pageText + '\n';
+        } catch (pageError) {
+          console.warn(`⚠️ Erro ao extrair página ${pageNum}:`, pageError);
+          // Continue com próximas páginas
+        }
+      }
+
       const extractionTime = Date.now() - startTime;
+      console.log(`📄 PDF extraído com pdfjs-dist: ${fullText.length} chars em ${extractionTime}ms`);
 
-      console.log(`📄 PDF extraído com pdf-parse (fresh): ${pdfData.text.length} chars em ${extractionTime}ms`);
-
-      if (!pdfData.text || pdfData.text.trim().length === 0) {
+      if (!fullText || fullText.trim().length === 0) {
         throw new Error('PDF não contém texto extraível');
       }
 
-      return pdfData.text;
+      return fullText;
     } catch (error) {
       console.error('❌ Erro no método primário:', error);
       return '';
@@ -263,16 +300,33 @@ export class PDFProcessor {
    */
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
-      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
-      const pdfData = await pdfParse(buffer);
+      const pdfLib = await getPdfJS();
+      const pdf = await pdfLib.getDocument({ data: buffer }).promise;
+
+      let fullText = '';
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        try {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str || '')
+            .join('');
+          fullText += pageText + '\n';
+        } catch {
+          // Continue
+        }
+      }
 
       // Detectar imagens verificando se há discrepância entre páginas e texto
-      const hasImages = this.detectImagesInPDF(buffer, pdfData);
+      const hasImages = this.detectImagesInPDF(buffer, {
+        text: fullText,
+        numpages: pdf.numPages
+      });
 
       return {
-        pages: pdfData.numpages,
+        pages: pdf.numPages,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
-        hasText: !!(pdfData.text && pdfData.text.trim().length > 0),
+        hasText: !!(fullText && fullText.trim().length > 0),
         hasImages
       };
     } catch (error) {
@@ -308,14 +362,13 @@ export class PDFProcessor {
   }
 
   /**
-   * Processa PDF completo - Extração local com pdf-parse (fresh install)
+   * Processa PDF completo - Extração com pdfjs-dist (sem canvas, pure Node.js)
    * Extrai texto, normaliza e identifica campos específicos
-   * NOTA: Cache corruption resolvida via vercel.json com --force npm install
    */
   async processComplete(options: ProcessCompleteOptions): Promise<PDFAnalysisResult> {
     try {
       // DEBUG: Log all inputs at start
-      console.log('=== PDF PROCESSOR START (pdf-parse fresh) ===');
+      console.log('=== PDF PROCESSOR START (pdfjs-dist no-canvas) ===');
       console.log('--- OPTIONS RECEIVED ---', JSON.stringify(options, null, 2));
       console.log('--- PDF_PATH TYPE ---', typeof options.pdf_path);
       console.log('--- PDF_PATH VALUE ---', options.pdf_path);
@@ -334,9 +387,6 @@ export class PDFProcessor {
       } catch (readError: any) {
         console.error('=== FILE READ FAILED ===');
         console.error('--- ERROR DETAILS ---', readError);
-        console.error('--- ERROR MESSAGE ---', readError.message);
-        console.error('--- ERROR CODE ---', readError.code);
-        console.error('--- ATTEMPTED PATH ---', options.pdf_path);
         throw readError;
       }
       const stats = await fs.stat(options.pdf_path);
@@ -345,13 +395,29 @@ export class PDFProcessor {
 
       console.log(`📄 Processando PDF localmente: ${file_name} (${file_size_mb.toFixed(2)}MB)`);
 
-      // 3. Extrair texto com pdf-parse (fresh install from npm, not corrupted)
-      console.log('--- STARTING PDF-PARSE EXTRACTION ---');
-      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
-      const pdfData = await pdfParse(fileBuffer);
-      const texto_original = pdfData.text || '';
+      // 3. Extrair texto com pdfjs-dist (text-only, sem canvas)
+      console.log('--- STARTING PDFJS-DIST EXTRACTION ---');
+      const pdfLib = await getPdfJS();
+      const pdf = await pdfLib.getDocument({ data: fileBuffer }).promise;
+      console.log('--- PDF DOCUMENT LOADED ---', `Pages: ${pdf.numPages}`);
 
-      console.log('--- PDF EXTRACTION COMPLETE ---', `Total: ${texto_original.length} chars from ${pdfData.numpages} pages`);
+      let texto_original = '';
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        try {
+          const page = await pdf.getPage(pageNum);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => (item.str || '') + (item.space ? ' ' : ''))
+            .join('')
+            .trim();
+          texto_original += pageText + '\n';
+          console.log(`--- PAGE ${pageNum} EXTRACTED ---`, `${pageText.length} chars`);
+        } catch (pageError) {
+          console.warn(`⚠️ Erro extraindo página ${pageNum}:`, pageError);
+        }
+      }
+
+      console.log('--- PDF EXTRACTION COMPLETE ---', `Total: ${texto_original.length} chars`);
 
       if (!texto_original || texto_original.trim().length === 0) {
         console.warn('⚠️ PDF não contém texto extraível');
@@ -387,7 +453,7 @@ export class PDFProcessor {
         processed_at: new Date().toISOString(),
         file_name,
         file_size_mb,
-        processingMethod: 'local-fresh-pdf-parse'
+        processingMethod: 'local-pdfjs-no-canvas'
       };
 
     } catch (error) {
