@@ -193,15 +193,17 @@ export default function UsageBanner({
   // Filtrar alertas não dismissados
   const activeAlerts = alerts.filter(alert => !dismissedAlerts.has(alert.type));
 
-  // Determinar se deve mostrar banner
-  const shouldShowBanner = activeAlerts.length > 0 || (usage && hasUsageConcerns(usage));
-
-  // Verificar se há preocupações de uso
+  // FIXED: Define helper function BEFORE using it to prevent TDZ violations during minification
+  // When const arrow functions are referenced before definition, minification can create
+  // a ReferenceError "Cannot access 'T' before initialization" in strict mode
   const hasUsageConcerns = (usage: MonthlyUsage) => {
     return usage.reports.percentage >= 80 ||
            usage.credits.remaining <= 5 ||
            usage.processes.percentage >= 90;
   };
+
+  // Determinar se deve mostrar banner (now safe to call hasUsageConcerns after definition)
+  const shouldShowBanner = activeAlerts.length > 0 || (usage && hasUsageConcerns(usage));
 
   // Loading state
   if (loading) {
