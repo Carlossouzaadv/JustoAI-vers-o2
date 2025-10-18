@@ -38,6 +38,7 @@ yarn-error.log*
 .env.production
 .env.production.local
 .env*.local
+.env.judit.example
 
 # API Keys and Secrets
 *.key

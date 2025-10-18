@@ -21,11 +21,17 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // For OAuth signup
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // For OAuth signup - lazy initialize only when needed
+  const getSupabaseClient = () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+      throw new Error('supabaseUrl and supabaseKey are required.');
+    }
+
+    return createClient(url, key);
+  };
 
   const {
     register,
@@ -108,6 +114,7 @@ export default function SignupPage() {
     setAuthError('');
 
     try {
+      const supabase = getSupabaseClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

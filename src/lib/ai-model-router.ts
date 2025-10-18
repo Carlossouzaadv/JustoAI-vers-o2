@@ -4,15 +4,10 @@
 // Implementa roteamento inteligente de modelos baseado em complexidade para economia de custos
 
 // Import types from ai-model-types to avoid circular dependencies
-export {
-  ModelTier,
-  ComplexityScore,
-  ProcessingConfig,
-  ModelCosts
-} from './ai-model-types';
+import { ModelTier, ComplexityScore, ProcessingConfig, ModelCosts } from './ai-model-types';
 
 // Re-export for backward compatibility
-import { ModelTier, ComplexityScore, ProcessingConfig, ModelCosts } from './ai-model-types';
+export { ModelTier, ComplexityScore, ProcessingConfig, ModelCosts } from './ai-model-types';
 
 /**
  * SCHEMA BASE UNIFICADO - Baseado em report_generator.py V1
