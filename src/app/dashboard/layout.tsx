@@ -1,27 +1,20 @@
 'use client';
 
-import { useState, createContext, useContext } from 'react';
+import { useState, createContext } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import '@/styles/dashboard-animations.css';
 
 // Context para compartilhar estado entre sidebar e página principal
-interface DashboardContextType {
+export interface DashboardContextType {
   selectedClientId: string;
   selectedClientName: string;
   setSelectedClient: (id: string, name: string) => void;
 }
 
-const DashboardContext = createContext<DashboardContextType | null>(null);
-
-export const useDashboard = () => {
-  const context = useContext(DashboardContext);
-  if (!context) {
-    throw new Error('useDashboard must be used within DashboardLayout');
-  }
-  return context;
-};
+// Exported context for use in separate hook file (prevents TDZ during minification)
+export const DashboardContext = createContext<DashboardContextType | null>(null);
 
 export default function DashboardLayout({
   children,

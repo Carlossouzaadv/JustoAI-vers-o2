@@ -99,14 +99,16 @@ export const ICONS = {
   HEALTH: '💚'
 } as const;
 
+// UI_TEXT is defined separately to avoid minification issues with template literals
+// Template literals with object references can cause TDZ violations during minification
 export const UI_TEXT = {
-  SUCCESS: `${ICONS.SUCCESS} Sucesso`,
-  ERROR: `${ICONS.ERROR} Erro`,
-  WARNING: `${ICONS.WARNING} Atenção`,
-  LOADING: `${ICONS.LOADING} Carregando`,
-  PROCESS_COMPLETE: `${ICONS.SUCCESS} Análise completa`,
-  PROCESS_PARTIAL: `${ICONS.WARNING} Monitorando`,
-  PROCESS_ATTENTION: `${ICONS.ERROR} Atenção necessária`
+  SUCCESS: '✓ Sucesso',
+  ERROR: '✗ Erro',
+  WARNING: '! Atenção',
+  LOADING: '... Carregando',
+  PROCESS_COMPLETE: '✓ Análise completa',
+  PROCESS_PARTIAL: '! Monitorando',
+  PROCESS_ATTENTION: '✗ Atenção necessária'
 } as const;
 
 export const EMOJIS = {

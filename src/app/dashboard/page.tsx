@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ICONS } from '@/lib/icons';
 import { getApiUrl } from '@/lib/api-client';
-import { useDashboard } from './layout';
+import { useDashboard } from '@/hooks/use-dashboard';
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { UsageAlert } from '@/components/ui/usage-alert';
@@ -94,7 +94,17 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [unreadNotifications, setUnreadNotifications] = useState(3);
-  const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
+
+  // Use hooks in try-catch to handle potential provider validation errors
+  let dashboardContext, onboardingContext, authContext;
+  try {
+    dashboardContext = useDashboard();
+  } catch (error) {
+    console.error('DashboardPage: useDashboard hook error -', error);
+    throw new Error('DashboardPage must be used within DashboardLayout');
+  }
+
+  const { selectedClientId, selectedClientName, setSelectedClient } = dashboardContext;
   const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
   const { workspaceId, loading: authLoading } = useAuth();
 
@@ -121,6 +131,14 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+
+      // Guard: Ensure workspaceId is available before making API call
+      // (Prevents null reference during minification)
+      if (!workspaceId) {
+        console.warn('DashboardPage: loadDashboardData called without workspaceId');
+        setLoading(false);
+        return;
+      }
 
       // Carregar dados gerais do dashboard
       const dashboardResponse = await fetch(getApiUrl(`/api/workspaces/${workspaceId}/summary`), {
