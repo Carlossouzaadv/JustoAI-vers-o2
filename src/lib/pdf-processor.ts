@@ -30,11 +30,14 @@ function log(prefix: string, message: string, data?: any) {
 function getPdfProcessorUrl(): string {
   // Prioritário: variável de ambiente para Railway em produção
   if (process.env.PDF_PROCESSOR_URL) {
+    log(`${ICONS.VERCEL}`, 'Usando PDF_PROCESSOR_URL do ambiente:', { url: process.env.PDF_PROCESSOR_URL });
     return process.env.PDF_PROCESSOR_URL;
   }
 
   // Fallback: localhost para desenvolvimento
-  return process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'http://localhost:3000';
+  const defaultUrl = 'http://localhost:3001';
+  log(`${ICONS.VERCEL}`, 'Usando localhost para desenvolvimento', { url: defaultUrl });
+  return defaultUrl;
 }
 
 // ================================================================

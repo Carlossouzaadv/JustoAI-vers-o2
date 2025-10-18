@@ -82,6 +82,11 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./justoai-v2/.next/static
 COPY --from=builder /app/public ./justoai-v2/public
 
+# ⚠️ CRITICAL: Copy FULL node_modules for Railway backend
+# This includes pdf-parse, pdfjs-dist, and other native dependencies
+# that are NOT included in Next.js standalone build
+COPY --from=builder /app/node_modules ./justoai-v2/node_modules
+
 # Copy Prisma client and engine for database operations
 COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
 
