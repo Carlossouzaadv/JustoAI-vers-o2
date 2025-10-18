@@ -167,8 +167,11 @@ export class PDFProcessor {
       const startTime = Date.now();
       const pdfLib = await getPdfJS();
 
+      // Convert Buffer to Uint8Array (pdfjs-dist requires Uint8Array, not Buffer)
+      const uint8Array = new Uint8Array(buffer);
+
       // Load PDF document
-      const pdf = await pdfLib.getDocument({ data: buffer }).promise;
+      const pdf = await pdfLib.getDocument({ data: uint8Array }).promise;
       let fullText = '';
 
       // Extract text from each page (no rendering, just text content)
@@ -301,7 +304,8 @@ export class PDFProcessor {
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
       const pdfLib = await getPdfJS();
-      const pdf = await pdfLib.getDocument({ data: buffer }).promise;
+      const uint8Array = new Uint8Array(buffer);
+      const pdf = await pdfLib.getDocument({ data: uint8Array }).promise;
 
       let fullText = '';
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -398,7 +402,9 @@ export class PDFProcessor {
       // 3. Extrair texto com pdfjs-dist (text-only, sem canvas)
       console.log('--- STARTING PDFJS-DIST EXTRACTION ---');
       const pdfLib = await getPdfJS();
-      const pdf = await pdfLib.getDocument({ data: fileBuffer }).promise;
+      // Convert Buffer to Uint8Array (pdfjs-dist requirement)
+      const uint8Array = new Uint8Array(fileBuffer);
+      const pdf = await pdfLib.getDocument({ data: uint8Array }).promise;
       console.log('--- PDF DOCUMENT LOADED ---', `Pages: ${pdf.numPages}`);
 
       let texto_original = '';
