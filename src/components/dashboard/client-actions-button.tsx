@@ -28,6 +28,7 @@ interface ProcessOption {
 export function ClientActionsButton({ clientId, clientName }: ClientActionsButtonProps) {
   const [processes, setProcesses] = useState<ProcessOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
 
   useEffect(() => {
     if (clientId) {
