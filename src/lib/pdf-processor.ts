@@ -68,12 +68,10 @@ export interface ProcessCompleteOptions {
 export class PDFProcessor {
   private readonly MIN_TEXT_LENGTH = 100;
   private readonly MAX_EXTRACTION_TIME = 60000; // 60 segundos
-  private readonly apiUrl: string;
   private readonly prisma: typeof prisma;
 
   constructor() {
-    // Construtor simplificado - não depende mais de Prisma ou API externa
-    this.apiUrl = process.env.PDF_API_URL || 'http://localhost:8000';
+    // Processamento 100% local - sem dependência de API externa
     this.prisma = prisma;
   }
 
@@ -307,76 +305,66 @@ export class PDFProcessor {
   }
 
   /**
-   * Processa PDF completo (versão otimizada para V2)
-   * Tenta usar API externa, mas tem fallback para processamento local
+   * Processa PDF completo - Extração local com pdf-parse
+   * Extrai texto, normaliza e identifica campos específicos
    */
   async processComplete(options: ProcessCompleteOptions): Promise<PDFAnalysisResult> {
     try {
-      // Verificar se arquivo existe
+      // 1. Verificar se arquivo existe
       await fs.access(options.pdf_path);
 
-      // Obter tamanho do arquivo
+      // 2. Ler arquivo do disco
+      const fileBuffer = await fs.readFile(options.pdf_path);
       const stats = await fs.stat(options.pdf_path);
       const file_size_mb = stats.size / (1024 * 1024);
+      const file_name = options.pdf_path.split('/').pop() || 'document.pdf';
 
-      // Tentar chamar API Python (se estiver disponível)
-      try {
-        const formData = new FormData();
-        const fileBuffer = await fs.readFile(options.pdf_path);
-        const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength) as ArrayBuffer;
-        const file = new File([arrayBuffer], options.pdf_path.split('/').pop() || 'document.pdf', {
-          type: 'application/pdf'
-        });
+      console.log(`📄 Processando PDF localmente: ${file_name} (${file_size_mb.toFixed(2)}MB)`);
 
-        formData.append('file', file);
-        formData.append('extract_fields', JSON.stringify(options.extract_fields));
-        if (options.custom_fields) {
-          formData.append('custom_fields', JSON.stringify(options.custom_fields));
-        }
+      // 3. Extrair texto com pdf-parse
+      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
+      const pdfData = await pdfParse(fileBuffer);
+      const texto_original = pdfData.text || '';
 
-        const response = await fetch(`${this.apiUrl}/api/pdf/process-complete`, {
-          method: 'POST',
-          body: formData,
-          signal: AbortSignal.timeout(10000), // 10 second timeout
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          return {
-            ...result,
-            file_size_mb,
-            processed_at: new Date().toISOString(),
-            processingMethod: 'api'
-          };
-        }
-      } catch (apiError) {
-        console.warn('⚠️ External PDF API unavailable, using fallback processing');
+      if (!texto_original || texto_original.trim().length === 0) {
+        console.warn('⚠️ PDF não contém texto extraível');
+        return {
+          success: false,
+          error: 'PDF não contém texto extraível',
+          extracted_fields: options.extract_fields,
+          custom_fields: options.custom_fields || [],
+          processed_at: new Date().toISOString(),
+          file_name,
+          file_size_mb
+        };
       }
 
-      // Fallback: Basic text extraction without external API
-      console.log('📄 Using fallback PDF processing (local)...');
+      console.log(`✅ Texto extraído: ${texto_original.length} caracteres`);
+
+      // 4. Normalizar/limpar texto
+      const texto_limpo = this.normalizeText(texto_original);
+      const texto_ai_friendly = texto_limpo.slice(0, 50000); // Limitar para análise IA
+
+      // 5. Extrair informações básicas conforme os campos solicitados
+      const info_basica = this.extractBasicInfo(texto_original, options.extract_fields);
+
+      // 6. Retornar resultado completo
       return {
         success: true,
-        texto_original: '[PDF processado em modo fallback - conteúdo completo será extraído após implementação]',
-        texto_limpo: '[PDF processado em modo fallback]',
-        texto_ai_friendly: '[PDF processado com sucesso]',
-        info_basica: {
-          numero_processo: undefined,
-          cpf_encontrado: undefined,
-          cnpj_encontrado: undefined,
-          valores_encontrados: [],
-          datas_encontradas: []
-        },
+        texto_original,
+        texto_limpo,
+        texto_ai_friendly,
+        info_basica,
         extracted_fields: options.extract_fields,
         custom_fields: options.custom_fields || [],
         processed_at: new Date().toISOString(),
-        file_name: options.pdf_path.split('/').pop() || 'document.pdf',
+        file_name,
         file_size_mb,
-        processingMethod: 'fallback'
+        processingMethod: 'local'
       };
 
     } catch (error) {
-      console.error('Erro no processamento PDF:', error);
+      console.error('❌ Erro ao processar PDF:', error);
 
       return {
         success: false,
@@ -384,9 +372,62 @@ export class PDFProcessor {
         extracted_fields: options.extract_fields,
         custom_fields: options.custom_fields || [],
         processed_at: new Date().toISOString(),
-        file_name: options.pdf_path.split('/').pop() || 'unknown',
+        file_name: options.pdf_path.split('/').pop() || 'unknown'
       };
     }
+  }
+
+  /**
+   * Normaliza texto removendo espaços e quebras de linha excessivas
+   */
+  private normalizeText(text: string): string {
+    return text
+      .replace(/\n{3,}/g, '\n\n') // Reduz quebras de linha excessivas
+      .replace(/\s{2,}/g, ' ') // Reduz espaços excessivos
+      .trim();
+  }
+
+  /**
+   * Extrai informações básicas do PDF conforme campos solicitados
+   */
+  private extractBasicInfo(texto: string, extract_fields: string[]): PDFAnalysisResult['info_basica'] {
+    const info: PDFAnalysisResult['info_basica'] = {
+      numero_processo: undefined,
+      cpf_encontrado: undefined,
+      cnpj_encontrado: undefined,
+      valores_encontrados: [],
+      datas_encontradas: []
+    };
+
+    if (!texto) return info;
+
+    try {
+      // Extrair número do processo (CNJ formato moderno ou antigo)
+      const cnj_modern = texto.match(/\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4}/);
+      const cnj_old = texto.match(/\d{4}\.\d{2}\.\d{6}-\d{1}/);
+      info.numero_processo = cnj_modern?.[0] || cnj_old?.[0];
+
+      // Extrair CPF
+      const cpf = texto.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
+      if (cpf) info.cpf_encontrado = cpf[0];
+
+      // Extrair CNPJ
+      const cnpj = texto.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);
+      if (cnpj) info.cnpj_encontrado = cnpj[0];
+
+      // Extrair valores monetários
+      const valores = texto.match(/R\$\s*[\d.,]+|R\$\s*\d+[.,]\d{2}/g);
+      if (valores) info.valores_encontrados = valores.slice(0, 5); // Primeiros 5 valores
+
+      // Extrair datas (DD/MM/YYYY)
+      const datas = texto.match(/\d{2}\/\d{2}\/\d{4}/g);
+      if (datas) info.datas_encontradas = [...new Set(datas)].slice(0, 5); // Únicas, primeiras 5
+
+    } catch (error) {
+      console.warn('⚠️ Erro ao extrair informações básicas:', error);
+    }
+
+    return info;
   }
 
   /**
