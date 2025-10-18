@@ -225,6 +225,8 @@ export default function DashboardPage() {
 
   // Smart Sorting: Ordenação inteligente por urgência
   const smartSort = (processes: DashboardData['ongoingProcesses']) => {
+    const priorityOrder = { high: 3, medium: 2, low: 1 } as const;
+
     return [...processes].sort((a, b) => {
       const today = new Date();
       const aDeadline = new Date(a.deadline);
@@ -239,12 +241,10 @@ export default function DashboardPage() {
 
       // 2. Se ambos vencidos, ordenar por prioridade
       if (aOverdue && bOverdue) {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       }
 
       // 3. Depois: Prioridade (alta primeiro)
-      const priorityOrder = { high: 3, medium: 2, low: 1 };
       if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       }

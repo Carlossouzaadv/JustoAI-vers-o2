@@ -16,7 +16,8 @@
       "Bash(node --require dotenv/config -e \"console.log(process.env.DATABASE_URL)\" dotenv_config_path=.env.local)",
       "Bash(node -e \"require(''dotenv'').config({path: ''.env.local''}); const { execSync } = require(''child_process''); execSync(''npx prisma migrate status'', { stdio: ''inherit'' })\")",
       "Bash(node scripts/apply-migrations.js:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(find \"D:\\JustoAI-vers-o2\\.next\" -name \"*.js\" -type f -exec grep -l \"T is not defined\\|ReferenceError.*T\" {})"
     ],
     "deny": [],
     "ask": []

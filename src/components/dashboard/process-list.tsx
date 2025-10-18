@@ -83,6 +83,8 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
     }
   };
 
+  const statusOrder = { attention: 0, partial: 1, complete: 2 } as const;
+
   const filteredProcesses = processes
     .filter(process => {
       if (filter !== 'all' && process.status !== filter) return false;
@@ -98,7 +100,6 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
     })
     .sort((a, b) => {
       // Ordenar por prioridade: attention > partial > complete
-      const statusOrder = { attention: 0, partial: 1, complete: 2 };
       if (a.status !== b.status) {
         return statusOrder[a.status] - statusOrder[b.status];
       }
