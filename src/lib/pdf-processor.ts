@@ -13,15 +13,17 @@ if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefi
   };
 }
 
-// Import pdfjs-dist for pure text extraction (no rendering)
+// Import pdfjs-dist (use .mjs without worker configuration for Node.js)
 let pdfjs: any = null;
 
 async function getPdfJS() {
   if (!pdfjs) {
-    pdfjs = await import('pdfjs-dist');
-    // Set worker URL - will use CDN in production
-    if (typeof window === 'undefined') {
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+    try {
+      // Try to import pdf.mjs directly (works in Node.js without external worker)
+      pdfjs = await import('pdfjs-dist/build/pdf.mjs');
+    } catch {
+      // Fallback to regular import
+      pdfjs = await import('pdfjs-dist');
     }
   }
   return pdfjs;
