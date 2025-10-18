@@ -81,6 +81,25 @@ const nextConfig: NextConfig = {
       };
     }
 
+    // Prevent webpack from bundling pdfjs-dist workers
+    // Workers are loaded dynamically at runtime, not needed in bundle
+    config.module.rules.push({
+      test: /pdf\.worker\.mjs$/,
+      type: 'asset/resource',
+      generator: {
+        filename: 'static/chunks/[name][ext]',
+      },
+    });
+
+    // Also handle .worker.js files
+    config.module.rules.push({
+      test: /\.worker\.js$/,
+      type: 'asset/resource',
+      generator: {
+        filename: 'static/chunks/[name][ext]',
+      },
+    });
+
     return config;
   },
 

@@ -13,7 +13,8 @@ if (typeof globalThis !== 'undefined' && typeof globalThis.DOMMatrix === 'undefi
   };
 }
 
-// Import pdfjs-dist with proper Node.js configuration
+// Import pdfjs-dist
+// webpack config prevents .worker.mjs files from being bundled
 let pdfjs: any = null;
 
 async function getPdfJS() {
@@ -22,12 +23,6 @@ async function getPdfJS() {
       pdfjs = await import('pdfjs-dist/build/pdf.mjs');
     } catch {
       pdfjs = await import('pdfjs-dist');
-    }
-
-    // Configure for Node.js/Vercel - disable worker to prevent webpack bundling issues
-    if (typeof window === 'undefined' && pdfjs.GlobalWorkerOptions) {
-      // Disable worker - text extraction doesn't need rendering/worker thread
-      (pdfjs.GlobalWorkerOptions as any).disableWorker = true;
     }
   }
   return pdfjs;
