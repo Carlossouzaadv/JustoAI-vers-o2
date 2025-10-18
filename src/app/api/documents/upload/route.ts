@@ -157,8 +157,19 @@ export async function POST(request: NextRequest) {
     // 7. EXTRAÇÃO E NORMALIZAÇÃO DE TEXTO
     console.log(`${ICONS.PROCESS} Extraindo texto do PDF...`);
 
+    // Save PDF to temp file for processing
+    const tempDir = join('/tmp', 'pdfs');
+    if (!existsSync(tempDir)) {
+      await mkdir(tempDir, { recursive: true });
+    }
+    const tempPath = join(tempDir, `${Date.now()}-${file.name}`);
+    await writeFile(tempPath, buffer);
+
     const pdfProcessor = new PDFProcessor();
-    const extractionResult = await pdfProcessor.processPDF(buffer, file.name);
+    const extractionResult = await pdfProcessor.processComplete({
+      pdf_path: tempPath,
+      extract_fields: ['processo', 'data', 'partes', 'valor']
+    });
 
     if (!extractionResult.success) {
       return NextResponse.json(
@@ -169,7 +180,8 @@ export async function POST(request: NextRequest) {
 
     // Limpar e normalizar texto
     const textCleaner = new TextCleaner();
-    const cleaningResult = textCleaner.cleanLegalDocument(extractionResult.text || '');
+    const extractedText = extractionResult.texto_original || extractionResult.texto_limpo || '';
+    const cleaningResult = textCleaner.cleanLegalDocument(extractedText);
     const cleanText = cleaningResult.cleanedText;
 
     // Registrar timestamp de extração
