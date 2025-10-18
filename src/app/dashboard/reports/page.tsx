@@ -64,101 +64,69 @@ export default function ReportsPage() {
   const [reportExecutions, setReportExecutions] = useState<ReportExecution[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Simulação de dados
+  // Carregar dados reais dos relatórios
   useEffect(() => {
-    const mockSchedules: ReportSchedule[] = [
-      {
-        id: '1',
-        name: 'Relatório Semanal - João Silva',
-        type: 'WEEKLY_UPDATE',
-        frequency: 'WEEKLY',
-        enabled: true,
-        lastRun: '2024-01-15T10:00:00Z',
-        nextRun: '2024-01-22T10:00:00Z',
-        recipients: ['joao@email.com'],
-        createdAt: '2024-01-01T00:00:00Z'
-      },
-      {
-        id: '2',
-        name: 'Resumo Mensal - Todos os Casos',
-        type: 'MONTHLY_SUMMARY',
-        frequency: 'MONTHLY',
-        enabled: true,
-        nextRun: '2024-02-01T09:00:00Z',
-        recipients: ['admin@escritorio.com', 'coordenador@escritorio.com'],
-        createdAt: '2024-01-01T00:00:00Z'
-      }
-    ];
+    const fetchReports = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-    const mockExecutions: ReportExecution[] = [
-      {
-        id: '1',
-        scheduleId: '1',
-        reportType: 'WEEKLY_UPDATE',
-        status: 'COMPLETED',
-        startedAt: '2024-01-15T10:00:00Z',
-        completedAt: '2024-01-15T10:05:00Z',
-        filePath: '/reports/weekly_update_20240115.pdf',
-        fileSize: 2048576,
-        tokensUsed: 1500,
-        estimatedCost: 0.15
-      },
-      {
-        id: '2',
-        reportType: 'CASE_SUMMARY',
-        status: 'RUNNING',
-        startedAt: '2024-01-20T14:30:00Z',
-        tokensUsed: 800,
-        estimatedCost: 0.08
-      },
-      {
-        id: '3',
-        reportType: 'MONTHLY_SUMMARY',
-        status: 'FAILED',
-        startedAt: '2024-01-10T09:00:00Z',
-        completedAt: '2024-01-10T09:03:00Z'
-      }
-    ];
+        // TODO: Implementar chamadas reais à API
+        // const schedulesRes = await fetch('/api/reports/schedules');
+        // const executionsRes = await fetch('/api/reports/executions');
+        //
+        // if (!schedulesRes.ok || !executionsRes.ok) {
+        //   throw new Error('Erro ao carregar relatórios');
+        // }
+        //
+        // const schedules = await schedulesRes.json();
+        // const executions = await executionsRes.json();
+        // setReportSchedules(schedules);
+        // setReportExecutions(executions);
 
-    setReportSchedules(mockSchedules);
-    setReportExecutions(mockExecutions);
+        // Por enquanto, dados vazios até API estar pronta
+        setReportSchedules([]);
+        setReportExecutions([]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro desconhecido');
+        console.error('Erro ao carregar relatórios:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReports();
   }, []);
 
   const generateInstantReport = async (type: string) => {
-    setIsGenerating(true);
+    try {
+      setIsGenerating(true);
+      setError(null);
 
-    // Simular geração de relatório
-    setTimeout(() => {
-      const newExecution: ReportExecution = {
-        id: Date.now().toString(),
-        reportType: type as any,
-        status: 'RUNNING',
-        startedAt: new Date().toISOString(),
-        tokensUsed: 0,
-        estimatedCost: 0
-      };
+      // TODO: Implementar chamada real à API de geração
+      // const response = await fetch('/api/reports/generate', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ reportType: type })
+      // });
+      //
+      // if (!response.ok) {
+      //   throw new Error('Erro ao gerar relatório');
+      // }
+      //
+      // const execution = await response.json();
+      // setReportExecutions(prev => [execution, ...prev]);
 
-      setReportExecutions(prev => [newExecution, ...prev]);
-
-      // Simular conclusão
-      setTimeout(() => {
-        setReportExecutions(prev => prev.map(exec =>
-          exec.id === newExecution.id
-            ? {
-                ...exec,
-                status: 'COMPLETED',
-                completedAt: new Date().toISOString(),
-                filePath: `/reports/${type}_${Date.now()}.pdf`,
-                fileSize: Math.floor(Math.random() * 5000000) + 1000000,
-                tokensUsed: Math.floor(Math.random() * 2000) + 500,
-                estimatedCost: Math.round((Math.random() * 0.5 + 0.1) * 100) / 100
-              }
-            : exec
-        ));
-        setIsGenerating(false);
-      }, 3000);
-    }, 500);
+      throw new Error('Geração de relatórios ainda não implementada. Em breve estaremos adicionando essa funcionalidade.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error('Erro ao gerar relatório:', err);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -235,6 +203,33 @@ export default function ReportsPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-neutral-600">Carregando relatórios...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <div>
+                <p className="text-red-800 font-medium">Erro</p>
+                <p className="text-red-700 text-sm">{error}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -381,54 +376,62 @@ export default function ReportsPage() {
               <CardTitle>Histórico de Execuções</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Iniciado em</TableHead>
-                    <TableHead>Duração</TableHead>
-                    <TableHead>Tamanho</TableHead>
-                    <TableHead>Custo</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reportExecutions.map((execution) => (
-                    <TableRow key={execution.id}>
-                      <TableCell>
-                        {getTypeBadge(execution.reportType)}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(execution.status)}
-                      </TableCell>
-                      <TableCell>
-                        {new Date(execution.startedAt).toLocaleString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        {execution.completedAt ? (
-                          `${Math.round((new Date(execution.completedAt).getTime() - new Date(execution.startedAt).getTime()) / 1000)}s`
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {execution.fileSize ? formatFileSize(execution.fileSize) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {execution.estimatedCost ? `R$ ${execution.estimatedCost.toFixed(2)}` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {execution.status === 'COMPLETED' && (
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </TableCell>
+              {reportExecutions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="w-12 h-12 text-neutral-300 mb-4" />
+                  <p className="text-neutral-600 font-medium">Nenhum relatório executado ainda</p>
+                  <p className="text-neutral-500 text-sm">Os relatórios gerados aparecerão aqui</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Iniciado em</TableHead>
+                      <TableHead>Duração</TableHead>
+                      <TableHead>Tamanho</TableHead>
+                      <TableHead>Custo</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {reportExecutions.map((execution) => (
+                      <TableRow key={execution.id}>
+                        <TableCell>
+                          {getTypeBadge(execution.reportType)}
+                        </TableCell>
+                        <TableCell>
+                          {getStatusBadge(execution.status)}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(execution.startedAt).toLocaleString('pt-BR')}
+                        </TableCell>
+                        <TableCell>
+                          {execution.completedAt ? (
+                            `${Math.round((new Date(execution.completedAt).getTime() - new Date(execution.startedAt).getTime()) / 1000)}s`
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {execution.fileSize ? formatFileSize(execution.fileSize) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {execution.estimatedCost ? `R$ ${execution.estimatedCost.toFixed(2)}` : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {execution.status === 'COMPLETED' && (
+                            <Button variant="ghost" size="sm">
+                              <Download className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -440,53 +443,61 @@ export default function ReportsPage() {
               <CardTitle>Relatórios Agendados</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Frequência</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Próxima Execução</TableHead>
-                    <TableHead>Destinatários</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reportSchedules.map((schedule) => (
-                    <TableRow key={schedule.id}>
-                      <TableCell className="font-medium">{schedule.name}</TableCell>
-                      <TableCell>
-                        {getTypeBadge(schedule.type)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {schedule.frequency === 'DAILY' ? 'Diário' :
-                           schedule.frequency === 'WEEKLY' ? 'Semanal' : 'Mensal'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={schedule.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                          {schedule.enabled ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(schedule.nextRun).toLocaleString('pt-BR')}
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-neutral-600">
-                          {schedule.recipients.length} destinatário(s)
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
+              {reportSchedules.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Clock className="w-12 h-12 text-neutral-300 mb-4" />
+                  <p className="text-neutral-600 font-medium">Nenhum relatório agendado</p>
+                  <p className="text-neutral-500 text-sm">Crie um novo agendamento para começar</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Frequência</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Próxima Execução</TableHead>
+                      <TableHead>Destinatários</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {reportSchedules.map((schedule) => (
+                      <TableRow key={schedule.id}>
+                        <TableCell className="font-medium">{schedule.name}</TableCell>
+                        <TableCell>
+                          {getTypeBadge(schedule.type)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {schedule.frequency === 'DAILY' ? 'Diário' :
+                             schedule.frequency === 'WEEKLY' ? 'Semanal' : 'Mensal'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={schedule.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                            {schedule.enabled ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(schedule.nextRun).toLocaleString('pt-BR')}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-neutral-600">
+                            {schedule.recipients.length} destinatário(s)
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm">
+                            <Settings className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
