@@ -89,13 +89,13 @@ export function sleep(ms: number): Promise<void> {
 /**
  * Debounce function
  */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
+export function debounce<TFunc extends (...args: any[]) => any>(
+  func: TFunc,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: Parameters<TFunc>) => void {
   let timeout: NodeJS.Timeout | null = null
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(...args: Parameters<TFunc>) {
     const later = () => {
       timeout = null
       func(...args)

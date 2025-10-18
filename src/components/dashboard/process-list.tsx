@@ -26,6 +26,9 @@ interface ProcessListProps {
   clientName?: string;
 }
 
+// Constants for sorting - moved outside component to avoid TDZ issues
+const STATUS_ORDER = { attention: 0, partial: 1, complete: 2 } as const;
+
 export function ProcessList({ clientId, clientName }: ProcessListProps) {
   const [processes, setProcesses] = useState<Process[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,8 +86,6 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
     }
   };
 
-  const statusOrder = { attention: 0, partial: 1, complete: 2 } as const;
-
   const filteredProcesses = processes
     .filter(process => {
       if (filter !== 'all' && process.status !== filter) return false;
@@ -101,7 +102,7 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
     .sort((a, b) => {
       // Ordenar por prioridade: attention > partial > complete
       if (a.status !== b.status) {
-        return statusOrder[a.status] - statusOrder[b.status];
+        return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
       }
       // Depois por data de atualização (mais recente primeiro)
       return new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime();

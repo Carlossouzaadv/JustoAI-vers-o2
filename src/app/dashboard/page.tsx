@@ -87,6 +87,9 @@ function AnimatedNumber({ value, suffix = '', className = '' }: { value: number;
   return <span className={className}>{animatedValue.toLocaleString()}{suffix}</span>;
 }
 
+// Constants for sorting - moved outside component to avoid TDZ issues
+const PRIORITY_ORDER = { high: 3, medium: 2, low: 1 } as const;
+
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -225,8 +228,6 @@ export default function DashboardPage() {
 
   // Smart Sorting: Ordenação inteligente por urgência
   const smartSort = (processes: DashboardData['ongoingProcesses']) => {
-    const priorityOrder = { high: 3, medium: 2, low: 1 } as const;
-
     return [...processes].sort((a, b) => {
       const today = new Date();
       const aDeadline = new Date(a.deadline);
@@ -241,12 +242,12 @@ export default function DashboardPage() {
 
       // 2. Se ambos vencidos, ordenar por prioridade
       if (aOverdue && bOverdue) {
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
+        return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
       }
 
       // 3. Depois: Prioridade (alta primeiro)
-      if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      if (PRIORITY_ORDER[a.priority] !== PRIORITY_ORDER[b.priority]) {
+        return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
       }
 
       // 4. Por último: Data de upload (mais recente primeiro)
