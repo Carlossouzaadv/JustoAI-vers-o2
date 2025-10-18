@@ -10,10 +10,38 @@ import { join } from 'path';
 
 export async function POST(request: NextRequest) {
   try {
-    // Dynamically require the PDF extractor at runtime using absolute path
-    // This prevents webpack from bundling it statically
-    // Use require() to load CommonJS module at runtime
-    const extractorPath = join(process.cwd(), 'src', 'lib', 'pdf-extractor.js');
+    // Dynamically require the PDF extractor at runtime
+    // Try multiple possible paths for the file in standalone build
+    const possiblePaths = [
+      // Path 1: Relative to current working directory
+      join(process.cwd(), 'src', 'lib', 'pdf-extractor.js'),
+      // Path 2: Absolute path if running from /justoai-v2
+      '/justoai-v2/src/lib/pdf-extractor.js',
+      // Path 3: Relative to process.cwd() with justoai-v2 prefix
+      join(process.cwd(), 'justoai-v2', 'src', 'lib', 'pdf-extractor.js'),
+      // Path 4: Try direct path from root
+      '/src/lib/pdf-extractor.js',
+    ];
+
+    let extractorPath = null;
+    let lastError = null;
+
+    for (const path of possiblePaths) {
+      try {
+        require.resolve(path);
+        extractorPath = path;
+        break;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    if (!extractorPath) {
+      const errorMsg = `Could not find pdf-extractor.js in any of: ${possiblePaths.join(', ')}. Last error: ${(lastError as any)?.message}`;
+      console.error(`[${new Date().toISOString()}] 🚂 ❌ PDF extractor not found:`, errorMsg);
+      throw new Error(errorMsg);
+    }
+
     const { handlePdfProcessing } = require(extractorPath);
 
     const result = await handlePdfProcessing(request);
