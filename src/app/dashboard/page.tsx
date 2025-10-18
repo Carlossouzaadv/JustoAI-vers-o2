@@ -107,10 +107,13 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    // Only load when auth is complete and we have a workspaceId
     if (!authLoading && workspaceId) {
       loadDashboardData();
     }
-  }, [workspaceId, authLoading, selectedClientId]);
+  }, [workspaceId, authLoading]);
+  // NOTE: Removed selectedClientId from dependencies to prevent extra renders
+  // selectedClientId is already handled inside loadDashboardData()
 
   const loadDashboardData = async () => {
     try {

@@ -93,14 +93,15 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans antialiased bg-white text-neutral-900`}>
-        <Providers>
-          <AuthProvider>
+        {/* AuthProvider MUST be first to initialize auth state before children */}
+        <AuthProvider>
+          <Providers>
             <CookieConsentProvider>
               {children}
               <CookieBanner />
             </CookieConsentProvider>
-          </AuthProvider>
-        </Providers>
+          </Providers>
+        </AuthProvider>
       </body>
     </html>
   );
