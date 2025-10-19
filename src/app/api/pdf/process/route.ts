@@ -2,118 +2,286 @@
 // PDF PROCESSING SERVICE - Railway Backend
 // ================================================================
 // Este endpoint roda no Railway (não no Vercel serverless)
-// Usa pdf-extractor.js que contém lógica Node.js pura (não bundled)
+// Toda lógica inlineada para evitar problemas de module resolution
 // Recebe PDF via request, processa, retorna texto extraído
 
 import { NextRequest, NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
 import { join } from 'path';
-import { existsSync, readdirSync } from 'fs';
+import { tmpdir } from 'os';
+import { randomBytes } from 'crypto';
 
-export async function POST(request: NextRequest) {
+const ICONS = {
+  RAILWAY: '🚂',
+  PDF: '📄',
+  SUCCESS: '✅',
+  ERROR: '❌',
+  LOG: '📝',
+};
+
+// ================================================================
+// LOGGER COM PREFIXES PARA RASTREAMENTO
+// ================================================================
+function log(prefix: string, message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${prefix} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+}
+
+// ================================================================
+// PDF EXTRACTION WITH CASCADE
+// ================================================================
+async function extractTextFromPDF(pdfPath: string): Promise<string> {
+  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Iniciando extração de texto do PDF', { path: pdfPath });
+
   try {
-    const timestamp = new Date().toISOString();
+    // Try pdf-parse first
+    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 1: pdf-parse');
 
-    // Debug: Log environment info
-    console.log(`[${timestamp}] 🚂 DEBUG: process.cwd() = ${process.cwd()}`);
-    console.log(`[${timestamp}] 🚂 DEBUG: __dirname (unavailable in standalone)`);
+    try {
+      const pdfParse = require('pdf-parse');
+      const fileBuffer = await fs.readFile(pdfPath);
+      const pdfData = await pdfParse(fileBuffer);
 
-    // Dynamically require the PDF extractor at runtime
-    // Try multiple possible paths for the file in standalone build
-    const possiblePaths = [
-      // Path 1: Standard standalone structure: /app/justoai-v2/src/lib/
-      '/app/justoai-v2/src/lib/pdf-extractor.js',
-      // Path 2: Relative to process.cwd() if in /app
-      join(process.cwd(), 'justoai-v2', 'src', 'lib', 'pdf-extractor.js'),
-      // Path 3: If process.cwd() is /app/justoai-v2
-      join(process.cwd(), 'src', 'lib', 'pdf-extractor.js'),
-      // Path 4: Direct path from app root
-      '/app/src/lib/pdf-extractor.js',
-      // Path 5: Try direct root path (fallback)
-      '/src/lib/pdf-extractor.js',
-    ];
+      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Extração bem-sucedida com pdf-parse`, {
+        pages: pdfData.numpages,
+        textLength: pdfData.text.length,
+      });
 
-    // Debug: Try to list directories
-    for (const checkPath of ['/app', '/app/justoai-v2', process.cwd()]) {
+      return pdfData.text;
+    } catch (pdfParseError) {
+      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `⚠️ pdf-parse falhou, tentando pdfjs-dist`, {
+        error: (pdfParseError as any)?.message?.substring(0, 100),
+      });
+
+      // Fallback to pdfjs-dist
+      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 2: pdfjs-dist');
+
       try {
-        if (existsSync(checkPath)) {
-          console.log(`[${timestamp}] 🚂 DEBUG: Files in ${checkPath}:`, readdirSync(checkPath).slice(0, 10).join(', '));
-        } else {
-          console.log(`[${timestamp}] 🚂 DEBUG: Path does not exist: ${checkPath}`);
-        }
-      } catch (err) {
-        console.log(`[${timestamp}] 🚂 DEBUG: Cannot list ${checkPath}:`, (err as any)?.message);
-      }
-    }
+        const pdfjs = require('pdfjs-dist');
 
-    let extractorPath = null;
-    let handlePdfProcessing = null;
-    const attemptedPaths: { path: string; exists: boolean }[] = [];
+        // Disable workers for Node.js environment
+        pdfjs.GlobalWorkerOptions = pdfjs.GlobalWorkerOptions || {};
+        pdfjs.GlobalWorkerOptions.workerSrc = null;
 
-    for (const path of possiblePaths) {
-      const exists = existsSync(path);
-      attemptedPaths.push({ path, exists });
+        const fileBuffer = await fs.readFile(pdfPath);
+        const uint8Array = new Uint8Array(fileBuffer);
+        const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
 
-      console.log(`[${timestamp}] 🚂 DEBUG: Checking path ${path}: exists=${exists}`);
-
-      if (exists) {
-        try {
-          // Try dynamic import with file:// URL for absolute paths
-          const fileUrl = `file://${path}`;
-          console.log(`[${timestamp}] 🚂 DEBUG: Attempting import from ${fileUrl}`);
-
-          const module = await import(fileUrl);
-          if (module && module.handlePdfProcessing) {
-            extractorPath = path;
-            handlePdfProcessing = module.handlePdfProcessing;
-            console.log(`[${timestamp}] 🚂 ✅ Found pdf-extractor at: ${path}`);
-            break;
-          } else {
-            console.log(`[${timestamp}] 🚂 DEBUG: Module loaded but missing handlePdfProcessing export`);
+        let fullText = '';
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          try {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => (item.str || '') + (item.space ? ' ' : ''))
+              .join('')
+              .trim();
+            fullText += pageText + '\n';
+          } catch (pageError) {
+            log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `⚠️ Erro ao extrair página ${pageNum}`, {
+              error: (pageError as any)?.message?.substring(0, 50),
+            });
           }
-        } catch (err) {
-          console.log(`[${timestamp}] 🚂 DEBUG: Failed to import ${path}:`, (err as any)?.message?.substring(0, 100));
         }
+
+        log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Extração bem-sucedida com pdfjs-dist`, {
+          pages: pdf.numPages,
+          textLength: fullText.length,
+        });
+
+        return fullText.trim();
+      } catch (pdfjsError) {
+        log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} pdfjs-dist também falhou`, {
+          error: (pdfjsError as any)?.message?.substring(0, 100),
+        });
+        throw pdfjsError;
       }
     }
+  } catch (error) {
+    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha na extração de PDF`, {
+      error: (error as any)?.message,
+    });
+    throw error;
+  }
+}
 
-    if (!extractorPath || !handlePdfProcessing) {
-      const statusInfo = attemptedPaths.map(p => `${p.path} (exists=${p.exists})`).join(' | ');
-      const errorMsg = `Could not find pdf-extractor.js. Attempted: ${statusInfo}`;
-      console.error(`[${timestamp}] 🚂 ❌ PDF extractor not found:`, errorMsg);
-      throw new Error(errorMsg);
+// ================================================================
+// TEXT CLEANING
+// ================================================================
+function cleanText(text: string): string {
+  if (!text) return '';
+
+  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Limpando e normalizando texto', { inputLength: text.length });
+
+  let cleaned = text
+    .replace(/\n{3,}/g, '\n\n') // Reduz quebras de linha múltiplas
+    .replace(/\s{2,}/g, ' ') // Reduz espaços múltiplos
+    .trim();
+
+  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Limpeza concluída', { outputLength: cleaned.length });
+
+  return cleaned;
+}
+
+// ================================================================
+// EXTRACT PROCESS NUMBER
+// ================================================================
+function extractProcessNumber(text: string): string | null {
+  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Procurando número do processo');
+
+  const patterns = [
+    /\b\d{7}[-.]?\d{2}[-.]?\d{4}[-.]?\d[-.]?\d{2}[-.]?\d{4}\b/, // CNJ moderno
+    /\b\d{4}\.\d{2}\.\d{6}[-.]?\d\b/, // CNJ antigo
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Processo encontrado: ${match[0]}`);
+      return match[0];
     }
+  }
 
-    console.log(`[${timestamp}] 🚂 Loading pdf-extractor from: ${extractorPath}`);
+  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, '⚠️ Nenhum processo encontrado');
+  return null;
+}
 
-    const result = await handlePdfProcessing(request);
+// ================================================================
+// ENDPOINT PRINCIPAL
+// ================================================================
+export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  let tempFilePath: string | null = null;
 
-    if (!result.success && result.status) {
+  try {
+    log(`${ICONS.RAILWAY}`, `${ICONS.PDF} Recebendo requisição de processamento de PDF`);
+
+    // 1. PARSEAR MULTIPART FORM DATA
+    const contentType = request.headers.get('content-type');
+    if (!contentType?.includes('multipart/form-data')) {
       return NextResponse.json(
-        { error: result.error, details: result.details },
-        { status: result.status }
+        { error: 'Content-Type deve ser multipart/form-data' },
+        { status: 400 }
       );
     }
 
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        data: result.data,
-      });
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+
+    if (!file) {
+      log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Arquivo não enviado`);
+      return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 });
     }
 
-    return NextResponse.json(result, { status: result.status || 500 });
-  } catch (error) {
-    const timestamp = new Date().toISOString();
-    const errorMsg = (error as any)?.message || 'Unknown error';
+    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Arquivo recebido', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    });
 
-    console.error(`[${timestamp}] 🚂 ❌ Fatal error in PDF processor:`, errorMsg);
+    // 2. SALVAR ARQUIVO TEMPORÁRIO
+    const tempDir = join(tmpdir(), 'justoai-pdfs');
+    try {
+      await fs.mkdir(tempDir, { recursive: true });
+    } catch (err) {
+      log(`${ICONS.RAILWAY}`, `⚠️ Aviso ao criar diretório temp`, { error: (err as any)?.message });
+    }
+
+    const tempFileName = `${Date.now()}-${randomBytes(4).toString('hex')}.pdf`;
+    tempFilePath = join(tempDir, tempFileName);
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(tempFilePath, buffer);
+
+    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Arquivo salvo temporariamente', {
+      path: tempFilePath,
+      size: buffer.length,
+    });
+
+    // 3. EXTRAIR TEXTO
+    const processingStartTime = Date.now();
+    let extractedText = '';
+
+    try {
+      extractedText = await extractTextFromPDF(tempFilePath);
+    } catch (extractError) {
+      log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Falha na extração`, {
+        error: (extractError as any)?.message,
+      });
+      throw extractError;
+    }
+
+    const processingTime = Date.now() - processingStartTime;
+
+    if (!extractedText || extractedText.trim().length < 50) {
+      log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Texto insuficiente extraído`, {
+        textLength: extractedText.length,
+      });
+
+      return NextResponse.json(
+        { error: 'PDF não contém texto suficiente' },
+        { status: 400 }
+      );
+    }
+
+    // 4. LIMPAR TEXTO
+    const cleanedText = cleanText(extractedText);
+
+    // 5. EXTRAIR PROCESSO
+    const processNumber = extractProcessNumber(extractedText);
+
+    // 6. PREPARAR RESPOSTA
+    const totalTime = Date.now() - startTime;
+
+    log(`${ICONS.RAILWAY}`, `${ICONS.SUCCESS} Processamento concluído com sucesso`, {
+      totalTime: `${totalTime}ms`,
+      processingTime: `${processingTime}ms`,
+      textLength: extractedText.length,
+      cleanedLength: cleanedText.length,
+      processNumber: processNumber || 'não identificado',
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        originalText: extractedText,
+        cleanedText: cleanedText,
+        processNumber: processNumber,
+        metrics: {
+          originalLength: extractedText.length,
+          cleanedLength: cleanedText.length,
+          extractionTimeMs: processingTime,
+          totalTimeMs: totalTime,
+        },
+      },
+    });
+  } catch (error) {
+    const totalTime = Date.now() - startTime;
+
+    log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Erro fatal no processamento`, {
+      error: (error as any)?.message,
+      totalTime: `${totalTime}ms`,
+      stack: (error as any)?.stack?.substring(0, 200),
+    });
 
     return NextResponse.json(
       {
         error: 'Erro ao processar PDF',
-        details: errorMsg,
+        details: (error as any)?.message,
       },
       { status: 500 }
     );
+  } finally {
+    // 7. LIMPAR ARQUIVO TEMPORÁRIO
+    if (tempFilePath) {
+      try {
+        await fs.unlink(tempFilePath);
+        log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Arquivo temporário removido');
+      } catch (cleanupError) {
+        log(`${ICONS.RAILWAY}`, `⚠️ Aviso ao remover arquivo temporário`, {
+          error: (cleanupError as any)?.message,
+        });
+      }
+    }
   }
 }
