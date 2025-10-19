@@ -14,7 +14,7 @@
 FROM node:20-alpine AS base
 
 # Install system dependencies once in base
-RUN apk add --no-cache libc6-compat openssl && \
+RUN apk add --no-cache libc6-compat openssl poppler-utils && \
     npm install -g npm@latest
 
 # ========================================

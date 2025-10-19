@@ -79,24 +79,8 @@ const nextConfig: NextConfig = {
         readline: false,
         events: false,
       };
-    } else {
-      // On server: exclude PDF libraries from bundling
-      // These modules must be loaded at runtime via require() in Node.js environment
-      // NOT bundled by webpack which causes DOM-related errors
-      const pdfModules = [
-        'pdf-parse',
-      ];
-
-      if (Array.isArray(config.externals)) {
-        config.externals.push(...pdfModules);
-      } else if (!config.externals) {
-        config.externals = pdfModules;
-      } else {
-        // If externals is an object or function, wrap it and add our modules
-        const existingExternals = config.externals;
-        config.externals = [existingExternals, ...pdfModules];
-      }
     }
+    // No need to exclude PDF modules - using system pdftotext command instead
 
     return config;
   },

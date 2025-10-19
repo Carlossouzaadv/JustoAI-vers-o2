@@ -10,6 +10,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
+import { execSync } from 'child_process';
 
 const ICONS = {
   RAILWAY: '🚂',
@@ -32,39 +33,31 @@ function log(prefix: string, message: string, data?: any) {
 }
 
 // ================================================================
-// PDF EXTRACTION - SIMPLIFIED (pdfjs-dist only)
+// PDF EXTRACTION - Using system pdftotext command (no Node.js issues)
 // ================================================================
 async function extractTextFromPDF(pdfPath: string): Promise<string> {
   log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Iniciando extração de texto do PDF', { path: pdfPath });
 
   try {
-    // Use pdfjs-dist directly without trying to modify GlobalWorkerOptions
-    // pdfjs-dist handles its own worker configuration in Node.js
-    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Usando pdfjs-dist para extração');
+    // Use pdftotext command-line tool (from poppler-utils)
+    // This is system-level, no Node.js dependencies, no DOMMatrix issues
+    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Usando pdftotext (poppler) para extração');
 
     try {
-      // Use pdf-parse for simple and direct Node.js PDF text extraction
-      // pdf-parse is designed specifically for Node.js and doesn't need polyfills
-      const pdf = require('pdf-parse');
-
-      // Read PDF file
-      const fileBuffer = await fs.readFile(pdfPath);
-
-      // Extract text directly
-      const pdfData = await pdf(fileBuffer);
+      // pdftotext arquivo.pdf - (outputs to stdout)
+      const command = `pdftotext "${pdfPath}" -`;
+      const text = execSync(command, { encoding: 'utf-8' });
 
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Extração bem-sucedida`, {
-        pages: pdfData.numpages,
-        textLength: pdfData.text.length,
+        textLength: text.length,
       });
 
-      return pdfData.text;
-    } catch (pdfError) {
+      return text;
+    } catch (extractError) {
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha ao extrair PDF`, {
-        error: (pdfError as any)?.message?.substring(0, 150),
-        stack: (pdfError as any)?.stack?.substring(0, 100),
+        error: (extractError as any)?.message?.substring(0, 150),
       });
-      throw pdfError;
+      throw extractError;
     }
   } catch (error) {
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha na extração de PDF`, {
