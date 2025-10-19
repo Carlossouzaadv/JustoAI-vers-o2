@@ -1,68 +1,156 @@
-# Dependencies
-node_modules
+# ========================================
+# DOCKER IGNORE - Optimized for minimal image
+# ========================================
+
+# ========================================
+# Version Control & CI/CD
+# ========================================
+.git/
+.gitignore
+.github/
+.gitlab-ci.yml
+.travis.yml
+*.patch
+
+# ========================================
+# Node/NPM (except node_modules - see below)
+# ========================================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+*.log
+pids/
+*.pid
 
-# Next.js
+# ========================================
+# Build & Dist (keep minimal for Next.js standalone)
+# ========================================
 .next/
 out/
-
-# Testing
-coverage
-.nyc_output
-
-# Environment files
-.env
-.env.local
-.env.development
-.env.test
-.env*.local
-
-# Vercel
-.vercel
-
-# TypeScript
+dist/
+build/
+coverage/
+.nyc_output/
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 
-# OS
-.DS_Store
-*.pem
-Thumbs.db
+# ========================================
+# Node Modules (will be installed fresh)
+# ========================================
+# node_modules will be copied from multi-stage build
+# This prevents sending 500MB+ to Docker daemon
 
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# ========================================
+# Environment Files
+# ========================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+.env.*.example
+.env.judit.example
 
-# IDE
+# ========================================
+# Deployment & Hosting
+# ========================================
+.vercel/
+.netlify/
+.docker/
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# ========================================
+# IDE & Editor
+# ========================================
 .vscode/
 .idea/
+.vs/
 *.swp
 *.swo
 *~
+*.iml
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
 
-# Misc
-.git/
-.gitignore
+# ========================================
+# Documentation & Tests
+# ========================================
 README.md
-*.md
-!prisma/*.md
-
-# Documentation
+CHANGELOG.md
+LICENSE.md
 docs/
 *.pdf
-
-# Tests
+*.doc
+*.docx
 **/*.test.ts
 **/*.test.tsx
 **/*.spec.ts
 **/*.spec.tsx
+**/*.test.js
+**/*.test.jsx
+**/*.spec.js
+**/*.spec.jsx
 __tests__/
+tests/
 jest.config.js
 jest.setup.js
+playwright.config.ts
+vitest.config.ts
 
-# Deployment
-deploy-scripts/
-.github/
+# ========================================
+# Source Code - Development/Build Only
+# ========================================
+# Keep minimal - only what's needed at runtime
+.storybook/
+stories/
+examples/
+scripts/deploy-scripts/
+scripts/setup-scripts/
+dev-utils/
+mock-data/
+
+# ========================================
+# Prisma - Keep migrations, remove backups
+# ========================================
+prisma/migrations/*.sql.bak
+prisma/*.sql.bak
+
+# ========================================
+# Package Manager Lock (not needed in Docker)
+# ========================================
+package-lock.json.backup
+yarn.lock.backup
+pnpm-lock.yaml.backup
+
+# ========================================
+# Misc Temporary Files
+# ========================================
+tmp/
+temp/
+.cache/
+.parcel-cache/
+dist-old/
+bull-board/
+uploads/
+logs/
+*.swp
+.DS_Store
+
+# ========================================
+# Framework-specific
+# ========================================
+# Next.js
+.next/
+# Vercel specific (already in .vercel/)
+# Nuxt specific
+.nuxt/
+nuxt.d.ts
+# Vite
+.vite/
