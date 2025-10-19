@@ -43,55 +43,28 @@ async function extractTextFromPDF(pdfPath: string): Promise<string> {
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Usando pdfjs-dist para extração');
 
     try {
-      // Use standard build - Node.js will load from node_modules correctly
-      // pdfjs-dist automatically handles Node.js environment
-      const pdfjs = require('pdfjs-dist/build/pdf');
+      // Use pdf-parse for simple and direct Node.js PDF text extraction
+      // pdf-parse is designed specifically for Node.js and doesn't need polyfills
+      const pdf = require('pdf-parse');
 
       // Read PDF file
       const fileBuffer = await fs.readFile(pdfPath);
-      const uint8Array = new Uint8Array(fileBuffer);
 
-      // Load PDF document
-      const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
-
-      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `Processando ${pdf.numPages} páginas`);
-
-      let fullText = '';
-
-      // Extract text from each page
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        try {
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-
-          const pageText = textContent.items
-            .map((item: any) => (item.str || '') + (item.space ? ' ' : ''))
-            .join('')
-            .trim();
-
-          fullText += pageText + '\n';
-        } catch (pageError) {
-          log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `⚠️ Erro ao extrair página ${pageNum}`, {
-            error: (pageError as any)?.message?.substring(0, 50),
-          });
-          // Continue with next page
-        }
-      }
-
-      fullText = fullText.trim();
+      // Extract text directly
+      const pdfData = await pdf(fileBuffer);
 
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Extração bem-sucedida`, {
-        pages: pdf.numPages,
-        textLength: fullText.length,
+        pages: pdfData.numpages,
+        textLength: pdfData.text.length,
       });
 
-      return fullText;
-    } catch (pdfjsError) {
+      return pdfData.text;
+    } catch (pdfError) {
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha ao extrair PDF`, {
-        error: (pdfjsError as any)?.message?.substring(0, 150),
-        stack: (pdfjsError as any)?.stack?.substring(0, 100),
+        error: (pdfError as any)?.message?.substring(0, 150),
+        stack: (pdfError as any)?.stack?.substring(0, 100),
       });
-      throw pdfjsError;
+      throw pdfError;
     }
   } catch (error) {
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha na extração de PDF`, {

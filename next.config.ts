@@ -84,10 +84,7 @@ const nextConfig: NextConfig = {
       // These modules must be loaded at runtime via require() in Node.js environment
       // NOT bundled by webpack which causes DOM-related errors
       const pdfModules = [
-        'pdfjs-dist',
-        'pdfjs-dist/build/pdf',
         'pdf-parse',
-        '@napi-rs/canvas',
       ];
 
       if (Array.isArray(config.externals)) {
