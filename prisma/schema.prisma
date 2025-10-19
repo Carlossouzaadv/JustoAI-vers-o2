@@ -134,6 +134,27 @@ model Case {
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
 
+  // ============================================================
+  // CAMPOS NOVOS PARA ONBOARDING 3 FASES
+  // ============================================================
+
+  // Preview snapshot (FASE 1)
+  previewSnapshot        Json?                 @map("preview_snapshot")
+
+  // CNJ detectado automaticamente
+  detectedCnj            String?               @map("detected_cnj") @db.VarChar(255)
+
+  // Primeira página do PDF
+  firstPageText          String?               @map("first_page_text")
+
+  // Status do onboarding
+  onboardingStatus       ProcessOnboardingStatus @default(created) @map("onboarding_status")
+
+  // Timestamps de progresso
+  enrichmentStartedAt    DateTime?             @map("enrichment_started_at")
+  enrichmentCompletedAt  DateTime?             @map("enrichment_completed_at")
+  previewGeneratedAt     DateTime?             @map("preview_generated_at")
+
   // Relacionamento com Processo JUDIT (opcional)
   processoId         String?               @unique
 
@@ -149,6 +170,8 @@ model Case {
   timelineEntries    ProcessTimelineEntry[]
   processo           Processo?             @relation(fields: [processoId], references: [id])
 
+  @@index([onboardingStatus, updatedAt])
+  @@index([detectedCnj])
   @@map("cases")
 }
 
@@ -195,6 +218,11 @@ model CaseDocument {
   analysisKey       String?            // Chave para cache de análise
   workerId          String?            // ID do worker que processou
   costEstimate      Float?             // Estimativa de custo da análise
+
+  // CAMPOS PARA JUDIT ATTACHMENTS
+  juditAttachmentUrl String?           @map("judit_attachment_url") @db.VarChar(500)
+  sourceOrigin       String             @default("USER_UPLOAD") @map("source_origin")
+
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
@@ -204,6 +232,7 @@ model CaseDocument {
 
   @@index([textSha]) // Índice para busca rápida de duplicatas
   @@index([analysisKey]) // Índice para cache de análise
+  @@index([sourceOrigin, createdAt]) // Índice para buscar documentos por origem
   @@map("case_documents")
 }
 
@@ -892,6 +921,15 @@ enum ProcessStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum ProcessOnboardingStatus {
+  created
+  previewed
+  enriching
+  enriched
+  analysis_pending
+  analyzed
 }
 
 enum AnalysisType {

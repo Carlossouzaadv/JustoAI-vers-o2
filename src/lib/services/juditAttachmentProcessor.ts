@@ -1,0 +1,327 @@
+// ================================================================
+// JUDIT ATTACHMENT PROCESSOR
+// Download e processamento de anexos da API JUDIT
+// ================================================================
+
+import { prisma } from '@/lib/prisma';
+import { ICONS } from '@/lib/icons';
+import { extractTextFromPDF } from '@/lib/pdf-processor';
+import { getDocumentHashManager } from '@/lib/document-hash';
+
+// ================================================================
+// TYPES
+// ================================================================
+
+export interface JuditAttachment {
+  id: string;
+  url: string;
+  name: string;
+  type: string;
+  size?: number;
+  date?: string;
+}
+
+export interface AttachmentProcessResult {
+  total: number;
+  downloaded: number;
+  processed: number;
+  failed: number;
+  errors: string[];
+}
+
+// ================================================================
+// CONSTANTS
+// ================================================================
+
+const MAX_CONCURRENT_DOWNLOADS = 5;
+const DOWNLOAD_TIMEOUT_MS = 60000; // 60s por arquivo
+const MAX_ATTACHMENT_SIZE = 50 * 1024 * 1024; // 50MB
+
+// ================================================================
+// MAIN FUNCTION
+// ================================================================
+
+/**
+ * Processa todos os anexos de uma resposta JUDIT
+ * Download paralelo + extração de texto + salvamento no banco
+ */
+export async function processJuditAttachments(
+  caseId: string,
+  juditResponse: any
+): Promise<AttachmentProcessResult> {
+  const result: AttachmentProcessResult = {
+    total: 0,
+    downloaded: 0,
+    processed: 0,
+    failed: 0,
+    errors: []
+  };
+
+  try {
+    console.log(`${ICONS.PROCESS} [JUDIT Attachments] Processando anexos para case ${caseId}`);
+
+    // ============================================================
+    // 1. EXTRAIR LISTA DE ANEXOS
+    // ============================================================
+
+    const attachments = extractAttachmentsFromJuditResponse(juditResponse);
+
+    result.total = attachments.length;
+
+    if (attachments.length === 0) {
+      console.log(`${ICONS.INFO} [JUDIT Attachments] Nenhum anexo encontrado`);
+      return result;
+    }
+
+    console.log(`${ICONS.INFO} [JUDIT Attachments] ${attachments.length} anexos encontrados`);
+
+    // ============================================================
+    // 2. DOWNLOAD PARALELO (máx 5 por vez)
+    // ============================================================
+
+    const downloadPromises = [];
+
+    for (let i = 0; i < attachments.length; i += MAX_CONCURRENT_DOWNLOADS) {
+      const batch = attachments.slice(i, i + MAX_CONCURRENT_DOWNLOADS);
+
+      const batchPromises = batch.map(attachment =>
+        downloadAndProcessAttachment(caseId, attachment, result)
+      );
+
+      downloadPromises.push(...batchPromises);
+    }
+
+    await Promise.allSettled(downloadPromises);
+
+    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Processamento completo: ${result.processed}/${result.total} processados`);
+
+    return result;
+
+  } catch (error) {
+    console.error(`${ICONS.ERROR} [JUDIT Attachments] Erro geral:`, error);
+    result.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
+    return result;
+  }
+}
+
+// ================================================================
+// HELPER FUNCTIONS
+// ================================================================
+
+/**
+ * Extrai lista de anexos do response JUDIT
+ * A estrutura pode variar, ajustar conforme API real
+ */
+function extractAttachmentsFromJuditResponse(juditResponse: any): JuditAttachment[] {
+  const attachments: JuditAttachment[] = [];
+
+  try {
+    // Estrutura esperada (ajustar conforme API JUDIT real):
+    // juditResponse.data.attachments[] ou similar
+
+    const data = juditResponse?.data || juditResponse;
+
+    if (data.attachments && Array.isArray(data.attachments)) {
+      for (const att of data.attachments) {
+        attachments.push({
+          id: att.id || att.attachment_id,
+          url: att.url || att.download_url,
+          name: att.name || att.filename || 'anexo-sem-nome.pdf',
+          type: att.type || 'unknown',
+          size: att.size,
+          date: att.date || att.created_at
+        });
+      }
+    }
+
+    // Verificar se há attachments em páginas (paginação)
+    if (data.pages && Array.isArray(data.pages)) {
+      for (const page of data.pages) {
+        if (page.attachments && Array.isArray(page.attachments)) {
+          for (const att of page.attachments) {
+            attachments.push({
+              id: att.id || att.attachment_id,
+              url: att.url || att.download_url,
+              name: att.name || att.filename || 'anexo-sem-nome.pdf',
+              type: att.type || 'unknown',
+              size: att.size,
+              date: att.date || att.created_at
+            });
+          }
+        }
+      }
+    }
+
+  } catch (error) {
+    console.error(`${ICONS.ERROR} [JUDIT Attachments] Erro ao extrair anexos:`, error);
+  }
+
+  return attachments;
+}
+
+/**
+ * Download e processa um único anexo
+ */
+async function downloadAndProcessAttachment(
+  caseId: string,
+  attachment: JuditAttachment,
+  result: AttachmentProcessResult
+): Promise<void> {
+  try {
+    console.log(`${ICONS.DOWNLOAD} [JUDIT Attachments] Baixando: ${attachment.name}`);
+
+    // ============================================================
+    // 1. DOWNLOAD DO ARQUIVO
+    // ============================================================
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+
+    const response = await fetch(attachment.url, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    // Verificar tamanho
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > MAX_ATTACHMENT_SIZE) {
+      throw new Error(`Arquivo muito grande: ${contentLength} bytes`);
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    result.downloaded++;
+
+    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Baixado: ${attachment.name} (${buffer.length} bytes)`);
+
+    // ============================================================
+    // 2. CALCULAR HASH
+    // ============================================================
+
+    const hashManager = getDocumentHashManager();
+    const fileSha256 = await hashManager.calculateHash(buffer);
+
+    // Verificar se já existe
+    const existing = await prisma.caseDocument.findFirst({
+      where: { textSha: fileSha256 }
+    });
+
+    if (existing) {
+      console.log(`${ICONS.WARNING} [JUDIT Attachments] Anexo duplicado (já existe): ${attachment.name}`);
+      return;
+    }
+
+    // ============================================================
+    // 3. SALVAR ARQUIVO TEMPORARIAMENTE
+    // ============================================================
+
+    const tempPath = `/tmp/judit-attachment-${Date.now()}-${attachment.name}`;
+    const fs = await import('fs/promises');
+    await fs.writeFile(tempPath, buffer);
+
+    // ============================================================
+    // 4. EXTRAIR TEXTO (se PDF)
+    // ============================================================
+
+    let extractedText = '';
+
+    if (attachment.name.toLowerCase().endsWith('.pdf')) {
+      try {
+        extractedText = await extractTextFromPDF(tempPath);
+        console.log(`${ICONS.EXTRACT} [JUDIT Attachments] Texto extraído: ${extractedText.length} chars`);
+      } catch (error) {
+        console.warn(`${ICONS.WARNING} [JUDIT Attachments] Falha ao extrair texto:`, error);
+      }
+    }
+
+    // ============================================================
+    // 5. CLASSIFICAR TIPO DE DOCUMENTO
+    // ============================================================
+
+    const documentType = classifyDocumentByName(attachment.name);
+
+    // ============================================================
+    // 6. SALVAR NO BANCO
+    // ============================================================
+
+    await prisma.caseDocument.create({
+      data: {
+        caseId,
+        name: attachment.name.replace(/\.(pdf|PDF)$/, ''),
+        originalName: attachment.name,
+        type: documentType as any,
+        mimeType: 'application/pdf',
+        size: buffer.length,
+        url: tempPath, // TODO: substituir por S3
+        path: tempPath,
+        extractedText: extractedText || null,
+        textSha: fileSha256,
+        textExtractedAt: extractedText ? new Date() : null,
+        processed: true,
+        ocrStatus: extractedText ? 'COMPLETED' : 'PENDING',
+        sourceOrigin: 'JUDIT_ATTACHMENT',
+        juditAttachmentUrl: attachment.url
+      }
+    });
+
+    result.processed++;
+
+    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Salvo no banco: ${attachment.name}`);
+
+  } catch (error) {
+    result.failed++;
+    const errorMsg = `Erro em ${attachment.name}: ${error instanceof Error ? error.message : 'Desconhecido'}`;
+    result.errors.push(errorMsg);
+    console.error(`${ICONS.ERROR} [JUDIT Attachments] ${errorMsg}`);
+  }
+}
+
+/**
+ * Classifica tipo de documento baseado no nome
+ * Heurística simples para identificar peças principais
+ */
+function classifyDocumentByName(filename: string): string {
+  const lower = filename.toLowerCase();
+
+  // Petição inicial
+  if (lower.includes('inicial') || lower.includes('peticao') || lower.includes('petição')) {
+    return 'PETITION';
+  }
+
+  // Contestação
+  if (lower.includes('contestacao') || lower.includes('contestação') || lower.includes('defesa')) {
+    return 'MOTION';
+  }
+
+  // Decisão
+  if (lower.includes('decisao') || lower.includes('decisão') || lower.includes('despacho')) {
+    return 'COURT_ORDER';
+  }
+
+  // Sentença
+  if (lower.includes('sentenca') || lower.includes('sentença')) {
+    return 'JUDGMENT';
+  }
+
+  // Recurso
+  if (lower.includes('recurso') || lower.includes('apelacao') || lower.includes('apelação')) {
+    return 'APPEAL';
+  }
+
+  // Acordo
+  if (lower.includes('acordo') || lower.includes('transacao') || lower.includes('transação')) {
+    return 'AGREEMENT';
+  }
+
+  // Prova
+  if (lower.includes('prova') || lower.includes('documento') || lower.includes('evidencia')) {
+    return 'EVIDENCE';
+  }
+
+  return 'OTHER';
+}

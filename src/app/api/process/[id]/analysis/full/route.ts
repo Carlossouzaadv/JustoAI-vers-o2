@@ -1,325 +1,204 @@
-// ================================================================
-// API ENDPOINT - Análise FULL
-// ================================================================
-// POST /process/{id}/analysis/full
-// Análise completa com upload de PDFs e consumo de FULL credits
-
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils';
-import { DeepAnalysisService } from '@/lib/deep-analysis-service';
-import { getCreditManager } from '@/lib/credit-system';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
+import { getGeminiClient } from '@/lib/gemini-client';
+import { ModelTier } from '@/lib/ai-model-types';
 
-// Schema de validação
-const fullAnalysisSchema = z.object({
-  workspaceId: z.string().min(1, 'Workspace ID é obrigatório'),
-  useExistingFiles: z.boolean().optional().default(false),
-  existingFileIds: z.array(z.string()).optional().default([]),
-  forceReprocessing: z.boolean().optional().default(false),
-  userId: z.string().optional()
-});
-
-export const POST = withErrorHandler(async (
+export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
-  const { id: processId } = await params;
-
-  // Auth check
-  const { user, error: authError } = await requireAuth(request);
-  if (authError) return authError;
-
-  console.log(`${ICONS.PROCESS} Iniciando análise FULL para processo: ${processId}`);
-
+  { params }: { params: { id: string } }
+) {
+  const startTime = Date.now();
   try {
-    const analysisService = new DeepAnalysisService();
-    const creditSystem = getCreditManager();
-
-    // Parse multipart form data
-    const formData = await request.formData();
-    const workspaceId = formData.get('workspaceId') as string;
-    const useExistingFiles = formData.get('useExistingFiles') === 'true';
-    const existingFileIds = formData.get('existingFileIds')
-      ? JSON.parse(formData.get('existingFileIds') as string)
-      : [];
-    const forceReprocessing = formData.get('forceReprocessing') === 'true';
-    const userId = formData.get('userId') as string;
-
-    if (!workspaceId) {
-      return errorResponse('workspaceId é obrigatório', 400);
-    }
-
-    // Verificar se o processo existe e pertence ao workspace
-    const processExists = await analysisService.validateProcessAccess(processId, workspaceId);
-    if (!processExists) {
-      return errorResponse('Processo não encontrado ou acesso negado', 404);
-    }
-
-    let filesToProcess = [];
-
-    if (useExistingFiles && existingFileIds.length > 0) {
-      // Usar arquivos já anexados específicos
-      filesToProcess = await analysisService.getProcessDocumentsByIds(processId, existingFileIds);
-    } else {
-      // Processar uploads de novos arquivos
-      const uploadedFiles = [];
-
-      for (const [key, value] of formData.entries()) {
-        if (key.startsWith('file_') && value instanceof File) {
-          uploadedFiles.push(value);
-        }
-      }
-
-      if (uploadedFiles.length === 0) {
-        return errorResponse(
-          'Pelo menos um arquivo PDF deve ser enviado ou arquivos existentes selecionados',
-          400
-        );
-      }
-
-      // Validar arquivos
-      for (const file of uploadedFiles) {
-        if (!file.name.toLowerCase().endsWith('.pdf')) {
-          return errorResponse(`Arquivo ${file.name} não é um PDF válido`, 400);
-        }
-
-        if (file.size > 50 * 1024 * 1024) { // 50MB limit
-          return errorResponse(`Arquivo ${file.name} excede o limite de 50MB`, 400);
-        }
-      }
-
-      // Processar e salvar arquivos
-      filesToProcess = await analysisService.processUploadedFiles(
-        uploadedFiles,
-        processId,
-        workspaceId,
-        userId || user.id
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: 'Não autenticado' },
+        { status: 401 }
       );
     }
+    const userId = session.user.id;
+    const caseId = params.id;
+    console.log(`${ICONS.ROBOT} [Full Analysis] Iniciando para case ${caseId}`);
 
-    if (filesToProcess.length === 0) {
-      return errorResponse('Nenhum arquivo válido para processar', 400);
-    }
-
-    // Calcular créditos necessários baseado na regra configurada
-    const fullCreditsNeeded = await analysisService.calculateFullCreditsNeeded(filesToProcess);
-
-    console.log(`${ICONS.INFO} FULL credits necessários: ${fullCreditsNeeded}`);
-
-    // Gerar chave de análise
-    const analysisKey = await analysisService.generateAnalysisKey({
-      processId,
-      documentHashes: filesToProcess.map(file => file.textSha),
-      analysisType: 'FULL',
-      modelVersion: 'gemini-1.5-pro'
+    const caseData = await prisma.case.findUnique({
+      where: { id: caseId },
+      include: {
+        documents: true,
+        processo: true,
+        timelineEntries: {
+          orderBy: { eventDate: 'desc' },
+          take: 100
+        },
+        workspace: true
+      }
     });
 
-    // Verificar cache se não for reprocessamento forçado
-    if (!forceReprocessing) {
-      const cachedResult = await analysisService.getCachedAnalysis(analysisKey, processId);
-
-      if (cachedResult) {
-        console.log(`${ICONS.SUCCESS} Cache HIT - Oferecendo opção de usar cache`);
-
-        return successResponse({
-          cacheAvailable: true,
-          cachedAnalysis: {
-            id: cachedResult.id,
-            versionNumber: cachedResult.versionNumber,
-            summary: cachedResult.summaryJson,
-            confidence: cachedResult.confidenceScore,
-            createdAt: cachedResult.createdAt,
-            creditsUsed: cachedResult.fullCreditsUsed
-          },
-          options: {
-            useCache: {
-              message: 'Usar resultado cacheado (sem consumir créditos)',
-              creditsUsed: 0
-            },
-            forceReprocess: {
-              message: `Forçar reprocessamento (consome ${fullCreditsNeeded} FULL credits)`,
-              creditsUsed: fullCreditsNeeded
-            }
-          },
-          filesProcessed: filesToProcess.length
-        });
-      }
+    if (!caseData) {
+      return NextResponse.json(
+        { success: false, error: 'Case não encontrado' },
+        { status: 404 }
+      );
     }
 
-    // Verificar saldo de FULL credits
-    const creditBalance = await creditSystem.getWorkspaceCredits(workspaceId);
-    if (!creditBalance.success) {
-      return errorResponse('Erro ao verificar saldo de créditos', 500);
-    }
-
-    if (creditBalance.credits!.fullCreditsBalance < fullCreditsNeeded) {
-      const shortage = fullCreditsNeeded - creditBalance.credits!.fullCreditsBalance;
-
-      return errorResponse(
-        'FULL credits insuficientes',
-        402, // Payment Required
+    if (caseData.onboardingStatus !== 'enriched' && caseData.onboardingStatus !== 'analyzed') {
+      return NextResponse.json(
         {
-          required: fullCreditsNeeded,
-          available: creditBalance.credits!.fullCreditsBalance,
-          shortage,
-          options: {
-            buyPack: {
-              message: 'Comprar pack de FULL credits',
-              recommendedPack: shortage <= 5 ? 'FULL_5' : shortage <= 15 ? 'FULL_15' : 'FULL_35'
-            },
-            schedule: {
-              message: 'Agendar análise para quando houver créditos disponíveis'
-            },
-            useFast: {
-              message: 'Executar análise FAST como alternativa (sem consumir FULL credits)'
-            }
-          }
-        }
+          success: false,
+          error: 'Case ainda não foi enriquecido. Aguarde a conclusão do processamento JUDIT.',
+          currentStatus: caseData.onboardingStatus
+        },
+        { status: 400 }
       );
     }
 
-    // Verificar se já existe job em andamento
-    const existingJob = await analysisService.getActiveJob(analysisKey);
-    if (existingJob) {
-      return successResponse({
-        analysisId: existingJob.id,
-        source: 'processing',
-        status: existingJob.status,
-        progress: existingJob.progress,
-        estimatedTime: '2-3 minutos',
-        creditsUsed: fullCreditsNeeded,
-        message: 'Análise FULL já está em andamento'
-      });
-    }
+    const lastVersion = await prisma.caseAnalysisVersion.findFirst({
+      where: { caseId },
+      orderBy: { version: 'desc' }
+    });
 
-    // Adquirir lock Redis
-    const lockResult = await analysisService.acquireAnalysisLock(analysisKey, 600); // 10 minutos
-    if (!lockResult.acquired) {
-      return errorResponse(
-        'Análise já está sendo processada por outro worker',
-        429,
-        { retryAfter: lockResult.ttl }
-      );
-    }
+    const nextVersion = (lastVersion?.version || 0) + 1;
+    const prompt = buildFullAnalysisPrompt({
+      caseData,
+      timeline: caseData.timelineEntries,
+      documents: caseData.documents,
+      juditData: caseData.processo?.dadosCompletos
+    });
 
-    try {
-      // Debitar FULL credits atomicamente (FIFO)
-      const debitResult = await creditSystem.debitCredits(
-        workspaceId,
-        0, // report credits
-        fullCreditsNeeded, // full credits
-        `Análise FULL - Processo ${processId}`,
-        {
-          processId,
-          analysisType: 'FULL',
-          filesCount: filesToProcess.length,
-          analysisKey,
-          userId: userId || user.id
-        }
-      );
+    console.log(`${ICONS.INFO} [Full Analysis] Prompt construído: ${prompt.length} chars`);
+    console.log(`${ICONS.ROBOT} [Full Analysis] Chamando Gemini Pro...`);
 
-      if (!debitResult.success) {
-        // Liberar lock
-        await analysisService.releaseAnalysisLock(lockResult.token);
-        return errorResponse(
-          `Erro ao debitar créditos: ${debitResult.error}`,
-          500
-        );
-      }
+    const gemini = getGeminiClient();
+    const analysisStartTime = Date.now();
 
-      console.log(`${ICONS.SUCCESS} FULL credits debitados: ${fullCreditsNeeded}`);
+    const analysis = await gemini.generateJsonContent(prompt, {
+      model: ModelTier.PRO,
+      maxTokens: 8000,
+      temperature: 0.2,
+      timeout: 120000
+    });
 
-      // Criar próxima versão de análise
-      const nextVersion = await analysisService.getNextVersionNumber(processId);
+    const analysisDuration = Date.now() - analysisStartTime;
+    console.log(`${ICONS.SUCCESS} [Full Analysis] Análise gerada em ${analysisDuration}ms`);
 
-      // Criar registro de versão (status PENDING)
-      const analysisVersion = await analysisService.createAnalysisVersion({
-        processId,
-        workspaceId,
-        versionNumber: nextVersion,
+    const version = await prisma.caseAnalysisVersion.create({
+      data: {
+        caseId,
+        workspaceId: caseData.workspaceId,
+        version: nextVersion,
+        status: 'COMPLETED',
+        aiAnalysis: analysis,
         analysisType: 'FULL',
+        confidence: analysis.confidence || 0.85,
         modelUsed: 'gemini-1.5-pro',
-        fullCreditsUsed: fullCreditsNeeded,
-        analysisKey,
-        sourceFilesMetadata: filesToProcess.map(file => ({
-          id: file.id,
-          name: file.name,
-          textSha: file.textSha,
-          size: file.size,
-          pages: file.pages || 0
-        })),
-        createdBy: userId || user.id
-      });
-
-      // Criar job de análise
-      const analysisJob = await analysisService.createAnalysisJob({
-        processId,
-        workspaceId,
-        analysisKey,
-        analysisType: 'FULL',
-        modelHint: 'gemini-1.5-pro',
-        filesMetadata: filesToProcess,
-        resultVersionId: analysisVersion.id,
-        lockToken: lockResult.token,
+        processingTime: analysisDuration,
+        costEstimate: 1.0,
         metadata: {
-          creditsDebited: fullCreditsNeeded,
-          allocationsUsed: debitResult.allocationsUsed
+          userId,
+          requestedAt: new Date().toISOString(),
+          tokensUsed: analysis.usage?.totalTokens || 0
         }
-      });
+      }
+    });
 
-      // Registrar evento de uso
-      await creditSystem.logUsageEvent({
-        workspaceId,
-        eventType: 'full_analysis_started',
-        resourceType: 'full_analysis',
-        resourceId: processId,
-        reportCreditsCost: 0,
-        fullCreditsCost: fullCreditsNeeded,
-        status: 'completed',
-        metadata: {
-          analysisVersionId: analysisVersion.id,
-          jobId: analysisJob.id,
-          filesCount: filesToProcess.length,
-          allocationsUsed: debitResult.allocationsUsed
-        }
-      });
+    console.log(`${ICONS.SUCCESS} [Full Analysis] Versão salva: ${version.id} (v${nextVersion})`);
 
-      // Disparar processamento em background
-      setImmediate(() => {
-        analysisService.processAnalysisInBackground(analysisJob.id)
-          .catch(error => {
-            console.error(`${ICONS.ERROR} Erro no processamento FULL background:`, error);
-          });
-      });
+    await prisma.case.update({
+      where: { id: caseId },
+      data: {
+        onboardingStatus: 'analyzed'
+      }
+    });
 
-      console.log(`${ICONS.SUCCESS} Análise FULL iniciada - versão ${nextVersion}`);
+    const totalDuration = Date.now() - startTime;
+    console.log(`${ICONS.SUCCESS} [Full Analysis] Completo em ${totalDuration}ms`);
 
-      return successResponse({
-        analysisId: analysisVersion.id,
-        jobId: analysisJob.id,
-        versionNumber: nextVersion,
-        source: 'processing',
-        analysisType: 'FULL',
-        model: 'gemini-1.5-pro',
-        status: 'PROCESSING',
-        creditsUsed: fullCreditsNeeded,
-        filesProcessed: filesToProcess.length,
-        estimatedTime: '2-3 minutos',
-        message: `Análise FULL iniciada usando ${filesToProcess.length} arquivo(s). ${fullCreditsNeeded} FULL credits consumidos.`
-      });
-
-    } catch (error) {
-      // Liberar lock em caso de erro
-      await analysisService.releaseAnalysisLock(lockResult.token);
-      throw error;
-    }
+    return NextResponse.json({
+      success: true,
+      analysisId: version.id,
+      version: nextVersion,
+      analysis: analysis,
+      creditsUsed: 1.0,
+      timing: {
+        total: totalDuration,
+        analysis: analysisDuration
+      },
+      message: 'Análise completa gerada com sucesso'
+    });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro na análise FULL:`, error);
-    return errorResponse(
-      error instanceof Error ? error.message : 'Erro interno do servidor',
-      500
+    console.error(`${ICONS.ERROR} [Full Analysis] Erro:`, error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erro ao gerar análise completa'
+      },
+      { status: 500 }
     );
   }
-});
+}
+
+function buildFullAnalysisPrompt(data: {
+  caseData: any;
+  timeline: any[];
+  documents: any[];
+  juditData?: any;
+}): string {
+  const { caseData, timeline, documents, juditData } = data;
+
+  const timelineText = timeline
+    .map((m: any) => `[${m.eventDate.toISOString().split('T')[0]}] ${m.eventType}: ${m.description}`)
+    .join('\n');
+
+  const documentsText = documents
+    .filter((d: any) => d.extractedText)
+    .map((d: any) => `Documento "${d.name}":\n${d.extractedText?.substring(0, 2000)}...`)
+    .join('\n\n');
+
+  const juditSummary = juditData
+    ? JSON.stringify(juditData).substring(0, 5000)
+    : 'Dados JUDIT não disponíveis';
+
+  return `Você é um advogado especialista em análise estratégica de processos jurídicos.
+Analise profundamente o processo abaixo e forneça uma análise estratégica completa.
+
+# DADOS DO PROCESSO
+**Número**: ${caseData.number}
+**Título**: ${caseData.title}
+**Status**: ${caseData.status}
+**Tipo**: ${caseData.type}
+
+# TIMELINE DE PRINCIPAIS MOVIMENTAÇÕES
+${timelineText}
+
+# DOCUMENTOS IMPORTANTES
+${documentsText}
+
+# DADOS OFICIAIS
+${juditSummary}
+
+# INSTRUÇÕES
+Forneça uma análise estratégica COMPLETA contendo:
+1. **executive_summary**: Resumo executivo do caso (3-5 parágrafos)
+2. **legal_analysis**: Análise jurídica detalhada dos fundamentos e argumentos
+3. **risk_assessment**: Avaliação de riscos e probabilidades de êxito
+4. **key_events**: Eventos chave que mudaram o rumo do processo
+5. **next_steps**: Próximos passos recomendados e estratégia sugerida
+6. **deadlines**: Prazos importantes e urgentes
+7. **strengths**: Pontos fortes da posição atual
+8. **weaknesses**: Pontos fracos e vulnerabilidades
+9. **recommendations**: Recomendações estratégicas específicas
+10. **confidence**: Sua confiança nesta análise (0.0 a 1.0)
+
+**FORMATO**: Retorne APENAS JSON válido com a estrutura acima.
+**RESPOSTA (JSON)**:`;
+}
+
+export async function GET() {
+  return NextResponse.json(
+    { success: false, error: 'Método não permitido. Use POST.' },
+    { status: 405 }
+  );
+}
