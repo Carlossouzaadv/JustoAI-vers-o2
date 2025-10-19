@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Read(//d/JustoAI/backend/**)"
+      "Read(//d/JustoAI/backend/**)",
+      "Bash(node -e \"require(''dotenv'').config({path: ''.env.local''}); const { execSync } = require(''child_process''); execSync(''npx prisma migrate deploy'', { stdio: ''inherit'' })\")",
+      "Bash(node check-columns.js)",
+      "Bash(node add-columns-manually.js)",
+      "Bash(node verify-complete-onboarding.js)"
     ],
     "deny": [],
     "ask": []

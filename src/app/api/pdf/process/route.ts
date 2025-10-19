@@ -13,11 +13,8 @@ import { randomBytes } from 'crypto';
 import { execSync } from 'child_process';
 
 const ICONS = {
-  RAILWAY: '🚂',
-  PDF: '📄',
   SUCCESS: '✅',
   ERROR: '❌',
-  LOG: '📝',
 };
 
 // ================================================================
@@ -25,44 +22,27 @@ const ICONS = {
 // ================================================================
 
 // ================================================================
-// LOGGER COM PREFIXES PARA RASTREAMENTO
+// MINIMALIST LOGGER - Only errors and critical status
 // ================================================================
-function log(prefix: string, message: string, data?: any) {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${prefix} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+function log(level: 'error' | 'success', message: string, data?: any) {
+  if (level === 'error') {
+    console.error(`${ICONS.ERROR} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  } else if (level === 'success') {
+    console.log(`${ICONS.SUCCESS} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  }
 }
 
 // ================================================================
 // PDF EXTRACTION - Using system pdftotext command (no Node.js issues)
 // ================================================================
 async function extractTextFromPDF(pdfPath: string): Promise<string> {
-  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Iniciando extração de texto do PDF', { path: pdfPath });
-
   try {
     // Use pdftotext command-line tool (from poppler-utils)
-    // This is system-level, no Node.js dependencies, no DOMMatrix issues
-    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Usando pdftotext (poppler) para extração');
-
-    try {
-      // pdftotext arquivo.pdf - (outputs to stdout)
-      const command = `pdftotext "${pdfPath}" -`;
-      const text = execSync(command, { encoding: 'utf-8' });
-
-      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Extração bem-sucedida`, {
-        textLength: text.length,
-      });
-
-      return text;
-    } catch (extractError) {
-      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha ao extrair PDF`, {
-        error: (extractError as any)?.message?.substring(0, 150),
-      });
-      throw extractError;
-    }
+    const command = `pdftotext "${pdfPath}" -`;
+    const text = execSync(command, { encoding: 'utf-8' });
+    return text;
   } catch (error) {
-    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha na extração de PDF`, {
-      error: (error as any)?.message,
-    });
+    log('error', 'PDF extraction failed', { error: (error as any)?.message });
     throw error;
   }
 }
@@ -73,14 +53,10 @@ async function extractTextFromPDF(pdfPath: string): Promise<string> {
 function cleanText(text: string): string {
   if (!text) return '';
 
-  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Limpando e normalizando texto', { inputLength: text.length });
-
   let cleaned = text
     .replace(/\n{3,}/g, '\n\n') // Reduz quebras de linha múltiplas
     .replace(/\s{2,}/g, ' ') // Reduz espaços múltiplos
     .trim();
-
-  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Limpeza concluída', { outputLength: cleaned.length });
 
   return cleaned;
 }
@@ -89,8 +65,6 @@ function cleanText(text: string): string {
 // EXTRACT PROCESS NUMBER
 // ================================================================
 function extractProcessNumber(text: string): string | null {
-  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Procurando número do processo');
-
   const patterns = [
     /\b\d{7}[-.]?\d{2}[-.]?\d{4}[-.]?\d[-.]?\d{2}[-.]?\d{4}\b/, // CNJ moderno
     /\b\d{4}\.\d{2}\.\d{6}[-.]?\d\b/, // CNJ antigo
@@ -99,12 +73,10 @@ function extractProcessNumber(text: string): string | null {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match) {
-      log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.SUCCESS} Processo encontrado: ${match[0]}`);
       return match[0];
     }
   }
 
-  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, '⚠️ Nenhum processo encontrado');
   return null;
 }
 
@@ -116,8 +88,6 @@ export async function POST(request: NextRequest) {
   let tempFilePath: string | null = null;
 
   try {
-    log(`${ICONS.RAILWAY}`, `${ICONS.PDF} Recebendo requisição de processamento de PDF`);
-
     // 1. PARSEAR MULTIPART FORM DATA
     const contentType = request.headers.get('content-type');
     if (!contentType?.includes('multipart/form-data')) {
@@ -131,22 +101,15 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
-      log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Arquivo não enviado`);
       return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 });
     }
-
-    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Arquivo recebido', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    });
 
     // 2. SALVAR ARQUIVO TEMPORÁRIO
     const tempDir = join(tmpdir(), 'justoai-pdfs');
     try {
       await fs.mkdir(tempDir, { recursive: true });
     } catch (err) {
-      log(`${ICONS.RAILWAY}`, `⚠️ Aviso ao criar diretório temp`, { error: (err as any)?.message });
+      // Silently fail if dir exists
     }
 
     const tempFileName = `${Date.now()}-${randomBytes(4).toString('hex')}.pdf`;
@@ -155,11 +118,6 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(tempFilePath, buffer);
 
-    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Arquivo salvo temporariamente', {
-      path: tempFilePath,
-      size: buffer.length,
-    });
-
     // 3. EXTRAIR TEXTO
     const processingStartTime = Date.now();
     let extractedText = '';
@@ -167,19 +125,12 @@ export async function POST(request: NextRequest) {
     try {
       extractedText = await extractTextFromPDF(tempFilePath);
     } catch (extractError) {
-      log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Falha na extração`, {
-        error: (extractError as any)?.message,
-      });
       throw extractError;
     }
 
     const processingTime = Date.now() - processingStartTime;
 
     if (!extractedText || extractedText.trim().length < 50) {
-      log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Texto insuficiente extraído`, {
-        textLength: extractedText.length,
-      });
-
       return NextResponse.json(
         { error: 'PDF não contém texto suficiente' },
         { status: 400 }
@@ -195,12 +146,12 @@ export async function POST(request: NextRequest) {
     // 6. PREPARAR RESPOSTA
     const totalTime = Date.now() - startTime;
 
-    log(`${ICONS.RAILWAY}`, `${ICONS.SUCCESS} Processamento concluído com sucesso`, {
+    log('success', 'PDF processed', {
       totalTime: `${totalTime}ms`,
       processingTime: `${processingTime}ms`,
       textLength: extractedText.length,
       cleanedLength: cleanedText.length,
-      processNumber: processNumber || 'não identificado',
+      processNumber: processNumber || 'not found',
     });
 
     return NextResponse.json({
@@ -219,11 +170,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const totalTime = Date.now() - startTime;
-
-    log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Erro fatal no processamento`, {
+    log('error', 'PDF processing failed', {
       error: (error as any)?.message,
       totalTime: `${totalTime}ms`,
-      stack: (error as any)?.stack?.substring(0, 200),
     });
 
     return NextResponse.json(
@@ -238,11 +187,8 @@ export async function POST(request: NextRequest) {
     if (tempFilePath) {
       try {
         await fs.unlink(tempFilePath);
-        log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Arquivo temporário removido');
       } catch (cleanupError) {
-        log(`${ICONS.RAILWAY}`, `⚠️ Aviso ao remover arquivo temporário`, {
-          error: (cleanupError as any)?.message,
-        });
+        // Silently fail
       }
     }
   }
