@@ -7,9 +7,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
+import { existsSync, readdirSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
+    const timestamp = new Date().toISOString();
+
+    // Debug: Log environment info
+    console.log(`[${timestamp}] 🚂 DEBUG: process.cwd() = ${process.cwd()}`);
+    console.log(`[${timestamp}] 🚂 DEBUG: __dirname (unavailable in standalone)`);
+
     // Dynamically require the PDF extractor at runtime
     // Try multiple possible paths for the file in standalone build
     const possiblePaths = [
@@ -25,22 +32,45 @@ export async function POST(request: NextRequest) {
       '/src/lib/pdf-extractor.js',
     ];
 
+    // Debug: Try to list directories
+    for (const checkPath of ['/app', '/app/justoai-v2', process.cwd()]) {
+      try {
+        if (existsSync(checkPath)) {
+          console.log(`[${timestamp}] 🚂 DEBUG: Files in ${checkPath}:`, readdirSync(checkPath).slice(0, 10).join(', '));
+        } else {
+          console.log(`[${timestamp}] 🚂 DEBUG: Path does not exist: ${checkPath}`);
+        }
+      } catch (err) {
+        console.log(`[${timestamp}] 🚂 DEBUG: Cannot list ${checkPath}:`, (err as any)?.message);
+      }
+    }
+
     let extractorPath = null;
     let lastError = null;
+    const attemptedPaths: { path: string; exists: boolean; error?: string }[] = [];
 
     for (const path of possiblePaths) {
-      try {
-        require.resolve(path);
-        extractorPath = path;
-        break;
-      } catch (err) {
-        lastError = err;
+      const exists = existsSync(path);
+      attemptedPaths.push({ path, exists });
+
+      console.log(`[${timestamp}] 🚂 DEBUG: Checking path ${path}: exists=${exists}`);
+
+      if (exists) {
+        try {
+          require.resolve(path);
+          extractorPath = path;
+          console.log(`[${timestamp}] 🚂 ✅ Found pdf-extractor at: ${path}`);
+          break;
+        } catch (err) {
+          console.log(`[${timestamp}] 🚂 DEBUG: require.resolve failed for ${path}:`, (err as any)?.message);
+        }
       }
     }
 
     if (!extractorPath) {
-      const errorMsg = `Could not find pdf-extractor.js in any of: ${possiblePaths.join(', ')}. Last error: ${(lastError as any)?.message}`;
-      console.error(`[${new Date().toISOString()}] 🚂 ❌ PDF extractor not found:`, errorMsg);
+      const statusInfo = attemptedPaths.map(p => `${p.path} (exists=${p.exists})`).join(' | ');
+      const errorMsg = `Could not find pdf-extractor.js. Attempted: ${statusInfo}`;
+      console.error(`[${timestamp}] 🚂 ❌ PDF extractor not found:`, errorMsg);
       throw new Error(errorMsg);
     }
 
