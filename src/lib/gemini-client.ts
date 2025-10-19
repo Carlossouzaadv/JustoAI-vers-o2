@@ -76,8 +76,9 @@ export class GeminiClient {
         temperature: finalConfig.temperature,
         topK: finalConfig.topK,
         topP: finalConfig.topP,
-        maxOutputTokens: finalConfig.maxTokens,
-        responseMimeType: 'text/plain'
+        maxOutputTokens: finalConfig.maxTokens
+        // Note: responseMimeType was removed in v1 API (was v1beta only)
+        // For JSON output in v1, use response_schema instead if needed
       },
       safetySettings: [
         {

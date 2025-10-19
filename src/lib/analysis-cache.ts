@@ -73,8 +73,6 @@ export class AnalysisCacheManager {
       const analysisKey = this.generateAnalysisKey(textShas, modelVersion, promptSignature, lastMovementDate);
       const cacheKey = `analysis:${analysisKey}`;
 
-      console.log(`${ICONS.SEARCH} Verificando cache de análise: ${analysisKey.substring(0, 16)}...`);
-
       const [data, ttl] = await Promise.all([
         this.redis.get(cacheKey),
         this.redis.ttl(cacheKey)
@@ -90,23 +88,19 @@ export class AnalysisCacheManager {
         const isValidByMovement = !lastMovementDate || cacheCreatedAt > lastMovementDate;
 
         if (isValidByMovement) {
-          const age = this.ANALYSIS_CACHE_TTL - ttl;
-          console.log(`${ICONS.SUCCESS} Cache HIT - análise válida (idade: ${Math.floor(age / 3600)}h)`);
-
+          console.log(`${ICONS.SUCCESS} Cache HIT`);
           return {
             hit: true,
             data: parsedData.result,
-            age,
+            age: this.ANALYSIS_CACHE_TTL - ttl,
             key: analysisKey
           };
         } else {
           // Cache inválido por nova movimentação
-          console.log(`${ICONS.WARNING} Cache INVALID - nova movimentação detectada, removendo cache`);
           await this.redis.del(cacheKey);
         }
       }
 
-      console.log(`${ICONS.INFO} Cache MISS - análise não encontrada ou inválida`);
       return {
         hit: false,
         key: analysisKey
@@ -118,9 +112,9 @@ export class AnalysisCacheManager {
       const errorMsg = error instanceof Error ? error.message : String(error);
 
       if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
-        console.warn(`${ICONS.WARNING} Redis temporarily unavailable (graceful degradation): ${errorMsg}`);
+        console.warn(`${ICONS.WARNING} Redis temporarily unavailable (graceful degradation)`);
       } else {
-        console.error(`${ICONS.ERROR} Erro ao verificar cache:`, error);
+        console.error(`${ICONS.ERROR} Cache error:`, errorMsg);
       }
 
       return {
@@ -165,10 +159,8 @@ export class AnalysisCacheManager {
       // In graceful mode, it's OK if cache save fails - just log it
       const errorMsg = error instanceof Error ? error.message : String(error);
 
-      if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
-        console.warn(`${ICONS.WARNING} Redis temporarily unavailable (graceful degradation): ${errorMsg}`);
-      } else {
-        console.error(`${ICONS.ERROR} Erro ao salvar cache:`, error);
+      if (!errorMsg.includes('Stream isn\'t writeable') && !errorMsg.includes('READONLY')) {
+        console.error(`${ICONS.ERROR} Cache save error:`, errorMsg);
       }
       return false;
     }
@@ -187,13 +179,10 @@ export class AnalysisCacheManager {
     try {
       const lockKey = `lock:analysis:${analysisKey}`;
 
-      console.log(`${ICONS.PROCESS} Tentando adquirir lock: ${analysisKey.substring(0, 16)}...`);
-
       // SETNX com TTL
       const result = await this.redis.set(lockKey, Date.now().toString(), 'EX', this.LOCK_TTL, 'NX');
 
       if (result === 'OK') {
-        console.log(`${ICONS.SUCCESS} Lock adquirido com sucesso`);
         return {
           acquired: true,
           lockKey,
@@ -203,7 +192,6 @@ export class AnalysisCacheManager {
 
       // Lock já existe, verificar TTL restante
       const ttl = await this.redis.ttl(lockKey);
-      console.log(`${ICONS.WARNING} Lock já existe (TTL restante: ${ttl}s)`);
 
       return {
         acquired: false,
@@ -215,10 +203,8 @@ export class AnalysisCacheManager {
       // In graceful mode, allow processing without lock
       const errorMsg = error instanceof Error ? error.message : String(error);
 
-      if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
-        console.warn(`${ICONS.WARNING} Redis unavailable - allowing processing without distributed lock (graceful degradation)`);
-      } else {
-        console.error(`${ICONS.ERROR} Erro ao adquirir lock:`, error);
+      if (!errorMsg.includes('Stream isn\'t writeable') && !errorMsg.includes('READONLY')) {
+        console.error(`${ICONS.ERROR} Lock error:`, errorMsg);
       }
 
       // Return false but with positive ttl to avoid triggering retries
