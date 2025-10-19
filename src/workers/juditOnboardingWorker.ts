@@ -10,6 +10,7 @@ import { getRedisConnection } from '../lib/redis';
 import { performFullProcessRequest } from '../lib/services/juditOnboardingService';
 import { checkConfiguration } from '../lib/services/juditService';
 import { queueLogger, logOperationStart } from '../lib/observability/logger';
+import { prisma } from '../lib/prisma';
 import type {
   JuditOnboardingJobData,
   JuditOnboardingJobResult,
@@ -130,6 +131,73 @@ async function processOnboardingJob(
         processo_id: result.processoId,
         request_id: result.requestId,
       });
+
+      // ================================================================
+      // FASE 2: Processamento de Anexos e Unificação de Timeline
+      // ================================================================
+      try {
+        workerLogger.debug({
+          action: 'fase2_start',
+          job_id: job.id,
+          cnj,
+          message: 'Iniciando FASE 2: Processamento de anexos e unificação de timeline',
+        });
+
+        const { processJuditAttachments } = await import('@/lib/services/juditAttachmentProcessor');
+        const { mergeTimelines } = await import('@/lib/services/timelineUnifier');
+
+        const processo = await prisma.processo.findFirst({
+          where: { numeroCnj: cnj },
+          include: { case: true },
+        });
+
+        if (processo?.case) {
+          const attachmentResult = await processJuditAttachments(
+            processo.case.id,
+            result.dadosCompletos
+          );
+
+          workerLogger.info({
+            action: 'fase2_attachments_done',
+            job_id: job.id,
+            cnj,
+            attachments_processed: attachmentResult.processed,
+            attachments_total: attachmentResult.total,
+          });
+
+          const timelineResult = await mergeTimelines(processo.case.id);
+
+          workerLogger.info({
+            action: 'fase2_timeline_done',
+            job_id: job.id,
+            cnj,
+            timeline_new: timelineResult.new,
+          });
+
+          await prisma.case.update({
+            where: { id: processo.case.id },
+            data: {
+              onboardingStatus: 'enriched',
+              enrichmentCompletedAt: new Date(),
+            },
+          });
+
+          workerLogger.info({
+            action: 'fase2_case_updated',
+            job_id: job.id,
+            cnj,
+            message: 'FASE 2 concluída com sucesso',
+          });
+        }
+      } catch (fase2Error) {
+        workerLogger.error({
+          action: 'fase2_error',
+          job_id: job.id,
+          cnj,
+          error: fase2Error instanceof Error ? fase2Error.message : String(fase2Error),
+          error_stack: fase2Error instanceof Error ? fase2Error.stack : undefined,
+        });
+      }
 
       workerLogger.info({
         action: 'job_success',
