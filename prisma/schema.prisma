@@ -115,7 +115,7 @@ model Case {
   id                 String                @id @default(cuid())
   workspaceId        String
   clientId           String
-  number             String                @unique
+  number             String
   title              String
   description        String?
   type               CaseType              @default(CIVIL)
@@ -172,6 +172,7 @@ model Case {
 
   @@index([onboardingStatus, updatedAt])
   @@index([detectedCnj])
+  @@unique([number, workspaceId])
   @@map("cases")
 }
 

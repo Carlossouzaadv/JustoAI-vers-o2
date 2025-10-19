@@ -277,29 +277,58 @@ export async function POST(request: NextRequest) {
       // Extrair metadados básicos do documento
       const basicData = await extractBasicProcessData(cleanText);
 
-      const newCase = await prisma.case.create({
-        data: {
-          workspaceId,
-          clientId: defaultClient.id,
-          number: extractedProcessNumber,
-          title: basicData.title || `Processo ${extractedProcessNumber}`,
-          description: basicData.description,
-          type: 'CIVIL', // Padrão
-          status: 'UNASSIGNED', // Status especial
-          priority: 'MEDIUM',
-          createdById: user.id,
-          claimValue: basicData.claimValue,
-          metadata: {
-            autoCreated: true,
-            createdFromUpload: true,
-            extractedData: basicData,
-            needsAssignment: true
+      try {
+        // Usar upsert para evitar erro de constraint em case de race condition
+        const newCase = await prisma.case.upsert({
+          where: {
+            number_workspaceId: {
+              number: extractedProcessNumber,
+              workspaceId
+            }
+          },
+          update: {
+            // Se existir, apenas atualiza o updatedAt
+            updatedAt: new Date()
+          },
+          create: {
+            workspaceId,
+            clientId: defaultClient.id,
+            number: extractedProcessNumber,
+            title: basicData.title || `Processo ${extractedProcessNumber}`,
+            description: basicData.description,
+            type: 'CIVIL', // Padrão
+            status: 'UNASSIGNED', // Status especial
+            priority: 'MEDIUM',
+            createdById: user.id,
+            claimValue: basicData.claimValue,
+            metadata: {
+              autoCreated: true,
+              createdFromUpload: true,
+              extractedData: basicData,
+              needsAssignment: true
+            }
           }
-        }
-      });
+        });
 
-      targetCaseId = newCase.id;
-      console.log(`${ICONS.SUCCESS} Processo criado automaticamente: ${newCase.title}`);
+        targetCaseId = newCase.id;
+        console.log(`${ICONS.SUCCESS} Processo obtido: ${newCase.title}`);
+      } catch (upsertError) {
+        // Se upsert falhar, tentar buscar o caso existente
+        const existingCase = await prisma.case.findFirst({
+          where: {
+            number: extractedProcessNumber,
+            workspaceId
+          }
+        });
+
+        if (existingCase) {
+          targetCaseId = existingCase.id;
+          console.log(`${ICONS.SUCCESS} Processo existente encontrado: ${existingCase.title}`);
+        } else {
+          console.error(`${ICONS.ERROR} Erro ao processar case:`, upsertError);
+          throw upsertError;
+        }
+      }
 
     } else {
       // Usar caseId fornecido ou processo existente
