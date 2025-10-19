@@ -80,16 +80,25 @@ const nextConfig: NextConfig = {
         events: false,
       };
     } else {
-      // On server: exclude pdfjs-dist from bundling as it has worker references
-      // pdfjs-dist will be loaded at runtime via require() only on Node.js
+      // On server: exclude PDF libraries from bundling
+      // These modules must be loaded at runtime via require() in Node.js environment
+      // NOT bundled by webpack which causes DOM-related errors
+      const pdfModules = [
+        'pdfjs-dist',
+        'pdfjs-dist/legacy',
+        'pdfjs-dist/legacy/build/pdf',
+        'pdf-parse',
+        '@napi-rs/canvas',
+      ];
+
       if (Array.isArray(config.externals)) {
-        config.externals.push('pdfjs-dist');
+        config.externals.push(...pdfModules);
       } else if (!config.externals) {
-        config.externals = ['pdfjs-dist'];
+        config.externals = pdfModules;
       } else {
-        // If externals is an object or function, wrap it and add our module
+        // If externals is an object or function, wrap it and add our modules
         const existingExternals = config.externals;
-        config.externals = [existingExternals, 'pdfjs-dist'];
+        config.externals = [existingExternals, ...pdfModules];
       }
     }
 
