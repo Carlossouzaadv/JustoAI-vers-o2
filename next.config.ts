@@ -85,8 +85,7 @@ const nextConfig: NextConfig = {
       // NOT bundled by webpack which causes DOM-related errors
       const pdfModules = [
         'pdfjs-dist',
-        'pdfjs-dist/legacy',
-        'pdfjs-dist/legacy/build/pdf',
+        'pdfjs-dist/build/pdf',
         'pdf-parse',
         '@napi-rs/canvas',
       ];

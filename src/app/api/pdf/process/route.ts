@@ -43,9 +43,9 @@ async function extractTextFromPDF(pdfPath: string): Promise<string> {
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Usando pdfjs-dist para extração');
 
     try {
-      // Use legacy build for Node.js (no DOM dependencies)
-      // pdfjs-dist warning: "Please use the `legacy` build in Node.js environments"
-      const pdfjs = require('pdfjs-dist/legacy/build/pdf');
+      // Use standard build - Node.js will load from node_modules correctly
+      // pdfjs-dist automatically handles Node.js environment
+      const pdfjs = require('pdfjs-dist/build/pdf');
 
       // Read PDF file
       const fileBuffer = await fs.readFile(pdfPath);
