@@ -577,7 +577,8 @@ export async function GET(request: NextRequest) {
 // ================================================================
 
 async function saveTemporaryFile(buffer: Buffer, fileName: string): Promise<string> {
-  const tempDir = join(process.cwd(), 'uploads', 'temp');
+  // Use /tmp which is available in all environments (Vercel, Railway, local)
+  const tempDir = '/tmp/justoai-temp';
   if (!existsSync(tempDir)) {
     await mkdir(tempDir, { recursive: true });
   }
@@ -590,7 +591,10 @@ async function saveTemporaryFile(buffer: Buffer, fileName: string): Promise<stri
 }
 
 async function saveFinalFile(buffer: Buffer, fileName: string): Promise<string> {
-  const uploadsDir = join(process.cwd(), 'uploads', 'pdfs');
+  // Use /tmp which is available in all environments (Vercel, Railway, local)
+  // Note: /tmp is ephemeral on Vercel - files are deleted after function completes
+  // For persistent storage, integrate with S3, Supabase Storage, or similar
+  const uploadsDir = '/tmp/justoai-uploads';
   if (!existsSync(uploadsDir)) {
     await mkdir(uploadsDir, { recursive: true });
   }

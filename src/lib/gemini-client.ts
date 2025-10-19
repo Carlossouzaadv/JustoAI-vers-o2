@@ -11,13 +11,15 @@ import { ModelTier, GeminiConfig, GeminiResponse, GeminiError } from './ai-model
  */
 export class GeminiClient {
   private readonly apiKey: string;
-  private readonly baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+  // Use v1 instead of v1beta - v1beta is deprecated and missing newer models
+  private readonly baseUrl = 'https://generativelanguage.googleapis.com/v1';
 
   // Rate limiting
   private requestCounts: Map<string, number> = new Map();
   private resetTimes: Map<string, number> = new Map();
 
   // Model mappings to Google API model names
+  // Using the correct v1 API model names that are actually available
   private readonly modelMappings: Record<ModelTier, string> = {
     [ModelTier.LITE]: 'gemini-1.5-flash-8b',
     [ModelTier.BALANCED]: 'gemini-1.5-flash',
@@ -61,6 +63,7 @@ export class GeminiClient {
     await this.checkRateLimit(finalConfig.model);
 
     const modelName = this.modelMappings[finalConfig.model];
+    // API v1 endpoint format: /v1/models/{model}:generateContent?key={apiKey}
     const url = `${this.baseUrl}/models/${modelName}:generateContent?key=${this.apiKey}`;
 
     const requestBody = {
