@@ -3,41 +3,31 @@
 // ================================================================
 // Este arquivo roda em VERCEL e faz requisições HTTP para Railway
 // O processamento pesado (pdf-parse, pdfjs-dist) acontece no Railway
-// Máximo logging para rastreamento completo
 
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
 
 const ICONS = {
-  VERCEL: '⚡',
-  RAILWAY: '🚂',
-  PDF: '📄',
-  API: '🌐',
   SUCCESS: '✅',
   ERROR: '❌',
-  LOG: '📝',
 };
 
+const DEBUG = process.env.DEBUG === 'true';
+
 // ================================================================
-// CONFIG E LOGGER
+// LOGGER MINIMALISTA
 // ================================================================
 function log(prefix: string, message: string, data?: any) {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${prefix} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  if (DEBUG && data) {
+    console.log(`${prefix} ${message}`, JSON.stringify(data, null, 2));
+  } else if (process.env.NODE_ENV === 'development' || message.includes('Error')) {
+    console.log(`${prefix} ${message}`);
+  }
 }
 
 // Obter URL base do serviço PDF (Railway ou localhost)
 function getPdfProcessorUrl(): string {
-  // Prioritário: variável de ambiente para Railway em produção
-  if (process.env.PDF_PROCESSOR_URL) {
-    log(`${ICONS.VERCEL}`, 'Usando PDF_PROCESSOR_URL do ambiente:', { url: process.env.PDF_PROCESSOR_URL });
-    return process.env.PDF_PROCESSOR_URL;
-  }
-
-  // Fallback: localhost para desenvolvimento
-  const defaultUrl = 'http://localhost:3001';
-  log(`${ICONS.VERCEL}`, 'Usando localhost para desenvolvimento', { url: defaultUrl });
-  return defaultUrl;
+  return process.env.PDF_PROCESSOR_URL || 'http://localhost:3001';
 }
 
 // ================================================================
@@ -48,12 +38,6 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
   const baseUrl = getPdfProcessorUrl();
   const url = `${baseUrl}/api/pdf/process`;
 
-  log(`${ICONS.VERCEL} ${ICONS.RAILWAY}`, 'Chamando serviço PDF do Railway', {
-    url,
-    fileName,
-    bufferSize: buffer.length,
-  });
-
   try {
     // Criar FormData
     const formData = new FormData();
@@ -61,44 +45,23 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
     formData.append('file', blob, fileName);
 
     // Fazer requisição
-    const callStartTime = Date.now();
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
       timeout: 60000, // 60 segundos timeout
     });
 
-    const callTime = Date.now() - callStartTime;
-
-    log(`${ICONS.VERCEL} ${ICONS.API}`, `Resposta recebida do Railway (${callTime}ms)`, {
-      status: response.status,
-      statusText: response.statusText,
-    });
-
     if (!response.ok) {
       const errorText = await response.text();
-      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Erro na resposta do Railway', {
-        status: response.status,
-        error: errorText.substring(0, 200),
-      });
-      throw new Error(`Railway retornou status ${response.status}: ${errorText}`);
+      console.error(`${ICONS.ERROR} PDF extraction failed: ${response.status} - ${errorText.substring(0, 100)}`);
+      throw new Error(`Railway error ${response.status}`);
     }
 
     const result = await response.json();
-
-    log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Dados extraídos do Railway com sucesso', {
-      originalLength: result.data.originalText.length,
-      cleanedLength: result.data.cleanedText.length,
-      processNumber: result.data.processNumber,
-      metrics: result.data.metrics,
-    });
-
+    log(`${ICONS.SUCCESS}`, `PDF processed (${Date.now() - startTime}ms)`);
     return result.data;
   } catch (error) {
-    const totalTime = Date.now() - startTime;
-    log(`${ICONS.VERCEL} ${ICONS.ERROR}`, `Erro ao chamar Railway (${totalTime}ms)`, {
-      error: (error as any)?.message,
-    });
+    console.error(`${ICONS.ERROR} Railway error: ${(error as any)?.message}`);
     throw error;
   }
 }
@@ -179,14 +142,11 @@ export class PDFProcessor {
    * 3. OCR seria implementado com tesseract.js se necessário
    */
   async extractText(buffer: Buffer, fileName: string = 'document.pdf'): Promise<ExtractionResult> {
-    log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Iniciando extração em cascata');
-
     try {
       // Estratégia 1: Método primário
       const primaryText = await this.extractWithPrimary(buffer, fileName);
 
       if (primaryText.length >= this.MIN_TEXT_LENGTH) {
-        log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Extração primária bem-sucedida');
         return {
           text: primaryText,
           method: 'primary',
@@ -198,13 +158,10 @@ export class PDFProcessor {
         };
       }
 
-      log(`${ICONS.VERCEL}`, 'Texto insuficiente, tentando método alternativo...');
-
       // Estratégia 2: Fallback
       const fallbackText = await this.extractWithFallback(buffer);
 
       if (fallbackText.length >= this.MIN_TEXT_LENGTH) {
-        log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Extração fallback bem-sucedida');
         return {
           text: fallbackText,
           method: 'fallback',
@@ -216,9 +173,7 @@ export class PDFProcessor {
         };
       }
 
-      // TODO: Estratégia 3: OCR com tesseract.js
-      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Todas as estratégias falharam');
-
+      console.error(`${ICONS.ERROR} Text extraction failed for ${fileName}`);
       return {
         text: primaryText || fallbackText || '',
         method: 'primary',
@@ -230,10 +185,8 @@ export class PDFProcessor {
       };
 
     } catch (error) {
-      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Erro na extração de texto', {
-        error: (error as any)?.message,
-      });
-      throw new Error(`Falha na extração: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error(`${ICONS.ERROR} Extraction error: ${(error as any)?.message}`);
+      throw new Error(`Extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -242,25 +195,16 @@ export class PDFProcessor {
    */
   private async extractWithPrimary(buffer: Buffer, fileName: string = 'document.pdf'): Promise<string> {
     try {
-      log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Iniciando extração primária via Railway');
-
       const data = await callRailwayPdfProcessor(buffer, fileName);
       const fullText = data.cleanedText;
 
-      log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Extração primária concluída', {
-        textLength: fullText.length,
-        processNumber: data.processNumber,
-      });
-
       if (!fullText || fullText.trim().length === 0) {
-        throw new Error('PDF não contém texto extraível');
+        throw new Error('No text extracted from PDF');
       }
 
       return fullText;
     } catch (error) {
-      log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Erro no método primário', {
-        error: (error as any)?.message,
-      });
+      console.error(`${ICONS.ERROR} Primary extraction failed: ${(error as any)?.message}`);
       return '';
     }
   }

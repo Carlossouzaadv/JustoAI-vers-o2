@@ -46,8 +46,6 @@ export async function POST(request: NextRequest) {
   let lockKey: string | null = null;
 
   try {
-    console.log(`${ICONS.UPLOAD} Iniciando upload de PDF com pipeline completo...`);
-
     // 1. VERIFICAR AUTENTICAÇÃO
     const { user, error: authError } = await requireAuth(request);
     if (authError) return authError;
@@ -108,7 +106,6 @@ export async function POST(request: NextRequest) {
     );
 
     if (deduplicationCheck.isDuplicate) {
-      console.log(`${ICONS.WARNING} Arquivo duplicado detectado`);
 
       // Registrar evento de auditoria
       const timelineService = getTimelineMergeService();
@@ -155,7 +152,6 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. EXTRAÇÃO E NORMALIZAÇÃO DE TEXTO
-    console.log(`${ICONS.PROCESS} Extraindo texto do PDF...`);
 
     // Save PDF to temp file for processing
     const tempDir = join('/tmp', 'pdfs');
@@ -189,7 +185,6 @@ export async function POST(request: NextRequest) {
     const textExtractedAt = new Date();
 
     // 8. IDENTIFICAÇÃO DE PROCESSO CNJ
-    console.log(`${ICONS.SEARCH} Identificando número do processo...`);
 
     const extractedProcessNumber = textCleaner.extractProcessNumber(cleanText);
     console.log(extractedProcessNumber ?
@@ -217,7 +212,6 @@ export async function POST(request: NextRequest) {
 
       if (existingProcess) {
         shouldPromptUser = true;
-        console.log(`${ICONS.SUCCESS} Processo existente encontrado: ${existingProcess.title}`);
       }
     }
 
@@ -253,7 +247,6 @@ export async function POST(request: NextRequest) {
     let targetCaseId: string;
 
     if (extractedProcessNumber && !existingProcess) {
-      console.log(`${ICONS.PROCESS} Criando novo processo: ${extractedProcessNumber}`);
 
       // Buscar ou criar cliente padrão "A Definir"
       let defaultClient = await prisma.client.findFirst({
@@ -311,7 +304,6 @@ export async function POST(request: NextRequest) {
         });
 
         targetCaseId = newCase.id;
-        console.log(`${ICONS.SUCCESS} Processo obtido: ${newCase.title}`);
       } catch (upsertError) {
         // Se upsert falhar, tentar buscar o caso existente
         const existingCase = await prisma.case.findFirst({
@@ -323,7 +315,6 @@ export async function POST(request: NextRequest) {
 
         if (existingCase) {
           targetCaseId = existingCase.id;
-          console.log(`${ICONS.SUCCESS} Processo existente encontrado: ${existingCase.title}`);
         } else {
           console.error(`${ICONS.ERROR} Erro ao processar case:`, upsertError);
           throw upsertError;
@@ -356,7 +347,6 @@ export async function POST(request: NextRequest) {
     let aiAnalysisResult = null;
 
     if (cacheResult.hit) {
-      console.log(`${ICONS.SUCCESS} Análise encontrada no cache`);
       aiAnalysisResult = cacheResult.data;
     } else {
       // 13. ADQUIRIR LOCK REDIS PARA ANÁLISE
@@ -381,7 +371,6 @@ export async function POST(request: NextRequest) {
 
       try {
         // 14. ANÁLISE IA COM ROUTER OTIMIZADO
-        console.log(`${ICONS.PROCESS} Iniciando análise IA...`);
 
         const aiRouter = new AIModelRouter();
         aiAnalysisResult = await aiRouter.analyzeStrategic(cleanText, file.size / (1024 * 1024), workspaceId);
@@ -443,7 +432,6 @@ export async function POST(request: NextRequest) {
 
       if (timelineEntries.length > 0) {
         const mergeResult = await timelineService.mergeEntries(targetCaseId, timelineEntries, prisma);
-        console.log(`${ICONS.SUCCESS} Timeline merge: ${mergeResult.newEntries} novas entradas`);
       }
     }
 
