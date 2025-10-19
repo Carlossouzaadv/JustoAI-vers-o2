@@ -20,6 +20,91 @@ const ICONS = {
 };
 
 // ================================================================
+// POLYFILLS FOR NODE.JS ENVIRONMENT
+// ================================================================
+if (typeof (global as any).DOMMatrix === 'undefined') {
+  (global as any).DOMMatrix = class DOMMatrix {
+    constructor(
+      public a: number = 1,
+      public b: number = 0,
+      public c: number = 0,
+      public d: number = 1,
+      public e: number = 0,
+      public f: number = 0
+    ) {}
+
+    multiply(other: any): any {
+      return new (global as any).DOMMatrix(
+        this.a * other.a + this.c * other.b,
+        this.b * other.a + this.d * other.b,
+        this.a * other.c + this.c * other.d,
+        this.b * other.c + this.d * other.d,
+        this.a * other.e + this.c * other.f + this.e,
+        this.b * other.e + this.d * other.f + this.f
+      );
+    }
+
+    translate(x: number = 0, y: number = 0): any {
+      return this.multiply(new (global as any).DOMMatrix(1, 0, 0, 1, x, y));
+    }
+
+    scale(x: number = 1, y: number = x): any {
+      return this.multiply(new (global as any).DOMMatrix(x, 0, 0, y, 0, 0));
+    }
+
+    rotate(angle: number = 0): any {
+      const cos = Math.cos((angle * Math.PI) / 180);
+      const sin = Math.sin((angle * Math.PI) / 180);
+      return this.multiply(new (global as any).DOMMatrix(cos, sin, -sin, cos, 0, 0));
+    }
+
+    skewX(angle: number = 0): any {
+      return this.multiply(new (global as any).DOMMatrix(1, 0, Math.tan((angle * Math.PI) / 180), 1, 0, 0));
+    }
+
+    skewY(angle: number = 0): any {
+      return this.multiply(new (global as any).DOMMatrix(1, Math.tan((angle * Math.PI) / 180), 0, 1, 0, 0));
+    }
+
+    inverse(): any {
+      const det = this.a * this.d - this.b * this.c;
+      if (det === 0) throw new Error('Matrix is not invertible');
+      return new (global as any).DOMMatrix(
+        this.d / det,
+        -this.b / det,
+        -this.c / det,
+        this.a / det,
+        (this.c * this.f - this.d * this.e) / det,
+        (this.b * this.e - this.a * this.f) / det
+      );
+    }
+
+    transformPoint(point: any): any {
+      return {
+        x: this.a * point.x + this.c * point.y + this.e,
+        y: this.b * point.x + this.d * point.y + this.f,
+      };
+    }
+
+    toString(): string {
+      return `matrix(${this.a}, ${this.b}, ${this.c}, ${this.d}, ${this.e}, ${this.f})`;
+    }
+
+    get isIdentity(): boolean {
+      return this.a === 1 && this.b === 0 && this.c === 0 && this.d === 1 && this.e === 0 && this.f === 0;
+    }
+
+    get is2D(): boolean {
+      return true;
+    }
+
+    get isInvertible(): boolean {
+      return this.a * this.d - this.b * this.c !== 0;
+    }
+  };
+}
+
+// ================================================================
 // LOGGER COM PREFIXES PARA RASTREAMENTO
 // ================================================================
 function log(prefix: string, message: string, data?: any) {
