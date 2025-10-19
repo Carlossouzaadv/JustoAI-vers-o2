@@ -15,6 +15,17 @@ import { logger } from '@/lib/observability/logger';
 // ================================================================
 
 /**
+ * Detect deployment environment
+ * - Railway workers: process.env.RAILWAY_ENVIRONMENT === 'production' && process.env.WORKER_ENABLED
+ * - Vercel web: process.env.VERCEL === '1' || process.env.VERCEL_ENV
+ * - Local dev: neither
+ */
+const IS_WORKER = process.env.WORKER_ENABLED === 'true' || process.env.IS_WORKER === 'true';
+const IS_RAILWAY = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID;
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+const IS_LOCAL = !IS_RAILWAY && !IS_VERCEL;
+
+/**
  * Check if Redis should be disabled (fallback to mock for development)
  * Redis is REQUIRED in production for workers
  */
@@ -24,14 +35,25 @@ const REDIS_URL = process.env.REDIS_URL;
 /**
  * Upstash Redis Configuration with Cost Optimization
  *
+ * TWO MODES:
+ *
+ * 1. STRICT MODE (Workers on Railway):
+ *    - enableOfflineQueue: false (fail fast if can't connect)
+ *    - enableReadyCheck: true (wait for connection to be ready)
+ *    - Will crash if Redis is unavailable (correct for workers!)
+ *
+ * 2. GRACEFUL MODE (Web on Vercel, Local dev):
+ *    - enableOfflineQueue: true (queue commands during connection)
+ *    - enableReadyCheck: true (wait for connection to be ready)
+ *    - Will fall back to MockRedis if connection fails
+ *
  * Key features for low idle costs:
  * - lazyConnect: true (don't connect until first command)
  * - keepAlive: 30000 (30s instead of default 0)
- * - maxRetriesPerRequest: 3 (limited retries)
+ * - maxRetriesPerRequest: appropriate to mode
  * - retryStrategy: exponential backoff with max delay
- * - enableOfflineQueue: false (fail fast, don't queue)
- * - connectTimeout: 10000 (10s timeout)
- * - commandTimeout: 5000 (5s timeout for commands)
+ * - connectTimeout: reasonable timeout
+ * - commandTimeout: 5s timeout for commands
  */
 const getRedisConfig = (): RedisOptions => {
   // Parse Upstash Redis URL if available
@@ -39,6 +61,9 @@ const getRedisConfig = (): RedisOptions => {
     // Upstash URLs come in format: rediss://default:password@host:6379
     try {
       const url = new URL(REDIS_URL);
+
+      // Determine strict vs graceful mode
+      const isStrictMode = IS_WORKER && IS_RAILWAY;
 
       return {
         host: url.hostname,
@@ -52,20 +77,26 @@ const getRedisConfig = (): RedisOptions => {
         // Connection Optimization (Low Idle Cost)
         lazyConnect: true, // Don't connect until first command
         keepAlive: 30000, // Keep connection alive for 30s
-        connectTimeout: 30000, // 30s connection timeout (increased for Upstash)
-        commandTimeout: 15000, // 15s command timeout (increased for Upstash)
+        connectTimeout: isStrictMode ? 10000 : 30000, // Strict: 10s, Graceful: 30s
+        commandTimeout: isStrictMode ? 5000 : 15000, // Strict: 5s, Graceful: 15s
 
-        // Retry Strategy (Fail fast, avoid infinite loops)
-        maxRetriesPerRequest: 5, // Max 5 retries per command (increased for Upstash reliability)
+        // Retry Strategy (Appropriate to mode)
+        maxRetriesPerRequest: isStrictMode ? 2 : 5, // Strict: fail fast, Graceful: more retries
         retryStrategy: (times: number) => {
-          // Exponential backoff: 100ms, 200ms, 400ms, ..., max 10s
-          const delay = Math.min(times * 100, 10000);
+          // Exponential backoff: 100ms, 200ms, 400ms, ..., max 5s
+          const maxDelay = isStrictMode ? 5000 : 10000;
+          const delay = Math.min(times * 100, maxDelay);
 
-          // Stop retrying after 10 attempts
-          if (times > 10) {
+          // Stop retrying based on mode
+          const maxAttempts = isStrictMode ? 5 : 10;
+          if (times > maxAttempts) {
             logger.error(
-              { component: 'redis', retries: times },
-              'Max retry attempts reached for Redis, giving up'
+              {
+                component: 'redis',
+                retries: times,
+                mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+              },
+              `Max retry attempts reached for Redis (${isStrictMode ? 'strict mode' : 'graceful mode'}), giving up`
             );
             return null; // Stop retrying
           }
@@ -73,17 +104,22 @@ const getRedisConfig = (): RedisOptions => {
           if (times % 3 === 0) {
             // Log every 3rd retry to avoid spam
             logger.warn(
-              { component: 'redis', attempt: times, delay_ms: delay },
-              'Redis retry attempt'
+              {
+                component: 'redis',
+                attempt: times,
+                delay_ms: delay,
+                mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+              },
+              `Redis retry attempt (${isStrictMode ? 'strict' : 'graceful'} mode)`
             );
           }
 
           return delay;
         },
 
-        // Fail fast configuration
-        enableOfflineQueue: false, // Don't queue commands when offline
-        enableReadyCheck: false, // Don't wait for READY state
+        // Queue behavior based on mode
+        enableOfflineQueue: isStrictMode ? false : true, // Strict: fail immediately, Graceful: queue commands
+        enableReadyCheck: true, // Both modes: wait for READY state
 
         // Connection pool (BullMQ compatibility)
         maxRetriesPerRequest: null, // Required for BullMQ (overrides above for queue operations)
@@ -95,39 +131,54 @@ const getRedisConfig = (): RedisOptions => {
   }
 
   // Fallback to individual env vars (legacy support)
+  const isStrictMode = IS_WORKER && IS_RAILWAY;
+
   return {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
     password: process.env.REDIS_PASSWORD || undefined,
     username: process.env.REDIS_USERNAME || 'default',
 
-    // Same optimization as above
+    // Same optimization as above, but with mode-appropriate settings
     lazyConnect: true,
     keepAlive: 30000,
-    connectTimeout: 30000,
-    commandTimeout: 15000,
+    connectTimeout: isStrictMode ? 10000 : 30000,
+    commandTimeout: isStrictMode ? 5000 : 15000,
 
-    maxRetriesPerRequest: 5,
+    maxRetriesPerRequest: isStrictMode ? 2 : 5,
     retryStrategy: (times: number) => {
-      const delay = Math.min(times * 100, 10000);
-      if (times > 10) {
+      const maxDelay = isStrictMode ? 5000 : 10000;
+      const delay = Math.min(times * 100, maxDelay);
+      const maxAttempts = isStrictMode ? 5 : 10;
+
+      if (times > maxAttempts) {
         logger.error(
-          { component: 'redis', retries: times },
-          'Max retry attempts reached for Redis (legacy config)'
+          {
+            component: 'redis',
+            retries: times,
+            mode: isStrictMode ? 'STRICT' : 'GRACEFUL',
+            config_source: 'REDIS_HOST/PORT (legacy)'
+          },
+          `Max retry attempts reached for Redis (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`
         );
         return null;
       }
       if (times % 3 === 0) {
         logger.warn(
-          { component: 'redis', attempt: times, delay_ms: delay },
-          'Redis retry attempt (legacy config)'
+          {
+            component: 'redis',
+            attempt: times,
+            delay_ms: delay,
+            mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+          },
+          `Redis retry attempt (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`
         );
       }
       return delay;
     },
 
-    enableOfflineQueue: false,
-    enableReadyCheck: false,
+    enableOfflineQueue: isStrictMode ? false : true,
+    enableReadyCheck: true,
   };
 };
 
@@ -236,8 +287,18 @@ export const getRedisClient = (): Redis | MockRedis => {
   }
 
   // Create real Redis client
+  const isStrictMode = IS_WORKER && IS_RAILWAY;
+
   logger.info(
-    { component: 'redis', config_source: REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT' },
+    {
+      component: 'redis',
+      config_source: REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT',
+      mode: isStrictMode ? 'STRICT (Workers)' : 'GRACEFUL (Web/Dev)',
+      is_worker: IS_WORKER,
+      is_railway: IS_RAILWAY,
+      is_vercel: IS_VERCEL,
+      is_local: IS_LOCAL
+    },
     'Initializing Redis client'
   );
 
@@ -249,17 +310,21 @@ export const getRedisClient = (): Redis | MockRedis => {
   // ================================================================
 
   client.on('connect', () => {
-    logger.info({ component: 'redis', event: 'connect' }, 'Connected to Redis');
+    logger.info({ component: 'redis', event: 'connect', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Connected to Redis');
   });
 
   client.on('ready', () => {
-    logger.info({ component: 'redis', event: 'ready' }, 'Redis client ready');
+    logger.info({ component: 'redis', event: 'ready', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis client ready');
   });
+
+  let hasErrored = false;
+  let fallbackToMock = false;
 
   client.on('error', (error) => {
     // Check for max retries error
     const isMaxRetriesError = error.message?.includes('max retries') ||
-      error.message?.includes('Reached the max');
+      error.message?.includes('Reached the max') ||
+      error.message?.includes('Stream isn\'t writeable');
 
     const level = isMaxRetriesError ? 'warn' : 'error';
 
@@ -270,28 +335,64 @@ export const getRedisClient = (): Redis | MockRedis => {
         error_message: error.message,
         error_code: (error as any).code,
         is_max_retries: isMaxRetriesError,
+        mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
       },
       `Redis connection error: ${error.message}`
     );
 
-    // Don't crash the application on Redis errors
-    // Workers will handle retries, API will continue without cache
+    if (isMaxRetriesError && !isStrictMode) {
+      // Graceful mode: fall back to mock after max retries
+      if (!fallbackToMock && !hasErrored) {
+        hasErrored = true;
+        logger.warn(
+          { component: 'redis' },
+          'Redis unavailable in GRACEFUL mode, will fall back to MockRedis on next operation'
+        );
+      }
+    }
+    // In STRICT mode, errors will propagate and crash the worker (correct behavior)
   });
 
   client.on('close', () => {
-    logger.info({ component: 'redis', event: 'close' }, 'Redis connection closed');
+    logger.info({ component: 'redis', event: 'close', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis connection closed');
   });
 
   client.on('reconnecting', (timeToReconnect) => {
     logger.info(
-      { component: 'redis', event: 'reconnecting', time_to_reconnect_ms: timeToReconnect },
+      {
+        component: 'redis',
+        event: 'reconnecting',
+        time_to_reconnect_ms: timeToReconnect,
+        mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+      },
       `Reconnecting to Redis in ${timeToReconnect}ms`
     );
   });
 
   client.on('end', () => {
-    logger.info({ component: 'redis', event: 'end' }, 'Redis connection ended');
+    logger.info({ component: 'redis', event: 'end', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis connection ended');
   });
+
+  // In graceful mode, wrap the client to fall back to mock on connection errors
+  if (!isStrictMode) {
+    const originalClient = client;
+
+    // Create a proxy that falls back to mock if connection fails
+    return new Proxy(client, {
+      get(target: any, prop: string | symbol) {
+        if (hasErrored && typeof prop === 'string' && !['on', 'once', 'off', 'connect', 'ping'].includes(prop)) {
+          // Return mock client methods
+          if (!fallbackToMock) {
+            logger.warn({ component: 'redis' }, 'Falling back to MockRedis due to connection failure');
+            fallbackToMock = true;
+            redisClient = new MockRedis();
+            return (redisClient as any)[prop];
+          }
+        }
+        return target[prop];
+      }
+    }) as any;
+  }
 
   redisClient = client;
   return redisClient;

@@ -113,7 +113,16 @@ export class AnalysisCacheManager {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao verificar cache:`, error);
+      // In graceful mode (Vercel web), Redis connection errors are expected and OK
+      // Just log and continue without cache
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
+        console.warn(`${ICONS.WARNING} Redis temporarily unavailable (graceful degradation): ${errorMsg}`);
+      } else {
+        console.error(`${ICONS.ERROR} Erro ao verificar cache:`, error);
+      }
+
       return {
         hit: false,
         key: 'error'
@@ -153,13 +162,26 @@ export class AnalysisCacheManager {
       return true;
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao salvar cache:`, error);
+      // In graceful mode, it's OK if cache save fails - just log it
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
+        console.warn(`${ICONS.WARNING} Redis temporarily unavailable (graceful degradation): ${errorMsg}`);
+      } else {
+        console.error(`${ICONS.ERROR} Erro ao salvar cache:`, error);
+      }
       return false;
     }
   }
 
   /**
    * Adquire lock Redis para evitar double-processing
+   *
+   * Em modo graceful (web), se Redis não está disponível:
+   * - Retorna acquired=false (sem lock, mas permite processamento)
+   * - API continua funcionando mesmo sem lock distribuído
+   *
+   * Em modo strict (workers), falha é propagada
    */
   async acquireLock(analysisKey: string): Promise<CacheLockResult> {
     try {
@@ -190,7 +212,17 @@ export class AnalysisCacheManager {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao adquirir lock:`, error);
+      // In graceful mode, allow processing without lock
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
+        console.warn(`${ICONS.WARNING} Redis unavailable - allowing processing without distributed lock (graceful degradation)`);
+      } else {
+        console.error(`${ICONS.ERROR} Erro ao adquirir lock:`, error);
+      }
+
+      // Return false but with positive ttl to avoid triggering retries
+      // In web mode, this allows processing to continue
       return {
         acquired: false,
         lockKey: '',

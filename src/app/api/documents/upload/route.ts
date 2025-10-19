@@ -342,15 +342,21 @@ export async function POST(request: NextRequest) {
       const analysisKey = hashResult.textSha + '_' + modelVersion;
       const lockResult = await cacheManager.acquireLock(analysisKey);
 
-      if (!lockResult.acquired) {
+      // Se não conseguiu lock mas tem um lockKey válido (lock existe por outro worker)
+      // E têm TTL significativo, reject a requisição (mutual processing prevention)
+      // Se lockKey vazio (redis unavailable), permite processamento em modo graceful
+      if (!lockResult.acquired && lockResult.lockKey && lockResult.ttl > 10) {
         return NextResponse.json({
           success: false,
           message: 'Documento sendo processado por outro worker. Tente novamente em alguns minutos.',
           retryAfter: lockResult.ttl
-        }, { status:429 });
+        }, { status: 429 });
       }
 
-      lockKey = lockResult.lockKey;
+      // Se lockKey existe, track it for cleanup
+      if (lockResult.lockKey) {
+        lockKey = lockResult.lockKey;
+      }
 
       try {
         // 14. ANÁLISE IA COM ROUTER OTIMIZADO
