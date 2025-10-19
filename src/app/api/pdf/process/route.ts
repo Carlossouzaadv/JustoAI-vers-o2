@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { existsSync, readdirSync } from 'fs';
+import { createRequire } from 'module';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,8 +47,11 @@ export async function POST(request: NextRequest) {
     }
 
     let extractorPath = null;
-    let lastError = null;
-    const attemptedPaths: { path: string; exists: boolean; error?: string }[] = [];
+    const attemptedPaths: { path: string; exists: boolean }[] = [];
+
+    // Create require function that supports absolute paths
+    // Use process.cwd() as the context for module resolution
+    const customRequire = createRequire(join(process.cwd(), 'package.json'));
 
     for (const path of possiblePaths) {
       const exists = existsSync(path);
@@ -57,12 +61,15 @@ export async function POST(request: NextRequest) {
 
       if (exists) {
         try {
-          require.resolve(path);
-          extractorPath = path;
-          console.log(`[${timestamp}] 🚂 ✅ Found pdf-extractor at: ${path}`);
-          break;
+          // Try to require using createRequire which supports absolute paths
+          const module = customRequire(path);
+          if (module && module.handlePdfProcessing) {
+            extractorPath = path;
+            console.log(`[${timestamp}] 🚂 ✅ Found pdf-extractor at: ${path}`);
+            break;
+          }
         } catch (err) {
-          console.log(`[${timestamp}] 🚂 DEBUG: require.resolve failed for ${path}:`, (err as any)?.message);
+          console.log(`[${timestamp}] 🚂 DEBUG: Failed to require ${path}:`, (err as any)?.message?.substring(0, 100));
         }
       }
     }
@@ -74,7 +81,8 @@ export async function POST(request: NextRequest) {
       throw new Error(errorMsg);
     }
 
-    const { handlePdfProcessing } = require(extractorPath);
+    console.log(`[${timestamp}] 🚂 Loading pdf-extractor from: ${extractorPath}`);
+    const { handlePdfProcessing } = customRequire(extractorPath);
 
     const result = await handlePdfProcessing(request);
 
