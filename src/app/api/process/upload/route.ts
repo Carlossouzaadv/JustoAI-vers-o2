@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.SUCCESS} [Upload] Documento salvo: ${document.id}`);
 
     // ============================================================
-    // 13. GERAR PREVIEW COM GEMINI FLASH
+    // 13. GERAR PREVIEW COM GEMINI FLASH (COM FALLBACK)
     // ============================================================
 
     console.log(`${ICONS.ROBOT} [Upload] Gerando preview...`);
@@ -297,27 +297,33 @@ export async function POST(request: NextRequest) {
     const previewDuration = Date.now() - previewStartTime;
 
     if (!previewResult.success || !previewResult.preview) {
-      console.error(`${ICONS.ERROR} [Upload] Falha ao gerar preview:`, previewResult.error);
+      // ERRO CRÍTICO: Análise de IA falhou mesmo após fallback
+      console.error(`${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas:`, previewResult.error);
 
-      // Continuar sem preview, mas marcar erro
-      await prisma.case.update({
-        where: { id: newCase.id },
-        data: {
-          metadata: {
-            ...newCase.metadata as any,
-            previewError: previewResult.error,
-            previewAttemptedAt: new Date().toISOString()
-          }
-        }
+      // Limpar o case incompleto
+      await prisma.case.delete({
+        where: { id: newCase.id }
       });
+
+      // Retornar erro explícito para o frontend
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'ai_analysis_failed',
+          message: `Falha na análise de IA do documento: ${previewResult.error || 'Erro desconhecido'}. Todas as tentativas com diferentes modelos falharam. Verifique se a chave da API Google está configurada corretamente.`,
+          canRetry: true,
+          detailedError: previewResult.error
+        },
+        { status: 503 } // Service Unavailable - indica problema com serviço de IA
+      );
 
     } else {
       // Preview gerado com sucesso
-      console.log(`${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms`);
+      console.log(`${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${previewResult.preview.model}`);
 
       // Validar estrutura
       if (!validatePreviewSnapshot(previewResult.preview)) {
-        console.warn(`${ICONS.WARNING} [Upload] Preview com estrutura inválida, salvando mesmo assim`);
+        console.warn(`${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim`);
       }
 
       // Atualizar Case com preview
@@ -381,6 +387,7 @@ export async function POST(request: NextRequest) {
       status: newCase.onboardingStatus,
       detectedCnj,
       preview: previewResult.preview || null,
+      analysisModel: previewResult.preview?.model || null, // Mostrar qual modelo foi usado
       juditJobId,
       timing: {
         total: overallDuration,
@@ -388,9 +395,9 @@ export async function POST(request: NextRequest) {
         preview: previewDuration
       },
       message: previewResult.preview
-        ? 'Preview gerado! Buscando histórico oficial e anexos (aguarde notificação).'
+        ? `Preview gerado com sucesso via ${previewResult.preview.model}! Buscando histórico oficial e anexos (aguarde notificação).`
         : 'Documento salvo. Preview não disponível no momento.'
-    });
+    }, { status: 200 });
 
   } catch (error) {
     console.error(`${ICONS.ERROR} [Upload] Erro geral:`, error);

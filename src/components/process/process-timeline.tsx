@@ -46,87 +46,21 @@ export function ProcessTimeline({ processId }: ProcessTimelineProps) {
     try {
       setLoading(true);
 
-      // Simular merge de múltiplas fontes
-      const response = await fetch(`/api/processes/${processId}/timeline`);
+      // Timeline events will be fetched from API when endpoint is implemented
+      const response = await fetch(`/api/cases/${processId}/events`, {
+        credentials: 'include',
+      });
+
       if (response.ok) {
         const data = await response.json();
         setEvents(data.events || []);
       } else {
-        // Dados simulados para desenvolvimento
-        setEvents([
-          {
-            id: '1',
-            date: '2024-01-15T08:30:00',
-            title: 'Petição Inicial protocolada',
-            description: 'Protocolado pedido de indenização por danos morais',
-            type: 'document',
-            source: 'pdf_analysis',
-            metadata: {
-              court: '1ª Vara Cível Central',
-              originalText: 'Petição inicial distribuída'
-            }
-          },
-          {
-            id: '2',
-            date: '2024-01-18T14:15:00',
-            title: 'Despacho do Juiz',
-            description: '"Cite-se o réu para responder no prazo legal"',
-            type: 'decision',
-            source: 'api_monitoring',
-            metadata: {
-              judge: 'Dr. João Silva',
-              movementCode: '123'
-            }
-          },
-          {
-            id: '3',
-            date: '2024-01-20T09:00:00',
-            title: 'Cliente quer propor acordo',
-            description: 'Reunião com cliente - ele demonstrou interesse em acordo amigável',
-            type: 'note',
-            source: 'lawyer_note'
-          },
-          {
-            id: '4',
-            date: '2024-01-22T16:45:00',
-            title: 'Réu citado',
-            description: 'Citação realizada com sucesso',
-            type: 'document',
-            source: 'api_monitoring',
-            status: 'completed'
-          },
-          {
-            id: '5',
-            date: '2024-01-25T10:30:00',
-            title: 'Contestação protocolada',
-            description: 'Réu apresentou defesa tempestiva',
-            type: 'document',
-            source: 'csv_import',
-            attachments: [
-              {
-                id: 'att1',
-                name: 'contestacao.pdf',
-                type: 'application/pdf',
-                size: 1024000
-              }
-            ]
-          },
-          {
-            id: '6',
-            date: '2024-02-01T15:00:00',
-            title: 'Audiência de Conciliação',
-            description: 'Designada audiência para tentativa de acordo',
-            type: 'hearing',
-            source: 'api_monitoring',
-            status: 'pending',
-            metadata: {
-              court: '1ª Vara Cível Central'
-            }
-          }
-        ]);
+        // No timeline events available yet - endpoint not implemented
+        setEvents([]);
       }
     } catch (error) {
       console.error('Erro ao carregar timeline:', error);
+      setEvents([]);
     } finally {
       setLoading(false);
     }

@@ -16,15 +16,25 @@ import { ProcessNotes } from '@/components/process/process-notes';
 
 import { ICONS } from '@/lib/icons';
 
-interface ProcessBasicInfo {
+interface CaseData {
   id: string;
   number: string;
+  detectedCnj: string;
   title: string;
-  clientName: string;
-  court: string;
-  phase: string;
-  status: 'active' | 'suspended' | 'finished';
+  description: string;
+  type: 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'TAX' | 'ADMINISTRATIVE';
+  status: 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  client?: {
+    id: string;
+    name: string;
+    email?: string;
+    type?: string;
+  };
+  documentCount: number;
+  onboardingStatus: string;
+  previewSnapshot: any;
+  previewGeneratedAt: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,121 +42,100 @@ interface ProcessBasicInfo {
 export default function ProcessPage() {
   const params = useParams();
   const router = useRouter();
-  const processId = params.id as string;
+  const caseId = params.id as string;
 
-  const [processInfo, setProcessInfo] = useState<ProcessBasicInfo | null>(null);
+  const [caseInfo, setCaseInfo] = useState<CaseData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('summary');
 
   useEffect(() => {
-    if (processId) {
-      loadProcessBasicInfo();
+    if (caseId) {
+      loadCaseData();
     }
-  }, [processId]);
+  }, [caseId]);
 
-  const loadProcessBasicInfo = async () => {
+  const loadCaseData = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // For development, use mock data since API requires auth
-      console.log('Loading process details for ID:', processId);
+      console.log(`${ICONS.SEARCH} Carregando caso: ${caseId}`);
 
-      // Simulate different processes based on ID
-      const mockProcesses: Record<string, ProcessBasicInfo> = {
-        '1': {
-          id: '1',
-          number: '1234567-89.2024.8.26.0001',
-          title: 'Ação de Cobrança - João Silva',
-          clientName: 'João Silva',
-          court: '1ª Vara Cível Central',
-          phase: 'Conhecimento',
-          status: 'active',
-          priority: 'HIGH',
-          createdAt: '2024-01-15T08:30:00',
-          updatedAt: '2024-01-25T16:45:00'
+      const response = await fetch(`/api/cases/${caseId}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        '2': {
-          id: '2',
-          number: '9876543-21.2024.8.26.0002',
-          title: 'Divórcio Consensual - Maria Santos',
-          clientName: 'Maria Santos',
-          court: '1ª Vara de Família',
-          phase: 'Execução',
-          status: 'active',
-          priority: 'MEDIUM',
-          createdAt: '2024-01-10T10:00:00',
-          updatedAt: '2024-01-20T14:30:00'
-        },
-        '3': {
-          id: '3',
-          number: '5555555-55.2024.5.02.0001',
-          title: 'Ação Trabalhista - Empresa ABC',
-          clientName: 'Empresa ABC Ltda',
-          court: '2ª Vara do Trabalho',
-          phase: 'Recurso',
-          status: 'active',
-          priority: 'LOW',
-          createdAt: '2023-12-01T09:00:00',
-          updatedAt: '2024-01-15T17:00:00'
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('Caso não encontrado');
+        } else if (response.status === 401) {
+          setError('Não autenticado. Faça login novamente');
+        } else {
+          setError('Erro ao carregar caso');
         }
-      };
-
-      const mockProcess = mockProcesses[processId];
-      if (mockProcess) {
-        setProcessInfo(mockProcess);
-      } else {
-        // Default process if ID not found
-        setProcessInfo({
-          id: processId,
-          number: `${processId}000-00.2024.8.26.0100`,
-          title: 'Processo de Exemplo',
-          clientName: 'Cliente de Exemplo',
-          court: 'Vara de Exemplo',
-          phase: 'Conhecimento',
-          status: 'active',
-          priority: 'MEDIUM',
-          createdAt: '2024-01-15T08:30:00',
-          updatedAt: '2024-01-25T16:45:00'
-        });
+        console.error(`${ICONS.ERROR} Erro ao carregar caso:`, response.status);
+        return;
       }
 
-    } catch (error) {
-      console.error('Erro ao carregar processo:', error);
-      // Show error message but still load mock data
-      setProcessInfo({
-        id: processId,
-        number: 'Erro-000-00.2024.8.26.0000',
-        title: 'Erro ao carregar processo',
-        clientName: 'Cliente não encontrado',
-        court: 'Tribunal não identificado',
-        phase: 'Desconhecida',
-        status: 'active',
-        priority: 'LOW',
-        createdAt: '2024-01-01T00:00:00',
-        updatedAt: '2024-01-01T00:00:00'
-      });
+      const data = await response.json();
+      console.log(`${ICONS.SUCCESS} Caso carregado:`, data.case);
+      setCaseInfo(data.case);
+
+    } catch (err) {
+      console.error(`${ICONS.ERROR} Erro ao carregar caso:`, err);
+      setError('Erro ao carregar caso. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'suspended': return 'secondary';
-      case 'finished': return 'outline';
+    switch (status.toUpperCase()) {
+      case 'ACTIVE': return 'default';
+      case 'SUSPENDED': return 'secondary';
+      case 'CLOSED':
+      case 'ARCHIVED':
+      case 'CANCELLED':
+        return 'outline';
       default: return 'outline';
     }
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
+    switch (priority.toUpperCase()) {
       case 'URGENT': return 'destructive';
       case 'HIGH': return 'destructive';
       case 'MEDIUM': return 'secondary';
       case 'LOW': return 'outline';
       default: return 'outline';
     }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status.toUpperCase()) {
+      case 'ACTIVE': return 'Ativo';
+      case 'SUSPENDED': return 'Suspenso';
+      case 'CLOSED': return 'Fechado';
+      case 'ARCHIVED': return 'Arquivado';
+      case 'CANCELLED': return 'Cancelado';
+      default: return status;
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      'CIVIL': 'Cível',
+      'CRIMINAL': 'Criminal',
+      'LABOR': 'Trabalhista',
+      'FAMILY': 'Família',
+      'TAX': 'Fiscal',
+      'ADMINISTRATIVE': 'Administrativo',
+    };
+    return typeMap[type] || type;
   };
 
   if (loading) {
@@ -179,18 +168,18 @@ export default function ProcessPage() {
     );
   }
 
-  if (!processInfo) {
+  if (error || !caseInfo) {
     return (
       <Card>
         <CardContent className="p-8">
           <div className="text-center text-muted-foreground">
             <span className="text-4xl mb-4 block">{ICONS.ERROR}</span>
-            <h3 className="text-lg font-medium mb-2">Processo não encontrado</h3>
+            <h3 className="text-lg font-medium mb-2">{error || 'Caso não encontrado'}</h3>
             <p className="text-sm mb-4">
-              O processo solicitado não foi encontrado ou você não tem acesso a ele.
+              {error ? error : 'O caso solicitado não foi encontrado ou você não tem acesso a ele.'}
             </p>
-            <Button onClick={() => router.push('/dashboard')} variant="outline">
-              {ICONS.ARROW_LEFT} Voltar ao Dashboard
+            <Button onClick={() => router.push('/dashboard/process')} variant="outline">
+              {ICONS.ARROW_LEFT} Voltar à Lista
             </Button>
           </div>
         </CardContent>
@@ -204,39 +193,42 @@ export default function ProcessPage() {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push('/dashboard/process')}
                 >
                   {ICONS.ARROW_LEFT} Voltar
                 </Button>
-                <h1 className="text-xl font-semibold">
-                  {processInfo.number}
+                <h1 className="text-2xl font-bold">
+                  {caseInfo.detectedCnj || caseInfo.number}
                 </h1>
               </div>
 
-              <div className="space-y-1">
-                <h2 className="font-medium text-muted-foreground">
-                  {processInfo.title}
-                </h2>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>{ICONS.CLIENT} {processInfo.clientName}</span>
-                  <span>{ICONS.PROCESS} {processInfo.court}</span>
-                  <span>Fase: {processInfo.phase}</span>
+              <div className="space-y-2">
+                <p className="font-medium text-base">{caseInfo.title}</p>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    {ICONS.CLIENT} {caseInfo.client?.name || 'Sem cliente associado'}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {ICONS.DOCUMENT} {getTypeLabel(caseInfo.type)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {ICONS.FOLDER} {caseInfo.documentCount} documento(s)
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant={getStatusColor(processInfo.status)}>
-                {processInfo.status === 'active' ? 'Ativo' :
-                 processInfo.status === 'suspended' ? 'Suspenso' : 'Finalizado'}
+              <Badge variant={getStatusColor(caseInfo.status)}>
+                {getStatusLabel(caseInfo.status)}
               </Badge>
-              <Badge variant={getPriorityColor(processInfo.priority)}>
-                {processInfo.priority}
+              <Badge variant={getPriorityColor(caseInfo.priority)}>
+                {caseInfo.priority}
               </Badge>
             </div>
           </div>
@@ -267,36 +259,26 @@ export default function ProcessPage() {
 
             <div className="mt-6">
               <TabsContent value="summary" className="mt-0">
-                <ProcessSummary processId={processId} />
+                <ProcessSummary processId={caseId} />
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-0">
-                <ProcessTimeline processId={processId} />
+                <ProcessTimeline processId={caseId} />
               </TabsContent>
 
               <TabsContent value="documents" className="mt-0">
-                <ProcessDocuments processId={processId} />
+                <ProcessDocuments processId={caseId} />
               </TabsContent>
 
               <TabsContent value="analysis" className="mt-0">
-                <ProcessAIAnalysis processId={processId} />
+                <ProcessAIAnalysis processId={caseId} />
               </TabsContent>
 
               <TabsContent value="notes" className="mt-0">
-                <ProcessNotes processId={processId} />
+                <ProcessNotes processId={caseId} />
               </TabsContent>
             </div>
           </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Informações de desenvolvimento */}
-      <Card className="border-dashed border-muted-foreground/30">
-        <CardContent className="p-4">
-          <p className="text-xs text-muted-foreground">
-            {ICONS.INFO} <strong>Modo desenvolvimento:</strong> Alguns dados podem ser simulados.
-            Process ID: {processId} • Última atualização: {new Date(processInfo.updatedAt).toLocaleString('pt-BR')}
-          </p>
         </CardContent>
       </Card>
     </div>

@@ -53,6 +53,7 @@ const GEMINI_TIMEOUT_MS = 30000;
 
 /**
  * Gera preview rápido de um processo usando Gemini Flash
+ * Com fallback automático: LITE → BALANCED → PRO
  *
  * @param cleanText - Texto limpo e normalizado do PDF
  * @param caseId - ID do case (para logging)
@@ -63,6 +64,13 @@ export async function generatePreview(
   caseId: string
 ): Promise<PreviewAnalysisResult> {
   const startTime = Date.now();
+
+  // Estratégia de fallback: tentar modelos cada vez mais potentes
+  const modelStrategy = [
+    { tier: ModelTier.LITE, name: 'Flash 8B' },
+    { tier: ModelTier.BALANCED, name: 'Flash' },
+    { tier: ModelTier.PRO, name: 'Pro' }
+  ];
 
   try {
     console.log(`${ICONS.ROBOT} [Preview] Gerando preview para case ${caseId}...`);
@@ -82,56 +90,73 @@ export async function generatePreview(
     const prompt = buildPreviewPrompt(limitedText);
 
     // ============================================================
-    // 3. CHAMAR GEMINI FLASH
+    // 3. TENTAR CHAMAR GEMINI COM FALLBACK
     // ============================================================
 
     const gemini = getGeminiClient();
+    let lastError: Error | null = null;
 
-    console.log(`${ICONS.SEARCH} [Preview] Chamando Gemini Flash...`);
+    for (const { tier, name } of modelStrategy) {
+      try {
+        console.log(`${ICONS.SEARCH} [Preview] Tentativa com Gemini ${name}...`);
 
-    const response = await gemini.generateJsonContent(prompt, {
-      model: ModelTier.LITE, // gemini-1.5-flash-8b (mais rápido e barato)
-      maxTokens: 1500,
-      temperature: 0.1,
-      timeout: GEMINI_TIMEOUT_MS
-    });
+        const response = await gemini.generateJsonContent(prompt, {
+          model: tier,
+          maxTokens: 1500,
+          temperature: 0.1,
+          timeout: GEMINI_TIMEOUT_MS
+        });
 
-    // ============================================================
-    // 4. VALIDAR RESPOSTA
-    // ============================================================
+        // ============================================================
+        // 4. VALIDAR RESPOSTA
+        // ============================================================
 
-    if (!response) {
-      throw new Error('Gemini retornou resposta vazia');
+        if (!response) {
+          throw new Error('Gemini retornou resposta vazia');
+        }
+
+        const preview: PreviewSnapshot = {
+          summary: response.summary || '',
+          parties: Array.isArray(response.parties) ? response.parties : [],
+          subject: response.subject || '',
+          claimValue: response.claimValue || null,
+          lastMovements: Array.isArray(response.lastMovements) ? response.lastMovements : [],
+          confidence: response.confidence || 0.75,
+          generatedAt: new Date().toISOString(),
+          model: `gemini-1.5-${name.toLowerCase()}`
+        };
+
+        const duration = Date.now() - startTime;
+
+        console.log(`${ICONS.SUCCESS} [Preview] Preview gerado com ${name} em ${duration}ms`);
+        console.log(`${ICONS.INFO} [Preview] Confiança: ${preview.confidence}`);
+        console.log(`${ICONS.INFO} [Preview] Movimentos extraídos: ${preview.lastMovements.length}`);
+
+        return {
+          success: true,
+          preview,
+          tokensUsed: response.usage?.totalTokens || 0,
+          duration
+        };
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`${ICONS.WARNING} [Preview] Falha com ${name}: ${lastError.message}`);
+
+        // Continuar para próximo modelo se não for a última tentativa
+        if (tier === ModelTier.PRO) {
+          throw lastError; // Última tentativa falhou
+        }
+      }
     }
 
-    const preview: PreviewSnapshot = {
-      summary: response.summary || '',
-      parties: Array.isArray(response.parties) ? response.parties : [],
-      subject: response.subject || '',
-      claimValue: response.claimValue || null,
-      lastMovements: Array.isArray(response.lastMovements) ? response.lastMovements : [],
-      confidence: response.confidence || 0.75,
-      generatedAt: new Date().toISOString(),
-      model: 'gemini-1.5-flash-8b'
-    };
-
-    const duration = Date.now() - startTime;
-
-    console.log(`${ICONS.SUCCESS} [Preview] Preview gerado em ${duration}ms`);
-    console.log(`${ICONS.INFO} [Preview] Confiança: ${preview.confidence}`);
-    console.log(`${ICONS.INFO} [Preview] Movimentos extraídos: ${preview.lastMovements.length}`);
-
-    return {
-      success: true,
-      preview,
-      tokensUsed: response.usage?.totalTokens || 0,
-      duration
-    };
+    // Se chegou aqui, todas as tentativas falharam
+    throw lastError || new Error('Todas as tentativas de análise falharam');
 
   } catch (error) {
     const duration = Date.now() - startTime;
 
-    console.error(`${ICONS.ERROR} [Preview] Erro ao gerar preview:`, error);
+    console.error(`${ICONS.ERROR} [Preview] Erro ao gerar preview após todas as tentativas:`, error);
 
     return {
       success: false,

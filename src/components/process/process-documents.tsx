@@ -47,65 +47,34 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/processes/${processId}/documents`);
+      const response = await fetch(`/api/cases/${processId}`, {
+        credentials: 'include',
+      });
+
       if (response.ok) {
         const data = await response.json();
-        setDocuments(data.documents || []);
+        const caseDocuments = data.case?.documents || [];
+
+        // Map case documents to DocumentFile format
+        const mappedDocuments: DocumentFile[] = caseDocuments.map((doc: any) => ({
+          id: doc.id,
+          name: doc.name,
+          type: doc.mimeType || 'application/pdf',
+          size: doc.size || 0,
+          uploadedAt: doc.createdAt,
+          status: 'completed',
+          category: 'other' as const,
+          analysisStatus: 'completed' as const,
+        }));
+
+        setDocuments(mappedDocuments);
       } else {
-        // Dados simulados para desenvolvimento
-        setDocuments([
-          {
-            id: '1',
-            name: 'peticao_inicial.pdf',
-            type: 'application/pdf',
-            size: 2048000,
-            uploadedAt: '2024-01-15T08:30:00',
-            status: 'completed',
-            category: 'petition',
-            analysisStatus: 'completed',
-            analysisProgress: 100,
-            aiSummary: 'Petição inicial de ação indenizatória por danos morais. Valor da causa: R$ 50.000,00.',
-            url: '/documents/1/view'
-          },
-          {
-            id: '2',
-            name: 'despacho_citacao.pdf',
-            type: 'application/pdf',
-            size: 512000,
-            uploadedAt: '2024-01-18T14:15:00',
-            status: 'completed',
-            category: 'decision',
-            analysisStatus: 'completed',
-            analysisProgress: 100,
-            aiSummary: 'Despacho determinando citação do réu. Prazo de 15 dias para resposta.',
-            url: '/documents/2/view'
-          },
-          {
-            id: '3',
-            name: 'documento_identidade.jpg',
-            type: 'image/jpeg',
-            size: 1024000,
-            uploadedAt: '2024-01-15T09:00:00',
-            status: 'completed',
-            category: 'evidence',
-            analysisStatus: 'pending',
-            url: '/documents/3/view'
-          },
-          {
-            id: '4',
-            name: 'procuracao.pdf',
-            type: 'application/pdf',
-            size: 256000,
-            uploadedAt: '2024-01-15T08:45:00',
-            status: 'processing',
-            category: 'other',
-            analysisStatus: 'analyzing',
-            analysisProgress: 65
-          }
-        ]);
+        console.error('Erro ao carregar documentos:', response.status);
+        setDocuments([]);
       }
     } catch (error) {
       console.error('Erro ao carregar documentos:', error);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }

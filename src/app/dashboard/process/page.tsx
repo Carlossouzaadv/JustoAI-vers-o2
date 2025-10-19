@@ -39,6 +39,7 @@ import {
 import { ICONS } from '@/lib/icons';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-client';
+import { ClientAssociationModal } from '@/components/process/client-association-modal';
 
 interface Case {
   id: string;
@@ -63,10 +64,10 @@ export default function ProcessPage() {
   const [cases, setCases] = useState<Case[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [updatingClientId, setUpdatingClientId] = useState<string | null>(null);
   const { workspaceId } = useAuth();
 
   // Carregar dados reais da API
@@ -99,6 +100,16 @@ export default function ProcessPage() {
 
     loadCases();
   }, [workspaceId]);
+
+  const handleClientAssociated = (caseId: string, client: { id: string; name: string }) => {
+    // Update the cases state to reflect the new client association
+    setCases(cases.map(c =>
+      c.id === caseId
+        ? { ...c, client }
+        : c
+    ));
+    setUpdatingClientId(null);
+  };
 
   const filteredCases = cases.filter(caseItem => {
     const matchesSearch = caseItem.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -377,9 +388,20 @@ export default function ProcessPage() {
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Link href={`/dashboard/clients?selected=${caseItem.client.id}`} className="font-medium text-primary-800 hover:text-primary-600 cursor-pointer hover:underline">
-                    {caseItem.client.name}
-                  </Link>
+                  <ClientAssociationModal
+                    caseId={caseItem.id}
+                    currentClient={caseItem.client}
+                    onClientAssociated={(client) => handleClientAssociated(caseItem.id, client)}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        className="font-medium text-primary-800 hover:text-primary-600 hover:underline p-0 h-auto"
+                        disabled={updatingClientId === caseItem.id}
+                      >
+                        {updatingClientId === caseItem.id ? 'Atualizando...' : caseItem.client.name}
+                      </Button>
+                    }
+                  />
                 </TableCell>
                 <TableCell>
                   {getTypeBadge(caseItem.type)}

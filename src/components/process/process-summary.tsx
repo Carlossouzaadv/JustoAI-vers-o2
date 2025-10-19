@@ -48,8 +48,9 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
     onSave: async (processData) => {
       if (!processData) return;
 
-      const response = await fetch(`/api/processes/${processId}`, {
+      const response = await fetch(`/api/cases/${processId}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: processData.title,
@@ -82,13 +83,15 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/processes/${processId}`);
+      const response = await fetch(`/api/cases/${processId}`, {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Processo não encontrado');
       }
 
       const result = await response.json();
-      setData(result.process);
+      setData(result.case);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
