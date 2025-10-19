@@ -106,29 +106,20 @@ COPY --from=prod-deps /app/node_modules ./justoai-v2/node_modules
 # Selective copy: only .prisma folder (not full prisma directory)
 COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
 
-# 6. Copy ONLY essential lib files that are require'd at runtime
-# These are the JS files that are NOT bundled in Next.js standalone
-RUN mkdir -p ./justoai-v2/src/lib/
-
-# Copy only PDF extraction utilities (if they exist and are needed)
-COPY --from=builder /app/src/lib/extractTextFromPDF.js* ./justoai-v2/src/lib/ 2>/dev/null || true
-COPY --from=builder /app/src/lib/pdfProcessor.js* ./justoai-v2/src/lib/ 2>/dev/null || true
-
-# 7. Package.json only (for reference, not needed at runtime but helpful)
+# 6. Package.json only (for reference)
 COPY --from=builder /app/package.json ./justoai-v2/
 
 # ========================================
 # Cleanup & Security
 # ========================================
 
-# Set proper ownership
+# Set proper ownership and cleanup unnecessary files
 RUN chown -R nextjs:nodejs /app && \
     chmod -R 755 /app && \
-    # Remove unnecessary files
-    find /app -type f -name "*.test.js" -delete && \
-    find /app -type f -name "*.spec.js" -delete && \
-    find /app/justoai-v2/node_modules -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
-    find /app/justoai-v2/node_modules -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
+    # Remove unnecessary node_modules subdirectories
+    find /app/justoai-v2/node_modules -maxdepth 2 -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name "examples" \) -exec rm -rf {} + 2>/dev/null || true && \
+    # Remove build artifacts from node_modules
+    find /app/justoai-v2/node_modules -type f \( -name "*.ts" -o -name "*.tsx" \) ! -path "*/prisma/*" -delete 2>/dev/null || true
 
 USER nextjs
 
