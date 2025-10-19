@@ -8,7 +8,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { existsSync, readdirSync } from 'fs';
-import { createRequire } from 'module';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,11 +46,8 @@ export async function POST(request: NextRequest) {
     }
 
     let extractorPath = null;
+    let handlePdfProcessing = null;
     const attemptedPaths: { path: string; exists: boolean }[] = [];
-
-    // Create require function that supports absolute paths
-    // Use process.cwd() as the context for module resolution
-    const customRequire = createRequire(join(process.cwd(), 'package.json'));
 
     for (const path of possiblePaths) {
       const exists = existsSync(path);
@@ -61,20 +57,26 @@ export async function POST(request: NextRequest) {
 
       if (exists) {
         try {
-          // Try to require using createRequire which supports absolute paths
-          const module = customRequire(path);
+          // Try dynamic import with file:// URL for absolute paths
+          const fileUrl = `file://${path}`;
+          console.log(`[${timestamp}] 🚂 DEBUG: Attempting import from ${fileUrl}`);
+
+          const module = await import(fileUrl);
           if (module && module.handlePdfProcessing) {
             extractorPath = path;
+            handlePdfProcessing = module.handlePdfProcessing;
             console.log(`[${timestamp}] 🚂 ✅ Found pdf-extractor at: ${path}`);
             break;
+          } else {
+            console.log(`[${timestamp}] 🚂 DEBUG: Module loaded but missing handlePdfProcessing export`);
           }
         } catch (err) {
-          console.log(`[${timestamp}] 🚂 DEBUG: Failed to require ${path}:`, (err as any)?.message?.substring(0, 100));
+          console.log(`[${timestamp}] 🚂 DEBUG: Failed to import ${path}:`, (err as any)?.message?.substring(0, 100));
         }
       }
     }
 
-    if (!extractorPath) {
+    if (!extractorPath || !handlePdfProcessing) {
       const statusInfo = attemptedPaths.map(p => `${p.path} (exists=${p.exists})`).join(' | ');
       const errorMsg = `Could not find pdf-extractor.js. Attempted: ${statusInfo}`;
       console.error(`[${timestamp}] 🚂 ❌ PDF extractor not found:`, errorMsg);
@@ -82,7 +84,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[${timestamp}] 🚂 Loading pdf-extractor from: ${extractorPath}`);
-    const { handlePdfProcessing } = customRequire(extractorPath);
 
     const result = await handlePdfProcessing(request);
 
