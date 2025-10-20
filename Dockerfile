@@ -1,22 +1,22 @@
 # ========================================
-# JustoAI V2 - Railway Backend Dockerfile
+# JustoAI V2 - Workers Dockerfile
 # ========================================
-# Optimized for minimal image size and fast deployment
+# Minimal workers service for background jobs (BullMQ)
+# No Next.js frontend - only Node.js backend logic
 #
 # Key Optimizations:
-# - Multi-stage build with aggressive layer management
-# - Production-only dependencies (npm ci --omit=dev)
-# - Next.js standalone output + minimal runtime libraries
-# - Selective file copying (no full src/lib or prisma dirs)
-# - Alpine base + non-root user + security hardening
+# - Production-only dependencies via --omit=dev
+# - Selective file copying (only what workers need)
+# - Alpine base for minimal image
+# - Non-root user for security
 #
-# Expected image size: ~250-300MB (down from 800MB+)
+# Expected image size: ~150-180MB (down from 400MB+)
+# ========================================
 
 FROM node:20-alpine AS base
 
-# Install system dependencies once in base
-# Only essentials: libc6-compat + openssl + poppler-utils for PDF extraction
-RUN apk add --no-cache libc6-compat openssl poppler-utils && \
+# Install system dependencies (openssl for TLS)
+RUN apk add --no-cache libc6-compat openssl && \
     npm install -g npm@latest
 
 # ========================================
@@ -25,42 +25,14 @@ RUN apk add --no-cache libc6-compat openssl poppler-utils && \
 FROM base AS deps
 WORKDIR /app
 
-# Copy only package files
+# Copy package files
 COPY package.json package-lock.json ./
 
-# Install ALL dependencies (dev + prod needed for build)
-# Using npm ci for reproducible builds
+# Install ALL dependencies (dev + prod needed to determine prod deps)
 RUN npm ci --legacy-peer-deps
 
 # ========================================
-# STAGE 2: Build Application
-# ========================================
-FROM base AS builder
-WORKDIR /app
-
-# Copy node_modules from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy source code (Docker will use .dockerignore to exclude unnecessary files)
-COPY . .
-
-# Set build-time environment variables
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV SKIP_ENV_VALIDATION=1
-# Placeholder values for build (real values injected at runtime)
-ENV NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-key-for-build-only
-ENV NEXT_PUBLIC_API_URL=http://localhost:3000
-ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Build Next.js application (outputs to .next/standalone + .next/static)
-RUN npm run build
-
-# ========================================
-# STAGE 3: Install Production Dependencies
+# STAGE 2: Install Production Dependencies Only
 # ========================================
 FROM base AS prod-deps
 WORKDIR /app
@@ -69,72 +41,83 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install ONLY production dependencies
-# --omit=dev skips: dev, jest, typescript, etc (~200-300MB saved)
+# --omit=dev skips: typescript, jest, @types/*, etc
+# This saves ~100-150MB
 RUN npm ci --omit=dev --legacy-peer-deps && \
     npm cache clean --force
 
 # ========================================
+# STAGE 3: Generate Prisma Client
+# ========================================
+FROM base AS prisma-gen
+WORKDIR /app
+
+# Copy package and build dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json ./
+COPY prisma ./prisma
+
+# Generate Prisma Client (required for database operations)
+RUN npx prisma generate
+
+# ========================================
 # STAGE 4: Production Runtime (MINIMAL)
 # ========================================
-FROM base AS runner
+FROM base AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# Cache-bust timestamp: 2025-10-20T15:35:00Z
+RUN echo "Building workers container..."
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 workers
 
 # ========================================
-# Copy Application Files - SELECTIVE & OPTIMIZED
+# Copy Application Files - SELECTIVE
 # ========================================
 
-# 1. Next.js standalone build (optimized + bundled)
-COPY --from=builder /app/.next/standalone ./
+# 1. Production dependencies only (not dev dependencies)
+COPY --from=prod-deps /app/node_modules ./node_modules
 
-# 2. Next.js static assets
-COPY --from=builder /app/.next/static ./justoai-v2/.next/static
+# 2. Prisma Client + Engine
+COPY --from=prisma-gen /app/node_modules/.prisma ./node_modules/.prisma
 
-# 3. Public files (favicon, etc)
-COPY --from=builder /app/public ./justoai-v2/public
+# 3. Package.json (for reference)
+COPY package.json ./
 
-# 4. Production-only node_modules (smaller than full install)
-COPY --from=prod-deps /app/node_modules ./justoai-v2/node_modules
+# 4. Minimal prisma schema (for potential migrations/debugging)
+COPY prisma/schema.prisma ./prisma/
 
-# 5. Prisma Client + Engine (needed for database operations)
-# Selective copy: only .prisma folder (not full prisma directory)
-COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
-
-# 6. Package.json only (for reference)
-COPY --from=builder /app/package.json ./justoai-v2/
+# 5. Only worker source code and all lib files
+# Adding aggressive cache-bust to ensure fresh COPY (build: 2025-10-20T16:20:00Z)
+COPY src/ ./src/
+RUN test -f /app/src/workers/juditOnboardingWorker.ts && echo "✅ Worker file verified" || (echo "❌ FATAL: Worker file missing!" && exit 1)
 
 # ========================================
 # Cleanup & Security
 # ========================================
 
-# Set proper ownership and cleanup unnecessary files
-RUN chown -R nextjs:nodejs /app && \
-    chmod -R 755 /app && \
-    # Remove unnecessary node_modules subdirectories
-    find /app/justoai-v2/node_modules -maxdepth 2 -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name "examples" \) -exec rm -rf {} + 2>/dev/null || true && \
-    # Remove build artifacts from node_modules
-    find /app/justoai-v2/node_modules -type f \( -name "*.ts" -o -name "*.tsx" \) ! -path "*/prisma/*" -delete 2>/dev/null || true
+# Re-generate Prisma Client at runtime to ensure compatibility
+RUN npx prisma generate
 
-USER nextjs
+# Set ownership and permissions
+RUN chown -R workers:nodejs /app && chmod -R 755 /app && \
+    # Remove unnecessary files that slipped through
+    find /app/node_modules -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/node_modules -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
+
+USER workers
 
 # ========================================
 # Container Configuration
 # ========================================
 
-EXPOSE 3000
+# Health check - verifies worker process is running
+HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
+  CMD pgrep -f "juditOnboardingWorker" || exit 1
 
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
-
-# Health check for container orchestration
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
-
-# Start server from standalone directory (server.js is in /app root)
-CMD ["node", "server.js"]
+# Run worker directly with tsx (compiles TS on-the-fly)
+# No build step needed - faster startup
+CMD ["npx", "tsx", "src/workers/juditOnboardingWorker.ts"]

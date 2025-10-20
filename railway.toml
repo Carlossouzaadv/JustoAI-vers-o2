@@ -11,7 +11,7 @@ name = "justoai-v2-api"
 
 [services.build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "Dockerfile.api"
 
 [services.deploy]
 startCommand = "node server.js"
@@ -28,7 +28,7 @@ name = "justoai-v2-workers"
 
 [services.build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.workers"
+dockerfilePath = "Dockerfile"
 
 [services.deploy]
 startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
