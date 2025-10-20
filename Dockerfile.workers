@@ -93,9 +93,8 @@ COPY prisma/schema.prisma ./prisma/
 # 5. Only worker source code and all lib files
 COPY src/ ./src/
 
-# 6. Verify worker file exists (debugging)
-RUN ls -la /app/src/workers/juditOnboardingWorker.ts || \
-    (echo "ERROR: Worker file not found!" && ls -la /app/src/ && exit 1)
+# Cache-bust to force rebuild (timestamp: 2025-10-20T16:15:00Z)
+RUN echo "Force cache invalidation"
 
 # ========================================
 # Cleanup & Security
