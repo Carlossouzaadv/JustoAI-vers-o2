@@ -91,10 +91,9 @@ COPY package.json ./
 COPY prisma/schema.prisma ./prisma/
 
 # 5. Only worker source code and all lib files
+# Adding aggressive cache-bust to ensure fresh COPY (build: 2025-10-20T16:20:00Z)
 COPY src/ ./src/
-
-# Cache-bust to force rebuild (timestamp: 2025-10-20T16:15:00Z)
-RUN echo "Force cache invalidation"
+RUN test -f /app/src/workers/juditOnboardingWorker.ts && echo "✅ Worker file verified" || (echo "❌ FATAL: Worker file missing!" && exit 1)
 
 # ========================================
 # Cleanup & Security
