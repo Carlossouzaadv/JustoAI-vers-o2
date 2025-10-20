@@ -1,13 +1,39 @@
-[build]
+# ================================================================
+# JustoAI V2 - Railway Configuration
+# Multi-service deployment: API + Workers
+# ================================================================
+
+# ================================================================
+# SERVICE 1: API (Web Frontend + Backend)
+# ================================================================
+[[services]]
+name = "justoai-v2-api"
+
+[services.build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
 
-[deploy]
-startCommand = "node server.js"
+[services.deploy]
+startCommand = "node justoai-v2/server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
+# ================================================================
+# SERVICE 2: JUDIT ONBOARDING WORKER
+# ================================================================
 [[services]]
-name = "justoai-v2-api"
+name = "justoai-v2-workers"
+
+[services.build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.workers"
+
+[services.deploy]
+startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Health check disabled for worker (uses pgrep instead)
+# Worker logs are monitored via Railway logs interface

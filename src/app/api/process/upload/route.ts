@@ -364,7 +364,8 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        console.log(`${ICONS.SUCCESS} [Upload] JUDIT enfileirado: ${jobId}`);
+        console.log(`${ICONS.SUCCESS} [Upload] Job de onboarding da JUDIT adicionado à fila para o processo ${detectedCnj}. Job ID: ${jobId}`);
+        console.log(`${ICONS.INFO} [Async Flow] JUDIT worker processará caso em background (workspaceId: ${workspaceId}, caseId: ${newCase.id})`);
 
       } catch (error) {
         console.error(`${ICONS.ERROR} [Upload] Erro ao enfileirar JUDIT:`, error);

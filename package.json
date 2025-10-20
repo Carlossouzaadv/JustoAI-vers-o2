@@ -49,7 +49,9 @@
     "deploy:prod": "npm run deploy:check && npm run deploy:test && vercel --prod",
     "deploy:preview": "npm run deploy:check && vercel",
     "check:imports": "madge --circular --extensions ts,tsx src/",
-    "check:all": "npm run type-check && npm run lint && npm run check:imports"
+    "check:all": "npm run type-check && npm run lint && npm run check:imports",
+    "verify:worker": "npx tsx scripts/verify-worker-config.ts",
+    "verify:worker:local": "NODE_ENV=development npx tsx scripts/verify-worker-config.ts"
   },
   "dependencies": {
     "@bull-board/express": "^6.12.7",

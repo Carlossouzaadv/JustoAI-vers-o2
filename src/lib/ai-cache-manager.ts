@@ -226,7 +226,7 @@ export class AiCacheManager {
       }
 
       const expiresAt = new Date();
-      expiresAt.setSeconds(expiresAt.getSeconds() + this.config.postgres_ttl);
+      expiresAt.setTime(expiresAt.getTime() + this.config.postgres_ttl * 1000);
 
       await prisma.aiCache.create({
         data: {
