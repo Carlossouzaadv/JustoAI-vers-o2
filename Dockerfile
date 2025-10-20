@@ -87,6 +87,9 @@ COPY --from=prisma-gen /app/node_modules/.prisma ./node_modules/.prisma
 # 3. Package.json (for reference)
 COPY package.json ./
 
+# 3b. TypeScript config (required for tsconfig-paths path resolution at runtime)
+COPY tsconfig.json ./
+
 # 4. Minimal prisma schema (for potential migrations/debugging)
 COPY prisma/schema.prisma ./prisma/
 

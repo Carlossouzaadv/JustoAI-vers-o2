@@ -109,6 +109,9 @@ COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
 # 6. Package.json only (for reference)
 COPY --from=builder /app/package.json ./justoai-v2/
 
+# 7. TypeScript config (required for tsconfig-paths path resolution at runtime)
+COPY --from=builder /app/tsconfig.json ./justoai-v2/
+
 # ========================================
 # Cleanup & Security
 # ========================================
