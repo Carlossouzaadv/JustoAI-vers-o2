@@ -25,7 +25,7 @@
       "@/lib/observability/*": ["./src/lib/observability/*"],
       "@/lib/queue/*": ["./src/lib/queue/*"],
       "@/lib/*": ["./src/lib/*"],
-      "@/workers/*": ["./workers/*"],
+      "@/workers/*": ["./src/workers/*"],
       "@/*": ["./src/*"]
     }
   },

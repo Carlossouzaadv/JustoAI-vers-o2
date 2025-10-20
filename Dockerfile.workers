@@ -88,8 +88,12 @@ COPY package.json ./
 # 4. Minimal prisma schema (for potential migrations/debugging)
 COPY prisma/schema.prisma ./prisma/
 
-# 5. Only worker source code
-COPY src/workers ./src/workers
+# 5. Create src directory structure
+RUN mkdir -p /app/src/workers /app/src/lib
+
+# 5b. Only worker source code
+COPY src/workers/ /app/src/workers/
+RUN ls -la /app/src/workers/
 
 # 6. Only essential lib files needed by workers
 COPY src/lib/redis.ts ./src/lib/
