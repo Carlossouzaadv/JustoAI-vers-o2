@@ -67,6 +67,8 @@ FROM base AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
+# Cache-bust timestamp: 2025-10-20T15:35:00Z
+RUN echo "Building workers container..."
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
@@ -90,6 +92,10 @@ COPY prisma/schema.prisma ./prisma/
 
 # 5. Only worker source code and all lib files
 COPY src/ ./src/
+
+# 6. Verify worker file exists (debugging)
+RUN ls -la /app/src/workers/juditOnboardingWorker.ts || \
+    (echo "ERROR: Worker file not found!" && ls -la /app/src/ && exit 1)
 
 # ========================================
 # Cleanup & Security
