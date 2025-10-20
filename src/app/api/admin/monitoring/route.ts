@@ -11,28 +11,24 @@ import { telemetry } from '@/lib/monitoring-telemetry';
 import { ICONS } from '@/lib/icons';
 
 // ================================================================
-// DYNAMIC WORKER IMPORTS
+// WORKER FUNCTIONS (MOCKED - process-monitor-worker not implemented)
 // ================================================================
 
 async function getWorkerFunctions() {
-  try {
-    const worker = await import('@/workers/process-monitor-worker');
-    return {
-      processMonitorQueue: worker.processMonitorQueue,
-      addMonitoringJob: worker.addMonitoringJob,
-      getMonitoringStats: worker.getMonitoringStats
-    };
-  } catch (error) {
-    console.warn('Worker functions not available:', error);
-    return {
-      processMonitorQueue: null,
-      addMonitoringJob: async () => ({ id: 'mock' }),
-      getMonitoringStats: async () => ({
-        queue: { waiting: 0, active: 0, completed: 0, failed: 0 },
-        workers: { active: 0, idle: 0 }
-      })
-    };
-  }
+  // Return mock functions since process-monitor-worker is not yet implemented
+  // In production, this would connect to actual BullMQ worker
+  return {
+    processMonitorQueue: null,
+    addMonitoringJob: async (jobName: string, data?: any) => ({
+      id: `mock-${Date.now()}`,
+      name: jobName,
+      data
+    }),
+    getMonitoringStats: async () => ({
+      queue: { waiting: 0, active: 0, completed: 0, failed: 0 },
+      workers: { active: 0, idle: 0 }
+    })
+  };
 }
 
 // ================================================================
