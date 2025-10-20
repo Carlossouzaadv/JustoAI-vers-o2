@@ -120,5 +120,6 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
   CMD pgrep -f "juditOnboardingWorker" || exit 1
 
 # Run worker directly with tsx (compiles TS on-the-fly)
+# -r tsconfig-paths/register enables TypeScript path aliases (@/lib/*)
 # No build step needed - faster startup
-CMD ["npx", "tsx", "src/workers/juditOnboardingWorker.ts"]
+CMD ["npx", "tsx", "-r", "tsconfig-paths/register", "src/workers/juditOnboardingWorker.ts"]
