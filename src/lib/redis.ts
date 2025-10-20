@@ -8,7 +8,14 @@
 // ================================================================
 
 import IORedis, { Redis, RedisOptions } from 'ioredis';
-import { logger } from '@/lib/observability/logger';
+
+// Simple inline logger to avoid external dependencies that may not be in container
+const logger = {
+  info: (msg: any, data?: any) => console.log(`[INFO]`, msg, data || ''),
+  error: (msg: any, data?: any) => console.error(`[ERROR]`, msg, data || ''),
+  warn: (msg: any, data?: any) => console.warn(`[WARN]`, msg, data || ''),
+  debug: (msg: any, data?: any) => console.debug(`[DEBUG]`, msg, data || ''),
+};
 
 // ================================================================
 // CONFIGURATION

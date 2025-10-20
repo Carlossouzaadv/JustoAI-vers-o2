@@ -38,7 +38,14 @@
 //
 // ================================================================
 
-import { juditLogger, logOperationStart } from '@/lib/observability/logger';
+// Simple inline logger to avoid external dependencies
+const juditLogger = {
+  info: (msg: any, data?: any) => console.log(`[JUDIT]`, msg, data || ''),
+  error: (msg: any, data?: any) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
+  warn: (msg: any, data?: any) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
+  debug: (msg: any, data?: any) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
+};
+const logOperationStart = (name: any, data?: any) => console.log(`[OPERATION] Starting`, name, data || '');
 
 // ================================================================
 // TYPES AND INTERFACES

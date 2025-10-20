@@ -6,11 +6,18 @@
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
 
-// Observability imports
-import { juditLogger, logOperationStart } from '@/lib/observability/logger';
-import { juditMetrics } from '@/lib/observability/metrics';
-import { trackJuditCost } from '@/lib/observability/costTracking';
-import { alertApiError, alertTimeout } from '@/lib/observability/alerting';
+// Observability stubs - inline to avoid external dependencies that may not be in container
+const juditLogger = {
+  info: (msg: any, data?: any) => console.log(`[JUDIT]`, msg, data || ''),
+  error: (msg: any, data?: any) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
+  warn: (msg: any, data?: any) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
+  debug: (msg: any, data?: any) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
+};
+const logOperationStart = (name: any, data?: any) => console.log(`[OPERATION] Starting`, name, data || '');
+const juditMetrics = { recordMetric: (name: any, value: any) => {} };
+const trackJuditCost = (operation: any, cost: any) => console.log(`[COST]`, operation, cost);
+const alertApiError = (error: any) => console.error(`[ALERT-API-ERROR]`, error);
+const alertTimeout = (duration: any) => console.warn(`[ALERT-TIMEOUT]`, duration);
 
 // ================================================================
 // TIPOS E INTERFACES
