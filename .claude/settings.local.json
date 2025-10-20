@@ -5,7 +5,10 @@
       "Bash(node -e \"require(''dotenv'').config({path: ''.env.local''}); const { execSync } = require(''child_process''); execSync(''npx prisma migrate deploy'', { stdio: ''inherit'' })\")",
       "Bash(node check-columns.js)",
       "Bash(node add-columns-manually.js)",
-      "Bash(node verify-complete-onboarding.js)"
+      "Bash(node verify-complete-onboarding.js)",
+      "Read(//c/Users/carlo/Downloads/**)",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"fix(types): export ModelTier as value, interfaces as type-only\n\nSplit exports per Sonnet analysis:\n- ModelTier enum: export as value (needed for runtime usage)\n- ComplexityScore, ProcessingConfig, ModelCosts: export type (type-only)\n\nFixes: ''ModelTier'' is not exported from ai-model-router\nbecause export type {} only works for types, not enums.\")"
     ],
     "deny": [],
     "ask": []
