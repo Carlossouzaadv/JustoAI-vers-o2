@@ -99,19 +99,18 @@ COPY src/lib/services ./src/lib/services
 COPY src/lib/queue ./src/lib/queue
 COPY src/config ./src/config
 
-# 7. Environment configuration
-COPY src/env.mjs ./src/
-
 # ========================================
 # Cleanup & Security
 # ========================================
+
+# Re-generate Prisma Client at runtime to ensure compatibility
+RUN npx prisma generate
 
 # Set ownership and permissions
 RUN chown -R workers:nodejs /app && chmod -R 755 /app && \
     # Remove unnecessary files that slipped through
     find /app/node_modules -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
-    find /app/node_modules -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true && \
-    find /app/node_modules -type d -name ".bin" -exec rm -rf {} + 2>/dev/null || true
+    find /app/node_modules -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
 
 USER workers
 
