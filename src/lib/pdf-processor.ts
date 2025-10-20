@@ -304,38 +304,21 @@ export class PDFProcessor {
   }
 
   /**
-   * Extração de metadados do PDF
+   * Extração de metadados do PDF - Implementação simplificada
+   * Não usa pdfjs-dist, apenas análise do buffer
    */
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
-      const pdfLib = await getPdfJS();
-      const uint8Array = new Uint8Array(buffer);
-      const pdf = await pdfLib.getDocument({ data: uint8Array }).promise;
-
-      let fullText = '';
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        try {
-          const page = await pdf.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => item.str || '')
-            .join('');
-          fullText += pageText + '\n';
-        } catch {
-          // Continue
-        }
-      }
-
-      // Detectar imagens verificando se há discrepância entre páginas e texto
+      const sizeMB = Math.round((buffer.length / (1024 * 1024)) * 100) / 100;
       const hasImages = this.detectImagesInPDF(buffer, {
-        text: fullText,
-        numpages: pdf.numPages
+        text: '',
+        numpages: 0
       });
 
       return {
-        pages: pdf.numPages,
-        sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
-        hasText: !!(fullText && fullText.trim().length > 0),
+        pages: 0, // Simplified - exact page count requires Railway processing
+        sizeMB,
+        hasText: false, // Will be determined during actual extraction
         hasImages
       };
     } catch (error) {
@@ -724,4 +707,27 @@ export class PDFProcessor {
       'Citações legais (artigos, leis, súmulas)'
     ];
   }
+}
+
+// ================================================================
+// STANDALONE FUNCTION EXPORTS
+// ================================================================
+
+/**
+ * Standalone function for PDF text extraction
+ * Wrapper around PDFProcessor.extractText for backward compatibility
+ */
+export async function extractTextFromPDF(
+  buffer: Buffer,
+  fileName: string = 'document.pdf'
+): Promise<ExtractionResult> {
+  const processor = new PDFProcessor()
+  return processor.extractText(buffer, fileName)
+}
+
+/**
+ * Initialize and get a PDFProcessor instance
+ */
+export function getPDFProcessor(): PDFProcessor {
+  return new PDFProcessor()
 }

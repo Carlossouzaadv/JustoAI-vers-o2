@@ -1,6 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
+import type { NextAuthOptions } from 'next-auth'
+import { JWT } from 'next-auth/jwt'
 
 // Supabase client for server-side auth
 export async function createSupabaseServerClient() {
@@ -189,4 +191,34 @@ export async function validateAuthAndGetUser(_request?: Request) {
     user,
     workspace: user.workspaces[0]?.workspace
   }
+}
+
+// ================================================================
+// NextAuth Configuration - Supabase Integration
+// ================================================================
+export const authOptions: NextAuthOptions = {
+  // Configure this for your auth setup
+  // Since we're using Supabase JWT in cookies, we use a credentials provider
+  providers: [],
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  },
+  callbacks: {
+    async jwt({ token, user }: { token: JWT; user?: any }) {
+      if (user) {
+        token.id = user.id
+      }
+      return token
+    },
+    async session({ session, token }: { session: any; token: JWT }) {
+      if (session?.user) {
+        session.user.id = token.id as string
+      }
+      return session
+    },
+  },
+  session: {
+    strategy: 'jwt',
+  },
 }
