@@ -679,7 +679,7 @@ export class PDFProcessor {
   private calculateModelCost(modelUsed: string, textLength: number): number {
     // Custos estimados por 1k tokens (em dólares)
     const modelCosts: Record<string, number> = {
-      'gemini-2.5-flash-8b': 0.000075,
+      'gemini-2.5-flash-lite': 0.000075,
       'gemini-2.5-flash': 0.00015,
       'gemini-2.5-pro': 0.0025,
       'gpt-4': 0.03,

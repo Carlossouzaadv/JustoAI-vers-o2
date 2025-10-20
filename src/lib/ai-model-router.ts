@@ -1428,7 +1428,7 @@ RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
    * Model mappings for Gemini API
    */
   private readonly modelMappings: Record<ModelTier, string> = {
-    [ModelTier.LITE]: 'gemini-2.5-flash-8b',
+    [ModelTier.LITE]: 'gemini-2.5-flash-lite',
     [ModelTier.BALANCED]: 'gemini-2.5-flash',
     [ModelTier.PRO]: 'gemini-2.5-pro'
   };

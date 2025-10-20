@@ -267,7 +267,7 @@ export class AiCacheManager {
 
   async setEssential(textHash: string, analysis: unknown, metadata?: { model?: string; complexity_score?: number; tokens_saved?: number; workspaceId?: string }): Promise<void> {
     return this.set(`essential:${textHash}`, analysis, 'essential', {
-      model: 'gemini-2.5-flash-8b',
+      model: 'gemini-2.5-flash-lite',
       ...metadata
     });
   }
