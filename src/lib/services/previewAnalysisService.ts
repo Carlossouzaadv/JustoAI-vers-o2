@@ -123,7 +123,7 @@ export async function generatePreview(
           lastMovements: Array.isArray(response.lastMovements) ? response.lastMovements : [],
           confidence: response.confidence || 0.75,
           generatedAt: new Date().toISOString(),
-          model: `gemini-1.5-${name.toLowerCase()}`
+          model: `gemini-2.5-${name.toLowerCase() === 'flash 8b' ? 'flash-8b' : name.toLowerCase().split(' ')[0] === 'flash' ? 'flash' : 'pro'}`
         };
 
         const duration = Date.now() - startTime;

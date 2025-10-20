@@ -370,10 +370,12 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        // 14. ANÁLISE IA COM ROUTER OTIMIZADO
+        // 14. ANÁLISE IA PHASE 1 - Análise rápida inicial com LITE-first strategy
 
         const aiRouter = new AIModelRouter();
-        aiAnalysisResult = await aiRouter.analyzeStrategic(cleanText, file.size / (1024 * 1024), workspaceId);
+        // Use analyzePhase1 for initial preview (LITE→BALANCED→PRO fallback)
+        // This ensures fast, cost-effective analysis while maintaining quality
+        aiAnalysisResult = await aiRouter.analyzePhase1(cleanText, file.size / (1024 * 1024), workspaceId);
 
         // Salvar no cache
         await cacheManager.saveAnalysisCache(

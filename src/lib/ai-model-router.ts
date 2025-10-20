@@ -1116,14 +1116,82 @@ PROFUNDIDADE: Completa e estratégica`;
   }
 
   /**
-   * Análise ESTRATÉGICA - Router por complexidade
-   * Cache por tier para otimização
+   * Análise PHASE 1 - LITE-first para análise rápida e inicial
+   * Inicia com LITE, sobe para BALANCED, depois PRO apenas se falhar
+   * Otimizado para previews rápidos com máxima economia de custos
+   */
+  async analyzePhase1(text: string, fileSizeMb: number = 0, workspaceId?: string): Promise<unknown> {
+    const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
+    const { ICONS } = await import('./icons');
+
+    console.log(`${ICONS.PROCESS} Análise PHASE 1 iniciada (LITE-first com fallback)`);
+
+    const cache = getAiCache();
+    const textHash = generateTextHash(text);
+
+    // 1. Buscar no cache
+    const cached = await cache.getEssential(textHash);
+    if (cached) {
+      const cachedRecord = cached as Record<string, unknown>;
+      const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
+      console.log(`${ICONS.CACHE} Cache HIT - Phase 1: ${routingInfo?.tokens_saved || 0} tokens economizados`);
+      return cached;
+    }
+
+    // 2. Processar com estratégia LITE-first
+    // Cria uma complexity score fictícia com tier LITE como recomendado
+    const phaseOneComplexity: ComplexityScore = {
+      totalScore: 0,
+      factors: {
+        documentType: 0,
+        textLength: 0,
+        legalComplexity: 0,
+        structuralComplexity: 0,
+        filesizeComplexity: 0
+      },
+      recommendedTier: ModelTier.LITE,  // Começa com LITE
+      confidence: 0.9,
+      documentType: 'PHASE_1_ANALYSIS'
+    };
+
+    const result = await this.processWithFallback(
+      text,
+      phaseOneComplexity,
+      async (config) => {
+        return await this.processWithModel(text, phaseOneComplexity.recommendedTier, 'phase1');
+      }
+    );
+
+    const resultRecord = result.result as Record<string, unknown>;
+    resultRecord._routing_info = {
+      ...(resultRecord._routing_info as Record<string, unknown> | undefined),
+      analysis_phase: 'Phase 1 - Initial Preview',
+      strategy: 'LITE-first with fallback to BALANCED and PRO',
+      model_used: result.modelUsed
+    };
+
+    // 3. Salvar no cache
+    await cache.setEssential(textHash, result.result, {
+      model: result.modelUsed,
+      tokens_saved: this.estimateTokens(text),
+      workspaceId,
+      analysis_phase: 'phase_1'
+    });
+
+    console.log(`${ICONS.SUCCESS} Análise Phase 1 concluída (${result.modelUsed}) e cacheada`);
+    return result.result;
+  }
+
+  /**
+   * Análise ESTRATÉGICA - Router por complexidade (PHASE 3)
+   * Inicia com tier recomendado por complexidade, com fallback
+   * Para análises completas e profundas após decisão do usuário
    */
   async analyzeStrategic(text: string, fileSizeMb: number = 0, workspaceId?: string): Promise<unknown> {
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
-    console.log(`${ICONS.PROCESS} Análise ESTRATÉGICA iniciada (routing por complexidade)`);
+    console.log(`${ICONS.PROCESS} Análise ESTRATÉGICA iniciada (PHASE 3 - routing por complexidade)`);
 
     const cache = getAiCache();
     const textHash = generateTextHash(text);
@@ -1152,14 +1220,17 @@ PROFUNDIDADE: Completa e estratégica`;
       ...(resultRecord._routing_info as Record<string, unknown> | undefined),
       complexity_score: complexityScore.totalScore,
       complexity_factors: complexityScore.factors,
-      reasoning: `Complexity: ${complexityScore.totalScore} points → Model: ${complexityScore.recommendedTier}`
+      analysis_phase: 'Phase 3 - Complete Analysis',
+      reasoning: `Complexity: ${complexityScore.totalScore} points → Model: ${complexityScore.recommendedTier}`,
+      model_used: result.modelUsed
     };
 
     // 3. Salvar no cache por tier
     await cache.setStrategic(textHash, result.result, complexityScore.totalScore, {
       model: complexityScore.recommendedTier,
       tokens_saved: this.estimateTokens(text),
-      workspaceId
+      workspaceId,
+      analysis_phase: 'phase_3'
     });
 
     console.log(`${ICONS.SUCCESS} Análise estratégica concluída (${complexityScore.recommendedTier}) e cacheada`);
@@ -1307,6 +1378,15 @@ PROFUNDIDADE: Completa e estratégica`;
     };
 
     switch (analysisType) {
+      case 'phase1':
+        return `${promptTemplate}
+
+TEXTO DO DOCUMENTO:
+${text}
+
+ANÁLISE SOLICITADA: Análise rápida de PHASE 1 para extração de informações essenciais. Identifique rapidamente partes envolvidas, valor da causa, situação processual atual e últimos movimentos. Foco em velocidade e economia de custo.
+RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
+
       case 'essential':
         return `${promptTemplate}
 
