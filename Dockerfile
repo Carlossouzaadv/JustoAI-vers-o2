@@ -91,9 +91,10 @@ COPY package.json ./
 COPY prisma/schema.prisma ./prisma/
 
 # 5. Only worker source code and all lib files
-# Adding aggressive cache-bust to ensure fresh COPY (build: 2025-10-20T16:20:00Z)
+# Adding aggressive cache-bust to ensure fresh COPY (build: 2025-10-20T16:40:00Z)
 COPY src/ ./src/
 RUN test -f /app/src/workers/juditOnboardingWorker.ts && echo "✅ Worker file verified" || (echo "❌ FATAL: Worker file missing!" && exit 1)
+RUN test -f /app/src/lib/observability/logger.ts && echo "✅ Logger file verified" || (echo "⚠️  WARNING: Logger file missing - checking directory..." && ls -la /app/src/lib/ 2>/dev/null | head -20)
 
 # ========================================
 # Cleanup & Security
