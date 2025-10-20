@@ -267,7 +267,7 @@ export class AiCacheManager {
 
   async setEssential(textHash: string, analysis: unknown, metadata?: { model?: string; complexity_score?: number; tokens_saved?: number; workspaceId?: string }): Promise<void> {
     return this.set(`essential:${textHash}`, analysis, 'essential', {
-      model: 'gemini-1.5-flash-8b',
+      model: 'gemini-2.5-flash-8b',
       ...metadata
     });
   }
@@ -302,7 +302,7 @@ export class AiCacheManager {
 
   async setReport(reportHash: string, report: unknown, metadata?: { model?: string; tokens_saved?: number; workspaceId?: string }): Promise<void> {
     return this.set(`report:${reportHash}`, report, 'report', {
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       ...metadata
     });
   }

@@ -335,7 +335,7 @@ export async function POST(request: NextRequest) {
 
     // 12. VERIFICAR CACHE DE ANÁLISE
     const cacheManager = getAnalysisCacheManager();
-    const modelVersion = 'gemini-1.5-flash-v1';
+    const modelVersion = 'gemini-2.5-flash';
     const promptSignature = 'legal-document-analysis-v2';
 
     const cacheResult = await cacheManager.checkAnalysisCache(

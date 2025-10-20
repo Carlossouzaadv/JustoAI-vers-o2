@@ -5,9 +5,9 @@
 // ai-model-router and gemini-client
 
 export enum ModelTier {
-  LITE = 'gemini-1.5-flash-8b',   // Mais barato (95% economia)
-  BALANCED = 'gemini-1.5-flash',  // Equilibrado
-  PRO = 'gemini-1.5-pro'          // Maior qualidade
+  LITE = 'gemini-2.5-flash-8b',   // Mais barato (95% economia)
+  BALANCED = 'gemini-2.5-flash',  // Equilibrado
+  PRO = 'gemini-2.5-pro'          // Maior qualidade
 }
 
 export interface ComplexityScore {

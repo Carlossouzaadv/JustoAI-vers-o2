@@ -92,7 +92,7 @@ export async function POST(
         aiAnalysis: analysis,
         analysisType: 'FULL',
         confidence: analysis.confidence || 0.85,
-        modelUsed: 'gemini-1.5-pro',
+        modelUsed: 'gemini-2.5-pro',
         processingTime: analysisDuration,
         costEstimate: 1.0,
         metadata: {

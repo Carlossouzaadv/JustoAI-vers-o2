@@ -60,7 +60,7 @@ export const POST = withErrorHandler(async (
       processId,
       documentHashes: attachedDocs.map(doc => doc.textSha),
       analysisType: 'FAST',
-      modelVersion: 'gemini-1.5-flash'
+      modelVersion: 'gemini-2.5-flash'
     });
 
     console.log(`${ICONS.INFO} Analysis key gerada: ${analysisKey}`);
@@ -125,7 +125,7 @@ export const POST = withErrorHandler(async (
         workspaceId,
         versionNumber: nextVersion,
         analysisType: 'FAST',
-        modelUsed: 'gemini-1.5-flash',
+        modelUsed: 'gemini-2.5-flash',
         analysisKey,
         sourceFilesMetadata: attachedDocs.map(doc => ({
           id: doc.id,
@@ -142,7 +142,7 @@ export const POST = withErrorHandler(async (
         workspaceId,
         analysisKey,
         analysisType: 'FAST',
-        modelHint: 'gemini-1.5-flash',
+        modelHint: 'gemini-2.5-flash',
         filesMetadata: attachedDocs,
         resultVersionId: analysisVersion.id,
         lockToken: lockResult.token
@@ -164,7 +164,7 @@ export const POST = withErrorHandler(async (
         versionNumber: nextVersion,
         source: 'processing',
         analysisType: 'FAST',
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         status: 'PROCESSING',
         documentsUsed: attachedDocs.length,
         estimatedTime: '30-60 segundos',

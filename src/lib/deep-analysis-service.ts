@@ -664,7 +664,7 @@ export class DeepAnalysisService {
         data: {
           aiAnalysis: analysisResult,
           status: JobStatus.COMPLETED,
-          modelUsed: 'gemini-1.5-pro',
+          modelUsed: 'gemini-2.5-pro',
           processingTime: Date.now() - (job.startedAt?.getTime() || Date.now()),
           confidence: analysisResult.metadata?.confidencia || 0.85
         }

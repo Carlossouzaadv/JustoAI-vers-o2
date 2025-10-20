@@ -84,7 +84,7 @@ export async function POST(
     }
 
     // 3. Configurar modelo e prompt baseado no nível
-    const modelVersion = level === 'FULL' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
+    const modelVersion = level === 'FULL' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
     const promptSignature = generatePromptSignature(level, includeDocuments, includeTimeline);
 
     console.log(`${ICONS.INFO} Configuração: ${level} | ${modelVersion} | prompt: ${promptSignature}`);
@@ -463,7 +463,7 @@ function generateMockAnalysis(level: 'FAST' | 'FULL') {
       `Análise ${level} - ${level === 'FULL' ? 'Completa e detalhada' : 'Baseada em documentos existentes'}`
     ],
     confidence: level === 'FULL' ? 0.95 : 0.85,
-    model: level === 'FULL' ? 'gemini-1.5-pro' : 'gemini-1.5-flash',
+    model: level === 'FULL' ? 'gemini-2.5-pro' : 'gemini-2.5-flash',
     level
   };
 

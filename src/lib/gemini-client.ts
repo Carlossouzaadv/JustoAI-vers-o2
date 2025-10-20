@@ -19,11 +19,10 @@ export class GeminiClient {
   private resetTimes: Map<string, number> = new Map();
 
   // Model mappings to Google API model names
-  // Using the correct v1 API model names that are actually available
   private readonly modelMappings: Record<ModelTier, string> = {
-    [ModelTier.LITE]: 'gemini-1.5-flash-8b',
-    [ModelTier.BALANCED]: 'gemini-1.5-flash',
-    [ModelTier.PRO]: 'gemini-1.5-pro'
+    [ModelTier.LITE]: 'gemini-2.5-flash-8b',
+    [ModelTier.BALANCED]: 'gemini-2.5-flash',
+    [ModelTier.PRO]: 'gemini-2.5-pro'
   };
 
   // Rate limits per model (requests per minute)

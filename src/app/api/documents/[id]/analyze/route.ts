@@ -157,7 +157,7 @@ export async function POST(
         analysisType: 'PDF_UPLOAD',
         extractedData: pdfResult,
         aiAnalysis,
-        modelUsed: routingInfo?.final_tier || 'gemini-1.5-flash',
+        modelUsed: routingInfo?.final_tier || 'gemini-2.5-flash',
         confidence: aiAnalysis ? 0.85 : 0.5, // Confiança menor se não houve análise IA
         processingTime: Date.now(), // TODO: medir tempo real
         costEstimate: routingInfo?.cost_estimate?.estimated_cost_usd || 0.001,
