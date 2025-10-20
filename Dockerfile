@@ -136,5 +136,5 @@ ENV HOSTNAME=0.0.0.0
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start server from standalone directory
-CMD ["node", "justoai-v2/server.js"]
+# Start server from standalone directory (server.js is in /app root)
+CMD ["node", "server.js"]
