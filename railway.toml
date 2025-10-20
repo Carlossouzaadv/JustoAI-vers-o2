@@ -11,7 +11,7 @@ name = "justoai-v2-api"
 
 [services.build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.railway"
+dockerfilePath = "Dockerfile"
 
 [services.deploy]
 startCommand = "node justoai-v2/server.js"
