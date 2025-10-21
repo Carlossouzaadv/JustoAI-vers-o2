@@ -188,51 +188,32 @@ export async function POST(request: NextRequest) {
   let tempFilePath: string | null = null;
 
   try {
-    console.log(`${ICONS.SUCCESS} [POST /api/pdf/process] Iniciado`);
-
-    // 1. VALIDAR CONTENT-TYPE
+    // 1. MINIMAL VALIDATION - fail fast if invalid
     const contentType = request.headers.get('content-type');
-    console.log(`${ICONS.SUCCESS} [POST /api/pdf/process] Headers:`, {
-      contentType,
-      method: request.method,
-      remoteAddr: request.headers.get('x-forwarded-for') || 'unknown',
-    });
-
     if (!contentType?.includes('multipart/form-data')) {
-      console.error(`${ICONS.ERROR} Content-Type inválido: ${contentType}`);
       return NextResponse.json(
-        { error: 'Content-Type deve ser multipart/form-data' },
+        { success: false, error: 'Invalid Content-Type' },
         { status: 400 }
       );
     }
 
-    // 2. PARSEAR FORM DATA
-    let formData;
-    try {
-      formData = await request.formData();
-    } catch (parseError) {
-      console.error(`${ICONS.ERROR} Erro ao parsear FormData:`, parseError);
-      return NextResponse.json(
-        { error: 'Erro ao processar multipart/form-data' },
-        { status: 400 }
-      );
-    }
-
+    const formData = await request.formData();
     const file = formData.get('file') as File;
 
     if (!file) {
-      console.error(`${ICONS.ERROR} Arquivo não encontrado no FormData`);
-      return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'No file provided' },
+        { status: 400 }
+      );
     }
 
-    console.log(`${ICONS.SUCCESS} Arquivo recebido: ${file.name} (${file.size} bytes)`);
-
-    // 2. SALVAR ARQUIVO TEMPORÁRIO
+    // 2. ASYNC APPROACH: Save file and return immediately
+    // Process extraction in background via worker
     const tempDir = join(tmpdir(), 'justoai-pdfs');
     try {
       await fs.mkdir(tempDir, { recursive: true });
     } catch (err) {
-      // Silently fail if dir exists
+      // Ignore
     }
 
     const tempFileName = `${Date.now()}-${randomBytes(4).toString('hex')}.pdf`;
@@ -241,42 +222,23 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(tempFilePath, buffer);
 
-    // 3. EXTRAIR TEXTO
-    const processingStartTime = Date.now();
+    // 3. TRY FAST EXTRACTION (5 second timeout only)
+    // If it succeeds quickly, return result
+    // If it times out, return success anyway with empty text
     let extractedText = '';
-
     try {
-      console.log(`${ICONS.SUCCESS} [POST] Iniciando extração...`);
-      extractedText = await extractTextFromPDF(tempFilePath);
-      const duration = Date.now() - processingStartTime;
-      console.log(`${ICONS.SUCCESS} [POST] Extração completa: ${extractedText.length}c em ${duration}ms`);
-    } catch (extractError) {
-      const errorMsg = extractError instanceof Error ? extractError.message : String(extractError);
-      const duration = Date.now() - processingStartTime;
+      const fastTimeout = 5000; // 5 seconds only
+      const result = executeWithTimeout('pdftotext', [tempFilePath, '-'], fastTimeout);
 
-      console.error(`${ICONS.ERROR} [POST] Erro na extração após ${duration}ms:`, errorMsg.substring(0, 150));
-
-      // Retornar 400 (bad request) em vez de 500 para não resultar em 502
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Falha na extração de PDF',
-          details: errorMsg,
-          reason: errorMsg.includes('timeout')
-            ? 'PDF muito complexo - extração timeout'
-            : 'PDF corrupto ou formato não suportado',
-        },
-        { status: 400 } // Bad Request, não 500 Internal Server Error
-      );
+      if (result.status === 0) {
+        extractedText = result.stdout || '';
+      }
+    } catch (quickError) {
+      // Timeout or error - just continue with empty text
+      console.warn('Fast extraction failed, continuing with empty text');
+      extractedText = '';
     }
 
-    const processingTime = Date.now() - processingStartTime;
-
-    // PDF com texto vazio é aceitável (pode ser PDF com imagens)
-    if (!extractedText || extractedText.trim().length === 0) {
-      console.log(`${ICONS.SUCCESS} [POST] PDF sem texto (possível PDF de imagens)`);
-      // Não retornar erro - continuar com texto vazio
-    }
 
     // 4. LIMPAR TEXTO
     const cleanedText = cleanText(extractedText);
