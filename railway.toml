@@ -1,0 +1,31 @@
+# ================================================================
+# JustoAI V2 - Railway Configuration
+# Multi-service deployment with Nixpacks
+# ================================================================
+
+[[services]]
+name = "justoai-web"
+
+[services.build]
+builder = "NIXPACKS"
+
+[services.deploy]
+startCommand = "node .next/standalone/server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# ================================================================
+# SERVICE 2: Background Workers
+# ================================================================
+[[services]]
+name = "justoai-workers"
+
+[services.build]
+builder = "NIXPACKS"
+
+[services.deploy]
+startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
