@@ -1,67 +1,19 @@
-'use client';
-
-// Desabilitar prerendering estático porque a página depende de useSession()
+// Desabilitar prerendering estático
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { UploadDialog } from '@/components/onboarding/upload-dialog';
-import { Upload, FileText, Zap, CheckCircle2, Clock, BarChart3 } from 'lucide-react';
-import { ICONS } from '@/lib/icons';
+import { CheckCircle2, Clock, Zap, Upload, FileText, BarChart3 } from 'lucide-react';
+import DocumentsUploadPageClient from './documents-upload-client';
 
-export default function DocumentsUploadPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [recentUploads, setRecentUploads] = useState<any[]>([]);
-  const [workspaceId, setWorkspaceId] = useState<string>('');
-  const [loadingWorkspace, setLoadingWorkspace] = useState(true);
+export default async function DocumentsUploadPage() {
+  // Verificar autenticação no servidor (garante que a página não pode ser pré-renderizada)
+  const session = await getServerSession(authOptions);
 
-  // Carregar workspace do usuário
-  useEffect(() => {
-    const loadWorkspace = async () => {
-      try {
-        const response = await fetch('/api/workspaces', {
-          credentials: 'include'
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.workspaces && data.workspaces.length > 0) {
-            setWorkspaceId(data.workspaces[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao carregar workspace:', error);
-      } finally {
-        setLoadingWorkspace(false);
-      }
-    };
-
-    if (status === 'authenticated') {
-      loadWorkspace();
-    }
-  }, [status]);
-
-  if (status === 'loading' || loadingWorkspace) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-10 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (status === 'unauthenticated') {
-    router.push('/auth/signin');
-    return null;
+  if (!session?.user) {
+    redirect('/auth/signin');
   }
 
   return (
@@ -132,43 +84,8 @@ export default function DocumentsUploadPage() {
           </Card>
         </div>
 
-        {/* Botão Principal de Upload */}
-        <Card className="mb-12 bg-gradient-to-r from-blue-500 to-blue-600 border-0 text-white">
-          <CardContent className="pt-12 pb-12">
-            <div className="text-center space-y-6">
-              <div>
-                <Upload className="w-16 h-16 mx-auto opacity-80 mb-4" />
-                <h2 className="text-3xl font-bold mb-2">Comece Agora</h2>
-                <p className="text-blue-100 text-lg">
-                  Faça upload de um PDF para iniciar o processamento completo
-                </p>
-              </div>
-
-              <Button
-                onClick={() => setUploadDialogOpen(true)}
-                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-6 text-lg font-semibold"
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Fazer Upload de PDF
-              </Button>
-
-              <div className="grid grid-cols-3 gap-4 text-sm text-blue-100 max-w-md mx-auto pt-4">
-                <div>
-                  <p className="font-semibold">Rápido</p>
-                  <p>Segundos</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Gratuito</p>
-                  <p>FASE 1</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Automático</p>
-                  <p>FASE 2</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Componente Client (com estados e interatividade) */}
+        <DocumentsUploadPageClient />
 
         {/* Informações Adicionais */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -236,19 +153,6 @@ export default function DocumentsUploadPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Dialog de Upload */}
-      {workspaceId && (
-        <UploadDialog
-          open={uploadDialogOpen}
-          onOpenChange={setUploadDialogOpen}
-          workspaceId={workspaceId}
-          onUploadSuccess={(data) => {
-            console.log('Upload realizado com sucesso:', data);
-            // Opcionalmente redirecionar ou atualizar UI
-          }}
-        />
-      )}
     </div>
   );
 }
