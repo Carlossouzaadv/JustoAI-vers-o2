@@ -27,7 +27,8 @@ pids/
 # ========================================
 # Build & Dist (keep minimal for Next.js standalone)
 # ========================================
-.next/
+# NOTE: .next/ MUST NOT be ignored - it's needed for standalone mode at runtime!
+# Nixpacks builds .next/ during build phase and needs to copy it to container
 out/
 dist/
 build/
@@ -146,8 +147,9 @@ logs/
 # Framework-specific
 # ========================================
 # Next.js
-.next/
+# NOTE: .next/ MUST NOT be ignored - required for standalone mode!
 # Vercel specific (already in .vercel/)
+.vercel/
 # Nuxt specific
 .nuxt/
 nuxt.d.ts
