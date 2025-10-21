@@ -1,6 +1,6 @@
 # ================================================================
 # JustoAI V2 - Railway Configuration
-# Multi-service deployment with Nixpacks
+# Single web service using Procfile for process management
 # ================================================================
 
 [[services]]
@@ -10,22 +10,8 @@ name = "justoai-web"
 builder = "NIXPACKS"
 
 [services.deploy]
-startCommand = "node .next/standalone/server.js"
+startCommand = "node .next/standalone/justoai-v2/server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-
-# ================================================================
-# SERVICE 2: Background Workers
-# ================================================================
-[[services]]
-name = "justoai-workers"
-
-[services.build]
-builder = "NIXPACKS"
-
-[services.deploy]
-startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 5
