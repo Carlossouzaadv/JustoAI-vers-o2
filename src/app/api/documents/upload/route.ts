@@ -14,6 +14,7 @@ import { requireAuth } from '@/lib/api-utils';
 import { getDocumentHashManager } from '@/lib/document-hash';
 import { getAnalysisCacheManager } from '@/lib/analysis-cache';
 import { getTimelineMergeService } from '@/lib/timeline-merge';
+import { addOnboardingJob } from '@/lib/queue/juditQueue';
 import { PDFProcessor } from '@/lib/pdf-processor';
 import { TextCleaner } from '@/lib/text-cleaner';
 import { AIModelRouter } from '@/lib/ai-model-router';
@@ -438,7 +439,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 18. REGISTRAR EVENTO
+    // 18. FASE 2 - ENRIQUECIMENTO OFICIAL VIA JUDIT (Background Async)
+    // Queue a background job to fetch official process data from JUDIT
+    // This happens asynchronously - doesn't block the response
+    let juditJobId: string | undefined;
+    if (extractedProcessNumber) {
+      try {
+        console.log(`${ICONS.ROCKET} [Onboarding] Enfileirando JUDIT para ${extractedProcessNumber}...`);
+        const { jobId } = await addOnboardingJob(extractedProcessNumber, {
+          workspaceId,
+          userId: user.id,
+          caseId: targetCaseId,
+          priority: 5
+        });
+        juditJobId = jobId;
+        console.log(`${ICONS.SUCCESS} [Onboarding] Job de JUDIT adicionado à fila (Job ID: ${jobId}). Worker processará em background.`);
+      } catch (juditError) {
+        console.error(`${ICONS.ERROR} [Onboarding] Erro ao enfileirar JUDIT:`, juditError);
+        // Não falhar o upload por causa disso - FASE 1 foi concluída com sucesso
+      }
+    }
+
+    // 19. REGISTRAR EVENTO
     await prisma.caseEvent.create({
       data: {
         caseId: targetCaseId,
@@ -457,13 +479,13 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 19. RESPOSTA DE SUCESSO
+    // 20. RESPOSTA DE SUCESSO
     const processingTime = Date.now() - startTime;
 
     return NextResponse.json({
       success: true,
       message: extractedProcessNumber ?
-        `PDF processado e processo ${extractedProcessNumber} criado automaticamente` :
+        `PDF processado com sucesso - FASE 1 concluída! Buscando histórico oficial e anexos...` :
         'PDF processado com sucesso',
       data: {
         documentId: document.id,
@@ -471,6 +493,14 @@ export async function POST(request: NextRequest) {
         textSha: hashResult.textSha,
         extractedProcessNumber,
         processAutoCreated: !!extractedProcessNumber && !existingProcess,
+        juditJobId, // FASE 2 job ID for tracking
+
+        // Fase do onboarding
+        onboardingPhase: {
+          current: 'PREVIEW', // FASE 1
+          next: juditJobId ? 'ENRICHMENT' : undefined, // FASE 2
+          nextAction: juditJobId ? 'Aguardando histórico oficial do tribunal' : 'Enriquecimento não iniciado'
+        },
 
         // Métricas de processamento
         processing: {
@@ -478,6 +508,7 @@ export async function POST(request: NextRequest) {
           textExtracted: true,
           aiAnalyzed: !!aiAnalysisResult,
           cacheHit: cacheResult.hit,
+          juditJobQueued: !!juditJobId,
           timelineEntriesAdded: 0 // TODO: incluir do merge result
         },
 
