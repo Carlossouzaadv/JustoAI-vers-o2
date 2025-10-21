@@ -13,6 +13,10 @@ RUN npm install --legacy-peer-deps --prefer-offline --no-audit
 # Copy source code
 COPY . .
 
+# Generate Prisma Client BEFORE building Next.js
+# This is needed because Next.js build may need to execute code that uses Prisma
+RUN npx prisma generate
+
 # Build Next.js app (generates .next/ folder)
 RUN npm run build
 
@@ -24,6 +28,10 @@ WORKDIR /app
 # Copy built .next folder from builder
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# Copy Prisma client (needed for runtime if APIs use DB)
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy public files if they exist
 COPY --from=builder /app/public ./public 2>/dev/null || true
