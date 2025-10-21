@@ -85,61 +85,58 @@ function executeWithTimeout(
 
 // ================================================================
 // PDF EXTRACTION - Using system pdftotext command (from poppler-utils)
+// With aggressive timeout and graceful degradation
 // ================================================================
 async function extractTextFromPDF(pdfPath: string): Promise<string> {
   const startTime = Date.now();
   try {
-    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Iniciando extração com pdftotext: ${pdfPath}`);
+    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Iniciando (timeout: ${PDFTOTEXT_TIMEOUT}ms)`);
 
     // 1. VERIFICAR SE ARQUIVO EXISTE
     try {
       await fs.stat(pdfPath);
-      console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Arquivo encontrado, iniciando extração`);
     } catch (statError) {
       const errorMsg = `Arquivo não encontrado: ${pdfPath}`;
       console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
       throw new Error(errorMsg);
     }
 
-    // 2. EXECUTAR PDFTOTEXT COM PROTEÇÕES
-    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Calling executeWithTimeout`);
-
-    const result = executeWithTimeout('pdftotext', [pdfPath, '-'], 15000); // 15s timeout
+    // 2. EXECUTAR PDFTOTEXT COM TIMEOUT AGRESSIVO
+    console.log(`${ICONS.TIMER} [extractTextFromPDF] Executando pdftotext...`);
+    let result;
+    try {
+      result = executeWithTimeout('pdftotext', [pdfPath, '-'], PDFTOTEXT_TIMEOUT);
+    } catch (timeoutError) {
+      const duration = Date.now() - startTime;
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] TIMEOUT após ${duration}ms`);
+      // Retornar erro específico de timeout em vez de crashar
+      throw new Error(`pdftotext timeout (${PDFTOTEXT_TIMEOUT}ms exceeded). PDF pode ser muito complexo.`);
+    }
 
     // 3. VALIDAR RESULTADO DO COMANDO
     if (result.status !== 0 && result.status !== null) {
       const errorMsg = result.stderr || `Exited with code ${result.status}`;
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] pdftotext error:`, {
-        status: result.status,
-        stderr: errorMsg,
-      });
-      throw new Error(`pdftotext failed (${result.status}): ${errorMsg}`);
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] pdftotext exit code ${result.status}`);
+      throw new Error(`pdftotext failed: ${errorMsg.substring(0, 100)}`);
     }
 
     const text = result.stdout || '';
 
     // 4. VALIDAR RESULTADO
     if (!text || text.trim().length === 0) {
-      const errorMsg = 'pdftotext retornou texto vazio - possível PDF corrupto ou sem texto';
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
-      throw new Error(errorMsg);
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] Texto vazio - PDF pode ser sem texto ou imagens`);
+      // Não throw - retornar string vazia é ok
+      return '';
     }
 
     const duration = Date.now() - startTime;
-    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Sucesso! ${text.length} caracteres em ${duration}ms`);
-
+    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] OK: ${text.length}c em ${duration}ms`);
     return text;
+
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-
-    console.error(`${ICONS.ERROR} [extractTextFromPDF] FALHA após ${duration}ms:`, {
-      error: errorMsg,
-      stack: errorStack?.split('\n').slice(0, 3).join('\n'),
-      pdfPath,
-    });
-
+    console.error(`${ICONS.ERROR} [extractTextFromPDF] ERRO após ${duration}ms: ${errorMsg.substring(0, 100)}`);
     throw error;
   }
 }
@@ -180,7 +177,8 @@ function extractProcessNumber(text: string): string | null {
 // ================================================================
 // CONSTANTS
 // ================================================================
-const MAX_PROCESSING_TIME = 25000; // 25 segundos total (Railway timeout é ~30s)
+const PDFTOTEXT_TIMEOUT = 8000; // 8 segundos MAX (Railway ~30s, Vercel ~60s)
+const MAX_PROCESSING_TIME = 25000; // 25 segundos total
 
 // ================================================================
 // ENDPOINT PRINCIPAL
@@ -248,50 +246,59 @@ export async function POST(request: NextRequest) {
     let extractedText = '';
 
     try {
-      console.log(`${ICONS.SUCCESS} Iniciando extração de texto do PDF...`);
+      console.log(`${ICONS.SUCCESS} [POST] Iniciando extração...`);
       extractedText = await extractTextFromPDF(tempFilePath);
-      console.log(`${ICONS.SUCCESS} Texto extraído com sucesso: ${extractedText.length} caracteres`);
+      const duration = Date.now() - processingStartTime;
+      console.log(`${ICONS.SUCCESS} [POST] Extração completa: ${extractedText.length}c em ${duration}ms`);
     } catch (extractError) {
       const errorMsg = extractError instanceof Error ? extractError.message : String(extractError);
-      console.error(`${ICONS.ERROR} Erro na extração de texto:`, {
-        error: errorMsg,
-        stack: extractError instanceof Error ? extractError.stack : undefined,
-      });
-      throw extractError;
+      const duration = Date.now() - processingStartTime;
+
+      console.error(`${ICONS.ERROR} [POST] Erro na extração após ${duration}ms:`, errorMsg.substring(0, 150));
+
+      // Retornar 400 (bad request) em vez de 500 para não resultar em 502
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Falha na extração de PDF',
+          details: errorMsg,
+          reason: errorMsg.includes('timeout')
+            ? 'PDF muito complexo - extração timeout'
+            : 'PDF corrupto ou formato não suportado',
+        },
+        { status: 400 } // Bad Request, não 500 Internal Server Error
+      );
     }
 
     const processingTime = Date.now() - processingStartTime;
 
-    if (!extractedText || extractedText.trim().length < 50) {
-      return NextResponse.json(
-        { error: 'PDF não contém texto suficiente' },
-        { status: 400 }
-      );
+    // PDF com texto vazio é aceitável (pode ser PDF com imagens)
+    if (!extractedText || extractedText.trim().length === 0) {
+      console.log(`${ICONS.SUCCESS} [POST] PDF sem texto (possível PDF de imagens)`);
+      // Não retornar erro - continuar com texto vazio
     }
 
     // 4. LIMPAR TEXTO
     const cleanedText = cleanText(extractedText);
 
-    // 5. EXTRAIR PROCESSO
-    const processNumber = extractProcessNumber(extractedText);
+    // 5. EXTRAIR PROCESSO (mesmo se texto vazio)
+    const processNumber = extractedText ? extractProcessNumber(extractedText) : null;
 
     // 6. PREPARAR RESPOSTA
     const totalTime = Date.now() - startTime;
 
     log('success', 'PDF processed', {
       totalTime: `${totalTime}ms`,
-      processingTime: `${processingTime}ms`,
       textLength: extractedText.length,
-      cleanedLength: cleanedText.length,
-      processNumber: processNumber || 'not found',
+      hasText: extractedText.length > 0,
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        originalText: extractedText,
-        cleanedText: cleanedText,
-        processNumber: processNumber,
+        originalText: extractedText || '',
+        cleanedText: cleanedText || '',
+        processNumber: processNumber || null,
         metrics: {
           originalLength: extractedText.length,
           cleanedLength: cleanedText.length,

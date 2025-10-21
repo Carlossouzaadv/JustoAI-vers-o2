@@ -81,19 +81,26 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        const errorMsg = `HTTP ${response.status}: ${errorText.substring(0, 200)}`;
+
+        // Parse JSON error if possible
+        let errorDetails = errorText;
+        try {
+          const jsonError = JSON.parse(errorText);
+          errorDetails = jsonError.reason || jsonError.details || JSON.stringify(jsonError);
+        } catch (e) {
+          // Not JSON, use raw text
+        }
+
+        const errorMsg = `HTTP ${response.status}: ${errorDetails.substring(0, 200)}`;
         console.error(`${ICONS.ERROR} PDF extraction failed: ${errorMsg}`);
 
-        // Log detalhado para debugging
-        log(`${ICONS.ERROR}`, `Railway error response`, {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText.substring(0, 500),
-          url: url,
+        // Log detalhado para debugging (mais conciso)
+        log(`${ICONS.ERROR}`, `Railway error (${response.status})`, {
+          reason: errorDetails.substring(0, 200),
           duration_ms: Date.now() - startTime,
         });
 
-        throw new Error(`Railway HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`Railway HTTP ${response.status}: ${errorDetails}`);
       }
 
       const result = await response.json();
