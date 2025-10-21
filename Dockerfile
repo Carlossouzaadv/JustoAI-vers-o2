@@ -1,0 +1,43 @@
+# Multi-stage build for Next.js standalone deployment
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY .npmrc* ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps --prefer-offline --no-audit
+
+# Copy source code
+COPY . .
+
+# Build Next.js app (generates .next/ folder)
+RUN npm run build
+
+# Production image
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy built .next folder from builder
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+# Copy public files if they exist
+COPY --from=builder /app/public ./public 2>/dev/null || true
+
+# Set environment
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+# Start the standalone server
+CMD ["node", "server.js"]

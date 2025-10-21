@@ -1,9 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[deploy]
-startCommand = "node .next/standalone/justoai-v2/server.js"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 100
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
