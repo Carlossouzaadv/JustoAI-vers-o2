@@ -748,6 +748,254 @@ node deploy-scripts/03-post-deploy-verify.js
 
 ---
 
+## 🐳 Docker & Railway Deployment Strategy (Multi-Service Architecture)
+
+### Overview
+
+JustoAI V2 uses a **unified Dockerfile** with **multi-service deployment configuration** via `railway.toml`:
+
+```
+Railway Project
+├── Service: justoai-web (Dockerfile - Next.js Standalone)
+│   ├── Build: npm run build → .next/standalone/
+│   ├── Start: node server.js
+│   └── Port: 3000 (with health checks)
+│
+└── Service: justoai-workers (Same Dockerfile - tsx Runner)
+    ├── Build: Same build process
+    ├── Start: npx tsx src/workers/juditOnboardingWorker.ts
+    └── Environment: WORKER_ENABLED=true
+```
+
+### Key Design Decisions
+
+**Why Single Dockerfile?**
+- ✅ Both services use same base image (Debian Bookworm)
+- ✅ Both need: Node.js, npm, dependencies, source code, Prisma
+- ✅ Different `startCommand` in `railway.toml` = different behavior
+- ✅ Simpler to maintain than multiple Dockerfiles
+
+**Why Bookworm (not Alpine)?**
+- ❌ Alpine missing build tools (autoconf, automake) needed by `mozjpeg`
+- ✅ Bookworm (full Debian) has all required build tools
+- ✅ Production image uses `bookworm-slim` (optimized for runtime)
+
+### Dockerfile Architecture
+
+**Build Stage:**
+```dockerfile
+FROM node:18-bookworm AS builder
+- npm install --legacy-peer-deps
+- npx prisma generate (needed before Next.js build)
+- npm run build (generates .next/standalone/)
+```
+
+**Production Stage:**
+```dockerfile
+FROM node:18-bookworm-slim
+- apt-get install openssl (Prisma needs this)
+- Copy .next/standalone/  (for web)
+- Copy src/              (for workers with tsx)
+- Copy tsconfig.json     (for path alias resolution)
+- Copy prisma/schema    (for Prisma)
+- Copy node_modules     (all deps + Query Engine)
+- Copy public/          (static assets)
+```
+
+### Resolved Issues During Deployment
+
+#### 1. **Next.js Standalone Path (`.next/standalone/justoai-v2/`)**
+**Problem:** Next.js generates nested directory `.next/standalone/justoai-v2/server.js`, but start command was pointing to `.next/standalone/server.js`
+
+**Solution:**
+- Updated all configs to correct path: `.next/standalone/justoai-v2/server.js`
+- Removed `.next/` from `.dockerignore` to ensure folder is copied
+
+#### 2. **Prisma Query Engine Not Found**
+**Problem:** `Prisma Client could not locate the Query Engine for runtime`
+
+**Root Cause:** Only partial Prisma directories were being copied, missing the architecture-specific binary
+
+**Solution:**
+```dockerfile
+# Copy entire node_modules (includes .prisma/client binaries)
+COPY --from=builder /app/node_modules ./node_modules
+```
+
+#### 3. **OpenSSL Not Available**
+**Problem:** `Prisma failed to detect the libssl/openssl version to use`
+
+**Solution:**
+```dockerfile
+RUN apt-get update -y && apt-get install -y openssl
+```
+
+#### 4. **mozjpeg Build Failure (Alpine)**
+**Problem:** Alpine image missing autoconf, automake for mozjpeg compilation
+
+**Solution:** Switched to Debian Bookworm with full build tools
+
+#### 5. **TypeScript Path Alias Resolution in Workers**
+**Problem:** Workers running with `npx tsx` couldn't resolve `@/lib` → `src/lib`
+
+**Root Cause:** `tsconfig.json` not in production image
+
+**Solution:**
+```dockerfile
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/tsconfig*.json ./
+COPY --from=builder /app/package.json ./
+```
+
+#### 6. **Railway.toml Service Configuration**
+**Problem:** Multiple services with different Dockerfiles not recognized
+
+**Solution:** Single Dockerfile with `railway.toml` specifying different `startCommand`:
+```toml
+[[services]]
+name = "justoai-web"
+startCommand = "node server.js"
+
+[[services]]
+name = "justoai-workers"
+startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
+```
+
+### Configuration Files
+
+**`Dockerfile`** (37 lines)
+```dockerfile
+# Multi-stage build optimized for both web and workers
+FROM node:18-bookworm AS builder
+...
+FROM node:18-bookworm-slim
+...
+```
+
+**`railway.toml`** (27 lines)
+```toml
+# Service definitions for Railway
+[[services]]
+name = "justoai-web"
+[services.build]
+dockerfile = "Dockerfile"
+[services.deploy]
+startCommand = "node server.js"
+healthcheckPath = "/api/health"
+
+[[services]]
+name = "justoai-workers"
+[services.build]
+dockerfile = "Dockerfile"
+[services.deploy]
+startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
+```
+
+**`.dockerignore`**
+```
+# Removed .next/ - it MUST be copied for standalone mode
+# Removed shell redirections (not supported by Docker COPY)
+```
+
+### Build Process
+
+1. **Node installation:** `npm install --legacy-peer-deps --prefer-offline --no-audit`
+2. **Prisma generation:** `npx prisma generate` (before Next.js build)
+3. **Next.js build:** `npm run build` (creates `.next/standalone/`)
+4. **Multi-stage copy:**
+   - `.next/standalone/` → production `/app/` (web server binary)
+   - `src/` → production `/app/src` (worker source)
+   - `node_modules/` → production (all runtime dependencies)
+   - `tsconfig.json` → production (path aliases)
+
+### Service Startup
+
+**Web Service:**
+```bash
+cd /app
+node server.js
+# Listens on PORT 3000, responds to GET /api/health
+```
+
+**Worker Service:**
+```bash
+cd /app
+npx tsx src/workers/juditOnboardingWorker.ts
+# Connects to Redis and consumes JUDIT jobs
+```
+
+### Performance & Size
+
+**Image Sizes:**
+- Builder stage: ~1.8GB (with full build tools)
+- Production stage: ~850MB (bookworm-slim + node_modules + app)
+- Compressed layer: ~300-400MB
+
+**Build Time:**
+- Clean build: 4-5 minutes (npm install + build)
+- Cached rebuild: 30-60 seconds
+
+### Environment Variables by Service
+
+**Web Service (justoai-web):**
+```bash
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://...
+REDIS_URL=rediss://...
+NEXT_PUBLIC_SUPABASE_URL=...
+# API-specific configurations
+```
+
+**Worker Service (justoai-workers):**
+```bash
+NODE_ENV=production
+DATABASE_URL=postgresql://...
+REDIS_URL=rediss://...
+JUDIT_API_KEY=...
+JUDIT_API_BASE_URL=...
+# Worker-specific configurations
+```
+
+### Deployment Steps
+
+1. **Push to main branch**
+   ```bash
+   git add Dockerfile railway.toml .dockerignore
+   git commit -m "feat(deploy): configure unified dockerfile and railway services"
+   git push origin main
+   ```
+
+2. **Railway detects changes**
+   - Reads `railway.toml`
+   - Builds both services using single `Dockerfile`
+   - Applies different `startCommand` to each service
+
+3. **Monitoring**
+   - Web service: Health checks at `/api/health` (30s interval)
+   - Worker service: Job processing with error handling
+   - Both services: Structured logs with `[WEB]` / `[WORKER]` prefixes
+
+### Troubleshooting
+
+**If web service crashes:**
+1. Check logs: `railway logs justoai-web`
+2. Verify `/api/health` returns 200
+3. Check environment variables are set
+
+**If workers don't process jobs:**
+1. Check REDIS_URL is valid
+2. Verify DATABASE_URL connectivity
+3. Check worker logs: `railway logs justoai-workers`
+4. Ensure JUDIT_API_KEY is configured
+
+**Build failures:**
+1. Clear Docker cache: `railway build --no-cache`
+2. Check npm install output for dependency conflicts
+3. Verify all environment variables are present
+
+---
+
 ## 🚀 Railway Workers Deployment (Separate Service)
 
 ### Quick Overview

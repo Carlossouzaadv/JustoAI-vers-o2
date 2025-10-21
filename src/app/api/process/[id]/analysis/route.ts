@@ -342,7 +342,8 @@ async function processAnalysisInBackground(
       modelVersion,
       promptSignature,
       mockResult,
-      lastMovementDate
+      lastMovementDate,
+      workspaceId
     );
 
     // Log usage event

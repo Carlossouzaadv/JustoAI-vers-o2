@@ -339,7 +339,7 @@ export async function POST(request: NextRequest) {
     const promptSignature = 'legal-document-analysis-v2';
 
     const cacheResult = await cacheManager.checkAnalysisCache(
-      hashResult.textSha,
+      [hashResult.textSha],
       modelVersion,
       promptSignature
     );
@@ -379,10 +379,11 @@ export async function POST(request: NextRequest) {
 
         // Salvar no cache
         await cacheManager.saveAnalysisCache(
-          hashResult.textSha,
+          [hashResult.textSha],
           modelVersion,
           promptSignature,
           aiAnalysisResult,
+          undefined, // lastMovementDate (optional, not available at upload time)
           workspaceId
         );
 
