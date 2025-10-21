@@ -25,8 +25,8 @@ FROM node:18-bookworm-slim
 
 WORKDIR /app
 
-# Install runtime dependencies (OpenSSL required by Prisma)
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies (OpenSSL required by Prisma, poppler-utils for PDF extraction)
+RUN apt-get update -y && apt-get install -y openssl poppler-utils && rm -rf /var/lib/apt/lists/*
 
 # Copy built .next folder from builder
 COPY --from=builder /app/.next/standalone ./
