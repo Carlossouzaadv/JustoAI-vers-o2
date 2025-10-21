@@ -1,5 +1,5 @@
 # Multi-stage build for Next.js standalone deployment
-FROM node:18-alpine AS builder
+FROM node:18-bookworm AS builder
 
 WORKDIR /app
 
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY .npmrc* ./
 
-# Install dependencies
+# Install dependencies (mozjpeg needs build tools available in bookworm)
 RUN npm install --legacy-peer-deps --prefer-offline --no-audit
 
 # Copy source code
@@ -16,8 +16,8 @@ COPY . .
 # Build Next.js app (generates .next/ folder)
 RUN npm run build
 
-# Production image
-FROM node:18-alpine
+# Production image - use slim variant to reduce size
+FROM node:18-bookworm-slim
 
 WORKDIR /app
 
