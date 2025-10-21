@@ -1,0 +1,20 @@
+# Nixpacks configuration for JustoAI V2
+# Override default behaviors to fix npm install issues
+
+[phases.install]
+# Use 'npm install' instead of 'npm ci' for better compatibility
+# npm ci is strict about lock file sync, which causes issues in Railway
+# npm install is more forgiving and will fix minor mismatches
+cmds = ["npm install --legacy-peer-deps --prefer-offline --no-audit"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[phases.start]
+# Start the correct service based on environment
+cmd = "node server.js"
+
+[env]
+PORT = "3000"
+HOSTNAME = "0.0.0.0"
+NODE_ENV = "production"
