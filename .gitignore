@@ -90,4 +90,3 @@ Thumbs.db
 # Cache directories
 .cache/
 .parcel-cache/
-package-lock.json
