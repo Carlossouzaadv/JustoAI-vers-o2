@@ -1,128 +1,29 @@
-# ========================================
-# JustoAI V2 - Workers Dockerfile
-# ========================================
-# Minimal workers service for background jobs (BullMQ)
-# No Next.js frontend - only Node.js backend logic
-#
-# Key Optimizations:
-# - Production-only dependencies via --omit=dev
-# - Selective file copying (only what workers need)
-# - Alpine base for minimal image
-# - Non-root user for security
-#
-# Expected image size: ~150-180MB (down from 400MB+)
-# ========================================
+# Worker service - runs background jobs with tsx
+FROM node:18-bookworm-slim
 
-FROM node:20-alpine AS base
-
-# Install system dependencies (openssl for TLS)
-RUN apk add --no-cache libc6-compat openssl && \
-    npm install -g npm@latest
-
-# ========================================
-# STAGE 1: Install Build Dependencies
-# ========================================
-FROM base AS deps
 WORKDIR /app
+
+# Install runtime dependencies (OpenSSL required by Prisma, build tools for tsx)
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
-COPY package.json package-lock.json ./
+COPY package*.json ./
+COPY .npmrc* ./
 
-# Install ALL dependencies (dev + prod needed to determine prod deps)
-RUN npm ci --legacy-peer-deps
+# Install dependencies
+RUN npm install --legacy-peer-deps --prefer-offline --no-audit
 
-# ========================================
-# STAGE 2: Install Production Dependencies Only
-# ========================================
-FROM base AS prod-deps
-WORKDIR /app
+# Copy source code (workers need src/)
+COPY src ./src
 
-# Copy package files
-COPY package.json package-lock.json ./
-
-# Install ONLY production dependencies
-# --omit=dev skips: typescript, jest, @types/*, etc
-# This saves ~100-150MB
-RUN npm ci --omit=dev --legacy-peer-deps && \
-    npm cache clean --force
-
-# ========================================
-# STAGE 3: Generate Prisma Client
-# ========================================
-FROM base AS prisma-gen
-WORKDIR /app
-
-# Copy package and build dependencies
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json ./
+# Copy Prisma schema
 COPY prisma ./prisma
 
-# Generate Prisma Client (required for database operations)
+# Generate Prisma Client
 RUN npx prisma generate
 
-# ========================================
-# STAGE 4: Production Runtime (MINIMAL)
-# ========================================
-FROM base AS runtime
-WORKDIR /app
-
+# Set environment
 ENV NODE_ENV=production
-# Cache-bust timestamp: 2025-10-20T15:35:00Z
-RUN echo "Building workers container..."
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 workers
-
-# ========================================
-# Copy Application Files - SELECTIVE
-# ========================================
-
-# 1. Production dependencies only (not dev dependencies)
-COPY --from=prod-deps /app/node_modules ./node_modules
-
-# 2. Prisma Client + Engine
-COPY --from=prisma-gen /app/node_modules/.prisma ./node_modules/.prisma
-
-# 3. Package.json (for reference)
-COPY package.json ./
-
-# 3b. TypeScript config (required for tsconfig-paths path resolution at runtime)
-COPY tsconfig.json ./
-
-# 4. Minimal prisma schema (for potential migrations/debugging)
-COPY prisma/schema.prisma ./prisma/
-
-# 5. Only worker source code and all lib files
-# Adding aggressive cache-bust to ensure fresh COPY (build: 2025-10-20T16:40:00Z)
-COPY src/ ./src/
-RUN test -f /app/src/workers/juditOnboardingWorker.ts && echo "✅ Worker file verified" || (echo "❌ FATAL: Worker file missing!" && exit 1)
-RUN test -f /app/src/lib/observability/logger.ts && echo "✅ Logger file verified" || (echo "⚠️  WARNING: Logger file missing - checking directory..." && ls -la /app/src/lib/ 2>/dev/null | head -20)
-
-# ========================================
-# Cleanup & Security
-# ========================================
-
-# Re-generate Prisma Client at runtime to ensure compatibility
-RUN npx prisma generate
-
-# Set ownership and permissions
-RUN chown -R workers:nodejs /app && chmod -R 755 /app && \
-    # Remove unnecessary files that slipped through
-    find /app/node_modules -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
-    find /app/node_modules -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true
-
-USER workers
-
-# ========================================
-# Container Configuration
-# ========================================
-
-# Health check - verifies worker process is running
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-  CMD pgrep -f "juditOnboardingWorker" || exit 1
-
-# Run worker directly with tsx (compiles TS on-the-fly)
-# -r tsconfig-paths/register enables TypeScript path aliases (@/lib/*)
-# No build step needed - faster startup
-CMD ["npx", "tsx", "-r", "tsconfig-paths/register", "src/workers/juditOnboardingWorker.ts"]
+# Run the worker
+CMD ["npx", "tsx", "src/workers/juditOnboardingWorker.ts"]

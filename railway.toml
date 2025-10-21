@@ -1,0 +1,26 @@
+# Railway configuration for JustoAI V2
+# Separate services for web and workers
+
+[[services]]
+name = "justoai-web"
+
+[services.build]
+dockerfile = "Dockerfile"
+context = "."
+
+[services.deploy]
+startCommand = "node server.js"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+
+[[services]]
+name = "justoai-workers"
+
+[services.build]
+dockerfile = "Dockerfile.workers"
+context = "."
+
+[services.deploy]
+startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
