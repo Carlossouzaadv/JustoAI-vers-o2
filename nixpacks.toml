@@ -11,8 +11,9 @@ cmds = ["npm install --legacy-peer-deps --prefer-offline --no-audit"]
 cmds = ["npm run build"]
 
 [phases.start]
-# Start the correct service based on environment
-cmd = "node server.js"
+# Start Next.js standalone server
+# Next.js standalone build outputs to .next/standalone/
+cmd = "node .next/standalone/server.js"
 
 [env]
 PORT = "3000"
