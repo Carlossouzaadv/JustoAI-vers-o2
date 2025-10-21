@@ -33,8 +33,8 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
-# Copy public files if they exist
-COPY --from=builder /app/public ./public 2>/dev/null || true
+# Copy public files
+COPY --from=builder /app/public ./public
 
 # Set environment
 ENV NODE_ENV=production
