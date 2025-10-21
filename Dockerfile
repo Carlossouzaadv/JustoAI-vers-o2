@@ -32,6 +32,11 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# Copy configuration files (needed for tsx to resolve path aliases)
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/tsconfig*.json ./
+COPY --from=builder /app/package.json ./
+
 # Copy source code (needed for workers which use tsx)
 COPY --from=builder /app/src ./src
 
