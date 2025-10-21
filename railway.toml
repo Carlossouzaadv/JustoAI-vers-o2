@@ -2,16 +2,21 @@
 # JustoAI V2 - Railway Configuration
 # Multi-service deployment: API + Workers
 # ================================================================
+# IMPORTANT: Services MUST be ordered with API first
+# Railway builds in order, service names must match environment names
 
 # ================================================================
 # SERVICE 1: API (Web Frontend + Backend)
+# CRITICAL: Must use Dockerfile.api (NOT Dockerfile)
 # ================================================================
 [[services]]
 name = "justoai-v2-api"
 
 [services.build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.api"
+# EXPLICIT: Use .api extension to avoid confusion
+# Railway was using wrong Dockerfile - force clarity
+dockerfilePath = "./Dockerfile.api"
 
 [services.deploy]
 startCommand = "node server.js"
