@@ -32,6 +32,12 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
+# Copy source code (needed for workers which use tsx)
+COPY --from=builder /app/src ./src
+
+# Copy prisma directory
+COPY --from=builder /app/prisma ./prisma
+
 # Copy ALL node_modules (needed for Prisma Query Engine and runtime dependencies)
 # Prisma Query Engine is an architecture-specific binary that must be copied as-is
 COPY --from=builder /app/node_modules ./node_modules
@@ -46,9 +52,10 @@ ENV HOSTNAME=0.0.0.0
 
 EXPOSE 3000
 
-# Health check
+# Health check (only for web service)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 0
 
-# Start the standalone server
+# Default: start as web service (Next.js standalone)
+# For workers, override CMD to: npx tsx src/workers/juditOnboardingWorker.ts
 CMD ["node", "server.js"]

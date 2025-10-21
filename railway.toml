@@ -17,7 +17,7 @@ healthcheckTimeout = 100
 name = "justoai-workers"
 
 [services.build]
-dockerfile = "Dockerfile.workers"
+dockerfile = "Dockerfile"
 context = "."
 
 [services.deploy]
