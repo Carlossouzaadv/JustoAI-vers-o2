@@ -147,7 +147,7 @@ async function extractTextFromPDF(pdfPath: string): Promise<string> {
 function cleanText(text: string): string {
   if (!text) return '';
 
-  let cleaned = text
+  const cleaned = text
     .replace(/\n{3,}/g, '\n\n') // Reduz quebras de linha múltiplas
     .replace(/\s{2,}/g, ' ') // Reduz espaços múltiplos
     .trim();
@@ -226,15 +226,19 @@ export async function POST(request: NextRequest) {
     // If it succeeds quickly, return result
     // If it times out, return success anyway with empty text
     let extractedText = '';
+    let extractionTimeMs = 0;
     try {
+      const extractionStart = Date.now();
       const fastTimeout = 5000; // 5 seconds only
       const result = executeWithTimeout('pdftotext', [tempFilePath, '-'], fastTimeout);
+      extractionTimeMs = Date.now() - extractionStart;
 
       if (result.status === 0) {
         extractedText = result.stdout || '';
       }
     } catch (quickError) {
       // Timeout or error - just continue with empty text
+      extractionTimeMs = Date.now() - startTime;
       console.warn('Fast extraction failed, continuing with empty text');
       extractedText = '';
     }
@@ -264,7 +268,7 @@ export async function POST(request: NextRequest) {
         metrics: {
           originalLength: extractedText.length,
           cleanedLength: cleanedText.length,
-          extractionTimeMs: processingTime,
+          extractionTimeMs: extractionTimeMs,
           totalTimeMs: totalTime,
         },
       },
