@@ -14,10 +14,17 @@
 
 FROM node:20-alpine AS base
 
+# Build arguments to force cache invalidation on rebuilds
+# Use: docker build --build-arg BUILD_TIMESTAMP="$(date +%s)"
+ARG BUILD_TIMESTAMP=latest
+ARG BUILD_ID=unknown
+RUN echo "Build timestamp: $BUILD_TIMESTAMP, Build ID: $BUILD_ID"
+
 # Install system dependencies once in base
 # Only essentials: libc6-compat + openssl + poppler-utils for PDF extraction
 RUN apk add --no-cache libc6-compat openssl poppler-utils && \
-    npm install -g npm@latest
+    npm install -g npm@latest && \
+    echo "System dependencies installed: libc6-compat, openssl, poppler-utils"
 
 # ========================================
 # STAGE 1: Install Build Dependencies
@@ -87,30 +94,31 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # ========================================
-# Copy Application Files - SELECTIVE & OPTIMIZED
+# Copy Application Files - NEXT.JS STANDALONE
 # ========================================
+# NOTE: Next.js standalone output creates everything in one directory structure
+# DO NOT split across multiple paths - this breaks route resolution
 
-# 1. Next.js standalone build (optimized + bundled)
-COPY --from=builder /app/.next/standalone ./
+# 1. Copy Next.js standalone build output (includes server.js)
+# The standalone build contains: server.js, .next, node_modules references
+COPY --from=builder /app/.next/standalone .
 
-# 2. Next.js static assets
-COPY --from=builder /app/.next/static ./justoai-v2/.next/static
+# 2. Copy Next.js static assets (required for client-side)
+COPY --from=builder /app/.next/static ./.next/static
 
-# 3. Public files (favicon, etc)
-COPY --from=builder /app/public ./justoai-v2/public
+# 3. Copy public files
+COPY --from=builder /app/public ./public
 
-# 4. Production-only node_modules (smaller than full install)
-COPY --from=prod-deps /app/node_modules ./justoai-v2/node_modules
+# 4. Copy production dependencies into node_modules
+# IMPORTANT: .next/standalone expects node_modules at ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 
-# 5. Prisma Client + Engine (needed for database operations)
-# Selective copy: only .prisma folder (not full prisma directory)
-COPY --from=builder /app/node_modules/.prisma ./justoai-v2/node_modules/.prisma
+# 5. Copy Prisma Client
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# 6. Package.json only (for reference)
-COPY --from=builder /app/package.json ./justoai-v2/
-
-# 7. TypeScript config (required for tsconfig-paths path resolution at runtime)
-COPY --from=builder /app/tsconfig.json ./justoai-v2/
+# 6. Copy package.json and tsconfig for path resolution
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/tsconfig.json ./
 
 # ========================================
 # Cleanup & Security
@@ -139,5 +147,28 @@ ENV HOSTNAME=0.0.0.0
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start server from standalone directory (server.js is in /app root)
-CMD ["node", "server.js"]
+# Create startup script that verifies dependencies
+RUN mkdir -p /app/startup && cat > /app/startup/check-deps.sh << 'EOF'
+#!/bin/sh
+echo "=== Checking Runtime Dependencies ==="
+echo "✅ Checking pdftotext..."
+if ! which pdftotext > /dev/null 2>&1; then
+  echo "❌ ERROR: pdftotext NOT found in PATH"
+  exit 1
+fi
+PDFTOTEXT_VERSION=$(pdftotext -v 2>&1 | head -1)
+echo "✅ pdftotext found: $PDFTOTEXT_VERSION"
+
+echo "✅ Checking node..."
+node --version
+
+echo "✅ Checking /app contents..."
+ls -la /app/ | head -20
+
+echo "✅ All dependencies OK, starting server..."
+exec node server.js
+EOF
+chmod +x /app/startup/check-deps.sh
+
+# Start server with dependency checks
+CMD ["/app/startup/check-deps.sh"]
