@@ -6,11 +6,11 @@
 # Railway builds in order, service names must match environment names
 
 # ================================================================
-# SERVICE 1: API (Web Frontend + Backend)
+# SERVICE 1: Web API (justoai-web)
 # CRITICAL: Must use Dockerfile.api (NOT Dockerfile)
 # ================================================================
 [[services]]
-name = "justoai-v2-api"
+name = "justoai-web"
 
 [services.build]
 builder = "DOCKERFILE"
@@ -26,14 +26,15 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 # ================================================================
-# SERVICE 2: JUDIT ONBOARDING WORKER
+# SERVICE 2: Background Workers (justoai-workers)
+# EXPLICIT: Use Dockerfile.workers (renamed from Dockerfile)
 # ================================================================
 [[services]]
-name = "justoai-v2-workers"
+name = "justoai-workers"
 
 [services.build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "./Dockerfile.workers"
 
 [services.deploy]
 startCommand = "npx tsx src/workers/juditOnboardingWorker.ts"
