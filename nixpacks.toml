@@ -1,0 +1,13 @@
+[phases.install]
+cmds = ["npm install --legacy-peer-deps --prefer-offline --no-audit"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[phases.start]
+cmd = "node .next/standalone/justoai-v2/server.js"
+
+[env]
+PORT = "3000"
+HOSTNAME = "0.0.0.0"
+NODE_ENV = "production"

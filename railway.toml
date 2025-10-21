@@ -1,15 +1,7 @@
-# ================================================================
-# JustoAI V2 - Railway Configuration
-# Single web service using Procfile for process management
-# ================================================================
+[build]
+builder = "nixpacks"
 
-[[services]]
-name = "justoai-web"
-
-[services.build]
-builder = "NIXPACKS"
-
-[services.deploy]
+[deploy]
 startCommand = "node .next/standalone/justoai-v2/server.js"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 100
