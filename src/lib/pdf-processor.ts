@@ -10,6 +10,14 @@ import { prisma } from './prisma';
 const ICONS = {
   SUCCESS: '✅',
   ERROR: '❌',
+  PDF: '📄',
+  RAILWAY: '🚂',
+  INFO: 'ℹ️',
+  DOWNLOAD: '⬇️',
+  PROCESS: '⚙️',
+  WARNING: '⚠️',
+  EXTRACT: '📝',
+  VERCEL: '▲',
 };
 
 const DEBUG = process.env.DEBUG === 'true';
@@ -18,16 +26,25 @@ const DEBUG = process.env.DEBUG === 'true';
 // LOGGER MINIMALISTA
 // ================================================================
 function log(prefix: string, message: string, data?: any) {
-  if (DEBUG && data) {
-    console.log(`${prefix} ${message}`, JSON.stringify(data, null, 2));
-  } else if (process.env.NODE_ENV === 'development' || message.includes('Error')) {
-    console.log(`${prefix} ${message}`);
+  const timestamp = new Date().toISOString().split('T')[1]; // HH:MM:SS.mmm
+
+  if (data) {
+    console.log(`[${timestamp}] ${prefix} ${message}`, JSON.stringify(data, null, 2));
+  } else if (process.env.NODE_ENV === 'development' || DEBUG || message.includes('Error')) {
+    console.log(`[${timestamp}] ${prefix} ${message}`);
   }
 }
 
 // Obter URL base do serviço PDF (Railway ou localhost)
 function getPdfProcessorUrl(): string {
-  return process.env.PDF_PROCESSOR_URL || 'http://localhost:3001';
+  const url = process.env.PDF_PROCESSOR_URL || 'http://localhost:3000';
+
+  // Log da URL (sem valores sensíveis)
+  if (DEBUG) {
+    console.log(`${ICONS.INFO} PDF_PROCESSOR_URL configurada como: ${url}`);
+  }
+
+  return url;
 }
 
 // ================================================================
@@ -39,29 +56,73 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
   const url = `${baseUrl}/api/pdf/process`;
 
   try {
+    log(`${ICONS.RAILWAY}`, `Iniciando extração via Railway: ${fileName}`, {
+      buffer_size: buffer.length,
+      url: url,
+    });
+
     // Criar FormData
     const formData = new FormData();
     const blob = new Blob([buffer], { type: 'application/pdf' });
     formData.append('file', blob, fileName);
 
-    // Fazer requisição
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      timeout: 60000, // 60 segundos timeout
+    // Fazer requisição com melhor tratamento de timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const errorMsg = `HTTP ${response.status}: ${errorText.substring(0, 200)}`;
+        console.error(`${ICONS.ERROR} PDF extraction failed: ${errorMsg}`);
+
+        // Log detalhado para debugging
+        log(`${ICONS.ERROR}`, `Railway error response`, {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText.substring(0, 500),
+          url: url,
+          duration_ms: Date.now() - startTime,
+        });
+
+        throw new Error(`Railway HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      log(`${ICONS.SUCCESS}`, `PDF processado com sucesso`, {
+        duration_ms: Date.now() - startTime,
+        text_length: result.data?.cleanedText?.length || 0,
+        file_name: fileName,
+      });
+
+      return result.data;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
+    }
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    const errorMsg = (error as any)?.message || 'Erro desconhecido';
+
+    console.error(`${ICONS.ERROR} Railway error (${duration}ms): ${errorMsg}`);
+
+    log(`${ICONS.ERROR}`, `Erro ao chamar Railway`, {
+      error: errorMsg,
+      file_name: fileName,
+      buffer_size: buffer.length,
+      url: url,
+      duration_ms: duration,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`${ICONS.ERROR} PDF extraction failed: ${response.status} - ${errorText.substring(0, 100)}`);
-      throw new Error(`Railway error ${response.status}`);
-    }
-
-    const result = await response.json();
-    log(`${ICONS.SUCCESS}`, `PDF processed (${Date.now() - startTime}ms)`);
-    return result.data;
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Railway error: ${(error as any)?.message}`);
     throw error;
   }
 }
@@ -714,15 +775,43 @@ export class PDFProcessor {
 // ================================================================
 
 /**
- * Standalone function for PDF text extraction
- * Wrapper around PDFProcessor.extractText for backward compatibility
+ * Standalone function for PDF text extraction from file path
+ * Reads file from disk and extracts text via Railway
+ * Used by juditAttachmentProcessor and other file-based PDF operations
  */
 export async function extractTextFromPDF(
-  buffer: Buffer,
+  bufferOrPath: Buffer | string,
   fileName: string = 'document.pdf'
 ): Promise<ExtractionResult> {
-  const processor = new PDFProcessor()
-  return processor.extractText(buffer, fileName)
+  try {
+    let buffer: Buffer;
+    let finalFileName = fileName;
+
+    // Handle both Buffer and file path inputs
+    if (typeof bufferOrPath === 'string') {
+      // It's a file path
+      const fs = await import('fs/promises');
+      buffer = await fs.readFile(bufferOrPath);
+      // Extract filename from path if not provided
+      finalFileName = bufferOrPath.split('/').pop() || fileName;
+      log(`${ICONS.PDF}`, `Lido arquivo do caminho: ${bufferOrPath} (${buffer.length} bytes)`);
+    } else {
+      // It's a Buffer
+      buffer = bufferOrPath;
+    }
+
+    const processor = new PDFProcessor();
+    const result = await processor.extractText(buffer, finalFileName);
+
+    if (!result.success) {
+      throw new Error(`Extração falhou: ${result.text ? 'sem texto' : 'erro desconhecido'}`);
+    }
+
+    return result;
+  } catch (error) {
+    log(`${ICONS.ERROR}`, `Erro na extração de PDF: ${(error as any)?.message}`);
+    throw error;
+  }
 }
 
 /**

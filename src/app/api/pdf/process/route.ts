@@ -10,7 +10,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 
 const ICONS = {
   SUCCESS: '✅',
@@ -33,16 +33,65 @@ function log(level: 'error' | 'success', message: string, data?: any) {
 }
 
 // ================================================================
-// PDF EXTRACTION - Using system pdftotext command (no Node.js issues)
+// PDF EXTRACTION - Using system pdftotext command (from poppler-utils)
 // ================================================================
 async function extractTextFromPDF(pdfPath: string): Promise<string> {
+  const startTime = Date.now();
   try {
-    // Use pdftotext command-line tool (from poppler-utils)
+    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Iniciando extração com pdftotext: ${pdfPath}`);
+
+    // Verificar se arquivo existe
+    try {
+      await fs.stat(pdfPath);
+    } catch (statError) {
+      const errorMsg = `Arquivo não encontrado: ${pdfPath}`;
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+
+    // Usar pdftotext command-line tool (from poppler-utils)
+    // Note: pdftotext lê de um arquivo e imprime em stdout
     const command = `pdftotext "${pdfPath}" -`;
-    const text = execSync(command, { encoding: 'utf-8' });
+
+    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Executando: ${command}`);
+
+    let text = '';
+    try {
+      text = execSync(command, {
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024, // 10MB max
+        timeout: 30000, // 30 segundos timeout
+      });
+    } catch (execError: any) {
+      const errorMsg = execError?.stderr?.toString() || execError?.message || 'Erro desconhecido';
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] pdftotext falhou:`, {
+        error: errorMsg,
+        command,
+        code: execError?.code,
+      });
+
+      throw new Error(`pdftotext error: ${errorMsg}`);
+    }
+
+    if (!text || text.trim().length === 0) {
+      const errorMsg = 'pdftotext retornou texto vazio';
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Sucesso! ${text.length} caracteres em ${duration}ms`);
+
     return text;
   } catch (error) {
-    log('error', 'PDF extraction failed', { error: (error as any)?.message });
+    const duration = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+
+    console.error(`${ICONS.ERROR} [extractTextFromPDF] Erro após ${duration}ms:`, {
+      error: errorMsg,
+      pdfPath,
+    });
+
     throw error;
   }
 }
@@ -88,21 +137,42 @@ export async function POST(request: NextRequest) {
   let tempFilePath: string | null = null;
 
   try {
-    // 1. PARSEAR MULTIPART FORM DATA
+    // 1. VALIDAR CONTENT-TYPE
     const contentType = request.headers.get('content-type');
+    console.log(`${ICONS.SUCCESS} POST /api/pdf/process recebido`, {
+      contentType,
+      method: request.method,
+      url: request.url,
+    });
+
     if (!contentType?.includes('multipart/form-data')) {
+      console.error(`${ICONS.ERROR} Content-Type inválido: ${contentType}`);
       return NextResponse.json(
         { error: 'Content-Type deve ser multipart/form-data' },
         { status: 400 }
       );
     }
 
-    const formData = await request.formData();
+    // 2. PARSEAR FORM DATA
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch (parseError) {
+      console.error(`${ICONS.ERROR} Erro ao parsear FormData:`, parseError);
+      return NextResponse.json(
+        { error: 'Erro ao processar multipart/form-data' },
+        { status: 400 }
+      );
+    }
+
     const file = formData.get('file') as File;
 
     if (!file) {
+      console.error(`${ICONS.ERROR} Arquivo não encontrado no FormData`);
       return NextResponse.json({ error: 'Arquivo não enviado' }, { status: 400 });
     }
+
+    console.log(`${ICONS.SUCCESS} Arquivo recebido: ${file.name} (${file.size} bytes)`);
 
     // 2. SALVAR ARQUIVO TEMPORÁRIO
     const tempDir = join(tmpdir(), 'justoai-pdfs');
@@ -123,8 +193,15 @@ export async function POST(request: NextRequest) {
     let extractedText = '';
 
     try {
+      console.log(`${ICONS.SUCCESS} Iniciando extração de texto do PDF...`);
       extractedText = await extractTextFromPDF(tempFilePath);
+      console.log(`${ICONS.SUCCESS} Texto extraído com sucesso: ${extractedText.length} caracteres`);
     } catch (extractError) {
+      const errorMsg = extractError instanceof Error ? extractError.message : String(extractError);
+      console.error(`${ICONS.ERROR} Erro na extração de texto:`, {
+        error: errorMsg,
+        stack: extractError instanceof Error ? extractError.stack : undefined,
+      });
       throw extractError;
     }
 
@@ -170,15 +247,25 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const totalTime = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+
+    console.error(`${ICONS.ERROR} [POST /api/pdf/process] Erro geral após ${totalTime}ms:`, {
+      error: errorMsg,
+      stack: stack?.substring(0, 500),
+    });
+
     log('error', 'PDF processing failed', {
-      error: (error as any)?.message,
+      error: errorMsg,
       totalTime: `${totalTime}ms`,
     });
 
     return NextResponse.json(
       {
+        success: false,
         error: 'Erro ao processar PDF',
-        details: (error as any)?.message,
+        details: errorMsg,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
