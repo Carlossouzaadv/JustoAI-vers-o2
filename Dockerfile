@@ -25,13 +25,16 @@ FROM node:18-bookworm-slim
 
 WORKDIR /app
 
+# Install runtime dependencies (OpenSSL required by Prisma)
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 # Copy built .next folder from builder
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy Prisma client (needed for runtime if APIs use DB)
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+# Copy ALL node_modules (needed for Prisma Query Engine and runtime dependencies)
+# Prisma Query Engine is an architecture-specific binary that must be copied as-is
+COPY --from=builder /app/node_modules ./node_modules
 
 # Copy public files
 COPY --from=builder /app/public ./public
