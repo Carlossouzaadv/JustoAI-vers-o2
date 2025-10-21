@@ -15,20 +15,71 @@ import { execSync, spawnSync } from 'child_process';
 const ICONS = {
   SUCCESS: '✅',
   ERROR: '❌',
+  TIMER: '⏱️',
 };
-
-// ================================================================
-// NO POLYFILLS - Use pdfjs-dist and pdf-parse as-is
-// ================================================================
 
 // ================================================================
 // MINIMALIST LOGGER - Only errors and critical status
 // ================================================================
 function log(level: 'error' | 'success', message: string, data?: any) {
+  const timestamp = new Date().toISOString().split('T')[1]; // HH:MM:SS.mmm
+
   if (level === 'error') {
-    console.error(`${ICONS.ERROR} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    console.error(`[${timestamp}] ${ICONS.ERROR} ${message}`, data ? JSON.stringify(data, null, 2) : '');
   } else if (level === 'success') {
-    console.log(`${ICONS.SUCCESS} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    console.log(`[${timestamp}] ${ICONS.SUCCESS} ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  }
+}
+
+// ================================================================
+// TIMEOUT HELPER - Execute command with timeout protection
+// ================================================================
+function executeWithTimeout(
+  command: string,
+  args: string[],
+  timeoutMs: number = 15000
+): { stdout: string; stderr: string; status: number | null } {
+  const startTime = Date.now();
+  console.log(`${ICONS.TIMER} [executeWithTimeout] Iniciando: ${command} (timeout: ${timeoutMs}ms)`);
+
+  try {
+    const result = spawnSync(command, args, {
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024, // 10MB
+      timeout: timeoutMs,
+    });
+
+    const duration = Date.now() - startTime;
+
+    if (result.error) {
+      console.error(`${ICONS.ERROR} [executeWithTimeout] Spawn error após ${duration}ms:`, {
+        error: result.error.message,
+        code: result.error.code,
+      });
+      throw result.error;
+    }
+
+    if (result.signal) {
+      console.error(`${ICONS.ERROR} [executeWithTimeout] Process killed após ${duration}ms:`, {
+        signal: result.signal,
+      });
+      throw new Error(`Process killed by signal: ${result.signal}`);
+    }
+
+    console.log(`${ICONS.SUCCESS} [executeWithTimeout] Completo em ${duration}ms (status: ${result.status})`);
+
+    return {
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+      status: result.status,
+    };
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error(`${ICONS.ERROR} [executeWithTimeout] Falha após ${duration}ms:`, {
+      error: (error as any)?.message,
+      command,
+    });
+    throw error;
   }
 }
 
@@ -40,41 +91,36 @@ async function extractTextFromPDF(pdfPath: string): Promise<string> {
   try {
     console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Iniciando extração com pdftotext: ${pdfPath}`);
 
-    // Verificar se arquivo existe
+    // 1. VERIFICAR SE ARQUIVO EXISTE
     try {
       await fs.stat(pdfPath);
+      console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Arquivo encontrado, iniciando extração`);
     } catch (statError) {
       const errorMsg = `Arquivo não encontrado: ${pdfPath}`;
       console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
       throw new Error(errorMsg);
     }
 
-    // Usar pdftotext command-line tool (from poppler-utils)
-    // Note: pdftotext lê de um arquivo e imprime em stdout
-    const command = `pdftotext "${pdfPath}" -`;
+    // 2. EXECUTAR PDFTOTEXT COM PROTEÇÕES
+    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Calling executeWithTimeout`);
 
-    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Executando: ${command}`);
+    const result = executeWithTimeout('pdftotext', [pdfPath, '-'], 15000); // 15s timeout
 
-    let text = '';
-    try {
-      text = execSync(command, {
-        encoding: 'utf-8',
-        maxBuffer: 10 * 1024 * 1024, // 10MB max
-        timeout: 30000, // 30 segundos timeout
+    // 3. VALIDAR RESULTADO DO COMANDO
+    if (result.status !== 0 && result.status !== null) {
+      const errorMsg = result.stderr || `Exited with code ${result.status}`;
+      console.error(`${ICONS.ERROR} [extractTextFromPDF] pdftotext error:`, {
+        status: result.status,
+        stderr: errorMsg,
       });
-    } catch (execError: any) {
-      const errorMsg = execError?.stderr?.toString() || execError?.message || 'Erro desconhecido';
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] pdftotext falhou:`, {
-        error: errorMsg,
-        command,
-        code: execError?.code,
-      });
-
-      throw new Error(`pdftotext error: ${errorMsg}`);
+      throw new Error(`pdftotext failed (${result.status}): ${errorMsg}`);
     }
 
+    const text = result.stdout || '';
+
+    // 4. VALIDAR RESULTADO
     if (!text || text.trim().length === 0) {
-      const errorMsg = 'pdftotext retornou texto vazio';
+      const errorMsg = 'pdftotext retornou texto vazio - possível PDF corrupto ou sem texto';
       console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
       throw new Error(errorMsg);
     }
@@ -86,9 +132,11 @@ async function extractTextFromPDF(pdfPath: string): Promise<string> {
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
 
-    console.error(`${ICONS.ERROR} [extractTextFromPDF] Erro após ${duration}ms:`, {
+    console.error(`${ICONS.ERROR} [extractTextFromPDF] FALHA após ${duration}ms:`, {
       error: errorMsg,
+      stack: errorStack?.split('\n').slice(0, 3).join('\n'),
       pdfPath,
     });
 
@@ -130,6 +178,11 @@ function extractProcessNumber(text: string): string | null {
 }
 
 // ================================================================
+// CONSTANTS
+// ================================================================
+const MAX_PROCESSING_TIME = 25000; // 25 segundos total (Railway timeout é ~30s)
+
+// ================================================================
 // ENDPOINT PRINCIPAL
 // ================================================================
 export async function POST(request: NextRequest) {
@@ -137,12 +190,14 @@ export async function POST(request: NextRequest) {
   let tempFilePath: string | null = null;
 
   try {
+    console.log(`${ICONS.SUCCESS} [POST /api/pdf/process] Iniciado`);
+
     // 1. VALIDAR CONTENT-TYPE
     const contentType = request.headers.get('content-type');
-    console.log(`${ICONS.SUCCESS} POST /api/pdf/process recebido`, {
+    console.log(`${ICONS.SUCCESS} [POST /api/pdf/process] Headers:`, {
       contentType,
       method: request.method,
-      url: request.url,
+      remoteAddr: request.headers.get('x-forwarded-for') || 'unknown',
     });
 
     if (!contentType?.includes('multipart/form-data')) {
