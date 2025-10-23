@@ -35,9 +35,10 @@ const IS_LOCAL = !IS_RAILWAY && !IS_VERCEL;
 /**
  * Check if Redis should be disabled (fallback to mock for development)
  * Redis is REQUIRED in production for workers
+ * NOTE: Use function to defer env access until runtime (not build time)
  */
-const REDIS_DISABLED = process.env.REDIS_DISABLED === 'true';
-const REDIS_URL = process.env.REDIS_URL;
+const REDIS_DISABLED = () => process.env.REDIS_DISABLED === 'true';
+const getRedisURL = () => process.env.REDIS_URL;
 
 /**
  * Upstash Redis Configuration with Cost Optimization
@@ -64,6 +65,7 @@ const REDIS_URL = process.env.REDIS_URL;
  */
 const getRedisConfig = (): RedisOptions => {
   // Parse Upstash Redis URL if available
+  const REDIS_URL = getRedisURL();
   if (REDIS_URL) {
     // Upstash URLs come in format: rediss://default:password@host:6379
     try {
@@ -276,7 +278,7 @@ export const getRedisClient = (): Redis | MockRedis => {
   }
 
   // Check if Redis should be disabled
-  if (REDIS_DISABLED) {
+  if (REDIS_DISABLED()) {
     logger.warn(
       { component: 'redis', mode: 'mock' },
       'Running in MOCK mode (REDIS_DISABLED=true) - Workers and queues will NOT function properly'
@@ -286,6 +288,7 @@ export const getRedisClient = (): Redis | MockRedis => {
   }
 
   // Check if REDIS_URL is configured
+  const REDIS_URL = getRedisURL();
   if (!REDIS_URL && !process.env.REDIS_HOST) {
     logger.warn(
       { component: 'redis', mode: 'mock' },
@@ -414,11 +417,12 @@ export const getRedisClient = (): Redis | MockRedis => {
  * @returns IORedis instance or null if disabled
  */
 export const getRedisConnection = (): IORedis | null => {
-  if (REDIS_DISABLED) {
+  if (REDIS_DISABLED()) {
     console.warn('[REDIS] ⚠️  Cannot create BullMQ connection - Redis disabled');
     return null;
   }
 
+  const REDIS_URL = getRedisURL();
   if (!REDIS_URL && !process.env.REDIS_HOST) {
     console.warn('[REDIS] ⚠️  Cannot create BullMQ connection - no Redis configured');
     return null;
