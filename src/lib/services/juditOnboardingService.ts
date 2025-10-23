@@ -71,8 +71,8 @@ interface JuditResponseData {
 
 const POLLING_CONFIG = {
   INTERVAL_MS: 20000, // 20 segundos entre verificações
-  MAX_ATTEMPTS: 90, // 30 minutos total (90 * 20s)
-  TIMEOUT_MS: 1800000, // 30 minutos
+  MAX_ATTEMPTS: 30, // 10 minutos total (30 * 20s) - reduzido de 90 para não consumir quota
+  TIMEOUT_MS: 600000, // 10 minutos - reduzido de 30min
   RETRY_ON_ERROR_DELAY_MS: 5000, // 5 segundos após erro
   MAX_ERROR_RETRIES: 3,
 } as const;

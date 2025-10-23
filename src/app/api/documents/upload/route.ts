@@ -335,6 +335,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 12. VERIFICAR CACHE DE ANÁLISE
+    // NOTE: Cache pode conter dados incompletos de análises antigas
+    // Para garantir que Gemini sempre gera análises completas com estrutura correta,
+    // desabilitamos cache hit para Phase 1 e sempre executamos analyzePhase1
     const cacheManager = getAnalysisCacheManager();
     const modelVersion = 'gemini-2.5-flash';
     const promptSignature = 'legal-document-analysis-v2';
@@ -347,9 +350,25 @@ export async function POST(request: NextRequest) {
 
     let aiAnalysisResult = null;
 
-    if (cacheResult.hit) {
+    // IMPORTANT: Only use cache if data has correct structure with lastMovements
+    // Older cached results may be missing required fields
+    const isValidCacheData = (data: any): boolean => {
+      return data &&
+             typeof data === 'object' &&
+             Array.isArray(data.lastMovements) &&
+             data.summary &&
+             data.parties;
+    };
+
+    if (cacheResult.hit && isValidCacheData(cacheResult.data)) {
       aiAnalysisResult = cacheResult.data;
+      console.log(`${ICONS.SUCCESS} Cache válido com estrutura correta`);
     } else {
+      // Use cache if valid, or run Gemini if cache invalid/missing
+      if (cacheResult.hit) {
+        console.log(`${ICONS.WARNING} Cache encontrado mas com estrutura inválida - executando Gemini novamente`);
+      }
+
       // 13. ADQUIRIR LOCK REDIS PARA ANÁLISE
       const analysisKey = hashResult.textSha + '_' + modelVersion;
       const lockResult = await cacheManager.acquireLock(analysisKey);
@@ -372,21 +391,26 @@ export async function POST(request: NextRequest) {
 
       try {
         // 14. ANÁLISE IA PHASE 1 - Análise rápida inicial com LITE-first strategy
+        console.log(`${ICONS.ROBOT} [Upload] Chamando Gemini para analyzePhase1...`);
 
         const aiRouter = new AIModelRouter();
         // Use analyzePhase1 for initial preview (LITE→BALANCED→PRO fallback)
         // This ensures fast, cost-effective analysis while maintaining quality
         aiAnalysisResult = await aiRouter.analyzePhase1(cleanText, file.size / (1024 * 1024), workspaceId);
 
-        // Salvar no cache
-        await cacheManager.saveAnalysisCache(
-          [hashResult.textSha],
-          modelVersion,
-          promptSignature,
-          aiAnalysisResult,
-          undefined, // lastMovementDate (optional, not available at upload time)
-          workspaceId
-        );
+        console.log(`${ICONS.SUCCESS} [Upload] Gemini analyzePhase1 concluído`);
+
+        // Salvar no cache (apenas se conseguiu resultado válido)
+        if (aiAnalysisResult) {
+          await cacheManager.saveAnalysisCache(
+            [hashResult.textSha],
+            modelVersion,
+            promptSignature,
+            aiAnalysisResult,
+            undefined, // lastMovementDate (optional, not available at upload time)
+            workspaceId
+          );
+        }
 
       } catch (analysisError) {
         console.error(`${ICONS.ERROR} Erro na análise IA:`, analysisError);
