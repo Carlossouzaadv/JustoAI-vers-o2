@@ -440,7 +440,7 @@ function ExpandedPhaseContent({
           </div>
           <div>
             <p className="text-gray-600">Custo Est.</p>
-            <p className="font-medium text-gray-900">R$ {(previewData.costEstimate || 0).toFixed(2)}</p>
+            <p className="font-medium text-gray-900">R$ {(Number(previewData.costEstimate) || 0).toFixed(2)}</p>
           </div>
         </div>
       </div>

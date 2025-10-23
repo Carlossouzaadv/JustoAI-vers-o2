@@ -541,7 +541,7 @@ export async function POST(request: NextRequest) {
           // Metadata da análise
           modelUsed: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion,
           confidence: (aiAnalysisResult as any).metadados_analise?.confianca || 0.8,
-          costEstimate: (aiAnalysisResult as any)._routing_info?.cost_estimate || 0,
+          costEstimate: Number(((aiAnalysisResult as any)._routing_info?.cost_estimate?.estimatedCost) || 0),
 
           // Conteúdo da análise para display
           resumo: (aiAnalysisResult as any).resumo_executivo || 'Análise em processamento',
