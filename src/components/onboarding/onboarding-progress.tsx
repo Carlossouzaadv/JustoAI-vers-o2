@@ -57,7 +57,8 @@ export function OnboardingProgress({
       status: 'completed',
       progress: 100,
       icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
-      details: previewData ? `Análise com ${previewData.modelUsed || 'Gemini'}` : undefined
+      details: previewData ? `Análise com ${previewData.modelUsed || 'Gemini'}` : undefined,
+      expandable: true  // Make preview expandable to show full analysis
     },
     ENRICHMENT: {
       name: 'Enriquecimento Oficial',
@@ -77,7 +78,8 @@ export function OnboardingProgress({
     }
   });
 
-  const [expandedPhase, setExpandedPhase] = useState<Phase | null>('ENRICHMENT');
+  // Start with PREVIEW expanded to show analysis immediately
+  const [expandedPhase, setExpandedPhase] = useState<Phase | null>(previewData ? 'PREVIEW' : 'ENRICHMENT');
   const [jobStatus, setJobStatus] = useState<any>(null);
   const [pollingActive, setPollingActive] = useState(!!juditJobId);
 
@@ -266,7 +268,7 @@ export function OnboardingProgress({
             </div>
 
             {/* Conteúdo Expandível */}
-            {phase.expandable && expandedPhase === phaseKey && phase.status !== 'pending' && (
+            {phase.expandable && expandedPhase === phaseKey && (
               <div className="px-4 pb-4 border-t pt-4 bg-gray-50">
                 <ExpandedPhaseContent
                   phase={phaseKey}
@@ -374,15 +376,71 @@ function ExpandedPhaseContent({
 
   if (phase === 'PREVIEW' && previewData) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
+        {/* Resumo Executivo */}
+        {previewData.resumo && (
+          <div className="bg-white rounded p-3 border border-blue-100">
+            <p className="text-sm font-semibold text-gray-900 mb-2">Resumo da Análise</p>
+            <p className="text-sm text-gray-700 leading-relaxed">{previewData.resumo}</p>
+          </div>
+        )}
+
+        {/* Grid com informações principais */}
         <div className="grid grid-cols-2 gap-3 text-sm">
+          {/* Partes Envolvidas */}
+          {previewData.partes && (
+            <div className="bg-white rounded p-2 border border-gray-200">
+              <p className="text-gray-600 text-xs font-semibold mb-1">Partes</p>
+              <p className="font-medium text-gray-900 line-clamp-2">{previewData.partes}</p>
+            </div>
+          )}
+
+          {/* Objeto do Litígio */}
+          {previewData.objeto && (
+            <div className="bg-white rounded p-2 border border-gray-200">
+              <p className="text-gray-600 text-xs font-semibold mb-1">Objeto</p>
+              <p className="font-medium text-gray-900 line-clamp-2">{previewData.objeto}</p>
+            </div>
+          )}
+
+          {/* Valores Envolvidos */}
+          {previewData.valores && (
+            <div className="bg-white rounded p-2 border border-gray-200">
+              <p className="text-gray-600 text-xs font-semibold mb-1">Valores</p>
+              <p className="font-medium text-gray-900">{previewData.valores}</p>
+            </div>
+          )}
+
+          {/* Probabilidade de Sucesso */}
+          {previewData.probabilidades && (
+            <div className="bg-white rounded p-2 border border-gray-200">
+              <p className="text-gray-600 text-xs font-semibold mb-1">Probabilidade</p>
+              <p className="font-medium text-gray-900">{previewData.probabilidades}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Próximos Passos */}
+        {previewData.proximosPassos && (
+          <div className="bg-amber-50 rounded p-3 border border-amber-200">
+            <p className="text-sm font-semibold text-amber-900 mb-2">Próximos Passos Recomendados</p>
+            <p className="text-sm text-amber-800">{previewData.proximosPassos}</p>
+          </div>
+        )}
+
+        {/* Metadata da Análise */}
+        <div className="grid grid-cols-3 gap-2 pt-2 border-t text-xs">
           <div>
-            <p className="text-gray-600 text-xs">Modelo Usado</p>
+            <p className="text-gray-600">Modelo</p>
             <p className="font-medium text-gray-900">{previewData.modelUsed}</p>
           </div>
           <div>
-            <p className="text-gray-600 text-xs">Confiança</p>
+            <p className="text-gray-600">Confiança</p>
             <p className="font-medium text-gray-900">{(previewData.confidence * 100).toFixed(0)}%</p>
+          </div>
+          <div>
+            <p className="text-gray-600">Custo Est.</p>
+            <p className="font-medium text-gray-900">R$ {(previewData.costEstimate || 0).toFixed(2)}</p>
           </div>
         </div>
       </div>

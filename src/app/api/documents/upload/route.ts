@@ -536,11 +536,23 @@ export async function POST(request: NextRequest) {
           timelineEntriesAdded: 0 // TODO: incluir do merge result
         },
 
-        // Informações da análise
+        // Informações da análise (PREVIEW COMPLETO)
         analysis: aiAnalysisResult ? {
-          modelUsed: aiAnalysisResult.modelUsed || modelVersion,
-          confidence: aiAnalysisResult.confidence || 0.8,
-          costEstimate: aiAnalysisResult.cost?.estimatedCost || 0
+          // Metadata da análise
+          modelUsed: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion,
+          confidence: (aiAnalysisResult as any).metadados_analise?.confianca || 0.8,
+          costEstimate: (aiAnalysisResult as any)._routing_info?.cost_estimate || 0,
+
+          // Conteúdo da análise para display
+          resumo: (aiAnalysisResult as any).resumo_executivo || 'Análise em processamento',
+          partes: (aiAnalysisResult as any).partes_envolvidas,
+          objeto: (aiAnalysisResult as any).objeto_litígio || (aiAnalysisResult as any).objetivo,
+          valores: (aiAnalysisResult as any).valores_envolvidos,
+          probabilidades: (aiAnalysisResult as any).probabilidade_sucesso,
+          proximosPassos: (aiAnalysisResult as any).próximos_passos,
+
+          // Dados estruturados completos para referência futura
+          dados: aiAnalysisResult
         } : null,
 
         // Informações do arquivo
