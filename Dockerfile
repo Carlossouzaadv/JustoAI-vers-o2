@@ -1,5 +1,5 @@
 # Multi-stage build for Next.js standalone deployment
-FROM node:18-bookworm AS builder
+FROM node:22-bookworm AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production image - use slim variant to reduce size
-FROM node:18-bookworm-slim
+FROM node:22-bookworm-slim
 
 WORKDIR /app
 

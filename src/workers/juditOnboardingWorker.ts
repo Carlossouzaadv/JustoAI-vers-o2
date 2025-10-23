@@ -435,18 +435,40 @@ juditOnboardingWorker.on('error', (error) => {
 // GRACEFUL SHUTDOWN
 // ================================================================
 
-async function gracefulShutdown() {
+// Graceful shutdown with timeout to prevent hanging
+// Default timeout: 30 seconds (platforms like Railway/Vercel give ~10-30s before SIGKILL)
+const SHUTDOWN_TIMEOUT_MS = 25000; // 25 seconds
+
+async function gracefulShutdown(signal?: string) {
   workerLogger.info({
     action: 'graceful_shutdown_start',
+    signal: signal || 'SIGTERM',
+    timeout_seconds: SHUTDOWN_TIMEOUT_MS / 1000,
     message: 'Encerrando worker...',
   });
 
+  let shutdownTimer: NodeJS.Timeout | null = null;
+
   try {
-    // Close worker (stops accepting new jobs, waits for active jobs)
+    // Set a hard timeout to prevent hanging forever
+    shutdownTimer = setTimeout(() => {
+      workerLogger.error({
+        action: 'graceful_shutdown_timeout',
+        message: `Graceful shutdown timeout (${SHUTDOWN_TIMEOUT_MS}ms) - forcing exit`,
+      });
+      process.exit(1);
+    }, SHUTDOWN_TIMEOUT_MS);
+
+    // Close worker (stops accepting new jobs, waits for active jobs to complete)
+    const startTime = Date.now();
     await juditOnboardingWorker.close();
+    const duration = Date.now() - startTime;
+
+    if (shutdownTimer) clearTimeout(shutdownTimer);
 
     workerLogger.info({
       action: 'graceful_shutdown_success',
+      duration_ms: duration,
       message: 'Worker encerrado com sucesso',
     });
 
@@ -455,6 +477,8 @@ async function gracefulShutdown() {
 
     process.exit(0);
   } catch (error) {
+    if (shutdownTimer) clearTimeout(shutdownTimer);
+
     workerLogger.error({
       action: 'graceful_shutdown_error',
       error: error instanceof Error ? error.message : String(error),
@@ -464,8 +488,8 @@ async function gracefulShutdown() {
   }
 }
 
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // ================================================================
 // START WORKER (se executado diretamente)
