@@ -28,7 +28,7 @@ const prisma = new PrismaClient();
 const CONFIG = {
   AUTO_SUGGEST_THRESHOLD: 0.9,
   UNASSIGNED_FOLDER: 'clientes_a_definir',
-  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB
+  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
   SUPPORTED_EXTENSIONS: ['.pdf']
 };
 

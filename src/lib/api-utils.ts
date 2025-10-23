@@ -74,6 +74,13 @@ export async function validateBody<T>(
         message: err.message,
       }))
 
+      console.error(`${ICONS.ERROR} [Validation Error] Schema validation failed:`, {
+        issues: error.issues,
+        formattedErrors,
+        path: request.url,
+        method: request.method
+      })
+
       return {
         data: null,
         error: NextResponse.json(
@@ -86,6 +93,12 @@ export async function validateBody<T>(
         ),
       }
     }
+
+    console.error(`${ICONS.ERROR} [Validation Error] Failed to parse request body:`, {
+      error: error instanceof Error ? error.message : String(error),
+      path: request.url,
+      method: request.method
+    })
 
     return {
       data: null,
@@ -111,6 +124,13 @@ export function validateQuery<T>(
         message: err.message,
       }))
 
+      console.error(`${ICONS.ERROR} [Query Validation Error] Schema validation failed:`, {
+        issues: error.issues,
+        formattedErrors,
+        path: request.url,
+        method: request.method
+      })
+
       return {
         data: null,
         error: NextResponse.json(
@@ -123,6 +143,12 @@ export function validateQuery<T>(
         ),
       }
     }
+
+    console.error(`${ICONS.ERROR} [Query Validation Error] Failed to parse query params:`, {
+      error: error instanceof Error ? error.message : String(error),
+      path: request.url,
+      method: request.method
+    })
 
     return {
       data: null,

@@ -250,25 +250,43 @@ async function GET(request: NextRequest) {
  */
 // POST /api/clients - Create client
 async function POST(request: NextRequest) {
+  console.log('[POST /api/clients] Iniciando criação de cliente')
+
   // Rate limiting (stricter for creates)
   const clientIP = getClientIP(request)
   const { allowed, error: rateLimitError } = await rateLimit(`create-client:${clientIP}`, 50)
-  if (!allowed) return rateLimitError!
+  if (!allowed) {
+    console.error('[POST /api/clients] Rate limit excedido para IP:', clientIP)
+    return rateLimitError!
+  }
 
   // Auth check
   const { user, error: authError } = await requireAuth(request)
-  if (!user) return authError!
+  if (!user) {
+    console.error('[POST /api/clients] Erro de autenticação')
+    return authError!
+  }
+  console.log('[POST /api/clients] Usuário autenticado:', user.id)
 
   // Body validation
   const { data: input, error: validationError } = await validateBody(request, createClientSchema)
-  if (!input) return validationError!
+  if (!input) {
+    console.error('[POST /api/clients] Validação do corpo falhou')
+    return validationError!
+  }
+  console.log('[POST /api/clients] Validação bem-sucedida. Input:', { name: input.name, workspaceId: input.workspaceId })
 
   // Workspace access check
   const { hasAccess, error: accessError } = await requireWorkspaceAccess(user.id, input.workspaceId)
-  if (!hasAccess) return accessError!
+  if (!hasAccess) {
+    console.error('[POST /api/clients] Acesso negado ao workspace:', input.workspaceId)
+    return accessError!
+  }
+  console.log('[POST /api/clients] Acesso ao workspace verificado:', input.workspaceId)
 
   // Check for duplicate client (same document in same workspace)
   if (input.document) {
+    console.log('[POST /api/clients] Verificando duplicação de documento:', input.document)
     const existingClient = await prisma.client.findFirst({
       where: {
         workspaceId: input.workspaceId,
@@ -278,33 +296,44 @@ async function POST(request: NextRequest) {
     })
 
     if (existingClient) {
+      console.error('[POST /api/clients] Cliente duplicado encontrado:', existingClient.id)
       return errorResponse('Client with this document already exists in this workspace', 409)
     }
   }
 
   // Create client
-  const client = await prisma.client.create({
-    data: input,
-    include: {
-      workspace: {
-        select: {
-          id: true,
-          name: true,
-          slug: true
-        }
-      },
-      _count: {
-        select: {
-          cases: true
+  try {
+    console.log('[POST /api/clients] Criando cliente no banco de dados...')
+    const client = await prisma.client.create({
+      data: input,
+      include: {
+        workspace: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        _count: {
+          select: {
+            cases: true
+          }
         }
       }
-    }
-  })
+    })
 
-  return successResponse(
-    client,
-    `Client "${client.name}" created successfully`
-  )
+    console.log('[POST /api/clients] Cliente criado com sucesso:', client.id)
+    return successResponse(
+      client,
+      `Client "${client.name}" created successfully`
+    )
+  } catch (error) {
+    console.error('[POST /api/clients] Erro ao criar cliente no banco de dados:', {
+      error: error instanceof Error ? error.message : String(error),
+      input: { name: input.name, workspaceId: input.workspaceId }
+    })
+    throw error
+  }
 }
 
 export { GET, POST }

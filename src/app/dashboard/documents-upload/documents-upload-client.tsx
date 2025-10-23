@@ -8,7 +8,7 @@ import { Upload } from 'lucide-react';
 
 export default function DocumentsUploadPageClient() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [workspaceId, setWorkspaceId] = useState<string>('');
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [loadingWorkspace, setLoadingWorkspace] = useState(true);
 
   // Carregar workspace do usuário
@@ -77,7 +77,7 @@ export default function DocumentsUploadPageClient() {
       </Card>
 
       {/* Dialog de Upload */}
-      {workspaceId && (
+      {workspaceId !== null && (
         <UploadDialog
           open={uploadDialogOpen}
           onOpenChange={setUploadDialogOpen}

@@ -133,7 +133,7 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
                     ? 'Solte o arquivo aqui'
                     : 'Arraste um arquivo PDF aqui ou clique para selecionar'}
                 </p>
-                <p className="text-xs text-gray-500">Máximo 50MB</p>
+                <p className="text-xs text-gray-500">Máximo 100MB</p>
 
                 {file && (
                   <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">

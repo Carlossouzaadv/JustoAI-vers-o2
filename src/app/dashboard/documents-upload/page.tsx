@@ -60,9 +60,9 @@ export default async function DocumentsUploadPage() {
             </CardHeader>
             <CardContent className="text-sm text-gray-700 space-y-2">
               <p>✓ Extração automática de texto</p>
-              <p>✓ Detecção de número do CNJ</p>
-              <p>✓ Análise rápida com IA</p>
-              <p>✓ Dados básicos extraídos</p>
+              <p>✓ Detecção de número do processo</p>
+              <p>✓ Análise instantânea do documento</p>
+              <p>✓ Dados essenciais identificados</p>
             </CardContent>
           </Card>
 
@@ -77,10 +77,10 @@ export default async function DocumentsUploadPage() {
               <CardDescription>Automático em Background</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-gray-700 space-y-2">
-              <p>✓ Integração com JUDIT</p>
+              <p>✓ Histórico processual completo</p>
               <p>✓ Dados oficiais do tribunal</p>
-              <p>✓ Download de anexos</p>
-              <p>✓ Timeline unificada</p>
+              <p>✓ Todos os anexos reunidos</p>
+              <p>✓ Timeline unificada de movimentações</p>
             </CardContent>
           </Card>
 
@@ -95,10 +95,10 @@ export default async function DocumentsUploadPage() {
               <CardDescription>Sob Demanda (Pago)</CardDescription>
             </CardHeader>
             <CardContent className="text-sm text-gray-700 space-y-2">
-              <p>✓ IA avançada (Gemini Pro)</p>
-              <p>✓ Insights estratégicos</p>
-              <p>✓ Análise de riscos</p>
-              <p>✓ Recomendações</p>
+              <p>✓ Análise profunda do caso</p>
+              <p>✓ Insights estratégicos e cenários</p>
+              <p>✓ Avaliação de riscos e oportunidades</p>
+              <p>✓ Recomendações personalizadas</p>
             </CardContent>
           </Card>
         </div>
@@ -116,7 +116,7 @@ export default async function DocumentsUploadPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-gray-600 space-y-2">
-              <p>✓ PDF (máximo 50MB)</p>
+              <p>✓ PDF (máximo 100MB)</p>
               <p>✓ Documentos de processos judiciais</p>
               <p>✓ Múltiplas páginas suportadas</p>
             </CardContent>
