@@ -14,7 +14,12 @@ const juditLogger = {
   debug: (msg: any, data?: any) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
 };
 const logOperationStart = (name: any, data?: any) => console.log(`[OPERATION] Starting`, name, data || '');
-const juditMetrics = { recordMetric: (name: any, value: any) => {} };
+const juditMetrics = {
+  recordMetric: (name: any, value: any) => {},
+  recordOnboarding: (status: 'success' | 'failure', durationMs: number) => {
+    console.log(`[JUDIT-METRICS] Onboarding ${status}:`, { durationMs });
+  },
+};
 const trackJuditCost = (operation: any, cost: any) => console.log(`[COST]`, operation, cost);
 const alertApiError = (error: any) => console.error(`[ALERT-API-ERROR]`, error);
 const alertTimeout = (duration: any) => console.warn(`[ALERT-TIMEOUT]`, duration);

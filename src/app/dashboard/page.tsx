@@ -410,7 +410,7 @@ export default function DashboardPage() {
           {/* Botões de Ação Rápida - Direita */}
           <div className="grid grid-cols-2 gap-4">
             <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
-                  onClick={() => window.location.href = '/dashboard/upload'}>
+                  onClick={() => window.location.href = '/dashboard/documents-upload'}>
               <CardContent className="p-6">
                 <div className="text-center space-y-2">
                   <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.UPLOAD}</div>

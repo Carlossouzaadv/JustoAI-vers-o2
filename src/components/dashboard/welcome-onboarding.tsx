@@ -357,7 +357,7 @@ function ActionStep({ profile, onComplete }: { profile: UserProfile; onComplete:
       title: 'Fazer primeiro upload',
       description: 'Subir uma cópia integral do processo em PDF',
       icon: ICONS.UPLOAD,
-      action: () => window.location.href = '/dashboard/upload'
+      action: () => window.location.href = '/dashboard/documents-upload'
     },
     {
       id: 'import',

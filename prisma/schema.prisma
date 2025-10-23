@@ -699,10 +699,10 @@ model GlobalLog {
 
 model Processo {
   id                String   @id @default(cuid())
-  numeroCnj         String   @unique
-  dadosCompletos    Json?    // Armazena a resposta completa da JUDIT
-  dataOnboarding    DateTime @default(now())
-  ultimaAtualizacao DateTime @updatedAt
+  numeroCnj         String   @unique @db.name("numero_cnj")
+  dadosCompletos    Json?    @db.name("dados_completos") // Armazena a resposta completa da JUDIT
+  dataOnboarding    DateTime @default(now()) @db.name("data_onboarding")
+  ultimaAtualizacao DateTime @updatedAt @db.name("ultima_atualizacao")
 
   // Relacionamentos
   requisicoes       JuditRequest[]
@@ -715,13 +715,13 @@ model Processo {
 
 model JuditRequest {
   id         String   @id @default(cuid())
-  requestId  String   @unique // O request_id retornado pela JUDIT
+  requestId  String   @unique @db.name("request_id") // O request_id retornado pela JUDIT
   status     String   // ex: "pending", "completed", "failed"
   finalidade String   // ex: "ONBOARDING", "BUSCA_ANEXOS"
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now()) @db.name("created_at")
+  updatedAt  DateTime @updatedAt @db.name("updated_at")
 
-  processoId String
+  processoId String @db.name("processo_id")
   processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
 
   @@index([requestId])
@@ -731,13 +731,13 @@ model JuditRequest {
 
 model JuditMonitoring {
   id         String  @id @default(cuid())
-  trackingId String  @unique // O tracking_id retornado pela JUDIT
+  trackingId String  @unique @db.name("tracking_id") // O tracking_id retornado pela JUDIT
   tipo       String  @default("UNIVERSAL") // "UNIVERSAL" ou "ANEXOS"
   ativo      Boolean @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now()) @db.name("created_at")
+  updatedAt  DateTime @updatedAt @db.name("updated_at")
 
-  processoId String   @unique
+  processoId String   @unique @db.name("processo_id")
   processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
 
   @@index([trackingId])
@@ -751,32 +751,32 @@ model JuditMonitoring {
 
 model JuditCostTracking {
   id                  String              @id @default(cuid())
-  workspaceId         String?             // Opcional para rastrear por workspace
-  operationType       JuditOperationType  // Tipo de operação
-  numeroCnj           String?             // CNJ do processo (se aplicável)
+  workspaceId         String?             @db.name("workspace_id") // Opcional para rastrear por workspace
+  operationType       JuditOperationType  @db.name("operation_type") // Tipo de operação
+  numeroCnj           String?             @db.name("numero_cnj") // CNJ do processo (se aplicável)
 
   // Custos em reais (BRL)
-  searchCost          Decimal             @default(0.69) @db.Decimal(10, 4) // Custo base da busca
-  attachmentsCost     Decimal             @default(0) @db.Decimal(10, 4)    // Custo de anexos
-  totalCost           Decimal             @db.Decimal(10, 4)                 // Custo total
+  searchCost          Decimal             @default(0.69) @db.Decimal(10, 4) @db.name("search_cost") // Custo base da busca
+  attachmentsCost     Decimal             @default(0) @db.Decimal(10, 4) @db.name("attachments_cost")    // Custo de anexos
+  totalCost           Decimal             @db.Decimal(10, 4) @db.name("total_cost")                 // Custo total
 
   // Métricas de recursos
-  documentsRetrieved  Int                 @default(0)  // Número de documentos baixados
-  movementsCount      Int                 @default(0)  // Número de movimentações
-  apiCallsCount       Int                 @default(1)  // Número de chamadas à API
+  documentsRetrieved  Int                 @default(0) @db.name("documents_retrieved") // Número de documentos baixados
+  movementsCount      Int                 @default(0) @db.name("movements_count") // Número de movimentações
+  apiCallsCount       Int                 @default(1) @db.name("api_calls_count") // Número de chamadas à API
 
   // Tempos de resposta (em ms)
-  durationMs          Int?                // Duração total da operação
+  durationMs          Int?                @db.name("duration_ms") // Duração total da operação
 
   // Metadata
-  requestId           String?             // ID da requisição JUDIT
-  trackingId          String?             // ID de tracking JUDIT
-  jobId               String?             // ID do job na fila (se aplicável)
+  requestId           String?             @db.name("request_id") // ID da requisição JUDIT
+  trackingId          String?             @db.name("tracking_id") // ID de tracking JUDIT
+  jobId               String?             @db.name("job_id") // ID do job na fila (se aplicável)
   status              String              @default("success") // success, failed, timeout
-  errorMessage        String?             // Mensagem de erro (se houver)
+  errorMessage        String?             @db.name("error_message") // Mensagem de erro (se houver)
 
   // Timestamps
-  createdAt           DateTime            @default(now())
+  createdAt           DateTime            @default(now()) @db.name("created_at")
 
   @@index([workspaceId, createdAt])
   @@index([operationType, createdAt])
@@ -787,29 +787,29 @@ model JuditCostTracking {
 
 model JuditAlert {
   id              String          @id @default(cuid())
-  workspaceId     String?         // Opcional
-  alertType       JuditAlertType  // Tipo de alerta
+  workspaceId     String?         @db.name("workspace_id") // Opcional
+  alertType       JuditAlertType  @db.name("alert_type") // Tipo de alerta
   severity        AlertSeverity   @default(MEDIUM)
 
   // Detalhes do alerta
   title           String
   message         String
-  errorCode       String?
+  errorCode       String?         @db.name("error_code")
 
   // Contexto
-  numeroCnj       String?
-  requestId       String?
-  trackingId      String?
-  jobId           String?
+  numeroCnj       String?         @db.name("numero_cnj")
+  requestId       String?         @db.name("request_id")
+  trackingId      String?         @db.name("tracking_id")
+  jobId           String?         @db.name("job_id")
   metadata        Json?           // Dados adicionais
 
   // Estado
   resolved        Boolean         @default(false)
-  resolvedAt      DateTime?
+  resolvedAt      DateTime?       @db.name("resolved_at")
   notified        Boolean         @default(false)
-  notifiedAt      DateTime?
+  notifiedAt      DateTime?       @db.name("notified_at")
 
-  createdAt       DateTime        @default(now())
+  createdAt       DateTime        @default(now()) @db.name("created_at")
 
   @@index([workspaceId, resolved, severity])
   @@index([alertType, resolved])

@@ -215,7 +215,7 @@ export default function ProcessPage() {
         </div>
 
         <div className="flex gap-2">
-          <Link href="/dashboard/upload">
+          <Link href="/dashboard/documents-upload">
             <Button className="flex items-center gap-2">
               <Upload className="w-4 h-4" />
               Subir Arquivo

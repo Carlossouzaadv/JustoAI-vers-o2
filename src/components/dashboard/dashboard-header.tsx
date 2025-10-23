@@ -13,7 +13,7 @@ export function DashboardHeader() {
     { href: '/dashboard', label: 'Dashboard', icon: ICONS.HOME },
     { href: '/dashboard/clients', label: 'Clientes', icon: ICONS.CLIENT },
     { href: '/dashboard/process', label: 'Processos', icon: ICONS.PROCESS },
-    { href: '/dashboard/upload', label: 'Upload PDFs', icon: ICONS.UPLOAD },
+    { href: '/dashboard/documents-upload', label: 'Upload PDFs', icon: ICONS.UPLOAD },
     { href: '/dashboard/reports', label: 'Relatórios', icon: ICONS.REPORTS },
   ];
 
