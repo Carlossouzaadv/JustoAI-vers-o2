@@ -78,7 +78,6 @@
     "@types/compression": "^1.8.1",
     "@types/cron": "^2.0.1",
     "@types/multer": "^2.0.0",
-    "@types/puppeteer": "^7.0.4",
     "@types/sharp": "^0.31.1",
     "autoprefixer": "^10.4.21",
     "axios": "^1.12.2",
