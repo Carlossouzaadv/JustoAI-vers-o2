@@ -45,7 +45,18 @@ const juditLogger = {
   warn: (msg: any, data?: any) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
   debug: (msg: any, data?: any) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
 };
-const logOperationStart = (name: any, data?: any) => console.log(`[OPERATION] Starting`, name, data || '');
+const logOperationStart = (logger: any, name: string, data?: any) => {
+  const startTime = Date.now();
+  logger.debug?.(`[OPERATION] Starting ${name}`, data || '');
+
+  return {
+    finish: (status: string, details?: any) => {
+      const duration = Date.now() - startTime;
+      logger.info?.(`[OPERATION] ${name} finished: ${status}`, { duration_ms: duration, ...details });
+      return duration;
+    }
+  };
+};
 
 // ================================================================
 // TYPES AND INTERFACES
