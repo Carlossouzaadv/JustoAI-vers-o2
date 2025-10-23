@@ -17,6 +17,20 @@ const logger = {
   debug: (msg: any, data?: any) => console.debug(`[DEBUG]`, msg, data || ''),
 };
 
+// Circuit breaker import - lazy loaded to avoid circular dependency
+let circuitBreakerService: any = null;
+const getCircuitBreaker = () => {
+  if (!circuitBreakerService) {
+    try {
+      circuitBreakerService = require('./services/circuitBreakerService').circuitBreakerService;
+    } catch (e) {
+      // Fallback if circuit breaker not available
+      return null;
+    }
+  }
+  return circuitBreakerService;
+};
+
 // ================================================================
 // CONFIGURATION
 // ================================================================
@@ -333,12 +347,25 @@ export const getRedisClient = (): Redis | MockRedis => {
   let fallbackToMock = false;
 
   client.on('error', (error) => {
+    // Check for Upstash quota exceeded error
+    const isQuotaExceededError = error.message?.includes('ERR max requests limit exceeded') ||
+      error.message?.includes('max_requests_limit') ||
+      error.message?.includes('quota');
+
     // Check for max retries error
     const isMaxRetriesError = error.message?.includes('max retries') ||
       error.message?.includes('Reached the max') ||
       error.message?.includes('Stream isn\'t writeable');
 
-    const level = isMaxRetriesError ? 'warn' : 'error';
+    // Trigger circuit breaker if quota exceeded
+    if (isQuotaExceededError) {
+      const cb = getCircuitBreaker();
+      if (cb && typeof cb.triggerQuotaExceeded === 'function') {
+        cb.triggerQuotaExceeded(error);
+      }
+    }
+
+    const level = isQuotaExceededError ? 'error' : isMaxRetriesError ? 'warn' : 'error';
 
     logger[level](
       {
@@ -347,6 +374,7 @@ export const getRedisClient = (): Redis | MockRedis => {
         error_message: error.message,
         error_code: (error as any).code,
         is_max_retries: isMaxRetriesError,
+        is_quota_exceeded: isQuotaExceededError,
         mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
       },
       `Redis connection error: ${error.message}`

@@ -7,6 +7,19 @@ import { Queue, Job } from 'bullmq';
 import { getRedisConnection } from '../redis';
 import { queueLogger } from '../observability/logger';
 
+// Circuit breaker import - lazy loaded to avoid circular dependency
+let circuitBreakerService: any = null;
+const getCircuitBreaker = () => {
+  if (!circuitBreakerService) {
+    try {
+      circuitBreakerService = require('../services/circuitBreakerService').circuitBreakerService;
+    } catch (e) {
+      return null;
+    }
+  }
+  return circuitBreakerService;
+};
+
 // ================================================================
 // TIPOS E INTERFACES
 // ================================================================
@@ -146,6 +159,17 @@ export async function addOnboardingJob(
   }
 ): Promise<{ jobId: string }> {
   ensureListeners();
+
+  // Check if queue is paused due to circuit breaker
+  const cb = getCircuitBreaker();
+  if (cb && cb.isQueuePaused && cb.isQueuePaused()) {
+    const status = cb.getStatus();
+    throw new Error(
+      `Queue is paused due to Upstash quota limit. Auto-retry: ${status.config.autoRetryInterval}. ` +
+      `Error: ${status.config.errorMessage}`
+    );
+  }
+
   const queue = getJuditQueue();
   const job = await queue.add(
     'onboard-process',
