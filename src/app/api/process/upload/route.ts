@@ -6,8 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
 
 // Services
@@ -47,16 +46,13 @@ export async function POST(request: NextRequest) {
     // 1. AUTENTICAÇÃO
     // ============================================================
 
-    const session = await getServerSession(authOptions);
+    const user = await getAuthenticatedUser(request);
 
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Não autenticado' },
-        { status: 401 }
-      );
+    if (!user) {
+      return unauthorizedResponse('Não autenticado');
     }
 
-    const userId = session.user.id;
+    const userId = user.id;
 
     console.log(`${ICONS.UPLOAD} [Upload] Iniciando upload - User: ${userId}`);
 

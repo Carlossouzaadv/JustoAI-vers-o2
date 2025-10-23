@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
 import { getGeminiClient } from '@/lib/gemini-client';
 import { ModelTier } from '@/lib/ai-model-types';
@@ -12,14 +11,11 @@ export async function POST(
 ) {
   const startTime = Date.now();
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Não autenticado' },
-        { status: 401 }
-      );
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return unauthorizedResponse('Não autenticado');
     }
-    const userId = session.user.id;
+    const userId = user.id;
     const caseId = params.id;
     console.log(`${ICONS.ROBOT} [Full Analysis] Iniciando para case ${caseId}`);
 

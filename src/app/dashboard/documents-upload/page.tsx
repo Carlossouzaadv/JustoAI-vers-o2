@@ -1,19 +1,38 @@
 // Desabilitar prerendering estático
 export const dynamic = 'force-dynamic';
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, Clock, Zap, Upload, FileText, BarChart3 } from 'lucide-react';
 import DocumentsUploadPageClient from './documents-upload-client';
 
 export default async function DocumentsUploadPage() {
-  // Verificar autenticação no servidor (garante que a página não pode ser pré-renderizada)
-  const session = await getServerSession(authOptions);
+  // Verificar autenticação no servidor usando Supabase (garante que a página não pode ser pré-renderizada)
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: any) {
+          cookieStore.delete(name);
+        },
+      },
+    }
+  );
 
-  if (!session?.user) {
-    redirect('/auth/signin');
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
   }
 
   return (

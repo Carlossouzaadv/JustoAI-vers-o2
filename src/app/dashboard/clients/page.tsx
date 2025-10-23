@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dialog';
 import { ICONS } from '@/lib/icons';
 import { getApiUrl } from '@/lib/api-client';
+import { useAuth } from '@/contexts/auth-context';
 
 interface Client {
   id: string;
@@ -46,6 +47,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
+  const { workspaceId } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -157,7 +159,14 @@ export default function ClientsPage() {
                 Preencha os dados do cliente abaixo
               </DialogDescription>
             </DialogHeader>
-            <CreateClientForm onClose={() => setShowCreateDialog(false)} />
+            <CreateClientForm
+              workspaceId={workspaceId || ''}
+              onClose={() => setShowCreateDialog(false)}
+              onSuccess={() => {
+                loadClients();
+                setShowCreateDialog(false);
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -365,7 +374,15 @@ export default function ClientsPage() {
 }
 
 // Component for creating new clients
-function CreateClientForm({ onClose }: { onClose: () => void }) {
+function CreateClientForm({
+  workspaceId,
+  onClose,
+  onSuccess,
+}: {
+  workspaceId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -374,16 +391,60 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
     type: 'INDIVIDUAL' as 'INDIVIDUAL' | 'COMPANY',
     status: 'ACTIVE' as const
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement client creation API call
-    console.log('Creating client:', formData);
-    onClose();
+
+    if (!formData.name || !formData.email) {
+      setError('Nome e email são obrigatórios');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(getApiUrl('/api/clients'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          workspaceId,
+          // Change COMPANY to BUSINESS for API compatibility
+          type: formData.type === 'COMPANY' ? 'BUSINESS' : formData.type,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar cliente');
+      }
+
+      const data = await response.json();
+      console.log('Cliente criado com sucesso:', data);
+      onSuccess();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro desconhecido';
+      setError(message);
+      console.error('Erro ao criar cliente:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">
           {formData.type === 'INDIVIDUAL' ? 'Nome Completo *' : 'Razão Social *'}
@@ -393,6 +454,7 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder={formData.type === 'INDIVIDUAL' ? 'Nome completo' : 'Razão social'}
           required
+          disabled={loading}
         />
       </div>
 
@@ -406,6 +468,7 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           placeholder="email@exemplo.com"
           required
+          disabled={loading}
         />
       </div>
 
@@ -417,6 +480,7 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
           value={formData.phone}
           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
           placeholder="(11) 99999-9999"
+          disabled={loading}
         />
       </div>
 
@@ -428,6 +492,7 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
           value={formData.document}
           onChange={(e) => setFormData({ ...formData, document: e.target.value })}
           placeholder={formData.type === 'INDIVIDUAL' ? 'CPF' : 'CNPJ'}
+          disabled={loading}
         />
       </div>
 
@@ -438,8 +503,9 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
         <select
           value={formData.type}
           onChange={(e) => setFormData({ ...formData, type: e.target.value as 'INDIVIDUAL' | 'COMPANY' })}
-          className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           required
+          disabled={loading}
         >
           <option value="INDIVIDUAL">Pessoa Física</option>
           <option value="COMPANY">Pessoa Jurídica</option>
@@ -447,11 +513,21 @@ function CreateClientForm({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="flex gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          className="flex-1"
+          disabled={loading}
+        >
           Cancelar
         </Button>
-        <Button type="submit" className="flex-1">
-          Criar Cliente
+        <Button
+          type="submit"
+          className="flex-1"
+          disabled={loading}
+        >
+          {loading ? 'Criando...' : 'Criar Cliente'}
         </Button>
       </div>
     </form>
