@@ -80,7 +80,17 @@ const nextConfig: NextConfig = {
         events: false,
       };
     }
-    // No need to exclude PDF modules - using system pdftotext command instead
+
+    // Suppress swagger-jsdoc critical dependency warning
+    // Known issue: swagger-jsdoc uses dynamic requires for plugin loading
+    // This is safe and doesn't affect functionality
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /swagger-jsdoc\/src\/utils\.js/,
+        message: /Critical dependency: the request of a dependency is an expression/,
+      },
+    ];
 
     return config;
   },
