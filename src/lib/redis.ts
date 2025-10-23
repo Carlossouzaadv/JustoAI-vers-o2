@@ -84,18 +84,18 @@ const getRedisConfig = (): RedisOptions => {
         // Connection Optimization (Low Idle Cost)
         lazyConnect: true, // Don't connect until first command
         keepAlive: 60000, // Keep connection alive for 60s (reduced PINGs: was 30s)
-        connectTimeout: isStrictMode ? 30000 : 60000, // Strict: 30s, Graceful: 60s (increased for stability)
-        commandTimeout: isStrictMode ? 15000 : 30000, // Strict: 15s, Graceful: 30s (increased for stability)
+        connectTimeout: isStrictMode ? 60000 : 60000, // Increased from 30s to 60s (Upstash has ~30s idle timeout)
+        commandTimeout: isStrictMode ? 30000 : 30000, // Increased from 15s to 30s for reliability
 
         // Retry Strategy (Appropriate to mode)
-        maxRetriesPerRequest: isStrictMode ? 2 : 5, // Strict: fail fast, Graceful: more retries
+        maxRetriesPerRequest: isStrictMode ? 5 : 5, // Increased from 2 to 5 for workers (more resilient to brief disconnects)
         retryStrategy: (times: number) => {
-          // Exponential backoff: 100ms, 200ms, 400ms, ..., max 5s
-          const maxDelay = isStrictMode ? 5000 : 10000;
+          // Exponential backoff: 100ms, 200ms, 400ms, ..., max 10s
+          const maxDelay = isStrictMode ? 10000 : 10000;
           const delay = Math.min(times * 100, maxDelay);
 
           // Stop retrying based on mode
-          const maxAttempts = isStrictMode ? 5 : 10;
+          const maxAttempts = isStrictMode ? 10 : 10;
           if (times > maxAttempts) {
             logger.error(
               {
@@ -125,7 +125,9 @@ const getRedisConfig = (): RedisOptions => {
         },
 
         // Queue behavior based on mode
-        enableOfflineQueue: isStrictMode ? false : true, // Strict: fail immediately, Graceful: queue commands
+        // CRITICAL: Enable offline queue for workers to buffer commands during brief disconnects
+        // This prevents failures during Upstash reconnection (happens every ~30-35s)
+        enableOfflineQueue: true, // Queue commands if connection drops (was: isStrictMode ? false : true)
         enableReadyCheck: true, // Both modes: wait for READY state
 
         // Connection pool (BullMQ compatibility)
@@ -149,14 +151,14 @@ const getRedisConfig = (): RedisOptions => {
     // Same optimization as above, but with mode-appropriate settings
     lazyConnect: true,
     keepAlive: 60000, // Keep connection alive for 60s (reduced PINGs: was 30s)
-    connectTimeout: isStrictMode ? 10000 : 30000,
-    commandTimeout: isStrictMode ? 5000 : 15000,
+    connectTimeout: 60000, // Increased from 10-30s to 60s for stability
+    commandTimeout: 30000, // Increased from 5-15s to 30s for reliability
 
-    maxRetriesPerRequest: isStrictMode ? 2 : 5,
+    maxRetriesPerRequest: 5, // Increased from 2 to 5 for more resilience
     retryStrategy: (times: number) => {
-      const maxDelay = isStrictMode ? 5000 : 10000;
+      const maxDelay = 10000; // Increased from 5-10s to 10s
       const delay = Math.min(times * 100, maxDelay);
-      const maxAttempts = isStrictMode ? 5 : 10;
+      const maxAttempts = 10; // Increased from 5-10 to 10
 
       if (times > maxAttempts) {
         logger.error(
@@ -184,7 +186,7 @@ const getRedisConfig = (): RedisOptions => {
       return delay;
     },
 
-    enableOfflineQueue: isStrictMode ? false : true,
+    enableOfflineQueue: true, // Enable queue for all modes (was: isStrictMode ? false : true)
     enableReadyCheck: true,
   };
 };
