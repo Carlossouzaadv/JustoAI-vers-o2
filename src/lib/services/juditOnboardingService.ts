@@ -52,13 +52,12 @@ interface JuditRequestPayload {
 
 interface JuditRequestResponse {
   request_id: string;
-  request_status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   [key: string]: any;
 }
 
 interface JuditResponseData {
   request_id: string;
-  request_status: string;
   all_pages_count?: number;
   page?: number;
   data?: any;
@@ -328,7 +327,7 @@ async function initiateRequest(
   await prisma.juditRequest.create({
     data: {
       requestId,
-      status: response.request_status || 'pending',
+      status: response.status || 'pending',
       finalidade,
       processoId: processo.id,
     },
@@ -389,7 +388,7 @@ async function pollRequestStatus(
         `/requests/${requestId}`
       );
 
-      const status = statusResponse.request_status;
+      const status = statusResponse.status;
 
       juditLogger.debug({
         action: 'polling_status_update',

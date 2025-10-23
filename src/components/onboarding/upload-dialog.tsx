@@ -95,8 +95,8 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
     if (!uploadResult?.caseId) return;
 
     try {
-      // Redirecionar para a página de análise ou abrir modal de análise
-      window.location.href = `/dashboard/processes/${uploadResult.caseId}`;
+      // Navigate to process page with analysis tab open
+      window.location.href = `/dashboard/process/${uploadResult.caseId}?tab=analysis`;
     } catch (err) {
       console.error('Error navigating to analysis:', err);
     }

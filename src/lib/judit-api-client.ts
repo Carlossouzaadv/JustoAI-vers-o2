@@ -23,7 +23,7 @@ export interface JuditRequest {
 
 export interface JuditResponse {
   request_id: string;
-  request_status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   data?: any;
   error?: string;
   attachments?: any[];
@@ -507,7 +507,7 @@ export class JuditApiClient {
 
         this.updateStats(true, responseTime);
 
-        if (response.request_status === 'completed') {
+        if (response.status === 'completed') {
           console.log(`${ICONS.SUCCESS} Request completed: ${requestId}`);
 
           // Registrar telemetria de conclusão
@@ -528,7 +528,7 @@ export class JuditApiClient {
           return response;
         }
 
-        if (response.request_status === 'failed') {
+        if (response.status === 'failed') {
           throw new Error(`Request failed: ${response.error}`);
         }
 

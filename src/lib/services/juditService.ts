@@ -96,7 +96,7 @@ export interface OnboardingPayload {
  */
 export interface OnboardingResponse {
   request_id: string;
-  request_status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   [key: string]: any;
 }
 
@@ -105,7 +105,7 @@ export interface OnboardingResponse {
  */
 export interface StatusResponse {
   request_id: string;
-  request_status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   [key: string]: any;
 }
 
@@ -385,7 +385,7 @@ export async function createOnboarding(
       action: 'create_onboarding_success',
       cnj,
       request_id: response.data.request_id,
-      status: response.data.request_status,
+      status: response.data.status,
     });
   } else {
     juditLogger.error({
@@ -421,7 +421,7 @@ export async function getOnboardingStatus(
     juditLogger.debug({
       action: 'get_onboarding_status_success',
       request_id: requestId,
-      status: response.data.request_status,
+      status: response.data.status,
     });
   }
 
