@@ -10,6 +10,7 @@ import { getRedisConnection } from '../lib/redis';
 import { performFullProcessRequest } from '../lib/services/juditOnboardingService';
 import { checkConfiguration } from '../lib/services/juditService';
 import { queueLogger, logOperationStart } from '../lib/observability/logger';
+import { circuitBreakerService } from '../lib/services/circuitBreakerService';
 import { prisma } from '../lib/prisma';
 import type {
   JuditOnboardingJobData,
@@ -68,6 +69,27 @@ async function processOnboardingJob(
 ): Promise<JuditOnboardingJobResult> {
   const { cnj, workspaceId, userId } = job.data;
 
+  // Check if circuit breaker is open (quota exceeded)
+  if (circuitBreakerService.isQueuePaused()) {
+    const status = circuitBreakerService.getStatus();
+    workerLogger.error({
+      action: 'job_blocked_circuit_open',
+      job_id: job.id,
+      cnj,
+      error: 'Upstash quota limit exceeded',
+      circuit_state: status.state,
+      error_message: status.config.errorMessage,
+      next_retry: status.nextRetryAttempt?.toISOString(),
+    });
+
+    // Reject job and let it retry later
+    throw new Error(
+      `Upstash quota exceeded. Queue paused. ` +
+      `Auto-retry scheduled for ${status.nextRetryAttempt?.toISOString() || 'unknown'}. ` +
+      `Error: ${status.config.errorMessage}`
+    );
+  }
+
   // Check if JUDIT is properly configured before processing
   const config = checkConfiguration();
   if (!config.configured) {
@@ -119,7 +141,32 @@ async function processOnboardingJob(
       cnj,
     });
 
-    const result = await performFullProcessRequest(cnj, 'ONBOARDING');
+    let result;
+    try {
+      result = await performFullProcessRequest(cnj, 'ONBOARDING');
+    } catch (serviceError) {
+      // Check if error is from Upstash quota limit
+      const errorStr = String(serviceError instanceof Error ? serviceError.message : serviceError);
+      if (
+        errorStr.includes('ERR max requests limit exceeded') ||
+        errorStr.includes('max_requests_limit') ||
+        errorStr.includes('quota')
+      ) {
+        // Trigger circuit breaker
+        circuitBreakerService.triggerQuotaExceeded(serviceError);
+
+        // Reject the job with circuit breaker error
+        const status = circuitBreakerService.getStatus();
+        throw new Error(
+          `Upstash quota exceeded. Circuit breaker activated. ` +
+          `Auto-retry scheduled for ${status.nextRetryAttempt?.toISOString() || 'unknown'}. ` +
+          `Original error: ${errorStr}`
+        );
+      }
+
+      // Re-throw non-quota errors
+      throw serviceError;
+    }
 
     const duration = Date.now() - startTime;
 
@@ -270,6 +317,53 @@ export const juditOnboardingWorker = new Worker<
     limiter: WORKER_CONFIG.limiter,
   }
 );
+
+// ================================================================
+// CIRCUIT BREAKER INTEGRATION
+// ================================================================
+
+// Listen for circuit breaker events and pause/resume worker accordingly
+circuitBreakerService.on('circuit-opened', async () => {
+  workerLogger.warn({
+    action: 'circuit_breaker_event',
+    event: 'circuit_opened',
+    message: 'Circuit breaker opened - pausing worker',
+  });
+
+  try {
+    await juditOnboardingWorker.pause();
+    workerLogger.info({
+      action: 'worker_paused',
+      reason: 'circuit_breaker_quota_exceeded',
+    });
+  } catch (error) {
+    workerLogger.error({
+      action: 'worker_pause_error',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+circuitBreakerService.on('queue-resumed', async () => {
+  workerLogger.info({
+    action: 'circuit_breaker_event',
+    event: 'queue_resumed',
+    message: 'Circuit breaker recovered - resuming worker',
+  });
+
+  try {
+    await juditOnboardingWorker.resume();
+    workerLogger.info({
+      action: 'worker_resumed',
+      reason: 'circuit_breaker_recovered',
+    });
+  } catch (error) {
+    workerLogger.error({
+      action: 'worker_resume_error',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
 
 // ================================================================
 // EVENT HANDLERS
