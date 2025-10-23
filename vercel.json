@@ -3,8 +3,6 @@
   "buildCommand": "npm run build",
   "framework": "nextjs",
   "installCommand": "npm install --legacy-peer-deps --prefer-offline --no-audit",
-  "nodeVersion": "20.x",
-
   "build": {
     "env": {
       "NODE_ENV": "production",
