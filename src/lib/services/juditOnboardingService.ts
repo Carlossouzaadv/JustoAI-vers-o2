@@ -547,11 +547,25 @@ async function retrieveAndPersistData(
   let dadosCompletos: any;
 
   if (totalPages === 1) {
-    // Apenas uma página
-    dadosCompletos = firstPageResponse;
+    // Apenas uma página - extrair process data
+    const processos = (firstPageResponse.page_data || []).map(
+      (item: any) => item.response_data
+    );
+
+    dadosCompletos = {
+      request_id: requestId,
+      request_status: firstPageResponse.request_status,
+      pagination: {
+        page: firstPageResponse.page,
+        page_count: firstPageResponse.page_count,
+        all_pages_count: firstPageResponse.all_pages_count,
+        all_count: firstPageResponse.all_count,
+      },
+      processos,
+    };
   } else {
-    // Múltiplas páginas - buscar todas
-    dadosCompletos = await retrieveAllPages(requestId, totalPages);
+    // Múltiplas páginas - buscar e consolidar todas
+    dadosCompletos = await retrieveAllPages(requestId, firstPageResponse, totalPages);
   }
 
   // Persistir dados completos no banco
@@ -591,6 +605,7 @@ async function retrieveAndPersistData(
 
 async function retrieveAllPages(
   requestId: string,
+  firstPageResponse: JuditResponseData,
   totalPages: number
 ): Promise<any> {
   const juditClient = getJuditApiClient();
@@ -611,11 +626,16 @@ async function retrieveAllPages(
     totalPages = PAGINATION_CONFIG.MAX_PAGES;
   }
 
+  // Inicializar com dados da primeira página
+  const allProcessos: any[] = (firstPageResponse.page_data || []).map(
+    (item: any) => item.response_data
+  );
+
   // Criar array de páginas para buscar (1 já foi buscada)
   const pagesToFetch = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
 
   // Buscar páginas em lotes paralelos
-  const allPagesData: any[] = [];
+  const allPagesData: JuditResponseData[] = [];
 
   for (let i = 0; i < pagesToFetch.length; i += PAGINATION_CONFIG.CONCURRENT_PAGE_REQUESTS) {
     const batch = pagesToFetch.slice(i, i + PAGINATION_CONFIG.CONCURRENT_PAGE_REQUESTS);
@@ -639,6 +659,11 @@ async function retrieveAllPages(
     batchResults.forEach((result, index) => {
       if (result.status === 'fulfilled') {
         allPagesData.push(result.value);
+        // Extrair process data desta página
+        const pageProcessos = (result.value.page_data || []).map(
+          (item: any) => item.response_data
+        );
+        allProcessos.push(...pageProcessos);
       } else {
         juditLogger.error({
           action: 'fetch_page_failed',
@@ -650,17 +675,24 @@ async function retrieveAllPages(
     });
   }
 
-  // Consolidar todas as páginas
+  // Consolidar todas as páginas com estrutura normalizada
   juditLogger.info({
     action: 'consolidate_pages',
     request_id: requestId,
     pages_count: allPagesData.length + 1,
+    total_processes: allProcessos.length,
   });
 
   const consolidated = {
     request_id: requestId,
-    all_pages_count: totalPages,
-    pages: allPagesData,
+    request_status: firstPageResponse.request_status,
+    pagination: {
+      page: firstPageResponse.page,
+      page_count: firstPageResponse.page_count,
+      all_pages_count: totalPages,
+      all_count: firstPageResponse.all_count,
+    },
+    processos: allProcessos,
   };
 
   return consolidated;
