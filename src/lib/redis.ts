@@ -83,7 +83,7 @@ const getRedisConfig = (): RedisOptions => {
 
         // Connection Optimization (Low Idle Cost)
         lazyConnect: true, // Don't connect until first command
-        keepAlive: 30000, // Keep connection alive for 30s
+        keepAlive: 60000, // Keep connection alive for 60s (reduced PINGs: was 30s)
         connectTimeout: isStrictMode ? 30000 : 60000, // Strict: 30s, Graceful: 60s (increased for stability)
         commandTimeout: isStrictMode ? 15000 : 30000, // Strict: 15s, Graceful: 30s (increased for stability)
 
@@ -148,7 +148,7 @@ const getRedisConfig = (): RedisOptions => {
 
     // Same optimization as above, but with mode-appropriate settings
     lazyConnect: true,
-    keepAlive: 30000,
+    keepAlive: 60000, // Keep connection alive for 60s (reduced PINGs: was 30s)
     connectTimeout: isStrictMode ? 10000 : 30000,
     commandTimeout: isStrictMode ? 5000 : 15000,
 
