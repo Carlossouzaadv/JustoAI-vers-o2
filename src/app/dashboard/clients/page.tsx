@@ -415,8 +415,6 @@ function CreateClientForm({
         body: JSON.stringify({
           ...formData,
           workspaceId,
-          // Change COMPANY to BUSINESS for API compatibility
-          type: formData.type === 'COMPANY' ? 'BUSINESS' : formData.type,
         }),
       });
 

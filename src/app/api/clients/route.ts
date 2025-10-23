@@ -45,7 +45,7 @@ import {
  *         required: false
  *         schema:
  *           type: string
- *           enum: [INDIVIDUAL, BUSINESS]
+ *           enum: [INDIVIDUAL, COMPANY, GOVERNMENT, NGO]
  *       - name: workspaceId
  *         in: query
  *         description: ID do workspace para filtrar
@@ -213,7 +213,7 @@ async function GET(request: NextRequest) {
  *                 description: CPF ou CNPJ
  *               type:
  *                 type: string
- *                 enum: [INDIVIDUAL, BUSINESS]
+ *                 enum: [INDIVIDUAL, COMPANY, GOVERNMENT, NGO]
  *                 example: INDIVIDUAL
  *               status:
  *                 type: string

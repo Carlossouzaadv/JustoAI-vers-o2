@@ -20,9 +20,11 @@ export default function DocumentsUploadPageClient() {
         });
 
         if (response.ok) {
-          const data = await response.json();
-          if (data.workspaces && data.workspaces.length > 0) {
-            setWorkspaceId(data.workspaces[0].id);
+          const result = await response.json();
+          // API returns { success, data, pagination, message }
+          // data is an array of workspaces
+          if (result.data && result.data.length > 0) {
+            setWorkspaceId(result.data[0].id);
           }
         }
       } catch (error) {
