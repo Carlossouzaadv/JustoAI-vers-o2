@@ -206,13 +206,13 @@ function buildNextSteps(schema: Partial<UnifiedProcessSchema>): string {
     passos.push(`Recomendação: ${recomendacao}`);
   }
 
-  // 3. Últim andamento (se não houver prazos)
-  if (passos.length === 0 && situacao?.ultimo_andamento) {
+  // 3. Último andamento (se não houver prazos ou recomendações E houver resumo do andamento)
+  if (passos.length === 0 && situacao?.ultimo_andamento?.resumo) {
     const ultimo = situacao.ultimo_andamento;
-    passos.push(`Último andamento: ${ultimo.resumo || 'Não especificado'}`);
+    passos.push(`Último andamento: ${ultimo.resumo}`);
   }
 
-  // Fallback
+  // Fallback - Se não houver nenhuma informação
   if (passos.length === 0) {
     return 'Aguardando atualização de próximos passos...';
   }

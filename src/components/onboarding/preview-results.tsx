@@ -11,6 +11,7 @@ interface PreviewData {
   processNumber?: string;
   parties?: string[];
   subject?: string;
+  object?: string; // Objeto jurídico específico extraído pelo Gemini
   claimValue?: number;
   dates?: string[];
   risks?: string[];
@@ -120,6 +121,18 @@ export function PreviewResults({ data, className }: PreviewResultsProps) {
           </Card>
         )}
       </div>
+
+      {/* Objeto Jurídico */}
+      {data.object && (
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader>
+            <CardTitle className="text-base">Objeto do Processo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-700 leading-relaxed">{data.object}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Datas Importantes */}
       {data.dates && data.dates.length > 0 && (

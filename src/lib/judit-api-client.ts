@@ -676,10 +676,27 @@ export class JuditApiClient {
           throw error;
         }
 
+        // ============================================================
+        // IMPORTANTE: Ler o response body UMA VEZ
+        // Fetch API não permite consumir o stream múltiplas vezes
+        // ============================================================
+        let responseBody: any;
+        let responseText: string = '';
+
+        try {
+          // Primeiro, tentar parsear como JSON
+          responseBody = await response.json();
+          responseText = JSON.stringify(responseBody);
+        } catch (parseError) {
+          // Se JSON falhar, ler como texto
+          // Neste ponto, o stream pode estar parcialmente consumido
+          // Então fazemos um fallback para texto bruto
+          responseText = `[JSON Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown'}]`;
+        }
+
         // Handle server errors that should be retried
         if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status as any)) {
-          const errorText = await response.text();
-          const error = new Error(`HTTP ${response.status}: ${errorText}`);
+          const error = new Error(`HTTP ${response.status}: ${responseText}`);
           (error as any).retryable = true;
           (error as any).statusCode = response.status;
           throw error;
@@ -687,22 +704,21 @@ export class JuditApiClient {
 
         // Handle client errors that should NOT be retried
         if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status as any)) {
-          const errorText = await response.text();
-          const error = new Error(`HTTP ${response.status}: ${errorText}`);
+          const error = new Error(`HTTP ${response.status}: ${responseText}`);
           (error as any).retryable = false;
           (error as any).statusCode = response.status;
           throw error;
         }
 
         if (!response.ok) {
-          const errorText = await response.text();
-          const error = new Error(`HTTP ${response.status}: ${errorText}`);
+          const error = new Error(`HTTP ${response.status}: ${responseText}`);
           (error as any).retryable = response.status >= 500; // Retry server errors
           (error as any).statusCode = response.status;
           throw error;
         }
 
-        return await response.json();
+        // Se chegou aqui, response.ok é true e temos o body parseado
+        return responseBody;
 
       } catch (error) {
         clearTimeout(timeoutId);

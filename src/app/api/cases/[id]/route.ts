@@ -23,41 +23,68 @@ export async function GET(
 
     console.log(`${ICONS.SEARCH} [API] Fetching case: ${caseId}`)
 
-    // First, fetch the case to get the workspaceId
-    const caseData = await prisma.case.findUnique({
-      where: { id: caseId },
-      include: {
-        client: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            type: true,
-          },
-        },
-        documents: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            size: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 20,
-        },
-        _count: {
-          select: {
-            documents: true,
-          },
+    // Include definition for case queries
+    const caseInclude = {
+      client: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          type: true,
         },
       },
+      documents: {
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          size: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      },
+      _count: {
+        select: {
+          documents: true,
+        },
+      },
+    }
+
+    // Try to fetch the case by ID (primary key)
+    let caseData = await prisma.case.findUnique({
+      where: { id: caseId },
+      include: caseInclude,
     })
 
+    // If not found by ID, try by detectedCnj (CNJ number)
     if (!caseData) {
-      console.warn(`${ICONS.WARNING} Case not found: ${caseId}`)
+      console.log(`${ICONS.INFO} [API] Not found by ID, trying detectedCnj...`)
+      caseData = await prisma.case.findFirst({
+        where: {
+          detectedCnj: caseId,
+        },
+        include: caseInclude,
+      })
+    }
+
+    // If still not found, try by process number
+    if (!caseData) {
+      console.log(`${ICONS.INFO} [API] Not found by detectedCnj, trying process number...`)
+      caseData = await prisma.case.findFirst({
+        where: {
+          number: caseId,
+        },
+        include: caseInclude,
+      })
+    }
+
+    if (!caseData) {
+      console.warn(`${ICONS.WARNING} Case not found using any identifier: ${caseId}`)
       return errorResponse('Caso não encontrado', 404)
     }
+
+    console.log(`${ICONS.SUCCESS} Case found: ${caseData.id} (number: ${caseData.number})`)
 
     // Check if user has access to this workspace
     const { hasAccess, error: accessError } = await requireWorkspaceAccess(
@@ -65,8 +92,6 @@ export async function GET(
       caseData.workspaceId
     )
     if (!hasAccess) return accessError!
-
-    console.log(`${ICONS.SUCCESS} Case fetched successfully: ${caseData.number}`)
 
     return successResponse({
       case: {

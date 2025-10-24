@@ -16,6 +16,7 @@ export interface PreviewSnapshot {
   summary: string;
   parties: string[];
   subject: string;
+  object: string; // Objeto jurídico específico (ex: "Agravo de Instrumento contra decisão que negou liminar")
   claimValue: number | null;
   lastMovements: PreviewMovement[];
   generatedAt: string;
@@ -119,6 +120,7 @@ export async function generatePreview(
           summary: response.summary || '',
           parties: Array.isArray(response.parties) ? response.parties : [],
           subject: response.subject || '',
+          object: response.object || '', // Objeto jurídico específico extraído pelo Gemini
           claimValue: response.claimValue || null,
           lastMovements: Array.isArray(response.lastMovements) ? response.lastMovements : [],
           generatedAt: new Date().toISOString(),
@@ -182,9 +184,13 @@ Analise o texto jurídico abaixo e extraia APENAS as seguintes informações par
 
 1. **summary**: Resumo do processo em 1-2 frases (máx 150 caracteres). Seja conciso e direto.
 2. **parties**: Lista de partes principais. Formato: ["Autor: Nome", "Réu: Nome"]
-3. **subject**: Assunto/objeto principal do processo em uma frase curta (máx 50 caracteres)
-4. **claimValue**: Valor da causa em reais como número (ex: 1000000.00) ou null se não houver
-5. **lastMovements**: Último andamento mais recente do processo (máximo 1 movimento com: date, type, description)
+3. **subject**: Classificação/tipo do processo ou recurso (ex: "Execução Fiscal", "Apelação Cível", "Ação Ordinária")
+4. **object**: Objeto jurídico específico (O DE QUÊ se trata este documento). Descreva o que está sendo discutido/solicitado, o fundamento jurídico ou a questão principal em disputa. Máx 150 caracteres. Exemplos:
+   - "Agravo de Instrumento contra decisão que negou liminar de suspensão de demissão"
+   - "Apelação contra sentença de condenação em ação de cobrança de débito"
+   - "Execução de Sentença de Indenização por Danos Morais"
+5. **claimValue**: Valor da causa em reais como número (ex: 1000000.00) ou null se não houver
+6. **lastMovements**: Último andamento mais recente do processo (máximo 1 movimento com: date, type, description)
 
 **REGRAS IMPORTANTES**:
 - Retorne APENAS JSON válido, sem texto adicional antes ou depois
@@ -192,13 +198,15 @@ Analise o texto jurídico abaixo e extraia APENAS as seguintes informações par
 - Datas: formato ISO 8601 (YYYY-MM-DD)
 - Descrição: máx 150 caracteres, objetiva
 - Não inclua informações de confiança, modelo ou análise de risco
+- O campo "object" é OBRIGATÓRIO e deve ser descritivo e jurídico
 
 **FORMATO DE RESPOSTA**:
 \`\`\`json
 {
   "summary": "Resumo breve do processo...",
   "parties": ["Autor: Nome do Autor", "Réu: Nome do Réu"],
-  "subject": "Execução Fiscal",
+  "subject": "Apelação Cível",
+  "object": "Apelação contra sentença que condenou em ação de cobrança de dívida",
   "claimValue": 580907.19,
   "lastMovements": [
     {
@@ -238,6 +246,10 @@ export function validatePreviewSnapshot(preview: any): boolean {
   }
 
   if (typeof preview.subject !== 'string' || preview.subject.trim().length === 0) {
+    return false;
+  }
+
+  if (typeof preview.object !== 'string' || preview.object.trim().length === 0) {
     return false;
   }
 
