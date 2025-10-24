@@ -24,7 +24,10 @@
       "Bash(pkill:*)",
       "Bash(kill:*)",
       "Bash(powershell -Command \"Remove-Item -Path ''node_modules'' -Recurse -Force\")",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Read(//c/Users/carlo/Documents/**)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

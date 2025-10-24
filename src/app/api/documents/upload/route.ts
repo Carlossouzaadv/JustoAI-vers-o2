@@ -470,7 +470,46 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 17. TIMELINE UNIFICADA - EXTRAIR E MESCLAR ANDAMENTOS
+    // 17. SALVAR ANÁLISE GERADA COMO VERSÃO
+    if (aiAnalysisResult) {
+      try {
+        // Obter versão mais recente
+        const lastVersion = await prisma.caseAnalysisVersion.findFirst({
+          where: { caseId: targetCaseId },
+          orderBy: { version: 'desc' },
+          select: { version: true }
+        });
+
+        const nextVersion = (lastVersion?.version || 0) + 1;
+
+        // Salvar análise como primeira versão
+        const analysisVersion = await prisma.caseAnalysisVersion.create({
+          data: {
+            caseId: targetCaseId,
+            version: nextVersion,
+            status: 'COMPLETED',
+            analysisType: 'essential', // Análise rápida do upload é considerada "essencial"
+            modelUsed: modelVersion,
+            aiAnalysis: aiAnalysisResult,
+            confidence: (aiAnalysisResult as any)?.metadados_analise?.confianca || 0.8,
+            processingTime: Date.now() - startTime,
+            metadata: {
+              source: 'upload_gemini',
+              documentId: document.id,
+              cacheKey: cacheResult.key,
+              model: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion
+            }
+          }
+        });
+
+        console.log(`${ICONS.SUCCESS} Análise salva como versão ${nextVersion}: ${analysisVersion.id}`);
+      } catch (analysisVersionError) {
+        console.error(`${ICONS.ERROR} Erro ao salvar análise:`, analysisVersionError);
+        // Não falhar o upload por causa disso
+      }
+    }
+
+    // 18. TIMELINE UNIFICADA - EXTRAIR E MESCLAR ANDAMENTOS
     const timelineService = getTimelineMergeService();
 
     if (aiAnalysisResult) {
@@ -481,7 +520,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 18. FASE 2 - ENRIQUECIMENTO OFICIAL VIA JUDIT (Background Async)
+    // 19. FASE 2 - ENRIQUECIMENTO OFICIAL VIA JUDIT (Background Async)
     // Queue a background job to fetch official process data from JUDIT
     // This happens asynchronously - doesn't block the response
     let juditJobId: string | undefined;
@@ -502,7 +541,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 19. REGISTRAR EVENTO
+    // 20. REGISTRAR EVENTO
     await prisma.caseEvent.create({
       data: {
         caseId: targetCaseId,
@@ -521,7 +560,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 20. RESPOSTA DE SUCESSO
+    // 21. RESPOSTA DE SUCESSO
     const processingTime = Date.now() - startTime;
 
     return NextResponse.json({

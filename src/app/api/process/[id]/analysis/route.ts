@@ -1,7 +1,8 @@
 // ================================================================
-// API ENDPOINT - Aprofundar Análise (FAST/FULL)
+// API ENDPOINT - Análise IA (GET análises / POST criar nova)
 // ================================================================
-// POST /api/process/{id}/analysis?level=FAST|FULL
+// GET  /api/process/{id}/analysis - Recuperar análises salvas
+// POST /api/process/{id}/analysis?level=FAST|FULL - Gerar nova análise
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
@@ -18,6 +19,68 @@ interface AnalysisRequest {
   includeTimeline?: boolean;
   uploadedFile?: string; // Para FULL - path do arquivo uploaded
   workspaceId: string; // Required for credit system
+}
+
+/**
+ * GET - Recuperar análises salvas do processo
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: processId } = await params;
+
+  try {
+    console.log(`${ICONS.SEARCH} Buscando análises para processo: ${processId}`);
+
+    // Buscar todas as análises do processo, ordenadas por versão (mais recentes primeiro)
+    const analyses = await prisma.caseAnalysisVersion.findMany({
+      where: { caseId: processId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        version: true,
+        status: true,
+        analysisType: true,
+        modelUsed: true,
+        aiAnalysis: true,
+        confidence: true,
+        processingTime: true,
+        createdAt: true,
+        metadata: true
+      }
+    });
+
+    console.log(`${ICONS.SUCCESS} Encontradas ${analyses.length} análise(s)`);
+
+    return NextResponse.json({
+      success: true,
+      analyses: analyses.map(a => ({
+        id: a.id,
+        version: a.version,
+        createdAt: a.createdAt,
+        status: a.status,
+        analysisType: a.analysisType,
+        model: a.modelUsed,
+        confidence: a.confidence,
+        processingTime: a.processingTime,
+        summary: (a.aiAnalysis as any)?.summary || (a.aiAnalysis as any)?.resumo_executivo,
+        keyPoints: (a.aiAnalysis as any)?.keyPoints || (a.aiAnalysis as any)?.pontos_principais,
+        legalAssessment: (a.aiAnalysis as any)?.legalAssessment || (a.aiAnalysis as any)?.avaliacao_juridica,
+        riskAssessment: (a.aiAnalysis as any)?.riskAssessment || (a.aiAnalysis as any)?.analise_risco,
+        timelineAnalysis: (a.aiAnalysis as any)?.timelineAnalysis || (a.aiAnalysis as any)?.analise_cronograma,
+        // Dados completos para referência
+        data: a.aiAnalysis
+      }))
+    });
+
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Erro ao buscar análises:`, error);
+    return NextResponse.json(
+      { error: 'Erro ao buscar análises' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(

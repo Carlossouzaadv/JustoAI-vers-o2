@@ -94,129 +94,39 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/processes/${processId}/ai-analysis`);
+      // Chamar endpoint correto: /api/process/{id}/analysis (singular)
+      const response = await fetch(`/api/process/${processId}/analysis`);
       if (response.ok) {
         const data = await response.json();
         const analysisVersions = data.analyses || [];
-        setAnalyses(analysisVersions);
+        setAnalyses(analysisVersions.map((a: any) => ({
+          id: a.id,
+          version: a.version,
+          createdAt: a.createdAt,
+          status: a.status,
+          analysisType: a.analysisType,
+          model: a.model,
+          summary: a.summary,
+          keyPoints: a.keyPoints,
+          legalAssessment: a.legalAssessment,
+          riskAssessment: a.riskAssessment,
+          timelineAnalysis: a.timelineAnalysis,
+          tokensUsed: (a.data as any)?.tokensUsed,
+          processingTime: a.processingTime,
+          confidence: a.confidence
+        })));
 
         // Selecionar a versão mais recente por padrão
         if (analysisVersions.length > 0) {
           setSelectedVersion(analysisVersions[0]);
         }
       } else {
-        // Dados simulados para desenvolvimento
-        const mockAnalyses: AIAnalysisVersion[] = [
-          {
-            id: '1',
-            version: 3,
-            createdAt: '2024-01-20T14:30:00',
-            status: 'completed',
-            analysisType: 'complete',
-            model: 'gemini-pro',
-            summary: 'Ação indenizatória por danos morais com boa fundamentação legal. Cliente possui documentação sólida e jurisprudência favorável.',
-            keyPoints: [
-              'Dano moral comprovado por documentos médicos',
-              'Nexo causal claro entre conduta e dano',
-              'Jurisprudência favorável no TJ-SP',
-              'Valor da indenização dentro da média regional'
-            ],
-            legalAssessment: {
-              strengths: [
-                'Documentação médica completa',
-                'Testemunhas identificadas',
-                'Precedentes favoráveis'
-              ],
-              weaknesses: [
-                'Réu possui defesas técnicas válidas',
-                'Período entre fato e ação é longo'
-              ],
-              recommendations: [
-                'Agilizar oitiva das testemunhas',
-                'Solicitar perícia complementar',
-                'Avaliar possibilidade de acordo'
-              ],
-              urgentActions: [
-                'Responder contestação em 10 dias',
-                'Agendar perícia médica'
-              ]
-            },
-            riskAssessment: {
-              level: 'medium',
-              factors: [
-                'Complexidade probatória média',
-                'Réu possui bons advogados',
-                'Valor elevado pode gerar resistência'
-              ],
-              mitigation: [
-                'Fortalecer conjunto probatório',
-                'Considerar acordo estratégico',
-                'Preparar jurisprudência atualizada'
-              ]
-            },
-            timelineAnalysis: {
-              nextDeadlines: [
-                {
-                  date: '2024-02-01T15:00:00',
-                  description: 'Audiência de conciliação',
-                  priority: 'high'
-                },
-                {
-                  date: '2024-01-28T18:00:00',
-                  description: 'Prazo para tréplica',
-                  priority: 'medium'
-                }
-              ],
-              criticalPhases: [
-                'Fase probatória',
-                'Possível recurso'
-              ]
-            },
-            tokensUsed: 3420,
-            processingTime: 4500,
-            confidence: 0.87
-          },
-          {
-            id: '2',
-            version: 2,
-            createdAt: '2024-01-18T09:15:00',
-            status: 'completed',
-            analysisType: 'strategic',
-            model: 'gemini-flash',
-            summary: 'Análise estratégica focada em riscos e oportunidades processuais.',
-            keyPoints: [
-              'Estratégia defensiva do réu é previsível',
-              'Oportunidade de acordo na primeira audiência',
-              'Jurisprudência recente favorável'
-            ],
-            tokensUsed: 1850,
-            processingTime: 2100,
-            confidence: 0.82
-          },
-          {
-            id: '3',
-            version: 1,
-            createdAt: '2024-01-15T10:00:00',
-            status: 'completed',
-            analysisType: 'essential',
-            model: 'gemini-flash-8b',
-            summary: 'Análise essencial dos pontos principais do processo.',
-            keyPoints: [
-              'Processo bem fundamentado',
-              'Documentação adequada',
-              'Prazo para resposta: 15 dias'
-            ],
-            tokensUsed: 950,
-            processingTime: 800,
-            confidence: 0.91
-          }
-        ];
-
-        setAnalyses(mockAnalyses);
-        setSelectedVersion(mockAnalyses[0]);
+        console.warn('Nenhuma análise encontrada via API, carregando dados vazios');
+        setAnalyses([]);
       }
     } catch (error) {
-      console.error('Erro ao carregar análises:', error);
+      console.error('Erro ao buscar análises:', error);
+      setAnalyses([]);
     } finally {
       setLoading(false);
     }
