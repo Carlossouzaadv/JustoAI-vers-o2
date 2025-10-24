@@ -14,6 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { UsageAlert } from '@/components/ui/usage-alert';
 import {
   SubscriptionPlan,
@@ -305,7 +311,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
             </div>
           ) : (
             <>
-              {/* Análise atual + histórico discreto */}
+              {/* Análise atual + histórico com dropdown */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <Badge
@@ -319,9 +325,52 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
                   </span>
                 </div>
                 {analyses.length > 1 && (
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    Ver Histórico ({analyses.length - 1} anterior{analyses.length > 2 ? 'es' : ''})
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-xs">
+                        {ICONS.TIME} Ver Histórico ({analyses.length - 1} anterior{analyses.length > 2 ? 'es' : ''})
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-80">
+                      <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
+                        Histórico de Análises
+                      </div>
+                      {analyses.map((analysis, index) => (
+                        <DropdownMenuItem
+                          key={analysis.id}
+                          onClick={() => setSelectedVersion(analysis)}
+                          className={`cursor-pointer ${
+                            selectedVersion.id === analysis.id ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="w-full">
+                            <div className="flex items-center gap-2 justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant={getAnalysisTypeColor(analysis.analysisType)} className="text-xs">
+                                  {getAnalysisTypeLabel(analysis.analysisType)}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  v{analysis.version}
+                                </span>
+                              </div>
+                              {selectedVersion.id === analysis.id && (
+                                <span className="text-xs text-blue-600">{ICONS.SUCCESS}</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(analysis.createdAt).toLocaleString('pt-BR')}
+                            </p>
+                            {analysis.status === 'generating' && (
+                              <p className="text-xs text-yellow-600 mt-0.5">Gerando...</p>
+                            )}
+                            {analysis.status === 'error' && (
+                              <p className="text-xs text-red-600 mt-0.5">Erro na geração</p>
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
               </div>
 

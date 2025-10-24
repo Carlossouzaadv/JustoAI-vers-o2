@@ -280,7 +280,7 @@ export default function ProcessPage() {
                         <Button
                           variant="destructive"
                           size="sm"
-                          className="flex items-center gap-1 h-7"
+                          className="flex items-center gap-1 h-7 text-white font-semibold"
                           onClick={() => loadClients()}
                         >
                           {ICONS.WARNING} Cliente não atribuído
