@@ -52,7 +52,7 @@
     "check:all": "npm run type-check && npm run lint && npm run check:imports",
     "verify:worker": "npx tsx scripts/verify-worker-config.ts",
     "verify:worker:local": "NODE_ENV=development npx tsx scripts/verify-worker-config.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@bull-board/express": "^6.12.7",
