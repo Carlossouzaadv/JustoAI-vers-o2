@@ -59,6 +59,7 @@ interface JuditRequestPayload {
     on_demand: boolean;
   };
   with_attachments: boolean;
+  callback_url?: string; // Webhook callback URL (NOVO)
 }
 
 interface JuditRequestResponse {
@@ -81,10 +82,10 @@ interface JuditResponseData {
 
 const POLLING_CONFIG = {
   INTERVAL_MS: 20000, // 20 segundos entre verificações
-  MAX_ATTEMPTS: 30, // 10 minutos total (30 * 20s) - reduzido de 90 para não consumir quota
-  TIMEOUT_MS: 600000, // 10 minutos - reduzido de 30min
+  MAX_ATTEMPTS: 60, // 20 minutos total (60 * 20s) - aumentado de 30 para dar mais tempo à JUDIT processar
+  TIMEOUT_MS: 1200000, // 20 minutos - aumentado de 10min para acomodar requisições mais lentas
   RETRY_ON_ERROR_DELAY_MS: 5000, // 5 segundos após erro
-  MAX_ERROR_RETRIES: 3,
+  MAX_ERROR_RETRIES: 5, // Aumentado de 3 para ser mais resiliente a falhas temporárias
 } as const;
 
 const PAGINATION_CONFIG = {
@@ -306,6 +307,10 @@ async function initiateRequest(
   }
 
   // Montar payload da requisição
+  // NOVO: Adicionar webhook callback para receber respostas de forma eficiente
+  // Isso evita o polling de 20 minutos e permite processar respostas conforme chegam
+  const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://api.justoai.com.br'}/api/webhook/judit/callback`;
+
   const payload: JuditRequestPayload = {
     search: {
       search_type: 'lawsuit_cnj',
@@ -313,12 +318,14 @@ async function initiateRequest(
       on_demand: true,
     },
     with_attachments: true,
+    callback_url: webhookUrl, // NOVO: Webhook callback (mais eficiente que polling)
   };
 
   juditLogger.info({
     action: 'send_judit_request',
     cnj,
     with_attachments: true,
+    webhook_callback_url: webhookUrl, // Log para auditoria
   });
 
   // Fazer requisição POST para /requests
@@ -460,19 +467,19 @@ async function pollRequestStatus(
       }
 
     } catch (error) {
-      consecutiveErrors++;
-      juditLogger.error({
-        action: 'polling_error',
-        request_id: requestId,
-        cnj,
-        attempt: attemptCount,
-        consecutive_errors: consecutiveErrors,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
-      // Se muitos erros consecutivos, falhar
-      if (consecutiveErrors >= POLLING_CONFIG.MAX_ERROR_RETRIES) {
-        const errorMessage = error instanceof Error ? error.message : 'Múltiplos erros de polling';
+      // NOVO: Detectar erro 404 (requisição expirou/deletada no servidor JUDIT)
+      // Quando receber 404, a requisição foi expirada/deletada, não faz sentido retentá-la
+      if (errorMessage.includes('HTTP 404') || errorMessage.includes('REQUEST_NOT_FOUND')) {
+        juditLogger.error({
+          action: 'request_expired_404',
+          request_id: requestId,
+          cnj,
+          attempt: attemptCount,
+          error: 'Requisição expirou/foi deletada do servidor JUDIT (HTTP 404)',
+          note: 'JUDIT mantém requisições pendentes apenas por ~10 minutos. Aumentado para 20 minutos.',
+        });
 
         await prisma.juditRequest.updateMany({
           where: { requestId },
@@ -481,7 +488,31 @@ async function pollRequestStatus(
 
         return {
           success: false,
-          error: errorMessage,
+          error: 'Requisição JUDIT expirou após não completar dentro do período de espera. Servidor JUDIT deletou a requisição pendente.',
+          attemptCount,
+        };
+      }
+
+      consecutiveErrors++;
+      juditLogger.error({
+        action: 'polling_error',
+        request_id: requestId,
+        cnj,
+        attempt: attemptCount,
+        consecutive_errors: consecutiveErrors,
+        error: errorMessage,
+      });
+
+      // Se muitos erros consecutivos, falhar
+      if (consecutiveErrors >= POLLING_CONFIG.MAX_ERROR_RETRIES) {
+        await prisma.juditRequest.updateMany({
+          where: { requestId },
+          data: { status: 'failed' },
+        });
+
+        return {
+          success: false,
+          error: `Falha após ${consecutiveErrors} erros consecutivos: ${errorMessage}`,
           attemptCount,
         };
       }

@@ -532,6 +532,7 @@ export async function POST(request: NextRequest) {
             status: 'COMPLETED',
             analysisType: 'essential', // Análise rápida do upload é considerada "essencial"
             modelUsed: modelVersion,
+            analysisKey: cacheResult.key || hashResult.textSha + '_' + modelVersion, // Chave para cache de análise
             aiAnalysis: aiAnalysisResult as any, // JSON field
             confidence: (aiAnalysisResult as any)?.metadados_analise?.confianca || 0.8,
             processingTime: Date.now() - startTime,

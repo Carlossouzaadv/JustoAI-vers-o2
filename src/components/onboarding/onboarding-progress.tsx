@@ -587,7 +587,29 @@ function ExpandedPhaseContent({
     );
   }
 
-  if (phase === 'PREVIEW' && previewData) {
+  if (phase === 'PREVIEW') {
+    // Se não há dados de preview, mostrar mensagem útil
+    if (!previewData) {
+      return (
+        <motion.div
+          className="space-y-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Alert className="bg-blue-50 border-blue-200">
+            <Clock className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              Análise rápida do PDF ainda não disponível. Aguardando processamento...
+            </AlertDescription>
+          </Alert>
+          <p className="text-sm text-gray-600">
+            O preview inteligente será exibido aqui assim que estiver pronto.
+          </p>
+        </motion.div>
+      );
+    }
+
     return (
       <motion.div
         className="space-y-4"
@@ -649,21 +671,9 @@ function ExpandedPhaseContent({
             </motion.div>
           )}
 
-          {/* Probabilidade de Sucesso */}
-          {previewData.probabilidades && (
-            <motion.div
-              className="bg-white rounded p-3 border border-purple-200 shadow-sm hover:shadow-md transition-shadow bg-purple-50"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <p className="text-purple-700 text-xs font-semibold mb-1.5 uppercase tracking-wide">Probabilidade</p>
-              <p className="font-medium text-purple-900">{previewData.probabilidades}</p>
-            </motion.div>
-          )}
         </div>
 
-        {/* Próximos Passos */}
+        {/* Último Andamento (conforme documento) */}
         {previewData.proximosPassos && (
           <motion.div
             className="bg-amber-50 rounded p-3 border border-amber-200 shadow-sm"
@@ -671,31 +681,11 @@ function ExpandedPhaseContent({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
           >
-            <p className="text-sm font-semibold text-amber-900 mb-2">Próximos Passos Recomendados</p>
+            <p className="text-sm font-semibold text-amber-900 mb-2">Último Andamento (conforme documento)</p>
             <p className="text-sm text-amber-800 leading-relaxed">{previewData.proximosPassos}</p>
           </motion.div>
         )}
 
-        {/* Metadata da Análise */}
-        <motion.div
-          className="grid grid-cols-3 gap-2 pt-3 border-t text-xs bg-gray-50 p-3 rounded-lg"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="text-center">
-            <p className="text-gray-600 font-medium">Modelo</p>
-            <p className="font-semibold text-gray-900 mt-1">{previewData.modelUsed}</p>
-          </div>
-          <div className="text-center border-l border-r border-gray-200">
-            <p className="text-gray-600 font-medium">Confiança</p>
-            <p className="font-semibold text-gray-900 mt-1">{(previewData.confidence * 100).toFixed(0)}%</p>
-          </div>
-          <div className="text-center">
-            <p className="text-gray-600 font-medium">Custo Est.</p>
-            <p className="font-semibold text-gray-900 mt-1">R$ {(Number(previewData.costEstimate) || 0).toFixed(2)}</p>
-          </div>
-        </motion.div>
       </motion.div>
     );
   }

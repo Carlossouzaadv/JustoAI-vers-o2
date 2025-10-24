@@ -166,28 +166,15 @@ async function GET(request: NextRequest) {
     take: limit,
   })
 
-  // Filter out clients with 0 cases and special "clientes_a_definir" with no cases
-  // This ensures the dashboard only shows meaningful clients
-  const filteredClients = clients.filter(client => {
-    // Always exclude clients with no cases
-    if (client._count.cases === 0) {
-      return false;
-    }
-
-    // Client is valid - has at least one case
-    return true;
-  });
-
-  // Note: Count is for clients before filter, to show accurate pagination info
-  // In a production app, you might want to exclude these at the DB query level
-  // but for now this provides better UX with realtime filtering
+  // Retornar todos os clientes (incluindo novos clientes sem casos)
+  // Clientes novos aparecem na lista mesmo sem casos associados
 
   return paginatedResponse(
-    filteredClients,
+    clients,
     page,
     limit,
     total,
-    `Found ${filteredClients.length} client${filteredClients.length !== 1 ? 's' : ''} (${total} total)`
+    `Found ${clients.length} client${clients.length !== 1 ? 's' : ''} (${total} total)`
   )
 }
 

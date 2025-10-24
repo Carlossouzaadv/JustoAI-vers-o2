@@ -18,9 +18,9 @@ export interface PreviewSnapshot {
   subject: string;
   claimValue: number | null;
   lastMovements: PreviewMovement[];
-  confidence: number;
   generatedAt: string;
   model: string;
+  // NOTA: 'confidence' foi removido (não exibido no frontend)
 }
 
 export interface PreviewMovement {
@@ -121,7 +121,6 @@ export async function generatePreview(
           subject: response.subject || '',
           claimValue: response.claimValue || null,
           lastMovements: Array.isArray(response.lastMovements) ? response.lastMovements : [],
-          confidence: response.confidence || 0.75,
           generatedAt: new Date().toISOString(),
           model: `gemini-2.5-${name.toLowerCase() === 'flash 8b' ? 'flash-8b' : name.toLowerCase().split(' ')[0] === 'flash' ? 'flash' : 'pro'}`
         };
@@ -129,7 +128,6 @@ export async function generatePreview(
         const duration = Date.now() - startTime;
 
         console.log(`${ICONS.SUCCESS} [Preview] Preview gerado com ${name} em ${duration}ms`);
-        console.log(`${ICONS.INFO} [Preview] Confiança: ${preview.confidence}`);
         console.log(`${ICONS.INFO} [Preview] Movimentos extraídos: ${preview.lastMovements.length}`);
 
         return {
@@ -173,41 +171,42 @@ export async function generatePreview(
 /**
  * Constrói prompt otimizado para Gemini Flash
  * Foco: velocidade + baixo custo + precisão suficiente
+ *
+ * OTIMIZAÇÃO: Removido campo "confidence" (não exibido no frontend)
+ * Isso reduz custo de tokens e torna a resposta mais rápida
  */
 function buildPreviewPrompt(text: string): string {
   return `Você é um assistente jurídico especializado em análise de documentos processuais.
 
-Analise o texto jurídico abaixo e extraia APENAS as seguintes informações:
+Analise o texto jurídico abaixo e extraia APENAS as seguintes informações para exibição em um preview rápido:
 
-1. **summary**: Resumo do processo em 1-2 frases (máx 200 caracteres)
-2. **parties**: Lista de partes (formato: "Autor: Nome" e "Réu: Nome")
-3. **subject**: Assunto principal do processo (1 frase curta)
-4. **claimValue**: Valor da causa em reais (número ou null se não houver)
-5. **lastMovements**: Últimos 5 movimentos processuais mais recentes (cada um com: date, type, description)
-6. **confidence**: Sua confiança na extração (0.0 a 1.0)
+1. **summary**: Resumo do processo em 1-2 frases (máx 150 caracteres). Seja conciso e direto.
+2. **parties**: Lista de partes principais. Formato: ["Autor: Nome", "Réu: Nome"]
+3. **subject**: Assunto/objeto principal do processo em uma frase curta (máx 50 caracteres)
+4. **claimValue**: Valor da causa em reais como número (ex: 1000000.00) ou null se não houver
+5. **lastMovements**: Último andamento mais recente do processo (máximo 1 movimento com: date, type, description)
 
 **REGRAS IMPORTANTES**:
 - Retorne APENAS JSON válido, sem texto adicional antes ou depois
-- Se alguma informação não for encontrada, use null ou array vazio
-- Datas devem estar no formato ISO 8601 (YYYY-MM-DD)
-- Movimentos: ordenar do mais recente para o mais antigo
-- Tipos de movimento comuns: "Sentença", "Audiência", "Despacho", "Juntada", "Petição"
+- Se alguma informação não for encontrada, use null ou array vazio []
+- Datas: formato ISO 8601 (YYYY-MM-DD)
+- Descrição: máx 150 caracteres, objetiva
+- Não inclua informações de confiança, modelo ou análise de risco
 
 **FORMATO DE RESPOSTA**:
 \`\`\`json
 {
-  "summary": "Resumo breve...",
+  "summary": "Resumo breve do processo...",
   "parties": ["Autor: Nome do Autor", "Réu: Nome do Réu"],
-  "subject": "Assunto principal",
-  "claimValue": 1000000.00,
+  "subject": "Execução Fiscal",
+  "claimValue": 580907.19,
   "lastMovements": [
     {
-      "date": "2025-10-15",
-      "type": "Sentença",
-      "description": "Descrição curta do movimento"
+      "date": "2025-09-15",
+      "type": "Andamento",
+      "description": "Descrição breve do último andamento"
     }
-  ],
-  "confidence": 0.85
+  ]
 }
 \`\`\`
 
@@ -230,15 +229,15 @@ export function validatePreviewSnapshot(preview: any): boolean {
   }
 
   // Campos obrigatórios
-  if (typeof preview.summary !== 'string') {
+  if (typeof preview.summary !== 'string' || preview.summary.trim().length === 0) {
     return false;
   }
 
-  if (!Array.isArray(preview.parties)) {
+  if (!Array.isArray(preview.parties) || preview.parties.length === 0) {
     return false;
   }
 
-  if (typeof preview.subject !== 'string') {
+  if (typeof preview.subject !== 'string' || preview.subject.trim().length === 0) {
     return false;
   }
 
@@ -246,10 +245,12 @@ export function validatePreviewSnapshot(preview: any): boolean {
     return false;
   }
 
-  // Validar estrutura de movimentos
-  for (const movement of preview.lastMovements) {
-    if (!movement.date || !movement.type || !movement.description) {
-      return false;
+  // Validar estrutura de movimentos (se houver)
+  if (preview.lastMovements.length > 0) {
+    for (const movement of preview.lastMovements) {
+      if (!movement.date || !movement.type || !movement.description) {
+        return false;
+      }
     }
   }
 
