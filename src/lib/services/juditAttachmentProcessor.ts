@@ -248,13 +248,22 @@ async function downloadAndProcessAttachment(
     const hashManager = getDocumentHashManager();
     const { textSha: fileSha256 } = hashManager.calculateSHA256(buffer);
 
-    // Verificar se já existe
-    const existing = await prisma.caseDocument.findFirst({
-      where: { textSha: fileSha256 }
+    // ============================================================
+    // 2.5. VERIFICAR SE JÁ FOI BAIXADO DA JUDIT
+    // ============================================================
+    // Para anexos JUDIT: usar attachment_id como chave única (não hash)
+    // Razão: Cada anexo da API JUDIT tem um ID único
+    //        Andamentos antigos não são re-processados → anexos antigos nunca são baixados novamente
+    //        "Relatório/Voto" é o mesmo nome em vários processos, mas são arquivos diferentes (IDs diferentes)
+
+    const juditAttachmentUrl = `attachment_${attachment.attachment_id}`;
+    const existingJuditAttachment = await prisma.caseDocument.findFirst({
+      where: { juditAttachmentUrl }
     });
 
-    if (existing) {
-      console.log(`${ICONS.WARNING} [JUDIT Attachments] Anexo duplicado (já existe): ${attachment.name}`);
+    if (existingJuditAttachment) {
+      console.log(`${ICONS.WARNING} [JUDIT Attachments] Anexo JUDIT já baixado (ID: ${attachment.attachment_id}): ${attachment.name}`);
+      result.downloaded++; // Contar como "já processado"
       return;
     }
 
@@ -314,7 +323,7 @@ async function downloadAndProcessAttachment(
         processed: true,
         ocrStatus: extractedText ? 'COMPLETED' : 'PENDING',
         sourceOrigin: 'JUDIT_ATTACHMENT',
-        juditAttachmentUrl: `attachment_${attachment.attachment_id}` // Usar attachment_id, não url
+        juditAttachmentUrl // Usa a variável definida acima (attachment_${attachment.attachment_id})
       }
     });
 
