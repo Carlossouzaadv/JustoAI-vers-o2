@@ -246,7 +246,7 @@ async function downloadAndProcessAttachment(
     // ============================================================
 
     const hashManager = getDocumentHashManager();
-    const fileSha256 = await hashManager.calculateHash(buffer);
+    const { textSha: fileSha256 } = hashManager.calculateSHA256(buffer);
 
     // Verificar se já existe
     const existing = await prisma.caseDocument.findFirst({
