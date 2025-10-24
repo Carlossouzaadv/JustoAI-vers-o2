@@ -23,8 +23,10 @@ import { ICONS } from '@/lib/icons';
 
 // Configuração de runtime para suportar uploads de arquivos grandes
 // maxDuration: tempo máximo para a função executar (Vercel limit)
+// maxBodySize: tamanho máximo do body da requisição
 // Nota: O limite real de body size é controlado no next.config.ts e Vercel
 export const maxDuration = 300; // 5 minutos máximo para processamento
+export const maxBodySize = '100mb'; // Suportar PDFs até 100MB
 
 const prisma = new PrismaClient();
 
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const caseId = formData.get('caseId') as string;
     const processNumber = formData.get('processNumber') as string;
+    const requestedWorkspaceId = formData.get('workspaceId') as string;
 
     // 3. VALIDAÇÕES BÁSICAS
     if (!file) {
@@ -106,19 +109,43 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. OBTER WORKSPACE DO USUÁRIO
-    const userWorkspace = await prisma.userWorkspace.findFirst({
-      where: { userId: user.id },
-      include: { workspace: true }
+    // IMPORTANT: Use the workspace requested by the frontend, not just the user's first workspace
+    // This prevents uploading to the wrong workspace when a user has multiple workspaces
+    let workspaceId = requestedWorkspaceId;
+
+    // If no workspace requested, use user's first workspace (fallback)
+    if (!workspaceId) {
+      const userWorkspace = await prisma.userWorkspace.findFirst({
+        where: { userId: user.id },
+        include: { workspace: true }
+      });
+
+      if (!userWorkspace) {
+        return NextResponse.json(
+          { error: 'Usuário não possui workspace' },
+          { status: 403 }
+        );
+      }
+
+      workspaceId = userWorkspace.workspaceId;
+    }
+
+    // Verify user has access to the requested workspace
+    const userWorkspace = await prisma.userWorkspace.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId: user.id,
+          workspaceId
+        }
+      }
     });
 
-    if (!userWorkspace) {
+    if (!userWorkspace || userWorkspace.status !== 'ACTIVE') {
       return NextResponse.json(
-        { error: 'Usuário não possui workspace' },
+        { error: 'Usuário não possui acesso a este workspace' },
         { status: 403 }
       );
     }
-
-    const workspaceId = userWorkspace.workspaceId;
 
     // 5. CALCULAR SHA256 DO ARQUIVO
     const buffer = Buffer.from(await file.arrayBuffer());
