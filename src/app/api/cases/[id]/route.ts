@@ -94,25 +94,23 @@ export async function GET(
     if (!hasAccess) return accessError!
 
     return successResponse({
-      case: {
-        id: caseData.id,
-        number: caseData.number,
-        detectedCnj: caseData.detectedCnj,
-        title: caseData.title,
-        description: caseData.description,
-        type: caseData.type,
-        status: caseData.status,
-        priority: caseData.priority,
-        client: caseData.client,
-        documents: caseData.documents,
-        documentCount: caseData._count.documents,
-        onboardingStatus: caseData.onboardingStatus,
-        // Note: previewSnapshot excluded from response due to size (load separately if needed)
-        previewGeneratedAt: caseData.previewGeneratedAt,
-        createdAt: caseData.createdAt,
-        updatedAt: caseData.updatedAt,
-        createdBy: caseData.createdById,
-      },
+      id: caseData.id,
+      number: caseData.number,
+      detectedCnj: caseData.detectedCnj,
+      title: caseData.title,
+      description: caseData.description,
+      type: caseData.type,
+      status: caseData.status,
+      priority: caseData.priority,
+      client: caseData.client,
+      documents: caseData.documents,
+      documentCount: caseData._count.documents,
+      onboardingStatus: caseData.onboardingStatus,
+      // Note: previewSnapshot excluded from response due to size (load separately if needed)
+      previewGeneratedAt: caseData.previewGeneratedAt,
+      createdAt: caseData.createdAt,
+      updatedAt: caseData.updatedAt,
+      createdBy: caseData.createdById,
     })
   } catch (error) {
     console.error(`${ICONS.ERROR} Error fetching case:`, error)
@@ -187,10 +185,7 @@ export async function PATCH(
 
     console.log(`${ICONS.SUCCESS} Case updated successfully: ${caseId}`)
 
-    return successResponse({
-      case: updatedCase,
-      message: 'Caso atualizado com sucesso',
-    })
+    return successResponse(updatedCase, 'Caso atualizado com sucesso')
   } catch (error) {
     console.error(`${ICONS.ERROR} Error updating case:`, error)
     return errorResponse('Erro ao atualizar caso', 500)

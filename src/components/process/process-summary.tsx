@@ -91,7 +91,7 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
       }
 
       const result = await response.json();
-      setData(result.case);
+      setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {

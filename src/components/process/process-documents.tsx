@@ -53,7 +53,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
       if (response.ok) {
         const data = await response.json();
-        const caseDocuments = data.case?.documents || [];
+        const caseDocuments = data.data?.documents || [];
 
         // Map case documents to DocumentFile format
         const mappedDocuments: DocumentFile[] = caseDocuments.map((doc: any) => ({

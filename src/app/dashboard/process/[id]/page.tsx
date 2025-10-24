@@ -91,8 +91,8 @@ export default function ProcessPage() {
       }
 
       const data = await response.json();
-      console.log(`${ICONS.SUCCESS} Caso carregado:`, data.case);
-      setCaseInfo(data.case);
+      console.log(`${ICONS.SUCCESS} Caso carregado:`, data.data);
+      setCaseInfo(data.data);
 
     } catch (err) {
       console.error(`${ICONS.ERROR} Erro ao carregar caso:`, err);
