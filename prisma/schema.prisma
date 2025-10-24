@@ -266,18 +266,18 @@ model CaseAnalysisVersion {
 
 model ProcessTimelineEntry {
   id                String             @id @default(cuid())
-  caseId            String
-  contentHash       String             // Hash do conteúdo normalizado para deduplicação
-  eventDate         DateTime           // Data original do andamento
-  eventType         String             // Tipo do evento (ex: "Juntada", "Despacho", "Sentença")
+  caseId            String             @map("case_id")
+  contentHash       String             @map("content_hash")             // Hash do conteúdo normalizado para deduplicação
+  eventDate         DateTime           @map("event_date")              // Data original do andamento
+  eventType         String             @map("event_type")             // Tipo do evento (ex: "Juntada", "Despacho", "Sentença")
   description       String             // Descrição do andamento
-  normalizedContent String             // Conteúdo normalizado para comparação
+  normalizedContent String             @map("normalized_content")      // Conteúdo normalizado para comparação
   source            TimelineSource     // Origem do andamento
-  sourceId          String?            // ID do registro original (documento, API, etc)
+  sourceId          String?            @map("source_id")              // ID do registro original (documento, API, etc)
   metadata          Json?              // Metadados específicos da fonte
   confidence        Float              @default(1.0) // Confiança na extração
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@unique([caseId, contentHash]) // Evita duplicatas por hash do conteúdo
