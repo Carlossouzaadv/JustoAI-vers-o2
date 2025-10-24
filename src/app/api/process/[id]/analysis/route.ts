@@ -184,6 +184,9 @@ export async function POST(
           case: {
             connect: { id: processId }
           },
+          workspace: {
+            connect: { id: workspaceId }
+          },
           version: await getNextVersionNumber(processId),
           status: 'COMPLETED',
           analysisType: level,
@@ -296,6 +299,9 @@ export async function POST(
         data: {
           case: {
             connect: { id: processId }
+          },
+          workspace: {
+            connect: { id: workspaceId }
           },
           version: nextVersion,
           status: 'PROCESSING',

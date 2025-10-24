@@ -668,6 +668,9 @@ export class PDFProcessor {
           case: {
             connect: { id: caseId }
           },
+          workspace: {
+            connect: { id: case_.workspaceId }
+          },
           version: nextVersion,
           analysisType: 'PDF_UPLOAD',
           extractedData: analysisResult as any,

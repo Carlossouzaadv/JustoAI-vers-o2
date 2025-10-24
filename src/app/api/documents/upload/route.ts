@@ -524,6 +524,9 @@ export async function POST(request: NextRequest) {
             case: {
               connect: { id: targetCaseId }
             },
+            workspace: {
+              connect: { id: workspaceId }
+            },
             version: nextVersion,
             status: 'COMPLETED',
             analysisType: 'essential', // Análise rápida do upload é considerada "essencial"

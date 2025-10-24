@@ -44,7 +44,8 @@ export async function POST(
         case: {
           select: {
             id: true,
-            title: true
+            title: true,
+            workspaceId: true
           }
         }
       }
@@ -154,6 +155,9 @@ export async function POST(
       data: {
         case: {
           connect: { id: document.caseId }
+        },
+        workspace: {
+          connect: { id: document.case.workspaceId }
         },
         version: nextVersion,
         analysisType: 'PDF_UPLOAD',

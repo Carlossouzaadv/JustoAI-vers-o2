@@ -521,6 +521,9 @@ export class DeepAnalysisService {
           case: {
             connect: { id: params.processId }
           },
+          workspace: {
+            connect: { id: params.workspaceId }
+          },
           version: params.version,
           analysisType: params.analysisType,
           modelUsed: params.modelUsed,

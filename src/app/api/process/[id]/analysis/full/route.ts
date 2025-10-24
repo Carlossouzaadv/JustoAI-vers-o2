@@ -84,6 +84,9 @@ export async function POST(
         case: {
           connect: { id: caseId }
         },
+        workspace: {
+          connect: { id: caseData.workspaceId }
+        },
         version: nextVersion,
         status: 'COMPLETED',
         aiAnalysis: analysis,
