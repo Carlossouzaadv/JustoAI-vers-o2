@@ -7,6 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 import { ProcessSummary } from '@/components/process/process-summary';
 import { ProcessTimeline } from '@/components/process/process-timeline';
@@ -48,6 +56,9 @@ export default function ProcessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('summary');
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     if (caseId) {
@@ -99,6 +110,48 @@ export default function ProcessPage() {
       setError('Erro ao carregar caso. Tente novamente.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadClients = async () => {
+    try {
+      setClientsLoading(true);
+      const response = await fetch('/api/clients', {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.data || []);
+      } else {
+        console.error('Erro ao carregar clientes');
+      }
+    } catch (err) {
+      console.error('Erro ao carregar clientes:', err);
+    } finally {
+      setClientsLoading(false);
+    }
+  };
+
+  const updateClientAssociation = async (clientId: string) => {
+    try {
+      const response = await fetch(`/api/cases/${caseId}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCaseInfo(data.data);
+        setShowClientModal(false);
+        console.log(`${ICONS.SUCCESS} Cliente atualizado`);
+      } else {
+        console.error('Erro ao atualizar cliente');
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar cliente:', err);
     }
   };
 
@@ -218,14 +271,94 @@ export default function ProcessPage() {
 
               <div className="space-y-2">
                 <p className="font-medium text-base">{caseInfo.title}</p>
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    {ICONS.CLIENT} {caseInfo.client?.name || 'Sem cliente associado'}
-                  </span>
-                  <span className="flex items-center gap-1">
+
+                {/* Status do Cliente - com indicação visual se não atribuído */}
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  {!caseInfo.client?.name || caseInfo.client.name === 'clientes_a_definir' ? (
+                    <Dialog open={showClientModal} onOpenChange={setShowClientModal}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="flex items-center gap-1 h-7"
+                          onClick={() => loadClients()}
+                        >
+                          {ICONS.WARNING} Cliente não atribuído
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Atribuir Cliente ao Processo</DialogTitle>
+                          <DialogDescription>
+                            Selecione um cliente para associar a este processo.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {clientsLoading ? (
+                            <p className="text-sm text-muted-foreground">Carregando clientes...</p>
+                          ) : clients.length > 0 ? (
+                            clients.map((client) => (
+                              <Button
+                                key={client.id}
+                                variant="outline"
+                                className="w-full justify-start"
+                                onClick={() => updateClientAssociation(client.id)}
+                              >
+                                {client.name}
+                              </Button>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Nenhum cliente disponível</p>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  ) : (
+                    <Dialog open={showClientModal} onOpenChange={setShowClientModal}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1 h-7"
+                          onClick={() => loadClients()}
+                        >
+                          {ICONS.CLIENT} {caseInfo.client.name}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Alterar Cliente</DialogTitle>
+                          <DialogDescription>
+                            Selecione um novo cliente para este processo.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {clientsLoading ? (
+                            <p className="text-sm text-muted-foreground">Carregando clientes...</p>
+                          ) : clients.length > 0 ? (
+                            clients.map((client) => (
+                              <Button
+                                key={client.id}
+                                variant={client.name === caseInfo.client?.name ? 'default' : 'outline'}
+                                className="w-full justify-start"
+                                onClick={() => updateClientAssociation(client.id)}
+                              >
+                                {client.name}
+                                {client.name === caseInfo.client?.name && ` ${ICONS.SUCCESS}`}
+                              </Button>
+                            ))
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Nenhum cliente disponível</p>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+
+                  <span className="flex items-center gap-1 text-muted-foreground">
                     {ICONS.DOCUMENT} {getTypeLabel(caseInfo.type)}
                   </span>
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-muted-foreground">
                     {ICONS.FOLDER} {caseInfo.documentCount} documento(s)
                   </span>
                 </div>

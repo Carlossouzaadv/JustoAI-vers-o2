@@ -78,64 +78,17 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
     try {
       setLoading(true);
 
-      const response = await fetch(`/api/processes/${processId}/notes`);
+      const response = await fetch(`/api/cases/${processId}/notes`);
       if (response.ok) {
         const data = await response.json();
         setNotes(data.notes || []);
       } else {
-        // Dados simulados para desenvolvimento
-        setNotes([
-          {
-            id: '1',
-            title: 'Estratégia inicial',
-            content: 'Cliente demonstrou muito interesse em acordo. Sugerir valores entre R$ 30k-40k na primeira audiência. Pontos fortes: documentação médica completa, testemunhas identificadas.',
-            category: 'strategy',
-            priority: 'high',
-            createdAt: '2024-01-15T10:00:00',
-            updatedAt: '2024-01-20T14:30:00',
-            authorName: 'Dr. João Silva',
-            isPrivate: false,
-            tags: ['acordo', 'audiencia', 'estrategia']
-          },
-          {
-            id: '2',
-            title: 'Contato com cliente',
-            content: 'Cliente ligou preocupado com demora do processo. Explicamos que é normal e que estamos aguardando citação do réu. Próximo contato agendado para semana que vem.',
-            category: 'client',
-            priority: 'medium',
-            createdAt: '2024-01-18T16:45:00',
-            updatedAt: '2024-01-18T16:45:00',
-            authorName: 'Ana Oliveira',
-            isPrivate: false
-          },
-          {
-            id: '3',
-            title: 'URGENTE - Prazo contestação',
-            content: 'Réu foi citado hoje. Prazo de 15 dias para contestação. Acompanhar diariamente o sistema. Se não contestar, pedir julgamento antecipado.',
-            category: 'urgent',
-            priority: 'high',
-            createdAt: '2024-01-22T17:00:00',
-            updatedAt: '2024-01-22T17:00:00',
-            authorName: 'Dr. João Silva',
-            isPrivate: true,
-            tags: ['prazo', 'contestacao', 'acompanhamento']
-          },
-          {
-            id: '4',
-            title: 'Pesquisa jurisprudencial',
-            content: 'Encontrei 3 precedentes favoráveis no TJ-SP com valores similares. Casos: AI 2023.0001234, AI 2023.0005678, AI 2023.0009012. Anexar na tréplica.',
-            category: 'research',
-            priority: 'medium',
-            createdAt: '2024-01-19T11:30:00',
-            updatedAt: '2024-01-19T11:30:00',
-            authorName: 'Carlos Santos',
-            isPrivate: false,
-            tags: ['jurisprudencia', 'tj-sp', 'precedentes']
-          }
-        ]);
+        // Nenhuma nota disponível ainda
+        setNotes([]);
       }
     } catch (error) {
       console.error('Erro ao carregar notas:', error);
+      setNotes([]);
     } finally {
       setLoading(false);
     }
