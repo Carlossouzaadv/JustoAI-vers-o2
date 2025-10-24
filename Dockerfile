@@ -8,7 +8,8 @@ COPY package*.json ./
 COPY .npmrc* ./
 
 # Install dependencies (mozjpeg needs build tools available in bookworm)
-RUN npm install --legacy-peer-deps --prefer-offline --no-audit
+# --ignore-scripts: Skip postinstall (schema.prisma not available yet)
+RUN npm install --legacy-peer-deps --prefer-offline --no-audit --ignore-scripts
 
 # Copy source code
 COPY . .
