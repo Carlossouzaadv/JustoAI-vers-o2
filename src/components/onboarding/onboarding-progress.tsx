@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,10 @@ import {
   BarChart3,
   Loader2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Bell,
+  TrendingUp,
+  X
 } from 'lucide-react';
 import { ICONS } from '@/lib/icons';
 
@@ -42,6 +46,15 @@ interface PhaseData {
   expandable?: boolean;
 }
 
+interface Toast {
+  id: string;
+  title: string;
+  message: string;
+  type: 'success' | 'info' | 'error';
+}
+
+const CACHE_KEY = 'onboarding-progress-state';
+
 export function OnboardingProgress({
   caseId,
   juditJobId,
@@ -50,6 +63,7 @@ export function OnboardingProgress({
   onPhaseComplete,
   onAnalyzeClick
 }: OnboardingProgressProps) {
+  // ====== STATE ======
   const [phases, setPhases] = useState<Record<Phase, PhaseData>>({
     PREVIEW: {
       name: 'Preview Inteligente',
@@ -58,7 +72,7 @@ export function OnboardingProgress({
       progress: 100,
       icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
       details: previewData ? `Análise com ${previewData.modelUsed || 'Gemini'}` : undefined,
-      expandable: true  // Make preview expandable to show full analysis
+      expandable: true
     },
     ENRICHMENT: {
       name: 'Enriquecimento Oficial',
@@ -78,18 +92,53 @@ export function OnboardingProgress({
     }
   });
 
-  // Start with PREVIEW expanded to show analysis immediately
   const [expandedPhase, setExpandedPhase] = useState<Phase | null>(previewData ? 'PREVIEW' : 'ENRICHMENT');
   const [jobStatus, setJobStatus] = useState<any>(null);
   const [pollingActive, setPollingActive] = useState(!!juditJobId);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [enrichmentCompleted, setEnrichmentCompleted] = useState(false);
 
-  // Polling para atualizar status do JUDIT job
+  // ====== EFFECT: Load state from localStorage ======
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const cached = localStorage.getItem(`${CACHE_KEY}-${caseId}`);
+      if (cached) {
+        const { expandedPhase: cachedExpanded } = JSON.parse(cached);
+        if (cachedExpanded) {
+          setExpandedPhase(cachedExpanded);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to load cached onboarding state:', err);
+    }
+  }, [caseId]);
+
+  // ====== EFFECT: Save state to localStorage ======
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem(
+        `${CACHE_KEY}-${caseId}`,
+        JSON.stringify({
+          expandedPhase,
+          timestamp: new Date().toISOString()
+        })
+      );
+    } catch (err) {
+      console.warn('Failed to save onboarding state to cache:', err);
+    }
+  }, [expandedPhase, caseId]);
+
+  // ====== EFFECT: Polling para status do JUDIT ======
   useEffect(() => {
     if (!juditJobId || !pollingActive) return;
 
     let pollInterval: NodeJS.Timeout;
     let attempts = 0;
-    const maxAttempts = 600; // 10 minutos com polling a cada 1s
+    const maxAttempts = 600; // 10 minutos
 
     const pollStatus = async () => {
       try {
@@ -111,7 +160,7 @@ export function OnboardingProgress({
         const jobData = data.data;
         setJobStatus(jobData);
 
-        // Atualizar phases baseado no status do job
+        // Atualizar phases baseado no status
         setPhases(prev => {
           const updated = { ...prev };
 
@@ -123,13 +172,29 @@ export function OnboardingProgress({
             updated.ENRICHMENT.status = 'completed';
             updated.ENRICHMENT.progress = 100;
             updated.ENRICHMENT.details = 'Dados oficiais carregados!';
-            updated.ANALYSIS.status = 'pending'; // Agora FASE 3 está disponível
-            setPollingActive(false); // Parar polling
-            onPhaseComplete?.('ENRICHMENT');
+            updated.ANALYSIS.status = 'pending';
+            setPollingActive(false);
+
+            // Disparar notificação
+            if (!enrichmentCompleted) {
+              setEnrichmentCompleted(true);
+              showToast(
+                'Enriquecimento Completo!',
+                'Histórico oficial carregado. Clique em "Gerar Análise Estratégica" para continuar.',
+                'success'
+              );
+              onPhaseComplete?.('ENRICHMENT');
+            }
           } else if (jobData.status === 'failed') {
             updated.ENRICHMENT.status = 'failed';
             updated.ENRICHMENT.error = jobData.error || 'Falha ao buscar dados do tribunal';
             setPollingActive(false);
+
+            showToast(
+              'Erro no Enriquecimento',
+              'Não foi possível buscar os dados do tribunal. Você pode continuar com os dados do PDF.',
+              'error'
+            );
           }
 
           return updated;
@@ -154,7 +219,18 @@ export function OnboardingProgress({
     pollInterval = setInterval(pollStatus, 1000);
 
     return () => clearInterval(pollInterval);
-  }, [juditJobId, pollingActive, onPhaseComplete]);
+  }, [juditJobId, pollingActive, onPhaseComplete, enrichmentCompleted]);
+
+  // ====== HELPERS ======
+  const showToast = (title: string, message: string, type: 'success' | 'info' | 'error') => {
+    const id = Date.now().toString();
+    setToast({ id, title, message, type });
+
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setToast(null);
+    }, 5000);
+  };
 
   const getStatusColor = (status: PhaseStatus) => {
     switch (status) {
@@ -180,156 +256,270 @@ export function OnboardingProgress({
     setExpandedPhase(expandedPhase === phase ? null : phase);
   };
 
+  // ====== RENDER ======
   return (
     <div className="space-y-4">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: 20 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: -20, x: 20 }}
+            className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${
+              toast.type === 'success'
+                ? 'bg-green-50 border border-green-200 text-green-900'
+                : toast.type === 'error'
+                ? 'bg-red-50 border border-red-200 text-red-900'
+                : 'bg-blue-50 border border-blue-200 text-blue-900'
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3 flex-1">
+                {toast.type === 'success' && (
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                )}
+                {toast.type === 'error' && (
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                )}
+                {toast.type === 'info' && (
+                  <Bell className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <p className="font-semibold">{toast.title}</p>
+                  <p className="text-sm mt-1 opacity-90">{toast.message}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setToast(null)}
+                className="ml-2 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Cabeçalho com informações do processo */}
       {extractedProcessNumber && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Processo Identificado</p>
-                <p className="text-lg font-bold text-blue-900">{extractedProcessNumber}</p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Processo Identificado</p>
+                  <p className="text-lg font-bold text-blue-900">{extractedProcessNumber}</p>
+                </div>
+                <Badge variant="secondary" className="ml-2">
+                  Onboarding em Progresso
+                </Badge>
               </div>
-              <Badge variant="secondary" className="ml-2">
-                Onboarding em Progresso
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
       {/* Fases do Onboarding */}
       <div className="space-y-3">
-        {(Object.entries(phases) as [Phase, PhaseData][]).map(([phaseKey, phase]) => (
-          <Card
+        {(Object.entries(phases) as [Phase, PhaseData][]).map(([phaseKey, phase], index) => (
+          <motion.div
             key={phaseKey}
-            className={`transition-all ${expandedPhase === phaseKey ? 'ring-2 ring-blue-500' : ''}`}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.3 }}
           >
-            <div
-              onClick={() => phase.expandable && togglePhaseExpand(phaseKey)}
-              className={`p-4 ${phase.expandable ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+            <Card
+              className={`transition-all ${expandedPhase === phaseKey ? 'ring-2 ring-blue-500' : ''}`}
             >
-              {/* Header da Fase */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  {phase.status === 'in_progress' ? (
-                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
-                  ) : (
-                    phase.icon
-                  )}
-
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{phase.name}</h3>
-                    <p className="text-sm text-gray-500">{phase.description}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Badge className={`${getStatusColor(phase.status)}`}>
-                    {getStatusText(phase.status)}
-                  </Badge>
-
-                  {phase.expandable && (
-                    expandedPhase === phaseKey ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
+              <div
+                onClick={() => phase.expandable && togglePhaseExpand(phaseKey)}
+                className={`p-4 ${phase.expandable ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+              >
+                {/* Header da Fase */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    {phase.status === 'in_progress' ? (
+                      <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    )
-                  )}
-                </div>
-              </div>
+                      phase.icon
+                    )}
 
-              {/* Progress Bar */}
-              {phase.status === 'in_progress' && (
-                <div className="mt-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs text-gray-600">Progresso</span>
-                    <span className="text-xs font-medium text-gray-900">{phase.progress}%</span>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{phase.name}</h3>
+                      <p className="text-sm text-gray-500">{phase.description}</p>
+                    </div>
                   </div>
-                  <Progress value={phase.progress} className="h-1.5" />
+
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${getStatusColor(phase.status)}`}>
+                      {getStatusText(phase.status)}
+                    </Badge>
+
+                    {phase.expandable && (
+                      expandedPhase === phaseKey ? (
+                        <ChevronUp className="w-5 h-5 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-400" />
+                      )
+                    )}
+                  </div>
                 </div>
-              )}
 
-              {/* Detalhes da Fase */}
-              {phase.details && (
-                <p className="text-sm text-gray-600 mt-2">{phase.details}</p>
-              )}
+                {/* Enhanced Progress Bar */}
+                {phase.status === 'in_progress' && (
+                  <motion.div
+                    className="mt-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-gray-600 font-medium">Progresso</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-blue-600">{phase.progress}%</span>
+                        <TrendingUp className="w-4 h-4 text-blue-500 animate-pulse" />
+                      </div>
+                    </div>
+                    {/* Animated progress bar */}
+                    <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${phase.progress}%` }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                      />
+                      {/* Shimmer effect */}
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                        animate={{ x: ['0%', '100%'] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    </div>
+                    {/* Micro-text com status */}
+                    {phase.details && (
+                      <p className="text-xs text-gray-500 mt-2 italic">{phase.details}</p>
+                    )}
+                  </motion.div>
+                )}
 
-              {/* Erro */}
-              {phase.error && (
-                <Alert className="mt-3 bg-red-50 border-red-200">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">
-                    {phase.error}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
+                {/* Detalhes da Fase (sem progress) */}
+                {phase.details && phase.status !== 'in_progress' && (
+                  <p className="text-sm text-gray-600 mt-2">{phase.details}</p>
+                )}
 
-            {/* Conteúdo Expandível */}
-            {phase.expandable && expandedPhase === phaseKey && (
-              <div className="px-4 pb-4 border-t pt-4 bg-gray-50">
-                <ExpandedPhaseContent
-                  phase={phaseKey}
-                  jobStatus={jobStatus}
-                  previewData={previewData}
-                />
+                {/* Erro */}
+                {phase.error && (
+                  <Alert className="mt-3 bg-red-50 border-red-200">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-800">
+                      {phase.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
-            )}
-          </Card>
+
+              {/* Conteúdo Expandível com Animação */}
+              <AnimatePresence>
+                {phase.expandable && expandedPhase === phaseKey && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="border-t"
+                  >
+                    <div className="px-4 py-4 bg-gray-50">
+                      <ExpandedPhaseContent
+                        phase={phaseKey}
+                        jobStatus={jobStatus}
+                        previewData={previewData}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
         ))}
       </div>
 
       {/* CTA para FASE 3 (Análise Estratégica) */}
-      {phases.ENRICHMENT.status === 'completed' && (
-        <Card className="bg-amber-50 border-amber-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-amber-600" />
-              Pronto para Análise Estratégica?
-            </CardTitle>
-            <CardDescription>
-              Use 1 crédito para obter insights detalhados com IA sobre este processo
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={onAnalyzeClick}
-              className="w-full bg-amber-600 hover:bg-amber-700"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Gerar Análise Estratégica Completa
-            </Button>
-            <p className="text-xs text-gray-600 mt-3">
-              {ICONS.INFO} Esta análise consumirá 1 crédito de sua conta
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <AnimatePresence>
+        {phases.ENRICHMENT.status === 'completed' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <motion.div animate={{ rotate: [0, 20, -20, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+                    <BarChart3 className="w-5 h-5 text-amber-600" />
+                  </motion.div>
+                  Pronto para Análise Estratégica?
+                </CardTitle>
+                <CardDescription>
+                  Use 1 crédito para obter insights detalhados com IA sobre este processo
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={onAnalyzeClick}
+                  className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Gerar Análise Estratégica Completa
+                </Button>
+                <p className="text-xs text-gray-600 mt-3">
+                  {ICONS.INFO} Esta análise consumirá 1 crédito de sua conta
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Status da JUDIT em tempo real */}
-      {jobStatus && phases.ENRICHMENT.status === 'in_progress' && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-sm">Status Detalhado</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <div>
-              <span className="font-medium">Job ID:</span>{' '}
-              <span className="text-gray-600 font-mono text-xs">{juditJobId}</span>
-            </div>
-            <div>
-              <span className="font-medium">Status:</span>{' '}
-              <span className="text-gray-600">{jobStatus.statusDescription}</span>
-            </div>
-            <div>
-              <span className="font-medium">Progresso:</span>{' '}
-              <span className="text-gray-600">{jobStatus.progress || 0}%</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <AnimatePresence>
+        {jobStatus && phases.ENRICHMENT.status === 'in_progress' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  Status Detalhado
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="font-medium">Job ID:</span>
+                  <span className="text-gray-600 font-mono text-xs">{juditJobId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Status:</span>
+                  <span className="text-gray-600">{jobStatus.statusDescription}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Progresso:</span>
+                  <span className="text-gray-600 font-semibold">{jobStatus.progress || 0}%</span>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -346,104 +536,167 @@ function ExpandedPhaseContent({
 }) {
   if (phase === 'ENRICHMENT' && jobStatus) {
     return (
-      <div className="space-y-3">
+      <motion.div
+        className="space-y-3"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <div>
-          <p className="text-sm font-medium text-gray-900 mb-1">O que está acontecendo</p>
-          <ul className="text-sm text-gray-600 space-y-1 ml-4">
-            <li>• Conectando ao tribunal (JUDIT)</li>
-            <li>• Buscando dados oficiais do processo</li>
-            <li>• Baixando anexos principais</li>
-            <li>• Unificando timeline com PDF</li>
+          <p className="text-sm font-medium text-gray-900 mb-2">O que está acontecendo</p>
+          <ul className="text-sm text-gray-600 space-y-1.5 ml-4">
+            {['Conectando ao tribunal (JUDIT)', 'Buscando dados oficiais do processo', 'Baixando anexos principais', 'Unificando timeline com PDF'].map((step, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+              >
+                ✓ {step}
+              </motion.li>
+            ))}
           </ul>
         </div>
 
         {jobStatus.result && (
-          <div>
-            <p className="text-sm font-medium text-gray-900 mb-1">Dados Carregados</p>
-            <div className="text-sm text-gray-600 space-y-1">
+          <div className="bg-blue-100 rounded-lg p-3 border border-blue-200">
+            <p className="text-sm font-medium text-blue-900 mb-2">Dados Carregados</p>
+            <div className="text-sm text-blue-800 space-y-1">
               {jobStatus.result.timelineEntries && (
-                <p>✓ {jobStatus.result.timelineEntries} andamentos carregados</p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  ✓ {jobStatus.result.timelineEntries} andamentos carregados
+                </motion.p>
               )}
               {jobStatus.result.attachmentsCount && (
-                <p>✓ {jobStatus.result.attachmentsCount} anexos baixados</p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  ✓ {jobStatus.result.attachmentsCount} anexos baixados
+                </motion.p>
               )}
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   }
 
   if (phase === 'PREVIEW' && previewData) {
     return (
-      <div className="space-y-4">
+      <motion.div
+        className="space-y-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* Resumo Executivo */}
         {previewData.resumo && (
-          <div className="bg-white rounded p-3 border border-blue-100">
+          <motion.div
+            className="bg-white rounded p-3 border border-blue-100 shadow-sm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             <p className="text-sm font-semibold text-gray-900 mb-2">Resumo da Análise</p>
             <p className="text-sm text-gray-700 leading-relaxed">{previewData.resumo}</p>
-          </div>
+          </motion.div>
         )}
 
         {/* Grid com informações principais */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           {/* Partes Envolvidas */}
           {previewData.partes && (
-            <div className="bg-white rounded p-2 border border-gray-200">
-              <p className="text-gray-600 text-xs font-semibold mb-1">Partes</p>
+            <motion.div
+              className="bg-white rounded p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15 }}
+            >
+              <p className="text-gray-600 text-xs font-semibold mb-1.5 uppercase tracking-wide">Partes</p>
               <p className="font-medium text-gray-900 line-clamp-2">{previewData.partes}</p>
-            </div>
+            </motion.div>
           )}
 
           {/* Objeto do Litígio */}
           {previewData.objeto && (
-            <div className="bg-white rounded p-2 border border-gray-200">
-              <p className="text-gray-600 text-xs font-semibold mb-1">Objeto</p>
+            <motion.div
+              className="bg-white rounded p-3 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <p className="text-gray-600 text-xs font-semibold mb-1.5 uppercase tracking-wide">Objeto</p>
               <p className="font-medium text-gray-900 line-clamp-2">{previewData.objeto}</p>
-            </div>
+            </motion.div>
           )}
 
           {/* Valores Envolvidos */}
           {previewData.valores && (
-            <div className="bg-white rounded p-2 border border-gray-200">
-              <p className="text-gray-600 text-xs font-semibold mb-1">Valores</p>
-              <p className="font-medium text-gray-900">{previewData.valores}</p>
-            </div>
+            <motion.div
+              className="bg-white rounded p-3 border border-green-200 shadow-sm hover:shadow-md transition-shadow bg-green-50"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.25 }}
+            >
+              <p className="text-green-700 text-xs font-semibold mb-1.5 uppercase tracking-wide">Valores</p>
+              <p className="font-bold text-green-900">{previewData.valores}</p>
+            </motion.div>
           )}
 
           {/* Probabilidade de Sucesso */}
           {previewData.probabilidades && (
-            <div className="bg-white rounded p-2 border border-gray-200">
-              <p className="text-gray-600 text-xs font-semibold mb-1">Probabilidade</p>
-              <p className="font-medium text-gray-900">{previewData.probabilidades}</p>
-            </div>
+            <motion.div
+              className="bg-white rounded p-3 border border-purple-200 shadow-sm hover:shadow-md transition-shadow bg-purple-50"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <p className="text-purple-700 text-xs font-semibold mb-1.5 uppercase tracking-wide">Probabilidade</p>
+              <p className="font-medium text-purple-900">{previewData.probabilidades}</p>
+            </motion.div>
           )}
         </div>
 
         {/* Próximos Passos */}
         {previewData.proximosPassos && (
-          <div className="bg-amber-50 rounded p-3 border border-amber-200">
+          <motion.div
+            className="bg-amber-50 rounded p-3 border border-amber-200 shadow-sm"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
             <p className="text-sm font-semibold text-amber-900 mb-2">Próximos Passos Recomendados</p>
-            <p className="text-sm text-amber-800">{previewData.proximosPassos}</p>
-          </div>
+            <p className="text-sm text-amber-800 leading-relaxed">{previewData.proximosPassos}</p>
+          </motion.div>
         )}
 
         {/* Metadata da Análise */}
-        <div className="grid grid-cols-3 gap-2 pt-2 border-t text-xs">
-          <div>
-            <p className="text-gray-600">Modelo</p>
-            <p className="font-medium text-gray-900">{previewData.modelUsed}</p>
+        <motion.div
+          className="grid grid-cols-3 gap-2 pt-3 border-t text-xs bg-gray-50 p-3 rounded-lg"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="text-center">
+            <p className="text-gray-600 font-medium">Modelo</p>
+            <p className="font-semibold text-gray-900 mt-1">{previewData.modelUsed}</p>
           </div>
-          <div>
-            <p className="text-gray-600">Confiança</p>
-            <p className="font-medium text-gray-900">{(previewData.confidence * 100).toFixed(0)}%</p>
+          <div className="text-center border-l border-r border-gray-200">
+            <p className="text-gray-600 font-medium">Confiança</p>
+            <p className="font-semibold text-gray-900 mt-1">{(previewData.confidence * 100).toFixed(0)}%</p>
           </div>
-          <div>
-            <p className="text-gray-600">Custo Est.</p>
-            <p className="font-medium text-gray-900">R$ {(Number(previewData.costEstimate) || 0).toFixed(2)}</p>
+          <div className="text-center">
+            <p className="text-gray-600 font-medium">Custo Est.</p>
+            <p className="font-semibold text-gray-900 mt-1">R$ {(Number(previewData.costEstimate) || 0).toFixed(2)}</p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   }
 
