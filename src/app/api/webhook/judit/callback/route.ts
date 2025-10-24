@@ -18,7 +18,9 @@ import { ICONS } from '@/lib/icons';
 
 // Critical: Timeout handling for webhook processing
 // JUDIT may have strict timeout requirements for webhook callbacks
-export const maxDuration = 60; // 60 seconds max for webhook processing
+// Vercel Pro allows up to 900s (15min), but we use 300s (5min) for processing 30+ attachments
+// With 5 parallel downloads, ~10-15 seconds per batch of 5 files
+export const maxDuration = 300; // 300 seconds (5 minutes) - enough for 30+ attachments with 5 concurrent
 
 // Type definitions for JUDIT webhook payload
 interface JuditWebhookPayload {

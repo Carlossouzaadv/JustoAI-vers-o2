@@ -297,7 +297,7 @@ async function downloadAndProcessAttachment(
         name: attachment.name.replace(/\.(pdf|PDF)$/, ''),
         originalName: attachment.name,
         type: documentType as any,
-        mimeType: 'application/pdf',
+        mimeType: attachment.extension === 'pdf' ? 'application/pdf' : 'application/octet-stream',
         size: buffer.length,
         url: tempPath, // TODO: substituir por S3
         path: tempPath,
@@ -307,7 +307,7 @@ async function downloadAndProcessAttachment(
         processed: true,
         ocrStatus: extractedText ? 'COMPLETED' : 'PENDING',
         sourceOrigin: 'JUDIT_ATTACHMENT',
-        juditAttachmentUrl: attachment.url
+        juditAttachmentUrl: `attachment_${attachment.attachment_id}` // Usar attachment_id, não url
       }
     });
 
