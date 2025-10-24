@@ -245,6 +245,33 @@ async function initiateRequest(
     });
   }
 
+  // ================================================================
+  // VINCULAR PROCESSO AO CASE SE EXISTIR
+  // ================================================================
+  // Procurar por Case que tenha esse CNJ detectado
+  const associatedCase = await prisma.case.findFirst({
+    where: {
+      detectedCnj: cnj,
+    },
+  });
+
+  if (associatedCase && !associatedCase.processoId) {
+    // Vincular o Case ao Processo
+    await prisma.case.update({
+      where: { id: associatedCase.id },
+      data: {
+        processoId: processo.id,
+      },
+    });
+
+    juditLogger.info({
+      action: 'case_linked_to_processo',
+      cnj,
+      case_id: associatedCase.id,
+      processo_id: processo.id,
+    });
+  }
+
   // Montar payload da requisição COM OTIMIZAÇÕES DE API JUDIT
   const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://api.justoai.com.br'}/api/webhook/judit/callback`;
 
