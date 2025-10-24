@@ -169,16 +169,27 @@ export async function POST(request: NextRequest) {
       extract_fields: ['processo', 'data', 'partes', 'valor']
     });
 
-    if (!extractionResult.success) {
+    // Verificar se houve sucesso, mas também aceitar resultados com extração parcial
+    if (!extractionResult.success && (!extractionResult.texto_original && !extractionResult.texto_limpo)) {
+      console.error(`${ICONS.ERROR} Extração de PDF falhou completamente:`, extractionResult.error);
       return NextResponse.json(
-        { error: 'Erro na extração de texto do PDF', details: extractionResult.error },
+        { error: 'Não foi possível extrair texto do PDF. O arquivo pode estar corrompido ou ser apenas imagens.' },
         { status: 400 }
       );
     }
 
-    // Limpar e normalizar texto
+    // Limpar e normalizar texto (usar fallback se necessário)
     const textCleaner = new TextCleaner();
     const extractedText = extractionResult.texto_original || extractionResult.texto_limpo || '';
+
+    if (!extractedText || extractedText.trim().length === 0) {
+      console.error(`${ICONS.ERROR} Nenhum texto extraído do PDF`);
+      return NextResponse.json(
+        { error: 'Nenhum texto foi extraído do PDF. Pode ser um PDF com apenas imagens (OCR não suportado ainda).' },
+        { status: 400 }
+      );
+    }
+
     const cleaningResult = textCleaner.cleanLegalDocument(extractedText);
     const cleanText = cleaningResult.cleanedText;
 

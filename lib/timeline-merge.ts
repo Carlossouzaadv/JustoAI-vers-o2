@@ -243,13 +243,12 @@ export class TimelineMergeService {
           level: 'INFO',
           category: 'UPLOAD',
           message: `Timeline event: ${type}`,
-          details,
-          source: 'timeline-merge-service',
-          createdAt: new Date()
+          data: details // Use 'data' field - GlobalLog schema only has 'data: Json?'
         }
       });
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao registrar auditoria:`, error);
+      // Silently fail - don't let audit logging block document upload
     }
   }
 }
