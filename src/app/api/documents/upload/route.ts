@@ -353,6 +353,7 @@ export async function POST(request: NextRequest) {
             workspaceId,
             clientId: defaultClient.id,
             number: extractedProcessNumber,
+            detectedCnj: extractedProcessNumber, // Preenchido automaticamente
             title: basicData.title || `Processo ${extractedProcessNumber}`,
             description: basicData.description,
             type: 'CIVIL', // Padrão

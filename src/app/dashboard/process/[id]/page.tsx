@@ -55,12 +55,12 @@ export default function ProcessPage() {
     }
   }, [caseId]);
 
-  const loadCaseData = async () => {
+  const loadCaseData = async (retryCount = 0, maxRetries = 3) => {
     try {
       setLoading(true);
-      setError(null);
+      if (retryCount === 0) setError(null);
 
-      console.log(`${ICONS.SEARCH} Carregando caso: ${caseId}`);
+      console.log(`${ICONS.SEARCH} Carregando caso: ${caseId}${retryCount > 0 ? ` (tentativa ${retryCount + 1})` : ''}`);
 
       const response = await fetch(`/api/cases/${caseId}`, {
         credentials: 'include',
@@ -70,6 +70,15 @@ export default function ProcessPage() {
       });
 
       if (!response.ok) {
+        // Retry on transient errors (5xx, network errors)
+        if (retryCount < maxRetries && (response.status >= 500 || response.status === 0)) {
+          const delayMs = 1000 * Math.pow(2, retryCount); // Exponential backoff: 1s, 2s, 4s
+          console.log(`${ICONS.WARNING} Erro ${response.status}, retentando em ${delayMs}ms...`);
+          setTimeout(() => loadCaseData(retryCount + 1, maxRetries), delayMs);
+          return;
+        }
+
+        // Don't retry on 404 or 401
         if (response.status === 404) {
           setError('Caso não encontrado');
         } else if (response.status === 401) {

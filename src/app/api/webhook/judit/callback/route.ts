@@ -166,10 +166,11 @@ export async function POST(request: NextRequest) {
         if (!isCachedResponse) {
           console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Resposta completa (não cacheada) recebida`);
 
-          // Atualizar status do caso para 'enriched' (FASE 2 completa)
+          // Atualizar status do caso para 'enriched' (FASE 2 completa) e mudar status de UNASSIGNED → ACTIVE
           await prisma.case.update({
             where: { id: processo.case.id },
             data: {
+              status: 'ACTIVE', // Muda de UNASSIGNED para ACTIVE quando JUDIT retorna dados
               onboardingStatus: 'enriched',
               enrichmentCompletedAt: new Date(),
               metadata: {
@@ -180,7 +181,7 @@ export async function POST(request: NextRequest) {
             }
           });
 
-          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${processo.case.id} marcado como 'enriched' (FASE 2 completa)`);
+          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${processo.case.id} marcado como 'enriched' (FASE 2 completa) e status atualizado para ACTIVE`);
         }
       }
 

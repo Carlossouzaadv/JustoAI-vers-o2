@@ -107,7 +107,7 @@ export async function GET(
         documents: caseData.documents,
         documentCount: caseData._count.documents,
         onboardingStatus: caseData.onboardingStatus,
-        previewSnapshot: caseData.previewSnapshot,
+        // Note: previewSnapshot excluded from response due to size (load separately if needed)
         previewGeneratedAt: caseData.previewGeneratedAt,
         createdAt: caseData.createdAt,
         updatedAt: caseData.updatedAt,
