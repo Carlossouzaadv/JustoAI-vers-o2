@@ -262,7 +262,14 @@ async function downloadAndProcessAttachment(
     // 3. SALVAR ARQUIVO TEMPORARIAMENTE
     // ============================================================
 
-    const tempPath = `/tmp/judit-attachment-${Date.now()}-${attachment.name}`;
+    // Sanitizar nome do arquivo: remover / e caracteres inválidos para evitar path traversal
+    const sanitizedName = attachment.name
+      .replace(/\//g, '_') // Substituir / por _
+      .replace(/\\/g, '_') // Substituir \ por _
+      .replace(/[^\w\s\-\.]/g, '_') // Remover caracteres especiais (manter apenas word chars, espaço, hífen, ponto)
+      .substring(0, 200); // Limitar tamanho do nome
+
+    const tempPath = `/tmp/judit-attachment-${Date.now()}-${sanitizedName}`;
     const fs = await import('fs/promises');
     await fs.writeFile(tempPath, buffer);
 
@@ -294,7 +301,7 @@ async function downloadAndProcessAttachment(
     await prisma.caseDocument.create({
       data: {
         caseId,
-        name: attachment.name.replace(/\.(pdf|PDF)$/, ''),
+        name: sanitizedName.replace(/\.(pdf|PDF)$/, ''),
         originalName: attachment.name,
         type: documentType as any,
         mimeType: attachment.extension === 'pdf' ? 'application/pdf' : 'application/octet-stream',
@@ -313,7 +320,7 @@ async function downloadAndProcessAttachment(
 
     result.processed++;
 
-    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Salvo no banco: ${attachment.name}`);
+    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Salvo no banco: ${sanitizedName}`);
 
   } catch (error) {
     result.failed++;
