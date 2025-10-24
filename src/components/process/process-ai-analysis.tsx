@@ -61,6 +61,31 @@ interface AIAnalysisVersion {
   tokensUsed?: number;
   processingTime?: number;
   confidence?: number;
+  data?: any; // Raw data para acesso direto
+}
+
+/**
+ * Sanitiza dados de análise removendo valores null
+ */
+function sanitizeAnalysisData(data: any): any {
+  if (!data) return null;
+  if (data === null) return null;
+
+  if (Array.isArray(data)) {
+    return data.filter(item => item != null).map(sanitizeAnalysisData);
+  }
+
+  if (typeof data === 'object') {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      // Skip null/undefined values
+      if (value === null || value === undefined) continue;
+      sanitized[key] = sanitizeAnalysisData(value);
+    }
+    return Object.keys(sanitized).length > 0 ? sanitized : null;
+  }
+
+  return data;
 }
 
 interface ProcessAIAnalysisProps {
@@ -99,26 +124,33 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
       if (response.ok) {
         const data = await response.json();
         const analysisVersions = data.analyses || [];
-        setAnalyses(analysisVersions.map((a: any) => ({
-          id: a.id,
-          version: a.version,
-          createdAt: a.createdAt,
-          status: a.status,
-          analysisType: a.analysisType,
-          model: a.model,
-          summary: a.summary,
-          keyPoints: a.keyPoints,
-          legalAssessment: a.legalAssessment,
-          riskAssessment: a.riskAssessment,
-          timelineAnalysis: a.timelineAnalysis,
-          tokensUsed: (a.data as any)?.tokensUsed,
-          processingTime: a.processingTime,
-          confidence: a.confidence
-        })));
+        const sanitizedAnalyses = analysisVersions.map((a: any) => {
+          // Sanitizar dados para remover nulls que quebram React
+          const sanitized = {
+            id: a.id,
+            version: a.version,
+            createdAt: a.createdAt,
+            status: a.status || 'completed',
+            analysisType: a.analysisType || 'essential',
+            model: a.model || 'gemini-flash',
+            summary: a.summary || undefined,
+            keyPoints: sanitizeAnalysisData(a.keyPoints) || undefined,
+            legalAssessment: sanitizeAnalysisData(a.legalAssessment) || undefined,
+            riskAssessment: sanitizeAnalysisData(a.riskAssessment) || undefined,
+            timelineAnalysis: sanitizeAnalysisData(a.timelineAnalysis) || undefined,
+            tokensUsed: (a.data as any)?.tokensUsed,
+            processingTime: a.processingTime,
+            confidence: a.confidence,
+            data: a.data
+          };
+          return sanitized;
+        });
+
+        setAnalyses(sanitizedAnalyses);
 
         // Selecionar a versão mais recente por padrão
-        if (analysisVersions.length > 0) {
-          setSelectedVersion(analysisVersions[0]);
+        if (sanitizedAnalyses.length > 0) {
+          setSelectedVersion(sanitizedAnalyses[0]);
         }
       } else {
         console.warn('Nenhuma análise encontrada via API, carregando dados vazios');

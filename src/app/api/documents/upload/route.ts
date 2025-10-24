@@ -485,12 +485,14 @@ export async function POST(request: NextRequest) {
         // Salvar análise como primeira versão
         const analysisVersion = await prisma.caseAnalysisVersion.create({
           data: {
-            caseId: targetCaseId,
+            case: {
+              connect: { id: targetCaseId }
+            },
             version: nextVersion,
             status: 'COMPLETED',
             analysisType: 'essential', // Análise rápida do upload é considerada "essencial"
             modelUsed: modelVersion,
-            aiAnalysis: aiAnalysisResult,
+            aiAnalysis: aiAnalysisResult as any, // JSON field
             confidence: (aiAnalysisResult as any)?.metadados_analise?.confianca || 0.8,
             processingTime: Date.now() - startTime,
             metadata: {
