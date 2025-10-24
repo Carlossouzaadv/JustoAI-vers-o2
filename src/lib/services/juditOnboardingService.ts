@@ -59,7 +59,8 @@ interface JuditRequestPayload {
     on_demand: boolean;
   };
   with_attachments: boolean;
-  callback_url?: string; // Webhook callback URL (NOVO)
+  callback_url?: string; // Webhook callback URL para receber respostas assincronamente
+  cache_ttl_in_days?: number; // Cache JUDIT por N dias (evita reconsultas desnecessárias)
 }
 
 interface JuditRequestResponse {
@@ -77,20 +78,20 @@ interface JuditResponseData {
 }
 
 // ================================================================
-// CONFIGURAÇÕES
+// CONFIGURAÇÕES OTIMIZADAS PARA WEBHOOK
 // ================================================================
+// NOTA: Polling foi REMOVIDO completamente. JUDIT envia respostas via webhook.
+// Veja: /api/webhook/judit/callback para processar as respostas assíncronamente.
+//
+// Otimizações de API JUDIT:
+// 1. cache_ttl_in_days: 7 - JUDIT cache de 7 dias evita reconsultas desnecessárias
+// 2. webhook callbacks: respostas incrementais conforme disponíveis (much more efficient!)
+// 3. on_demand: true - prioridade alta na fila JUDIT
 
-const POLLING_CONFIG = {
-  INTERVAL_MS: 20000, // 20 segundos entre verificações
-  MAX_ATTEMPTS: 60, // 20 minutos total (60 * 20s) - aumentado de 30 para dar mais tempo à JUDIT processar
-  TIMEOUT_MS: 1200000, // 20 minutos - aumentado de 10min para acomodar requisições mais lentas
-  RETRY_ON_ERROR_DELAY_MS: 5000, // 5 segundos após erro
-  MAX_ERROR_RETRIES: 5, // Aumentado de 3 para ser mais resiliente a falhas temporárias
-} as const;
-
-const PAGINATION_CONFIG = {
-  MAX_PAGES: 50, // Limite de segurança
-  CONCURRENT_PAGE_REQUESTS: 3, // Requisições paralelas
+const JUDIT_REQUEST_CONFIG = {
+  CACHE_TTL_DAYS: 7, // Usar cache JUDIT por até 7 dias (otimização de JUDIT)
+  CALLBACK_TIMEOUT_SECONDS: 3600, // 1 hora para receber callbacks (sem polling!)
+  WITH_ATTACHMENTS: true, // Sempre buscar anexos
 } as const;
 
 // ================================================================
@@ -106,11 +107,17 @@ const sleep = (ms: number): Promise<void> => {
 // ================================================================
 
 /**
- * Realiza uma consulta completa e assíncrona à API JUDIT
+ * Realiza uma consulta assíncrona à API JUDIT via webhook callback
+ *
+ * NOVO FLUXO (WEBHOOK-BASED):
+ * 1. Inicia requisição com callback_url apontando para /api/webhook/judit/callback
+ * 2. Retorna IMEDIATAMENTE com requestId (sem bloquear)
+ * 3. JUDIT envia respostas incrementalmente via webhook conforme encontra dados
+ * 4. Webhook processa e atualiza case progressivamente
  *
  * @param cnj - Número CNJ do processo
  * @param finalidade - Tipo de consulta (ONBOARDING ou BUSCA_ANEXOS)
- * @returns Resultado completo da operação
+ * @returns Status inicial da requisição (dados completos vêm via webhook)
  */
 export async function performFullProcessRequest(
   cnj: string,
@@ -124,102 +131,36 @@ export async function performFullProcessRequest(
   });
 
   const startTime = Date.now();
-  const juditClient = getJuditApiClient();
   let requestId = '';
   let processoId = '';
-  let documentsRetrieved = 0;
 
   try {
     // ============================================================
-    // ETAPA 1: INICIAR REQUISIÇÃO
+    // ETAPA ÚNICA: INICIAR REQUISIÇÃO COM WEBHOOK CALLBACK
     // ============================================================
+    // NOTA: Polling foi removido! JUDIT envia dados via webhook.
 
     const initResult = await initiateRequest(cnj, finalidade);
     processoId = initResult.processoId;
     requestId = initResult.requestId;
 
+    const duration = Date.now() - startTime;
+
     juditLogger.info({
-      action: 'request_initiated',
+      action: 'request_initiated_webhook',
       cnj,
       request_id: requestId,
       processo_id: processoId,
+      duration_ms: duration,
+      note: 'Webhook callback configured - responses will be delivered asynchronously',
     });
 
-    // ============================================================
-    // ETAPA 2: POLLING DO STATUS
-    // ============================================================
-
-    const pollingResult = await pollRequestStatus(requestId, processoId, cnj);
-
-    if (!pollingResult.success) {
-      // Record failure metrics
-      const duration = Date.now() - startTime;
-      juditMetrics.recordOnboarding('failure', duration);
-
-      // Track cost (even for failures)
-      await trackJuditCost({
-        workspaceId,
-        operationType: 'ONBOARDING',
-        numeroCnj: cnj,
-        requestId,
-        durationMs: duration,
-        status: 'failed',
-        errorMessage: pollingResult.error,
-      });
-
-      operation.finish('failure', { error: pollingResult.error });
-
-      return {
-        success: false,
-        processoId,
-        requestId,
-        numeroCnj: cnj,
-        error: pollingResult.error,
-        attemptCount: pollingResult.attemptCount,
-        duration,
-      };
-    }
-
-    // ============================================================
-    // ETAPA 3: RECUPERAR E PERSISTIR DADOS
-    // ============================================================
-
-    const dadosCompletos = await retrieveAndPersistData(requestId, processoId, cnj);
-
-    // Extract metrics from response
-    documentsRetrieved = extractDocumentCount(dadosCompletos);
-    const movementsCount = extractMovementsCount(dadosCompletos);
-
-    const duration = Date.now() - startTime;
-
-    // Record success metrics
+    // Record success of request initiation
     juditMetrics.recordOnboarding('success', duration);
 
-    // Track costs
-    await trackJuditCost({
-      workspaceId,
-      operationType: finalidade === 'ONBOARDING' ? 'ONBOARDING' : 'ATTACHMENT_FETCH',
-      numeroCnj: cnj,
-      documentsRetrieved,
-      movementsCount,
-      requestId,
-      durationMs: duration,
-      status: 'success',
-    });
-
-    juditLogger.info({
-      action: 'onboarding_completed',
-      cnj,
-      request_id: requestId,
-      duration_ms: duration,
-      documents_retrieved: documentsRetrieved,
-      movements_count: movementsCount,
-      pages: dadosCompletos?.all_pages_count || 1,
-    });
-
     operation.finish('success', {
-      documents_retrieved: documentsRetrieved,
-      duration_ms: duration,
+      request_initiated: true,
+      webhook_enabled: true,
     });
 
     return {
@@ -227,8 +168,6 @@ export async function performFullProcessRequest(
       processoId,
       requestId,
       numeroCnj: cnj,
-      dadosCompletos,
-      attemptCount: pollingResult.attemptCount,
       duration,
     };
   } catch (error) {
@@ -306,26 +245,27 @@ async function initiateRequest(
     });
   }
 
-  // Montar payload da requisição
-  // NOVO: Adicionar webhook callback para receber respostas de forma eficiente
-  // Isso evita o polling de 20 minutos e permite processar respostas conforme chegam
+  // Montar payload da requisição COM OTIMIZAÇÕES DE API JUDIT
   const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://api.justoai.com.br'}/api/webhook/judit/callback`;
 
   const payload: JuditRequestPayload = {
     search: {
       search_type: 'lawsuit_cnj',
       search_key: cnj,
-      on_demand: true,
+      on_demand: true, // Prioridade alta na fila JUDIT
     },
-    with_attachments: true,
-    callback_url: webhookUrl, // NOVO: Webhook callback (mais eficiente que polling)
+    with_attachments: true, // Sempre trazer anexos para enriquecimento
+    callback_url: webhookUrl, // Webhook para respostas assincronamente
+    cache_ttl_in_days: JUDIT_REQUEST_CONFIG.CACHE_TTL_DAYS, // Cache 7 dias (evita reconsultas)
   };
 
   juditLogger.info({
     action: 'send_judit_request',
     cnj,
     with_attachments: true,
-    webhook_callback_url: webhookUrl, // Log para auditoria
+    webhook_callback_url: webhookUrl,
+    cache_ttl_days: JUDIT_REQUEST_CONFIG.CACHE_TTL_DAYS,
+    optimizations: 'webhook_callback + cache_ttl + on_demand',
   });
 
   // Fazer requisição POST para /requests
@@ -363,382 +303,9 @@ async function initiateRequest(
   };
 }
 
-// ================================================================
-// ETAPA 2: POLLING DO STATUS
-// ================================================================
-
-interface PollingResult {
-  success: boolean;
-  error?: string;
-  attemptCount: number;
-}
-
-async function pollRequestStatus(
-  requestId: string,
-  processoId: string,
-  cnj: string
-): Promise<PollingResult> {
-  const juditClient = getJuditApiClient();
-  let attemptCount = 0;
-  let consecutiveErrors = 0;
-
-  juditLogger.info({
-    action: 'start_polling',
-    request_id: requestId,
-    cnj,
-  });
-
-  while (attemptCount < POLLING_CONFIG.MAX_ATTEMPTS) {
-    attemptCount++;
-
-    try {
-      juditLogger.debug({
-        action: 'polling_attempt',
-        request_id: requestId,
-        cnj,
-        attempt: attemptCount,
-        max_attempts: POLLING_CONFIG.MAX_ATTEMPTS,
-      });
-
-      // Verificar status da requisição
-      const statusResponse = await juditClient.get<JuditRequestResponse>(
-        'requests',
-        `/requests/${requestId}`
-      );
-
-      const status = statusResponse.status;
-
-      juditLogger.debug({
-        action: 'polling_status_update',
-        request_id: requestId,
-        cnj,
-        status,
-        attempt: attemptCount,
-      });
-
-      // Atualizar status no banco
-      await prisma.juditRequest.updateMany({
-        where: { requestId },
-        data: { status },
-      });
-
-      // Verificar se completou
-      if (status === 'completed') {
-        juditLogger.info({
-          action: 'request_completed',
-          request_id: requestId,
-          cnj,
-          attempts: attemptCount,
-        });
-        return {
-          success: true,
-          attemptCount,
-        };
-      }
-
-      // Verificar se falhou
-      if (status === 'failed') {
-        const errorMessage = statusResponse.error || 'Requisição falhou na JUDIT';
-        juditLogger.error({
-          action: 'request_failed',
-          request_id: requestId,
-          cnj,
-          error: errorMessage,
-        });
-
-        await prisma.juditRequest.updateMany({
-          where: { requestId },
-          data: { status: 'failed' },
-        });
-
-        return {
-          success: false,
-          error: errorMessage,
-          attemptCount,
-        };
-      }
-
-      // Reset contador de erros consecutivos (requisição bem-sucedida)
-      consecutiveErrors = 0;
-
-      // Aguardar antes da próxima verificação
-      if (attemptCount < POLLING_CONFIG.MAX_ATTEMPTS) {
-        await sleep(POLLING_CONFIG.INTERVAL_MS);
-      }
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-
-      // NOVO: Detectar erro 404 (requisição expirou/deletada no servidor JUDIT)
-      // Quando receber 404, a requisição foi expirada/deletada, não faz sentido retentá-la
-      if (errorMessage.includes('HTTP 404') || errorMessage.includes('REQUEST_NOT_FOUND')) {
-        juditLogger.error({
-          action: 'request_expired_404',
-          request_id: requestId,
-          cnj,
-          attempt: attemptCount,
-          error: 'Requisição expirou/foi deletada do servidor JUDIT (HTTP 404)',
-          note: 'JUDIT mantém requisições pendentes apenas por ~10 minutos. Aumentado para 20 minutos.',
-        });
-
-        await prisma.juditRequest.updateMany({
-          where: { requestId },
-          data: { status: 'failed' },
-        });
-
-        return {
-          success: false,
-          error: 'Requisição JUDIT expirou após não completar dentro do período de espera. Servidor JUDIT deletou a requisição pendente.',
-          attemptCount,
-        };
-      }
-
-      consecutiveErrors++;
-      juditLogger.error({
-        action: 'polling_error',
-        request_id: requestId,
-        cnj,
-        attempt: attemptCount,
-        consecutive_errors: consecutiveErrors,
-        error: errorMessage,
-      });
-
-      // Se muitos erros consecutivos, falhar
-      if (consecutiveErrors >= POLLING_CONFIG.MAX_ERROR_RETRIES) {
-        await prisma.juditRequest.updateMany({
-          where: { requestId },
-          data: { status: 'failed' },
-        });
-
-        return {
-          success: false,
-          error: `Falha após ${consecutiveErrors} erros consecutivos: ${errorMessage}`,
-          attemptCount,
-        };
-      }
-
-      // Aguardar menos tempo após erro
-      await sleep(POLLING_CONFIG.RETRY_ON_ERROR_DELAY_MS);
-    }
-  }
-
-  // Timeout atingido
-  const timeoutDuration = (POLLING_CONFIG.MAX_ATTEMPTS * POLLING_CONFIG.INTERVAL_MS) / 1000;
-
-  juditLogger.error({
-    action: 'polling_timeout',
-    request_id: requestId,
-    cnj,
-    attempts: attemptCount,
-    duration_seconds: timeoutDuration,
-  });
-
-  // Send timeout alert
-  await alertTimeout({
-    operation: 'JUDIT Request Polling',
-    duration: attemptCount * POLLING_CONFIG.INTERVAL_MS,
-    maxDuration: POLLING_CONFIG.MAX_ATTEMPTS * POLLING_CONFIG.INTERVAL_MS,
-    requestId,
-    numeroCnj: cnj,
-  });
-
-  await prisma.juditRequest.updateMany({
-    where: { requestId },
-    data: { status: 'timeout' },
-  });
-
-  return {
-    success: false,
-    error: `Timeout após ${attemptCount} tentativas (${timeoutDuration}s)`,
-    attemptCount,
-  };
-}
-
-// ================================================================
-// ETAPA 3: RECUPERAR E PERSISTIR DADOS
-// ================================================================
-
-async function retrieveAndPersistData(
-  requestId: string,
-  processoId: string,
-  cnj: string
-): Promise<any> {
-  const juditClient = getJuditApiClient();
-
-  juditLogger.info({
-    action: 'retrieve_response_data',
-    request_id: requestId,
-    cnj,
-  });
-
-  // Buscar primeira página
-  const firstPageResponse = await juditClient.get<JuditResponseData>(
-    'requests',
-    `/responses?request_id=${requestId}&page=1&page_size=100`
-  );
-
-  const totalPages = firstPageResponse.all_pages_count || 1;
-
-  juditLogger.info({
-    action: 'first_page_retrieved',
-    request_id: requestId,
-    cnj,
-    total_pages: totalPages,
-  });
-
-  let dadosCompletos: any;
-
-  if (totalPages === 1) {
-    // Apenas uma página - extrair process data
-    const processos = (firstPageResponse.page_data || []).map(
-      (item: any) => item.response_data
-    );
-
-    dadosCompletos = {
-      request_id: requestId,
-      request_status: firstPageResponse.request_status,
-      pagination: {
-        page: firstPageResponse.page,
-        page_count: firstPageResponse.page_count,
-        all_pages_count: firstPageResponse.all_pages_count,
-        all_count: firstPageResponse.all_count,
-      },
-      processos,
-    };
-  } else {
-    // Múltiplas páginas - buscar e consolidar todas
-    dadosCompletos = await retrieveAllPages(requestId, firstPageResponse, totalPages);
-  }
-
-  // Persistir dados completos no banco
-  juditLogger.info({
-    action: 'persist_data',
-    request_id: requestId,
-    cnj,
-  });
-
-  await prisma.processo.update({
-    where: { id: processoId },
-    data: {
-      dadosCompletos,
-      ultimaAtualizacao: new Date(),
-    },
-  });
-
-  // Marcar requisição como completed
-  await prisma.juditRequest.updateMany({
-    where: { requestId },
-    data: { status: 'completed' },
-  });
-
-  juditLogger.info({
-    action: 'data_persisted',
-    request_id: requestId,
-    cnj,
-    total_pages: totalPages,
-  });
-
-  return dadosCompletos;
-}
-
-// ================================================================
-// PAGINAÇÃO
-// ================================================================
-
-async function retrieveAllPages(
-  requestId: string,
-  firstPageResponse: JuditResponseData,
-  totalPages: number
-): Promise<any> {
-  const juditClient = getJuditApiClient();
-
-  juditLogger.info({
-    action: 'retrieve_all_pages',
-    request_id: requestId,
-    total_pages: totalPages,
-  });
-
-  if (totalPages > PAGINATION_CONFIG.MAX_PAGES) {
-    juditLogger.warn({
-      action: 'pages_exceed_limit',
-      request_id: requestId,
-      total_pages: totalPages,
-      max_pages: PAGINATION_CONFIG.MAX_PAGES,
-    });
-    totalPages = PAGINATION_CONFIG.MAX_PAGES;
-  }
-
-  // Inicializar com dados da primeira página
-  const allProcessos: any[] = (firstPageResponse.page_data || []).map(
-    (item: any) => item.response_data
-  );
-
-  // Criar array de páginas para buscar (1 já foi buscada)
-  const pagesToFetch = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-
-  // Buscar páginas em lotes paralelos
-  const allPagesData: JuditResponseData[] = [];
-
-  for (let i = 0; i < pagesToFetch.length; i += PAGINATION_CONFIG.CONCURRENT_PAGE_REQUESTS) {
-    const batch = pagesToFetch.slice(i, i + PAGINATION_CONFIG.CONCURRENT_PAGE_REQUESTS);
-
-    juditLogger.debug({
-      action: 'fetch_page_batch',
-      request_id: requestId,
-      pages: batch,
-      progress: `${i + batch.length}/${totalPages}`,
-    });
-
-    const batchPromises = batch.map((pageNumber) =>
-      juditClient.get<JuditResponseData>(
-        'requests',
-        `/responses?request_id=${requestId}&page=${pageNumber}&page_size=100`
-      )
-    );
-
-    const batchResults = await Promise.allSettled(batchPromises);
-
-    batchResults.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        allPagesData.push(result.value);
-        // Extrair process data desta página
-        const pageProcessos = (result.value.page_data || []).map(
-          (item: any) => item.response_data
-        );
-        allProcessos.push(...pageProcessos);
-      } else {
-        juditLogger.error({
-          action: 'fetch_page_failed',
-          request_id: requestId,
-          page: batch[index],
-          error: result.reason instanceof Error ? result.reason.message : String(result.reason),
-        });
-      }
-    });
-  }
-
-  // Consolidar todas as páginas com estrutura normalizada
-  juditLogger.info({
-    action: 'consolidate_pages',
-    request_id: requestId,
-    pages_count: allPagesData.length + 1,
-    total_processes: allProcessos.length,
-  });
-
-  const consolidated = {
-    request_id: requestId,
-    request_status: firstPageResponse.request_status,
-    pagination: {
-      page: firstPageResponse.page,
-      page_count: firstPageResponse.page_count,
-      all_pages_count: totalPages,
-      all_count: firstPageResponse.all_count,
-    },
-    processos: allProcessos,
-  };
-
-  return consolidated;
-}
+// NOTA: ETAPA 3 (RECUPERAR E PERSISTIR DADOS) foi removida
+// Agora os dados são processados assincronamente via webhook em /api/webhook/judit/callback
+// O webhook processa respostas incrementais conforme JUDIT envia, muito mais eficiente!
 
 // ================================================================
 // FUNÇÕES AUXILIARES PÚBLICAS
