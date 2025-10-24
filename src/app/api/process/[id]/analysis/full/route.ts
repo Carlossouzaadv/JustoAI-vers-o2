@@ -81,8 +81,9 @@ export async function POST(
 
     const version = await prisma.caseAnalysisVersion.create({
       data: {
-        caseId,
-        workspaceId: caseData.workspaceId,
+        case: {
+          connect: { id: caseId }
+        },
         version: nextVersion,
         status: 'COMPLETED',
         aiAnalysis: analysis,

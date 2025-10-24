@@ -665,8 +665,9 @@ export class PDFProcessor {
 
       const version = await this.prisma.caseAnalysisVersion.create({
         data: {
-          caseId,
-          workspaceId: case_.workspaceId,
+          case: {
+            connect: { id: caseId }
+          },
           version: nextVersion,
           analysisType: 'PDF_UPLOAD',
           extractedData: analysisResult as any,

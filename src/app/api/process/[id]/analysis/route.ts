@@ -181,7 +181,9 @@ export async function POST(
       // Criar nova versão no banco apontando para o cache
       const analysisVersion = await prisma.caseAnalysisVersion.create({
         data: {
-          caseId: processId,
+          case: {
+            connect: { id: processId }
+          },
           version: await getNextVersionNumber(processId),
           status: 'COMPLETED',
           analysisType: level,
@@ -292,7 +294,9 @@ export async function POST(
 
       const analysisVersion = await prisma.caseAnalysisVersion.create({
         data: {
-          caseId: processId,
+          case: {
+            connect: { id: processId }
+          },
           version: nextVersion,
           status: 'PROCESSING',
           analysisType: level,

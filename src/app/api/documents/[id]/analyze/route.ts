@@ -152,7 +152,9 @@ export async function POST(
     // 8. Salvar nova versão da análise
     const analysisVersion = await prisma.caseAnalysisVersion.create({
       data: {
-        caseId: document.caseId,
+        case: {
+          connect: { id: document.caseId }
+        },
         version: nextVersion,
         analysisType: 'PDF_UPLOAD',
         extractedData: pdfResult,

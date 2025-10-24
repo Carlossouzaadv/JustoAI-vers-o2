@@ -518,8 +518,9 @@ export class DeepAnalysisService {
     try {
       const version = await prisma.caseAnalysisVersion.create({
         data: {
-          caseId: params.processId,
-          workspaceId: params.workspaceId,
+          case: {
+            connect: { id: params.processId }
+          },
           version: params.version,
           analysisType: params.analysisType,
           modelUsed: params.modelUsed,
