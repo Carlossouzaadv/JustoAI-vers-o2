@@ -226,6 +226,7 @@ export async function POST(request: NextRequest) {
         requiresUserDecision: true,
         message: 'Processo existente identificado',
         data: {
+          caseId: existingProcess.id, // ✓ Sempre retorna caseId na raiz para consistência
           extractedProcessNumber,
           existingProcess: {
             id: existingProcess.id,
@@ -331,6 +332,23 @@ export async function POST(request: NextRequest) {
           { error: 'caseId é obrigatório quando processo não é identificado automaticamente' },
           { status: 400 }
         );
+      }
+
+      // VALIDATE: Se um caseId foi fornecido, verificar se pertence ao workspace
+      if (caseId && !existingProcess) {
+        const providedCase = await prisma.case.findFirst({
+          where: {
+            id: caseId,
+            workspaceId // Garante que o case pertence ao workspace do usuário
+          }
+        });
+
+        if (!providedCase) {
+          return NextResponse.json(
+            { error: 'Caso fornecido não existe ou você não tem acesso a ele' },
+            { status: 404 }
+          );
+        }
       }
     }
 
