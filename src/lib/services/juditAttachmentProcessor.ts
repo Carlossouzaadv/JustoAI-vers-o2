@@ -116,10 +116,20 @@ function extractAttachmentsFromJuditResponse(juditResponse: any): JuditAttachmen
   const attachments: JuditAttachment[] = [];
 
   try {
+    // Guard: validar se juditResponse existe
+    if (!juditResponse) {
+      return attachments;
+    }
+
     // Estrutura esperada (ajustar conforme API JUDIT real):
     // juditResponse.data.attachments[] ou similar
 
     const data = juditResponse?.data || juditResponse;
+
+    // Guard: validar se data é objeto antes de acessar propriedades
+    if (!data || typeof data !== 'object') {
+      return attachments;
+    }
 
     if (data.attachments && Array.isArray(data.attachments)) {
       for (const att of data.attachments) {
