@@ -15,6 +15,10 @@ import { prisma } from '@/lib/prisma';
 import { getTimelineMergeService } from '@/lib/timeline-merge';
 import { ICONS } from '@/lib/icons';
 
+// Critical: Timeout handling for webhook processing
+// JUDIT may have strict timeout requirements for webhook callbacks
+export const maxDuration = 60; // 60 seconds max for webhook processing
+
 // Type definitions for JUDIT webhook payload
 interface JuditWebhookPayload {
   user_id: string;
@@ -40,14 +44,34 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    console.log(`${ICONS.WEBHOOK} [JUDIT Webhook] Recebido callback`);
+    // Log com timestamp exato para rastreamento
+    const timestamp = new Date().toISOString();
+    console.log(`${ICONS.WEBHOOK} [JUDIT Webhook] ✅ RECEBIDO EM ${timestamp}`);
+    console.log(`${ICONS.WEBHOOK} [JUDIT Webhook] URL: ${request.url}`);
+    console.log(`${ICONS.WEBHOOK} [JUDIT Webhook] Method: ${request.method}`);
+    console.log(`${ICONS.WEBHOOK} [JUDIT Webhook] Headers:`, {
+      'content-type': request.headers.get('content-type'),
+      'user-agent': request.headers.get('user-agent'),
+    });
 
     // Parse request body
-    const webhook: JuditWebhookPayload = await request.json();
+    let webhook: JuditWebhookPayload;
+    try {
+      const bodyText = await request.text();
+      console.log(`${ICONS.WEBHOOK} [JUDIT Webhook] Body size: ${bodyText.length} bytes`);
+      webhook = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error(`${ICONS.ERROR} [JUDIT Webhook] Erro ao parsear JSON:`, parseError);
+      return NextResponse.json(
+        { error: 'JSON inválido', details: parseError instanceof Error ? parseError.message : 'desconhecido' },
+        { status: 400 }
+      );
+    }
 
     // Validar payload obrigatório
     if (!webhook.reference_id) {
       console.warn(`${ICONS.WARNING} [JUDIT Webhook] Payload inválido - faltando reference_id`);
+      console.warn(`${ICONS.WARNING} [JUDIT Webhook] Payload recebido:`, JSON.stringify(webhook).substring(0, 500));
       return NextResponse.json(
         { error: 'reference_id obrigatório' },
         { status: 400 }
@@ -57,7 +81,7 @@ export async function POST(request: NextRequest) {
     const requestId = webhook.reference_id;
     const eventType = webhook.event_type;
 
-    console.log(`${ICONS.INFO} [JUDIT Webhook] Event: ${eventType}, RequestID: ${requestId}`);
+    console.log(`${ICONS.SUCCESS} [JUDIT Webhook] ✅ VÁLIDO - Event: ${eventType}, RequestID: ${requestId}`);
 
     // ================================================================
     // CASE 1: response_created - JUDIT encontrou dados
