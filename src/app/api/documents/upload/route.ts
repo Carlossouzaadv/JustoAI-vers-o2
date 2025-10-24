@@ -18,6 +18,7 @@ import { addOnboardingJob } from '@/lib/queue/juditQueue';
 import { PDFProcessor } from '@/lib/pdf-processor';
 import { TextCleaner } from '@/lib/text-cleaner';
 import { AIModelRouter } from '@/lib/ai-model-router';
+import { mapAnalysisToPreview, extractCoreInfo } from '@/lib/ai-analysis-mapper';
 import { ICONS } from '@/lib/icons';
 
 // Configuração de runtime para suportar uploads de arquivos grandes
@@ -635,23 +636,25 @@ export async function POST(request: NextRequest) {
         },
 
         // Informações da análise (PREVIEW COMPLETO)
-        analysis: aiAnalysisResult ? {
-          // Metadata da análise
-          modelUsed: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion,
-          confidence: (aiAnalysisResult as any).metadados_analise?.confianca || 0.8,
-          costEstimate: Number(((aiAnalysisResult as any)._routing_info?.cost_estimate?.estimatedCost) || 0),
+        analysis: aiAnalysisResult ? (() => {
+          const previewData = mapAnalysisToPreview(aiAnalysisResult, {
+            modelUsed: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion,
+            confidence: (aiAnalysisResult as any).metadados_analise?.confianca_geral || 0.8,
+            costEstimate: Number(((aiAnalysisResult as any)._routing_info?.cost_estimate?.estimatedCost) || 0)
+          });
 
-          // Conteúdo da análise para display
-          resumo: (aiAnalysisResult as any).resumo_executivo || 'Análise em processamento',
-          partes: (aiAnalysisResult as any).partes_envolvidas,
-          objeto: (aiAnalysisResult as any).objeto_litígio || (aiAnalysisResult as any).objetivo,
-          valores: (aiAnalysisResult as any).valores_envolvidos,
-          probabilidades: (aiAnalysisResult as any).probabilidade_sucesso,
-          proximosPassos: (aiAnalysisResult as any).próximos_passos,
+          // Log dos dados extraídos
+          const coreInfo = extractCoreInfo(aiAnalysisResult);
+          console.log(`${ICONS.SUCCESS} Análise mapeada para preview:`, coreInfo);
 
-          // Dados estruturados completos para referência futura
-          dados: aiAnalysisResult
-        } : null,
+          return {
+            // Dados formatados para o popup
+            ...previewData,
+
+            // Dados estruturados completos para referência futura
+            dados: aiAnalysisResult
+          };
+        })() : null,
 
         // Informações do arquivo
         file: {
