@@ -1,0 +1,169 @@
+API de Transferência de Arquivos
+Esta API permite que clientes da JUDIT listem, consultem e façam download de arquivos disponíveis para transferência, além de atualizarem o status de cada arquivo após o consumo.
+
+Base URL: https://lawsuits.prod.judit.io/
+​
+🔐 Autenticação
+Todas as requisições devem conter um cabeçalho com a chave de API da empresa:
+
+Copy
+api-key: SUA_CHAVE_DE_API
+⚠️ Um usuário só pode acessar arquivos pertencentes ao tenant da sua própria empresa.
+​
+📂 Listar arquivos disponíveis
+​
+GET /transfer-file
+Retorna uma lista paginada de arquivos disponíveis para a empresa do usuário autenticado.
+​
+Query Params suportados:
+description: string (filtra por descrição)
+file_type: csv, json, parquet
+name: string (filtra por nome do arquivo)
+status: string ou array (ex: status=completed ou status=["completed","error"])
+Datas: filtros de intervalo para os campos abaixo:
+created_at, updated_at, completed_at, downloaded_at, error_at, failed_at, started_at
+Exemplo: created_at_gte=2025-04-01T00:00:00.000Z
+Paginação e ordenação:
+page: número da página (default: 1)
+page_size: tamanho da página (máx: 100, default: 10)
+order_by: campo de ordenação (default: created_at)
+order: asc ou desc (default: desc)
+​
+Exemplo de chamada com curl:
+
+Copy
+curl -H "api-key: SUA_CHAVE_DE_API" \
+  "https://lawsuits.prod.judit.io/transfer-file?page=1&page_size=20&status=[\"completed\"]"
+​
+Exemplo de resposta:
+
+Copy
+{
+  "page": 1,
+  "page_data": [
+    {
+      "transfer_file_id": "be4ed52a-a96b-4782-a181-b7ed75cb2f21",
+      "description": "ARQUIVO INICIAL - CARGA 0",
+      "file_type": "parquet",
+      "name": "be4ed52a-a96b-4782-a181-b7ed75cb2f21-part-00001.parquet",
+      "status": "downloaded",
+      "created_at": "2025-04-22T11:50:00.000Z",
+      "updated_at": "2025-04-22T09:21:06.343Z",
+      "completed_at": "2025-04-22T11:51:00.000Z",
+      "started_at": "2025-04-22T11:50:01.000Z",
+      "downloaded_at": "2025-04-22T09:21:06.343Z",
+      "error_at": "2025-04-22T09:20:31.460Z",
+      "error_message": "teste de erro",
+      "file_size": 0.038,
+      "lawsuits_count": 19
+    }
+  ],
+  "page_count": 1,
+  "all_count": 1,
+  "all_pages_count": 1
+}
+​
+Explicação dos campos de retorno:
+page: número da página atual
+page_data: lista de arquivos retornados nesta página
+page_count: quantidade de registros nesta página
+all_count: total de arquivos encontrados no filtro
+all_pages_count: total de páginas disponíveis
+​
+📥 Obter URL para download
+​
+GET /transfer-file/:transfer_file_id
+Retorna os metadados do arquivo e uma URL pré-assinada da AWS para download (válida por 5 minutos).
+​
+Exemplo de chamada com curl:
+
+Copy
+curl -H "api-key: SUA_CHAVE_DE_API" \
+  "https://lawsuits.prod.judit.io/transfer-file/be4ed52a-a96b-4782-a181-b7ed75cb2f21"
+​
+Exemplo de resposta:
+
+Copy
+{
+  "transfer_file_id": "be4ed52a-a96b-4782-a181-b7ed75cb2f21",
+  "description": "ARQUIVO INICIAL - CARGA 0",
+  "file_type": "parquet",
+  "name": "be4ed52a-a96b-4782-a181-b7ed75cb2f21-part-00001.parquet",
+  "status": "completed",
+  "created_at": "2025-04-22T11:50:00.000Z",
+  "updated_at": "2025-04-22T09:21:06.343Z",
+  "completed_at": "2025-04-22T11:51:00.000Z",
+  "started_at": "2025-04-22T11:50:01.000Z",
+  "file_size": 0.038,
+  "lawsuits_count": 19,
+  "pre_signed_url": "https://s3.amazonaws.com/..."
+}
+​
+🛠 Atualizar status de um arquivo
+​
+PATCH /transfer-file/:transfer_file_id
+Permite marcar o arquivo como downloaded ou error após a tentativa de uso.
+​
+Exemplo de chamada com curl:
+
+Copy
+curl -X PATCH -H "api-key: SUA_CHAVE_DE_API" \
+     -H "Content-Type: application/json" \
+     -d '{"status": "downloaded"}' \
+     "https://lawsuits.prod.judit.io/transfer-file/be4ed52a-a96b-4782-a181-b7ed75cb2f21"
+​
+Corpo da requisição:
+Para marcar como baixado:
+
+Copy
+{
+  "status": "downloaded"
+}
+Para reportar erro:
+
+Copy
+{
+  "status": "error",
+  "error_message": "Descrição do erro, stack trace ou contexto do problema."
+}
+​
+Exemplo de resposta - status downloaded:
+
+Copy
+{
+  "transfer_file_id": "be4ed52a-a96b-4782-a181-b7ed75cb2f21",
+  "description": "ARQUIVO INICIAL - CARGA 0",
+  "file_type": "parquet",
+  "name": "be4ed52a-a96b-4782-a181-b7ed75cb2f21-part-00001.parquet",
+  "status": "downloaded",
+  "created_at": "2025-04-22T11:50:00.000Z",
+  "updated_at": "2025-04-22T11:55:00.000Z",
+  "completed_at": "2025-04-22T11:51:00.000Z",
+  "started_at": "2025-04-22T11:50:01.000Z",
+  "downloaded_at": "2025-04-22T11:55:00.000Z",
+  "file_size": 0.038,
+  "lawsuits_count": 19
+}
+​
+Exemplo de resposta - status error:
+
+Copy
+{
+  "transfer_file_id": "be4ed52a-a96b-4782-a181-b7ed75cb2f21",
+  "description": "ARQUIVO INICIAL - CARGA 0",
+  "file_type": "parquet",
+  "name": "be4ed52a-a96b-4782-a181-b7ed75cb2f21-part-00001.parquet",
+  "status": "error",
+  "created_at": "2025-04-22T11:50:00.000Z",
+  "updated_at": "2025-04-22T11:57:00.000Z",
+  "completed_at": "2025-04-22T11:51:00.000Z",
+  "started_at": "2025-04-22T11:50:01.000Z",
+  "error_at": "2025-04-22T11:57:00.000Z",
+  "error_message": "Descrição do erro, stack trace ou contexto do problema.",
+  "file_size": 0.038,
+  "lawsuits_count": 19
+}
+​
+🧠 Observações
+A URL retornada pela rota GET /transfer-file/:id expira em 5 minutos.
+Arquivos com status error serão analisados pela equipe técnica da JUDIT.

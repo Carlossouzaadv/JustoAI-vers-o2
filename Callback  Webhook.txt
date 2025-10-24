@@ -1,0 +1,1165 @@
+Callback / Webhook
+callbacks
+
+​
+Solicitação para envio via webhook
+Quando uma busca ou um monitoramento e feito pela API da JUDIT enviamos um retorno com as informações encontradas. Para que todas as respostas das solicitações sejam enviadas a um único webhook, o cadastro deve ser realizado entrando em contato com nosso suporte. Alternativamente, o webhook também pode ser especificado adicionando o parâmetro callback_url no payload da requisição, conforme o exemplo abaixo:
+
+Copy
+{
+    "search": {
+        "search_type": "lawsuit_cnj",
+        "search_key": "9999999-99.9999.9.99.9999"
+    },
+    "callback_url": "https://webhook.site/b0ac6522-5bfc-42fa-bebf-a8c2b5ec0999",
+    "with_attachments": true
+}
+O parâmetro “with_attachments” deve ser aplicado apenas para consultas processuais, ou seja, quando o campo “search_type” for definido como “lawsuit_cnj”.
+​
+Envio da resposta
+Realizamos uma solicitação POST para o webhook, enviando as respostas conforme os resultados da sua busca. O envio ocorre de forma incremental, à medida que as respostas são geradas, e é concluído quando o status da requisição é atualizado para “completed”.
+É possível que o webhook receba duas respostas com conteúdos semelhantes. Isso ocorre porque, inicialmente, pode ser enviada uma resposta cacheada cached_response: true. Posteriormente, uma nova resposta completa é gerada e enviada com cached_response: false, contendo todas as informações disponíveis.
+Essa diferença é indicada pelo campo cached_response:
+true → a resposta veio de nossa base de dados.
+false → a resposta foi obtida pelo crawler diretamente do tribunal.
+⚠️ Em alguns casos, o campo cached_response pode estar como true e ainda assim ser a única resposta enviada. Isso acontece quando a consulta processual foi feita recentemente, tornando desnecessária uma nova captura no tribunal.
+​
+Resposta para consulta histórica:
+Exemplo de reposta com cached_response: true:
+
+Copy
+{
+    "user_id": "ab829a35-894b-4fbd-9168-2398fd69cecc",
+    "callback_id": "d5dcbbd6-a9cc-4eef-b1d1-d58a59c4631b",
+    "event_type": "response_created",
+    "reference_type": "request",
+    "reference_id": "ec545a1e-c0ac-47cf-a3df-3668f1bdde11",
+    "payload": {
+        "request_id": "ec545a1e-c0ac-47cf-a3df-3668f1bdde11",
+        "response_id": "2db448e0-7b9d-4e6b-a2d7-9c0adcff9b77",
+        "response_type": "lawsuit",
+        "response_data": {
+            "code": "9999999-99.9999.9.99.9999",
+            "instance": 1,
+            "name": "Usuário teste 1 X Usuário teste 2",
+            "free_justice": true,
+            "secrecy_level": 0,
+            "courts": [
+                {
+                    "code": "7846",
+                    "name": "BANGU REGIONAL 2 VARA CIVEL"
+                }
+            ],
+            "tribunal_acronym": "TJRJ",
+            "county": "CAPITAL CENTRAL DE ARQUIVAMENTO DO NUR 1",
+            "state": "RJ",
+            "city": "RIO DE JANEIRO",
+            "distribution_date": "2022-01-13T13:06:46.799Z",
+            "last_step": {
+                "step_id": "27572cb5",
+                "step_date": "2025-06-29T20:07:53.000Z",
+                "content": "Remetidos os Autos (cumpridos) para 2ª Vara Cível da Regional de Bangu",
+                "steps_count": 19
+            },
+            "tags": {
+                "crawl_id": "eb2d2f65-69c0-43bd-b75a-ad9d9a787447",
+                "dictionary_updated_at": "2025-08-06T13:48:47.823Z",
+                "possible_homonym": true,
+                "datalake_id": "08004925520228190204",
+                "datalake_segment": "JUSTICA_ESTADUAL"
+            },
+            "justice": "8",
+            "tribunal": "19",
+            "crawler": {
+                "source_name": "JPje - RJ - Lawsuit - Auth - 1 instance",
+                "crawl_id": "eb2d2f65-69c0-43bd-b75a-ad9d9a787447",
+                "updated_at": "2025-07-01T15:42:55.700Z",
+                "weight": 10
+            },
+            "area": "DIREITO CIVIL",
+            "justice_description": "JUSTIÇA ESTADUAL",
+            "created_at": "2024-09-25T04:13:06.923Z",
+            "updated_at": "2025-08-04T15:27:19.032Z",
+            "amount": 11617.01,
+            "classifications": [
+                {
+                    "code": "7",
+                    "name": "PROCEDIMENTO COMUM CÍVEL"
+                }
+            ],
+            "subjects": [
+                {
+                    "code": "10671",
+                    "name": "OBRIGAÇÃO DE FAZER / NÃO FAZER"
+                },
+                {
+                    "code": "6007",
+                    "name": "REPETIÇÃO DE INDÉBITO"
+                },
+                {
+                    "code": "10441",
+                    "name": "ACIDENTE DE TRÂNSITO"
+                },
+                {
+                    "code": "14",
+                    "name": "DIREITO TRIBUTÁRIO"
+                },
+                {
+                    "code": "5986",
+                    "name": "CRÉDITO TRIBUTÁRIO"
+                },
+                {
+                    "code": "899",
+                    "name": "DIREITO CIVIL"
+                },
+                {
+                    "code": "10431",
+                    "name": "RESPONSABILIDADE CIVIL"
+                },
+                {
+                    "code": "10439",
+                    "name": "INDENIZAÇÃO POR DANO MATERIAL"
+                },
+                {
+                    "code": "8826",
+                    "name": "DIREITO PROCESSUAL CIVIL E DO TRABALHO"
+                },
+                {
+                    "code": "9148",
+                    "name": "LIQUIDAÇÃO / CUMPRIMENTO / EXECUÇÃO"
+                },
+                {
+                    "code": "",
+                    "name": "INDENIZAÇÃO POR DANO MORAL"
+                }
+            ],
+            "parties": [
+                {
+                    "main_document": "99999999999",
+                    "name": "Usuário teste 1",
+                    "side": "Active",
+                    "person_type": "Autor",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cpf"
+                        }
+                    ],
+                    "lawyers": [
+                        {
+                            "name": "Usuário teste 2",
+                            "documents": []
+                        }
+                    ]
+                },
+                {
+                    "main_document": "99999999999",
+                    "name": "Usuário teste 2",
+                    "side": "Passive",
+                    "person_type": "RÉU",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cnpj"
+                        }
+                    ],
+                    "lawyers": [
+                        {
+                            "name": "Usuário teste 3 - (99999999999)",
+                            "documents": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Usuário teste 2",
+                    "side": "Active",
+                    "person_type": "Advogado",
+                    "documents": [],
+                    "lawyers": []
+                },
+                {
+                    "name": "Usuário teste 3 - (99999999999)",
+                    "side": "Passive",
+                    "person_type": "Advogado",
+                    "documents": [],
+                    "lawyers": []
+                }
+            ],
+            "attachments": [],
+            "related_lawsuits": [],
+            "steps": []
+        },
+        "user_id": "ab829a35-894b-4fbd-9168-2398fd69cecc",
+        "created_at": "2025-08-06T13:48:47.824Z",
+        "request_created_at": "2025-08-06T13:48:46.910Z",
+        "is_scrapper_info": false,
+        "tags": {
+            "dashboard_id": null,
+            "cached_response": true
+        },
+        "origin": "api",
+        "origin_id": "ec545a1e-c0ac-47cf-a3df-3668f1bdde11"
+    }
+}
+Exemplo de reposta com cached_response: false:
+
+Copy
+{
+    "user_id": "ab829a35-894b-4fbd-9168-2398fd69cecc",
+    "callback_id": "3be957e0-876f-4d36-b98b-d60ad63a0e1c",
+    "event_type": "response_created",
+    "reference_type": "request",
+    "reference_id": "ec545a1e-c0ac-47cf-a3df-3668f1bdde11",
+    "payload": {
+        "request_id": "ec545a1e-c0ac-47cf-a3df-3668f1bdde11",
+        "response_id": "aab3ba92-da01-461b-9d88-b3fc610b8b99",
+        "response_type": "lawsuit",
+        "response_data": {
+            "code": "9999999-99.9999.9.99",
+            "instance": 1,
+            "name": "Uusuário teste 1 X Usuário teste 2",
+            "free_justice": false,
+            "secrecy_level": 0,
+            "courts": [
+                {
+                    "code": "7838",
+                    "name": "BANGU REGIONAL 1 VARA CIVEL"
+                },
+                {
+                    "name": "1ª Vara Cível da Regional de Bangu",
+                    "date": "2022-11-14T00:00:00.000Z"
+                }
+            ],
+            "tribunal_acronym": "TJRJ",
+            "county": "CAPITAL CENTRAL DE ARQUIVAMENTO DO NUR 1",
+            "state": "RJ",
+            "city": "RIO DE JANEIRO",
+            "judge": "Juiz de Direito",
+            "distribution_date": "2022-11-14T20:58:19.530Z",
+            "last_step": {
+                "step_id": "5d89299a",
+                "step_date": "2023-07-04T09:44:00.000Z",
+                "content": "Baixa Definitiva",
+                "steps_count": 26
+            },
+            "tags": {
+                "crawl_id": "f8639963-31af-4d0c-be0d-502db2d222cc",
+                "dictionary_updated_at": "2025-08-06T13:48:47.822Z",
+                "possible_homonym": true,
+                "datalake_id": "08246793020228190204",
+                "datalake_segment": "JUSTICA_ESTADUAL"
+            },
+            "justice": "8",
+            "tribunal": "19",
+            "crawler": {
+                "source_name": "JPje - RJ - Lawsuit - Auth - 1 instance",
+                "crawl_id": "f8639963-31af-4d0c-be0d-502db2d222cc",
+                "updated_at": "2025-07-29T18:36:21.461Z",
+                "weight": 10
+            },
+            "area": "DIREITO DO CONSUMIDOR",
+            "justice_description": "JUSTIÇA ESTADUAL",
+            "created_at": "2024-09-25T05:29:22.270Z",
+            "updated_at": "2025-08-04T15:27:19.298Z",
+            "amount": 9614.9,
+            "classifications": [
+                {
+                    "code": "7",
+                    "name": "PROCEDIMENTO COMUM CÍVEL"
+                }
+            ],
+            "subjects": [
+                {
+                    "code": "7760",
+                    "name": "FORNECIMENTO DE ENERGIA ELÉTRICA"
+                },
+                {
+                    "code": "7780",
+                    "name": "INDENIZAÇÃO POR DANO MATERIAL"
+                },
+                {
+                    "code": "6226",
+                    "name": "INCLUSÃO INDEVIDA EM CADASTRO DE INADIMPLENTES"
+                },
+                {
+                    "code": "1156",
+                    "name": "DIREITO DO CONSUMIDOR"
+                },
+                {
+                    "code": "6220",
+                    "name": "RESPONSABILIDADE DO FORNECEDOR"
+                },
+                {
+                    "code": "7779",
+                    "name": "INDENIZAÇÃO POR DANO MORAL"
+                },
+                {
+                    "code": "7771",
+                    "name": "CONTRATOS DE CONSUMO"
+                }
+            ],
+            "parties": [
+                {
+                    "main_document": "99999999999",
+                    "name": "Usuário teste 2",
+                    "side": "Passive",
+                    "person_type": "RÉU",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cnpj"
+                        }
+                    ],
+                    "lawyers": [
+                        {
+                            "main_document": "99999999999",
+                            "name": "Usuário teste 2",
+                            "documents": [
+                                {
+                                    "document": "99999999999",
+                                    "document_type": "cpf"
+                                },
+                                {
+                                    "document": "999999",
+                                    "document_type": "oab"
+                                }
+                            ]
+                        },
+                        {
+                            "main_document": "99999999999",
+                            "name": "Usuário teste 3",
+                            "documents": [
+                                {
+                                    "document": "99999999999",
+                                    "document_type": "cpf"
+                                },
+                                {
+                                    "document": "9999999",
+                                    "document_type": "oab"
+                                }
+                            ]
+                        },
+                        {
+                            "main_document": "99999999999",
+                            "name": "usuário teste 4",
+                            "documents": [
+                                {
+                                    "document": "99999999999",
+                                    "document_type": "cpf"
+                                },
+                                {
+                                    "document": "9999999",
+                                    "document_type": "oab"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "main_document": "99999999999",
+                    "name": "Usuário teste 2",
+                    "side": "Passive",
+                    "person_type": "Advogado",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cpf"
+                        },
+                        {
+                            "document": "99999999",
+                            "document_type": "oab"
+                        },
+                        {
+                            "document": "9999999",
+                            "document_type": "oab"
+                        }
+                    ],
+                    "lawyers": []
+                },
+                {
+                    "main_document": "99999999999",
+                    "name": "Usuário teste 3",
+                    "side": "Passive",
+                    "person_type": "Advogado",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cpf"
+                        },
+                        {
+                            "document": "RJ0145264",
+                            "document_type": "oab"
+                        },
+                        {
+                            "document": "99999999",
+                            "document_type": "oab"
+                        }
+                    ],
+                    "lawyers": []
+                },
+                {
+                    "main_document": "99999999999",
+                    "name": "usuário teste 4",
+                    "side": "Passive",
+                    "person_type": "Advogado",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cpf"
+                        },
+                        {
+                            "document": "RJ000000",
+                            "document_type": "oab"
+                        },
+                        {
+                            "document": "99999999",
+                            "document_type": "oab"
+                        }
+                    ],
+                    "lawyers": []
+                },
+                {
+                    "main_document": "99999999999",
+                    "name": "Uusuário teste 1",
+                    "side": "Active",
+                    "person_type": "Autor",
+                    "documents": [
+                        {
+                            "document": "99999999999",
+                            "document_type": "cpf"
+                        }
+                    ],
+                    "lawyers": [
+                        {
+                            "main_document": "99999999999",
+                            "name": "Usuário teste5",
+                            "documents": [
+                                {
+                                    "document": "99999999999",
+                                    "document_type": "cpf"
+                                },
+                                {
+                                    "document": "999999RJ",
+                                    "document_type": "oab"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "attachments": [],
+            "related_lawsuits": [],
+            "steps": []
+        },
+        "user_id": "ab829a35-894b-4fbd-9168-2398fd69cecc",
+        "created_at": "2025-08-06T13:48:47.824Z",
+        "request_created_at": "2025-08-06T13:48:46.910Z",
+        "is_scrapper_info": false,
+        "tags": {
+            "dashboard_id": null,
+            "cached_response": false
+        },
+        "origin": "api",
+        "origin_id": "ec545a1e-c0ac-47cf-a3df-3668f1bdde11"
+    }
+}
+​
+Resposta para consulta processual:
+Exemplo de reposta com cached_response: true:
+
+Copy
+{
+  "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+  "callback_id": "1a1700da-531b-4b50-ab38-2855a2525929",
+  "event_type": "response_created",
+  "reference_type": "request",
+  "reference_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+  "payload": {
+    "request_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+    "response_id": "752c4e7d-b0b0-435f-a27f-56bed8e559c7",
+    "response_type": "lawsuit",
+    "response_data": {
+      "code": "9999999-99.9999.9.99.9999",
+      "instance": 1,
+      "name": "Usuário teste 1 X Usuário teste 2",
+      "free_justice": true,
+      "secrecy_level": 0,
+      "courts": [
+        {
+          "code": "7846",
+          "name": "BANGU REGIONAL 2 VARA CIVEL"
+        }
+      ],
+      "tribunal_acronym": "TJRJ",
+      "county": "CAPITAL CENTRAL DE ARQUIVAMENTO DO NUR 1",
+      "state": "RJ",
+      "city": "RIO DE JANEIRO",
+      "distribution_date": "2022-01-13T00:00:00.000Z",
+      "last_step": {
+        "step_id": "27572cb5",
+        "step_date": "2025-06-29T20:07:53.000Z",
+        "content": "Remetidos os Autos (cumpridos) para 2ª Vara Cível da Regional de Bangu",
+        "steps_count": 19
+      },
+      "tags": {
+        "crawl_id": "5bfc2f70-3142-4b79-b306-f4d9a70cc88e",
+        "dictionary_updated_at": "2025-08-13T13:27:19.460Z",
+        "possible_homonym": true,
+        "datalake_id": "08004925520228190204",
+        "datalake_segment": "JUSTICA_ESTADUAL"
+      },
+      "justice": "8",
+      "tribunal": "19",
+      "crawler": {
+        "source_name": "JPje - RJ - Lawsuit - Auth - 1 instance",
+        "crawl_id": "5bfc2f70-3142-4b79-b306-f4d9a70cc88e",
+        "updated_at": "2025-08-13T13:26:20.073Z",
+        "weight": 10
+      },
+      "status": "Finalizado",
+      "phase": "Arquivado",
+      "area": "DIREITO CIVIL",
+      "justice_description": "JUSTIÇA ESTADUAL",
+      "created_at": "2024-09-25T04:13:06.923Z",
+      "updated_at": "2025-08-13T13:26:23.583Z",
+      "amount": 11617.01,
+      "classifications": [
+        {
+          "code": "7",
+          "name": "PROCEDIMENTO COMUM CÍVEL"
+        }
+      ],
+      "subjects": [
+        {
+          "code": "14",
+          "name": "DIREITO TRIBUTÁRIO"
+        },
+        {
+          "code": "5986",
+          "name": "CRÉDITO TRIBUTÁRIO"
+        },
+        {
+          "code": "899",
+          "name": "DIREITO CIVIL"
+        },
+        {
+          "code": "10431",
+          "name": "RESPONSABILIDADE CIVIL"
+        },
+        {
+          "code": "10439",
+          "name": "INDENIZAÇÃO POR DANO MATERIAL"
+        },
+        {
+          "code": "8826",
+          "name": "DIREITO PROCESSUAL CIVIL E DO TRABALHO"
+        },
+        {
+          "code": "9148",
+          "name": "LIQUIDAÇÃO / CUMPRIMENTO / EXECUÇÃO"
+        },
+        {
+          "code": "10671",
+          "name": "OBRIGAÇÃO DE FAZER / NÃO FAZER"
+        },
+        {
+          "code": "6007",
+          "name": "REPETIÇÃO DE INDÉBITO"
+        },
+        {
+          "code": "10441",
+          "name": "ACIDENTE DE TRÂNSITO"
+        },
+        {
+          "code": "",
+          "name": "INDENIZAÇÃO POR DANO MORAL"
+        }
+      ],
+      "parties": [
+        {
+          "main_document": "99999999999",
+          "name": "Usuário teste 1",
+          "side": "Active",
+          "person_type": "Autor",
+          "documents": [
+            {
+              "document": "99999999999",
+              "document_type": "cpf"
+            }
+          ],
+          "lawyers": [
+            {
+              "name": "Usuário teste 3",
+              "documents": []
+            }
+          ]
+        },
+        {
+          "main_document": "99999999999",
+          "name": "Usuário teste 2",
+          "side": "Passive",
+          "person_type": "RÉU",
+          "documents": [
+            {
+              "document": "99999999999",
+              "document_type": "cnpj"
+            }
+          ],
+          "lawyers": [
+            {
+              "name": "Usuário teste 2 - (99999999999)",
+              "documents": []
+            }
+          ]
+        },
+        {
+          "name": "Usuário teste 3",
+          "side": "Active",
+          "person_type": "Advogado",
+          "documents": [],
+          "lawyers": []
+        },
+        {
+          "name": "Usuário teste 2 - (99999999999)",
+          "side": "Passive",
+          "person_type": "Advogado",
+          "documents": [],
+          "lawyers": []
+        }
+      ],
+      "attachments": [
+        {
+          "attachment_id": "201273181",
+          "attachment_name": "Certidão de Débito (Certidão de Débito)",
+          "extension": "html",
+          "tags": {
+            "crawl_id": "7ce9007d-98d2-4ea6-b729-ca1f3bc77d2f"
+          },
+          "status": "done",
+          "attachment_date": null
+        },
+        {
+          "attachment_id": "16345831",
+          "attachment_name": "Sentença (Sentença)",
+          "extension": "html",
+          "tags": {
+            "crawl_id": "c53921e7-7c6e-4bbc-b816-64aee561cf8c"
+          },
+          "status": "done",
+          "attachment_date": "2022-04-08T14:04:57.000Z"
+        },
+        {
+          "attachment_id": "13084368",
+          "attachment_name": "Contestação (Contestação)",
+          "extension": "html",
+          "tags": {
+            "crawl_id": "c53921e7-7c6e-4bbc-b816-64aee561cf8c"
+          },
+          "status": "done",
+          "attachment_date": "2022-02-15T15:52:41.000Z"
+        },
+        {
+          "attachment_id": "11529202",
+          "attachment_name": "Decisão (Decisão)",
+          "extension": "html",
+          "tags": {
+            "crawl_id": "c53921e7-7c6e-4bbc-b816-64aee561cf8c"
+          },
+          "status": "done",
+          "attachment_date": "2022-01-19T19:17:51.000Z"
+        }
+      ],
+      "related_lawsuits": [],
+      "steps": [
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "step_id": "27572cb5",
+          "step_date": "2025-06-29T20:07:53.000Z",
+          "content": "Remetidos os Autos (cumpridos) para 2ª Vara Cível da Regional de Bangu",
+          "private": false,
+          "created_at": "2025-08-13T13:26:23.096Z",
+          "updated_at": "2025-08-13T13:26:23.096Z",
+          "tags": {
+            "crawl_id": "5bfc2f70-3142-4b79-b306-f4d9a70cc88e"
+          }
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "step_id": "a9d74d34",
+          "step_date": "2025-06-29T20:07:53.000Z",
+          "step_type": "123",
+          "private": false,
+          "created_at": "2025-08-11T18:00:08.187Z",
+          "updated_at": "2025-08-11T18:00:08.187Z",
+          "tags": {
+            "crawl_id": "b5fc9f65-f071-48a0-a760-5a3a69e6ae6d"
+          }
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "step_id": "7136b764",
+          "step_date": "2025-06-16T20:24:29.000Z",
+          "content": "Juntada de Petição de certidão de débito\n\t\t\t\t\t\n\t\t16/06/2025 20:24:28",
+          "private": false,
+          "created_at": "2025-08-13T13:26:23.096Z",
+          "updated_at": "2025-08-13T13:26:23.096Z",
+          "tags": {
+            "crawl_id": "5bfc2f70-3142-4b79-b306-f4d9a70cc88e"
+          }
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "step_id": "c92f8e31",
+          "step_date": "2025-06-15T13:42:16.000Z",
+          "content": "Expedição de Certidão.",
+          "private": false,
+          "created_at": "2025-08-13T13:26:23.096Z",
+          "updated_at": "2025-08-13T13:26:23.096Z",
+          "tags": {
+            "crawl_id": "5bfc2f70-3142-4b79-b306-f4d9a70cc88e"
+          }
+        }
+      ]
+    },
+    "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+    "created_at": "2025-08-13T13:27:19.462Z",
+    "request_created_at": "2025-08-13T13:27:18.416Z",
+    "is_scrapper_info": false,
+    "tags": {
+      "debug": true,
+      "dashboard_id": null,
+      "cached_response": true
+    },
+    "origin": "api",
+    "origin_id": "949f0d48-022b-496c-a9a9-97a80c3f8044"
+  }
+}
+Exemplo de reposta com cached_response: false:
+
+Copy
+{
+  "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+  "callback_id": "10e9c234-4f10-4882-a296-53389060b32c",
+  "event_type": "response_created",
+  "reference_type": "request",
+  "reference_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+  "payload": {
+    "_id": "689c92bae1249918bf8266cb",
+    "response_id": "752c4e7d-b0b0-435f-a27f-56bed8e559c7",
+    "origin": "api",
+    "origin_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+    "request_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+    "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+    "response_type": "lawsuit",
+    "response_data": {
+      "code": "9999999-99.9999.9.99.9999",
+      "instance": 1,
+      "name": "Usuário 1 X Usuário 2",
+      "free_justice": false,
+      "secrecy_level": 0,
+      "classifications": [
+        {
+          "code": "7",
+          "name": "PROCEDIMENTO COMUM CÍVEL",
+          "date": "2022-01-13T00:00:00.000Z"
+        }
+      ],
+      "courts": [
+        {
+          "code": "7846",
+          "name": "BANGU REGIONAL 2 VARA CIVEL"
+        },
+        {
+          "name": "2ª Vara Cível da Regional de Bangu",
+          "date": "2022-01-13T00:00:00.000Z"
+        }
+      ],
+      "tribunal_acronym": "TJRJ",
+      "county": "CAPITAL CENTRAL DE ARQUIVAMENTO DO NUR 1",
+      "state": "RJ",
+      "city": "RIO DE JANEIRO",
+      "distribution_date": "2022-01-13T00:00:00.000Z",
+      "amount": 11617.01,
+      "attachments": [
+        {
+          "attachment_id": "201273181",
+          "attachment_date": "2025-06-16T20:24:00.000Z",
+          "attachment_name": "Certidão de Débito (Certidão de Débito)",
+          "step_id": "50bb801c",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "7ce9007d-98d2-4ea6-b729-ca1f3bc77d2f"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "200884452",
+          "attachment_date": "2025-06-15T13:42:00.000Z",
+          "attachment_name": "Certidão",
+          "step_id": "3ff7cb6f",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "39678201",
+          "attachment_date": "2022-12-14T17:31:00.000Z",
+          "attachment_name": "Certidão",
+          "step_id": "a9e15505",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "25650248",
+          "attachment_date": "2022-08-04T14:10:00.000Z",
+          "attachment_name": "Certidão",
+          "step_id": "98b9142a",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "16345831",
+          "attachment_date": "2022-04-08T14:04:57.000Z",
+          "attachment_name": "Sentença (Sentença)",
+          "step_id": "1909bb45",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "c53921e7-7c6e-4bbc-b816-64aee561cf8c"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "16327314",
+          "attachment_date": "2022-04-07T17:33:00.000Z",
+          "attachment_name": "Ato Ordinatório",
+          "step_id": "739c98d1",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "15939964",
+          "attachment_date": "2022-04-01T18:29:00.000Z",
+          "attachment_name": "Petição",
+          "step_id": "c8ce483d",
+          "extension": "html",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "15939965",
+          "attachment_date": "2022-04-01T18:29:00.000Z",
+          "attachment_name": "Petição (COMPROVA DEPOSITO   0800492 55.2022.8.19.0204)",
+          "step_id": "c8ce483d",
+          "extension": "pdf",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        },
+        {
+          "attachment_id": "15939966",
+          "attachment_date": "2022-04-01T18:29:00.000Z",
+          "attachment_name": "Procuração (SUBSTABELECIMENTO GOES)",
+          "step_id": "c8ce483d",
+          "extension": "pdf",
+          "status": "done",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "user_data": null
+        }
+      ],
+      "parties": [
+        {
+          "main_document": "99999999999",
+          "name": "Usuário 1",
+          "side": "Active",
+          "person_type": "Autor",
+          "documents": [
+            {
+              "document": "99999999999",
+              "document_type": "cpf"
+            }
+          ],
+          "lawyers": [
+            {
+              "name": "Usuário teste 4",
+              "documents": []
+            }
+          ]
+        },
+        {
+          "main_document": "99999999999",
+          "name": "Usuário 2",
+          "side": "Passive",
+          "person_type": "RÉU",
+          "documents": [
+            {
+              "document": "99999999999",
+              "document_type": "cnpj"
+            }
+          ],
+          "lawyers": [
+            {
+              "name": "Usuário teste 2 - (99999999999)",
+              "documents": []
+            }
+          ]
+        },
+        {
+          "name": "Usuário teste 4",
+          "side": "Active",
+          "person_type": "Advogado",
+          "documents": []
+        },
+        {
+          "name": "Usuário teste 2 - (99999999999)",
+          "side": "Passive",
+          "person_type": "Advogado",
+          "documents": []
+        }
+      ],
+      "subjects": [
+        {
+          "code": "6007",
+          "name": "REPETIÇÃO DE INDÉBITO",
+          "date": "2022-01-13T00:00:00.000Z"
+        },
+        {
+          "code": "10441",
+          "name": "ACIDENTE DE TRÂNSITO",
+          "date": "2022-01-13T00:00:00.000Z"
+        },
+        {
+          "code": "10671",
+          "name": "OBRIGAÇÃO DE FAZER / NÃO FAZER",
+          "date": "2022-01-13T00:00:00.000Z"
+        },
+        {
+          "code": "14",
+          "name": "DIREITO TRIBUTÁRIO"
+        },
+        {
+          "code": "5986",
+          "name": "CRÉDITO TRIBUTÁRIO"
+        },
+        {
+          "code": "899",
+          "name": "DIREITO CIVIL"
+        },
+        {
+          "code": "10431",
+          "name": "RESPONSABILIDADE CIVIL"
+        },
+        {
+          "code": "10439",
+          "name": "INDENIZAÇÃO POR DANO MATERIAL"
+        },
+        {
+          "code": "8826",
+          "name": "DIREITO PROCESSUAL CIVIL E DO TRABALHO"
+        },
+        {
+          "code": "9148",
+          "name": "LIQUIDAÇÃO / CUMPRIMENTO / EXECUÇÃO"
+        },
+        {
+          "code": "",
+          "name": "INDENIZAÇÃO POR DANO MORAL"
+        }
+      ],
+      "related_lawsuits": [],
+      "last_step": {
+        "step_id": "0b602661",
+        "step_date": "2025-06-29T20:07:00.000Z",
+        "content": "Remetidos os Autos (cumpridos) para 2ª Vara Cível da Regional de Bangu",
+        "steps_count": 30
+      },
+      "tags": {
+        "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1",
+        "dictionary_updated_at": "2025-08-13T13:27:33.509Z",
+        "possible_homonym": true,
+        "datalake_id": "08004925520228190204",
+        "datalake_segment": "JUSTICA_ESTADUAL"
+      },
+      "metadata": {},
+      "justice": "8",
+      "tribunal": "19",
+      "status": "Finalizado",
+      "phase": "Arquivado",
+      "crawler": {
+        "source_name": "JPje - RJ - Lawsuit - Auth - 1 instance",
+        "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1",
+        "updated_at": "2025-08-13T13:27:40.457Z",
+        "weight": 10
+      },
+      "created_at": "2024-09-25T04:13:06.923Z",
+      "updated_at": "2025-08-13T13:27:42.343Z",
+      "area": "DIREITO CIVIL",
+      "justice_description": "JUSTIÇA ESTADUAL",
+      "judge": "Juiz de Direito",
+      "steps": [
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "private": false,
+          "step_id": "0b602661",
+          "step_date": "2025-06-29T20:07:00.000Z",
+          "content": "Remetidos os Autos (cumpridos) para 2ª Vara Cível da Regional de Bangu",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          },
+          "steps_count": 30
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "private": false,
+          "step_id": "50bb801c",
+          "step_date": "2025-06-16T20:24:00.000Z",
+          "content": "Juntada de Petição de certidão de débito",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          }
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "private": false,
+          "step_id": "3ff7cb6f",
+          "step_date": "2025-06-15T13:42:00.000Z",
+          "content": "Expedição de Certidão.",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          }
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "private": false,
+          "step_id": "8055d7d9",
+          "step_date": "2022-12-14T17:31:00.000Z",
+          "content": "Arquivado Definitivamente",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          }
+        },
+        {
+          "lawsuit_cnj": "9999999-99.9999.9.99.9999",
+          "lawsuit_instance": 1,
+          "private": false,
+          "step_id": "7002b6bd",
+          "step_date": "2022-12-14T17:31:00.000Z",
+          "content": "Remetidos os Autos (outros motivos) para Central de Arquivamento do NUR 1 Comarca da Capital",
+          "tags": {
+            "crawl_id": "e3da89f2-8951-4061-98da-356e070301e1"
+          }
+        }
+      ]
+    },
+    "request_created_at": "2025-08-13T13:27:18.416Z",
+    "created_at": "2025-08-13T13:27:19.462Z",
+    "tags": {
+      "debug": true,
+      "dashboard_id": null,
+      "cached_response": false,
+      "cached": false
+    },
+    "updatedAt": "2025-08-13T13:27:50.145Z"
+  }
+}
+O campo reference_type pode variar entre request ou tracking.
+​
+Resposta enviada para monitoramento
+De acordo com a recorrência configurada no monitoramento, o crawler é executado para:
+Realizar a busca do processo no tribunal, no caso de monitoramento processual.
+Buscar novas ações vinculadas ao documento, no caso de monitoramento de novas ações.
+Quando o crawler encontra novas informações, é enviada uma mensagem com o conteúdo atualizado via webhook para:
+O webhook registrado na conta, ou
+O webhook informado como parâmetro no payload da requisição.
+Caso não haja atualizações para o processo ou novas ações no momento da execução do crawler, é enviada apenas a mensagem request_completed.
+Quando o monitoramento envia sua resposta para o webhook, o campo origin_id terá o mesmo valor de tracking_id, que é o identificador único do monitoramento.
+​
+Request_completed
+Aqui está um exemplo de resposta enviada ao término do envio completo, com a mensagem de confirmação indicando que todas as respostas foram entregues. Essa mensagem final inclui o statusCode “600” e a mensagem “request_completed”, conforme ilustrado abaixo:
+
+Copy
+{
+  "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+  "callback_id": "c2c79ac8-8ac7-41fd-a3d5-a4dddb013cfb",
+  "event_type": "response_created",
+  "reference_type": "request",
+  "reference_id": "8ac8f0d0-1372-4281-993b-8b08a521a28a",
+  "payload": {
+    "request_id": "8ac8f0d0-1372-4281-993b-8b08a521a28a",
+    "response_id": "5084577b-075c-48ea-b772-934032a9a7af",
+    "origin": "api",
+    "origin_id": "8ac8f0d0-1372-4281-993b-8b08a521a28a",
+    "request_created_at": "2024-11-14T13:11:22.578Z",
+    "response_type": "application_info",
+    "response_data": {
+      "code": 600,
+      "message": "REQUEST_COMPLETED"
+    },
+    "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+    "created_at": "2024-11-14T13:11:57.234Z",
+    "tags": {
+      "dashboard_id": null
+    }
+  }
+}
+​
+Apllication_error
+Eventualmente, pode ser enviada uma mensagem application_error caso o processo ou alguma instância específica não seja encontrado.
+
+Copy
+{
+  "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+  "callback_id": "5e204503-b012-4ba4-a8b4-1b43b199837a",
+  "event_type": "response_created",
+  "reference_type": "request",
+  "reference_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+  "payload": {
+    "request_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+    "response_id": "d37eb759-7346-495b-ae6f-6da51c3e8dca",
+    "response_type": "application_error",
+    "response_data": {
+      "code": 2,
+      "message": "LAWSUIT_NOT_FOUND"
+    },
+    "user_id": "7f8065a3-4891-428d-9456-dedfc12ff850",
+    "created_at": "2025-08-13T13:30:06.625Z",
+    "is_scrapper_info": false,
+    "origin": "api",
+    "origin_id": "949f0d48-022b-496c-a9a9-97a80c3f8044",
+    "tags": {
+      "debug": true,
+      "dashboard_id": null
+    }
+  }
+}
