@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
   // Without this, Railway healthcheck generates "[SECURITY] Suspicious host header" warnings
   experimental: {
     serverActions: {
-      bodySizeLimit: '2mb',
+      bodySizeLimit: '100mb', // Aumentado para suportar PDFs grandes
     },
   },
 

@@ -15,6 +15,10 @@
       "maxDuration": 60,
       "memory": 1024
     },
+    "src/app/api/documents/upload/route.ts": {
+      "maxDuration": 300,
+      "memory": 2048
+    },
     "src/app/api/judit/**/*.ts": {
       "maxDuration": 60,
       "memory": 2048

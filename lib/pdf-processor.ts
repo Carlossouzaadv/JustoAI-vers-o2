@@ -72,8 +72,8 @@ export class PDFProcessor {
   private readonly prisma: typeof prisma;
 
   constructor() {
-    // Construtor simplificado - não depende mais de Prisma ou API externa
-    this.apiUrl = process.env.PDF_API_URL || 'http://localhost:8000';
+    // Usa apenas pdf-parse local, sem dependência de API externa
+    this.apiUrl = '';
     this.prisma = prisma;
   }
 
@@ -319,22 +319,11 @@ export class PDFProcessor {
       const file_size_mb = stats.size / (1024 * 1024);
       const fileName = options.pdf_path.split('/').pop() || 'document.pdf';
 
-      // Tentar chamar API Python se disponível
-      if (this.apiUrl && this.apiUrl !== 'http://localhost:8000') {
-        try {
-          return await this.tryExternalAPI(options, file_size_mb, fileName);
-        } catch (apiError) {
-          console.warn(`⚠️ API Python indisponível, usando extração local:`, apiError instanceof Error ? apiError.message : 'Erro desconhecido');
-        }
-      } else {
-        console.log(`📍 PDF_API_URL não configurado, usando extração local com pdf-parse`);
-      }
-
-      // Fallback: Extração local com pdf-parse
+      // Extração local com pdf-parse (única estratégia disponível em V2)
       return await this.processWithLocalExtraction(options.pdf_path, options.extract_fields, file_size_mb, fileName);
 
     } catch (error) {
-      console.error('❌ Erro crítico no processamento PDF:', error);
+      console.error('❌ Erro no processamento PDF:', error);
 
       return {
         success: false,
@@ -350,56 +339,7 @@ export class PDFProcessor {
   }
 
   /**
-   * Tenta usar API Python externa se disponível
-   */
-  private async tryExternalAPI(
-    options: ProcessCompleteOptions,
-    file_size_mb: number,
-    fileName: string
-  ): Promise<PDFAnalysisResult> {
-    const formData = new FormData();
-    const fileBuffer = await fs.readFile(options.pdf_path);
-    const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength) as ArrayBuffer;
-    const file = new File([arrayBuffer], fileName, {
-      type: 'application/pdf'
-    });
-
-    formData.append('file', file);
-    formData.append('extract_fields', JSON.stringify(options.extract_fields));
-    if (options.custom_fields) {
-      formData.append('custom_fields', JSON.stringify(options.custom_fields));
-    }
-
-    const response = await fetch(`${this.apiUrl}/api/pdf/process-complete`, {
-      method: 'POST',
-      body: formData,
-      timeout: 30000 // 30 segundos timeout
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API Python error (${response.status}):`, errorText.substring(0, 200));
-      throw new Error(`API retornou ${response.status}: ${errorText.substring(0, 100)}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      console.error('❌ API retornou não-JSON:', text.substring(0, 200));
-      throw new Error(`Resposta inválida da API: ${text.substring(0, 100)}`);
-    }
-
-    const result = await response.json();
-
-    return {
-      ...result,
-      file_size_mb,
-      processed_at: new Date().toISOString(),
-    };
-  }
-
-  /**
-   * Extração local com pdf-parse (fallback)
+   * Extração com pdf-parse (estratégia principal em V2)
    */
   private async processWithLocalExtraction(
     pdfPath: string,
@@ -419,11 +359,11 @@ export class PDFProcessor {
         const pdfData = await pdfParse(buffer);
         pageCount = pdfData.numpages || 0;
       } catch (e) {
-        // Se falhar ao extrair páginas, usar padrão
-        pageCount = Math.ceil(file_size_mb * 10); // Estimativa grosseira
+        // Se falhar ao extrair páginas, usar estimativa
+        pageCount = Math.ceil(file_size_mb * 10);
       }
 
-      console.log(`✅ Extração local completada: ${extractionResult.text.length} chars em ${pageCount} páginas`);
+      console.log(`✅ Extração PDF completada: ${extractionResult.text.length} caracteres em ${pageCount} páginas`);
 
       return {
         success: extractionResult.success,
@@ -431,7 +371,7 @@ export class PDFProcessor {
         texto_limpo: extractionResult.text.trim(),
         extracted_fields: extractFields,
         custom_fields: [],
-        processingMethod: 'local-pdf-parse',
+        processingMethod: 'pdf-parse',
         processed_at: new Date().toISOString(),
         file_name: fileName,
         file_size_mb,
@@ -439,7 +379,7 @@ export class PDFProcessor {
         extraction: extractionResult
       };
     } catch (error) {
-      console.error('❌ Erro na extração local:', error);
+      console.error('❌ Erro na extração PDF:', error);
       throw error;
     }
   }

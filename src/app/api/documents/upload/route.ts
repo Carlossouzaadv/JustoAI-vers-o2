@@ -20,6 +20,11 @@ import { TextCleaner } from '@/lib/text-cleaner';
 import { AIModelRouter } from '@/lib/ai-model-router';
 import { ICONS } from '@/lib/icons';
 
+// Configuração de runtime para suportar uploads de arquivos grandes
+// maxDuration: tempo máximo para a função executar (Vercel limit)
+// Nota: O limite real de body size é controlado no next.config.ts e Vercel
+export const maxDuration = 300; // 5 minutos máximo para processamento
+
 const prisma = new PrismaClient();
 
 // ================================================================
@@ -52,7 +57,27 @@ export async function POST(request: NextRequest) {
     if (authError) return authError;
 
     // 2. PROCESSAR FORMDATA
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (formDataError) {
+      // Erro ao processar FormData geralmente indica arquivo muito grande
+      const errorMsg = formDataError instanceof Error ? formDataError.message : 'Erro desconhecido';
+      console.error(`${ICONS.ERROR} Erro ao processar FormData:`, errorMsg);
+
+      if (errorMsg.includes('size') || errorMsg.includes('413')) {
+        return NextResponse.json(
+          { error: `Arquivo muito grande. Máximo permitido: ${CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB` },
+          { status: 413 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: 'Erro ao processar arquivo. Verifique o tamanho e tente novamente.' },
+        { status: 400 }
+      );
+    }
+
     const file = formData.get('file') as File;
     const caseId = formData.get('caseId') as string;
     const processNumber = formData.get('processNumber') as string;
@@ -74,8 +99,8 @@ export async function POST(request: NextRequest) {
 
     if (file.size > CONFIG.MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `Arquivo muito grande. Máximo: ${CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB` },
-        { status: 400 }
+        { error: `Arquivo muito grande. Máximo: ${CONFIG.MAX_FILE_SIZE / (1024 * 1024)}MB. Seu arquivo tem: ${(file.size / (1024 * 1024)).toFixed(2)}MB` },
+        { status: 413 }
       );
     }
 
