@@ -770,17 +770,24 @@ function extractDocumentCount(dadosCompletos: any): number {
   if (!dadosCompletos) return 0;
 
   try {
-    // Check if data has documents array
-    if (dadosCompletos.data?.documents) {
-      return Array.isArray(dadosCompletos.data.documents)
-        ? dadosCompletos.data.documents.length
+    // Check if data has attachments array (JUDIT API returns "attachments", not "documents")
+    if (dadosCompletos.data?.attachments) {
+      return Array.isArray(dadosCompletos.data.attachments)
+        ? dadosCompletos.data.attachments.length
+        : 0;
+    }
+
+    // Also check response_data (alternative structure)
+    if (dadosCompletos.response_data?.attachments) {
+      return Array.isArray(dadosCompletos.response_data.attachments)
+        ? dadosCompletos.response_data.attachments.length
         : 0;
     }
 
     // Check pages array
     if (dadosCompletos.pages && Array.isArray(dadosCompletos.pages)) {
       return dadosCompletos.pages.reduce((total: number, page: any) => {
-        const pageDocs = page.data?.documents || [];
+        const pageDocs = page.data?.attachments || page.response_data?.attachments || [];
         return total + (Array.isArray(pageDocs) ? pageDocs.length : 0);
       }, 0);
     }
@@ -802,17 +809,24 @@ function extractMovementsCount(dadosCompletos: any): number {
   if (!dadosCompletos) return 0;
 
   try {
-    // Check if data has movements array
-    if (dadosCompletos.data?.movements) {
-      return Array.isArray(dadosCompletos.data.movements)
-        ? dadosCompletos.data.movements.length
+    // Check if data has steps array (JUDIT API returns "steps", not "movements")
+    if (dadosCompletos.data?.steps) {
+      return Array.isArray(dadosCompletos.data.steps)
+        ? dadosCompletos.data.steps.length
+        : 0;
+    }
+
+    // Also check response_data (alternative structure)
+    if (dadosCompletos.response_data?.steps) {
+      return Array.isArray(dadosCompletos.response_data.steps)
+        ? dadosCompletos.response_data.steps.length
         : 0;
     }
 
     // Check pages array
     if (dadosCompletos.pages && Array.isArray(dadosCompletos.pages)) {
       return dadosCompletos.pages.reduce((total: number, page: any) => {
-        const pageMovements = page.data?.movements || [];
+        const pageMovements = page.data?.steps || page.response_data?.steps || [];
         return total + (Array.isArray(pageMovements) ? pageMovements.length : 0);
       }, 0);
     }
