@@ -14,11 +14,13 @@ import { getDocumentHashManager } from '@/lib/document-hash';
 
 export interface JuditAttachment {
   id: string;
-  url: string;
+  attachment_id: string; // ID fornecido pela API JUDIT
   name: string;
   type: string;
+  extension?: string;
   size?: number;
   date?: string;
+  step_id?: string;
 }
 
 export interface AttachmentProcessResult {
@@ -47,7 +49,9 @@ const MAX_ATTACHMENT_SIZE = 50 * 1024 * 1024; // 50MB
  */
 export async function processJuditAttachments(
   caseId: string,
-  juditResponse: any
+  juditResponse: any,
+  cnj_code?: string,
+  instance?: number
 ): Promise<AttachmentProcessResult> {
   const result: AttachmentProcessResult = {
     total: 0,
@@ -75,6 +79,13 @@ export async function processJuditAttachments(
 
     console.log(`${ICONS.INFO} [JUDIT Attachments] ${attachments.length} anexos encontrados`);
 
+    // Guard: validar se temos cnj_code e instance para baixar
+    if (!cnj_code || instance === undefined) {
+      console.warn(`${ICONS.WARNING} [JUDIT Attachments] CNJ code ou instance não fornecidos - não é possível baixar anexos`);
+      console.log(`${ICONS.INFO} [JUDIT Attachments] cnj_code: ${cnj_code}, instance: ${instance}`);
+      return result;
+    }
+
     // ============================================================
     // 2. DOWNLOAD PARALELO (máx 5 por vez)
     // ============================================================
@@ -85,7 +96,7 @@ export async function processJuditAttachments(
       const batch = attachments.slice(i, i + MAX_CONCURRENT_DOWNLOADS);
 
       const batchPromises = batch.map(attachment =>
-        downloadAndProcessAttachment(caseId, attachment, result)
+        downloadAndProcessAttachment(caseId, attachment, result, cnj_code, instance)
       );
 
       downloadPromises.push(...batchPromises);
@@ -133,13 +144,16 @@ function extractAttachmentsFromJuditResponse(juditResponse: any): JuditAttachmen
 
     if (data.attachments && Array.isArray(data.attachments)) {
       for (const att of data.attachments) {
+        // A API JUDIT retorna: attachment_id, attachment_name, extension, status, attachment_date, step_id
         attachments.push({
-          id: att.id || att.attachment_id,
-          url: att.url || att.download_url,
-          name: att.name || att.filename || 'anexo-sem-nome.pdf',
-          type: att.type || 'unknown',
+          id: att.attachment_id || att.id,
+          attachment_id: att.attachment_id,
+          name: att.attachment_name || att.name || att.filename || 'anexo-sem-nome',
+          type: classifyDocumentByName(att.attachment_name || att.name || ''),
+          extension: att.extension || 'pdf',
           size: att.size,
-          date: att.date || att.created_at
+          date: att.attachment_date || att.date || att.created_at,
+          step_id: att.step_id
         });
       }
     }
@@ -150,12 +164,14 @@ function extractAttachmentsFromJuditResponse(juditResponse: any): JuditAttachmen
         if (page.attachments && Array.isArray(page.attachments)) {
           for (const att of page.attachments) {
             attachments.push({
-              id: att.id || att.attachment_id,
-              url: att.url || att.download_url,
-              name: att.name || att.filename || 'anexo-sem-nome.pdf',
-              type: att.type || 'unknown',
+              id: att.attachment_id || att.id,
+              attachment_id: att.attachment_id,
+              name: att.attachment_name || att.name || att.filename || 'anexo-sem-nome',
+              type: classifyDocumentByName(att.attachment_name || att.name || ''),
+              extension: att.extension || 'pdf',
               size: att.size,
-              date: att.date || att.created_at
+              date: att.attachment_date || att.date || att.created_at,
+              step_id: att.step_id
             });
           }
         }
@@ -175,26 +191,42 @@ function extractAttachmentsFromJuditResponse(juditResponse: any): JuditAttachmen
 async function downloadAndProcessAttachment(
   caseId: string,
   attachment: JuditAttachment,
-  result: AttachmentProcessResult
+  result: AttachmentProcessResult,
+  cnj_code: string,
+  instance: number
 ): Promise<void> {
   try {
-    console.log(`${ICONS.DOWNLOAD} [JUDIT Attachments] Baixando: ${attachment.name}`);
+    console.log(`${ICONS.DOWNLOAD} [JUDIT Attachments] Baixando: ${attachment.name} (ID: ${attachment.attachment_id})`);
 
     // ============================================================
-    // 1. DOWNLOAD DO ARQUIVO
+    // 1. CONSTRUIR URL DE DOWNLOAD (usando API JUDIT)
     // ============================================================
+
+    // Rota: GET /lawsuits/{cnj_code}/{instance}/attachments/{attachment_id}
+    const downloadUrl = `https://lawsuits.production.judit.io/lawsuits/${cnj_code}/${instance}/attachments/${attachment.attachment_id}`;
+
+    // Obter API key da JUDIT
+    const juditApiKey = process.env.JUDIT_API_KEY;
+    if (!juditApiKey) {
+      throw new Error('JUDIT_API_KEY não configurada - não é possível baixar anexos');
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
 
-    const response = await fetch(attachment.url, {
-      signal: controller.signal
+    const response = await fetch(downloadUrl, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/pdf,application/octet-stream,*/*',
+        'api-key': juditApiKey
+      }
     });
 
     clearTimeout(timeout);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText} ao baixar de ${downloadUrl}`);
     }
 
     // Verificar tamanho

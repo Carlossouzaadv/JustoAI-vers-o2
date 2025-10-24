@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTimelineMergeService } from '@/lib/timeline-merge';
+import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
 
 // Critical: Timeout handling for webhook processing
@@ -160,6 +161,30 @@ export async function POST(request: NextRequest) {
               new_entries: mergeResult?.added || 0,
             });
           }
+        }
+
+        // Processar anexos (com retry silencioso se falhar)
+        try {
+          if (responseData.attachments && Array.isArray(responseData.attachments) && responseData.attachments.length > 0) {
+            console.log(`${ICONS.PROCESS} [JUDIT Webhook] Iniciando processamento de ${responseData.attachments.length} anexos`);
+
+            const attachmentResult = await processJuditAttachments(
+              processo.case.id,
+              responseData,
+              responseData.code, // cnj_code
+              responseData.instance // instance
+            );
+
+            console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Anexos processados:`, {
+              total: attachmentResult.total,
+              downloaded: attachmentResult.downloaded,
+              processed: attachmentResult.processed,
+              failed: attachmentResult.failed
+            });
+          }
+        } catch (attachmentError) {
+          console.error(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar anexos:`, attachmentError);
+          // Continuar mesmo se erro em anexos
         }
 
         // Se não é resposta cacheada, é a resposta final completa
