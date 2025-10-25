@@ -15,6 +15,10 @@ import { prisma } from '@/lib/prisma';
 import { getTimelineMergeService } from '@/lib/timeline-merge';
 import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
+import {
+  extractCaseTypeFromJuditResponse,
+  extractCaseTypeFromSubject,
+} from '@/lib/utils/judit-type-mapper';
 
 // Critical: Timeout handling for webhook processing
 // JUDIT may have strict timeout requirements for webhook callbacks
@@ -194,10 +198,32 @@ export async function POST(request: NextRequest) {
         if (!isCachedResponse) {
           console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Resposta completa (não cacheada) recebida`);
 
+          // ================================================================
+          // EXTRAIR TIPO DE PROCESSO AUTOMATICAMENTE
+          // ================================================================
+          let mappedCaseType = processo.case.type; // Manter tipo atual por padrão
+
+          // Tentar extrair do classifications (preferencial)
+          const classificationType = extractCaseTypeFromJuditResponse(responseData);
+          if (classificationType) {
+            mappedCaseType = classificationType;
+            console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo mapeado automaticamente: ${mappedCaseType}`);
+          } else {
+            // Fallback: tentar extrair do subject
+            const subjectType = extractCaseTypeFromSubject(responseData);
+            if (subjectType) {
+              mappedCaseType = subjectType;
+              console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo extraído de subject: ${mappedCaseType}`);
+            } else {
+              console.warn(`${ICONS.WARNING} [JUDIT Webhook] Não foi possível mapear tipo automaticamente, mantendo ${processo.case.type}`);
+            }
+          }
+
           // Atualizar status do caso para 'enriched' (FASE 2 completa) e mudar status de UNASSIGNED → ACTIVE
           await prisma.case.update({
             where: { id: processo.case.id },
             data: {
+              type: mappedCaseType, // ← AGORA ATUALIZA O TIPO AUTOMATICAMENTE!
               status: 'ACTIVE', // Muda de UNASSIGNED para ACTIVE quando JUDIT retorna dados
               onboardingStatus: 'enriched',
               enrichmentCompletedAt: new Date(),
@@ -205,11 +231,12 @@ export async function POST(request: NextRequest) {
                 ...(processo.case.metadata as any),
                 judit_data_retrieved: true,
                 judit_callback_received_at: new Date().toISOString(),
+                auto_mapped_case_type: mappedCaseType, // Log da mudança para auditoria
               }
             }
           });
 
-          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${processo.case.id} marcado como 'enriched' (FASE 2 completa) e status atualizado para ACTIVE`);
+          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${processo.case.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`);
         }
       }
 
