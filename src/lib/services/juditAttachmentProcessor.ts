@@ -263,7 +263,9 @@ async function downloadAndProcessAttachment(
 
     if (existingJuditAttachment) {
       console.log(`${ICONS.WARNING} [JUDIT Attachments] Anexo JUDIT já baixado (ID: ${attachment.attachment_id}): ${attachment.name}`);
-      result.downloaded++; // Contar como "já processado"
+      // NÃO incrementar downloaded novamente - o arquivo não foi baixado agora
+      // (apenas reutilizando um já existente)
+      result.processed++;
       return;
     }
 
