@@ -125,6 +125,30 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     }
   };
 
+  const handleViewDocument = (document: DocumentFile) => {
+    if (!document.url) {
+      alert('URL do documento não disponível');
+      return;
+    }
+
+    // Se é uma URL de arquivo, tentar abrir em nova aba
+    try {
+      window.open(document.url, '_blank');
+    } catch (error) {
+      console.error('Erro ao abrir documento:', error);
+      alert('Erro ao abrir documento');
+    }
+  };
+
+  const handleEditDocument = (document: DocumentFile) => {
+    // TODO: Implementar modal de edição com opções:
+    // - Renomear
+    // - Alterar categoria
+    // - Adicionar tags/observações
+    // - Deletar
+    console.log('Editar documento:', document.id);
+  };
+
   const getCategoryIcon = (category: DocumentFile['category']) => {
     switch (category) {
       case 'petition': return ICONS.DOCUMENT;
@@ -329,11 +353,21 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
                   <div className="flex gap-2 mt-3">
                     {document.url && document.status === 'completed' && (
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleViewDocument(document)}
+                      >
                         Ver
                       </Button>
                     )}
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditDocument(document)}
+                      title="Editar documento (renomear, categoria, deletar)"
+                    >
                       {ICONS.EDIT}
                     </Button>
                   </div>
