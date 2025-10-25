@@ -147,6 +147,7 @@ export async function POST(request: NextRequest) {
             eventDate: new Date(step.step_date),
             eventType: step.step_type || 'Andamento',
             description: step.content,
+            source: 'API_JUDIT',
             sourceId: step.step_id,
           }));
 
