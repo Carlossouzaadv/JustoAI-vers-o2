@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Upload } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Eye, Upload, Check } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -40,6 +41,7 @@ import { ICONS } from '@/lib/icons';
 import { useAuth } from '@/contexts/auth-context';
 import { getApiUrl } from '@/lib/api-client';
 import { ClientAssociationModal } from '@/components/process/client-association-modal';
+import { BulkActionsBar } from '@/components/process/bulk-actions-bar';
 
 interface Case {
   id: string;
@@ -68,6 +70,8 @@ export default function ProcessPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [updatingClientId, setUpdatingClientId] = useState<string | null>(null);
+  const [selectedCaseIds, setSelectedCaseIds] = useState<Set<string>>(new Set());
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { workspaceId } = useAuth();
 
   // Carregar dados reais da API
@@ -109,6 +113,28 @@ export default function ProcessPage() {
         : c
     ));
     setUpdatingClientId(null);
+  };
+
+  const handleToggleCaseSelection = (caseId: string) => {
+    const newSelection = new Set(selectedCaseIds);
+    if (newSelection.has(caseId)) {
+      newSelection.delete(caseId);
+    } else {
+      newSelection.add(caseId);
+    }
+    setSelectedCaseIds(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCaseIds.size === filteredCases.length) {
+      setSelectedCaseIds(new Set());
+    } else {
+      setSelectedCaseIds(new Set(filteredCases.map(c => c.id)));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCaseIds(new Set());
   };
 
   const filteredCases = cases.filter(caseItem => {
@@ -363,11 +389,26 @@ export default function ProcessPage() {
         </Card>
       </div>
 
+      {/* Success message */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-2">
+          <Check className="h-5 w-5 text-green-600" />
+          <span className="text-green-800">{successMessage}</span>
+        </div>
+      )}
+
       {/* Cases Table */}
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={selectedCaseIds.size === filteredCases.length && filteredCases.length > 0}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Selecionar todos"
+                />
+              </TableHead>
               <TableHead>Processo</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Tipo</TableHead>
@@ -380,7 +421,17 @@ export default function ProcessPage() {
           </TableHeader>
           <TableBody>
             {filteredCases.map((caseItem) => (
-              <TableRow key={caseItem.id}>
+              <TableRow
+                key={caseItem.id}
+                className={selectedCaseIds.has(caseItem.id) ? 'bg-blue-50' : ''}
+              >
+                <TableCell>
+                  <Checkbox
+                    checked={selectedCaseIds.has(caseItem.id)}
+                    onCheckedChange={() => handleToggleCaseSelection(caseItem.id)}
+                    aria-label={`Selecionar ${caseItem.title}`}
+                  />
+                </TableCell>
                 <TableCell>
                   <Link href={`/dashboard/process/${caseItem.id}`} className="block hover:bg-neutral-50 transition-colors rounded p-1 -m-1">
                     <div className="font-medium text-primary-800 hover:text-primary-600 cursor-pointer">{caseItem.title}</div>
@@ -451,6 +502,22 @@ export default function ProcessPage() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Bulk Actions Bar */}
+      {selectedCaseIds.size > 0 && (
+        <BulkActionsBar
+          selectedCount={selectedCaseIds.size}
+          selectedCaseIds={selectedCaseIds}
+          onClearSelection={handleClearSelection}
+          onSuccess={(message) => {
+            setSuccessMessage(message);
+            setTimeout(() => setSuccessMessage(null), 3000);
+          }}
+          onError={(error) => {
+            console.error('Bulk action error:', error);
+          }}
+        />
+      )}
     </div>
   );
 }

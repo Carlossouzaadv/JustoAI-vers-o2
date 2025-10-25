@@ -24,9 +24,13 @@ interface Client {
 
 interface ClientAssociationModalProps {
   caseId: string;
-  currentClient?: Client;
+  currentClient?: Client | null;
   onClientAssociated: (client: Client) => void;
   trigger: React.ReactNode;
+  bulkMode?: boolean;
+  bulkSelectedCount?: number;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function ClientAssociationModal({
@@ -34,18 +38,25 @@ export function ClientAssociationModal({
   currentClient,
   onClientAssociated,
   trigger,
+  bulkMode = false,
+  bulkSelectedCount = 0,
+  isOpen: externalIsOpen,
+  onOpenChange: externalOnOpenChange,
 }: ClientAssociationModalProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalOpen;
+  const setOpen = externalOnOpenChange ? externalOnOpenChange : setInternalOpen;
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       loadClients();
     }
-  }, [open]);
+  }, [isOpen]);
 
   const loadClients = async () => {
     try {
@@ -73,6 +84,13 @@ export function ClientAssociationModal({
   };
 
   const handleSelectClient = async (client: Client) => {
+    // Em modo bulk, apenas retorna o cliente selecionado (atualização feita via bulk API)
+    if (bulkMode) {
+      onClientAssociated(client);
+      return;
+    }
+
+    // Modo individual: fazer update do case
     try {
       // Update case with client ID
       const response = await fetch(`/api/cases/${caseId}`, {
@@ -109,9 +127,15 @@ export function ClientAssociationModal({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Associar Cliente</DialogTitle>
+          <DialogTitle>
+            {bulkMode ? 'Atribuir Cliente em Massa' : 'Associar Cliente'}
+          </DialogTitle>
           <DialogDescription>
-            Selecione um cliente existente ou crie um novo
+            {bulkMode
+              ? `Selecione um cliente para atribuir a ${bulkSelectedCount} ${
+                  bulkSelectedCount === 1 ? 'caso' : 'casos'
+                }`
+              : 'Selecione um cliente existente ou crie um novo'}
           </DialogDescription>
         </DialogHeader>
 
