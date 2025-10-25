@@ -231,7 +231,7 @@ export class TimelineMergeService {
           // Recuperar e tentar merge
           if (createError?.code === 'P2002') {
             console.log(
-              `${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição...`
+              `${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição para ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
             );
 
             // Recuperar a entrada que foi criada pela outra requisição
@@ -265,6 +265,10 @@ export class TimelineMergeService {
                 });
 
                 mergedDuplicates++;
+                console.log(
+                  `${ICONS.INFO} Entrada recuperada e mesclada via race condition recovery: ${entry.eventType}`
+                );
+
                 mergedEntries.push({
                   id: updatedEntry.id,
                   eventDate: updatedEntry.eventDate,
@@ -275,10 +279,24 @@ export class TimelineMergeService {
                 });
               } else {
                 duplicatesSkipped++;
+                console.log(
+                  `${ICONS.INFO} Entrada recuperada mas sem mudanças: ${entry.eventType}`
+                );
               }
+            } else {
+              // PROBLEMA: Não conseguiu recuperar a entrada!
+              // Isso é anômalo - significa que o erro foi levantado mas a entrada não existe
+              console.error(
+                `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`
+              );
+              duplicatesSkipped++;
             }
           } else {
             // Re-throw se for erro diferente
+            console.error(
+              `${ICONS.ERROR} Erro ao criar entrada (não é P2002):`,
+              { code: createError?.code, message: createError?.message }
+            );
             throw createError;
           }
         }
