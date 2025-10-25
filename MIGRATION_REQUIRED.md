@@ -1,58 +1,62 @@
-# 🚨 Migration Required: TimelineSource Enum
+# 🚨 Migration Required: Create process_timeline_entries Table
 
 ## Problem
-The `process_timeline_entries.source` column was created as `VARCHAR(50)` in the database, but the Prisma schema defines it as an enum type `TimelineSource`. This causes:
+The `process_timeline_entries` table doesn't exist in the database:
 
 ```
-type "public.TimelineSource" does not exist
+ERROR:  42P01: relation "public.process_timeline_entries" does not exist
 ```
+
+This table is required for timeline functionality and must be created with the proper `TimelineSource` enum type.
 
 ## Solution
-Execute the migration to convert the column to use the enum type properly.
+Execute the SQL migration to create the table with all constraints and indexes.
 
-### Option 1: Via Supabase SQL Editor (Recommended for Production)
-1. Go to Supabase Dashboard → SQL Editor
-2. Copy and paste the SQL from `prisma/migrations/20251025_fix_timeline_source_enum/migration.sql`
-3. Click "Run"
+### Option 1: Via Supabase SQL Editor (Recommended for Production) ⭐
+1. Go to **Supabase Dashboard → SQL Editor**
+2. Create a **new query**
+3. Copy ALL the SQL from: `prisma/migrations/20251025_create_timeline_with_enum/migration.sql`
+4. Click **"Run"** (or Ctrl+Enter)
+5. You should see: `Query executed successfully`
 
 ### Option 2: Via Prisma CLI (Local/Development)
 ```bash
 npx prisma migrate deploy
 ```
 
-## SQL to Execute
-```sql
--- 1. Create the enum type
-CREATE TYPE "public"."TimelineSource" AS ENUM (
-    'DOCUMENT_UPLOAD',
-    'API_JUDIT',
-    'MANUAL_ENTRY',
-    'SYSTEM_IMPORT',
-    'AI_EXTRACTION'
-);
-
--- 2. Alter column to use the enum
-ALTER TABLE "public"."process_timeline_entries"
-    ALTER COLUMN "source" TYPE "public"."TimelineSource"
-    USING "source"::"public"."TimelineSource";
-```
+## What This Migration Does
+1. ✓ Creates `TimelineSource` enum with 5 values
+2. ✓ Drops old malformed table (if exists)
+3. ✓ Creates `process_timeline_entries` table with proper schema
+4. ✓ Creates 4 indexes for performance
+5. ✓ Creates trigger for `updated_at` auto-update
+6. ✓ Adds documentation comments
 
 ## Verification
-After running the migration, these errors should disappear from the logs:
+After running the migration:
+
+❌ These errors should **disappear**:
 ```
+ERROR: 42P01: relation "public.process_timeline_entries" does not exist
 type "public.TimelineSource" does not exist
 ```
 
-And you should see successful logs like:
+✅ You should see in logs:
 ```
 ✓ [JUDIT Webhook] Timeline atualizada: { case_id: '...', new_entries: X }
+✓ [JUDIT Webhook] Anexos processados: { total: 11, downloaded: 11, processed: 11, failed: 0 }
 ```
 
+## Files Changed
+- `prisma/migrations/20251025_create_timeline_with_enum/migration.sql` - Main migration file
+- Deleted: `prisma/migrations/20251025_fix_timeline_source_enum/` (old broken migration)
+
 ## Timeline of Fixes
-1. ✓ Fixed: `Argument 'source' is missing` (added source field)
-2. ⏳ **Action Required**: Execute this migration to fix enum type error
-3. ✓ Will Fix: Remaining timeline issues once enum is in place
+1. ✅ Fixed: `Argument 'source' is missing` (added source field in webhook)
+2. ⏳ **ACTION REQUIRED**: Execute this migration to create table
+3. ✅ Affects: Timeline processing, attachment processing, all webhook operations
 
 ---
 **Created**: 2025-10-25
-**Priority**: HIGH - Blocks timeline processing
+**Updated**: 2025-10-25 (Found actual problem: missing table)
+**Priority**: 🔴 CRITICAL - Blocks all webhook processing
