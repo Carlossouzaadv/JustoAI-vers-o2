@@ -242,19 +242,13 @@ async function downloadAndProcessAttachment(
     console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Baixado: ${attachment.name} (${buffer.length} bytes)`);
 
     // ============================================================
-    // 2. CALCULAR HASH
+    // 2. VERIFICAR SE JÁ FOI BAIXADO DA JUDIT
     // ============================================================
-
-    const hashManager = getDocumentHashManager();
-    const { textSha: fileSha256 } = hashManager.calculateSHA256(buffer);
-
-    // ============================================================
-    // 2.5. VERIFICAR SE JÁ FOI BAIXADO DA JUDIT
-    // ============================================================
-    // Para anexos JUDIT: usar attachment_id como chave única (não hash)
+    // Para anexos JUDIT: usar attachment_id como chave única (NÃO usar hash)
     // Razão: Cada anexo da API JUDIT tem um ID único
     //        Andamentos antigos não são re-processados → anexos antigos nunca são baixados novamente
     //        "Relatório/Voto" é o mesmo nome em vários processos, mas são arquivos diferentes (IDs diferentes)
+    // NÃO calcular SHA256 para JUDIT - seria desnecessário overhead
 
     const juditAttachmentUrl = `attachment_${attachment.attachment_id}`;
     const existingJuditAttachment = await prisma.caseDocument.findFirst({
@@ -320,7 +314,7 @@ async function downloadAndProcessAttachment(
         url: tempPath, // TODO: substituir por S3
         path: tempPath,
         extractedText: extractedText || null,
-        textSha: fileSha256,
+        textSha: null, // JUDIT attachments não usam hash - usam attachment_id como chave única
         textExtractedAt: extractedText ? new Date() : null,
         processed: true,
         ocrStatus: extractedText ? 'COMPLETED' : 'PENDING',

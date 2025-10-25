@@ -196,33 +196,47 @@ export class TimelineMergeService {
           continue;
         }
 
-        // Criar nova entrada
-        const newEntry = await prisma.processTimelineEntry.create({
-          data: {
-            caseId,
-            contentHash,
-            eventDate: entry.eventDate,
-            eventType: entry.eventType,
-            description: entry.description,
-            normalizedContent,
-            source: entry.source,
-            sourceId: entry.sourceId,
-            metadata: entry.metadata || {},
-            confidence: entry.confidence || 1.0
+        // Criar nova entrada (com tratamento de race condition)
+        try {
+          const newEntry = await prisma.processTimelineEntry.create({
+            data: {
+              caseId,
+              contentHash,
+              eventDate: entry.eventDate,
+              eventType: entry.eventType,
+              description: entry.description,
+              normalizedContent,
+              source: entry.source,
+              sourceId: entry.sourceId,
+              metadata: entry.metadata || {},
+              confidence: entry.confidence || 1.0
+            }
+          });
+
+          mergedEntries.push({
+            id: newEntry.id,
+            eventDate: newEntry.eventDate,
+            eventType: newEntry.eventType,
+            description: newEntry.description,
+            source: newEntry.source,
+            confidence: newEntry.confidence
+          });
+
+          newEntries++;
+          console.log(`${ICONS.SUCCESS} Nova entrada adicionada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`);
+        } catch (createError: any) {
+          // Tratar race condition: se houver erro de constraint única, significa que outra requisição
+          // criou a entrada entre o findUnique e o create. Isso não é um erro real.
+          if (createError?.code === 'P2002' && createError?.meta?.target?.includes('content_hash')) {
+            console.log(
+              `${ICONS.INFO} Entrada criada por outra requisição: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
+            );
+            duplicatesSkipped++;
+          } else {
+            // Re-throw se for um erro diferente
+            throw createError;
           }
-        });
-
-        mergedEntries.push({
-          id: newEntry.id,
-          eventDate: newEntry.eventDate,
-          eventType: newEntry.eventType,
-          description: newEntry.description,
-          source: newEntry.source,
-          confidence: newEntry.confidence
-        });
-
-        newEntries++;
-        console.log(`${ICONS.SUCCESS} Nova entrada adicionada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`);
+        }
 
       } catch (error) {
         console.error(`${ICONS.ERROR} Erro ao processar entrada:`, error);
