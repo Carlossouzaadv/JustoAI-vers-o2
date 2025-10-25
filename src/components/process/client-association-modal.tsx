@@ -122,8 +122,12 @@ export function ClientAssociationModal({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+    <>
+      {/* Render trigger button */}
+      {trigger}
+
+      {/* Modal Dialog - fully controlled by props */}
+      <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
@@ -200,5 +204,6 @@ export function ClientAssociationModal({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
