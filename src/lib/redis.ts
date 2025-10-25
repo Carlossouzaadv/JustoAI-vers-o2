@@ -97,9 +97,9 @@ const getRedisConfig = (): RedisOptions => {
         // TLS Configuration (required for Upstash)
         tls: url.protocol === 'rediss:' ? {} : undefined,
 
-        // Connection Optimization (Low Idle Cost)
+        // Connection Optimization (Low Idle Cost) - OPTIMIZED 2025-10-25
         lazyConnect: true, // Don't connect until first command
-        keepAlive: 60000, // Keep connection alive for 60s (reduced PINGs: was 30s)
+        keepAlive: 120000, // INCREASED: 120s (was 60s) - reduces PING requests by ~50%
         connectTimeout: isStrictMode ? 60000 : 60000, // Increased from 30s to 60s (Upstash has ~30s idle timeout)
         commandTimeout: isStrictMode ? 30000 : 30000, // Increased from 15s to 30s for reliability
 
@@ -164,9 +164,9 @@ const getRedisConfig = (): RedisOptions => {
     password: process.env.REDIS_PASSWORD || undefined,
     username: process.env.REDIS_USERNAME || 'default',
 
-    // Same optimization as above, but with mode-appropriate settings
+    // Same optimization as above, but with mode-appropriate settings - OPTIMIZED 2025-10-25
     lazyConnect: true,
-    keepAlive: 60000, // Keep connection alive for 60s (reduced PINGs: was 30s)
+    keepAlive: 120000, // INCREASED: 120s (was 60s) - reduces PING requests by ~50%
     connectTimeout: 60000, // Increased from 10-30s to 60s for stability
     commandTimeout: 30000, // Increased from 5-15s to 30s for reliability
 
