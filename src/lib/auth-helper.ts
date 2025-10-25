@@ -24,10 +24,10 @@ export async function getAuthenticatedUser(request: NextRequest) {
       {
         cookies: {
           getAll() {
-            return request.cookies.getSetCookie().map(cookie => {
-              const [name, ...rest] = cookie.split('=');
-              return { name, value: rest.join('=') };
-            });
+            return request.cookies.getAll().map(cookie => ({
+              name: cookie.name,
+              value: cookie.value,
+            }));
           },
           setAll(cookiesToSet) {
             // No-op for API routes
