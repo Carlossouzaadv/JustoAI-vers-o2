@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ICONS } from '@/lib/icons';
-import Link from 'next/link';
 
 interface Client {
   id: string;
@@ -135,7 +134,7 @@ export function ClientAssociationModal({
               ? `Selecione um cliente para atribuir a ${bulkSelectedCount} ${
                   bulkSelectedCount === 1 ? 'caso' : 'casos'
                 }`
-              : 'Selecione um cliente existente ou crie um novo'}
+              : 'Selecione um cliente existente'}
           </DialogDescription>
         </DialogHeader>
 
@@ -187,14 +186,8 @@ export function ClientAssociationModal({
             )}
           </div>
 
-          {/* Create new client button */}
+          {/* Actions */}
           <div className="border-t pt-4 space-y-2">
-            <Link href="/dashboard/clients/new">
-              <Button variant="outline" className="w-full">
-                {ICONS.PLUS} Cadastrar Novo Cliente
-              </Button>
-            </Link>
-
             {/* Cancel button */}
             <Button
               variant="ghost"
