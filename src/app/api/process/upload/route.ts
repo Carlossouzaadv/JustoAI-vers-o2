@@ -331,6 +331,45 @@ export async function POST(request: NextRequest) {
           onboardingStatus: 'previewed'
         }
       });
+
+      // IMPORTANTE: Salvar preview como análise inicial em CaseAnalysisVersion
+      // Isso permite que o preview apareça na aba "Análise IA"
+      try {
+        await prisma.caseAnalysisVersion.create({
+          data: {
+            caseId: newCase.id,
+            workspaceId,
+            version: 1,
+            status: 'COMPLETED',
+            analysisType: 'FAST',
+            modelUsed: previewResult.preview.model,
+            aiAnalysis: {
+              summary: previewResult.preview.summary,
+              keyPoints: previewResult.preview.lastMovements.map(m => `${m.type}: ${m.description}`),
+              metadata: {
+                parties: previewResult.preview.parties,
+                subject: previewResult.preview.subject,
+                object: previewResult.preview.object,
+                claimValue: previewResult.preview.claimValue,
+                source: 'preview_initial'
+              }
+            } as any,
+            confidence: 0.85,
+            processingTime: previewDuration,
+            metadata: {
+              source: 'initial_preview',
+              model: previewResult.preview.model,
+              tokensUsed: previewResult.tokensUsed,
+              generatedAt: previewResult.preview.generatedAt
+            }
+          }
+        });
+
+        console.log(`${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion`);
+      } catch (analysisError) {
+        console.error(`${ICONS.WARNING} [Upload] Erro ao salvar análise inicial:`, analysisError);
+        // Não falhar o upload se não conseguir salvar a análise
+      }
     }
 
     // ============================================================
