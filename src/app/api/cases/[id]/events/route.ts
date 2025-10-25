@@ -131,28 +131,75 @@ export async function GET(
     // FONTE 3: CaseDocument (documentos carregados)
     // ================================================================
     if (caseData.documents && caseData.documents.length > 0) {
-      const documentEvents = caseData.documents.map((doc) => ({
-        id: doc.id,
-        date: doc.createdAt.toISOString(),
-        title: 'Documento',
-        description: doc.originalName,
-        type: 'document' as const,
-        source: doc.sourceOrigin === 'JUDIT_IMPORT' ? 'api_monitoring' : 'pdf_analysis' as const,
-        attachments: [
-          {
-            id: doc.id,
-            name: doc.originalName,
-            type: doc.mimeType,
-            size: doc.size,
+      const documentEvents = caseData.documents.map((doc) => {
+        // IMPORTANTE: Procurar data real do andamento/movimento
+        let realEventDate = doc.createdAt; // fallback para createdAt
+
+        // Tentar recuperar data do previewSnapshot.lastMovements (PDF inicial)
+        if (caseData.previewSnapshot && typeof caseData.previewSnapshot === 'object') {
+          const preview = caseData.previewSnapshot as any;
+          if (preview.lastMovements && Array.isArray(preview.lastMovements)) {
+            // Procurar movimento que corresponde ao documento
+            const matchedMovement = preview.lastMovements.find(
+              (m: any) =>
+                m.description?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
+                m.description?.toLowerCase().includes(doc.name?.toLowerCase())
+            );
+
+            if (matchedMovement && matchedMovement.date) {
+              try {
+                realEventDate = new Date(matchedMovement.date);
+              } catch (e) {
+                // Manter date original se não conseguir parsear
+              }
+            }
+          }
+        }
+
+        // Se não encontrou no preview, tentar recuperar dos dados JUDIT
+        if (realEventDate === doc.createdAt && caseData.processo?.dadosCompletos) {
+          const dadosCompletos = caseData.processo.dadosCompletos as any;
+          if (dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
+            // Procurar step que corresponde ao documento
+            const matchedStep = dadosCompletos.steps.find(
+              (s: any) =>
+                s.content?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
+                s.content?.toLowerCase().includes(doc.name?.toLowerCase())
+            );
+
+            if (matchedStep && matchedStep.step_date) {
+              try {
+                realEventDate = new Date(matchedStep.step_date);
+              } catch (e) {
+                // Manter date original se não conseguir parsear
+              }
+            }
+          }
+        }
+
+        return {
+          id: doc.id,
+          date: realEventDate.toISOString(),
+          title: 'Documento',
+          description: doc.originalName,
+          type: 'document' as const,
+          source: doc.sourceOrigin === 'JUDIT_IMPORT' ? 'api_monitoring' : 'pdf_analysis' as const,
+          attachments: [
+            {
+              id: doc.id,
+              name: doc.originalName,
+              type: doc.mimeType,
+              size: doc.size,
+            },
+          ],
+          metadata: {
+            documentType: doc.type,
+            pages: doc.pages,
+            hasExtractedText: !!doc.extractedText,
+            sourceOrigin: doc.sourceOrigin,
           },
-        ],
-        metadata: {
-          documentType: doc.type,
-          pages: doc.pages,
-          hasExtractedText: !!doc.extractedText,
-          sourceOrigin: doc.sourceOrigin,
-        },
-      }));
+        };
+      });
 
       events.push(...documentEvents);
     }
