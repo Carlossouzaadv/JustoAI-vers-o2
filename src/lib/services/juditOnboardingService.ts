@@ -5,6 +5,7 @@
 
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
+import { recordOnboardingError } from '@/lib/utils/case-onboarding-helper';
 
 // Observability stubs - inline to avoid external dependencies that may not be in container
 const juditLogger = {
@@ -172,14 +173,39 @@ export async function performFullProcessRequest(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     juditLogger.error({
       action: 'onboarding_failed',
       cnj,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       error_stack: error instanceof Error ? error.stack : undefined,
       duration_ms: duration,
     });
+
+    // ================================================================
+    // REGISTRAR ERRO NO BANCO DE DADOS PARA VISIBILIDADE DO USUÁRIO
+    // ================================================================
+    try {
+      // Se processoId disponível, buscar caseId associado
+      if (processoId) {
+        const processo = await prisma.processo.findUnique({
+          where: { id: processoId },
+          select: { case: { select: { id: true } } }
+        });
+
+        if (processo?.case) {
+          await recordOnboardingError(
+            processo.case.id,
+            'ENRICHMENT',
+            errorMessage,
+            'JUDIT_REQUEST_FAILED'
+          );
+        }
+      }
+    } catch (dbError) {
+      console.error('[OnboardingError] Erro ao registrar erro no banco:', dbError);
+    }
 
     // Record failure metrics
     juditMetrics.recordOnboarding('failure', duration);
@@ -192,7 +218,7 @@ export async function performFullProcessRequest(
       requestId,
       durationMs: duration,
       status: 'failed',
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorMessage: errorMessage,
     });
 
     // Send alert for error
@@ -204,7 +230,7 @@ export async function performFullProcessRequest(
     });
 
     operation.finish('failure', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
     });
 
     return {
@@ -212,7 +238,7 @@ export async function performFullProcessRequest(
       processoId,
       requestId,
       numeroCnj: cnj,
-      error: error instanceof Error ? error.message : 'Erro desconhecido',
+      error: errorMessage,
       duration,
     };
   }
