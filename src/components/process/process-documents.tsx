@@ -7,6 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
 
 interface DocumentFile {
@@ -36,6 +51,14 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [filter, setFilter] = useState<'all' | DocumentFile['category']>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // States para modal de edição
+  const [editingDocument, setEditingDocument] = useState<DocumentFile | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState<DocumentFile['category']>('other');
+  const [editNotes, setEditNotes] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -141,12 +164,64 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   };
 
   const handleEditDocument = (document: DocumentFile) => {
-    // TODO: Implementar modal de edição com opções:
-    // - Renomear
-    // - Alterar categoria
-    // - Adicionar tags/observações
-    // - Deletar
-    console.log('Editar documento:', document.id);
+    setEditingDocument(document);
+    setEditName(document.name);
+    setEditCategory(document.category);
+    setEditNotes('');
+  };
+
+  const handleSaveDocument = async () => {
+    if (!editingDocument) return;
+
+    setIsSaving(true);
+    try {
+      // TODO: Implementar API endpoint para atualizar documento
+      // const response = await fetch(`/api/documents/${editingDocument.id}`, {
+      //   method: 'PATCH',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     name: editName,
+      //     category: editCategory,
+      //     notes: editNotes,
+      //   }),
+      // });
+
+      // Por enquanto, apenas atualizar no estado local
+      setDocuments(documents.map(doc =>
+        doc.id === editingDocument.id
+          ? { ...doc, name: editName, category: editCategory }
+          : doc
+      ));
+
+      setEditingDocument(null);
+    } catch (error) {
+      console.error('Erro ao salvar documento:', error);
+      alert('Erro ao salvar documento');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteDocument = async () => {
+    if (!editingDocument || !window.confirm('Deseja realmente deletar este documento?')) return;
+
+    setIsDeleting(true);
+    try {
+      // TODO: Implementar API endpoint para deletar documento
+      // const response = await fetch(`/api/documents/${editingDocument.id}`, {
+      //   method: 'DELETE',
+      // });
+
+      // Por enquanto, apenas remover do estado local
+      setDocuments(documents.filter(doc => doc.id !== editingDocument.id));
+
+      setEditingDocument(null);
+    } catch (error) {
+      console.error('Erro ao deletar documento:', error);
+      alert('Erro ao deletar documento');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getCategoryIcon = (category: DocumentFile['category']) => {
@@ -383,6 +458,87 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
           </p>
         </div>
       </CardContent>
+
+      {/* Modal de Edição de Documento */}
+      <Dialog open={!!editingDocument} onOpenChange={(open) => !open && setEditingDocument(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Documento</DialogTitle>
+            <DialogDescription>
+              Altere as informações do documento
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Nome do documento */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nome do Documento</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Nome do documento"
+              />
+            </div>
+
+            {/* Categoria */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Categoria</label>
+              <Select value={editCategory} onValueChange={(value: any) => setEditCategory(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="petition">Petição</SelectItem>
+                  <SelectItem value="decision">Decisão</SelectItem>
+                  <SelectItem value="evidence">Prova</SelectItem>
+                  <SelectItem value="correspondence">Correspondência</SelectItem>
+                  <SelectItem value="other">Outros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Observações/Tags - TODO */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Observações (em desenvolvimento)</label>
+              <Input
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Adicione observações sobre o documento..."
+                disabled
+                className="opacity-50"
+              />
+              <p className="text-xs text-muted-foreground">Funcionalidade em desenvolvimento</p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2 justify-between">
+            <Button
+              variant="destructive"
+              onClick={handleDeleteDocument}
+              disabled={isDeleting || isSaving}
+              className="mr-auto"
+            >
+              {isDeleting ? `${ICONS.LOADING} Deletando...` : `${ICONS.TRASH} Deletar`}
+            </Button>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditingDocument(null)}
+                disabled={isSaving || isDeleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveDocument}
+                disabled={isSaving || isDeleting}
+              >
+                {isSaving ? `${ICONS.LOADING} Salvando...` : `${ICONS.SUCCESS} Salvar`}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
