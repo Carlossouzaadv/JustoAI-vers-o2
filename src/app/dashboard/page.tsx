@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { CreditCard } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -380,26 +379,6 @@ export default function DashboardPage() {
       {/* Seção 1: Ações Imediatas */}
       <section>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Quick Link para Créditos e Billing */}
-          <Link href="/dashboard/billing">
-            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 h-full">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" /> Créditos e Faturamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-blue-600 font-medium">Gerencie seus créditos</p>
-                <p className="text-xs text-blue-500 mt-2">Visualize uso, compre créditos e confira histórico</p>
-                <div className="mt-4 pt-4 border-t border-blue-200">
-                  <p className="text-xs text-blue-600 font-semibold flex items-center gap-1">
-                    Acessar →
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
           {/* Card de Alerta - Centro */}
           <Card
             className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"

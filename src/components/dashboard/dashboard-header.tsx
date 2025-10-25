@@ -15,6 +15,7 @@ export function DashboardHeader() {
     { href: '/dashboard/process', label: 'Processos', icon: ICONS.PROCESS },
     { href: '/dashboard/documents-upload', label: 'Upload PDFs', icon: ICONS.UPLOAD },
     { href: '/dashboard/reports', label: 'Relatórios', icon: ICONS.REPORTS },
+    { href: '/dashboard/billing', label: 'Créditos', icon: ICONS.CREDIT },
   ];
 
   return (

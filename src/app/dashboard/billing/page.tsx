@@ -59,21 +59,23 @@ export default function BillingPage() {
 
         if (creditsRes.ok) {
           const creditsData = await creditsRes.json();
-          setCredits(creditsData);
+          // Extract the balance data from the response
+          const balanceData = creditsData.data?.balance || creditsData;
+          setCredits(balanceData);
         }
 
-        // Carregar histórico de uso
-        const historyRes = await fetch(
-          getApiUrl(`/api/billing/history?workspaceId=${workspaceId}&limit=20`),
-          { credentials: 'include' }
-        );
-
-        if (historyRes.ok) {
-          const historyData = await historyRes.json();
-          setHistory(historyData.data || []);
-        }
+        // Carregar histórico de uso - criar dados de exemplo ou deixar vazio
+        // Por enquanto vamos usar dados vazios já que o endpoint de histórico não existe
+        setHistory([]);
       } catch (error) {
         console.error('Erro ao carregar dados de billing:', error);
+        // Set default empty credits to avoid undefined errors
+        setCredits({
+          balance: 0,
+          includedCredits: 0,
+          purchasedCredits: 0,
+          consumedCredits: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -117,7 +119,7 @@ export default function BillingPage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <p className="text-sm font-medium text-blue-600 mb-2">Saldo Disponível</p>
-            <h2 className="text-4xl font-bold text-blue-900">{credits?.balance.toLocaleString('pt-BR')}</h2>
+            <h2 className="text-4xl font-bold text-blue-900">{(credits?.balance || 0).toLocaleString('pt-BR')}</h2>
             <p className="text-blue-700 mt-2">Créditos disponíveis para uso</p>
           </div>
 
@@ -161,7 +163,7 @@ export default function BillingPage() {
             <div>
               <p className="text-sm font-medium text-neutral-600 mb-1">Créditos Inclusos</p>
               <p className="text-2xl font-bold text-green-600">
-                {credits?.includedCredits.toLocaleString('pt-BR') || '0'}
+                {(credits?.includedCredits || 0).toLocaleString('pt-BR')}
               </p>
               <p className="text-xs text-neutral-500 mt-2">Vêm com seu plano</p>
             </div>
@@ -176,7 +178,7 @@ export default function BillingPage() {
             <div>
               <p className="text-sm font-medium text-neutral-600 mb-1">Créditos Comprados</p>
               <p className="text-2xl font-bold text-blue-600">
-                {credits?.purchasedCredits.toLocaleString('pt-BR') || '0'}
+                {(credits?.purchasedCredits || 0).toLocaleString('pt-BR')}
               </p>
               <p className="text-xs text-neutral-500 mt-2">Extras adicionados</p>
             </div>
@@ -191,7 +193,7 @@ export default function BillingPage() {
             <div>
               <p className="text-sm font-medium text-neutral-600 mb-1">Créditos Usados</p>
               <p className="text-2xl font-bold text-orange-600">
-                {credits?.consumedCredits.toLocaleString('pt-BR') || '0'}
+                {(credits?.consumedCredits || 0).toLocaleString('pt-BR')}
               </p>
               <p className="text-xs text-neutral-500 mt-2">Neste ciclo</p>
             </div>

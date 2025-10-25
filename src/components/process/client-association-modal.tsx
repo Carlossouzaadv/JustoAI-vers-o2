@@ -188,12 +188,21 @@ export function ClientAssociationModal({
           </div>
 
           {/* Create new client button */}
-          <div className="border-t pt-4">
+          <div className="border-t pt-4 space-y-2">
             <Link href="/dashboard/clients/new">
               <Button variant="outline" className="w-full">
                 {ICONS.PLUS} Cadastrar Novo Cliente
               </Button>
             </Link>
+
+            {/* Cancel button */}
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => setOpen(false)}
+            >
+              Cancelar
+            </Button>
           </div>
         </div>
       </DialogContent>
