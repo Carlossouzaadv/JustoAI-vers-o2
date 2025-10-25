@@ -72,6 +72,7 @@ export default function ProcessPage() {
   const [updatingClientId, setUpdatingClientId] = useState<string | null>(null);
   const [selectedCaseIds, setSelectedCaseIds] = useState<Set<string>>(new Set());
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [openClientModalId, setOpenClientModalId] = useState<string | null>(null);
   const { workspaceId } = useAuth();
 
   // Carregar dados reais da API
@@ -442,16 +443,26 @@ export default function ProcessPage() {
                   <ClientAssociationModal
                     caseId={caseItem.id}
                     currentClient={caseItem.client}
-                    onClientAssociated={(client) => handleClientAssociated(caseItem.id, client)}
+                    onClientAssociated={(client) => {
+                      handleClientAssociated(caseItem.id, client);
+                      setOpenClientModalId(null);
+                    }}
                     trigger={
                       <Button
                         variant="ghost"
                         className="font-medium text-primary-800 hover:text-primary-600 hover:underline p-0 h-auto"
                         disabled={updatingClientId === caseItem.id}
+                        onClick={() => setOpenClientModalId(caseItem.id)}
                       >
                         {updatingClientId === caseItem.id ? 'Atualizando...' : caseItem.client.name}
                       </Button>
                     }
+                    isOpen={openClientModalId === caseItem.id}
+                    onOpenChange={(open) => {
+                      if (!open) {
+                        setOpenClientModalId(null);
+                      }
+                    }}
                   />
                 </TableCell>
                 <TableCell>
