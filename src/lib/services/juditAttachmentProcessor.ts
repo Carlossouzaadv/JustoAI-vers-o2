@@ -268,11 +268,13 @@ async function downloadAndProcessAttachment(
     // ============================================================
 
     // Sanitizar nome do arquivo: remover / e caracteres inválidos para evitar path traversal
+    // Preservar acentos e caracteres especiais legítimos em português
     const sanitizedName = attachment.name
       .replace(/\//g, '_') // Substituir / por _
       .replace(/\\/g, '_') // Substituir \ por _
-      .replace(/[^\w\s\-\.]/g, '_') // Remover caracteres especiais (manter apenas word chars, espaço, hífen, ponto)
-      .substring(0, 200); // Limitar tamanho do nome
+      .replace(/[\x00-\x1f\x7f]/g, '_') // Remover caracteres de controle apenas
+      .replace(/[\\/:"*?<>|]/g, '_') // Remover caracteres inválidos para filesystem
+      .substring(0, 255); // Limitar tamanho do nome (max filename length em NTFS/ext4)
 
     const tempPath = `/tmp/judit-attachment-${Date.now()}-${sanitizedName}`;
     const fs = await import('fs/promises');
@@ -303,7 +305,7 @@ async function downloadAndProcessAttachment(
     // 6. SALVAR NO BANCO
     // ============================================================
 
-    await prisma.caseDocument.create({
+    const createdDoc = await prisma.caseDocument.create({
       data: {
         caseId,
         name: sanitizedName.replace(/\.(pdf|PDF)$/, ''),
@@ -311,7 +313,7 @@ async function downloadAndProcessAttachment(
         type: documentType as any,
         mimeType: attachment.extension === 'pdf' ? 'application/pdf' : 'application/octet-stream',
         size: buffer.length,
-        url: tempPath, // TODO: substituir por S3
+        url: `/api/documents/${undefined}/download`, // Será atualizado abaixo com o ID correto
         path: tempPath,
         extractedText: extractedText || null,
         textSha: null, // JUDIT attachments não usam hash - usam attachment_id como chave única
@@ -320,6 +322,14 @@ async function downloadAndProcessAttachment(
         ocrStatus: extractedText ? 'COMPLETED' : 'PENDING',
         sourceOrigin: 'JUDIT_ATTACHMENT',
         juditAttachmentUrl // Usa a variável definida acima (attachment_${attachment.attachment_id})
+      }
+    });
+
+    // Atualizar URL com o ID do documento criado
+    await prisma.caseDocument.update({
+      where: { id: createdDoc.id },
+      data: {
+        url: `/api/documents/${createdDoc.id}/download`
       }
     });
 

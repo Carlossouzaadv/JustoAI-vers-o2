@@ -235,29 +235,57 @@ async function generateConsolidatedSummaryWithAI(
 
     const prompt = generateConsolidationPrompt(documents, caseInfo);
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
+    console.log(`${ICONS.EXTRACT} [Summary Consolidator] Enviando prompt para Gemini (${prompt.length} chars, ${documents.length} docs)`);
+
+    try {
+      const result = await model.generateContent({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.3,
+          topP: 0.8,
+          topK: 20,
+          maxOutputTokens: 500,
         },
-      ],
-      generationConfig: {
-        temperature: 0.3,
-        topP: 0.8,
-        topK: 20,
-        maxOutputTokens: 500,
-      },
-    });
+      });
 
-    const response = result.response;
-    const text = response.text();
+      const response = result.response;
+      const text = response.text();
 
-    if (!text) {
-      throw new Error('Resposta vazia do Gemini');
+      if (!text) {
+        throw new Error('Resposta vazia do Gemini');
+      }
+
+      console.log(`${ICONS.SUCCESS} [Summary Consolidator] Resposta recebida do Gemini: ${text.length} chars`);
+      return text.trim();
+    } catch (geminiError: any) {
+      // Tratamento específico de erros da Gemini API
+      console.error(`${ICONS.ERROR} [Summary Consolidator] Erro específico do Gemini:`, {
+        error: geminiError,
+        message: geminiError?.message,
+        status: geminiError?.status,
+        code: geminiError?.code
+      });
+
+      // Se é erro de quota ou rate limit, mencionar isto
+      if (geminiError?.status === 429 || geminiError?.message?.includes('rate limit')) {
+        throw new Error('Limite de requisições da API Gemini atingido. Tente novamente em alguns minutos.');
+      }
+
+      if (geminiError?.status === 403 || geminiError?.message?.includes('permission denied')) {
+        throw new Error('Permissão negada na API Gemini. Verifique a configuração da chave.');
+      }
+
+      if (geminiError?.message?.includes('INVALID_ARGUMENT')) {
+        throw new Error('Erro na configuração do prompt ou parâmetros da Gemini API.');
+      }
+
+      throw geminiError;
     }
-
-    return text.trim();
   } catch (error) {
     console.error(`${ICONS.ERROR} [Summary Consolidator] Erro ao chamar Gemini:`, error);
     throw error;
@@ -301,7 +329,128 @@ function generateFallbackSummary(documents: DocumentSummaryData[]): string {
 // ================================================================
 
 /**
+ * Gera resumo a partir da timeline e documentos já processados (SEM chamar Gemini novamente)
+ * Usado para regeneração rápida após atualizações
+ */
+export async function generateSummaryFromTimeline(caseId: string): Promise<string> {
+  try {
+    console.log(`${ICONS.PROCESS} [Summary Consolidator] Gerando resumo a partir da timeline: ${caseId}`);
+
+    // Carregar informações do caso
+    const caseInfo = await prisma.case.findUnique({
+      where: { id: caseId },
+      select: {
+        id: true,
+        number: true,
+        title: true,
+        type: true,
+        status: true,
+      },
+    });
+
+    if (!caseInfo) {
+      throw new Error(`Caso não encontrado: ${caseId}`);
+    }
+
+    // Carregar timeline do caso (já processada e unificada)
+    const timelineEntries = await prisma.processTimelineEntry.findMany({
+      where: { caseId },
+      orderBy: { eventDate: 'asc' },
+      select: {
+        eventDate: true,
+        eventType: true,
+        description: true,
+        source: true,
+      },
+    });
+
+    // Carregar documentos com metadados já extraídos
+    const documents = await loadCaseDocuments(caseId);
+
+    if (documents.length === 0 && timelineEntries.length === 0) {
+      console.log(`${ICONS.INFO} [Summary Consolidator] Nenhum dado para gerar resumo`);
+      return 'Nenhum documento ou evento processado disponível.';
+    }
+
+    // Construir resumo a partir dos dados já processados
+    const parts: string[] = [];
+
+    // 1. Título e tipo do caso
+    if (caseInfo.title) {
+      parts.push(`**Caso**: ${caseInfo.title}`);
+    }
+    if (caseInfo.number) {
+      parts.push(`**Processo**: ${caseInfo.number}`);
+    }
+
+    // 2. Status do caso
+    if (caseInfo.status) {
+      parts.push(`**Status**: ${caseInfo.status}`);
+    }
+
+    // 3. Resumo dos documentos
+    if (documents.length > 0) {
+      const documentTypes = new Set(documents.map((d) => formatDocumentType(d.type || 'OTHER')));
+      parts.push(`**Documentação**: ${Array.from(documentTypes).join(', ')} (${documents.length} documentos)`);
+
+      // Períodos importantes dos documentos
+      const timeSpan = extractTimelineSpan(documents);
+      if (timeSpan.earliest && timeSpan.latest) {
+        parts.push(`**Período**: ${timeSpan.earliest.toLocaleDateString('pt-BR')} a ${timeSpan.latest.toLocaleDateString('pt-BR')}`);
+      }
+    }
+
+    // 4. Andamentos principais (últimos 5 de cada tipo importante)
+    if (timelineEntries.length > 0) {
+      // Agrupar andamentos por tipo
+      const eventsByType: Record<string, typeof timelineEntries> = {};
+      for (const entry of timelineEntries) {
+        if (!eventsByType[entry.eventType]) {
+          eventsByType[entry.eventType] = [];
+        }
+        eventsByType[entry.eventType].push(entry);
+      }
+
+      // Selecionar tipos mais importantes
+      const importantTypes = ['DECISION', 'JUDGMENT', 'SENTENÇA', 'Decisão', 'Sentença'];
+      const recentEvents: string[] = [];
+
+      // Pegar últimos eventos de cada tipo importante
+      for (const type of importantTypes) {
+        const eventsOfType = eventsByType[type];
+        if (eventsOfType && eventsOfType.length > 0) {
+          const lastEvent = eventsOfType[eventsOfType.length - 1];
+          recentEvents.push(`- ${lastEvent.eventType} (${lastEvent.eventDate.toLocaleDateString('pt-BR')}): ${lastEvent.description.substring(0, 100)}`);
+        }
+      }
+
+      // Se não houver eventos importantes, pegar os 3 últimos gerais
+      if (recentEvents.length === 0) {
+        const lastThree = timelineEntries.slice(-3);
+        for (const event of lastThree) {
+          recentEvents.push(`- ${event.eventType} (${event.eventDate.toLocaleDateString('pt-BR')}): ${event.description.substring(0, 100)}`);
+        }
+      }
+
+      if (recentEvents.length > 0) {
+        parts.push(`**Andamentos Recentes**:\n${recentEvents.join('\n')}`);
+      }
+    }
+
+    const consolidatedDescription = parts.join('\n\n') || 'Processo com dados em processamento.';
+
+    console.log(`${ICONS.SUCCESS} [Summary Consolidator] Resumo gerado a partir da timeline e documentos`);
+    return consolidatedDescription;
+
+  } catch (error) {
+    console.error(`${ICONS.ERROR} [Summary Consolidator] Erro ao gerar resumo da timeline:`, error);
+    throw error;
+  }
+}
+
+/**
  * Consolida resumo do caso a partir de documentos extraídos
+ * NOTA: Usado apenas na primeira análise (fase inicial com Gemini)
  */
 export async function consolidateCaseSummary(caseId: string): Promise<ConsolidatedCaseSummary> {
   try {

@@ -120,6 +120,7 @@ export class TimelineMergeService {
 
   /**
    * Adiciona entradas à timeline com deduplicação automática E mesclagem inteligente
+   * Usa abordagem otimista com tratamento robusto de race conditions
    */
   async mergeEntries(
     caseId: string,
@@ -143,7 +144,7 @@ export class TimelineMergeService {
         const contentHash = this.hashManager.generateContentHash(normalizedContent);
 
         // Verificar se entrada já existe
-        const existingEntry = await prisma.processTimelineEntry.findUnique({
+        let existingEntry = await prisma.processTimelineEntry.findUnique({
           where: {
             caseId_contentHash: {
               caseId,
@@ -153,7 +154,7 @@ export class TimelineMergeService {
         });
 
         if (existingEntry) {
-          // Tentar mesclar inteligentemente ao invés de apenas descartar
+          // Tentar mesclar inteligentemente
           const { merged, changed } = this.mergeIntelligently(existingEntry, entry);
 
           if (changed) {
@@ -175,7 +176,7 @@ export class TimelineMergeService {
 
             mergedDuplicates++;
             console.log(
-              `${ICONS.INFO} Entrada duplicada mesclada inteligentemente: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
+              `${ICONS.INFO} Entrada duplicada mesclada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
             );
 
             mergedEntries.push({
@@ -187,7 +188,7 @@ export class TimelineMergeService {
               confidence: updatedEntry.confidence
             });
           } else {
-            // Não houve mudanças na mesclagem
+            // Não houve mudanças
             duplicatesSkipped++;
             console.log(
               `${ICONS.WARNING} Entrada duplicada sem mudanças: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
@@ -196,7 +197,7 @@ export class TimelineMergeService {
           continue;
         }
 
-        // Criar nova entrada (com tratamento de race condition)
+        // Tentar criar nova entrada
         try {
           const newEntry = await prisma.processTimelineEntry.create({
             data: {
@@ -213,6 +214,9 @@ export class TimelineMergeService {
             }
           });
 
+          newEntries++;
+          console.log(`${ICONS.SUCCESS} Nova entrada adicionada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`);
+
           mergedEntries.push({
             id: newEntry.id,
             eventDate: newEntry.eventDate,
@@ -222,18 +226,59 @@ export class TimelineMergeService {
             confidence: newEntry.confidence
           });
 
-          newEntries++;
-          console.log(`${ICONS.SUCCESS} Nova entrada adicionada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`);
         } catch (createError: any) {
-          // Tratar race condition: se houver erro de constraint única, significa que outra requisição
-          // criou a entrada entre o findUnique e o create. Isso não é um erro real.
-          if (createError?.code === 'P2002' && createError?.meta?.target?.includes('content_hash')) {
+          // Se houver erro de constraint única, outra requisição criou a entrada
+          // Recuperar e tentar merge
+          if (createError?.code === 'P2002') {
             console.log(
-              `${ICONS.INFO} Entrada criada por outra requisição: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
+              `${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição...`
             );
-            duplicatesSkipped++;
+
+            // Recuperar a entrada que foi criada pela outra requisição
+            existingEntry = await prisma.processTimelineEntry.findUnique({
+              where: {
+                caseId_contentHash: {
+                  caseId,
+                  contentHash
+                }
+              }
+            });
+
+            if (existingEntry) {
+              // Tentar merge com a entrada recuperada
+              const { merged, changed } = this.mergeIntelligently(existingEntry, entry);
+
+              if (changed) {
+                const updatedEntry = await prisma.processTimelineEntry.update({
+                  where: { id: existingEntry.id },
+                  data: {
+                    eventDate: merged.eventDate,
+                    eventType: merged.eventType,
+                    description: merged.description,
+                    source: merged.source,
+                    metadata: merged.metadata,
+                    confidence: merged.confidence,
+                    normalizedContent: this.hashManager.normalizeForTimeline(
+                      `${merged.eventType}_${merged.description}_${merged.eventDate.toISOString().split('T')[0]}`
+                    )
+                  }
+                });
+
+                mergedDuplicates++;
+                mergedEntries.push({
+                  id: updatedEntry.id,
+                  eventDate: updatedEntry.eventDate,
+                  eventType: updatedEntry.eventType,
+                  description: updatedEntry.description,
+                  source: updatedEntry.source,
+                  confidence: updatedEntry.confidence
+                });
+              } else {
+                duplicatesSkipped++;
+              }
+            }
           } else {
-            // Re-throw se for um erro diferente
+            // Re-throw se for erro diferente
             throw createError;
           }
         }

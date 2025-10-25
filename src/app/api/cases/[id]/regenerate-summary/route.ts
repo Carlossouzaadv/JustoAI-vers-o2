@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
-import { updateCaseSummaryDescription } from '@/lib/services/summaryConsolidator';
+import { generateSummaryFromTimeline } from '@/lib/services/summaryConsolidator';
 
 // ================================================================
 // MAIN HANDLER
@@ -67,11 +67,43 @@ export async function POST(
     // 3. REGENERAR RESUMO
     // ============================================================
 
-    console.log(`${ICONS.EXTRACT} [Regenerate Summary] Consolidando novo resumo...`);
+    console.log(`${ICONS.EXTRACT} [Regenerate Summary] Regenerando resumo a partir da timeline e documentos...`);
 
-    const newDescription = await updateCaseSummaryDescription(caseId);
+    let newDescription: string;
+    try {
+      // Gerar resumo a partir da timeline (SEM chamar Gemini novamente)
+      newDescription = await generateSummaryFromTimeline(caseId);
 
-    console.log(`${ICONS.SUCCESS} [Regenerate Summary] Resumo regenerado com sucesso`);
+      // Atualizar caso com novo resumo
+      await prisma.case.update({
+        where: { id: caseId },
+        data: {
+          description: newDescription,
+        },
+      });
+
+    } catch (consolidationError) {
+      console.error(`${ICONS.ERROR} [Regenerate Summary] Erro durante regeneração:`, consolidationError);
+
+      // Retornar erro mais informativo
+      const errorMessage = consolidationError instanceof Error
+        ? consolidationError.message
+        : 'Erro desconhecido ao regenerar resumo';
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Erro ao regenerar resumo: ${errorMessage}`,
+          details: {
+            caseId,
+            timestamp: new Date().toISOString()
+          }
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log(`${ICONS.SUCCESS} [Regenerate Summary] Resumo regenerado com sucesso a partir da timeline`);
 
     // ============================================================
     // 4. RETORNAR RESPOSTA

@@ -23,11 +23,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
+import { DocumentViewerModal } from './document-viewer-modal';
 
 interface DocumentFile {
   id: string;
   name: string;
   type: string;
+  mimeType?: string;
   size: number;
   uploadedAt: string;
   status: 'processing' | 'completed' | 'error';
@@ -51,6 +53,9 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [filter, setFilter] = useState<'all' | DocumentFile['category']>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // States para modal de visualização
+  const [viewingDocument, setViewingDocument] = useState<DocumentFile | null>(null);
 
   // States para modal de edição
   const [editingDocument, setEditingDocument] = useState<DocumentFile | null>(null);
@@ -83,6 +88,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
           id: doc.id,
           name: doc.name,
           type: doc.mimeType || 'application/pdf',
+          mimeType: doc.mimeType || 'application/pdf',
           size: doc.size || 0,
           uploadedAt: doc.createdAt,
           status: 'completed',
@@ -149,18 +155,13 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   };
 
   const handleViewDocument = (document: DocumentFile) => {
-    if (!document.url) {
-      alert('URL do documento não disponível');
+    if (!document.url && !document.id) {
+      alert('Documento não disponível para visualização');
       return;
     }
 
-    // Se é uma URL de arquivo, tentar abrir em nova aba
-    try {
-      window.open(document.url, '_blank');
-    } catch (error) {
-      console.error('Erro ao abrir documento:', error);
-      alert('Erro ao abrir documento');
-    }
+    // Abrir modal de visualização ao invés de nova aba
+    setViewingDocument(document);
   };
 
   const handleEditDocument = (document: DocumentFile) => {
@@ -539,6 +540,17 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Visualização de Documento */}
+      {viewingDocument && (
+        <DocumentViewerModal
+          documentId={viewingDocument.id}
+          documentName={viewingDocument.name}
+          mimeType={viewingDocument.mimeType || 'application/octet-stream'}
+          isOpen={!!viewingDocument}
+          onClose={() => setViewingDocument(null)}
+        />
+      )}
     </Card>
   );
 }
