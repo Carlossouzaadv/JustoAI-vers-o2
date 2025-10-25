@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUnassignedReason } from '@/lib/utils/case-onboarding-helper';
-import { auth } from '@clerk/nextjs/server';
+import { validateAuthAndGetUser } from '@/lib/auth';
 
 /**
  * GET /api/cases/[id]/onboarding-status
@@ -13,9 +13,10 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await auth();
+    const authData = await validateAuthAndGetUser(request);
+    const user = authData.user;
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -49,13 +50,13 @@ export async function GET(
         id: caseData.workspaceId,
         members: {
           some: {
-            clerkId: userId,
+            userId: user.id,
           },
         },
       },
     });
 
-    if (!workspace && caseData.createdById !== userId) {
+    if (!workspace && caseData.createdById !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }

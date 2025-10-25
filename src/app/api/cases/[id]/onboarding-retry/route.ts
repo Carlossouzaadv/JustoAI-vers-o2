@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { retryOnboarding } from '@/lib/utils/case-onboarding-helper';
 import { addOnboardingJob } from '@/lib/queue/juditQueue';
-import { auth } from '@clerk/nextjs/server';
+import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
 
 /**
@@ -15,9 +15,10 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { userId } = await auth();
+    const authData = await validateAuthAndGetUser(request);
+    const user = authData.user;
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -52,13 +53,13 @@ export async function POST(
         id: caseData.workspaceId,
         members: {
           some: {
-            clerkId: userId,
+            userId: user.id,
           },
         },
       },
     });
 
-    if (!workspace && caseData.createdById !== userId) {
+    if (!workspace && caseData.createdById !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden' },
         { status: 403 }

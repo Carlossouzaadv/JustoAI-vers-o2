@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@clerk/nextjs/server';
+import { validateAuthAndGetUser } from '@/lib/auth';
 
 /**
  * PATCH /api/cases/bulk
@@ -21,9 +21,10 @@ import { auth } from '@clerk/nextjs/server';
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const authData = await validateAuthAndGetUser(request);
+    const user = authData.user;
 
-    if (!userId) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -90,7 +91,7 @@ export async function PATCH(request: NextRequest) {
         id: casesWorkspace.workspaceId,
         members: {
           some: {
-            clerkId: userId
+            userId: user.id
           }
         }
       }
@@ -146,7 +147,7 @@ export async function PATCH(request: NextRequest) {
     const caseEvents = await prisma.caseEvent.createMany({
       data: caseIds.map(caseId => ({
         caseId,
-        userId,
+        userId: user.id,
         type: 'BULK_UPDATE',
         title: 'Atualização em massa',
         description: `Atualização em massa: ${updateSummary}`,
@@ -158,7 +159,7 @@ export async function PATCH(request: NextRequest) {
       }))
     });
 
-    console.log(`[Bulk Update] ${result.count} casos atualizados pelo user ${userId}`);
+    console.log(`[Bulk Update] ${result.count} casos atualizados pelo user ${user.id}`);
 
     return NextResponse.json({
       success: true,
