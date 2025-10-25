@@ -35,6 +35,55 @@ export class TimelineMergeService {
   private hashManager = getDocumentHashManager();
 
   /**
+   * Helper: Aguarda um tempo com backoff exponencial
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Tenta recuperar uma entrada com retry e backoff exponencial
+   * Útil quando race condition deixa entry não imediatamente disponível
+   */
+  private async findEntryWithRetry(
+    prisma: any,
+    caseId: string,
+    contentHash: string,
+    maxRetries: number = 3
+  ): Promise<any> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const entry = await prisma.processTimelineEntry.findUnique({
+        where: {
+          caseId_contentHash: {
+            caseId,
+            contentHash
+          }
+        }
+      });
+
+      if (entry) {
+        if (attempt > 0) {
+          console.log(
+            `${ICONS.INFO} Entrada encontrada após retry #${attempt}`
+          );
+        }
+        return entry;
+      }
+
+      // Se não encontrou e ainda há tentativas, aguardar com backoff
+      if (attempt < maxRetries - 1) {
+        const delayMs = Math.pow(2, attempt) * 100; // 100ms, 200ms, 400ms
+        console.log(
+          `${ICONS.WARNING} Entrada não encontrada na tentativa ${attempt + 1}. Aguardando ${delayMs}ms antes de retry...`
+        );
+        await this.sleep(delayMs);
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Função de prioridade para ordenar fontes
    * Fonte com maior prioridade = mais confiável
    */
@@ -228,21 +277,14 @@ export class TimelineMergeService {
 
         } catch (createError: any) {
           // Se houver erro de constraint única, outra requisição criou a entrada
-          // Recuperar e tentar merge
+          // Recuperar e tentar merge com retry
           if (createError?.code === 'P2002') {
             console.log(
               `${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição para ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
             );
 
-            // Recuperar a entrada que foi criada pela outra requisição
-            existingEntry = await prisma.processTimelineEntry.findUnique({
-              where: {
-                caseId_contentHash: {
-                  caseId,
-                  contentHash
-                }
-              }
-            });
+            // Recuperar a entrada que foi criada pela outra requisição com retry
+            existingEntry = await this.findEntryWithRetry(prisma, caseId, contentHash);
 
             if (existingEntry) {
               // Tentar merge com a entrada recuperada
@@ -284,10 +326,11 @@ export class TimelineMergeService {
                 );
               }
             } else {
-              // PROBLEMA: Não conseguiu recuperar a entrada!
-              // Isso é anômalo - significa que o erro foi levantado mas a entrada não existe
+              // PROBLEMA: Não conseguiu recuperar a entrada mesmo com retries!
+              // Isso é crítico - significa que o erro foi levantado mas a entrada não existe
+              // após múltiplas tentativas. Pode indicar problema no banco de dados.
               console.error(
-                `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`
+                `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}. Possível problema com banco de dados ou replicação.`
               );
               duplicatesSkipped++;
             }
