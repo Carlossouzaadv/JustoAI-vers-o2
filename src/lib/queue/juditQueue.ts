@@ -26,6 +26,7 @@ const getCircuitBreaker = () => {
 
 export interface JuditOnboardingJobData {
   cnj: string;
+  caseId?: string; // Novo: case ID explícito para webhook usar
   workspaceId?: string;
   userId?: string;
   priority?: number;
@@ -153,6 +154,7 @@ export const juditOnboardingQueue = new Proxy({} as any, {
 export async function addOnboardingJob(
   cnj: string,
   options?: {
+    caseId?: string; // Novo: case ID explícito
     workspaceId?: string;
     userId?: string;
     priority?: number;
@@ -175,6 +177,7 @@ export async function addOnboardingJob(
     'onboard-process',
     {
       cnj,
+      caseId: options?.caseId, // NOVO: Passar case ID explícito
       workspaceId: options?.workspaceId,
       userId: options?.userId,
       priority: options?.priority || 1,

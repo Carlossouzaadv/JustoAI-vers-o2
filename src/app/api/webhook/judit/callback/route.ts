@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         cnj: responseData?.code,
       });
 
-      // Encontrar o processo que iniciou essa requisição
+      // Encontrar o processo que iniciou essa requisição COM CASE ID EXPLÍCITO
       const juditRequest = await prisma.juditRequest.findUnique({
         where: { requestId }
       });
@@ -117,25 +117,82 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Encontrar o caso relacionado
-      const processo = await prisma.processo.findUnique({
-        where: { id: juditRequest.processoId },
-        include: { case: true }
-      });
+      // ================================================================
+      // NOVO: Usar caseId EXPLÍCITO do JuditRequest (evita busca por CNJ ambígua)
+      // ================================================================
+      let targetCase = null;
 
-      if (!processo) {
-        console.error(`${ICONS.ERROR} [JUDIT Webhook] Processo não encontrado:`, juditRequest.processoId);
-        return NextResponse.json(
-          { error: 'Processo não encontrado' },
-          { status: 404 }
+      if (juditRequest.caseId) {
+        // PREFERENCIAL: Usar o case ID armazenado explicitamente
+        targetCase = await prisma.case.findUnique({
+          where: { id: juditRequest.caseId }
+        });
+
+        if (!targetCase) {
+          console.error(
+            `${ICONS.ERROR} [JUDIT Webhook] Case não encontrado com ID explícito:`,
+            juditRequest.caseId
+          );
+          return NextResponse.json(
+            { error: 'Case com ID explícito não encontrado' },
+            { status: 404 }
+          );
+        }
+
+        console.log(
+          `${ICONS.SUCCESS} [JUDIT Webhook] Usando case ID explícito: ${targetCase.id}`
         );
+      } else {
+        // FALLBACK: Buscar caso relacionado via Processo (legacy, menos confiável)
+        const processo = await prisma.processo.findUnique({
+          where: { id: juditRequest.processoId },
+          include: { case: true }
+        });
+
+        if (!processo) {
+          console.error(`${ICONS.ERROR} [JUDIT Webhook] Processo não encontrado:`, juditRequest.processoId);
+          return NextResponse.json(
+            { error: 'Processo não encontrado' },
+            { status: 404 }
+          );
+        }
+
+        targetCase = processo.case;
+
+        if (!targetCase) {
+          console.warn(
+            `${ICONS.WARNING} [JUDIT Webhook] Processo ${juditRequest.processoId} não tem case associado`
+          );
+        }
       }
 
       // Se há um caso associado, atualizar com dados da JUDIT
-      if (processo.case) {
-        // Salvar dados completos no proceso
+      if (targetCase) {
+        // ================================================================
+        // NOVO: VERIFICAÇÃO DE IDEMPOTÊNCIA - EVITAR PROCESSAR WEBHOOK DUPLICADO
+        // ================================================================
+        // JUDIT pode enviar múltiplos webhooks para o mesmo requestId
+        // Verificar se este requestId já foi processado para este caso
+        const currentMetadata = (targetCase.metadata || {}) as any;
+        const processedRequestIds = (currentMetadata.processed_webhook_request_ids || []) as string[];
+
+        if (processedRequestIds.includes(requestId)) {
+          console.warn(
+            `${ICONS.WARNING} [JUDIT Webhook] Webhook duplicado detectado (requestId: ${requestId}, case: ${targetCase.id}). Ignorando.`
+          );
+          // Retornar sucesso mas não processar novamente
+          return NextResponse.json({
+            success: true,
+            message: 'Webhook duplicado ignorado (já processado)',
+            isDuplicate: true,
+            cached: isCachedResponse,
+            cnj: responseData?.code
+          });
+        }
+
+        // Salvar dados completos no processo
         await prisma.processo.update({
-          where: { id: processo.id },
+          where: { id: juditRequest.processoId },
           data: {
             dadosCompletos: responseData,
             ultimaAtualizacao: new Date()
@@ -158,13 +215,13 @@ export async function POST(request: NextRequest) {
           // Mesclar com timeline existente
           if (timelineEntries.length > 0) {
             const mergeResult = await timelineService.mergeEntries(
-              processo.case.id,
+              targetCase.id,
               timelineEntries,
               prisma
             );
 
             console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Timeline atualizada:`, {
-              case_id: processo.case.id,
+              case_id: targetCase.id,
               new_entries: mergeResult?.added || 0,
             });
           }
@@ -176,7 +233,7 @@ export async function POST(request: NextRequest) {
             console.log(`${ICONS.PROCESS} [JUDIT Webhook] Iniciando processamento de ${responseData.attachments.length} anexos`);
 
             const attachmentResult = await processJuditAttachments(
-              processo.case.id,
+              targetCase.id,
               responseData,
               responseData.code, // cnj_code
               responseData.instance // instance
@@ -201,7 +258,7 @@ export async function POST(request: NextRequest) {
           // ================================================================
           // EXTRAIR TIPO DE PROCESSO AUTOMATICAMENTE
           // ================================================================
-          let mappedCaseType = processo.case.type; // Manter tipo atual por padrão
+          let mappedCaseType = targetCase.type; // Manter tipo atual por padrão
 
           // Tentar extrair do classifications (preferencial)
           const classificationType = extractCaseTypeFromJuditResponse(responseData);
@@ -215,28 +272,31 @@ export async function POST(request: NextRequest) {
               mappedCaseType = subjectType;
               console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo extraído de subject: ${mappedCaseType}`);
             } else {
-              console.warn(`${ICONS.WARNING} [JUDIT Webhook] Não foi possível mapear tipo automaticamente, mantendo ${processo.case.type}`);
+              console.warn(`${ICONS.WARNING} [JUDIT Webhook] Não foi possível mapear tipo automaticamente, mantendo ${targetCase.type}`);
             }
           }
 
           // Atualizar status do caso para 'enriched' (FASE 2 completa) e mudar status de UNASSIGNED → ACTIVE
+          // IMPORTANTE: Marcar este requestId como processado para evitar duplicação
           await prisma.case.update({
-            where: { id: processo.case.id },
+            where: { id: targetCase.id },
             data: {
               type: mappedCaseType, // ← AGORA ATUALIZA O TIPO AUTOMATICAMENTE!
               status: 'ACTIVE', // Muda de UNASSIGNED para ACTIVE quando JUDIT retorna dados
               onboardingStatus: 'enriched',
               enrichmentCompletedAt: new Date(),
               metadata: {
-                ...(processo.case.metadata as any),
+                ...(currentMetadata),
                 judit_data_retrieved: true,
                 judit_callback_received_at: new Date().toISOString(),
                 auto_mapped_case_type: mappedCaseType, // Log da mudança para auditoria
+                // NOVO: Registrar requestId como processado para idempotência
+                processed_webhook_request_ids: [...processedRequestIds, requestId],
               }
             }
           });
 
-          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${processo.case.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`);
+          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${targetCase.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`);
         }
       }
 

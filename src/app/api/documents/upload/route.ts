@@ -594,14 +594,15 @@ export async function POST(request: NextRequest) {
     // 19. FASE 2 - ENRIQUECIMENTO OFICIAL VIA JUDIT (Background Async)
     // Queue a background job to fetch official process data from JUDIT
     // This happens asynchronously - doesn't block the response
+    // IMPORTANTE: Passar caseId explicitamente para evitar ambiguidade na webhook
     let juditJobId: string | undefined;
     if (extractedProcessNumber) {
       try {
-        console.log(`${ICONS.ROCKET} [Onboarding] Enfileirando JUDIT para ${extractedProcessNumber}...`);
+        console.log(`${ICONS.ROCKET} [Onboarding] Enfileirando JUDIT para ${extractedProcessNumber} (Case: ${targetCaseId})`);
         const { jobId } = await addOnboardingJob(extractedProcessNumber, {
+          caseId: targetCaseId, // NOVO: Passar case ID explícito para webhook usar
           workspaceId,
           userId: user.id,
-          caseId: targetCaseId,
           priority: 5
         });
         juditJobId = jobId;

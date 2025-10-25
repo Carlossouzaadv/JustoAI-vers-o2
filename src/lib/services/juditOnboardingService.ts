@@ -123,12 +123,14 @@ const sleep = (ms: number): Promise<void> => {
 export async function performFullProcessRequest(
   cnj: string,
   finalidade: Finalidade = 'ONBOARDING',
-  workspaceId?: string
+  workspaceId?: string,
+  caseId?: string // Novo: case ID explícito para vincular com webhook
 ): Promise<ProcessRequestResult> {
   // Start operation timer
   const operation = logOperationStart(juditLogger, 'performFullProcessRequest', {
     cnj,
     finalidade,
+    caseId, // Log do case ID para auditoria
   });
 
   const startTime = Date.now();
@@ -141,7 +143,7 @@ export async function performFullProcessRequest(
     // ============================================================
     // NOTA: Polling foi removido! JUDIT envia dados via webhook.
 
-    const initResult = await initiateRequest(cnj, finalidade);
+    const initResult = await initiateRequest(cnj, finalidade, caseId);
     processoId = initResult.processoId;
     requestId = initResult.requestId;
 
@@ -250,7 +252,8 @@ export async function performFullProcessRequest(
 
 async function initiateRequest(
   cnj: string,
-  finalidade: Finalidade
+  finalidade: Finalidade,
+  explicitCaseId?: string // Novo: case ID explícito (prioritário)
 ): Promise<{ processoId: string; requestId: string }> {
   const juditClient = getJuditApiClient();
 
@@ -274,28 +277,46 @@ async function initiateRequest(
   // ================================================================
   // VINCULAR PROCESSO AO CASE SE EXISTIR
   // ================================================================
-  // Procurar por Case que tenha esse CNJ detectado
-  const associatedCase = await prisma.case.findFirst({
-    where: {
-      detectedCnj: cnj,
-    },
-  });
+  // IMPORTANTE: Se um caseId foi passado explicitamente, usar esse (evita ambiguidade)
+  let targetCaseId = explicitCaseId;
 
-  if (associatedCase && !associatedCase.processoId) {
-    // Vincular o Case ao Processo
-    await prisma.case.update({
-      where: { id: associatedCase.id },
-      data: {
-        processoId: processo.id,
+  if (!targetCaseId) {
+    // Fallback: Procurar por Case que tenha esse CNJ detectado
+    // (Apenas se não foi passado um caseId explícito)
+    const associatedCase = await prisma.case.findFirst({
+      where: {
+        detectedCnj: cnj,
       },
     });
 
-    juditLogger.info({
-      action: 'case_linked_to_processo',
-      cnj,
-      case_id: associatedCase.id,
-      processo_id: processo.id,
+    if (associatedCase) {
+      targetCaseId = associatedCase.id;
+    }
+  }
+
+  if (targetCaseId && !processo.case) {
+    // Vincular o Case ao Processo (se ainda não estiver vinculado)
+    const caseToUpdate = await prisma.case.findUnique({
+      where: { id: targetCaseId },
+      select: { processoId: true }
     });
+
+    if (caseToUpdate && !caseToUpdate.processoId) {
+      await prisma.case.update({
+        where: { id: targetCaseId },
+        data: {
+          processoId: processo.id,
+        },
+      });
+
+      juditLogger.info({
+        action: 'case_linked_to_processo',
+        cnj,
+        case_id: targetCaseId,
+        processo_id: processo.id,
+        explicit_case_id: !!explicitCaseId, // Log se foi explícito
+      });
+    }
   }
 
   // Montar payload da requisição COM OTIMIZAÇÕES DE API JUDIT
@@ -334,13 +355,14 @@ async function initiateRequest(
     throw new Error('JUDIT não retornou request_id');
   }
 
-  // Salvar registro da requisição no banco
+  // Salvar registro da requisição no banco COM CASE ID EXPLÍCITO
   await prisma.juditRequest.create({
     data: {
       requestId,
       status: response.status || 'pending',
       finalidade,
       processoId: processo.id,
+      caseId: targetCaseId, // NOVO: Armazenar case ID explícito para webhook usar
     },
   });
 
@@ -348,6 +370,7 @@ async function initiateRequest(
     action: 'request_saved_to_db',
     cnj,
     request_id: requestId,
+    case_id: targetCaseId, // Log do case ID armazenado
   });
 
   return {

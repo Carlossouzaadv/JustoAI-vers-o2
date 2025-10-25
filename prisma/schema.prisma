@@ -169,6 +169,7 @@ model Case {
   monitoredProcesses MonitoredProcess[]
   timelineEntries    ProcessTimelineEntry[]
   processo           Processo?             @relation(fields: [processoId], references: [id])
+  juditRequests      JuditRequest[]        @relation("JuditRequestCase")
 
   @@index([onboardingStatus, updatedAt])
   @@index([detectedCnj])
@@ -723,11 +724,17 @@ model JuditRequest {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  processoId String @map("processo_id")
+  processoId String  @map("processo_id")
   processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  // NOVO: Case explícito associado para evitar busca por CNJ ambígua
+  caseId     String? @map("case_id")
+  case       Case?   @relation("JuditRequestCase", fields: [caseId], references: [id], onDelete: SetNull)
 
   @@index([requestId])
   @@index([processoId, status])
+  @@index([caseId]) // Índice para busca rápida pelo case
+  @@index([requestId, caseId]) // Índice para validação de idempotência
   @@map("judit_requests")
 }
 
