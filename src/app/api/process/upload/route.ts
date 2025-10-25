@@ -15,6 +15,8 @@ import { TextCleaner } from '@/lib/text-cleaner';
 import { generatePreview, validatePreviewSnapshot } from '@/lib/services/previewAnalysisService';
 import { addOnboardingJob } from '@/lib/queue/juditQueue';
 import { getDocumentHashManager } from '@/lib/document-hash';
+import { extractPDFMetadata } from '@/lib/services/localPDFMetadataExtractor';
+import { updateCaseSummaryDescription } from '@/lib/services/summaryConsolidator';
 
 // ================================================================
 // VALIDATION SCHEMA
@@ -189,6 +191,31 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.CLEAN} [Upload] Texto limpo: ${cleanText.length} chars (redução: ${cleaningResult.reductionPercentage.toFixed(1)}%)`);
 
     // ============================================================
+    // 8.5 EXTRAIR METADATA DO DOCUMENTO
+    // ============================================================
+
+    console.log(`${ICONS.EXTRACT} [Upload] Extraindo metadata do documento...`);
+
+    let documentMetadata;
+    try {
+      documentMetadata = await extractPDFMetadata(cleanText, file.name, buffer);
+      console.log(`${ICONS.SUCCESS} [Upload] Metadata extraída:`, {
+        documentType: documentMetadata.documentType,
+        documentDate: documentMetadata.documentDate?.toISOString(),
+        confidence: documentMetadata.confidence
+      });
+    } catch (metadataError) {
+      console.warn(`${ICONS.WARNING} [Upload] Erro ao extrair metadata (continuando mesmo assim):`, metadataError);
+      documentMetadata = {
+        documentType: 'UNKNOWN',
+        documentTypeCategory: 'OTHER' as const,
+        description: `Documento: ${file.name}`,
+        confidence: 0.1,
+        courtLevel: 'UNKNOWN' as const
+      };
+    }
+
+    // ============================================================
     // 9. DETECTAR CNJ
     // ============================================================
 
@@ -265,7 +292,7 @@ export async function POST(request: NextRequest) {
         caseId: newCase.id,
         name: file.name.replace('.pdf', ''),
         originalName: file.name,
-        type: 'OTHER', // Será classificado depois
+        type: documentMetadata.documentTypeCategory as any, // Usar metadata extraída
         mimeType: file.type,
         size: file.size,
         url: tempPath, // TODO: substituir por URL S3
@@ -274,13 +301,29 @@ export async function POST(request: NextRequest) {
         cleanText,
         textSha: fileSha256,
         textExtractedAt: new Date(),
+        documentDate: documentMetadata.documentDate || undefined, // Data extraída do documento
+        metadata: documentMetadata, // Salvar metadata completa
         processed: true,
         ocrStatus: 'COMPLETED',
-        source_origin: 'USER_UPLOAD'
+        sourceOrigin: 'USER_UPLOAD'
       }
     });
 
     console.log(`${ICONS.SUCCESS} [Upload] Documento salvo: ${document.id}`);
+
+    // ============================================================
+    // 12.5 CONSOLIDAR RESUMO DO CASO
+    // ============================================================
+
+    console.log(`${ICONS.EXTRACT} [Upload] Consolidando resumo do caso...`);
+
+    try {
+      const consolidatedDescription = await updateCaseSummaryDescription(newCase.id);
+      console.log(`${ICONS.SUCCESS} [Upload] Resumo consolidado e salvo no caso`);
+    } catch (summaryError) {
+      console.warn(`${ICONS.WARNING} [Upload] Erro ao consolidar resumo (continuando mesmo assim):`, summaryError);
+      // Não falhar o upload por causa disso
+    }
 
     // ============================================================
     // 13. GERAR PREVIEW COM GEMINI FLASH (COM FALLBACK)

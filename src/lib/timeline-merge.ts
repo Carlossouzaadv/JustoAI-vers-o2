@@ -35,7 +35,91 @@ export class TimelineMergeService {
   private hashManager = getDocumentHashManager();
 
   /**
-   * Adiciona entradas à timeline com deduplicação automática
+   * Função de prioridade para ordenar fontes
+   * Fonte com maior prioridade = mais confiável
+   */
+  private getSourcePriority(source: TimelineEntry['source']): number {
+    const priorities: Record<TimelineEntry['source'], number> = {
+      'API_JUDIT': 10, // Fonte oficial - maior prioridade
+      'DOCUMENT_UPLOAD': 8, // Documento do processo
+      'AI_EXTRACTION': 6, // Extração por IA
+      'SYSTEM_IMPORT': 5, // Importação de sistema
+      'MANUAL_ENTRY': 3, // Entrada manual - menor prioridade
+    };
+    return priorities[source] || 0;
+  }
+
+  /**
+   * Mescla inteligentemente informações de múltiplas fontes
+   * Combina descrições e usa dados de melhor fonte
+   */
+  private mergeIntelligently(
+    existing: any,
+    newEntry: TimelineEntry
+  ): { merged: TimelineEntry; changed: boolean } {
+    const existingPriority = this.getSourcePriority(existing.source);
+    const newPriority = this.getSourcePriority(newEntry.source);
+
+    // Usar data da fonte com maior prioridade
+    const eventDate =
+      newPriority > existingPriority
+        ? newEntry.eventDate
+        : existing.eventDate;
+
+    // Usar tipo do evento da fonte com maior prioridade
+    const eventType =
+      newPriority > existingPriority
+        ? newEntry.eventType
+        : existing.eventType;
+
+    // Combinar descrições se forem diferentes
+    let description = existing.description;
+    const isDescriptionDifferent =
+      newEntry.description.toLowerCase() !== existing.description.toLowerCase();
+
+    if (isDescriptionDifferent && newEntry.description) {
+      // Adicionar descrição nova como referência adicional
+      description = `${existing.description} [${newEntry.source}: ${newEntry.description}]`;
+    }
+
+    // Usar maior confiança
+    const confidence = Math.max(
+      newEntry.confidence || 1.0,
+      existing.confidence || 1.0
+    );
+
+    // Mesclar metadados
+    const mergedMetadata = {
+      ...(existing.metadata || {}),
+      ...(newEntry.metadata || {}),
+      sources: [
+        ...(existing.metadata?.sources || [{ source: existing.source, date: existing.createdAt }]),
+        { source: newEntry.source, date: new Date(), description: newEntry.description }
+      ],
+      lastMerged: new Date().toISOString()
+    };
+
+    const merged: TimelineEntry = {
+      eventDate,
+      eventType,
+      description,
+      source: newPriority > existingPriority ? newEntry.source : existing.source,
+      sourceId: newEntry.sourceId || existing.sourceId,
+      metadata: mergedMetadata,
+      confidence
+    };
+
+    const changed =
+      merged.eventDate !== existing.eventDate ||
+      merged.eventType !== existing.eventType ||
+      merged.description !== existing.description ||
+      merged.source !== existing.source;
+
+    return { merged, changed };
+  }
+
+  /**
+   * Adiciona entradas à timeline com deduplicação automática E mesclagem inteligente
    */
   async mergeEntries(
     caseId: string,
@@ -46,6 +130,7 @@ export class TimelineMergeService {
 
     let newEntries = 0;
     let duplicatesSkipped = 0;
+    let mergedDuplicates = 0;
     const mergedEntries = [];
 
     for (const entry of entries) {
@@ -68,8 +153,46 @@ export class TimelineMergeService {
         });
 
         if (existingEntry) {
-          console.log(`${ICONS.WARNING} Entrada duplicada ignorada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`);
-          duplicatesSkipped++;
+          // Tentar mesclar inteligentemente ao invés de apenas descartar
+          const { merged, changed } = this.mergeIntelligently(existingEntry, entry);
+
+          if (changed) {
+            // Atualizar entrada existente com dados mesclados
+            const updatedEntry = await prisma.processTimelineEntry.update({
+              where: { id: existingEntry.id },
+              data: {
+                eventDate: merged.eventDate,
+                eventType: merged.eventType,
+                description: merged.description,
+                source: merged.source,
+                metadata: merged.metadata,
+                confidence: merged.confidence,
+                normalizedContent: this.hashManager.normalizeForTimeline(
+                  `${merged.eventType}_${merged.description}_${merged.eventDate.toISOString().split('T')[0]}`
+                )
+              }
+            });
+
+            mergedDuplicates++;
+            console.log(
+              `${ICONS.INFO} Entrada duplicada mesclada inteligentemente: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
+            );
+
+            mergedEntries.push({
+              id: updatedEntry.id,
+              eventDate: updatedEntry.eventDate,
+              eventType: updatedEntry.eventType,
+              description: updatedEntry.description,
+              source: updatedEntry.source,
+              confidence: updatedEntry.confidence
+            });
+          } else {
+            // Não houve mudanças na mesclagem
+            duplicatesSkipped++;
+            console.log(
+              `${ICONS.WARNING} Entrada duplicada sem mudanças: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
+            );
+          }
           continue;
         }
 
@@ -112,10 +235,12 @@ export class TimelineMergeService {
       where: { caseId }
     });
 
-    console.log(`${ICONS.SUCCESS} Timeline merge concluído: ${newEntries} novas, ${duplicatesSkipped} duplicatas, ${totalEntries} total`);
+    console.log(
+      `${ICONS.SUCCESS} Timeline merge concluído: ${newEntries} novas, ${mergedDuplicates} mescladas, ${duplicatesSkipped} ignoradas, ${totalEntries} total`
+    );
 
     return {
-      newEntries,
+      newEntries: newEntries + mergedDuplicates,
       duplicatesSkipped,
       totalEntries,
       mergedEntries

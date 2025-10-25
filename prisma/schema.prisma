@@ -219,6 +219,8 @@ model CaseDocument {
   analysisKey       String?            // Chave para cache de análise
   workerId          String?            // ID do worker que processou
   costEstimate      Float?             // Estimativa de custo da análise
+  documentDate      DateTime?          @map("document_date") // Data extraída do documento (não data de upload)
+  metadata          Json?              // Metadados estruturados do documento (tipo, partes, juiz, etc)
 
   // CAMPOS PARA JUDIT ATTACHMENTS
   juditAttachmentUrl String?           @map("judit_attachment_url") @db.VarChar(500)
