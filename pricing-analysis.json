@@ -1,0 +1,107 @@
+{
+  "realConsumption": {
+    "period": "2025-10-17 a 2025-10-27",
+    "days": 10,
+    "totalRequests": 616,
+    "totalCost": 352.8,
+    "completedAnalyses": 48,
+    "attachmentsDownloaded": 568
+  },
+  "constants": {
+    "avgCostPerRequest": 0.5727272727272728,
+    "avgAttachmentsPerAnalysis": 11.833333333333334,
+    "requestMultipliers": {
+      "analiseContinua": 12,
+      "processMonitoring": 2,
+      "relatorios": 5
+    }
+  },
+  "plans": {
+    "A": {
+      "name": "Starter",
+      "users": 2,
+      "processosMonitorados": 100,
+      "analisesOnboarding": 25,
+      "analisesMonthly": 5,
+      "costs": {
+        "planName": "Starter",
+        "onboardingCost": "286.36",
+        "recurringCostPerMonth": "148.91",
+        "estimatedYearlyCost": "1786.91",
+        "requests": {
+          "onboarding": 500,
+          "recurring": 260
+        }
+      },
+      "pricing": {
+        "margin50": {
+          "monthlyPrice": "297.82",
+          "monthlyProfit": "148.91",
+          "yearlyPrice": "3573.84",
+          "yearlyProfit": "1786.92"
+        },
+        "margin60": {
+          "monthlyPrice": "372.27",
+          "monthlyProfit": "223.36",
+          "yearlyPrice": "4467.30",
+          "yearlyProfit": "2680.38"
+        },
+        "margin70": {
+          "monthlyPrice": "496.37",
+          "monthlyProfit": "347.46",
+          "yearlyPrice": "5956.40",
+          "yearlyProfit": "4169.48"
+        },
+        "margin80": {
+          "monthlyPrice": "744.55",
+          "monthlyProfit": "595.64",
+          "yearlyPrice": "8934.60",
+          "yearlyProfit": "7147.68"
+        }
+      }
+    },
+    "B": {
+      "name": "Professional",
+      "users": 5,
+      "processosMonitorados": 300,
+      "analisesOnboarding": 75,
+      "analisesMonthly": 15,
+      "costs": {
+        "planName": "Professional",
+        "onboardingCost": "859.09",
+        "recurringCostPerMonth": "446.73",
+        "estimatedYearlyCost": "5360.73",
+        "requests": {
+          "onboarding": 1500,
+          "recurring": 780
+        }
+      },
+      "pricing": {
+        "margin50": {
+          "monthlyPrice": "893.46",
+          "monthlyProfit": "446.73",
+          "yearlyPrice": "10721.52",
+          "yearlyProfit": "5360.76"
+        },
+        "margin60": {
+          "monthlyPrice": "1116.83",
+          "monthlyProfit": "670.10",
+          "yearlyPrice": "13401.90",
+          "yearlyProfit": "8041.14"
+        },
+        "margin70": {
+          "monthlyPrice": "1489.10",
+          "monthlyProfit": "1042.37",
+          "yearlyPrice": "17869.20",
+          "yearlyProfit": "12508.44"
+        },
+        "margin80": {
+          "monthlyPrice": "2233.65",
+          "monthlyProfit": "1786.92",
+          "yearlyPrice": "26803.80",
+          "yearlyProfit": "21443.04"
+        }
+      }
+    }
+  }
+}

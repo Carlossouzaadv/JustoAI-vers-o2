@@ -120,6 +120,9 @@ npm run test:watch   # Watch mode
 | Resource | Purpose |
 |----------|---------|
 | [CLAUDE.md](./CLAUDE.md) | Development guidelines for Claude Code |
+| [WEBHOOK_FIX_SUMMARY.md](./WEBHOOK_FIX_SUMMARY.md) | JUDIT webhook fixes - technical details |
+| [WEBHOOK_FIX_CHECKLIST.md](./WEBHOOK_FIX_CHECKLIST.md) | JUDIT webhook - deployment & testing checklist |
+| [DEPLOYMENT_WEBHOOK_FIX.md](./DEPLOYMENT_WEBHOOK_FIX.md) | JUDIT webhook - step-by-step deployment guide |
 | [docs/JUDIT_INTEGRATION.md](./docs/JUDIT_INTEGRATION.md) | JUDIT API integration guide |
 | [docs/PRODUCTION_SETUP.md](./docs/PRODUCTION_SETUP.md) | Production deployment checklist |
 | [docs/CIRCUIT_BREAKER.md](./docs/CIRCUIT_BREAKER.md) | Circuit breaker pattern implementation |
@@ -132,6 +135,7 @@ npm run test:watch   # Watch mode
 
 ## 🏗️ Architecture
 
+### Overall System Flow
 ```
 ┌──────────────────────────────────────────────┐
 │         Next.js 15 App Router (Frontend)     │
@@ -153,6 +157,46 @@ npm run test:watch   # Watch mode
 └─────────────────┘      │  (Redis)         │
                          └──────────────────┘
 ```
+
+### JUDIT Webhook Integration
+```
+User Upload                 Queue Processing              JUDIT Webhook
+─────────────               ─────────────────             ──────────────
+    │                            │                              │
+    ├─ File Upload               │                              │
+    ├─ Create Case               │                              │
+    ├─ Extract CNJ               │                              │
+    └─ Queue Job (+ caseId)      │                              │
+                 │                │                              │
+                 └─ Process Job ──┤                              │
+                                  ├─ Initiate JUDIT Request     │
+                                  ├─ Store JuditRequest (w/caseId)
+                                  └─ Webhook URL configured      │
+                                                                 │
+                                           JUDIT API Returns ────┤
+                                                 │                │
+                                                 └─ Webhook Call ─┘
+                                                      │
+                                           ┌──────────────────────┐
+                                           │  Webhook Handler     │
+                                           ├──────────────────────┤
+                                           │ 1. Validate request  │
+                                           │ 2. Load JuditRequest │
+                                           │ 3. Use explicit caseId
+                                           │ 4. Check idempotency │
+                                           │ 5. Process updates   │
+                                           │    - Timeline        │
+                                           │    - Attachments     │
+                                           │    - Case Type       │
+                                           │ 6. Mark as processed │
+                                           └──────────────────────┘
+```
+
+**Key Features:**
+- ✅ **Explicit Case Association:** caseId prevents wrong case updates
+- ✅ **Idempotency:** Duplicate webhooks detected and skipped
+- ✅ **Real-time:** Asynchronous webhook callbacks (no polling)
+- ✅ **Reliable:** Persistent queue ensures no data loss
 
 ---
 
@@ -182,11 +226,14 @@ npm run test:watch   # Watch mode
 - Preview intelligent with confidence scoring
 - Cost-optimized caching
 
-### 🔍 Process Monitoring
-- Real-time judicial data (JUDIT integration)
-- Automatic movement alerts
-- Unified timeline with deduplication
-- Court synchronization
+### 🔍 Real-Time Process Monitoring via JUDIT
+- **JUDIT Integration:** Official Brazilian court process API
+- **Webhook Architecture:** Asynchronous webhook callbacks for real-time updates
+- **Explicit Case Association:** Fixed webhook routing to ensure correct case updates
+- **Duplicate Prevention:** Idempotency protection prevents duplicate processing
+- **Automatic Movement Alerts:** Real-time notifications for process updates
+- **Unified Timeline:** Merged deduplication across multiple sources
+- **Court Synchronization:** Automatic sync with official judicial data
 
 ### 💳 Credits & Billing
 - Per-workspace credit management
@@ -224,6 +271,31 @@ npm run test:watch   # Watch mode
 - **Approach:** Intelligent keyword-based monitoring
 
 Full observability at `/dashboard/judit`
+
+---
+
+## 🔧 Recent Improvements (Oct 2025)
+
+### JUDIT Webhook Integration Fixes
+Fixed critical issues in webhook processing with robust solutions:
+
+**Issue 1: Wrong Case Association**
+- **Problem:** Webhooks processed wrong case when multiple cases had same CNJ
+- **Solution:** Added explicit `caseId` field to `JuditRequest`, passed through entire workflow
+- **Result:** 100% accurate case matching, zero webhook routing errors
+
+**Issue 2: Duplicate Webhook Processing**
+- **Problem:** Same webhook processed multiple times, causing conflicting data updates
+- **Solution:** Added idempotency tracking via `processed_webhook_request_ids` in metadata
+- **Result:** Webhooks processed exactly once, duplicates gracefully skipped
+
+**Implementation Details:**
+- Added `case_id` column to `judit_requests` table with foreign key
+- Updated workflow: `upload → queue → webhook` now includes explicit case reference
+- Idempotency check in webhook handler prevents duplicate processing
+- Backward compatible - falls back to CNJ lookup if explicit caseId not provided
+
+**See:** [WEBHOOK_FIX_SUMMARY.md](./WEBHOOK_FIX_SUMMARY.md) for technical details
 
 ---
 

@@ -1,0 +1,6181 @@
+{
+  "total": 616,
+  "byOrigin": {
+    "api": 616
+  },
+  "bySearchType": {
+    "lawsuit_attachment": 568,
+    "lawsuit_cnj": 48
+  },
+  "byResponseType": {
+    "attachment": 568,
+    "lawsuit": 48
+  },
+  "withAttachments": 48,
+  "byStatus": {
+    "completed": 616
+  },
+  "totalEstimatedCost": 352.8000000000021,
+  "requests": [
+    {
+      "id": "76ca99ff-2761-41eb-af96-f18776d191d8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.595Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6cff08e5-318b-4cb2-b851-11d834b38dfd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.519Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7b9b3b78-ccb6-44a6-9305-a745cb39ffc0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.517Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8328affd-e58d-4f1f-8780-913d3c35fd17",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.387Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2b17ef69-0df1-419a-a058-1bd7637d8864",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.316Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b9f72563-5cfa-4bc2-8552-0711fda47fad",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.315Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f45b6e44-4e44-4aa3-b190-8f096e2fb7ce",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.311Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f6dbf755-08d4-46be-9771-0f86265b3296",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.305Z",
+      "cost": 0.3
+    },
+    {
+      "id": "813693ea-52d9-4e88-a9a4-2fcdb4fa16ff",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.303Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7749b3d0-d73c-4d6a-bf35-205b3097163d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.298Z",
+      "cost": 0.3
+    },
+    {
+      "id": "60ff791f-f078-45c2-ba6b-18cc9615b4ba",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.273Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6093ed42-3541-4dfc-8122-165d425ace5d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.229Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c91e9795-5000-4cd0-aaa2-6ab13f4d5668",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.226Z",
+      "cost": 0.3
+    },
+    {
+      "id": "86b13bb1-45f4-45d4-bf0c-9c0fce80647b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.214Z",
+      "cost": 0.3
+    },
+    {
+      "id": "510464a8-3076-4ee5-9191-8c5cab23d22d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.213Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fd59e3b1-feb6-4df6-b950-be7a1cb7686b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.212Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0d2d2758-f6c6-464c-b95e-d4332831da24",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.205Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bfc1dca6-c351-465d-a853-ab0a7ce4b69e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.205Z",
+      "cost": 0.3
+    },
+    {
+      "id": "030d4bae-1fd5-49f3-b05d-4c6a8cd66e41",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.199Z",
+      "cost": 0.3
+    },
+    {
+      "id": "88be962c-3c95-40bb-9a8b-d6c56613903d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.198Z",
+      "cost": 0.3
+    },
+    {
+      "id": "75009448-359c-4c22-9e91-8ffe79843027",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.197Z",
+      "cost": 0.3
+    },
+    {
+      "id": "585e5d0f-eb64-4bcc-9d62-747493156c1e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.195Z",
+      "cost": 0.3
+    },
+    {
+      "id": "322c4cb4-0642-4c39-9911-c2a73155a89f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.193Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d6334c29-d0dd-475b-bf34-de6b3d7666f2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.174Z",
+      "cost": 0.3
+    },
+    {
+      "id": "951840b9-2bc5-4cbd-af10-c55f4de2e751",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.171Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d6322033-dd71-4e3c-85df-745be12462e5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.148Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e25ff3e2-d998-4fae-b126-abb42017e271",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.143Z",
+      "cost": 0.3
+    },
+    {
+      "id": "05a26d01-1d7c-4862-8baf-95b1f4fbc831",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:53:09.057Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c3b12be3-2db6-4716-8c48-c2d77b1c60ca",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:51:15.230Z",
+      "cost": 3.8
+    },
+    {
+      "id": "c7e1c202-950a-4f5a-864c-3b74718d87cd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:56.152Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e2b05ba9-40be-4b60-9c5f-be23d48ac571",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:56.146Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6248b519-c044-49cb-92d6-e6454c25a2c8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:56.141Z",
+      "cost": 0.3
+    },
+    {
+      "id": "39997833-6d5b-4e71-adb1-9916981ea042",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:56.141Z",
+      "cost": 0.3
+    },
+    {
+      "id": "da1a12ed-74e1-4614-be9f-5dd65e7ee8f8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:56.129Z",
+      "cost": 0.3
+    },
+    {
+      "id": "26c96fee-88e2-4697-a43c-4c3f44f8482a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:39.695Z",
+      "cost": 0.3
+    },
+    {
+      "id": "71fa7368-a643-4626-86a1-7668ba6ce4d8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:39.695Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6fdef184-b201-46cc-b64e-5e595675927a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:39.694Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1bfa17a4-e233-4995-9757-f11519db0ca4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:39.674Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7026eaec-1eb6-490b-ac65-1f9ee8d14af2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:07:39.556Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e7e7fa1f-a57f-4b1a-9a3f-80e88727dd11",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T18:06:59.557Z",
+      "cost": 3.8
+    },
+    {
+      "id": "23600bf1-6e5a-482d-aa88-6543f0ed8e16",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T14:56:41.377Z",
+      "cost": 3.8
+    },
+    {
+      "id": "d949bc8f-5748-4189-b9f1-190f95edfe23",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.800Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d7cfd425-6640-47c2-b9f6-2e05887cf86c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.796Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f6a48856-36c9-4e92-aa45-c9153d9e0d58",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.785Z",
+      "cost": 0.3
+    },
+    {
+      "id": "72c75db7-47f9-47a5-ac03-38e6bdb7640f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.779Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e0a27ae1-eac0-4df8-8f62-9a3be8a70430",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.683Z",
+      "cost": 0.3
+    },
+    {
+      "id": "38536fa8-8c48-493c-9aad-3c4e06327938",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.658Z",
+      "cost": 0.3
+    },
+    {
+      "id": "09482862-a7f3-41b4-bcd0-1facb7a013ce",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.538Z",
+      "cost": 0.3
+    },
+    {
+      "id": "129253ce-5025-4567-b059-f9ab7794f788",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.535Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4bb23f99-5d7d-4107-a20c-1c1a138ee132",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.530Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b0641f30-6e91-45a6-87a4-6cbb3772a39e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.528Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d4935416-78a9-43f6-9e2d-011b8cb96119",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.527Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6d3e4677-15c8-420d-a770-5c15122de889",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:18:17.403Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2516096c-b424-4b61-94cc-68308604a079",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T05:16:35.547Z",
+      "cost": 3.8
+    },
+    {
+      "id": "d5bb9352-d950-4cfc-a0fd-75494fa3ad48",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.792Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c1065f58-02b1-44e8-a552-825dc743cec5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.783Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e1ab2216-8d3d-4b18-b0e4-921e81cdafa3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.713Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7e127298-af33-446d-aa8e-6a17290958a4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.659Z",
+      "cost": 0.3
+    },
+    {
+      "id": "22f2f8b3-cd30-4669-b812-1c07d60f6794",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.188Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d1e00055-c94c-4f94-8a4d-0cfa667d3cec",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.173Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0ef7afe3-0893-4a1e-9df0-5be2b6e575dc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.075Z",
+      "cost": 0.3
+    },
+    {
+      "id": "811d89ef-5c13-44ce-9eae-bcca072cb628",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:12.067Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fcf95622-9200-48a2-8f7d-57a502f6ab95",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.789Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cd39a329-0c46-47ec-b8bd-cc14cac00f46",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.584Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ca86ddf6-20ad-4690-9907-544a58be4064",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.554Z",
+      "cost": 0.3
+    },
+    {
+      "id": "57625aba-03e5-44bf-ad1d-7151f6e3e1e7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.547Z",
+      "cost": 0.3
+    },
+    {
+      "id": "71edcee1-af92-4812-b58b-e87ed779a323",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.528Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7b541530-183d-455c-9d79-5fd00434bb25",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.523Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5535fc7f-6b9a-4234-8e9e-85a815b8dae0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.522Z",
+      "cost": 0.3
+    },
+    {
+      "id": "29ed42c1-d038-46cd-a079-3cff0da9ed05",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.517Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7fcfe099-1ab0-43df-8b9a-340af91abedb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.506Z",
+      "cost": 0.3
+    },
+    {
+      "id": "42a91b1f-4a2e-465b-bb14-ad561ac3a77c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.496Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2a154d97-3e17-4c9a-8821-e3d064314c89",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.428Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f2e85e95-50fa-416b-b6e5-5c5079b8fd33",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.416Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d54b205d-8fc9-4da1-8e6b-ecac67c1abb9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.414Z",
+      "cost": 0.3
+    },
+    {
+      "id": "82ac03b6-25ad-4ccb-ae4f-6a14b86ec178",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.393Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c7d01501-7ba3-4744-afab-0c13cbd06096",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.379Z",
+      "cost": 0.3
+    },
+    {
+      "id": "47b2bbad-b59c-401b-9c26-c3bc6710ffaf",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.348Z",
+      "cost": 0.3
+    },
+    {
+      "id": "53a9a01b-d214-423e-b5ab-9adafb5ce6ca",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.307Z",
+      "cost": 0.3
+    },
+    {
+      "id": "52892d07-1af6-4c97-99e6-10d8af81a2fc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.292Z",
+      "cost": 0.3
+    },
+    {
+      "id": "23a4efa3-9a20-4396-b2d2-433cf732c737",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.288Z",
+      "cost": 0.3
+    },
+    {
+      "id": "56f16751-ed23-4877-91fe-a724d24b25a8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.176Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8d6eb36c-5ddd-46c8-b72d-743d758acced",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.136Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3e2cd5f1-a0c2-4595-aea2-5e34c0042811",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.129Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8230fe60-9274-4b3f-9ee0-25f6b5658c44",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.125Z",
+      "cost": 0.3
+    },
+    {
+      "id": "395ded52-643f-4db0-821a-561c9e6a44cc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.113Z",
+      "cost": 0.3
+    },
+    {
+      "id": "723abaf0-65d2-41cc-98da-74bd3688088d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.111Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0968b101-f5ca-4a38-beb0-6653feba4837",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.103Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c9aee857-35c0-44b1-b63d-e8702c44e527",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.081Z",
+      "cost": 0.3
+    },
+    {
+      "id": "077b807f-3be8-4b9d-8e6c-024adc8f2104",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.080Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b79f6989-b967-4576-9bfc-c968cff93572",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.066Z",
+      "cost": 0.3
+    },
+    {
+      "id": "762e7757-1e32-4401-8303-9ea357351497",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.064Z",
+      "cost": 0.3
+    },
+    {
+      "id": "135fbe3c-10ea-4274-bd32-f57cf7b57799",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.013Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3dc2db8e-cf51-4a5e-89da-2fdf9c2cfc03",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.005Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bd8da140-ef7e-4da7-8a32-9326b1cc1872",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:11.000Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f3c5ea39-35b4-4a17-9135-dedfc7ce05bf",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.998Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d20cfd86-d63b-4121-abf5-dcafe95aa25b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.993Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4e40075d-bb25-45c1-9b56-c8c6f8cce7e2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.992Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3e1991d3-8525-4b5d-bf59-d730841c1efc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.964Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a342e4c0-8e1f-4113-bd09-ad4ae04b2998",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.960Z",
+      "cost": 0.3
+    },
+    {
+      "id": "564fc0a7-b811-4ecf-87bc-46ec61411169",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.957Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b374da5c-e441-4e87-8de3-222ea7af17cd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:56:10.937Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6adcbe0f-67de-471b-9e14-a0cbcf73d106",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:54:43.968Z",
+      "cost": 3.8
+    },
+    {
+      "id": "ed0c1515-2058-4b69-a375-7d48bfb7f066",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.338Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f80f1ad0-fcb6-48f8-aa53-8a82c6ba8501",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.333Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f529fe40-016c-4e4d-beee-171cb15de1a2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.326Z",
+      "cost": 0.3
+    },
+    {
+      "id": "197cb39a-ad15-42f0-a142-0e1e60e79923",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.323Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c551ee63-731a-4b1f-9947-3ea29be72bf8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.318Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c505fb81-922e-4468-bf47-a8dad42d2d28",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.310Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1c3ac23e-28e8-4985-8fc1-5826ff01adbb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.213Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8c3a69cb-362f-4045-b947-f77ceed42516",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.197Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c6257302-2627-4599-b964-da126f37f601",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.176Z",
+      "cost": 0.3
+    },
+    {
+      "id": "102f01bb-9f2f-43e3-9722-e29e45315ba4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.166Z",
+      "cost": 0.3
+    },
+    {
+      "id": "84d1a528-db49-47a0-a4e7-4a20c0f76f7c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.090Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ea0808c6-5a73-4bf8-aa16-72241b4c01c9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.077Z",
+      "cost": 0.3
+    },
+    {
+      "id": "30acd08f-d809-4d19-9f38-24171c36569c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:58.070Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0e3b00b4-650a-4f12-9f61-127e541e45e7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.987Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bc712323-7a08-4ca5-9d87-59fd572ee37d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.979Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d38aa387-f31a-4267-a8e6-bf9cd4871c5e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.875Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5294575d-e1fa-4452-ba6e-c864f0714afd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.874Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fca1fdff-9311-4c01-8bc6-5faebc1af587",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.687Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7608f014-cad5-4f81-9cf5-a037927112ab",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.675Z",
+      "cost": 0.3
+    },
+    {
+      "id": "41fc6db7-b835-44a2-9ed3-3e5067f72651",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.669Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0cfc5915-bd4f-4748-a165-28e16a0cdf3d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.577Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b39c489f-0249-4225-aa8a-e0441dc0fa45",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.575Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2ca2c464-a14e-47bf-b295-667746517dda",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.570Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3574d604-82ae-4edc-9261-f2801c440bab",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.521Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fc08f819-fff2-4d53-81e5-773145d18276",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.513Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c2dfb4c5-8932-433e-b057-60c9da9dfd9c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.505Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fcb587ef-e693-41c3-b76f-b7bd5178b99e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.494Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fa544e1c-b1cc-4399-a9a3-0a878bbd34c0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.394Z",
+      "cost": 0.3
+    },
+    {
+      "id": "49ce0239-ed9e-4b8a-a72c-e79165c34c8a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.106Z",
+      "cost": 0.3
+    },
+    {
+      "id": "15ebf225-4662-4de1-9e82-d21b592aa07e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.081Z",
+      "cost": 0.3
+    },
+    {
+      "id": "932df1c1-0b40-4f89-8a1f-54d3a9111a22",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.033Z",
+      "cost": 0.3
+    },
+    {
+      "id": "18eccfd5-bea8-4f8f-bc3d-1d08544ea99c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.024Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2185ce17-6be3-4c05-9357-e55a099471ce",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.014Z",
+      "cost": 0.3
+    },
+    {
+      "id": "01eee7f1-1591-4b8c-8427-ef0ab79941ec",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:57.000Z",
+      "cost": 0.3
+    },
+    {
+      "id": "43938e32-67d5-4a90-b2b4-db62a619ae0d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.980Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4dd34984-93dc-49da-998d-cf80d1b00c42",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.973Z",
+      "cost": 0.3
+    },
+    {
+      "id": "05df42fa-a1d5-4499-adfe-6269b3dd609d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.965Z",
+      "cost": 0.3
+    },
+    {
+      "id": "13a6497d-9d3a-4d74-bee6-0d4500fdbe80",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.961Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1cfc4f13-39cf-4f2a-b92b-d8a5aa737d88",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.958Z",
+      "cost": 0.3
+    },
+    {
+      "id": "11ba37db-4fcd-49d9-9866-1203d4b965fa",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.949Z",
+      "cost": 0.3
+    },
+    {
+      "id": "250e8e6c-f907-4c0a-b486-303f606094fe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.942Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d1bd4a13-b13d-4739-b7a4-ded790f9276c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.938Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8ae179fb-8719-4fa5-8752-0eadfa98785b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.928Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2e231ae9-873f-46dd-ad87-af2d005fd5fd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.925Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2fc0bbaf-fa33-4c5f-b23d-e2609a6c8dd7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.916Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cb12f36b-dcad-4b57-adc3-99ef7ac8ed96",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.901Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0d9f416a-14d8-419c-ba97-1cd787b371ae",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.897Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2700a64b-bc20-439e-ab36-c099b73bfd2c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.846Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f05c5cc5-a14f-4d2d-87d4-31ce67416190",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.842Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f1387ae4-1155-4030-a35d-82703bc59054",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.838Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a53d42c8-7bf6-4d1f-88f9-a49a57fa248d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.838Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d9322693-eaf6-4071-8607-f688282847b7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.835Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d49a245b-ea51-45a9-bd6f-b4885dd7799b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.808Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9d392616-306e-4410-a71a-29a24af2f279",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.734Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ebda2b63-c055-49b2-9e9d-d09457c8de97",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.717Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a7e63cba-f357-49e6-8fe0-8f477ccb43cd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:45:56.708Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6e4211a7-f0b0-4a58-bc2d-d04e9e48b4a9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:53.198Z",
+      "cost": 0.3
+    },
+    {
+      "id": "58f1bb69-6a9c-48c9-a548-7cf5082580c0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.976Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3fbcc269-ac1d-4c9d-bdf1-73dadcb37c73",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.866Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1dc10643-7d0f-4f19-84ca-d8f650f5ed29",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.524Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d4bbe06a-28f1-4b27-81bf-c4e5afeb9cfe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.522Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a2f6d948-f5b3-4407-a35c-3f003159b0c9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.514Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a8042b4d-b6f4-4960-9c6b-47e830fd4f5f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.506Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f3db916b-9351-4c93-a7be-d33c09110437",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.499Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8f162d00-6d2d-43d3-bdde-df5af331d631",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.474Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a05a164a-6be4-4482-a8fb-d016aca15f1d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.405Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3d398508-611c-40a4-bb1d-e139343e22ae",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.400Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7da1f23f-88c4-4f70-9ca6-7ef37bd19f77",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.392Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e7d45e8f-4ce5-4dd1-95f5-e27fe23d3d66",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.389Z",
+      "cost": 0.3
+    },
+    {
+      "id": "faef529e-afd5-4e89-84eb-716315201d46",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.389Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ffe47b73-6a83-4c1a-a1ce-312f5aec7a19",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.366Z",
+      "cost": 0.3
+    },
+    {
+      "id": "46287a90-8d93-4229-82c2-47f416ef285a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.346Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a4a6d4a5-fbe2-44d7-bcfd-d87d3fa5b704",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.337Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4e33363c-a593-46a2-99ee-9acc28baeb1b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.336Z",
+      "cost": 0.3
+    },
+    {
+      "id": "25d2cb19-6b5e-404f-af47-2049b97fe100",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.334Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3e2740ce-0398-4a87-ad4d-9916b136ff07",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.333Z",
+      "cost": 0.3
+    },
+    {
+      "id": "983ff3a4-ec91-44e5-8563-80d7bfabdcc3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.331Z",
+      "cost": 0.3
+    },
+    {
+      "id": "786a755f-50ba-482d-8dbf-09d6fc43007e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.326Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4ab19062-d136-4b16-8416-25e277d47f99",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.324Z",
+      "cost": 0.3
+    },
+    {
+      "id": "82a9fab5-e55b-401c-bbc2-340d11eb2193",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.316Z",
+      "cost": 0.3
+    },
+    {
+      "id": "52f01d67-6cda-4e80-a764-cf991db5da42",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.249Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9c3880ba-57ec-4a93-bae5-a52f56a07f1d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.212Z",
+      "cost": 0.3
+    },
+    {
+      "id": "77144cf8-cede-47f0-bafb-0f7c556b1cf5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.205Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0f9fb56b-fa14-41d7-9ad1-ebc382116056",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:27:52.199Z",
+      "cost": 0.3
+    },
+    {
+      "id": "34ab9644-4ef7-4316-94dd-d800700b7345",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:26:12.866Z",
+      "cost": 3.8
+    },
+    {
+      "id": "be17c964-f3fa-4ab8-ad7c-227161d6447a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.511Z",
+      "cost": 0.3
+    },
+    {
+      "id": "eda2cac5-94b5-4545-a7b5-0efffd447ee0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.475Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8cd076b3-c99b-4bb8-84f0-207c6b6c99ab",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.464Z",
+      "cost": 0.3
+    },
+    {
+      "id": "83c79542-1c71-4d36-b247-d182ccec3867",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.438Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b09a57e1-1d38-4e93-a61d-87e9a5125908",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.375Z",
+      "cost": 0.3
+    },
+    {
+      "id": "dbdc2813-99dd-43e2-9986-ec9a580ddc48",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.320Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e38bf835-92eb-4186-9881-e04a9c2bc712",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.318Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c286b2f8-1caf-4ab9-83cd-ce74775fd1c2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.314Z",
+      "cost": 0.3
+    },
+    {
+      "id": "eda21df1-cfc8-4c31-b114-b110cbd7c6b9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.310Z",
+      "cost": 0.3
+    },
+    {
+      "id": "53af4f98-5c38-48cd-8f5c-1f6bed6717a5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.301Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ba71399b-9b7a-4caf-babf-779fadaae8f7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.288Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e33410b5-2568-4609-b969-069f531e8d35",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.280Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ec9349cb-dfe0-4455-8f43-19b55305829c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.277Z",
+      "cost": 0.3
+    },
+    {
+      "id": "69e32104-c4f7-46dc-98bc-a609f8cf04b6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.259Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c70fc6e7-6245-49b1-952e-bda32c6f4300",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.253Z",
+      "cost": 0.3
+    },
+    {
+      "id": "04955210-6ef7-4bdf-9bd7-17a849549ae6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.247Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4bcee924-fc9d-4e46-a366-5d6d5cd32e21",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.239Z",
+      "cost": 0.3
+    },
+    {
+      "id": "dd7a4f63-f64a-46ec-a3c0-619f30e29ce1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.234Z",
+      "cost": 0.3
+    },
+    {
+      "id": "671c4d00-0ca9-4cfa-95fb-521d8c6bdcf6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.226Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f2047095-e83a-4550-ba5b-60b0a2519b10",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.225Z",
+      "cost": 0.3
+    },
+    {
+      "id": "37d91722-1f38-480e-aff6-139522411c06",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.222Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f4a6fb2f-42d5-46a9-b6b9-996c2c806ddc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.214Z",
+      "cost": 0.3
+    },
+    {
+      "id": "24477937-9c57-44b4-a813-61c7b6dc8f24",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.213Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fe148f32-2bdd-46c5-97b4-9c099bfc9a42",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.209Z",
+      "cost": 0.3
+    },
+    {
+      "id": "282f351c-b8c9-47e7-8a80-e57b23ec9b22",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.208Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e165dee4-04ee-41a1-a18c-930407e9d3b5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.197Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1ebf12f9-a21e-46f5-baa9-4b88a07827cd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.187Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0cc215c7-706c-4975-91e2-3a57b695eca6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.187Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ddfcc337-da93-440a-a7d3-4cfcae55ee2d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.178Z",
+      "cost": 0.3
+    },
+    {
+      "id": "01db7fbb-cc27-4937-8112-befdb093e291",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.172Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5fca28bf-2e03-4f88-995a-7dfc7c3ddc1c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.170Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cf73a63c-185f-4ac3-9151-60080d04fd06",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.167Z",
+      "cost": 0.3
+    },
+    {
+      "id": "26bbe2f4-e8d9-4bf2-916c-fae51f776bab",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.163Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d8d3a729-63fb-4620-9a70-8a3758d8cc08",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.157Z",
+      "cost": 0.3
+    },
+    {
+      "id": "65b926f9-5909-4bc0-af1b-737e6079d80f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.151Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d645f506-b9e6-4d9b-9028-13df392399b5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.150Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2741cee1-8c66-4b1a-8855-5bb09fd68bed",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.148Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2ce3f63f-54aa-4f8d-8147-5b652958bea9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.141Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d660066d-3aa5-4571-aa84-aba075bbdb3a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.140Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3e21caee-5c97-4f0f-9892-19e561804a3a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.140Z",
+      "cost": 0.3
+    },
+    {
+      "id": "76b2aede-a29a-44cf-9c05-c0c734e2198c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.137Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cf302b9a-c608-460f-a106-c1cc9af55bac",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.136Z",
+      "cost": 0.3
+    },
+    {
+      "id": "07330f2c-5574-4b5d-878a-963b5696602e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.134Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e6a34cfe-a95f-401b-9fc8-24d4bb527907",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.126Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4d6aa5af-bfef-4b3c-9477-80764de7e021",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.124Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c9e65001-390d-4b67-8bec-c822c2878101",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.123Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e6ef5d5f-e75e-481a-a782-7719d91fea78",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.118Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7425f859-2d31-4f69-9e3c-10761d2f645d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.109Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d22cbcb9-7b3d-498c-9461-1bddc7b5cf9b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.099Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cef27bee-48f4-45eb-b1b6-5125fc7004bf",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.089Z",
+      "cost": 0.3
+    },
+    {
+      "id": "82e86592-047b-41e9-8841-29a4d406f835",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.084Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fbf1757b-3598-49eb-af6f-44c5abb42afe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.080Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3a652083-9cdd-47b6-90d4-e51110cce3f1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.057Z",
+      "cost": 0.3
+    },
+    {
+      "id": "10ce8295-5235-44d8-b4e6-f8aa4508cc38",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.048Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e9ed733a-a840-4f08-bc00-32f3d1e8bdf6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.042Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8adf5479-4e86-40bd-9f92-4b3dd8cbacd6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:16:20.031Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8abf235a-4c72-422a-bb13-5e71d0a69840",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:06.073Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0c3460d3-9447-494f-b3c8-38e6fead0122",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:06.024Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fe2d52df-562a-422c-a263-25e601cb033d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:06.017Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4b7a962f-b659-413a-bc47-d667457d197b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:06.003Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d87cd827-72c3-4375-b324-9f96ccfaf0b8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.986Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5224f7c0-e848-40d4-a899-b4819b1551aa",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.963Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a8c35e3d-34e8-450d-bce5-7c0b4283becd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.916Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4e350c47-18a1-4550-915a-e5095570ecf4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.888Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6c2f6a24-0944-4b5b-a320-f98ee99a6dab",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.887Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ef67a57f-8278-40bd-b734-ced51fced11b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.784Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a991aa93-118a-4965-990e-05fd4d3162ec",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.737Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3d4537df-a050-42c0-ae7d-88d956a23c70",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.685Z",
+      "cost": 0.3
+    },
+    {
+      "id": "40e383df-0c09-45cf-8f03-e09ea7c60fa9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.623Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0db0aa6a-e195-4978-8dc5-a542576a3a70",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.598Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4c0b88e7-bf88-44ed-9e80-cbd05d1f5150",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.576Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5a87bc06-557d-4803-b700-df34bd434df7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.545Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e34bb02e-3469-48b3-859b-cbc9023ea430",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.531Z",
+      "cost": 0.3
+    },
+    {
+      "id": "10a1a644-9020-4914-a209-0a5655bc3bbb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.529Z",
+      "cost": 0.3
+    },
+    {
+      "id": "46b78ae7-fff5-42dc-bba2-a6eb6938f9b3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.502Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8efd87ae-cc41-449a-98a0-48fe51fd7bd0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.497Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2b20d58a-139e-4145-a3c1-7f220cf64240",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.483Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b3cc584d-5cf6-4bf1-8627-ab7ae25bc013",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.467Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b4bf838d-c3be-45a3-a795-1a4bd340780f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.442Z",
+      "cost": 0.3
+    },
+    {
+      "id": "797a466d-33cc-4b25-be81-569fdbfa4c9e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.415Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9f3456c1-6c7f-4774-914f-98b786523d5c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.399Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7699d7b8-90b9-4b6d-913f-66ce75dd1ebe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.382Z",
+      "cost": 0.3
+    },
+    {
+      "id": "71625f03-a91c-4752-b350-1efd7d6f55e9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.372Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5505ca09-cb73-4003-aa7a-4eddb2c491cc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.349Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d3b69527-d133-46ee-8b24-36a8c5ff7fd2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.320Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1aed949c-c580-40b5-a381-e5b92dda2c34",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.303Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1073188d-29bc-4f30-a724-bcd93baff6ee",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.287Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d2014c1c-d25b-487d-b809-dbf8d12717f9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.240Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0d25f595-f2c1-40a6-93f6-c23f45d6e6fe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.227Z",
+      "cost": 0.3
+    },
+    {
+      "id": "845ec76f-4635-4cc3-8ffe-d5a83a319663",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.186Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f073f8ce-3385-45a9-8035-8f8a69c8840e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.167Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9bff7891-04bd-4f2c-9ce3-39864188db77",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.161Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c7be2b52-72b3-442a-9b8c-55e31f3f9306",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.153Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9ad4011a-6e64-42d9-9c60-8a2867661ae5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.066Z",
+      "cost": 0.3
+    },
+    {
+      "id": "574bb4f2-07ee-49bc-861b-efb3be2f28ea",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.029Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9b7e3ae7-8a0d-4bc7-b0ca-62f2ed8d6197",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.009Z",
+      "cost": 0.3
+    },
+    {
+      "id": "06801d3a-e1d5-4ed4-a6ea-3f53ae0d1d87",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:05.006Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bfa78e27-78ae-4307-b345-21540f107ea0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.990Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4b4824b6-9236-4387-8186-a4193a716b46",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.974Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1fb8908e-ca2d-434d-a4cb-db5bf28701aa",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.970Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1f8c4d8c-8ba1-4c13-aa5c-25cd10fab5dd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.891Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1f2602d5-5880-4a3f-b9e8-cf2bb235299b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.881Z",
+      "cost": 0.3
+    },
+    {
+      "id": "789f6e29-bed6-4e06-8872-82e8e279d624",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.797Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6a54c4c5-baee-4988-8f1e-db9e8da8bf03",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.777Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1556d4e9-c2a1-4bef-8673-4d4f9f1e8419",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.698Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8117566b-97ec-4d51-b662-fc57c214e86c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.693Z",
+      "cost": 0.3
+    },
+    {
+      "id": "83dec529-2949-4783-9055-8c11f855af56",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.683Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d7ecbcc0-3ddf-4d8f-b0c7-90f802c5bdf8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.679Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7127bbc7-ef00-46cb-b6ac-29d752fca7d6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.646Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d65e15fb-f353-443b-b841-ffefbd47ab5c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.624Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1e615947-46d2-4e82-916c-4436c14029f8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.620Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3601452a-e94e-4ca5-8d3a-97eabf7dcec3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.610Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2dbcb6dc-cb6d-44ba-af5f-e7dcb5e4250f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.603Z",
+      "cost": 0.3
+    },
+    {
+      "id": "aac19a2a-5bd0-45b4-9437-c332b5c735b8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.601Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f5cc97cc-137a-438f-95cc-a409fec1065a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.597Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6bef0f63-4ad3-4a6a-8cf7-fc084d69fe83",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.593Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0d8b27ac-7d85-4833-9ea2-4892bd06976a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.581Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7fb02c99-1662-46e8-a236-5b8c850afa5e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.578Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0e3af411-da15-439c-8e4b-7efe87298d0d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.542Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b1d8482e-555f-4bca-8a7f-0838cfd3b2eb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.528Z",
+      "cost": 0.3
+    },
+    {
+      "id": "49698a48-90c9-4db7-b65f-701847afb31c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.523Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5c36ec8c-d1fb-48aa-82a2-462a9c29e90d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.514Z",
+      "cost": 0.3
+    },
+    {
+      "id": "452ccfd0-fdbe-4485-ab60-9af4cb6dccf0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.510Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5724daa7-c65d-493a-a14e-5d63aa0059b3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.499Z",
+      "cost": 0.3
+    },
+    {
+      "id": "df01e487-65e6-4e7a-997c-0c734501c8ec",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.494Z",
+      "cost": 0.3
+    },
+    {
+      "id": "924d68dc-bfb9-4a92-ada0-60154f3ecdbe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.442Z",
+      "cost": 0.3
+    },
+    {
+      "id": "54591639-d406-45ec-bb3d-53fa5b17d247",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.438Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3c9e1926-7b74-4a12-8c8c-121675f135fe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.433Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7326f6fa-5703-4141-b122-175217e62bfa",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.431Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3c113c2e-f6db-462b-8859-6cab0112e155",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.426Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0df19260-973e-4285-b40f-da193c64f525",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.411Z",
+      "cost": 0.3
+    },
+    {
+      "id": "947d139b-843e-489b-b86c-90fef8a12849",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.406Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d867bc33-bf94-4281-911c-981c7e48dbee",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.403Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8e787317-92df-462f-b52f-a1060a835a68",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.401Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fdc65214-92f8-4ab1-8e74-282f6838f338",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.390Z",
+      "cost": 0.3
+    },
+    {
+      "id": "412a1d82-11ee-4f02-96ae-72222a9b4a13",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.389Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9ed2b3a9-fd55-4476-af59-b55a0df996e2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.378Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c0827ede-6fde-48d4-af16-f4fa1d2be756",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.367Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f8284859-6f2c-4a2b-93e5-5fc05a63e798",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.366Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ef30c7ee-c74f-460f-8415-5024ff2472e0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.360Z",
+      "cost": 0.3
+    },
+    {
+      "id": "39f4f428-c120-4266-93e8-ad7a8d9c4adb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.339Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6e6cd7c5-cd68-4481-aa8b-dda4d633bdb3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.327Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2030c328-696f-4f1a-90d4-33beb6cc13f7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.323Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3764126d-030a-4e6f-8c18-20e9b20524a3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.315Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2a98773d-7a9d-4f5d-973c-6089b5ef5a78",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.308Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f7fa9a96-fd90-4bfd-8ffd-474ab1acad60",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.307Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e58dfa41-f2ab-4119-8e68-7edd29df670e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.305Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3c6f6671-7de2-428f-a7ed-6418c08a1b32",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.296Z",
+      "cost": 0.3
+    },
+    {
+      "id": "08e4190a-16ae-43e9-844d-e91807f563c1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.296Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3ea1a25e-2a0c-4ba8-a551-e9b665274f1f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.292Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1a0deb56-4ac7-4506-9396-43f0b00b33c2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.260Z",
+      "cost": 0.3
+    },
+    {
+      "id": "408e0af0-9e49-435d-b10c-06dfc5ca7937",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.252Z",
+      "cost": 0.3
+    },
+    {
+      "id": "710dd497-ca6c-41c7-9837-3fb03e15942b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.250Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6a8b2e33-b1c8-4e61-a7ff-08cd00c323aa",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.243Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8a1fac35-83dd-451e-a965-7be604a3f06d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.242Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bf5778b3-89a6-4143-8178-0efea5ca094f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.236Z",
+      "cost": 0.3
+    },
+    {
+      "id": "82d052de-d8e5-4e33-9fff-7d0b9eac44d5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.233Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0d551022-6f7a-4620-a397-a8fa2a0eac05",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.232Z",
+      "cost": 0.3
+    },
+    {
+      "id": "43398577-5524-4882-9e5d-076af6523ca7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.230Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9f2699e4-c60a-4275-a8d2-3bdcf7565349",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.218Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1655851c-9402-414e-851c-e268de098f00",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.212Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3d61cb7d-8afd-4174-bd6f-93604498a63f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.198Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7ab11b88-ad8a-428d-92f9-e219fcd7fa4c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.197Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2faa5967-e193-4547-bcd9-87ff20430f9b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.165Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b3b69135-0852-4428-95c4-568c11c3a33d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.150Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c09031dd-8906-4d4d-aaa5-4d94e7580a19",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.126Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1ef37a8d-6d4d-437d-9d5d-84a1d4b7ce2b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.114Z",
+      "cost": 0.3
+    },
+    {
+      "id": "63c07843-0649-49fd-88bd-97ada1966326",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:15:04.048Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d935fe2f-2de2-4f94-9f3f-d3a98adddb34",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T04:12:46.685Z",
+      "cost": 3.8
+    },
+    {
+      "id": "d058910c-2339-487f-a7d5-908a7609818b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T03:18:30.561Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f0a8238e-ce23-4792-afc6-89d2bc961138",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T03:18:30.464Z",
+      "cost": 0.3
+    },
+    {
+      "id": "39ffcd52-1645-45ab-8a55-d2741f8f34c4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T03:18:00.082Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2e56bc28-b79d-4b22-a9e2-43b54e5fd1a8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T03:18:00.046Z",
+      "cost": 0.3
+    },
+    {
+      "id": "901264c3-cc85-4526-b15b-06395345dd47",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T03:16:50.301Z",
+      "cost": 3.8
+    },
+    {
+      "id": "823389e3-895e-4774-a722-0e56abab3456",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.684Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a93e91c4-9f70-404c-8f99-c5aeb5d6959e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.679Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e918b754-b67e-437c-9a9a-599c727b11e6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.665Z",
+      "cost": 0.3
+    },
+    {
+      "id": "55c98cb7-057e-48bd-808a-7f463ef35f7b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.565Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f4cc0879-74dc-4b78-8b3f-76670fdd3ca0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.555Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9f34a3c8-1159-4152-81e2-acf1d1d4e9ce",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.550Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f3400d11-ae0e-4772-b921-2ca2d0d0e76f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.548Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7f269df9-1174-4b8a-b6b9-17b17954114e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.545Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4fb93961-f15c-41de-a9d7-8560bb447408",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.543Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3a68f316-0738-4b9a-a89f-5b47e6059c22",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.539Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bed17882-247a-41c2-942a-fc5b9af3a0cd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:14.535Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f942c27b-c0b7-4de1-b958-19f9867d3735",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:06.772Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4a54e298-b906-4f25-9c28-2e9ca1684c41",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:06.494Z",
+      "cost": 0.3
+    },
+    {
+      "id": "35b37530-1f10-4466-b682-9d0a341bdd9b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:06.489Z",
+      "cost": 0.3
+    },
+    {
+      "id": "75fad50b-1865-4269-a717-a4704565d3ad",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:06.377Z",
+      "cost": 0.3
+    },
+    {
+      "id": "155b99a0-3590-4cee-8a87-2e15342c8962",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.788Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4e2c4c4f-d1e2-4677-8a08-12fceb180f12",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.698Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ba724ca5-fd38-4201-a0fa-9271b1e1fcff",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.667Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d90bdf76-c912-48ab-b93a-e92b51d6702c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.658Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ebb556c4-bc0e-430c-be94-f4d18d34c740",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.658Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c7cd24db-0db2-4546-ac4a-b0bf0285a067",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.653Z",
+      "cost": 0.3
+    },
+    {
+      "id": "93501174-1698-46b4-ae61-44fa3ac18d26",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:57:05.641Z",
+      "cost": 0.3
+    },
+    {
+      "id": "334c7164-1e5d-4c56-8554-171250be784c",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:56:32.064Z",
+      "cost": 3.8
+    },
+    {
+      "id": "76d7aac4-f609-4668-bc36-8f56833251ae",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.928Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cb0afb34-d608-49a3-a4d6-eefff69796c4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.721Z",
+      "cost": 0.3
+    },
+    {
+      "id": "33c3b3b0-490b-4e87-a7dc-b379919f5604",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.718Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f6a173bb-2ca0-4c23-b891-1ea3f36bad7a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.715Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1f934149-0101-4465-b7ba-29ec26be295f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.709Z",
+      "cost": 0.3
+    },
+    {
+      "id": "de72f74d-bf64-45be-b0e0-ac7619694c57",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.709Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cc3384bd-bf15-4d4e-9e7c-828401a35fb0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.707Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f0edc15f-7f94-4a60-9fbc-c430b2cfd497",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.661Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c7240454-d589-4b79-84fd-8ae3467d2c84",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.650Z",
+      "cost": 0.3
+    },
+    {
+      "id": "44648429-c5cc-4f11-a389-03acfd772334",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.648Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b88f87c0-dbed-469a-845e-d54a7620f9d9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.647Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4cad4428-3fbd-400c-8684-c039f0d10444",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.644Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cf19ec5b-7c19-4780-9e12-cc2b380fe179",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.601Z",
+      "cost": 0.3
+    },
+    {
+      "id": "94e86592-a3b0-44b7-a9e8-48a28bd176c4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.600Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ea4608b3-f45c-416d-a975-3a1d1fe010e1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.593Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3e38d1bf-024f-4c0e-8448-1d2e830fb354",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.591Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a8cc3091-9d47-4a34-a031-740cb30ca992",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.589Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d4884fd2-acd8-42cb-9426-bf26c9245249",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.587Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3a0098ad-6216-4fde-9477-71d7f736d91e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.581Z",
+      "cost": 0.3
+    },
+    {
+      "id": "385c334f-39bb-4619-b939-b683985ce00b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.559Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b111c2bf-c907-4683-b8b7-c2a4ff141fc5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.536Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7f0e0e32-4101-4281-a2c1-093ed9de4dfd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.536Z",
+      "cost": 0.3
+    },
+    {
+      "id": "965eaff5-2a42-4ddd-a89e-b46fe7aaa17d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.535Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fcdf81ca-55a4-4d09-b4ea-c06d81dfac13",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.526Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6ef4830e-cc83-4b4e-9c38-59e04c40932d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.517Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b07653da-d703-4e5b-acef-706460e71d75",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.516Z",
+      "cost": 0.3
+    },
+    {
+      "id": "274e7505-68de-4c4a-b509-8cbe4b51f319",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.505Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a0013ffc-4f7c-4aee-90d7-b53fef354df3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:22:01.494Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9c26a43d-354f-420f-9f59-b349a5d4d457",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.539Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7cef1dfb-9179-4f14-8825-8c74c8e3480d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.531Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8eaeeed7-f790-426c-a713-faa09eb8f3ee",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.512Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8de361c0-bb80-4b09-aa0f-288aed741d74",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.512Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d02a1af5-6557-40ed-b895-85f124db3f35",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.506Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7caec161-ee00-45e9-9925-c7e0ac7caada",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.499Z",
+      "cost": 0.3
+    },
+    {
+      "id": "39fa3b0c-944d-4a2a-a0e8-5d2020cf00d7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.493Z",
+      "cost": 0.3
+    },
+    {
+      "id": "75596ec1-05d0-414f-80d4-59ea1559fda2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.482Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fa2adca9-271e-4ce3-b4d1-27750e180e26",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.464Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fbda43e2-199d-459c-972e-910c406838b3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.455Z",
+      "cost": 0.3
+    },
+    {
+      "id": "23930aa2-fe9e-4b26-b714-89f4d6c6e7d5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.453Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e117e697-3bc8-47f5-9ed1-de497e1ba21d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.418Z",
+      "cost": 0.3
+    },
+    {
+      "id": "df4db37c-13a9-4b0c-8b6b-c6be19c1860b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.412Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1c485639-2662-4bcf-ab4e-5429a20d3282",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.401Z",
+      "cost": 0.3
+    },
+    {
+      "id": "32da9335-4d49-4495-b212-2d1ff38dd41b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.400Z",
+      "cost": 0.3
+    },
+    {
+      "id": "66c3bbd6-5e80-4d58-a764-a7784d19af26",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.376Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a956ef16-ff07-408a-96b9-a796ba9f8d39",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.375Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7080d347-f1c5-4050-a6d3-1241b14ecfe0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.364Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d602bd5f-ba6b-4bf8-a2d2-3e8cbefebfab",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.355Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bf047ac2-f511-4857-9432-8f53e04094e4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.348Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c4a028e9-8123-4b26-8077-144cb5a488c0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.344Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e8569574-7547-4707-a83e-8878ad30fff6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.336Z",
+      "cost": 0.3
+    },
+    {
+      "id": "02f11cee-b74c-40e7-835b-42219a479703",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.333Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a3610190-4969-478f-a8ef-ae5887258b01",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.324Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d3e53097-9125-4ae6-8e96-ad44720ac43a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.306Z",
+      "cost": 0.3
+    },
+    {
+      "id": "78a8e502-8653-4a06-b964-11bde3c2d39e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.297Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6bff5c3d-02d5-40cc-a1a3-68c036796137",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.267Z",
+      "cost": 0.3
+    },
+    {
+      "id": "97cea501-3230-403e-99f4-b7483bbe3f31",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:48.254Z",
+      "cost": 0.3
+    },
+    {
+      "id": "587c9112-ffde-4430-bfec-dbef71cd7518",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-25T02:21:09.628Z",
+      "cost": 3.8
+    },
+    {
+      "id": "54c1e64a-7dd5-48c5-a71c-b20d2080e1b1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:28.854Z",
+      "cost": 0.3
+    },
+    {
+      "id": "844bb1b7-9e42-488d-8b27-d78b6f345732",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:28.729Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a863c468-d4dc-4cba-9e1d-c98c9625dd7d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:28.727Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9d42993f-7769-4abc-919c-869217af7cdb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:28.721Z",
+      "cost": 0.3
+    },
+    {
+      "id": "07990756-78b5-4968-8007-077298c0599b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:28.717Z",
+      "cost": 0.3
+    },
+    {
+      "id": "48fc6cf4-b0de-47cb-8481-1ea26f7e14fe",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:11.427Z",
+      "cost": 0.3
+    },
+    {
+      "id": "97a9fa04-149e-4426-95e1-79fe454c3577",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:11.420Z",
+      "cost": 0.3
+    },
+    {
+      "id": "47aa09f9-d0aa-4cbe-9fbd-4a017e1a1f28",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:11.292Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a9eaa727-caf0-424b-a95d-99e79a4ddcce",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:11.290Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3dae5b9e-d0c5-4405-a4e3-b7b615d341d2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:46:11.287Z",
+      "cost": 0.3
+    },
+    {
+      "id": "59ce3adb-84fa-4330-805d-a396b24a245f",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:45:33.796Z",
+      "cost": 3.8
+    },
+    {
+      "id": "f296def3-e098-48b2-aaa2-b53d5002f76e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.808Z",
+      "cost": 0.3
+    },
+    {
+      "id": "09a52467-5f41-4402-9a40-b9a3040363be",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.798Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c1820f45-d8aa-4415-af54-5250bd01ba0a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.798Z",
+      "cost": 0.3
+    },
+    {
+      "id": "378313b7-e18c-4e09-8d4b-b795efeaacdc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.794Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6d3a5c97-8fe7-414a-911c-69e4ebd9fe15",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.770Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4a917950-db88-4d56-9e10-05e3b2018e7a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.692Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2ba2d165-5030-4e33-aafc-0acc7e819844",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.687Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1ca7590b-0e6c-4694-8ad8-9ce827b1eb30",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.682Z",
+      "cost": 0.3
+    },
+    {
+      "id": "75b35ba0-643b-4c6f-b970-7d082a27f8b3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.658Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cd30bc1e-81bd-4105-9563-eada4cc7b367",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.654Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6a0b6ebe-3364-4bec-b6e5-51c83e6df959",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:29.644Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f7e0d2a3-b25e-491a-ba7d-71a76b93f4a2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.492Z",
+      "cost": 0.3
+    },
+    {
+      "id": "2d4e2692-0995-4a72-9df2-85a175162054",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.488Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f81699a0-baa1-403e-8eb7-8560f29809f8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.436Z",
+      "cost": 0.3
+    },
+    {
+      "id": "97d81713-c8b9-4990-a4e0-34b3a69bee2c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.431Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d89fcc73-17bb-4879-97f9-bb43d94d35af",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.410Z",
+      "cost": 0.3
+    },
+    {
+      "id": "02b127ab-f276-4b7d-b7fa-e5a39588ba76",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.377Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b4ba29a8-5707-4b35-bff7-f18f2ab30c35",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.371Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e4797be0-52ab-48e3-98cd-e8d20de358b4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.353Z",
+      "cost": 0.3
+    },
+    {
+      "id": "daf075e0-ed0d-4fca-9712-b913317d5d49",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.324Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b0e52334-986e-4a5d-9ee6-ede23263575a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.319Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1ad2433f-6a7a-4e03-976b-cd3c0e9a3a40",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:34:13.289Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4b80a0d0-ca48-4078-aee2-0039021491ac",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:33:50.620Z",
+      "cost": 3.8
+    },
+    {
+      "id": "3dadf5b5-fc88-4a4d-ac16-2b3af58c025c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:51.172Z",
+      "cost": 0.3
+    },
+    {
+      "id": "88cace63-32d0-4e39-ade7-9e44200fdc63",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:51.070Z",
+      "cost": 0.3
+    },
+    {
+      "id": "630cbcd1-8597-48c6-bfa2-14a71a3116ea",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.873Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bc1fb988-c625-4585-af5d-7614a660cad8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.866Z",
+      "cost": 0.3
+    },
+    {
+      "id": "82f3530b-374f-4aff-a111-96596866181b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.779Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e808c4fb-ba7c-4c39-b245-3b162845a0ba",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.669Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c3f354be-20b7-45d6-9b5f-7165dc56a554",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.584Z",
+      "cost": 0.3
+    },
+    {
+      "id": "bce36ccc-88a9-43a7-a3f0-c6780b4336c3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.488Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b9054e29-f475-4f51-84b6-cb511ce76fd7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.478Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5902abdd-ea34-493f-826c-23fd892e37e2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.399Z",
+      "cost": 0.3
+    },
+    {
+      "id": "89513498-b9db-4098-823d-eae06b4fa1a1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.397Z",
+      "cost": 0.3
+    },
+    {
+      "id": "403e70c6-625d-4650-8af3-99792ab6bc63",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.385Z",
+      "cost": 0.3
+    },
+    {
+      "id": "7db1f2b3-6686-4296-baf6-2b1661eaeecb",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.304Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ec15de14-f1d0-4d3e-9e76-14e4ab5f8bdc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.300Z",
+      "cost": 0.3
+    },
+    {
+      "id": "20560b26-7fc8-41e2-bb15-42f6ccc1b935",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.295Z",
+      "cost": 0.3
+    },
+    {
+      "id": "91045112-6fda-46fb-b370-36f59eb56907",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.200Z",
+      "cost": 0.3
+    },
+    {
+      "id": "734b6623-7c08-4104-9ef6-39f4fb7b7784",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.184Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d4fcc5ca-86da-494c-8db9-a955aa431783",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.175Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0c644d98-068e-4a7d-a5aa-a759418ec4bd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.174Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b3983a3f-8be2-45f3-8cb5-5cacca9803e0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.171Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6d81752c-6e63-458d-886a-05c4ddbb6dd6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.168Z",
+      "cost": 0.3
+    },
+    {
+      "id": "78060272-7fe4-421e-875b-e9ab01fe4fe3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.153Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a1a412e8-1b14-44af-a879-c2246ccf39b9",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.125Z",
+      "cost": 0.3
+    },
+    {
+      "id": "97e335d6-a5e3-4e26-a1b5-2dd6ab06e4f2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.115Z",
+      "cost": 0.3
+    },
+    {
+      "id": "787b7d8b-8b94-4d62-bf54-4910ba439003",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.111Z",
+      "cost": 0.3
+    },
+    {
+      "id": "99db9bf7-5758-4991-b640-27e4f407d68c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.105Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e5622899-1554-4b73-9747-5e09f4251eed",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.104Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c2d4fa0c-4099-4646-85ca-93266d47d19e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.098Z",
+      "cost": 0.3
+    },
+    {
+      "id": "af0674fc-5675-4d77-b134-8b6f6d1bb9f8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.096Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cc80cb63-664b-4f28-b6ba-c6547075b3b1",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.093Z",
+      "cost": 0.3
+    },
+    {
+      "id": "09b0d9fb-d654-4289-8e3f-baa5955fa008",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.073Z",
+      "cost": 0.3
+    },
+    {
+      "id": "fe596008-4716-4323-8b6c-3da2c4899c17",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.039Z",
+      "cost": 0.3
+    },
+    {
+      "id": "baa33353-c192-435f-890f-297f9f48a102",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.039Z",
+      "cost": 0.3
+    },
+    {
+      "id": "18060d79-0d40-4888-a372-3c0eb547e394",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.030Z",
+      "cost": 0.3
+    },
+    {
+      "id": "166e4fe1-76d3-4b3a-bb9b-59399a91c78c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.017Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9106709c-8cfe-4880-ad0b-495b4b21b677",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.008Z",
+      "cost": 0.3
+    },
+    {
+      "id": "52bbf0be-fcf9-4e1d-b1a5-0655185ce898",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.008Z",
+      "cost": 0.3
+    },
+    {
+      "id": "696124db-0780-4001-bcd9-8391e1274f97",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:50.006Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e54e8f9c-5777-4098-a728-36990e811750",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.996Z",
+      "cost": 0.3
+    },
+    {
+      "id": "39fb5ee9-ff8a-4f86-b922-c86b467a7cd4",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.973Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4bc66791-c6a7-4145-a0f4-9e460ac8e4f2",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.964Z",
+      "cost": 0.3
+    },
+    {
+      "id": "56316dd1-57d7-44ac-b9c6-b6b5af159295",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.957Z",
+      "cost": 0.3
+    },
+    {
+      "id": "44a4a896-8e40-4623-8f8f-7aeb7a6cc4d3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.950Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ed5c1c17-410e-4ce8-af15-a871d883bee7",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.944Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0e5ae26a-6831-487b-90da-19691bbc85bf",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.918Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1a9e76e6-56e2-4434-9ce4-0cef0c39d90b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.908Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d9a21eeb-f017-406b-8760-2051b1e4ebb6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.906Z",
+      "cost": 0.3
+    },
+    {
+      "id": "dc694d92-d201-40df-95c5-a40bd79f67f6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.901Z",
+      "cost": 0.3
+    },
+    {
+      "id": "056a5d84-9158-4011-8229-df2d7dab8894",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.898Z",
+      "cost": 0.3
+    },
+    {
+      "id": "c1230ec5-185e-47aa-8243-2ae0ab1c596f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.898Z",
+      "cost": 0.3
+    },
+    {
+      "id": "4bb4bd7c-d7b2-410f-9fe4-375f5a6bdd41",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.897Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b7a86b44-aba2-429c-b80a-141e91512122",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.889Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6899b1fc-3d30-43a5-a27a-b815f84cc4ba",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.889Z",
+      "cost": 0.3
+    },
+    {
+      "id": "dfc1947f-3539-4032-9073-7c8f4c2deb77",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.884Z",
+      "cost": 0.3
+    },
+    {
+      "id": "794cb57d-6cce-4341-85d2-9b98d9cc242f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.884Z",
+      "cost": 0.3
+    },
+    {
+      "id": "061d28ea-300b-468f-9d9b-3f8c935d2179",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:18:49.874Z",
+      "cost": 0.3
+    },
+    {
+      "id": "db25809a-e223-4a20-802d-723417bd1f48",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T22:17:45.118Z",
+      "cost": 3.8
+    },
+    {
+      "id": "617013f2-18a3-4420-a2f8-b623114b9cde",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:08.366Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e36def33-fe72-4ed4-8447-6ce322162ff0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:08.361Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3a27f526-acf3-46c7-85d9-f5e2ebe649e5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:08.353Z",
+      "cost": 0.3
+    },
+    {
+      "id": "ff3d4feb-4419-4eeb-9202-7fea8fc22fc3",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.694Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1d0b6121-b79c-445b-aee9-f535e5aed56d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.689Z",
+      "cost": 0.3
+    },
+    {
+      "id": "020b51a5-169d-4437-b6e5-f5e9a0982bd0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.665Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6266aaac-5831-48d3-ba73-3b6441d2af63",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.661Z",
+      "cost": 0.3
+    },
+    {
+      "id": "62b0fe55-845b-49f4-9ca8-59d21d285ae5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.657Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a918b5fa-f7ef-4d72-b237-e91a78007299",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.652Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d5fdc289-49d9-42a9-beb6-de0ede6ba596",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.651Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a0194ad6-eef5-4403-85fd-84f3599bd507",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.650Z",
+      "cost": 0.3
+    },
+    {
+      "id": "04c59d79-8427-4d44-80b9-5208548b6374",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.641Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cedb1a69-cd6a-49bf-a22f-77e3449a4a8d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.638Z",
+      "cost": 0.3
+    },
+    {
+      "id": "0a8000b0-3732-4655-bdbf-b855e03d7599",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.564Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a27b9603-30df-42a1-a698-48922e70f9e8",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.547Z",
+      "cost": 0.3
+    },
+    {
+      "id": "dda6cb1e-d5c8-443c-8144-130233f8af18",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.524Z",
+      "cost": 0.3
+    },
+    {
+      "id": "b3f593c5-4bf5-4698-b0d3-05a7498c01f5",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.518Z",
+      "cost": 0.3
+    },
+    {
+      "id": "3e2e0fcf-e61e-42fb-a859-874cdcfa59ae",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.517Z",
+      "cost": 0.3
+    },
+    {
+      "id": "8ada83dd-3f5b-4cce-af4a-9f6f405b9e1e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.513Z",
+      "cost": 0.3
+    },
+    {
+      "id": "cb66d11a-8929-46e7-936e-03692f58540f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.511Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f2fb74cf-d411-4014-b2b7-8072a43de4da",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.508Z",
+      "cost": 0.3
+    },
+    {
+      "id": "dde37407-185c-4fdb-b3d5-0509a9235ccc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.498Z",
+      "cost": 0.3
+    },
+    {
+      "id": "395ac14a-b304-44f9-9c32-61213b06680b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.480Z",
+      "cost": 0.3
+    },
+    {
+      "id": "af701981-3eb5-47c0-a619-6db14df8d743",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:56:07.475Z",
+      "cost": 0.3
+    },
+    {
+      "id": "18abe245-2c1b-4c7a-ad64-963be7df9aaf",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:58.207Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d8094bf5-41fb-4a5d-ac41-af56c1129b90",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:58.202Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d895758e-1376-47dd-8e59-f95cbee5ffae",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:58.118Z",
+      "cost": 0.3
+    },
+    {
+      "id": "9adffd44-eb83-409c-86c9-9c34e9e6d01e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.714Z",
+      "cost": 0.3
+    },
+    {
+      "id": "5d132592-cac3-4fb0-a913-ab8aa05bbba6",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.702Z",
+      "cost": 0.3
+    },
+    {
+      "id": "95e33614-eeaa-4bfe-85b6-d301a447482b",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.679Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e1fa60a1-94b0-4f93-91d6-672dea444537",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.672Z",
+      "cost": 0.3
+    },
+    {
+      "id": "f806cc78-961a-4cbb-b763-fe94dfa0a896",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.668Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e2aa2aef-c3b7-4130-9b4d-66958bf52150",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.663Z",
+      "cost": 0.3
+    },
+    {
+      "id": "154aa6c0-c619-42a5-9bae-329a1ca3bfae",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.658Z",
+      "cost": 0.3
+    },
+    {
+      "id": "17785c01-adb9-4268-bb57-4417c2ce0d8f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.634Z",
+      "cost": 0.3
+    },
+    {
+      "id": "db5f551d-c993-40cd-bb8d-3a101dc82c1d",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.593Z",
+      "cost": 0.3
+    },
+    {
+      "id": "14d04a65-c1fc-4bf6-a4e9-d5108404cc0a",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.589Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d9275e0b-5f58-43db-bf31-95e3528d972c",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.574Z",
+      "cost": 0.3
+    },
+    {
+      "id": "128829c6-60cd-4aab-a612-b284b0fd24fc",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.556Z",
+      "cost": 0.3
+    },
+    {
+      "id": "44fb5388-e5cf-4c13-91d9-3649a8904111",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.550Z",
+      "cost": 0.3
+    },
+    {
+      "id": "d68c4ac7-5852-446a-b1e2-d03081f23117",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.508Z",
+      "cost": 0.3
+    },
+    {
+      "id": "1b3ee76c-28d3-4c65-860c-60dac198d5e0",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.501Z",
+      "cost": 0.3
+    },
+    {
+      "id": "21ca011d-fbda-48bd-8c9d-95ad469c8011",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.498Z",
+      "cost": 0.3
+    },
+    {
+      "id": "a5dc6b1e-5959-4645-bcd0-96c4cec5a796",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.487Z",
+      "cost": 0.3
+    },
+    {
+      "id": "6f0e754c-e553-4312-a761-60deab107a2e",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.487Z",
+      "cost": 0.3
+    },
+    {
+      "id": "56ef6844-447a-4f57-9813-88fa3e7a3b7f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.486Z",
+      "cost": 0.3
+    },
+    {
+      "id": "44bbea23-ec46-429c-97cb-309c6a7560bd",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.473Z",
+      "cost": 0.3
+    },
+    {
+      "id": "beaa44a0-a2a0-4657-a67e-54adff11f37f",
+      "searchType": "lawsuit_attachment",
+      "responseType": "attachment",
+      "origin": "api",
+      "hasAttachments": false,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:57.460Z",
+      "cost": 0.3
+    },
+    {
+      "id": "e15526b3-3117-43cf-a58e-188f0a771956",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:55:10.728Z",
+      "cost": 3.8
+    },
+    {
+      "id": "a1f98134-4eee-42c5-ba4a-ac93403dccb2",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T21:23:06.684Z",
+      "cost": 3.8
+    },
+    {
+      "id": "3d1369c6-77a1-4403-bbbe-1ea24efb8bac",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T19:44:37.886Z",
+      "cost": 3.8
+    },
+    {
+      "id": "1fa96b97-aedc-4ba3-8b20-36da0b80c60e",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T19:24:53.671Z",
+      "cost": 3.8
+    },
+    {
+      "id": "1075a15e-74d9-45da-a9f0-f55491192951",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T18:55:14.470Z",
+      "cost": 3.8
+    },
+    {
+      "id": "d7167f4c-5f88-456a-86bc-808bf5bc6543",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T18:17:52.006Z",
+      "cost": 3.8
+    },
+    {
+      "id": "af9eab10-ae0e-4ea7-97a4-09bac1901cf8",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T17:44:07.434Z",
+      "cost": 3.8
+    },
+    {
+      "id": "1215484f-454c-484b-8574-28ddfbb0ae57",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T17:13:24.414Z",
+      "cost": 3.8
+    },
+    {
+      "id": "4a110d94-1f44-4ac0-a093-2e633a4d47ff",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T13:47:04.395Z",
+      "cost": 3.8
+    },
+    {
+      "id": "8059abf9-0033-4057-830e-9a23ade0a8d2",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T13:02:31.715Z",
+      "cost": 3.8
+    },
+    {
+      "id": "4711658e-a593-4468-9371-fff9abf3021f",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T12:13:08.373Z",
+      "cost": 3.8
+    },
+    {
+      "id": "48278622-8f34-4bf3-8d17-754fc35afe15",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T11:27:41.562Z",
+      "cost": 3.8
+    },
+    {
+      "id": "44d9da9a-75d7-410a-96af-facf823cfbc7",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T11:17:02.711Z",
+      "cost": 3.8
+    },
+    {
+      "id": "b0093e2b-94a2-4b11-bd24-6c6b50482702",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T01:49:35.633Z",
+      "cost": 3.8
+    },
+    {
+      "id": "d0f27e3f-fe8a-4512-8781-29d1a2f8f897",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T01:25:41.835Z",
+      "cost": 3.8
+    },
+    {
+      "id": "a7e2266d-43e5-46a1-adfc-70b4b8091999",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-24T00:27:49.133Z",
+      "cost": 3.8
+    },
+    {
+      "id": "eda3d624-f749-4e5d-86b7-5dd1787e3830",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T23:49:39.310Z",
+      "cost": 3.8
+    },
+    {
+      "id": "245981af-42f6-4683-b277-bf77a0db34c2",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T23:38:57.141Z",
+      "cost": 3.8
+    },
+    {
+      "id": "a5feaa44-c173-49d0-8293-21063711cfe5",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T21:06:50.553Z",
+      "cost": 3.8
+    },
+    {
+      "id": "ac2a8ef5-6ed0-4502-999c-2489904992b8",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T21:05:24.738Z",
+      "cost": 3.8
+    },
+    {
+      "id": "0bbd933e-7c43-403f-b35a-889cba35c1fc",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T21:04:28.799Z",
+      "cost": 3.8
+    },
+    {
+      "id": "4281f908-8e2e-478c-abcf-43fb6a960312",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T20:20:30.119Z",
+      "cost": 3.8
+    },
+    {
+      "id": "92063316-e21f-4174-8485-3493fe0f1271",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T20:19:06.940Z",
+      "cost": 3.8
+    },
+    {
+      "id": "1755a3bc-080f-49dd-8066-5c770d0cd121",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T20:09:30.354Z",
+      "cost": 3.8
+    },
+    {
+      "id": "c04cf3b7-bd01-43bb-875b-fffbcde8840a",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T20:08:07.604Z",
+      "cost": 3.8
+    },
+    {
+      "id": "076285ba-0f60-478d-9814-ba12747447f3",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T19:58:58.806Z",
+      "cost": 3.8
+    },
+    {
+      "id": "30a73946-24fc-4779-8ba5-d66305028097",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T19:57:38.562Z",
+      "cost": 3.8
+    },
+    {
+      "id": "196cc0e6-fb16-4d32-8a56-61b59bc28e4f",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-23T19:34:04.197Z",
+      "cost": 3.8
+    },
+    {
+      "id": "0be88963-d354-4b30-a4ec-a4e7681e0175",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T04:13:37.386Z",
+      "cost": 3.8
+    },
+    {
+      "id": "5872f746-6d5f-48b1-a7ae-1aedcb2cc706",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T04:12:27.150Z",
+      "cost": 3.8
+    },
+    {
+      "id": "29be3389-1e54-4dae-a5a5-f0bba8f9bf9d",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T04:08:59.376Z",
+      "cost": 3.8
+    },
+    {
+      "id": "986f823d-d5b3-46b3-9621-95b2cac43a97",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T04:05:43.790Z",
+      "cost": 3.8
+    },
+    {
+      "id": "46fecf6c-b5c1-46a3-8b6b-d4b0114b6325",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T03:57:19.955Z",
+      "cost": 3.8
+    },
+    {
+      "id": "9793e321-6a4e-4c77-b9d2-5089148e278d",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T03:56:55.281Z",
+      "cost": 3.8
+    },
+    {
+      "id": "90b47f7a-0d16-4fec-a3ff-9d162cedd24b",
+      "searchType": "lawsuit_cnj",
+      "responseType": "lawsuit",
+      "origin": "api",
+      "hasAttachments": true,
+      "status": "completed",
+      "createdAt": "2025-10-18T03:51:44.815Z",
+      "cost": 3.8
+    }
+  ]
+}
