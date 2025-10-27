@@ -15,7 +15,7 @@ interface PaginationProps {
   totalPages: number;
   totalItems?: number;
   itemsPerPage?: number;
-  onPageChange: (page: number) => void;
+  onPageChange: (_page: number) => void;
   showInfo?: boolean;
   showFirstLast?: boolean;
   maxVisiblePages?: number;
@@ -257,7 +257,7 @@ export function usePagination({
  */
 interface PageSizeSelectProps {
   pageSize: number;
-  onPageSizeChange: (size: number) => void;
+  onPageSizeChange: (_size: number) => void;
   options?: number[];
   className?: string;
 }

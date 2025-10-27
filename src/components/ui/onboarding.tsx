@@ -43,7 +43,7 @@ export function Onboarding({
     height: number;
   } | null>(null);
 
-  const getCurrentStep = () => steps[currentStep];
+  const getCurrentStep = useCallback(() => steps[currentStep], [currentStep, steps]);
   const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
 
@@ -71,7 +71,7 @@ export function Onboarding({
         inline: 'center'
       });
     }
-  }, [isActive, currentStep, steps]);
+  }, [isActive, getCurrentStep]);
 
   useEffect(() => {
     if (isActive) {

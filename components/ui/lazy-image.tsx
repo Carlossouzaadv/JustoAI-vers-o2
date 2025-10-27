@@ -31,9 +31,7 @@ export function LazyImage({
   fallbackSrc = '/images/placeholder.svg',
   placeholder,
   blurDataURL,
-  quality = 85,
   priority = false,
-  sizes = '100vw',
   onLoad,
   onError,
   className,
@@ -115,6 +113,7 @@ export function LazyImage({
 
       {/* Blur placeholder se fornecido */}
       {blurDataURL && !isLoaded && (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={blurDataURL}
           alt=""
@@ -129,6 +128,7 @@ export function LazyImage({
 
       {/* Imagem principal */}
       {isInView && (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imgRef}
           src={imageSrc}

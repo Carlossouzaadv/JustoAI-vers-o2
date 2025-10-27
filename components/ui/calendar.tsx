@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, no-unused-vars */
 'use client'
 
 import * as React from 'react'
@@ -6,8 +7,8 @@ import { cn } from '@/lib/utils'
 export type CalendarProps = React.ComponentProps<'div'> & {
   mode?: 'single' | 'range'
   selected?: Date | { from?: Date; to?: Date }
-  onSelect?: (date: Date | { from?: Date; to?: Date } | undefined) => void
-  disabled?: (date: Date) => boolean
+  onSelect?: (_date: Date | { from?: Date; to?: Date } | undefined) => void
+  disabled?: (_date: Date) => boolean
   fromDate?: Date
   toDate?: Date
 }

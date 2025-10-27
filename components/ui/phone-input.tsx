@@ -6,8 +6,8 @@ interface PhoneInputProps {
   id: string;
   name: string;
   value?: string;
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onChange: (_event: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (_event: React.FocusEvent<HTMLInputElement>) => void;
   placeholder?: string;
   className?: string;
   error?: string;

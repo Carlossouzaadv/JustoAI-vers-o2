@@ -8,7 +8,7 @@ interface PasswordInputProps {
   id: string;
   name: string;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (_e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   showStrength?: boolean;
   error?: string;

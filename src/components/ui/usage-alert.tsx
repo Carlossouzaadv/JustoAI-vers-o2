@@ -48,12 +48,6 @@ export function UsageAlert({ plan, usage, onUpgrade, onDismiss, className = '' }
     onDismiss?.();
   };
 
-  const getAlertVariant = () => {
-    if (isDepleted) return 'destructive';
-    if (isAlmostDepleted) return 'warning';
-    return 'default';
-  };
-
   const getAlertColor = () => {
     if (isDepleted) return 'border-red-200 bg-red-50';
     if (isAlmostDepleted) return 'border-orange-200 bg-orange-50';
