@@ -7,8 +7,9 @@ import { ModelTier } from '@/lib/ai-model-types';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const startTime = Date.now();
   try {
     const user = await getAuthenticatedUser(request);
@@ -16,7 +17,7 @@ export async function POST(
       return unauthorizedResponse('Não autenticado');
     }
     const userId = user.id;
-    const caseId = params.id;
+    const caseId = id;
     console.log(`${ICONS.ROBOT} [Full Analysis] Iniciando para case ${caseId}`);
 
     const caseData = await prisma.case.findUnique({

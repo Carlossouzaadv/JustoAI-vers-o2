@@ -10,8 +10,9 @@ import { validateAuthAndGetUser } from '@/lib/auth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const authData = await validateAuthAndGetUser(request);
     const user = authData.user;
@@ -23,7 +24,7 @@ export async function GET(
       );
     }
 
-    const caseId = params.id;
+    const caseId = id;
 
     // Verificar que o usuário tem acesso a este caso
     const caseData = await prisma.case.findUnique({

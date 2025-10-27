@@ -12,8 +12,9 @@ import { ICONS } from '@/lib/icons';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const authData = await validateAuthAndGetUser(request);
     const user = authData.user;
@@ -25,7 +26,7 @@ export async function POST(
       );
     }
 
-    const caseId = params.id;
+    const caseId = id;
 
     // Verificar que o usuário tem acesso a este caso
     const caseData = await prisma.case.findUnique({

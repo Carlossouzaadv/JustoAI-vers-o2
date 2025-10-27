@@ -24,10 +24,8 @@ import { ICONS } from '@/lib/icons';
 
 // Configuração de runtime para suportar uploads de arquivos grandes
 // maxDuration: tempo máximo para a função executar (Vercel limit)
-// maxBodySize: tamanho máximo do body da requisição
 // Nota: O limite real de body size é controlado no next.config.ts e Vercel
 export const maxDuration = 300; // 5 minutos máximo para processamento
-export const maxBodySize = '100mb'; // Suportar PDFs até 100MB
 
 const prisma = new PrismaClient();
 

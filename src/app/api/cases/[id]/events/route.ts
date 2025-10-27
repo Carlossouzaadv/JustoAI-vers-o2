@@ -46,10 +46,11 @@ interface TimelineEvent {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const caseId = params.id;
+    const caseId = id;
 
     console.log(`${ICONS.TIME} Buscando eventos de timeline para case: ${caseId}`);
 

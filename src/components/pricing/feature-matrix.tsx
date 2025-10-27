@@ -15,9 +15,9 @@ interface FeatureMatrixProps {
       name: string;
       features: Array<{
         name: string;
-        starter: string;
-        professional: string;
-        enterprise: string;
+        starter: string | boolean;
+        professional: string | boolean;
+        enterprise: string | boolean;
       }>;
     }>;
   };

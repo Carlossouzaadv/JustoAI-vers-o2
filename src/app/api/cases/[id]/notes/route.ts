@@ -9,10 +9,11 @@ import { ICONS } from '@/lib/icons';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const caseId = params.id;
+    const caseId = id;
 
     console.log(`${ICONS.EDIT} Buscando notas para case: ${caseId}`);
 
@@ -55,10 +56,11 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const caseId = params.id;
+    const caseId = id;
     const body = await request.json();
 
     console.log(`${ICONS.EDIT} Criando nota para case: ${caseId}`);

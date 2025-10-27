@@ -28,8 +28,9 @@ interface ResolveConflictsRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     // ============================================================
     // 1. AUTHENTICATION
@@ -40,7 +41,7 @@ export async function POST(
       return unauthorizedResponse('Não autenticado');
     }
 
-    const caseId = params.id;
+    const caseId = id;
     const body = (await request.json()) as ResolveConflictsRequest;
     const { resolutions } = body;
 

@@ -135,8 +135,8 @@ const ALERT_RULES: AlertRule[] = [
     name: 'Spike de Billing Detectado',
     description: 'Custo diário > 5x a média dos últimos 7 dias',
     condition: (ctx) => {
-      const dailyAvg = ctx.metadata?.dailyAverage || 0;
-      const currentDaily = ctx.metadata?.currentDaily || 0;
+      const dailyAvg = typeof ctx.metadata?.dailyAverage === 'number' ? ctx.metadata.dailyAverage : 0;
+      const currentDaily = typeof ctx.metadata?.currentDaily === 'number' ? ctx.metadata.currentDaily : 0;
       return currentDaily > (dailyAvg * 5);
     },
     severity: 'high',
@@ -500,7 +500,9 @@ export class OpsAlerts {
   private formatAlertMessage(rule: AlertRule, context: AlertContext): string {
     switch (rule.id) {
       case 'high_billing_cost':
-        return `🔸 Workspace "${context.workspaceName}" tem custo estimado de R$ ${context.billingEstimate.toFixed(2)} (${((context.billingEstimate / context.planPrice) * 100).toFixed(1)}% do plano ${context.metadata?.plan?.toUpperCase()}).\n\nTop consumidores:\n${this.formatTopConsumers(context.metadata?.billingBreakdown)}`;
+        const plan1 = typeof context.metadata?.plan === 'string' ? context.metadata.plan.toUpperCase() : 'DESCONHECIDO';
+        const billingBreakdown1 = context.metadata?.billingBreakdown as Record<string, number> | undefined;
+        return `🔸 Workspace "${context.workspaceName}" tem custo estimado de R$ ${context.billingEstimate.toFixed(2)} (${((context.billingEstimate / context.planPrice) * 100).toFixed(1)}% do plano ${plan1}).\n\nTop consumidores:\n${this.formatTopConsumers(billingBreakdown1)}`;
 
       case 'critical_billing_cost':
         return `🚨 CRÍTICO: Workspace "${context.workspaceName}" excedeu o valor do plano!\n\nCusto estimado: R$ ${context.billingEstimate.toFixed(2)}\nValor do plano: R$ ${context.planPrice.toFixed(2)}\nExcesso: R$ ${(context.billingEstimate - context.planPrice).toFixed(2)}\n\nAção necessária: Revisar uso ou upgrade de plano.`;
@@ -509,10 +511,15 @@ export class OpsAlerts {
         return `⚠️ Workspace "${context.workspaceName}" teve ${context.hardBlockedEvents} bloqueios de quota nos últimos 7 dias.\n\nQuota atual: ${context.quotaUsage}/${context.quotaLimit} relatórios\nRecomendação: Upgrade de plano ou compra de créditos extras.`;
 
       case 'workspace_quota_exhausted':
-        return `📊 Workspace "${context.workspaceName}" esgotou sua quota mensal de relatórios.\n\nUso: ${context.quotaUsage}/${context.quotaLimit} relatórios (100%)\nPlano: ${context.metadata?.plan?.toUpperCase()}\n\nUsuário pode precisar comprar créditos extras.`;
+        const plan2 = typeof context.metadata?.plan === 'string' ? context.metadata.plan.toUpperCase() : 'DESCONHECIDO';
+        return `📊 Workspace "${context.workspaceName}" esgotou sua quota mensal de relatórios.\n\nUso: ${context.quotaUsage}/${context.quotaLimit} relatórios (100%)\nPlano: ${plan2}\n\nUsuário pode precisar comprar créditos extras.`;
 
-      case 'billing_spike_detected':
-        return `📈 Spike de uso detectado no workspace "${context.workspaceName}"!\n\nCusto hoje: R$ ${context.metadata?.currentDaily?.toFixed(2)}\nMédia 7 dias: R$ ${context.metadata?.dailyAverage?.toFixed(2)}\nMultiplicador: ${(context.metadata?.currentDaily / context.metadata?.dailyAverage).toFixed(1)}x\n\nInvestigar uso anômalo.`;
+      case 'billing_spike_detected': {
+        const currentDaily = typeof context.metadata?.currentDaily === 'number' ? context.metadata.currentDaily : 0;
+        const dailyAverage = typeof context.metadata?.dailyAverage === 'number' ? context.metadata.dailyAverage : 0;
+        const multiplier = dailyAverage > 0 ? (currentDaily / dailyAverage).toFixed(1) : '0';
+        return `📈 Spike de uso detectado no workspace "${context.workspaceName}"!\n\nCusto hoje: R$ ${currentDaily.toFixed(2)}\nMédia 7 dias: R$ ${dailyAverage.toFixed(2)}\nMultiplicador: ${multiplier}x\n\nInvestigar uso anômalo.`;
+      }
 
       default:
         return `${rule.description}\n\nWorkspace: ${context.workspaceName}\nDetalhes: ${JSON.stringify(context.metadata, null, 2)}`;

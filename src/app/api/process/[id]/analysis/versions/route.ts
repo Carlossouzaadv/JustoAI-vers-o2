@@ -219,38 +219,6 @@ function summarizeChanges(current: any, previous: any) {
 /**
  * GET /api/process/{id}/analysis/versions/{versionId}
  * Busca versão específica
+ * TODO: Implementar com rota dinâmica separada: /process/[id]/analysis/versions/[versionId]/route.ts
+ * Next.js 15 não suporta exports com nomes customizados como GET_VERSION
  */
-export async function GET_VERSION(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; versionId: string }> }
-) {
-  const { id: processId, versionId } = await params;
-
-  try {
-    const version = await prisma.caseAnalysisVersion.findFirst({
-      where: {
-        id: versionId,
-        caseId: processId
-      }
-    });
-
-    if (!version) {
-      return NextResponse.json(
-        { error: 'Versão não encontrada' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      version
-    });
-
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao buscar versão específica:`, error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    );
-  }
-}

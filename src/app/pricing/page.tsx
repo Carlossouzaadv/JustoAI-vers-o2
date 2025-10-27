@@ -205,7 +205,16 @@ export default function PricingPage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <CreditsPacks
-            creditPacks={pricingData.credit_packs}
+            creditPacks={pricingData.credit_packs as Array<{
+              id: string;
+              name: string;
+              description: string;
+              credits: number;
+              price: number;
+              type: 'reports' | 'analysis';
+              popular?: boolean;
+              savings?: string;
+            }>}
             onBuyPack={handleBuyCredits}
           />
         </div>
@@ -249,14 +258,26 @@ export default function PricingPage() {
       </section>
 
       {/* Plan Modal */}
-      <PlanModal
-        isOpen={showPlanModal}
-        onClose={() => setShowPlanModal(false)}
-        plan={selectedPlanData}
-        billingCycle={billingCycle}
-        onStartTrial={handleStartTrial}
-        onContactSales={handleContactSales}
-      />
+      {selectedPlanData && (
+        <PlanModal
+          isOpen={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          plan={selectedPlanData as any}
+          billingCycle={billingCycle}
+          onStartTrial={handleStartTrial}
+          onContactSales={handleContactSales}
+        />
+      )}
+      {!selectedPlanData && (
+        <PlanModal
+          isOpen={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          plan={null}
+          billingCycle={billingCycle}
+          onStartTrial={handleStartTrial}
+          onContactSales={handleContactSales}
+        />
+      )}
     </div>
   );
 }

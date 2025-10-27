@@ -499,7 +499,8 @@ export class ReportDataCollector {
       );
 
       // Extrair insights da resposta da IA
-      const insights = this.extractInsights(result.analysis || result.content || '');
+      const resultRecord = result as Record<string, unknown>;
+      const insights = this.extractInsights((resultRecord.analysis || resultRecord.content || '') as string);
       return insights.slice(0, 5); // Máximo 5 insights
 
     } catch (error) {
