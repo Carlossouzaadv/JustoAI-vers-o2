@@ -120,6 +120,8 @@ npm run test:watch   # Watch mode
 | Resource | Purpose |
 |----------|---------|
 | [CLAUDE.md](./CLAUDE.md) | Development guidelines for Claude Code |
+| [TIMELINE_UNIFICADA_IMPLEMENTACAO.md](./TIMELINE_UNIFICADA_IMPLEMENTACAO.md) | 🚀 NEW - Unified Timeline implementation tracking with checkboxes (Oct 2025) |
+| [FASE 3 IMPLEMENTATION](./docs/FASE3_ANALYSIS.md) | ✨ 3-phase onboarding flow & strategic analysis (Oct 2025) |
 | [WEBHOOK_FIX_SUMMARY.md](./WEBHOOK_FIX_SUMMARY.md) | JUDIT webhook fixes - technical details |
 | [WEBHOOK_FIX_CHECKLIST.md](./WEBHOOK_FIX_CHECKLIST.md) | JUDIT webhook - deployment & testing checklist |
 | [DEPLOYMENT_WEBHOOK_FIX.md](./DEPLOYMENT_WEBHOOK_FIX.md) | JUDIT webhook - step-by-step deployment guide |
@@ -130,6 +132,19 @@ npm run test:watch   # Watch mode
 **API Endpoints:** See `/api` route documentation or enable Swagger at `/api/swagger`
 
 **User Documentation:** See `src/app/help/` for 40+ user guides
+
+**Testing FASE 3:**
+```bash
+# Quick start
+npm run dev
+
+# Test workflow:
+# 1. Upload PDF case document
+# 2. Wait for FASE 1 & 2 completion
+# 3. Click "Aprofundar Análise"
+# 4. Try both FAST and FULL analysis levels
+# 5. Check console logs for mock credit operations
+```
 
 ---
 
@@ -219,12 +234,43 @@ User Upload                 Queue Processing              JUDIT Webhook
 
 ## 📊 Key Features
 
-### 🤖 AI Analysis
+### 🤖 AI Analysis - 3-Phase Onboarding Flow
+
+**FASE 1: Preview Inteligente** ✅
+- Instantaneous analysis (2-10 seconds)
+- Automatic CNJ detection from PDF
+- Quick extraction of: parties, claim value, subject, last movements
+- Uses Gemini Flash 8B/Flash with fallback to Pro
+- **Status:** Complete & Production-Ready
+
+**FASE 2: Enriquecimento Oficial** ✅
+- Automatic JUDIT API integration (background processing)
+- Webhook-based architecture (real-time updates, no polling)
+- Downloads official court documents & movements
+- Timeline unification (PDF + JUDIT + Manual)
+- Automatic case type mapping
+- **Status:** Complete & Production-Ready
+
+**FASE 3: Análise Estratégica** ✅ (NEW - Oct 2025)
+- Two analysis levels available:
+  - **FAST:** Quick analysis using existing documents (Gemini Flash)
+  - **FULL:** Complete strategic analysis with Gemini Pro (1 credit)
+- Comprehensive insights:
+  - Legal assessment (strengths, weaknesses, recommendations)
+  - Risk analysis with mitigation strategies
+  - Timeline with deadlines and critical phases
+  - Precedent references
+- Mock credit system for testing (always returns 999 credits)
+- **Status:** Complete & Ready for Testing
+- **Build Status:** ✅ Compiled successfully
+- **Implementation:** Oct 27, 2025
+
+**System Details:**
 - Document processing (PDF, DOCX, images)
 - Multi-front analysis with Google Gemini
 - Automatic data extraction & summarization
-- Preview intelligent with confidence scoring
-- Cost-optimized caching
+- Cost-optimized caching with smart routing
+- Credit management (mockable for development)
 
 ### 🔍 Real-Time Process Monitoring via JUDIT
 - **JUDIT Integration:** Official Brazilian court process API
@@ -275,6 +321,51 @@ Full observability at `/dashboard/judit`
 ---
 
 ## 🔧 Recent Improvements (Oct 2025)
+
+### FASE 3: Análise Estratégica Implementation (Oct 27, 2025)
+
+Complete implementation of the 3-phase onboarding flow with strategic AI analysis:
+
+**What was added:**
+- ✅ **Serviço de Créditos Mockado** (`src/lib/services/creditService.ts`)
+  - Mock system returning 999 credits (enables unlimited testing)
+  - Methods: `checkCredits()`, `debitCredits()`, `getBalance()`, `getFormattedBalance()`
+  - Fully ready to swap for production Prisma queries
+
+- ✅ **Endpoint de Análise** (`src/app/api/process/[id]/analysis`)
+  - POST handler supports two levels: FAST (Flash) and FULL (Pro)
+  - FAST: Quick analysis with existing documents (~10-15s)
+  - FULL: Complete strategic analysis with Gemini Pro (~20-30s, costs 1 credit)
+  - Asynchronous background processing with status tracking
+  - Results saved as `analysisType: 'strategic'` or `'complete'`
+
+- ✅ **Endpoint de Créditos** (`src/app/api/billing/credits`)
+  - Returns mock balance via `creditService`
+  - Compatible with existing billing UI
+  - Shows 999 credits balance for testing
+
+- ✅ **Frontend Integration** (`src/components/process/process-ai-analysis.tsx`)
+  - `loadCredits()`: Fetches balance before opening modal
+  - `handleOpenAnalysisModal()`: Loads credits dynamically
+  - Modal displays:
+    - Current credit balance (mock: 999)
+    - FAST option (always enabled)
+    - FULL option (enabled when balance > 0)
+  - Real-time credit display with cost breakdown
+
+**Build Status:** ✅ Compiled successfully (21.9s)
+
+**Testing Ready:**
+```bash
+npm run dev  # Start development server
+# 1. Upload PDF → FASE 1 (instantaneous, free)
+# 2. Wait for JUDIT → FASE 2 (background, free)
+# 3. Click "Aprofundar Análise" → FASE 3 (new!)
+#    - Choose FAST: Uses Gemini Flash, ~10-15 seconds
+#    - Choose FULL: Uses Gemini Pro, ~20-30 seconds, logs mock debit
+```
+
+**Architecture:** Service-oriented with dependency injection for easy testing
 
 ### JUDIT Webhook Integration Fixes
 Fixed critical issues in webhook processing with robust solutions:

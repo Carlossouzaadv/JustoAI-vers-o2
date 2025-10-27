@@ -233,6 +233,8 @@ model CaseDocument {
   originalDocument  CaseDocument?      @relation("DocumentDuplicate", fields: [originalDocumentId], references: [id])
   duplicates        CaseDocument[]     @relation("DocumentDuplicate")
   importedDataItems ImportedDataItem[]
+  // Novo: Relacionamento com timeline (um documento pode estar vinculado a múltiplos eventos)
+  timelineEntries   ProcessTimelineEntry[] @relation("TimelineDocumentLinks")
 
   @@index([textSha]) // Índice para busca rápida de duplicatas
   @@index([analysisKey]) // Índice para cache de análise
@@ -281,10 +283,45 @@ model ProcessTimelineEntry {
   confidence        Float              @default(1.0) // Confiança na extração
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  // ============================================================
+  // NOVOS CAMPOS PARA TIMELINE UNIFICADA INTELIGENTE (Oct 2025)
+  // ============================================================
+
+  // Vinculação: Este evento enriquece outro evento JUDIT base?
+  baseEventId       String?            @map("base_event_id")           // Se não-null, este evento enriquece um evento base
+  enrichedByIds     String[]           @map("enriched_by_ids") @default([])   // IDs de eventos que enriquecem este
+  relationType      EventRelationType? @map("relation_type")           // DUPLICATE, ENRICHMENT, RELATED, CONFLICT
+
+  // Preservação de textos originais
+  originalTexts     Json?              @map("original_texts")          // {source: "texto original", ...}
+  contributingSources TimelineSource[] @map("contributing_sources") @default([])
+
+  // Vinculação com documentos
+  linkedDocumentIds String[]           @map("linked_document_ids") @default([])
+
+  // Enriquecimento por IA
+  isEnriched        Boolean            @default(false) @map("is_enriched")
+  enrichedAt        DateTime?          @map("enriched_at")
+  enrichmentModel   String?            @map("enrichment_model")        // e.g. "gemini-1.5-flash"
+
+  // Conflitos
+  hasConflict       Boolean            @default(false) @map("has_conflict")
+  conflictDetails   Json?              @map("conflict_details")        // {type, sources, details}
+  reviewedBy        String?            @map("reviewed_by")             // userId
+  reviewedAt        DateTime?          @map("reviewed_at")
+
+  // Relacionamentos
   case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  baseEvent         ProcessTimelineEntry? @relation("EventEnrichment", fields: [baseEventId], references: [id], onDelete: SetNull)
+  enrichingEvents   ProcessTimelineEntry[] @relation("EventEnrichment")
+  linkedDocuments   CaseDocument[]     @relation("TimelineDocumentLinks")
 
   @@unique([caseId, contentHash]) // Evita duplicatas por hash do conteúdo
   @@index([eventDate]) // Índice para ordenação cronológica
+  @@index([baseEventId]) // Índice para buscar eventos enriquecedores
+  @@index([isEnriched]) // Índice para filtrar eventos enriquecidos
+  @@index([hasConflict]) // Índice para buscar conflitos
   @@map("process_timeline_entries")
 }
 
@@ -1138,6 +1175,13 @@ enum TimelineSource {
   MANUAL_ENTRY    // Inserido manualmente
   SYSTEM_IMPORT   // Importado de sistema externo
   AI_EXTRACTION   // Extraído por IA
+}
+
+enum EventRelationType {
+  DUPLICATE    // Hash idêntico - mesmo evento de diferentes fontes
+  ENRICHMENT   // Adiciona contexto a um evento base JUDIT
+  RELATED      // Semanticamente similar mas distinto
+  CONFLICT     // Informações conflitantes entre fontes
 }
 
 // ================================================================

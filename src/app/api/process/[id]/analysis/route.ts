@@ -5,13 +5,10 @@
 // POST /api/process/{id}/analysis?level=FAST|FULL - Gerar nova análise
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { getAnalysisCacheManager } from '@/lib/analysis-cache';
-import { getCreditManager } from '@/lib/credit-system';
+import { prisma } from '@/lib/prisma';
+import { AIModelRouter } from '@/lib/ai-model-router';
+import { creditService } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
-
-const prisma = new PrismaClient();
-const cacheManager = getAnalysisCacheManager();
 
 interface AnalysisRequest {
   level: 'FAST' | 'FULL';
@@ -93,9 +90,9 @@ export async function POST(
     console.log(`${ICONS.PROCESS} Iniciando análise para processo: ${processId}`);
 
     const body: AnalysisRequest = await request.json();
-    const { level, includeDocuments = true, includeTimeline = true, uploadedFile, workspaceId } = body;
+    const { level, includeDocuments = true, includeTimeline = true, workspaceId } = body;
 
-    // Validate required fields
+    // Validar campos obrigatórios
     if (!workspaceId) {
       return NextResponse.json(
         { error: 'workspaceId é obrigatório' },
@@ -103,7 +100,6 @@ export async function POST(
       );
     }
 
-    // Validar nível
     if (!['FAST', 'FULL'].includes(level)) {
       return NextResponse.json(
         { error: 'Nível de análise deve ser FAST ou FULL' },
@@ -111,368 +107,208 @@ export async function POST(
       );
     }
 
-    // 1. Buscar última movimentação para cache
-    const lastMovementDate = await cacheManager.getLastMovementDate(processId, prisma);
-    console.log(`${ICONS.INFO} Última movimentação: ${lastMovementDate?.toISOString() || 'nenhuma'}`);
-
-    // 2. Buscar documentos
-    let documentHashes: string[] = [];
-
-    if (level === 'FAST') {
-      // FAST: usar documentos já anexados
-      documentHashes = await cacheManager.getProcessDocumentHashes(processId, prisma);
-      console.log(`${ICONS.SEARCH} FAST - Usando ${documentHashes.length} documentos existentes`);
-
-      if (documentHashes.length === 0) {
-        return NextResponse.json(
-          {
-            error: 'Nenhum documento encontrado para análise FAST',
-            suggestion: 'Use a opção FULL para fazer upload do PDF completo'
-          },
-          { status: 400 }
-        );
-      }
-    } else if (level === 'FULL') {
-      // FULL: usar arquivo uploaded (se fornecido) + documentos existentes
-      if (uploadedFile) {
-        // TODO: Processar arquivo uploaded e gerar hash
-        console.log(`${ICONS.SUCCESS} FULL - Processando arquivo uploaded: ${uploadedFile}`);
-      }
-
-      // Incluir documentos existentes também
-      const existingHashes = await cacheManager.getProcessDocumentHashes(processId, prisma);
-      documentHashes = [...existingHashes];
-
-      console.log(`${ICONS.SEARCH} FULL - Usando ${documentHashes.length} documentos total`);
-    }
-
-    // 3. Configurar modelo e prompt baseado no nível
-    const modelVersion = level === 'FULL' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
-    const promptSignature = generatePromptSignature(level, includeDocuments, includeTimeline);
-
-    console.log(`${ICONS.INFO} Configuração: ${level} | ${modelVersion} | prompt: ${promptSignature}`);
-
-    // 4. Verificar cache
-    const cacheResult = await cacheManager.checkAnalysisCache(
-      documentHashes,
-      modelVersion,
-      promptSignature,
-      lastMovementDate
+    // Verificar créditos (mock - sempre retorna sucesso)
+    const creditCheck = await creditService.checkCredits(
+      workspaceId,
+      level === 'FULL' ? 1 : 0,
+      level === 'FULL' ? 'FULL' : 'REPORT'
     );
 
-    // 5. Calcular custos de crédito (antes do cache hit para logs)
-    const creditSystem = getCreditManager(prisma);
-    const processCount = documentHashes.length || 1; // Pelo menos 1 processo
-
-    let reportCreditsRequired = 0;
-    let fullCreditsRequired = 0;
-
-    if (level === 'FAST') {
-      reportCreditsRequired = creditSystem.calculateReportCreditCost(processCount);
-    } else if (level === 'FULL') {
-      fullCreditsRequired = Math.ceil(processCount / 10); // 10 processes per FULL credit
-    }
-
-    console.log(`${ICONS.INFO} Custos calculados: ${reportCreditsRequired} report + ${fullCreditsRequired} full credits`);
-
-    if (cacheResult.hit) {
-      console.log(`${ICONS.SUCCESS} Cache HIT - Retornando análise cacheada (sem cobrança)`);
-
-      // Criar nova versão no banco apontando para o cache
-      const analysisVersion = await prisma.caseAnalysisVersion.create({
-        data: {
-          case: {
-            connect: { id: processId }
-          },
-          workspace: {
-            connect: { id: workspaceId }
-          },
-          version: await getNextVersionNumber(processId),
-          status: 'COMPLETED',
-          analysisType: level,
-          modelUsed: modelVersion,
-          aiAnalysis: cacheResult.data,
-          confidence: 0.95,
-          processingTime: 100, // Cache é rápido
-          metadata: {
-            source: 'cache',
-            cacheAge: cacheResult.age,
-            level,
-            documentCount: documentHashes.length
-          }
-        }
-      });
-
-      return NextResponse.json({
-        success: true,
-        analysisId: analysisVersion.id,
-        source: 'cache',
-        level,
-        model: modelVersion,
-        processingTime: 100
-      });
-    }
-
-    // 6. Verificar saldo de créditos antes do processamento
-    const balanceResult = await creditSystem.getWorkspaceCredits(workspaceId);
-    if (!balanceResult.success) {
+    if (!creditCheck.available) {
+      console.error(`${ICONS.ERROR} Créditos insuficientes:`, creditCheck);
       return NextResponse.json(
-        { error: 'Erro ao verificar saldo de créditos' },
-        { status: 500 }
+        { error: 'Créditos insuficientes', details: creditCheck },
+        { status: 402 }
       );
     }
 
-    const { reportCreditsBalance, fullCreditsBalance } = balanceResult.credits!;
+    console.log(`${ICONS.SUCCESS} Créditos verificados - prosseguindo com análise`);
 
-    // Verificar se há créditos suficientes
-    if (reportCreditsRequired > reportCreditsBalance) {
+    // Buscar documentos do caso
+    const documents = await prisma.caseDocument.findMany({
+      where: { caseId: processId },
+      select: {
+        id: true,
+        cleanText: true,
+        extractedText: true,
+        originalName: true,
+        type: true
+      },
+      take: 20 // Limitar para performance
+    });
+
+    console.log(`${ICONS.SEARCH} Encontrados ${documents.length} documento(s) para ${level}`);
+
+    // Concatenar texto dos documentos
+    const fullText = documents
+      .map(d => d.cleanText || d.extractedText || '')
+      .filter(Boolean)
+      .join('\n\n');
+
+    if (!fullText) {
       return NextResponse.json(
         {
-          error: 'Créditos report insuficientes',
-          required: reportCreditsRequired,
-          available: reportCreditsBalance,
-          creditType: 'report'
+          error: 'Nenhum texto encontrado para análise',
+          suggestion: 'Faça upload de documentos ou use a opção FULL'
         },
-        { status: 402 } // Payment Required
+        { status: 400 }
       );
     }
 
-    if (fullCreditsRequired > fullCreditsBalance) {
-      return NextResponse.json(
-        {
-          error: 'Créditos FULL insuficientes',
-          required: fullCreditsRequired,
-          available: fullCreditsBalance,
-          creditType: 'full'
-        },
-        { status: 402 } // Payment Required
-      );
-    }
+    // Selecionar modelo baseado no nível
+    const modelUsed = level === 'FULL' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
 
-    console.log(`${ICONS.SUCCESS} Créditos suficientes - Prosseguindo com análise`);
+    console.log(`${ICONS.INFO} Usando modelo: ${modelUsed} para análise ${level}`);
 
-    // 7. Adquirir lock para evitar double-processing
-    const lockResult = await cacheManager.acquireLock(cacheResult.key);
+    // Criar versão em andamento
+    const nextVersion = await getNextVersionNumber(processId);
+    const startTime = Date.now();
 
-    if (!lockResult.acquired) {
-      console.log(`${ICONS.WARNING} Lock não adquirido - processamento em andamento`);
-      return NextResponse.json(
-        {
-          error: 'Análise já está sendo processada',
-          retryIn: lockResult.ttl
-        },
-        { status: 429 }
-      );
-    }
-
-    try {
-      console.log(`${ICONS.SUCCESS} Lock adquirido - iniciando processamento`);
-
-      // 8. Consumir créditos ANTES do processamento
-      const debitResult = await creditSystem.debitCredits(
+    const analysisVersion = await prisma.caseAnalysisVersion.create({
+      data: {
+        caseId: processId,
         workspaceId,
-        reportCreditsRequired,
-        fullCreditsRequired,
-        `Análise ${level} - Processo ${processId}`,
-        {
-          processId,
-          level,
-          modelUsed: modelVersion,
-          documentCount: documentHashes.length
-        }
-      );
-
-      if (!debitResult.success) {
-        console.error(`${ICONS.ERROR} Falha ao debitar créditos:`, debitResult.error);
-        return NextResponse.json(
-          { error: 'Erro ao consumir créditos: ' + debitResult.error },
-          { status: 500 }
-        );
-      }
-
-      console.log(`${ICONS.SUCCESS} Créditos debitados: ${reportCreditsRequired}R + ${fullCreditsRequired}F`);
-
-      // 9. Incrementar caseAnalysisVersion
-      const nextVersion = await getNextVersionNumber(processId);
-
-      const analysisVersion = await prisma.caseAnalysisVersion.create({
-        data: {
-          case: {
-            connect: { id: processId }
-          },
-          workspace: {
-            connect: { id: workspaceId }
-          },
-          version: nextVersion,
-          status: 'PROCESSING',
-          analysisType: level,
-          modelUsed: modelVersion,
-          metadata: {
-            level,
-            documentCount: documentHashes.length,
-            lastMovementDate: lastMovementDate?.toISOString(),
-            startedAt: new Date().toISOString(),
-            creditCost: {
-              reportCredits: reportCreditsRequired,
-              fullCredits: fullCreditsRequired,
-              allocationsUsed: debitResult.allocationsUsed
-            }
-          }
-        }
-      });
-
-      console.log(`${ICONS.SUCCESS} Versão ${nextVersion} criada no banco`);
-
-      // 10. Processar análise em background
-      processAnalysisInBackground(
-        analysisVersion.id,
-        processId,
-        level,
-        documentHashes,
-        modelVersion,
-        promptSignature,
-        lastMovementDate,
-        cacheResult.key,
-        lockResult.lockKey,
-        workspaceId,
-        reportCreditsRequired,
-        fullCreditsRequired
-      ).catch(error => {
-        console.error(`${ICONS.ERROR} Erro no processamento background:`, error);
-      });
-
-      // 8. Criar event entry no process timeline
-      await createTimelineEvent(processId, level, nextVersion);
-
-      return NextResponse.json({
-        success: true,
-        analysisId: analysisVersion.id,
-        source: 'processing',
-        level,
-        model: modelVersion,
         version: nextVersion,
-        estimatedTime: level === 'FULL' ? '2-3 minutos' : '30-60 segundos'
-      });
+        status: 'PROCESSING',
+        analysisType: level === 'FULL' ? 'complete' : 'strategic',
+        modelUsed,
+        confidence: 0,
+        metadata: {
+          level,
+          documentCount: documents.length,
+          startedAt: new Date().toISOString()
+        }
+      }
+    });
 
-    } catch (error) {
-      // Liberar lock em caso de erro
-      await cacheManager.releaseLock(lockResult.lockKey);
-      throw error;
-    }
+    console.log(`${ICONS.SUCCESS} Versão ${nextVersion} criada - ID: ${analysisVersion.id}`);
+
+    // Processar em background
+    processAnalysisInBackground(
+      analysisVersion.id,
+      processId,
+      fullText,
+      level,
+      modelUsed,
+      workspaceId,
+      documents.length
+    ).catch(error => {
+      console.error(`${ICONS.ERROR} Erro no processamento:`, error);
+    });
+
+    return NextResponse.json({
+      success: true,
+      analysisId: analysisVersion.id,
+      version: nextVersion,
+      level,
+      model: modelUsed,
+      estimatedTime: level === 'FULL' ? '20-30 segundos' : '10-15 segundos'
+    });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro na análise:`, error);
+    console.error(`${ICONS.ERROR} Erro ao gerar análise:`, error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro ao gerar análise', details: error instanceof Error ? error.message : 'Desconhecido' },
       { status: 500 }
     );
   }
 }
 
 /**
- * Processa análise em background
+ * Processa análise em background usando Gemini
  */
 async function processAnalysisInBackground(
   analysisVersionId: string,
   processId: string,
+  fullText: string,
   level: 'FAST' | 'FULL',
-  documentHashes: string[],
-  modelVersion: string,
-  promptSignature: string,
-  lastMovementDate: Date | null,
-  cacheKey: string,
-  lockKey: string,
+  modelUsed: string,
   workspaceId: string,
-  reportCreditsRequired: number,
-  fullCreditsRequired: number
+  documentCount: number
 ) {
   try {
-    console.log(`${ICONS.PROCESS} Iniciando processamento background para ${analysisVersionId}`);
+    console.log(`${ICONS.PROCESS} Iniciando processamento background para análise ${analysisVersionId}`);
 
-    // Simular processamento (em produção, chamar Gemini aqui)
-    const processingTime = level === 'FULL' ? 8000 : 3000;
+    const startTime = Date.now();
 
-    await new Promise(resolve => setTimeout(resolve, processingTime));
+    // Chamar Gemini para análise real
+    let analysisResult;
 
-    // Mock result baseado no nível
-    const mockResult = generateMockAnalysis(level);
+    if (level === 'FULL') {
+      // FULL: Análise estratégica completa com Gemini Pro
+      console.log(`${ICONS.STAR} Executando análise FULL com Gemini Pro...`);
+      analysisResult = await AIModelRouter.analyzeStrategic(
+        fullText,
+        Math.ceil(fullText.length / 1024 / 1024), // Estimar MB
+        workspaceId
+      );
+    } else {
+      // FAST: Análise rápida com Gemini Flash
+      console.log(`${ICONS.ZOOMBIN} Executando análise FAST com Gemini Flash...`);
+      analysisResult = await AIModelRouter.analyzePhase1(
+        fullText,
+        Math.ceil(fullText.length / 1024 / 1024), // Estimar MB
+        workspaceId
+      );
+    }
 
-    // Salvar resultado no banco
+    const processingTime = Date.now() - startTime;
+
+    // Salvar resultado
     await prisma.caseAnalysisVersion.update({
       where: { id: analysisVersionId },
       data: {
         status: 'COMPLETED',
-        aiAnalysis: mockResult,
+        aiAnalysis: analysisResult.result,
+        modelUsed: analysisResult.modelUsed || modelUsed,
         confidence: level === 'FULL' ? 0.95 : 0.85,
         processingTime,
-        updatedAt: new Date()
+        metadata: {
+          level,
+          documentCount,
+          completedAt: new Date().toISOString(),
+          processingTimeMs: processingTime,
+          creditsConsumed: level === 'FULL' ? 1 : 0
+        }
       }
     });
 
-    // Salvar no cache
-    await cacheManager.saveAnalysisCache(
-      documentHashes,
-      modelVersion,
-      promptSignature,
-      mockResult,
-      lastMovementDate,
-      workspaceId
+    // Debitar crédito (mock)
+    if (level === 'FULL') {
+      await creditService.debitCredits(
+        workspaceId,
+        1,
+        'FULL',
+        {
+          reason: 'strategic_analysis',
+          caseId: processId,
+          analysisId: analysisVersionId,
+          level
+        }
+      );
+    }
+
+    console.log(
+      `${ICONS.SUCCESS} Análise ${analysisVersionId} concluída em ${(processingTime / 1000).toFixed(1)}s`
     );
 
-    // Log usage event
-    const creditSystem = getCreditManager(prisma);
-    await creditSystem.logUsageEvent({
-      workspaceId,
-      eventType: 'analysis_completed',
-      resourceType: level === 'FULL' ? 'full_analysis' : 'analysis',
-      resourceId: processId,
-      reportCreditsCost: reportCreditsRequired,
-      fullCreditsCost: fullCreditsRequired,
-      status: 'completed',
-      metadata: {
-        analysisVersionId,
-        level,
-        modelUsed: modelVersion,
-        processingTime,
-        documentCount: documentHashes.length
-      }
-    });
-
-    console.log(`${ICONS.SUCCESS} Análise ${analysisVersionId} concluída e cacheada`);
-
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro no processamento:`, error);
+    console.error(`${ICONS.ERROR} Erro ao processar análise:`, error);
 
     // Marcar como erro no banco
     await prisma.caseAnalysisVersion.update({
       where: { id: analysisVersionId },
       data: {
         status: 'FAILED',
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        metadata: {
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+          failedAt: new Date().toISOString()
+        }
       }
     });
 
-    // Log failed usage event
-    const creditSystem = getCreditManager(prisma);
-    await creditSystem.logUsageEvent({
-      workspaceId,
-      eventType: 'analysis_failed',
-      resourceType: level === 'FULL' ? 'full_analysis' : 'analysis',
-      resourceId: processId,
-      reportCreditsCost: reportCreditsRequired,
-      fullCreditsCost: fullCreditsRequired,
-      status: 'failed',
-      metadata: {
-        analysisVersionId,
-        level,
-        modelUsed: modelVersion,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
-        documentCount: documentHashes.length
-      }
-    });
-  } finally {
-    // Sempre liberar lock
-    await cacheManager.releaseLock(lockKey);
+    console.error(`${ICONS.ERROR} Falha na análise ${analysisVersionId}:`, error instanceof Error ? error.message : 'Desconhecido');
   }
 }
 
@@ -489,73 +325,3 @@ async function getNextVersionNumber(processId: string): Promise<number> {
   return (lastVersion?.version || 0) + 1;
 }
 
-/**
- * Gera signature do prompt
- */
-function generatePromptSignature(level: string, includeDocuments: boolean, includeTimeline: boolean): string {
-  const promptConfig = { level, includeDocuments, includeTimeline };
-  const combined = JSON.stringify(promptConfig);
-  return require('crypto').createHash('sha256').update(combined).digest('hex').substring(0, 16);
-}
-
-/**
- * Cria evento na timeline do processo
- */
-async function createTimelineEvent(processId: string, level: string, version: number) {
-  try {
-    await prisma.processTimelineEntry.create({
-      data: {
-        caseId: processId,
-        contentHash: `analysis_${level}_v${version}_${Date.now()}`,
-        eventDate: new Date(),
-        eventType: 'ANÁLISE_IA',
-        description: `Análise ${level} gerada - Versão ${version}`,
-        normalizedContent: `Análise por IA nivel ${level} versão ${version}`,
-        source: 'AI_EXTRACTION',
-        confidence: 1.0,
-        metadata: {
-          analysisLevel: level,
-          version,
-          generatedAt: new Date().toISOString()
-        }
-      }
-    });
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao criar evento timeline:`, error);
-  }
-}
-
-/**
- * Gera análise mock baseada no nível
- */
-function generateMockAnalysis(level: 'FAST' | 'FULL') {
-  const baseAnalysis = {
-    summary: `Análise ${level} - Processo com fundamentação sólida`,
-    keyPoints: [
-      'Documentação adequada para o tipo de ação',
-      'Jurisprudência favorável identificada',
-      `Análise ${level} - ${level === 'FULL' ? 'Completa e detalhada' : 'Baseada em documentos existentes'}`
-    ],
-    confidence: level === 'FULL' ? 0.95 : 0.85,
-    model: level === 'FULL' ? 'gemini-2.5-pro' : 'gemini-2.5-flash',
-    level
-  };
-
-  if (level === 'FULL') {
-    return {
-      ...baseAnalysis,
-      detailedAnalysis: {
-        strengths: ['Análise completa com documento integral', 'Maior precisão'],
-        weaknesses: ['Identificados pontos de atenção específicos'],
-        recommendations: ['Estratégias baseadas em análise completa']
-      },
-      riskAssessment: {
-        level: 'medium',
-        factors: ['Análise detalhada do processo completo'],
-        confidence: 0.95
-      }
-    };
-  }
-
-  return baseAnalysis;
-}

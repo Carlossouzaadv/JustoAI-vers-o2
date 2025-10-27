@@ -105,6 +105,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
   const [generating, setGenerating] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [creditsBalance, setCreditsBalance] = useState(999); // Mock: sempre 999 por enquanto
 
   // Mock user plan and usage - in real app, this would come from user context
   const [userPlan] = useState<SubscriptionPlan>('professional');
@@ -120,6 +121,26 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
   useEffect(() => {
     loadAnalyses();
   }, [processId]);
+
+  const loadCredits = async () => {
+    try {
+      const response = await fetch('/api/billing/credits');
+      if (response.ok) {
+        const data = await response.json();
+        const balance = data.data?.balance?.fullCreditsBalance || 999;
+        setCreditsBalance(balance);
+        console.log(`${ICONS.CREDIT} Créditos carregados: ${balance}`);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar créditos:', error);
+      setCreditsBalance(999); // Fallback
+    }
+  };
+
+  const handleOpenAnalysisModal = () => {
+    loadCredits(); // Carregar créditos antes de abrir
+    setShowUpgradeModal(true);
+  };
 
   const loadAnalyses = async () => {
     try {
@@ -289,7 +310,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={() => setShowUpgradeModal(true)}
+                onClick={handleOpenAnalysisModal}
                 disabled={generating}
                 variant="default"
               >
@@ -305,7 +326,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
               <span className="text-4xl mb-4 block">{ICONS.STAR}</span>
               <h3 className="text-lg font-medium mb-2">Nenhuma análise encontrada</h3>
               <p className="text-sm mb-4">Gere sua primeira análise estratégica por IA</p>
-              <Button onClick={() => setShowUpgradeModal(true)} variant="default">
+              <Button onClick={handleOpenAnalysisModal} variant="default">
                 {ICONS.STAR} Gerar Análise Estratégica
               </Button>
             </div>
@@ -649,14 +670,6 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Usage Alert */}
-            <UsageAlert
-              plan={userPlan}
-              usage={userUsage}
-              onUpgrade={() => window.open('/pricing', '_blank')}
-              className="mb-4"
-            />
-
             <div className="space-y-3">
               {/* OPÇÃO A: FAST - Documentos existentes */}
               <Button
@@ -684,15 +697,13 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
                 </div>
               </Button>
 
-              {/* OPÇÃO B: FULL - Upload de cópia integral */}
+              {/* OPÇÃO B: FULL - Análise Completa com Gemini Pro */}
               <Button
                 className="w-full justify-start h-auto p-4 text-left"
                 variant="outline"
-                disabled={!canPerformAction(userPlan, 'complete_analysis', userUsage).allowed}
+                disabled={creditsBalance <= 0}
                 onClick={() => {
-                  const canPerform = canPerformAction(userPlan, 'complete_analysis', userUsage);
-                  if (canPerform.allowed) {
-                    // TODO: Implementar upload de arquivo integral
+                  if (creditsBalance > 0) {
                     generateNewAnalysis('FULL');
                     setShowUpgradeModal(false);
                   }
@@ -701,27 +712,23 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
                 <div className="w-full">
                   <div className="font-medium flex items-center gap-2 mb-2">
                     <Badge variant="destructive" className="text-xs">FULL</Badge>
-                    <span className="text-sm">Fazer upload de cópia integral</span>
-                    {canPerformAction(userPlan, 'complete_analysis', userUsage).allowed ? (
-                      <Badge variant="secondary" className="text-xs ml-auto">
-                        {getAnalysisRemaining(userPlan, userUsage)} restante{getAnalysisRemaining(userPlan, userUsage) !== 1 ? 's' : ''}
-                      </Badge>
-                    ) : (
-                      <Badge variant="destructive" className="text-xs ml-auto">Limite atingido</Badge>
-                    )}
+                    <span className="text-sm">Análise Completa com Gemini Pro</span>
+                    <Badge variant="secondary" className="text-xs ml-auto">
+                      {creditsBalance} créditos
+                    </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Upload do PDF completo do processo + análise com Gemini Pro. Resultado mais completo e preciso.
+                    Análise estratégica completa e detalhada com nosso modelo mais avançado. Resultado mais profundo e preciso.
                   </p>
                   <div className="bg-green-50 p-2 rounded border border-green-200">
                     <p className="text-xs text-green-700">
-                      ✓ Análise mais detalhada • ✓ Modelo avançado • ✓ Maior precisão
+                      ✓ Análise detalhada • ✓ Modelo Pro • ✓ Maior precisão • ✓ Custa 1 crédito
                     </p>
                   </div>
-                  {!canPerformAction(userPlan, 'complete_analysis', userUsage).allowed && (
+                  {creditsBalance <= 0 && (
                     <div className="bg-red-50 p-2 rounded border border-red-200 mt-2">
                       <p className="text-xs text-red-700">
-                        {canPerformAction(userPlan, 'complete_analysis', userUsage).reason}
+                        Créditos insuficientes. Compre mais créditos para continuar.
                       </p>
                     </div>
                   )}

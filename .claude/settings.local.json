@@ -28,7 +28,8 @@
       "Read(//c/Users/carlo/Documents/**)",
       "Bash(cat:*)",
       "Bash(find:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(npm run db:migrate:*)"
     ],
     "deny": [],
     "ask": []

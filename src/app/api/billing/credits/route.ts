@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { usageTracker } from '@/lib/telemetry/usage-tracker';
 import { quotaEnforcement } from '@/lib/middleware/quota-enforcement';
+import { creditService } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
 
 // ================================================================
@@ -232,18 +233,13 @@ async function getCreditTransactions(workspaceId: string): Promise<NextResponse>
 
 async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
   try {
-    // Return default data if services are unavailable
+    // Usar serviço de créditos (mockado no momento)
+    const balanceData = await creditService.getFormattedBalance(workspaceId);
+
     return NextResponse.json({
       success: true,
       data: {
-        balance: {
-          workspaceId,
-          balance: 0,
-          includedCredits: 0,
-          purchasedCredits: 0,
-          consumedCredits: 0,
-          transactions: []
-        },
+        balance: balanceData.balance,
         quotaStatus: {
           reports: {
             quotaStatus: 'ok',
@@ -263,8 +259,9 @@ async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
       data: {
         balance: {
           workspaceId,
-          balance: 0,
-          includedCredits: 0,
+          fullCreditsBalance: 999,
+          reportCreditsBalance: 999,
+          includedCredits: 999,
           purchasedCredits: 0,
           consumedCredits: 0,
           transactions: []
