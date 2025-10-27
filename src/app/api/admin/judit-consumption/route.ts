@@ -18,7 +18,7 @@ import { prisma } from '@/lib/prisma';
 
 // Constants
 const JUDIT_API_KEY = process.env.JUDIT_API_KEY;
-const JUDIT_API_URL = 'https://requests.prod.judit.io/requests';
+const JUDIT_API_URL = process.env.JUDIT_API_URL || 'https://api.judit.com.br';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // ================================================================
@@ -106,7 +106,12 @@ async function fetchJuditData(startDate: string, endDate: string) {
     throw new Error('JUDIT_API_KEY not configured');
   }
 
-  const url = `${JUDIT_API_URL}?page_size=1000&created_at_gte=${startDate}&created_at_lte=${endDate}`;
+  // Construct proper JUDIT API endpoint
+  // Format: https://api.judit.com.br/requests?page_size=1000&created_at_gte=YYYY-MM-DD&created_at_lte=YYYY-MM-DD
+  const baseUrl = JUDIT_API_URL.endsWith('/') ? JUDIT_API_URL.slice(0, -1) : JUDIT_API_URL;
+  const url = `${baseUrl}/requests?page_size=1000&created_at_gte=${startDate}&created_at_lte=${endDate}`;
+
+  console.log(`JUDIT request URL: ${url}`);
 
   const response = await fetch(url, {
     method: 'GET',
@@ -117,6 +122,8 @@ async function fetchJuditData(startDate: string, endDate: string) {
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`JUDIT API error response: ${errorText}`);
     throw new Error(`JUDIT API error: ${response.status} ${response.statusText}`);
   }
 
