@@ -111,23 +111,47 @@ async function fetchJuditData(startDate: string, endDate: string) {
   const baseUrl = JUDIT_API_URL.endsWith('/') ? JUDIT_API_URL.slice(0, -1) : JUDIT_API_URL;
   const url = `${baseUrl}/requests?page_size=1000&created_at_gte=${startDate}&created_at_lte=${endDate}`;
 
-  console.log(`JUDIT request URL: ${url}`);
+  console.log(`[JUDIT] Request URL: ${url}`);
+  console.log(`[JUDIT] Using API Key: ${JUDIT_API_KEY.substring(0, 10)}...`);
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'api-key': JUDIT_API_KEY,
-      'Content-Type': 'application/json'
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'api-key': JUDIT_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      // Add timeout (5 seconds)
+      signal: AbortSignal.timeout(5000)
+    });
+
+    console.log(`[JUDIT] Response status: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[JUDIT] Error response body: ${errorText}`);
+      throw new Error(`JUDIT API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
-  });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`JUDIT API error response: ${errorText}`);
-    throw new Error(`JUDIT API error: ${response.status} ${response.statusText}`);
+    const data = await response.json();
+    console.log(`[JUDIT] Successfully received ${data.page_data?.length || 0} requests`);
+    return data;
+  } catch (error) {
+    console.error(`[JUDIT] Fetch error:`, error);
+
+    if (error instanceof TypeError) {
+      // Network error
+      console.error(`[JUDIT] Network/Connection error:`, error.message);
+      throw new Error(`Network error connecting to JUDIT: ${error.message}`);
+    }
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`[JUDIT] Request timeout (5s exceeded)`);
+      throw new Error('JUDIT API request timeout after 5 seconds');
+    }
+
+    throw error;
   }
-
-  return response.json();
 }
 
 function calculateCost(request: JuditRequest): number {
