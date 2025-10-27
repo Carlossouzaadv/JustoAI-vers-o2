@@ -8,7 +8,7 @@ import { ExternalLink, ShieldCheck } from 'lucide-react';
 interface ConsentCheckboxProps {
   id: string;
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  onChange: (_checked: boolean) => void;
   error?: string;
   required?: boolean;
   variant?: 'terms' | 'privacy' | 'both';
@@ -173,7 +173,7 @@ export const ConsentCheckbox: React.FC<ConsentCheckboxProps> = ({
 interface MarketingConsentProps {
   id: string;
   checked: boolean;
-  onChange: (checked: boolean) => void;
+  onChange: (_checked: boolean) => void;
   className?: string;
 }
 
