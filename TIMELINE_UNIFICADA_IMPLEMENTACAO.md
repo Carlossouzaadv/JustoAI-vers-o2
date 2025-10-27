@@ -12,11 +12,11 @@
 ```
 Sprint 1 (Schema):        [████████████████░░] 100% ✅
 Sprint 2 (Enriquecimento): [██████████████░░░░] 80%  🟡
-Sprint 3 (Integração):     [████░░░░░░░░░░░░░░] 33%  🟡
+Sprint 3 (Integração):     [████████████████░░] 100% ✅
 Sprint 4 (UI):             [░░░░░░░░░░░░░░░░░░] 0%
 Sprint 5 (Conflitos):      [░░░░░░░░░░░░░░░░░░] 0%
 ────────────────────────────────────────────────
-TOTAL:                     [███████████░░░░░░░░] 45%
+TOTAL:                     [███████████████░░░] 53%
 ```
 
 ---
@@ -162,19 +162,26 @@ TOTAL:                     [███████████░░░░░░�
 
 **Status**: ✅ COMPLETO
 
-### 3.2 Atualizar upload PDF
-- [ ] Arquivo: `src/app/api/documents/upload/route.ts`
-  - [ ] Passar `documentId` para `mergeEntries()`
-  - [ ] Preencher `linkedDocumentIds` ao criar eventos
+### 3.2 Atualizar upload PDF ✅
+- [x] Arquivo: `src/app/api/documents/upload/route.ts`
+  - [x] Importar novo `mergeTimelines()` do `timelineUnifier.ts`
+  - [x] Chamar `mergeTimelines(caseId, [documentId])` após criar documento
+  - [x] Passar documentId como linkedDocumentIds
+  - [x] Log detalhado do resultado (new, duplicates, enriched, related, conflicts)
+  - [x] Graceful error handling (não falhar upload se timeline falhar)
+  - [x] Manter backward compatibility com timeline-merge.ts antigo
 
-**Status**: ⏳ Aguardando Sprint 2
+**Status**: ✅ COMPLETO
 
-### 3.3 Atualizar webhook JUDIT
-- [ ] Arquivo: `src/app/api/webhook/judit/callback/route.ts`
-  - [ ] Marcar eventos JUDIT com metadata especial
-  - [ ] Garantir criação de JUDIT antes de enriquecimentos
+### 3.3 Atualizar webhook JUDIT ✅
+- [x] Arquivo: `src/app/api/webhook/judit/callback/route.ts`
+  - [x] Importar novo `mergeTimelines()` do `timelineUnifier.ts`
+  - [x] Chamar `mergeTimelines(caseId)` quando JUDIT response_created chega
+  - [x] Garantir JUDIT é espinha dorsal (criado primeiro)
+  - [x] Log detalhado com breakdown (total, new, duplicates, enriched, related, conflicts)
+  - [x] Graceful error handling (não falha webhook se timeline falhar)
 
-**Status**: ⏳ Aguardando Sprint 2
+**Status**: ✅ COMPLETO
 
 ---
 
@@ -276,5 +283,6 @@ TOTAL:                     [███████████░░░░░░�
 
 ---
 
-**Last Updated**: 27 de Outubro de 2025
+**Last Updated**: 27 de Outubro de 2025 (Sprint 3 completo)
 **Atualizado Automaticamente**: Sim
+**Próximo Passo**: Sprint 4 (UI) - Criar componente EnrichedTimelineEvent

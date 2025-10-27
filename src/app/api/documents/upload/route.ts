@@ -14,6 +14,7 @@ import { requireAuth } from '@/lib/api-utils';
 import { getDocumentHashManager } from '@/lib/document-hash';
 import { getAnalysisCacheManager } from '@/lib/analysis-cache';
 import { getTimelineMergeService } from '@/lib/timeline-merge';
+import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { addOnboardingJob } from '@/lib/queue/juditQueue';
 import { PDFProcessor } from '@/lib/pdf-processor';
 import { TextCleaner } from '@/lib/text-cleaner';
@@ -580,7 +581,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 18. TIMELINE UNIFICADA - EXTRAIR E MESCLAR ANDAMENTOS
+    // 18. TIMELINE UNIFICADA - EXTRAIR E MESCLAR ANDAMENTOS (COM ENRIQUECIMENTO INTELIGENTE)
     const timelineService = getTimelineMergeService();
 
     if (aiAnalysisResult) {
@@ -589,6 +590,23 @@ export async function POST(request: NextRequest) {
       if (timelineEntries.length > 0) {
         const mergeResult = await timelineService.mergeEntries(targetCaseId, timelineEntries, prisma);
       }
+    }
+
+    // 18.2 NOVO: CHAMAR MERGE TIMELINES V2 COM ENRIQUECIMENTO INTELIGENTE
+    // Isto usa o novo TimelineEnricherService com associação e enriquecimento
+    try {
+      console.log(`${ICONS.PROCESS} [Timeline] Iniciando unificação v2 com enriquecimento para case ${targetCaseId}`);
+      const unificationResult = await mergeTimelines(targetCaseId, [document.id]);
+
+      console.log(`${ICONS.SUCCESS} [Timeline] Unificação v2 concluída:
+        Novos: ${unificationResult.new}
+        Duplicados: ${unificationResult.duplicates}
+        Enriquecidos: ${unificationResult.enriched}
+        Relacionados: ${unificationResult.related}
+        Conflitos: ${unificationResult.conflicts}`);
+    } catch (timelineError) {
+      console.error(`${ICONS.WARNING} [Timeline] Erro na unificação v2 (não é crítico):`, timelineError);
+      // Não falhar o upload por causa disso - timeline é secundária
     }
 
     // 19. FASE 2 - ENRIQUECIMENTO OFICIAL VIA JUDIT (Background Async)

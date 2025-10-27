@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getTimelineMergeService } from '@/lib/timeline-merge';
+import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
 import {
@@ -199,32 +200,32 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // Extrair informações principais e processar timeline
-        const timelineService = getTimelineMergeService();
+        // ================================================================
+        // NOVO: Chamar inteligente mergeTimelines v2 com enriquecimento
+        // Fluxo:
+        // 1. JUDIT é espinha dorsal (oficial)
+        // 2. Outros eventos associam inteligentemente
+        // 3. Enriquecimento automático via Gemini Flash
+        // 4. Detecção de conflitos
+        // ================================================================
+        try {
+          const unificationResult = await mergeTimelines(targetCase.id);
 
-        // Extrair andamentos do response_data
-        if (responseData.steps && Array.isArray(responseData.steps)) {
-          const timelineEntries = responseData.steps.map((step: any) => ({
-            eventDate: new Date(step.step_date),
-            eventType: step.step_type || 'Andamento',
-            description: step.content,
-            source: 'API_JUDIT',
-            sourceId: step.step_id,
-          }));
-
-          // Mesclar com timeline existente
-          if (timelineEntries.length > 0) {
-            const mergeResult = await timelineService.mergeEntries(
-              targetCase.id,
-              timelineEntries,
-              prisma
-            );
-
-            console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Timeline atualizada:`, {
-              case_id: targetCase.id,
-              new_entries: mergeResult?.added || 0,
-            });
-          }
+          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Timeline unificada com enriquecimento:`, {
+            case_id: targetCase.id,
+            total_analyzed: unificationResult.total,
+            new_events: unificationResult.new,
+            duplicates_detected: unificationResult.duplicates,
+            enriched: unificationResult.enriched,
+            related: unificationResult.related,
+            conflicts: unificationResult.conflicts,
+          });
+        } catch (unificationError) {
+          console.error(
+            `${ICONS.ERROR} [JUDIT Webhook] Erro na unificação de timeline:`,
+            unificationError
+          );
+          // Continuar mesmo se erro - não falha o webhook
         }
 
         // Processar anexos (com retry silencioso se falhar)
