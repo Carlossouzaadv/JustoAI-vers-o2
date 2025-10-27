@@ -6,7 +6,13 @@
  * Usage: node judit-consumption-report.js
  */
 
-const apiKey = '4b851ddf-83f1-4f68-8f82-54af336b3d52';
+// Load from environment variable
+if (!process.env.JUDIT_API_KEY) {
+  console.error('❌ JUDIT_API_KEY não encontrada em .env');
+  console.error('Configure em .env: JUDIT_API_KEY=sua_chave_aqui');
+  process.exit(1);
+}
+const apiKey = process.env.JUDIT_API_KEY;
 const startDate = '2025-10-17';
 const endDate = '2025-10-27';
 
