@@ -10,6 +10,29 @@ import { prisma } from '@/lib/prisma';
 // TIPOS E INTERFACES
 // ================================================================
 
+export interface Processo {
+  id: string;
+  numeroCnj: string;
+  ultimaAtualizacao?: Date;
+  dadosCompletos?: ProcessoData;
+  monitoramento?: JuditMonitoring;
+}
+
+export interface JuditMonitoring {
+  id: string;
+  trackingId: string;
+  tipo: string;
+  ativo: boolean;
+  createdAt?: Date;
+  processoId: string;
+}
+
+export interface ProcessoData {
+  [key: string]: unknown;
+  movimentos?: unknown[];
+  ultimaVerificacao?: string;
+}
+
 export interface MonitoringSetupResult {
   success: boolean;
   trackingId?: string;
@@ -30,14 +53,27 @@ export interface TrackingPayload {
 export interface TrackingResponse {
   tracking_id: string;
   status: string;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+export interface Movement {
+  [key: string]: unknown;
+  date?: string;
+  movement_date?: string;
+  text?: string;
+  description?: string;
+  descricao?: string;
+  movement_description?: string;
+  movimento?: string;
+  content?: string;
+  conteudo?: string;
 }
 
 export interface TrackingUpdateResult {
   trackingId: string;
   hasNewMovements: boolean;
   movementsCount: number;
-  movements?: any[];
+  movements?: Movement[];
   error?: string;
 }
 
@@ -57,14 +93,18 @@ const MONITORING_CONFIG = {
 // LOGS
 // ================================================================
 
+interface LogData {
+  [key: string]: string | number | boolean | object | undefined;
+}
+
 const log = {
-  info: (message: string, data?: any) => {
+  info: (message: string, data?: LogData) => {
     console.log(`[JUDIT MONITORING] ${message}`, data || '');
   },
-  error: (message: string, error?: any) => {
+  error: (message: string, error?: LogData) => {
     console.error(`[JUDIT MONITORING ERROR] ${message}`, error || '');
   },
-  warn: (message: string, data?: any) => {
+  warn: (message: string, data?: LogData) => {
     console.warn(`[JUDIT MONITORING WARN] ${message}`, data || '');
   },
 };
@@ -214,7 +254,7 @@ export async function checkTrackingUpdates(
     log.info(`Verificando updates para tracking`, { trackingId, sinceTimestamp });
 
     // Fazer requisição GET para /tracking/{trackingId}/responses
-    const response = await juditClient.get<any>(
+    const response = await juditClient.get<{ page_data?: Movement[] }>(
       'tracking',
       `/tracking/${trackingId}/responses?created_at_gte=${encodeURIComponent(sinceTimestamp)}`
     );
@@ -307,7 +347,7 @@ export async function restartProcessMonitoring(cnj: string): Promise<MonitoringS
 /**
  * Lista todos os monitoramentos ativos
  */
-export async function listActiveMonitorings(): Promise<any[]> {
+export async function listActiveMonitorings(): Promise<(JuditMonitoring & { processo?: Pick<Processo, 'id' | 'numeroCnj' | 'ultimaAtualizacao'> })[]> {
   const monitorings = await prisma.juditMonitoring.findMany({
     where: { ativo: true },
     include: {
@@ -328,7 +368,7 @@ export async function listActiveMonitorings(): Promise<any[]> {
 /**
  * Busca monitoramento por CNJ
  */
-export async function getMonitoringByCnj(cnj: string): Promise<any | null> {
+export async function getMonitoringByCnj(cnj: string): Promise<JuditMonitoring | null> {
   const processo = await prisma.processo.findUnique({
     where: { numeroCnj: cnj },
     include: {
@@ -367,7 +407,7 @@ export async function getMonitoringStats() {
 /**
  * Extrai texto das movimentações de uma resposta JUDIT
  */
-export function extractMovementsText(movements: any[]): string[] {
+export function extractMovementsText(movements: Movement[]): string[] {
   if (!movements || !Array.isArray(movements)) {
     return [];
   }
@@ -396,7 +436,7 @@ export function extractMovementsText(movements: any[]): string[] {
  */
 export async function updateProcessWithMovements(
   processoId: string,
-  movements: any[]
+  movements: Movement[]
 ): Promise<void> {
   try {
     // Buscar dados atuais
@@ -405,7 +445,7 @@ export async function updateProcessWithMovements(
       select: { dadosCompletos: true },
     });
 
-    const dadosAtuais = (processo?.dadosCompletos as any) || {};
+    const dadosAtuais = (processo?.dadosCompletos as ProcessoData) || {};
 
     // Adicionar novos movimentos
     const movimentosExistentes = dadosAtuais.movimentos || [];
@@ -534,8 +574,8 @@ export interface AttachmentAnalysisResult {
  * @returns Resultado da análise e busca (se executada)
  */
 export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
-  processo: any,
-  novosAndamentos: any[]
+  processo: Processo,
+  novosAndamentos: Movement[]
 ): Promise<AttachmentAnalysisResult> {
 
   log.info(`Analisando ${novosAndamentos.length} novos andamentos`, {
@@ -660,20 +700,19 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
 /**
  * Extrai texto de um andamento (suporta diferentes formatos)
  */
-function extractMovementText(andamento: any): string | null {
+function extractMovementText(andamento: Movement): string | null {
   if (!andamento) return null;
 
   // Tentar diferentes campos comuns
-  return (
-    andamento.text ||
+  const text = andamento.text ||
     andamento.description ||
     andamento.descricao ||
     andamento.movimento ||
     andamento.texto ||
     andamento.content ||
-    andamento.conteudo ||
-    null
-  );
+    andamento.conteudo;
+
+  return typeof text === 'string' ? text : null;
 }
 
 /**

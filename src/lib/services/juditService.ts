@@ -38,19 +38,39 @@
 //
 // ================================================================
 
+// ================================================================
+// LOGGER TYPES AND INTERFACES
+// ================================================================
+
+interface LogMessage {
+  [key: string]: string | number | boolean | object | undefined;
+}
+
+interface Logger {
+  info: (msg: string, data?: LogMessage) => void;
+  error: (msg: string, data?: LogMessage) => void;
+  warn: (msg: string, data?: LogMessage) => void;
+  debug: (msg: string, data?: LogMessage) => void;
+}
+
+interface OperationTracker {
+  finish: (status: string, details?: LogMessage) => number;
+}
+
 // Simple inline logger to avoid external dependencies
-const juditLogger = {
-  info: (msg: any, data?: any) => console.log(`[JUDIT]`, msg, data || ''),
-  error: (msg: any, data?: any) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
-  warn: (msg: any, data?: any) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
-  debug: (msg: any, data?: any) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
+const juditLogger: Logger = {
+  info: (msg: string, data?: LogMessage) => console.log(`[JUDIT]`, msg, data || ''),
+  error: (msg: string, data?: LogMessage) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
+  warn: (msg: string, data?: LogMessage) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
+  debug: (msg: string, data?: LogMessage) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
 };
-const logOperationStart = (logger: any, name: string, data?: any) => {
+
+const logOperationStart = (logger: Logger, name: string, data?: LogMessage): OperationTracker => {
   const startTime = Date.now();
-  logger.debug?.(`[OPERATION] Starting ${name}`, data || '');
+  logger.debug?.(`[OPERATION] Starting ${name}`, data || {});
 
   return {
-    finish: (status: string, details?: any) => {
+    finish: (status: string, details?: LogMessage) => {
       const duration = Date.now() - startTime;
       logger.info?.(`[OPERATION] ${name} finished: ${status}`, { duration_ms: duration, ...details });
       return duration;
@@ -83,7 +103,7 @@ export interface RequestOptions {
 /**
  * Standard API response wrapper
  */
-export interface JuditApiResponse<T = any> {
+export interface JuditApiResponse<T = Record<string, unknown>> {
   success: boolean;
   data?: T;
   error?: string;
@@ -108,7 +128,7 @@ export interface OnboardingPayload {
 export interface OnboardingResponse {
   request_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -117,7 +137,7 @@ export interface OnboardingResponse {
 export interface StatusResponse {
   request_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ================================================================
@@ -179,10 +199,10 @@ function getJuditConfig(): JuditConfig {
  * @param options - Additional request options
  * @returns Response data
  */
-export async function sendRequest<T = any>(
+export async function sendRequest<T = Record<string, unknown>>(
   endpoint: string,
   method: string = 'GET',
-  body?: any,
+  body?: Record<string, unknown>,
   options?: RequestOptions
 ): Promise<JuditApiResponse<T>> {
   const config = getJuditConfig();
@@ -450,7 +470,7 @@ export async function getOnboardingStatus(
  */
 export async function processDocument(
   document: File | Buffer | string
-): Promise<JuditApiResponse<any>> {
+): Promise<JuditApiResponse<Record<string, unknown>>> {
   juditLogger.info({
     action: 'process_document_start',
     document_type: typeof document,
