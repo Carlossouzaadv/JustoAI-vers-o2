@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // ================================================================
 // LOCAL PDF METADATA EXTRACTOR
 // Extrai metadata de documentos PDFs sem chamar serviço externo

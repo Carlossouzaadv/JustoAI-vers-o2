@@ -27,7 +27,8 @@
       "Bash(git add:*)",
       "Read(//c/Users/carlo/Documents/**)",
       "Bash(cat:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": []

@@ -299,6 +299,57 @@ Fixed critical issues in webhook processing with robust solutions:
 
 ---
 
+## 📊 Admin Dashboard - JUDIT Consumption Analytics
+
+**What was added (Oct 2025):**
+
+An internal admin dashboard for real-time JUDIT API consumption monitoring, pricing analysis, and business metrics. **Protected endpoint** - only authenticated users can access.
+
+### ✅ Features Implemented
+- 📊 **Real-time Consumption Dashboard** (`/admin/dashboard/judit`)
+  - Visual metrics: Total requests, success rate, costs
+  - Interactive charts: Consumption by origin, search type, costs
+  - Live pricing calculator (50%-80% margins)
+
+- 💾 **Analysis API Endpoint** (`/api/admin/judit-consumption`)
+  - Fetches JUDIT data for last 10 days
+  - Calculates costs and unit economics
+  - 24-hour caching (can be refreshed on-demand)
+
+- 🛠️ **Standalone Analysis Scripts** (`scripts/`)
+  - `pricing-analysis.js` - Unit economics and pricing suggestions
+  - `judit-consumption-report.js` - Detailed consumption analysis
+  - `dynamic-pricing-calculator.js` - Interactive pricing simulator
+
+### 🎯 Key Metrics
+- **Real Consumption (10/17-10/27):** 616 requests, 100% success rate, R$ 352.80 cost
+- **Suggested Pricing (70% margin):**
+  - Plan A (Starter): **R$ 496/month** | Profit: R$ 347/month
+  - Plan B (Professional): **R$ 1.489/month** | Profit: R$ 1.042/month
+- **Payback Period:** 2-3 months with R$ 500 CAC
+
+### 📖 Documentation to Review
+
+| Document | Purpose | Action |
+|----------|---------|--------|
+| [ADMIN_DASHBOARD_README.md](./ADMIN_DASHBOARD_README.md) | **Complete dashboard guide** - Read first for overview & roadmap | 🔍 Check "🚀 Radar: Próximas Melhorias" for what's missing |
+| [JUDIT_ANALYSIS_REPORT.md](./JUDIT_ANALYSIS_REPORT.md) | Executive report with business metrics for CFO/CMO | 📊 Use for pitches & investor decks |
+| [JUDIT_TOOLS_README.md](./JUDIT_TOOLS_README.md) | How to run standalone analysis scripts locally | 🛠️ Run scripts manually for weekly analysis |
+
+### 🔄 Development Roadmap
+
+| Phase | Timeline | Status | Next Action |
+|-------|----------|--------|-------------|
+| **Phase 1: Foundation** | ✅ Complete | `Deployed` | Test in production |
+| **Phase 2: Security & Performance** | 📅 Week 1-2 | `Pending` | RBAC, DB caching, rate limiting |
+| **Phase 3: Analytics** | 📅 Week 2-3 | `Pending` | Trending, user/project analysis, projections |
+| **Phase 4: Business Intelligence** | 📅 Week 3-4 | `Pending` | Alerts, PDF export, billing integration |
+| **Phase 5: Future** | 📅 1+ month | `Backlog` | ML predictions, white-labeled dashboard |
+
+**See:** [ADMIN_DASHBOARD_README.md § 🚀 Radar: Próximas Melhorias](./ADMIN_DASHBOARD_README.md#-radar-próximas-melhorias) for detailed checklist
+
+---
+
 ## 🧪 Testing
 
 ```bash

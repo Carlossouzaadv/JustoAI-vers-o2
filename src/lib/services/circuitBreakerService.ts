@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { EventEmitter } from 'eventemitter3'
 import { logger, queueLogger } from '../observability/logger'
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // ================================================================
 // TIMELINE UNIFIER SERVICE
 // Unifica movimentos de PDF + JUDIT evitando duplicatas

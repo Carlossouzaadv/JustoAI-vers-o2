@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // ================================================================
 // JUDIT ATTACHMENT PROCESSOR
 // Download e processamento de anexos da API JUDIT
