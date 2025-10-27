@@ -281,6 +281,52 @@ User Upload                 Queue Processing              JUDIT Webhook
 - **Unified Timeline:** Merged deduplication across multiple sources
 - **Court Synchronization:** Automatic sync with official judicial data
 
+### 🧠 Unified Intelligent Timeline with AI Enrichment (NEW - Oct 27, 2025)
+
+**Complete Timeline Fusion and Enrichment Engine:**
+
+**Smart Event Association** ✅
+- **4-Level Intelligent Matching:**
+  - Hash-based exact matching → `DUPLICATE`
+  - Levenshtein distance ≥ 0.85 → `ENRICHMENT` (merge with JUDIT base)
+  - Levenshtein distance ≥ 0.70 → `RELATED` (separate linked event)
+  - No match → New standalone event
+- **Date Proximity Window:** ±2 days for event association
+- **JUDIT as Backbone:** Official court data always the base reference
+
+**AI-Powered Enrichment** ✅
+- **Automatic Description Enhancement:** Gemini Flash rewrites event descriptions
+- **Source Awareness:** Combines context from PDF, JUDIT, and AI sources
+- **Original Text Preservation:** Keeps unmodified texts for audit trail
+- **Configurable:** Similarity thresholds and model via `.env`
+- **Cost-Optimized:** Falls back to concatenation if AI unavailable (no cost penalty)
+
+**Conflict Detection & Resolution** ✅
+- **Automatic Detection:**
+  - `DATE_MISMATCH`: Events differ by >3 days
+  - `TYPE_MISMATCH`: Different movement types
+  - `DESCRIPTION_CONTRADICTION`: Conflicting data
+- **User-Friendly Resolution** (4 strategies):
+  - Keep JUDIT (official reference)
+  - Use Document (prioritize alternate source)
+  - Merge Manually (user edits description)
+  - Keep Both (create separate related event)
+- **Audit Trail:** Records reviewer, timestamp, resolution strategy
+- **Visual Management:** Dedicated UI page at `/dashboard/process/[id]/conflicts`
+
+**Configuration** (`.env`):
+```env
+TIMELINE_SIMILARITY_THRESHOLD_ENRICHMENT=0.85    # ENRICHMENT threshold
+TIMELINE_SIMILARITY_THRESHOLD_RELATED=0.70       # RELATED threshold
+TIMELINE_DATE_PROXIMITY_DAYS=2                   # Window for association
+TIMELINE_ENRICHMENT_MODEL=gemini-1-5-flash       # AI model for enrichment
+TIMELINE_ENRICHMENT_CREDIT_COST=0.001            # Cost per enrichment
+TIMELINE_ENRICHMENT_ENABLED=true                 # Toggle enrichment
+TIMELINE_CONFLICT_DETECTION_ENABLED=true         # Toggle conflict detection
+```
+
+**See:** [TIMELINE_UNIFICADA_IMPLEMENTACAO.md](./TIMELINE_UNIFICADA_IMPLEMENTACAO.md) for complete implementation tracking (100% complete, 5 sprints)
+
 ### 💳 Credits & Billing
 - Per-workspace credit management
 - Multiple credit types (analysis, reports)
