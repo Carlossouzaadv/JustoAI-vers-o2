@@ -342,23 +342,26 @@ export async function decompressFileGzip(inputPath: string, outputPath: string):
  * Middleware para compressão automática de uploads
  */
 export function createCompressionMiddleware(options: CompressionOptions = {}) {
-  return async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
+  return async (req: any, res: any, next: any) => {
     // Se há arquivos no upload
     if (req.files || req.file) {
       const files = req.files || [req.file];
 
       for (const file of Array.isArray(files) ? files : [files]) {
-        if (file && isImageFile(file.originalname)) {
+        if (file && file.originalname && isImageFile(file.originalname)) {
           try {
             // Comprimir imagem automaticamente
-            const result = await compressImage(file.path, undefined, options);
+            const filePath = (file as any).path;
+            if (filePath) {
+              const result = await compressImage(filePath, undefined, options);
 
-            if (result.success) {
-              // Atualizar informações do arquivo
-              file.compressedPath = result.outputPath;
-              file.originalSize = result.originalSize;
-              file.compressedSize = result.compressedSize;
-              file.compressionRatio = result.compressionRatio;
+              if (result.success) {
+                // Atualizar informações do arquivo
+                (file as any).compressedPath = result.outputPath;
+                (file as any).originalSize = result.originalSize;
+                (file as any).compressedSize = result.compressedSize;
+                (file as any).compressionRatio = result.compressionRatio;
+              }
             }
           } catch (error) {
             console.error('Compression middleware error:', error);

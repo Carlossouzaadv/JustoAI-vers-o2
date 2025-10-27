@@ -14,15 +14,12 @@ import {
   documentProcessingQueue,
   notificationQueue
 } from './queues';
+import { getRedisClient } from '../src/lib/redis';
 
-// Augment Express namespace for compatibility
-declare global {
-  namespace Express {
-    interface Request extends ExpressRequest {}
-    interface Response extends ExpressResponse {}
-    interface NextFunction extends ExpressNextFunction {}
-  }
-}
+// Use Express types directly
+type Request = ExpressRequest;
+type Response = ExpressResponse;
+type NextFunction = ExpressNextFunction;
 
 // === CONFIGURAÇÃO DO BULL BOARD ===
 
@@ -37,11 +34,11 @@ serverAdapter.setBasePath('/admin/queues');
  */
 const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   queues: [
-    new BullAdapter(syncQueue),
-    new BullAdapter(reportsQueue),
-    new BullAdapter(cacheCleanupQueue),
-    new BullAdapter(documentProcessingQueue),
-    new BullAdapter(notificationQueue),
+    new BullAdapter(syncQueue()),
+    new BullAdapter(reportsQueue()),
+    new BullAdapter(cacheCleanupQueue()),
+    new BullAdapter(documentProcessingQueue()),
+    new BullAdapter(notificationQueue()),
   ],
   serverAdapter: serverAdapter,
   options: {
@@ -76,14 +73,14 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
  * Middleware para proteger o Bull Board
  * Só permite acesso para usuários autenticados e admins
  */
-export function bullBoardAuthMiddleware(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+export function bullBoardAuthMiddleware(req: any, res: any, next: any) {
   // Em desenvolvimento, permitir acesso direto
   if (process.env.NODE_ENV === 'development') {
     return next();
   }
 
   // Verificar autenticação
-  const authHeader = req.headers.authorization;
+  const authHeader = req.headers?.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Authorization required' });
   }
@@ -108,11 +105,11 @@ export function bullBoardAuthMiddleware(req: Express.Request, res: Express.Respo
 export async function getBullBoardStats() {
   try {
     const queues = [
-      { name: 'API Sync', queue: syncQueue },
-      { name: 'Automated Reports', queue: reportsQueue },
-      { name: 'Cache Cleanup', queue: cacheCleanupQueue },
-      { name: 'Document Processing', queue: documentProcessingQueue },
-      { name: 'Notifications', queue: notificationQueue },
+      { name: 'API Sync', queue: syncQueue() },
+      { name: 'Automated Reports', queue: reportsQueue() },
+      { name: 'Cache Cleanup', queue: cacheCleanupQueue() },
+      { name: 'Document Processing', queue: documentProcessingQueue() },
+      { name: 'Notifications', queue: notificationQueue() },
     ];
 
     const stats = await Promise.all(
@@ -216,7 +213,7 @@ export async function getBullBoardStats() {
  * Pausa todas as filas
  */
 export async function pauseAllQueues() {
-  const queues = [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+  const queues = [syncQueue(), reportsQueue(), cacheCleanupQueue(), documentProcessingQueue(), notificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -232,7 +229,7 @@ export async function pauseAllQueues() {
  * Resume todas as filas
  */
 export async function resumeAllQueues() {
-  const queues = [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+  const queues = [syncQueue(), reportsQueue(), cacheCleanupQueue(), documentProcessingQueue(), notificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -252,7 +249,7 @@ export async function cleanAllQueues() {
     throw new Error('Cannot clean queues in production');
   }
 
-  const queues = [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+  const queues = [syncQueue(), reportsQueue(), cacheCleanupQueue(), documentProcessingQueue(), notificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -269,10 +266,16 @@ export async function cleanAllQueues() {
  * Retry jobs falhados
  */
 export async function retryFailedJobs(queueName?: string) {
-  const queueMap = { syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue };
+  const queueMap = {
+    syncQueue: syncQueue(),
+    reportsQueue: reportsQueue(),
+    cacheCleanupQueue: cacheCleanupQueue(),
+    documentProcessingQueue: documentProcessingQueue(),
+    notificationQueue: notificationQueue()
+  };
   const queues = queueName && queueName in queueMap ?
     [queueMap[queueName as keyof typeof queueMap]] :
-    [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+    [syncQueue(), reportsQueue(), cacheCleanupQueue(), documentProcessingQueue(), notificationQueue()];
 
   const results = await Promise.allSettled(
     (Array.isArray(queues) ? queues : [queues]).map(async (queue) => {
@@ -354,14 +357,24 @@ export async function systemHealthCheck() {
 
 async function checkRedisHealth() {
   try {
-    const { redis } = await import('./redis');
+    const redis = getRedisClient();
     const pong = await redis.ping();
-    const info = await redis.info('memory');
-    const memoryMatch = info.match(/used_memory_human:([^\r\n]+)/);
+    let memoryUsage = 'N/A';
+
+    // Try to get Redis info (may not work with MockRedis)
+    try {
+      const info = (await (redis as any).info?.('memory')) || '';
+      const memoryMatch = info.match?.(/used_memory_human:([^\r\n]+)/);
+      if (memoryMatch) {
+        memoryUsage = memoryMatch[1];
+      }
+    } catch (e) {
+      // MockRedis or other implementation that doesn't support info
+    }
 
     return {
       connected: pong === 'PONG',
-      memoryUsage: memoryMatch ? memoryMatch[1].trim() : 'unknown',
+      memoryUsage: memoryUsage.trim(),
       status: 'healthy'
     };
   } catch (error) {

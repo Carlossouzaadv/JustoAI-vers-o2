@@ -25,7 +25,7 @@ export interface CacheLockResult {
 }
 
 export class AnalysisCacheManager {
-  private redis: Redis;
+  private redis: any; // Redis | MockRedis - can be either type
   private hashManager = getDocumentHashManager();
 
   // Configurações baseadas na especificação

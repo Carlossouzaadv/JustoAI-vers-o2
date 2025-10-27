@@ -2,12 +2,11 @@
  * Bull Queue Configuration
  * Sistema de filas para processamento assíncrono
  *
- * Uses centralized Redis configuration from src/lib/redis.ts
- * Lazy-loads Redis connections to avoid connection attempts during build
+ * Uses REDIS_URL from environment for BullMQ compatibility
+ * Lazy-loads queue connections to avoid connection attempts during build
  */
 
 import Queue from 'bull';
-import { getRedisConnection } from '../src/lib/redis';
 
 // Lazy initialization - queues are created on first use, not on import
 let _syncQueue: Queue.Queue | null = null;
@@ -17,18 +16,22 @@ let _documentProcessingQueue: Queue.Queue | null = null;
 let _notificationQueue: Queue.Queue | null = null;
 
 // Helper function to get or create queue config
-const getQueueConfig = () => ({
-  redis: getRedisConnection(),
-  defaultJobOptions: {
-    removeOnComplete: 100, // Manter últimos 100 jobs completos
-    removeOnFail: 50,      // Manter últimos 50 jobs falhados
-    attempts: 3,           // 3 tentativas por padrão
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
+const getQueueConfig = () => {
+  const redisUrl = process.env.REDIS_URL;
+
+  return {
+    ...(redisUrl ? { redis: redisUrl } : {}),
+    defaultJobOptions: {
+      removeOnComplete: 100, // Manter últimos 100 jobs completos
+      removeOnFail: 50,      // Manter últimos 50 jobs falhados
+      attempts: 3,           // 3 tentativas por padrão
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
     },
-  },
-});
+  };
+};
 
 // === FILAS PRINCIPAIS (Lazy Load) ===
 
@@ -309,11 +312,6 @@ export async function closeAllQueues() {
 
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.close()));
-
-  const bullRedis = getRedisConnection();
-  if (bullRedis) {
-    await bullRedis.disconnect();
-  }
 
   console.log('✅ All queues closed successfully');
 }

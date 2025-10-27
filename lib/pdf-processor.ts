@@ -54,6 +54,7 @@ export interface PDFAnalysisResult {
   file_name: string;
   error?: string;
   file_size_mb?: number;
+  pageCount?: number;
   tokenReduction?: number;
   processingMethod?: string;
   extraction?: ExtractionResult;

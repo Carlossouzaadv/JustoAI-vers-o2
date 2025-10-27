@@ -234,7 +234,7 @@ export class AiCacheManager {
           cacheKey: cacheKey,
           type: 'ANALYSIS',
           prompt: analysisType,
-          result: value,
+          result: value as any,
           model: metadata?.model || 'unknown',
           tokens: metadata?.tokens_saved || 0,
           cost: 0.001,

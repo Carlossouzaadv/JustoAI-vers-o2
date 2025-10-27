@@ -70,23 +70,18 @@ export async function getCurrentUser() {
           data: {
             name: `${user.user_metadata?.full_name || user.email}'s Workspace`,
             slug: `workspace-${user.id.substring(0, 8)}`,
-            type: 'ORGANIZATION',
             description: 'Default workspace created on signup',
             status: 'ACTIVE',
-            members: {
-              create: {
-                userId: dbUser.id,
-                role: 'OWNER',
-                status: 'ACTIVE',
-              }
-            }
-          },
-          include: {
-            members: {
-              include: {
-                user: true
-              }
-            }
+          }
+        })
+
+        // Add user to workspace
+        await prisma.userWorkspace.create({
+          data: {
+            userId: dbUser.id,
+            workspaceId: defaultWorkspace.id,
+            role: 'OWNER',
+            status: 'ACTIVE',
           }
         })
 
@@ -102,7 +97,7 @@ export async function getCurrentUser() {
               }
             }
           }
-        })!
+        }) || dbUser
       } catch (workspaceError) {
         console.error('Error creating default workspace:', workspaceError)
         // Continue mesmo se falhar - não quebra o login
