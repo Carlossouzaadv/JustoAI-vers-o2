@@ -11,12 +11,12 @@
 
 ```
 Sprint 1 (Schema):        [████████████████░░] 100% ✅
-Sprint 2 (Enriquecimento): [████████░░░░░░░░░░] 60%  🟡
-Sprint 3 (Integração):     [░░░░░░░░░░░░░░░░░░] 0%
+Sprint 2 (Enriquecimento): [██████████████░░░░] 80%  🟡
+Sprint 3 (Integração):     [████░░░░░░░░░░░░░░] 33%  🟡
 Sprint 4 (UI):             [░░░░░░░░░░░░░░░░░░] 0%
 Sprint 5 (Conflitos):      [░░░░░░░░░░░░░░░░░░] 0%
 ────────────────────────────────────────────────
-TOTAL:                     [████████░░░░░░░░░░] 32%
+TOTAL:                     [███████████░░░░░░░░] 45%
 ```
 
 ---
@@ -140,18 +140,27 @@ TOTAL:                     [████████░░░░░░░░░�
 
 ---
 
-## 🟠 SPRINT 3: Integração no Fluxo
+## 🟡 SPRINT 3: Integração no Fluxo (33%)
 
-### 3.1 Modificar timelineUnifier.ts
-- [ ] Atualizar `mergeTimelines()`:
-  - [ ] Buscar eventos JUDIT existentes
-  - [ ] Chamar `associateToBaseEvent()` para eventos não-JUDIT
-  - [ ] Lógica de ENRICHMENT: enriquecer descrição + vincular
-  - [ ] Lógica de RELATED: criar separado + vincular via baseEventId
-  - [ ] Lógica de CONFLICT: marcar hasConflict=true
-  - [ ] Vincular documentos via linkedDocumentIds
+### 3.1 Modificar timelineUnifier.ts ✅
+- [x] Atualizar `mergeTimelines()` - versão V2 com enriquecimento:
+  - [x] Extrair eventos JUDIT primeiro (espinha dorsal)
+  - [x] Criar/atualizar eventos JUDIT no banco
+  - [x] Extrair eventos PDF/IA
+  - [x] Para cada evento não-JUDIT:
+    - [x] Chamar `associateToBaseEvent()` do TimelineEnricherService
+    - [x] Lógica ENRICHMENT: enriquecer descrição + atualizar base
+    - [x] Lógica RELATED: criar novo evento + vincular via baseEventId
+    - [x] Lógica CONFLICT: marcar hasConflict=true + salvar conflictDetails
+    - [x] Fallback: novo evento se nenhuma associação
+  - [x] Vincular documentos aos eventos via linkedDocumentIds
+  - [x] Atualizar interface TimelineUnificationResult com novos campos:
+    - [x] enriched (contador de eventos enriquecidos)
+    - [x] related (contador de eventos relacionados)
+    - [x] conflicts (contador de conflitos detectados)
+  - [x] Log detalhado com breakdown final
 
-**Status**: ⏳ Aguardando Sprint 2
+**Status**: ✅ COMPLETO
 
 ### 3.2 Atualizar upload PDF
 - [ ] Arquivo: `src/app/api/documents/upload/route.ts`
