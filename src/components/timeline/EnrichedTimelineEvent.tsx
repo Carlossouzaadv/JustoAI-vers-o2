@@ -18,7 +18,7 @@ import { AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 export interface EnrichedTimelineEventProps {
   id: string;
   eventDate: Date | string;
-  eventType: string;
+  eventType?: string;
   description: string;
   source: TimelineSource;
   isEnriched?: boolean;
@@ -61,7 +61,7 @@ export interface EnrichedTimelineEventProps {
 export function EnrichedTimelineEvent({
   id,
   eventDate,
-  eventType,
+  eventType = 'Evento',
   description,
   source,
   isEnriched = false,
@@ -111,8 +111,10 @@ export function EnrichedTimelineEvent({
     };
 
     // Tentar encontrar correspondência exata ou parcial
-    for (const [key, icon] of Object.entries(typeMap)) {
-      if (eventType.includes(key)) return icon;
+    if (eventType) {
+      for (const [key, icon] of Object.entries(typeMap)) {
+        if (eventType.includes(key)) return icon;
+      }
     }
 
     return ICONS.INFO;
