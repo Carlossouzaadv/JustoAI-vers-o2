@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
-import type { NextAuthOptions } from 'next-auth'
+import type { NextAuthOptions, Session } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 
 // Supabase client for server-side auth
@@ -147,7 +147,7 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
 }
 
 // Additional auth functions for compatibility
-export async function validateAuth(_request?: Request) {
+export async function validateAuth() {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
     console.log('⚠️ Development mode: Bypassing auth validation')
@@ -182,7 +182,7 @@ export async function validateAuth(_request?: Request) {
   }
 }
 
-export async function validateAuthAndGetUser(_request?: Request) {
+export async function validateAuthAndGetUser() {
   const user = await getCurrentUser()
   if (!user) {
     throw new Error('Unauthorized')
@@ -196,6 +196,19 @@ export async function validateAuthAndGetUser(_request?: Request) {
 // ================================================================
 // NextAuth Configuration - Supabase Integration
 // ================================================================
+interface JWTCallback {
+  token: JWT
+  user?: {
+    id?: string
+    email?: string
+  }
+}
+
+interface SessionCallback {
+  session: Session
+  token: JWT
+}
+
 export const authOptions: NextAuthOptions = {
   // Configure this for your auth setup
   // Since we're using Supabase JWT in cookies, we use a credentials provider
@@ -205,13 +218,13 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
   callbacks: {
-    async jwt({ token, user }: { token: JWT; user?: any }) {
+    async jwt({ token, user }: JWTCallback) {
       if (user) {
         token.id = user.id
       }
       return token
     },
-    async session({ session, token }: { session: any; token: JWT }) {
+    async session({ session, token }: SessionCallback) {
       if (session?.user) {
         session.user.id = token.id as string
       }
