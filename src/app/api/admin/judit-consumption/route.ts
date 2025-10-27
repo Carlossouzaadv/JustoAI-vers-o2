@@ -149,6 +149,16 @@ function calculateCost(request: JuditRequest): number {
 }
 
 function analyzeRequests(requests: JuditRequest[]): ConsumptionReport {
+  // Search costs table
+  const searchCosts: Record<string, number> = {
+    cpf: 0.50,
+    cnpj: 0.50,
+    oab: 0.50,
+    name: 0.50,
+    lawsuit_cnj: 0.30,
+    lawsuit_attachment: 0.30
+  };
+
   const analysis = {
     period: {
       start: '',
@@ -232,16 +242,6 @@ function analyzeRequests(requests: JuditRequest[]): ConsumptionReport {
   analysis.successRate = (analysis.completedRequests / requests.length) * 100;
 
   return analysis;
-
-  // Helper for search costs - need to define it properly
-  const searchCosts: Record<string, number> = {
-    cpf: 0.50,
-    cnpj: 0.50,
-    oab: 0.50,
-    name: 0.50,
-    lawsuit_cnj: 0.30,
-    lawsuit_attachment: 0.30
-  };
 }
 
 async function getCachedReport(): Promise<ConsumptionReport | null> {
@@ -270,6 +270,18 @@ async function saveCachedReport(report: ConsumptionReport): Promise<void> {
 
 export async function GET(request: NextRequest) {
   try {
+    // Check JUDIT_API_KEY is configured
+    if (!JUDIT_API_KEY) {
+      console.error('JUDIT_API_KEY is not configured');
+      return NextResponse.json(
+        {
+          error: 'Server configuration error',
+          details: 'JUDIT_API_KEY not found. Add to .env: JUDIT_API_KEY=your_key'
+        },
+        { status: 503 }
+      );
+    }
+
     // Check authentication
     const isAuthenticated = await isUserAuthenticated(request);
     if (!isAuthenticated) {
@@ -297,8 +309,12 @@ export async function GET(request: NextRequest) {
     const startDateStr = startDate.toISOString().split('T')[0];
     const endDateStr = endDate.toISOString().split('T')[0];
 
+    console.log(`Fetching JUDIT data from ${startDateStr} to ${endDateStr}`);
+
     const juditData = await fetchJuditData(startDateStr, endDateStr);
     const requests = juditData.page_data || [];
+
+    console.log(`Received ${requests.length} requests from JUDIT`);
 
     // Analyze data
     const report = analyzeRequests(requests);
@@ -313,10 +329,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching JUDIT consumption:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Failed to fetch consumption data',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage,
+        type: error instanceof Error ? error.constructor.name : 'Unknown'
       },
       { status: 500 }
     );
