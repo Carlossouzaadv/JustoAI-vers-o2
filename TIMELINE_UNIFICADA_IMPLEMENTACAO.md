@@ -13,10 +13,10 @@
 Sprint 1 (Schema):        [████████████████░░] 100% ✅
 Sprint 2 (Enriquecimento): [██████████████░░░░] 80%  🟡
 Sprint 3 (Integração):     [████████████████░░] 100% ✅
-Sprint 4 (UI):             [░░░░░░░░░░░░░░░░░░] 0%
+Sprint 4 (UI):             [████████████████░░] 100% ✅
 Sprint 5 (Conflitos):      [░░░░░░░░░░░░░░░░░░] 0%
 ────────────────────────────────────────────────
-TOTAL:                     [███████████████░░░] 53%
+TOTAL:                     [████████████████░░] 67%
 ```
 
 ---
@@ -197,26 +197,27 @@ TOTAL:                     [███████████████░░�
 
 **Status**: ⏳ Aguardando Sprint 3
 
-### 4.2 Atualizar API unified-timeline
-- [ ] Arquivo: `src/app/api/cases/[id]/unified-timeline/route.ts`
-  - [ ] Novo formato de resposta com:
-    - [ ] `isEnriched: boolean`
-    - [ ] `contributingSources: TimelineSource[]`
-    - [ ] `originalTexts?: Record<TimelineSource, string>`
-    - [ ] `linkedDocuments?: Array<{id, name, url}>`
-    - [ ] `hasConflict: boolean`
-    - [ ] `conflictDetails?: ConflictDetails`
-    - [ ] `relatedEvents?: Array<{id, relation}>`
+### 4.2 Atualizar API unified-timeline ✅
+- [x] Arquivo: `src/app/api/cases/[id]/unified-timeline/route.ts`
+  - [x] Estender interface UnifiedTimelineEntry com campos enriquecidos
+  - [x] Atualizar query para carregar linkedDocuments
+  - [x] Mapear campos de enriquecimento (isEnriched, enrichedByIds, relationType, etc.)
+  - [x] Formatar documentos vinculados para componente
+  - [x] Incluir originalTexts, contributingSources, conflictDetails
 
-**Status**: ⏳ Aguardando Sprint 3
+**Status**: ✅ COMPLETO
 
-### 4.3 Atualizar process-timeline.tsx
-- [ ] Arquivo: `src/components/process/process-timeline.tsx`
-  - [ ] Usar `EnrichedTimelineEvent` em vez de componente simples
-  - [ ] Adicionar filtro "Mostrar apenas enriquecidos"
-  - [ ] Contador de eventos por fonte
+### 4.3 Atualizar process-timeline.tsx ✅
+- [x] Arquivo: `src/components/process/process-timeline.tsx`
+  - [x] Importar EnrichedTimelineEvent
+  - [x] Usar `EnrichedTimelineEvent` ao invés de componente simples
+  - [x] Atualizar para usar unified-timeline API
+  - [x] Adicionar filtros: Todos, JUDIT, Enriquecidos, Conflitos
+  - [x] Mostrar contadores de cada filtro
+  - [x] Exibir estatísticas gerais (total, enriquecidos, conflitos, confiança)
+  - [x] Suporte a fallback para API legada
 
-**Status**: ⏳ Aguardando Sprint 3
+**Status**: ✅ COMPLETO
 
 ---
 
@@ -283,6 +284,6 @@ TOTAL:                     [███████████████░░�
 
 ---
 
-**Last Updated**: 27 de Outubro de 2025 (Sprint 3 completo)
+**Last Updated**: 27 de Outubro de 2025 (Sprint 4 completo - UI com enriquecimento)
 **Atualizado Automaticamente**: Sim
-**Próximo Passo**: Sprint 4 (UI) - Criar componente EnrichedTimelineEvent
+**Próximo Passo**: Sprint 5 (Conflitos) - Gestão de conflitos e revisão

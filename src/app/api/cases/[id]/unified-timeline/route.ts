@@ -22,6 +22,17 @@ interface UnifiedTimelineEntry {
   sourceName: string;
   confidence: number;
   metadata?: any;
+  // ===== NOVO: Campos de enriquecimento =====
+  isEnriched?: boolean;
+  enrichedAt?: Date;
+  enrichmentModel?: string;
+  contributingSources?: string[];
+  originalTexts?: Record<string, string>;
+  linkedDocumentIds?: string[];
+  hasConflict?: boolean;
+  conflictDetails?: any;
+  relationType?: 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT';
+  baseEventId?: string;
 }
 
 // ================================================================
@@ -66,7 +77,7 @@ const SOURCE_METADATA = {
 // ================================================================
 
 /**
- * Enriquece entrada de timeline com ícone e metadados de fonte
+ * Enriquece entrada de timeline com ícone, metadados de fonte e dados de enriquecimento
  */
 function enrichTimelineEntry(entry: any): UnifiedTimelineEntry {
   const sourceMetadata = SOURCE_METADATA[entry.source] || {
@@ -75,6 +86,13 @@ function enrichTimelineEntry(entry: any): UnifiedTimelineEntry {
     color: '#64748B',
     badge: 'OTHER'
   };
+
+  // Formatar documentos vinculados para o formato esperado pelo componente
+  const linkedDocuments = entry.linkedDocuments?.map((doc: any) => ({
+    id: doc.id,
+    name: doc.name || doc.originalName,
+    // URL será preenchida pelo frontend se necessário
+  })) || [];
 
   return {
     id: entry.id,
@@ -88,8 +106,20 @@ function enrichTimelineEntry(entry: any): UnifiedTimelineEntry {
     metadata: {
       ...entry.metadata,
       sourceColor: sourceMetadata.color,
-      sourceBadge: sourceMetadata.badge
-    }
+      sourceBadge: sourceMetadata.badge,
+      linkedDocuments, // Incluir documentos nos metadados também
+    },
+    // ===== NOVO: Campos de enriquecimento =====
+    isEnriched: entry.isEnriched,
+    enrichedAt: entry.enrichedAt,
+    enrichmentModel: entry.enrichmentModel,
+    contributingSources: entry.contributingSources,
+    originalTexts: entry.originalTexts as Record<string, string>,
+    linkedDocumentIds: entry.linkedDocumentIds,
+    hasConflict: entry.hasConflict,
+    conflictDetails: entry.conflictDetails,
+    relationType: entry.relationType,
+    baseEventId: entry.baseEventId,
   };
 }
 
@@ -205,16 +235,16 @@ export async function GET(
     const timelineEntries = await prisma.processTimelineEntry.findMany({
       where: { caseId },
       orderBy: [{ eventDate: 'asc' }, { createdAt: 'asc' }],
-      select: {
-        id: true,
-        eventDate: true,
-        eventType: true,
-        description: true,
-        source: true,
-        sourceId: true,
-        metadata: true,
-        confidence: true,
-        createdAt: true
+      include: {
+        // Carregar documentos vinculados
+        linkedDocuments: {
+          select: {
+            id: true,
+            name: true,
+            originalName: true,
+            type: true,
+          }
+        }
       }
     });
 
