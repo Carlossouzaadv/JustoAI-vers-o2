@@ -32,7 +32,7 @@ interface JuditRequest {
     search_type: string;
     search_key: string;
     response_type: string;
-    search_params?: Record<string, any>;
+    search_params?: Record<string, unknown>;
   };
   with_attachments: boolean;
   origin: 'api' | 'tracking';
