@@ -69,6 +69,7 @@ export class PDFGenerator {
   private browser: Browser | null = null;
   private pagePool: Page[] = [];
   private readonly maxConcurrentPages: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly puppeteerOptions: any;
 
   constructor(maxConcurrentPages: number = 10) {
@@ -208,7 +209,7 @@ export class PDFGenerator {
 
       // Gerar PDF
       const pdfBuffer = await page.pdf({
-        format: defaultOptions.format as any,
+        format: (defaultOptions.format || 'A4') as 'A4' | 'Letter',
         landscape: defaultOptions.orientation === 'landscape',
         margin: defaultOptions.margin,
         printBackground: defaultOptions.printBackground,
@@ -286,6 +287,7 @@ export class PDFGenerator {
 
           // Salvar arquivo se especificado
           if (job.outputPath) {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const fs = require('fs').promises;
             await fs.writeFile(job.outputPath, pdfBuffer);
             result.outputPath = job.outputPath;
@@ -397,7 +399,7 @@ export class PDFGenerator {
       };
 
       const pdfBuffer = await page.pdf({
-        format: defaultOptions.format as any,
+        format: (defaultOptions.format || 'A4') as 'A4' | 'Letter',
         landscape: defaultOptions.orientation === 'landscape',
         margin: defaultOptions.margin,
         printBackground: defaultOptions.printBackground,

@@ -5,6 +5,7 @@
 // Não é processado pelo webpack, então require() funciona em runtime
 // Usado pela rota API /api/pdf/process no Railway
 
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -34,6 +35,7 @@ async function extractTextFromPDF(pdfPath) {
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 1: pdf-parse');
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pdfParse = require('pdf-parse');
       const fileBuffer = await fs.readFile(pdfPath);
       const pdfData = await pdfParse(fileBuffer);
@@ -53,6 +55,7 @@ async function extractTextFromPDF(pdfPath) {
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 2: pdfjs-dist');
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const pdfjs = require('pdfjs-dist');
 
         // Disable workers for Node.js environment

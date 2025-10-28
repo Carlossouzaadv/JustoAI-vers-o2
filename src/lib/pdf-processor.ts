@@ -25,7 +25,7 @@ const DEBUG = process.env.DEBUG === 'true';
 // ================================================================
 // LOGGER MINIMALISTA
 // ================================================================
-function log(prefix: string, message: string, data?: any) {
+function log(prefix: string, message: string, data?: Record<string, unknown>) {
   const timestamp = new Date().toISOString().split('T')[1]; // HH:MM:SS.mmm
 
   if (data) {
@@ -87,7 +87,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
         try {
           const jsonError = JSON.parse(errorText);
           errorDetails = jsonError.reason || jsonError.details || JSON.stringify(jsonError);
-        } catch (e) {
+        } catch {
           // Not JSON, use raw text
         }
 
@@ -118,7 +118,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
     }
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMsg = (error as any)?.message || 'Erro desconhecido';
+    const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
 
     console.error(`${ICONS.ERROR} Railway error (${duration}ms): ${errorMsg}`);
 
@@ -135,11 +135,12 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
 }
 
 // Type declaration for extracted PDF data
+// Note: PDFData interface is used for type checking PDF parsing responses
 interface PDFData {
   text: string;
   numpages: number;
-  info: any;
-  metadata: any;
+  info: Record<string, unknown>;
+  metadata: Record<string, unknown>;
 }
 
 export interface ExtractionResult {
@@ -253,8 +254,9 @@ export class PDFProcessor {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Extraction error: ${(error as any)?.message}`);
-      throw new Error(`Extraction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`${ICONS.ERROR} Extraction error: ${errorMsg}`);
+      throw new Error(`Extraction failed: ${errorMsg}`);
     }
   }
 
@@ -272,7 +274,8 @@ export class PDFProcessor {
 
       return fullText;
     } catch (error) {
-      console.error(`${ICONS.ERROR} Primary extraction failed: ${(error as any)?.message}`);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`${ICONS.ERROR} Primary extraction failed: ${errorMsg}`);
       return '';
     }
   }
@@ -280,7 +283,7 @@ export class PDFProcessor {
   /**
    * Método fallback
    */
-  private async extractWithFallback(buffer: Buffer): Promise<string> {
+  private async extractWithFallback(_buffer: Buffer): Promise<string> {
     try {
       console.log('🔄 Tentando extração fallback...');
       // Implementação básica de fallback
@@ -294,7 +297,7 @@ export class PDFProcessor {
   /**
    * Validação robusta de PDF - Adaptado do pdf_validator.py
    */
-  async validatePDF(buffer: Buffer, filename: string, userPlan: string = 'starter'): Promise<PDFValidationResult> {
+  async validatePDF(buffer: Buffer, filename: string, _userPlan: string = 'starter'): Promise<PDFValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -526,16 +529,18 @@ export class PDFProcessor {
 
     } catch (error) {
       const totalTime = Date.now() - processStartTime;
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorStack = error instanceof Error ? error.stack?.substring(0, 200) : undefined;
 
       log(`${ICONS.VERCEL} ${ICONS.ERROR}`, '=== ERRO AO PROCESSAR PDF ===', {
-        error_message: (error as any)?.message,
+        error_message: errorMessage,
         total_time_ms: totalTime,
-        stack: (error as any)?.stack?.substring(0, 200),
+        stack: errorStack,
       });
 
       return {
         success: false,
-        error: (error as any)?.message || 'Erro desconhecido',
+        error: errorMessage,
         extracted_fields: options.extract_fields,
         custom_fields: options.custom_fields || [],
         processed_at: new Date().toISOString(),
@@ -557,7 +562,7 @@ export class PDFProcessor {
   /**
    * Extrai informações básicas do PDF conforme campos solicitados
    */
-  private extractBasicInfo(texto: string, extract_fields: string[]): PDFAnalysisResult['info_basica'] {
+  private extractBasicInfo(texto: string, _extract_fields: string[]): PDFAnalysisResult['info_basica'] {
     const info: PDFAnalysisResult['info_basica'] = {
       numero_processo: undefined,
       cpf_encontrado: undefined,
@@ -600,7 +605,7 @@ export class PDFProcessor {
   /**
    * Detecta presença de imagens no PDF
    */
-  private detectImagesInPDF(buffer: Buffer, pdfData: any): boolean {
+  private detectImagesInPDF(buffer: Buffer, pdfData: Record<string, unknown>): boolean {
     try {
       // Estratégias para detectar imagens:
 
@@ -635,7 +640,7 @@ export class PDFProcessor {
     caseId: string,
     analysisResult: PDFAnalysisResult,
     modelUsed: string,
-    aiAnalysis: any,
+    aiAnalysis: Record<string, unknown>,
     processingTime: number = 0
   ) {
     try {
@@ -673,7 +678,7 @@ export class PDFProcessor {
           },
           version: nextVersion,
           analysisType: 'PDF_UPLOAD',
-          extractedData: analysisResult as any,
+          extractedData: analysisResult as Record<string, unknown>,
           aiAnalysis,
           modelUsed,
           confidence,
@@ -820,7 +825,8 @@ export async function extractTextFromPDF(
 
     return result;
   } catch (error) {
-    log(`${ICONS.ERROR}`, `Erro na extração de PDF: ${(error as any)?.message}`);
+    const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+    log(`${ICONS.ERROR}`, `Erro na extração de PDF: ${errorMsg}`);
     throw error;
   }
 }
