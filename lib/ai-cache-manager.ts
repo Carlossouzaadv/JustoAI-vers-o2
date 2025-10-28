@@ -49,6 +49,15 @@ export interface CacheConfig {
   aggressive_mode: boolean; // CRÍTICO para economia
 }
 
+interface RedisClient {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  get: (key: string) => Promise<string | null>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  setex: (key: string, ttl: number, value: string) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  flushdb: () => Promise<void>;
+}
+
 // ================================
 // CLASSE PRINCIPAL DO CACHE
 // ================================
@@ -66,7 +75,7 @@ export class AiCacheManager {
   };
 
   // Cliente Redis opcional (se disponível)
-  private redisClient: { get: (key: string) => Promise<string | null>; setex: (key: string, ttl: number, value: string) => Promise<void>; flushdb: () => Promise<void> } | null = null;
+  private redisClient: RedisClient | null = null;
 
   constructor(config?: Partial<CacheConfig>) {
     this.config = {
@@ -97,7 +106,8 @@ export class AiCacheManager {
       // });
       // await this.redisClient.connect();
       console.log(`${ICONS.SUCCESS} Redis conectado (cache nível 2)`);
-    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       console.warn(`${ICONS.WARNING} Redis não disponível, usando apenas memória + PostgreSQL`);
       this.config.enable_redis = false;
     }
@@ -234,6 +244,7 @@ export class AiCacheManager {
           cacheKey: cacheKey,
           type: 'ANALYSIS',
           prompt: analysisType,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           result: value as any,
           model: metadata?.model || 'unknown',
           tokens: metadata?.tokens_saved || 0,
@@ -525,9 +536,10 @@ export function generateTextHash(text: string): string {
  */
 export function withCache(
   analysisType: 'essential' | 'strategic' | 'report',
-  keyExtractor: (args: unknown[]) => string
+  keyExtractor: (_args: unknown[]) => string
 ) {
   return function (_target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
     descriptor.value = async function (this: unknown, ...args: unknown[]) {

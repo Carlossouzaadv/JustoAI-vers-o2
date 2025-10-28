@@ -11,6 +11,18 @@ import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { getRedisClient } from '../src/lib/redis';
 
+// Redis client interface for type safety
+interface RedisClient {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, ...args: unknown[]): Promise<string | null>;
+  setex(key: string, ttl: number, value: string): Promise<string | null>;
+  del(key: string | string[]): Promise<number>;
+  ttl(key: string): Promise<number>;
+  keys(pattern: string): Promise<string[]>;
+  call(command: string, ...args: unknown[]): Promise<unknown>;
+  disconnect(): Promise<void>;
+}
+
 export interface AnalysisCacheResult {
   hit: boolean;
   data?: unknown;
@@ -25,7 +37,7 @@ export interface CacheLockResult {
 }
 
 export class AnalysisCacheManager {
-  private redis: any; // Redis | MockRedis - can be either type
+  private redis: RedisClient;
   private hashManager = getDocumentHashManager();
 
   // Configurações baseadas na especificação
@@ -300,7 +312,7 @@ export class AnalysisCacheManager {
       let memoryInfo = 0;
       try {
         memoryInfo = await this.redis.call('MEMORY', 'USAGE') as number;
-      } catch (error) {
+      } catch (_error) {
         console.warn('Redis MEMORY USAGE command not supported, using fallback');
       }
 
@@ -326,7 +338,7 @@ export class AnalysisCacheManager {
   /**
    * Busca última data de movimentação do processo
    */
-  async getLastMovementDate(processId: string, prisma: { processMovement: { findFirst: (args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
+  async getLastMovementDate(processId: string, prisma: { processMovement: { findFirst: (_args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
     try {
       const lastMovement = await prisma.processMovement.findFirst({
         where: {
@@ -352,7 +364,7 @@ export class AnalysisCacheManager {
   /**
    * Busca hashes de texto dos documentos do processo
    */
-  async getProcessDocumentHashes(processId: string, prisma: { caseDocument: { findMany: (args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
+  async getProcessDocumentHashes(processId: string, prisma: { caseDocument: { findMany: (_args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
     try {
       const documents = await prisma.caseDocument.findMany({
         where: {
@@ -397,7 +409,7 @@ export class AnalysisCacheManager {
               invalidatedCount++;
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // Ignorar erros de parsing individual
         }
       }

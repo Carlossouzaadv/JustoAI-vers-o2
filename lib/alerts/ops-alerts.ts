@@ -14,7 +14,7 @@ interface AlertRule {
   id: string;
   name: string;
   description: string;
-  condition: (context: AlertContext) => boolean;
+  condition: (_context: AlertContext) => boolean;
   severity: 'low' | 'medium' | 'high' | 'critical';
   channels: AlertChannel[];
   cooldown: number; // minutos
@@ -642,7 +642,7 @@ export class OpsAlerts {
     // TODO: Implementar sistema de acknowledgment
   }
 
-  async getActiveAlerts(workspaceId?: string): Promise<AlertEvent[]> {
+  async getActiveAlerts(_workspaceId?: string): Promise<AlertEvent[]> {
     // TODO: Implementar busca de alertas ativos
     return [];
   }

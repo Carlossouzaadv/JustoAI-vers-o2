@@ -7,9 +7,10 @@ const RadioGroup = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
     value?: string
-    onValueChange?: (_value: string) => void
+    onValueChange?: (value: string) => void
   }
->(({ className, value: _value, onValueChange: _onValueChange, children, ...props }, ref) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+>(({ className, value, onValueChange, children, ...props }, ref) => {
   return (
     <div ref={ref} className={cn('grid gap-2', className)} {...props}>
       {children}

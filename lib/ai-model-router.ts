@@ -3,6 +3,7 @@
 // ================================================================
 // Implementa roteamento inteligente de modelos baseado em complexidade para economia de custos
 
+// eslint-disable-next-line no-unused-vars
 export enum ModelTier {
   LITE = 'gemini-2.5-flash-lite',   // Mais barato (95% economia)
   BALANCED = 'gemini-2.5-flash',  // Equilibrado
@@ -267,7 +268,6 @@ export class AIModelRouter {
    */
   private detectDocumentType(text: string): { type: string; confidence: number } {
     const lowerText = text.toLowerCase();
-    const firstLines = text.split('\n').slice(0, 10).join('\n').toLowerCase();
 
     // ANÁLISE RÁPIDA (Flash 8B) - Documentos de baixa complexidade
     const rapidAnalysisPatterns = [
@@ -308,7 +308,6 @@ export class AIModelRouter {
 
     // Determinar tipo e confiança
     const maxScore = Math.max(...Object.values(scores));
-    const maxCategory = Object.keys(scores).find(key => scores[key as keyof typeof scores] === maxScore);
 
     if (maxScore === 0) {
       return { type: 'DOCUMENTO_GENERICO', confidence: 0.5 };
@@ -525,7 +524,7 @@ export class AIModelRouter {
    * Gera prompts otimizados por modelo usando Schema Base Unificado
    * ATUALIZADO: Inclui análise multi-frentes para processos complexos
    */
-  private getOptimizedPrompt(tier: ModelTier, documentType: string): string {
+  private getOptimizedPrompt(tier: ModelTier, _documentType: string): string {
     const schemaJson = this.getUnifiedSchemaForPrompt();
 
     switch (tier) {
@@ -583,7 +582,7 @@ ${schemaJson}`;
    * NOVO: Gera prompts especializados para análise multi-frentes de processos complexos
    * Organiza análise por frentes de discussão paralelas
    */
-  getMultiFrontAnalysisPrompt(tier: ModelTier, processData: unknown): string {
+  getMultiFrontAnalysisPrompt(tier: ModelTier, _processData: unknown): string {
     const basePrompt = this.getOptimizedPrompt(tier, 'legal');
 
     return `${basePrompt}
@@ -1128,7 +1127,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const result = await this.processWithFallback(
       text,
       { ...complexity, recommendedTier: ModelTier.LITE },
-      async (config) => {
+      async () => {
         return await this.processWithModel(text, ModelTier.LITE, 'essential');
       }
     );
@@ -1170,7 +1169,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const result = await this.processWithFallback(
       text,
       complexityScore,
-      async (config) => {
+      async () => {
         return await this.processWithModel(text, complexityScore.recommendedTier, 'strategic');
       }
     );
@@ -1235,7 +1234,7 @@ PROFUNDIDADE: Completa e estratégica`;
         recommendedTier: ModelTier.BALANCED,
         confidence: 0.9
       },
-      async (config) => {
+      async () => {
         return await this.processWithModel(JSON.stringify(reportData), ModelTier.BALANCED, 'report');
       }
     );
@@ -1328,12 +1327,6 @@ PROFUNDIDADE: Completa e estratégica`;
    * Build analysis prompt based on type and template
    */
   private buildAnalysisPrompt(text: string, analysisType: string, promptTemplate: string): string {
-    const context = {
-      analysis_type: analysisType,
-      document_text: text,
-      timestamp: new Date().toISOString()
-    };
-
     switch (analysisType) {
       case 'essential':
         return `${promptTemplate}
