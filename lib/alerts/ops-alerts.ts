@@ -642,7 +642,7 @@ export class OpsAlerts {
     // TODO: Implementar sistema de acknowledgment
   }
 
-  async getActiveAlerts(_workspaceId?: string): Promise<AlertEvent[]> {
+  async getActiveAlerts(__workspaceId?: string): Promise<AlertEvent[]> {
     // TODO: Implementar busca de alertas ativos
     return [];
   }

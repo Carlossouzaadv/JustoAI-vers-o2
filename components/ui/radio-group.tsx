@@ -9,8 +9,7 @@ const RadioGroup = React.forwardRef<
     value?: string
     onValueChange?: (value: string) => void
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
->(({ className, value, onValueChange, children, ...props }, ref) => {
+>(({ className, _value, _onValueChange, children, ...props }, ref) => {
   return (
     <div ref={ref} className={cn('grid gap-2', className)} {...props}>
       {children}

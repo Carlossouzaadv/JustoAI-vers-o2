@@ -134,16 +134,17 @@ export async function getCostSummary(
   startDate?: Date,
   endDate?: Date
 ): Promise<CostSummary> {
-  const where: any = {};
+  const where: Record<string, unknown> = {};
 
   if (workspaceId) {
     where.workspaceId = workspaceId;
   }
 
   if (startDate || endDate) {
-    where.createdAt = {};
-    if (startDate) where.createdAt.gte = startDate;
-    if (endDate) where.createdAt.lte = endDate;
+    where.createdAt = {
+      ...(startDate && { gte: startDate }),
+      ...(endDate && { lte: endDate }),
+    };
   }
 
   const records = await prisma.juditCostTracking.findMany({
@@ -187,16 +188,17 @@ export async function getCostBreakdown(
   startDate?: Date,
   endDate?: Date
 ): Promise<CostBreakdown[]> {
-  const where: any = {};
+  const where: Record<string, unknown> = {};
 
   if (workspaceId) {
     where.workspaceId = workspaceId;
   }
 
   if (startDate || endDate) {
-    where.createdAt = {};
-    if (startDate) where.createdAt.gte = startDate;
-    if (endDate) where.createdAt.lte = endDate;
+    where.createdAt = {
+      ...(startDate && { gte: startDate }),
+      ...(endDate && { lte: endDate }),
+    };
   }
 
   const records = await prisma.juditCostTracking.groupBy({
@@ -228,7 +230,7 @@ export async function getDailyCosts(
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  const where: any = {
+  const where: Record<string, unknown> = {
     createdAt: {
       gte: startDate,
     },
@@ -275,7 +277,7 @@ export async function getDailyCosts(
  * Estima custo de uma operação
  */
 export function estimateCost(
-  operationType: JuditOperationType,
+  _operationType: JuditOperationType,
   expectedDocuments: number = 0
 ): { searchCost: number; attachmentsCost: number; totalCost: number } {
   const searchCost = JUDIT_PRICING.SEARCH_BASE;
@@ -289,10 +291,14 @@ export function estimateCost(
 // ALERTING
 // ================================================================
 
+// Type for alert types as stored in database (Prisma enum)
+type AlertType = 'HIGH_COST' | 'RATE_LIMIT' | 'API_ERROR' | 'SYNC_FAILED';
+type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
 interface AlertInput {
   workspaceId?: string;
-  alertType: string;
-  severity: string;
+  alertType: AlertType;
+  severity: SeverityLevel;
   title: string;
   message: string;
   errorCode?: string;
@@ -300,7 +306,7 @@ interface AlertInput {
   requestId?: string;
   trackingId?: string;
   jobId?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -311,8 +317,8 @@ export async function createAlert(input: AlertInput): Promise<void> {
     await prisma.juditAlert.create({
       data: {
         workspaceId: input.workspaceId,
-        alertType: input.alertType as any,
-        severity: input.severity as any,
+        alertType: input.alertType,
+        severity: input.severity,
         title: input.title,
         message: input.message,
         errorCode: input.errorCode,
@@ -343,7 +349,7 @@ export async function createAlert(input: AlertInput): Promise<void> {
  * Busca alertas não resolvidos
  */
 export async function getUnresolvedAlerts(workspaceId?: string) {
-  const where: any = {
+  const where: Record<string, unknown> = {
     resolved: false,
   };
 

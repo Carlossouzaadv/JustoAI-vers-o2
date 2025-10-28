@@ -29,7 +29,9 @@
       "Bash(cat:*)",
       "Bash(find:*)",
       "Bash(npm run lint)",
-      "Bash(npm run db:migrate:*)"
+      "Bash(npm run db:migrate:*)",
+      "Bash(tee:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

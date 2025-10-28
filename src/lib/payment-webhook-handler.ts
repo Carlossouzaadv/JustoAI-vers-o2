@@ -18,9 +18,9 @@ export interface PaymentWebhookPayload {
     userId?: string;
     planId?: string;
     credits?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  rawPayload: any;
+  rawPayload: unknown;
 }
 
 export interface PaymentProcessingResult {
@@ -310,7 +310,7 @@ export class PaymentWebhookHandler {
         }
       });
 
-      if (originalTransaction && originalTransaction.metadata && (originalTransaction.metadata as any).status === 'COMPLETED') {
+      if (originalTransaction && originalTransaction.metadata && (originalTransaction.metadata as Record<string, unknown>).status === 'COMPLETED') {
         // Remover créditos do workspace
         await prisma.workspaceCredits.update({
           where: { workspaceId: originalTransaction.workspaceId },
@@ -355,7 +355,7 @@ export class PaymentWebhookHandler {
    * Parse webhook payload based on provider
    */
   private parseWebhookPayload(provider: string, rawBody: string): PaymentWebhookPayload {
-    const data = JSON.parse(rawBody);
+    const data = JSON.parse(rawBody) as Record<string, unknown>;
 
     switch (provider.toLowerCase()) {
       case 'stripe':
@@ -368,18 +368,18 @@ export class PaymentWebhookHandler {
         // Generic/custom payload format
         return {
           provider: 'custom',
-          event: data.event || 'payment.success',
-          transactionId: data.transactionId || data.id,
-          amount: data.amount || 0,
-          currency: data.currency || 'BRL',
-          metadata: data.metadata || {},
+          event: (data.event as PaymentWebhookPayload['event']) || 'payment.success',
+          transactionId: (data.transactionId as string) || (data.id as string),
+          amount: (data.amount as number) || 0,
+          currency: (data.currency as string) || 'BRL',
+          metadata: (data.metadata as Record<string, unknown>) || {},
           rawPayload: data
         };
     }
   }
 
-  private parseStripePayload(data: any): PaymentWebhookPayload {
-    const eventType = data.type;
+  private parseStripePayload(data: Record<string, unknown>): PaymentWebhookPayload {
+    const eventType = data.type as string;
     let event: PaymentWebhookPayload['event'] = 'payment.success';
 
     if (eventType.includes('payment_intent.succeeded')) {
@@ -390,21 +390,27 @@ export class PaymentWebhookHandler {
       event = 'payment.refunded';
     }
 
+    const dataObj = data.data as Record<string, unknown>;
+    const objectData = dataObj.object as Record<string, unknown>;
+
     return {
       provider: 'stripe',
       event,
-      transactionId: data.data.object.id,
-      amount: data.data.object.amount / 100, // Stripe usa centavos
-      currency: data.data.object.currency.toUpperCase(),
-      metadata: data.data.object.metadata || {},
+      transactionId: objectData.id as string,
+      amount: (objectData.amount as number) / 100, // Stripe usa centavos
+      currency: (objectData.currency as string).toUpperCase(),
+      metadata: (objectData.metadata as Record<string, unknown>) || {},
       rawPayload: data
     };
   }
 
-  private parseMercadoPagoPayload(data: any): PaymentWebhookPayload {
+  private parseMercadoPagoPayload(data: Record<string, unknown>): PaymentWebhookPayload {
     let event: PaymentWebhookPayload['event'] = 'payment.success';
 
-    switch (data.data?.status || data.status) {
+    const dataObj = data.data as Record<string, unknown> | undefined;
+    const status = dataObj?.status || data.status;
+
+    switch (status) {
       case 'approved':
         event = 'payment.success';
         break;
@@ -422,23 +428,23 @@ export class PaymentWebhookHandler {
     return {
       provider: 'mercadopago',
       event,
-      transactionId: data.data?.id || data.id,
-      amount: data.data?.transaction_amount || data.transaction_amount || 0,
+      transactionId: (dataObj?.id || data.id) as string,
+      amount: ((dataObj?.transaction_amount || data.transaction_amount) as number) || 0,
       currency: 'BRL',
-      metadata: data.metadata || {},
+      metadata: (data.metadata as Record<string, unknown>) || {},
       rawPayload: data
     };
   }
 
-  private parsePagSeguroPayload(data: any): PaymentWebhookPayload {
+  private parsePagSeguroPayload(data: Record<string, unknown>): PaymentWebhookPayload {
     // Implementar parsing específico do PagSeguro
     return {
       provider: 'pagseguro',
       event: 'payment.success',
-      transactionId: data.id || 'unknown',
-      amount: data.amount || 0,
+      transactionId: (data.id as string) || 'unknown',
+      amount: (data.amount as number) || 0,
       currency: 'BRL',
-      metadata: data.metadata || {},
+      metadata: (data.metadata as Record<string, unknown>) || {},
       rawPayload: data
     };
   }
@@ -446,9 +452,9 @@ export class PaymentWebhookHandler {
   /**
    * Verify webhook signature
    */
-  private verifyWebhookSignature(provider: string, headers: Record<string, string>, body: string): boolean {
+  private verifyWebhookSignature(_provider: string, _headers: Record<string, string>, _body: string): boolean {
     // Por enquanto, sempre válido - implementar verificação real conforme provider
-    console.log(`${ICONS.SHIELD} Verificando assinatura do webhook ${provider}...`);
+    console.log(`${ICONS.SHIELD} Verificando assinatura do webhook ${_provider}...`);
 
     // TODO: Implementar verificação real de assinatura para cada provider
     // Stripe: usar stripe.webhooks.constructEvent

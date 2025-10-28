@@ -55,13 +55,13 @@ export class AnalysisCacheManager {
    * analysis_key = sha256(text_sha(s) + model_version + prompt_signature + last_movement_date)
    */
   private generateAnalysisKey(
-    textShas: string[],
+    _textShas: string[],
     modelVersion: string,
     promptSignature: string,
     lastMovementDate?: Date
   ): string {
     // Ordenar hashes para garantir consistência independente da ordem dos arquivos
-    const sortedTextShas = [...textShas].sort();
+    const sortedTextShas = [..._textShas].sort();
 
     // Incluir data da última movimentação
     const movementDateStr = lastMovementDate?.toISOString() || 'no-movements';
@@ -76,13 +76,13 @@ export class AnalysisCacheManager {
    * Cache é válido apenas se não houve movimentações após a criação
    */
   async checkAnalysisCache(
-    textShas: string[],
+    _textShas: string[],
     modelVersion: string,
     promptSignature: string,
     lastMovementDate?: Date
   ): Promise<AnalysisCacheResult> {
     try {
-      const analysisKey = this.generateAnalysisKey(textShas, modelVersion, promptSignature, lastMovementDate);
+      const analysisKey = this.generateAnalysisKey(_textShas, modelVersion, promptSignature, lastMovementDate);
       const cacheKey = `analysis:${analysisKey}`;
 
       console.log(`${ICONS.SEARCH} Verificando cache de análise: ${analysisKey.substring(0, 16)}...`);
@@ -137,7 +137,7 @@ export class AnalysisCacheManager {
    * Salva resultado de análise no cache
    */
   async saveAnalysisCache(
-    textShas: string[],
+    _textShas: string[],
     modelVersion: string,
     promptSignature: string,
     analysisResult: unknown,
@@ -145,11 +145,11 @@ export class AnalysisCacheManager {
     workspaceId?: string
   ): Promise<boolean> {
     try {
-      const analysisKey = this.generateAnalysisKey(textShas, modelVersion, promptSignature, lastMovementDate);
+      const analysisKey = this.generateAnalysisKey(_textShas, modelVersion, promptSignature, lastMovementDate);
       const cacheKey = `analysis:${analysisKey}`;
 
       const cacheData = {
-        textShas,
+        textShas: _textShas,
         modelVersion,
         promptSignature,
         lastMovementDate: lastMovementDate?.toISOString(),
@@ -173,11 +173,11 @@ export class AnalysisCacheManager {
   /**
    * Adquire lock Redis para evitar double-processing
    */
-  async acquireLock(analysisKey: string): Promise<CacheLockResult> {
+  async acquireLock(_analysisKey: string): Promise<CacheLockResult> {
     try {
-      const lockKey = `lock:analysis:${analysisKey}`;
+      const lockKey = `lock:analysis:${_analysisKey}`;
 
-      console.log(`${ICONS.PROCESS} Tentando adquirir lock: ${analysisKey.substring(0, 16)}...`);
+      console.log(`${ICONS.PROCESS} Tentando adquirir lock: ${_analysisKey.substring(0, 16)}...`);
 
       // SETNX com TTL
       const result = await this.redis.set(lockKey, Date.now().toString(), 'EX', this.LOCK_TTL, 'NX');
@@ -214,10 +214,10 @@ export class AnalysisCacheManager {
   /**
    * Libera lock Redis
    */
-  async releaseLock(lockKey: string): Promise<boolean> {
+  async releaseLock(_lockKey: string): Promise<boolean> {
     try {
-      const result = await this.redis.del(lockKey);
-      console.log(`${ICONS.SUCCESS} Lock liberado: ${lockKey}`);
+      const result = await this.redis.del(_lockKey);
+      console.log(`${ICONS.SUCCESS} Lock liberado: ${_lockKey}`);
       return result > 0;
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao liberar lock:`, error);
@@ -228,9 +228,9 @@ export class AnalysisCacheManager {
   /**
    * Cache de texto extraído (TTL longo - 90 dias)
    */
-  async cacheExtractedText(textSha: string, extractedText: string): Promise<boolean> {
+  async cacheExtractedText(_textSha: string, extractedText: string): Promise<boolean> {
     try {
-      const textKey = `text:${textSha}`;
+      const textKey = `text:${_textSha}`;
 
       await this.redis.setex(textKey, this.TEXT_CACHE_TTL, extractedText);
 
@@ -245,9 +245,9 @@ export class AnalysisCacheManager {
   /**
    * Recupera texto extraído do cache
    */
-  async getCachedText(textSha: string): Promise<string | null> {
+  async getCachedText(_textSha: string): Promise<string | null> {
     try {
-      const textKey = `text:${textSha}`;
+      const textKey = `text:${_textSha}`;
       const text = await this.redis.get(textKey);
 
       if (text) {
@@ -268,10 +268,10 @@ export class AnalysisCacheManager {
     try {
       console.log(`${ICONS.PROCESS} Iniciando limpeza de caches expirados...`);
 
-      const keys = await this.redis.keys('analysis:*');
+      const _keys = await this.redis.keys('analysis:*');
       let cleanedCount = 0;
 
-      for (const key of keys) {
+      for (const key of _keys) {
         const ttl = await this.redis.ttl(key);
         if (ttl <= 0) {
           await this.redis.del(key);
@@ -312,7 +312,7 @@ export class AnalysisCacheManager {
       let memoryInfo = 0;
       try {
         memoryInfo = await this.redis.call('MEMORY', 'USAGE') as number;
-      } catch (_error) {
+      } catch (__error) {
         console.warn('Redis MEMORY USAGE command not supported, using fallback');
       }
 
@@ -338,12 +338,12 @@ export class AnalysisCacheManager {
   /**
    * Busca última data de movimentação do processo
    */
-  async getLastMovementDate(processId: string, prisma: { processMovement: { findFirst: (_args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
+  async getLastMovementDate(_processId: string, prisma: { processMovement: { findFirst: (__args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
     try {
       const lastMovement = await prisma.processMovement.findFirst({
         where: {
           monitoredProcess: {
-            caseId: processId
+            caseId: _processId
           }
         },
         orderBy: {
@@ -364,11 +364,11 @@ export class AnalysisCacheManager {
   /**
    * Busca hashes de texto dos documentos do processo
    */
-  async getProcessDocumentHashes(processId: string, prisma: { caseDocument: { findMany: (_args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
+  async getProcessDocumentHashes(_processId: string, prisma: { caseDocument: { findMany: (__args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
     try {
       const documents = await prisma.caseDocument.findMany({
         where: {
-          caseId: processId,
+          caseId: _processId,
           textSha: { not: null }
         },
         select: {
@@ -389,7 +389,7 @@ export class AnalysisCacheManager {
   /**
    * Invalida cache quando há nova movimentação
    */
-  async invalidateCacheForProcess(processId: string): Promise<void> {
+  async invalidateCacheForProcess(_processId: string): Promise<void> {
     try {
       // Buscar todas as chaves de cache relacionadas ao processo
       const pattern = 'analysis:*';
@@ -415,7 +415,7 @@ export class AnalysisCacheManager {
       }
 
       if (invalidatedCount > 0) {
-        console.log(`${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${processId}`);
+        console.log(`${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${_processId}`);
       }
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao invalidar cache:`, error);

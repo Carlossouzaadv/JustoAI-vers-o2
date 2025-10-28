@@ -5,8 +5,11 @@
 
  
 export enum ModelTier {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   LITE = 'gemini-2.5-flash-lite',   // Mais barato (95% economia)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   BALANCED = 'gemini-2.5-flash',  // Equilibrado
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   PRO = 'gemini-2.5-pro'          // Maior qualidade
 }
 
@@ -491,7 +494,7 @@ export class AIModelRouter {
   /**
    * Gera configuração otimizada para processamento
    */
-  getProcessingConfig(complexity: ComplexityScore, documentType: string = 'legal'): ProcessingConfig {
+  getProcessingConfig(complexity: ComplexityScore, _documentType: string = 'legal'): ProcessingConfig {
     const model = complexity.recommendedTier;
 
     const configs: Record<ModelTier, ProcessingConfig> = {
@@ -499,21 +502,21 @@ export class AIModelRouter {
         model: ModelTier.LITE,
         maxTokens: 2000,
         temperature: 0.1,
-        promptTemplate: this.getOptimizedPrompt(ModelTier.LITE, documentType),
+        promptTemplate: this.getOptimizedPrompt(ModelTier.LITE, _documentType),
         fallbackModel: ModelTier.BALANCED
       },
       [ModelTier.BALANCED]: {
         model: ModelTier.BALANCED,
         maxTokens: 3000,
         temperature: 0.2,
-        promptTemplate: this.getOptimizedPrompt(ModelTier.BALANCED, documentType),
+        promptTemplate: this.getOptimizedPrompt(ModelTier.BALANCED, _documentType),
         fallbackModel: ModelTier.PRO
       },
       [ModelTier.PRO]: {
         model: ModelTier.PRO,
         maxTokens: 4000,
         temperature: 0.1,
-        promptTemplate: this.getOptimizedPrompt(ModelTier.PRO, documentType)
+        promptTemplate: this.getOptimizedPrompt(ModelTier.PRO, _documentType)
       }
     };
 
@@ -582,7 +585,7 @@ ${schemaJson}`;
    * NOVO: Gera prompts especializados para análise multi-frentes de processos complexos
    * Organiza análise por frentes de discussão paralelas
    */
-  getMultiFrontAnalysisPrompt(tier: ModelTier, _processData: unknown): string {
+  getMultiFrontAnalysisPrompt(tier: ModelTier, __processData: unknown): string {
     const basePrompt = this.getOptimizedPrompt(tier, 'legal');
 
     return `${basePrompt}
@@ -646,8 +649,8 @@ PRIORIZAÇÃO:
    * Adapta linguagem conforme público-alvo
    */
   getExecutiveReportPrompt(
-    tier: ModelTier,
-    processesData: unknown[],
+    _tier: ModelTier,
+    _processesData: unknown[],
     audience: 'Cliente' | 'Diretoria' | 'Uso Interno' = 'Cliente',
     reportType: 'COMPLETO' | 'NOVIDADES' = 'COMPLETO'
   ): string {
@@ -808,8 +811,8 @@ INSTRUÇÃO ESPECIAL: Se não houve movimentação significativa em uma frente, 
    */
   getSpecificSituationPrompt(
     tier: ModelTier,
-    processNumber: string,
-    situation: string,
+    _processNumber: string,
+    _situation: string,
     questionType: 'status' | 'proximos_passos' | 'prazos' | 'analise_completa' = 'analise_completa'
   ): string {
 
@@ -820,8 +823,8 @@ INSTRUÇÃO ESPECIAL: Se não houve movimentação significativa em uma frente, 
 
 === ANÁLISE DE SITUAÇÃO ESPECÍFICA ===
 
-PROCESSO: ${processNumber}
-SITUAÇÃO ATUAL: ${situation}
+PROCESSO: ${_processNumber}
+SITUAÇÃO ATUAL: ${_situation}
 
 ${questionInstructions}
 
@@ -833,7 +836,7 @@ INSTRUÇÕES ESPECÍFICAS:
 
 ESTRUTURA DE RESPOSTA:
 {
-  "situacao_analisada": "${situation}",
+  "situacao_analisada": "${_situation}",
   "frente_principal_afetada": "string",
   "frentes_secundarias_impactadas": ["string"],
   "analise_situacao": {

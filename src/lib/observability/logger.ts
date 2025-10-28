@@ -95,7 +95,7 @@ export const costLogger = logger.child({
 export function logOperationStart(
   loggerInstance: typeof logger,
   operation: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   const startTime = Date.now();
 
@@ -107,7 +107,7 @@ export function logOperationStart(
 
   return {
     startTime,
-    finish: (result?: 'success' | 'failure', additionalData?: Record<string, any>) => {
+    finish: (result?: 'success' | 'failure', additionalData?: Record<string, unknown>) => {
       const duration = Date.now() - startTime;
 
       const logLevel = result === 'failure' ? 'error' : 'info';
@@ -131,7 +131,7 @@ export function logOperationStart(
 export function logError(
   loggerInstance: typeof logger,
   error: Error | unknown,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ) {
   const errorInfo = error instanceof Error
     ? {
@@ -157,7 +157,7 @@ export function logApiCall(
   endpoint: string,
   statusCode?: number,
   duration?: number,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   juditLogger.info({
     type: 'api_call',

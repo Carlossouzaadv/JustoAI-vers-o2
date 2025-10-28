@@ -8,12 +8,19 @@ import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import {
-  syncQueue,
-  reportsQueue,
-  cacheCleanupQueue,
-  documentProcessingQueue,
-  notificationQueue
+  syncQueue as getSyncQueue,
+  reportsQueue as getReportsQueue,
+  cacheCleanupQueue as getCacheCleanupQueue,
+  documentProcessingQueue as getDocumentProcessingQueue,
+  notificationQueue as getNotificationQueue
 } from './queues';
+
+// Call the getter functions to get the actual queue instances
+const syncQueue = getSyncQueue();
+const reportsQueue = getReportsQueue();
+const cacheCleanupQueue = getCacheCleanupQueue();
+const documentProcessingQueue = getDocumentProcessingQueue();
+const notificationQueue = getNotificationQueue();
 
 // Augment Express namespace for compatibility
 declare global {

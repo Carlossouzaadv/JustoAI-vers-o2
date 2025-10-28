@@ -133,7 +133,7 @@ export class AnalysisCacheManager {
     promptSignature: string,
     analysisResult: unknown,
     lastMovementDate?: Date,
-    workspaceId?: string
+    _workspaceId?: string
   ): Promise<boolean> {
     try {
       const analysisKey = this.generateAnalysisKey(textShas, modelVersion, promptSignature, lastMovementDate);
@@ -145,7 +145,7 @@ export class AnalysisCacheManager {
         promptSignature,
         lastMovementDate: lastMovementDate?.toISOString(),
         result: analysisResult,
-        workspaceId,
+        workspaceId: _workspaceId,
         cachedAt: new Date().toISOString(),
         ttl: this.ANALYSIS_CACHE_TTL
       };
@@ -344,7 +344,7 @@ export class AnalysisCacheManager {
   /**
    * Busca última data de movimentação do processo
    */
-  async getLastMovementDate(processId: string, prisma: { processMovement: { findFirst: (args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
+  async getLastMovementDate(_processId: string, prisma: { processMovement: { findFirst: (args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
     try {
       const lastMovement = await prisma.processMovement.findFirst({
         where: {
@@ -395,7 +395,7 @@ export class AnalysisCacheManager {
   /**
    * Invalida cache quando há nova movimentação
    */
-  async invalidateCacheForProcess(processId: string): Promise<void> {
+  async invalidateCacheForProcess(_processId: string): Promise<void> {
     try {
       // Buscar todas as chaves de cache relacionadas ao processo
       const pattern = 'analysis:*';

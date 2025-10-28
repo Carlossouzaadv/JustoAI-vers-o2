@@ -27,13 +27,13 @@ export function successResponse<T>(data: T, message?: string): NextResponse<ApiR
 }
 
 // Error response helper
-export function errorResponse(error: string, status: number = 400): NextResponse<ApiResponse> {
+export function errorResponse(error: string, _status: number = 400): NextResponse<ApiResponse> {
   return NextResponse.json(
     {
       success: false,
       error,
     },
-    { status }
+    { status: _status }
   )
 }
 
@@ -132,7 +132,7 @@ export function validateQuery<T>(
 }
 
 // Auth middleware
-export async function requireAuth(_request: NextRequest) {
+export async function requireAuth(__request: NextRequest) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
     console.log('⚠️ Development mode: Bypassing API auth validation')
@@ -293,14 +293,18 @@ export function getClientIP(request: NextRequest): string {
 
 // Custom Error class for API errors
 export class ApiError extends Error {
-   
+  public status: number;
+  public code?: string;
+
   constructor(
     message: string,
-    public status: number = 400,
-    public code?: string
+    _status: number = 400,
+    _code?: string
   ) {
     super(message)
     this.name = 'ApiError'
+    this.status = _status
+    this.code = _code
   }
 }
 

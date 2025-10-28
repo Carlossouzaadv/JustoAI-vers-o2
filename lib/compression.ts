@@ -9,8 +9,25 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { createGunzip, createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
+import type { Request, Response, NextFunction } from 'express';
 
 // === TIPOS E INTERFACES ===
+
+interface UploadedFile {
+  originalname: string;
+  path: string;
+  mimetype?: string;
+  size?: number;
+  compressedPath?: string;
+  originalSize?: number;
+  compressedSize?: number;
+  compressionRatio?: number;
+}
+
+interface CompressionRequest extends Request {
+  file?: UploadedFile;
+  files?: UploadedFile[];
+}
 
 interface CompressionOptions {
   quality?: number;
@@ -270,12 +287,9 @@ export async function optimizePDF(
     const originalSize = originalStats.size;
 
     // Configurações
-    const config = {
-      quality: options.quality || 'medium',
-      dpi: options.dpi || COMPRESSION_CONFIG.PDF.DPI[options.quality || 'medium'],
-      grayscale: options.grayscale ?? false,
-      removeMetadata: options.removeMetadata ?? true,
-    };
+    // NOTE: config will be used when real PDF optimization is implemented
+    // For now, we use gzip as a fallback compression
+    void (options.quality || 'medium');
 
     const finalOutputPath = outputPath || generateOptimizedPath(inputPath, 'pdf');
 
@@ -342,7 +356,7 @@ export async function decompressFileGzip(inputPath: string, outputPath: string):
  * Middleware para compressão automática de uploads
  */
 export function createCompressionMiddleware(options: CompressionOptions = {}) {
-  return async (req: any, res: any, next: any) => {
+  return async (req: CompressionRequest, res: Response, next: NextFunction): Promise<void> => {
     // Se há arquivos no upload
     if (req.files || req.file) {
       const files = req.files || [req.file];
@@ -351,20 +365,20 @@ export function createCompressionMiddleware(options: CompressionOptions = {}) {
         if (file && file.originalname && isImageFile(file.originalname)) {
           try {
             // Comprimir imagem automaticamente
-            const filePath = (file as any).path;
+            const filePath = file.path;
             if (filePath) {
               const result = await compressImage(filePath, undefined, options);
 
               if (result.success) {
                 // Atualizar informações do arquivo
-                (file as any).compressedPath = result.outputPath;
-                (file as any).originalSize = result.originalSize;
-                (file as any).compressedSize = result.compressedSize;
-                (file as any).compressionRatio = result.compressionRatio;
+                file.compressedPath = result.outputPath;
+                file.originalSize = result.originalSize;
+                file.compressedSize = result.compressedSize;
+                file.compressionRatio = result.compressionRatio;
               }
             }
-          } catch (error) {
-            console.error('Compression middleware error:', error);
+          } catch (_error) {
+            console.error('Compression middleware error:', _error);
             // Continuar sem falhar se compressão falhar
           }
         }

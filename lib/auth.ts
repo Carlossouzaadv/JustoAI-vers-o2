@@ -140,7 +140,7 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
 }
 
 // Additional auth functions for compatibility
-export async function validateAuth(_request?: Request) {
+export async function validateAuth(__request?: Request) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
     console.log('⚠️ Development mode: Bypassing auth validation')
@@ -175,7 +175,7 @@ export async function validateAuth(_request?: Request) {
   }
 }
 
-export async function validateAuthAndGetUser(_request?: Request) {
+export async function validateAuthAndGetUser(__request?: Request) {
   const user = await getCurrentUser()
   if (!user) {
     throw new Error('Unauthorized')

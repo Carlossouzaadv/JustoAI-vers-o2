@@ -60,8 +60,7 @@ export class ReportScheduler {
         // Validar quota
         const quotaValidation = await this.quotaSystem.validateReportCreation(
           schedule.workspaceId,
-          schedule.processIds.length,
-          schedule.type
+          schedule.processIds.length
         );
 
         if (!quotaValidation.allowed) {
@@ -82,12 +81,12 @@ export class ReportScheduler {
           data: {
             workspaceId: schedule.workspaceId,
             scheduleId: schedule.id,
-            reportType: schedule.type,
-            parameters: schedule.filters || {},
+            reportType: schedule.type as 'COMPLETO' | 'NOVIDADES' | 'ANALITICO',
+            parameters: (schedule.filters as Record<string, unknown>) || {},
             recipients: schedule.recipients,
             status: 'AGENDADO',
-            audienceType: schedule.audienceType,
-            outputFormats: schedule.outputFormats,
+            audienceType: schedule.audienceType as 'CLIENTE' | 'DIRETORIA' | 'USO_INTERNO',
+            outputFormats: schedule.outputFormats as ('PDF' | 'DOCX')[],
             processCount: schedule.processIds.length,
             scheduledFor: assignedTime,
             quotaConsumed: 1
@@ -308,7 +307,21 @@ export class ReportScheduler {
   /**
    * Encontra schedules que devem rodar hoje
    */
-  private async findSchedulesToRun(date: Date): Promise<any[]> {
+  private async findSchedulesToRun(date: Date): Promise<Array<{
+    id: string;
+    workspaceId: string;
+    type: string;
+    processIds: string[];
+    recipients: string[];
+    audienceType: string;
+    outputFormats: string[];
+    filters: Record<string, unknown> | null;
+    frequency: string;
+    workspace: {
+      plan: string;
+      status: string;
+    };
+  }>> {
     const today = new Date(date);
     today.setHours(0, 0, 0, 0);
 
@@ -346,7 +359,7 @@ export class ReportScheduler {
   /**
    * Calcula próxima execução baseada na frequência
    */
-  private calculateNextRun(schedule: any): Date {
+  private calculateNextRun(schedule: { frequency: string }): Date {
     const next = new Date();
 
     switch (schedule.frequency) {
@@ -389,9 +402,13 @@ export class ReportScheduler {
   /**
    * Envia notificação do relatório (placeholder)
    */
-  private async sendReportNotification(execution: any, result: any): Promise<void> {
+  private async sendReportNotification(
+    execution: { recipients: string[] | Record<string, unknown> },
+    result: { summary?: Record<string, unknown>; fileUrls?: Record<string, string> }
+  ): Promise<void> {
     // TODO: Implementar sistema de notificação
-    console.log(`${ICONS.MAIL} Notificação enviada para: ${execution.recipients.join(', ')}`);
+    const recipients = Array.isArray(execution.recipients) ? execution.recipients : [];
+    console.log(`${ICONS.MAIL} Notificação enviada para: ${recipients.join(', ')}`);
   }
 
   /**

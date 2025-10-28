@@ -50,6 +50,14 @@ export interface DataCollectionStats {
   collectionTime: number;
 }
 
+export interface SummaryData {
+  total_processes: number;
+  active_processes: number;
+  new_movements: number;
+  critical_alerts: number;
+  pending_actions: number;
+}
+
 // ================================
 // CLASSE PRINCIPAL
 // ================================
@@ -538,7 +546,7 @@ export class ReportDataCollector {
   /**
    * Gera insights executivos
    */
-  private async generateExecutiveInsights(processes: ProcessReportData[], summary: any): Promise<string[]> {
+  private async generateExecutiveInsights(processes: ProcessReportData[], summary: SummaryData): Promise<string[]> {
     return [
       `${processes.filter(p => p.priority === 'URGENT').length} processos críticos identificados`,
       `Taxa de atividade: ${Math.round((summary.active_processes / summary.total_processes) * 100)}%`,

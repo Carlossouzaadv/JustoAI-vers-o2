@@ -50,11 +50,8 @@ export interface CacheConfig {
 }
 
 interface RedisClient {
-   
-  get: (_key: string) => Promise<string | null>;
-   
-  setex: (_key: string, _ttl: number, _value: string) => Promise<void>;
-   
+  get: (key: string) => Promise<string | null>;
+  setex: (key: string, ttl: number, value: string) => Promise<void>;
   flushdb: () => Promise<void>;
 }
 
@@ -106,8 +103,7 @@ export class AiCacheManager {
       // });
       // await this.redisClient.connect();
       console.log(`${ICONS.SUCCESS} Redis conectado (cache nível 2)`);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_error) {
+    } catch {
       console.warn(`${ICONS.WARNING} Redis não disponível, usando apenas memória + PostgreSQL`);
       this.config.enable_redis = false;
     }
@@ -535,9 +531,9 @@ export function generateTextHash(text: string): string {
  */
 export function withCache(
   analysisType: 'essential' | 'strategic' | 'report',
-  keyExtractor: (_args: unknown[]) => string
+  keyExtractor: (args: unknown[]) => string
 ) {
-  return function (_target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (_target: unknown, _propertyName: string, descriptor: PropertyDescriptor) {
      
     const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
@@ -560,6 +556,8 @@ export function withCache(
 
       return result;
     };
+
+    return descriptor;
   };
 }
 

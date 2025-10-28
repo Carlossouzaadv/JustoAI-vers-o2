@@ -322,12 +322,12 @@ export class AiCacheManager {
   // UTILITÁRIOS PRIVADOS
   // ================================
 
-  private buildCacheKey(key: string, type: string): string {
+  private buildCacheKey(_key: string, type: string): string {
     if (this.config.aggressive_mode) {
       // Modo agressivo: cache mais genérico para máxima reutilização
-      return `${type}:${this.hashString(key)}`;
+      return `${type}:${this.hashString(_key)}`;
     }
-    return `${type}:${key}`;
+    return `${type}:${_key}`;
   }
 
   private getTierFromComplexity(score: number): string {
@@ -351,20 +351,20 @@ export class AiCacheManager {
   // CACHE MEMÓRIA
   // ================================
 
-  private getFromMemory(key: string): unknown {
-    const entry = this.memoryCache.get(key);
+  private getFromMemory(_key: string): unknown {
+    const entry = this.memoryCache.get(_key);
     if (entry && entry.expires > Date.now()) {
       entry.hits++;
       return entry.data;
     }
     if (entry) {
-      this.memoryCache.delete(key); // Expirou
+      this.memoryCache.delete(_key); // Expirou
     }
     return null;
   }
 
-  private setInMemory(key: string, data: unknown): void {
-    this.memoryCache.set(key, {
+  private setInMemory(_key: string, data: unknown): void {
+    this.memoryCache.set(_key, {
       data,
       expires: Date.now() + this.config.memory_ttl,
       hits: 0
@@ -536,9 +536,9 @@ export function generateTextHash(text: string): string {
  */
 export function withCache(
   analysisType: 'essential' | 'strategic' | 'report',
-  keyExtractor: (_args: unknown[]) => string
+  keyExtractor: (..._args: unknown[]) => string
 ) {
-  return function (_target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
+  return function (_target: unknown, _propertyName: string, descriptor: PropertyDescriptor) {
      
     const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
@@ -549,7 +549,7 @@ export function withCache(
       // Tentar buscar no cache primeiro
       const cached = await cache.get(key, analysisType);
       if (cached) {
-        console.log(`${ICONS.CACHE} Cache hit para ${analysisType}: ${propertyName}`);
+        console.log(`${ICONS.CACHE} Cache hit para ${analysisType}: ${_propertyName}`);
         return cached;
       }
 

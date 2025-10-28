@@ -133,7 +133,7 @@ export class PerformanceOptimizer {
   // OTIMIZAÇÕES PUPPETEER
   // ================================
 
-  getPuppeteerConfig(): any {
+  getPuppeteerConfig(): Record<string, unknown> {
     return {
       headless: true,
       args: [
@@ -198,9 +198,9 @@ export class PerformanceOptimizer {
   getPageOptimizations() {
     return {
       // Request interception for maximum speed
-      interceptRequests: (page: any) => {
+      interceptRequests: (page: { setRequestInterception: (enabled: boolean) => void; on: (event: string, handler: (request: { resourceType: () => string; url: () => string; continue: () => void; abort: () => void }) => void) => void }) => {
         page.setRequestInterception(true);
-        page.on('request', (request: any) => {
+        page.on('request', (request: { resourceType: () => string; url: () => string; continue: () => void; abort: () => void }) => {
           const resourceType = request.resourceType();
           const url = request.url();
 
@@ -227,7 +227,13 @@ export class PerformanceOptimizer {
       },
 
       // Page configuration for speed
-      configureForSpeed: async (page: any) => {
+      configureForSpeed: async (page: {
+        setJavaScriptEnabled: (enabled: boolean) => Promise<void>;
+        setViewport: (viewport: { width: number; height: number; deviceScaleFactor: number }) => Promise<void>;
+        setDefaultTimeout: (timeout: number) => Promise<void>;
+        setDefaultNavigationTimeout: (timeout: number) => Promise<void>;
+        addStyleTag: (options: { content: string }) => Promise<void>;
+      }) => {
         // Disable JavaScript (reports are static)
         await page.setJavaScriptEnabled(false);
 

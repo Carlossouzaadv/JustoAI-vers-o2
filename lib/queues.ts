@@ -170,7 +170,7 @@ export async function setupRecurringJobs() {
 /**
  * Adiciona job de sincronização manual
  */
-export async function addSyncJob(workspaceId: string, options = {}) {
+export async function addSyncJob(workspaceId: string, options: Record<string, unknown> = {}) {
   return await getSyncQueue().add(
     'manual-sync',
     {
@@ -188,7 +188,7 @@ export async function addSyncJob(workspaceId: string, options = {}) {
 /**
  * Adiciona job de geração de relatório
  */
-export async function addReportJob(scheduleId: string, options = {}) {
+export async function addReportJob(scheduleId: string, options: Record<string, unknown> = {}) {
   return await getReportsQueue().add(
     'generate-report',
     {
@@ -206,7 +206,7 @@ export async function addReportJob(scheduleId: string, options = {}) {
 /**
  * Adiciona job de processamento de documento
  */
-export async function addDocumentProcessingJob(documentId: string, options = {}) {
+export async function addDocumentProcessingJob(documentId: string, options: Record<string, unknown> = {}) {
   return await getDocumentProcessingQueue().add(
     'process-document',
     {
@@ -224,7 +224,7 @@ export async function addDocumentProcessingJob(documentId: string, options = {})
 /**
  * Adiciona job de notificação
  */
-export async function addNotificationJob(type: string, data: any, options = {}) {
+export async function addNotificationJob(type: string, data: Record<string, unknown>, options: Record<string, unknown> = {}) {
   return await getNotificationQueue().add(
     'send-notification',
     {

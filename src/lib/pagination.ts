@@ -59,7 +59,7 @@ export interface PaginatedResponse<T> {
     search?: string;
     sort?: string;
     order?: 'asc' | 'desc';
-    filters?: Record<string, any>;
+    filters?: Record<string, unknown>;
   };
 }
 
@@ -88,7 +88,7 @@ export function createPaginatedResponse<T>(
   data: T[],
   params: PaginationParams,
   total: number,
-  meta?: Record<string, any>
+  meta?: Record<string, unknown>
 ): PaginatedResponse<T> {
   const totalPages = Math.ceil(total / params.limit);
   const hasNext = params.page < totalPages;
@@ -121,7 +121,7 @@ export function createPaginatedResponse<T>(
  * Gera configuração Prisma para paginação
  */
 export function getPrismaConfig(params: PaginationParams) {
-  const config: any = {
+  const config: Record<string, unknown> = {
     skip: params.offset,
     take: params.limit,
   };
@@ -142,9 +142,9 @@ export function getPrismaConfig(params: PaginationParams) {
 export function getPrismaSearchConfig(
   searchFields: string[],
   searchTerm?: string,
-  additionalWhere?: any
+  additionalWhere?: Record<string, unknown>
 ) {
-  let where = additionalWhere || {};
+  let where = additionalWhere || {} as Record<string, unknown>;
 
   if (searchTerm && searchFields.length > 0) {
     const searchConditions = searchFields.map(field => ({
@@ -217,7 +217,7 @@ export function generatePaginationUrls(
     return url.toString();
   };
 
-  const urls: any = {
+  const urls: Record<string, string> = {
     self: createUrl(params.page),
     first: createUrl(1),
     last: createUrl(totalPages),
@@ -238,7 +238,7 @@ export function generatePaginationUrls(
  * Middleware para validação de paginação
  */
 export function validatePaginationMiddleware() {
-  return (req: any, res: any, next: any) => {
+  return (req: { query: PaginationQuery; pagination?: PaginationParams }, res: { status: (code: number) => { json: (data: unknown) => unknown } }, next: () => void) => {
     try {
       const params = parsePaginationQuery(req.query);
       req.pagination = params;
@@ -264,7 +264,7 @@ export function validatePaginationMiddleware() {
 export function generatePaginationCacheKey(
   resource: string,
   params: PaginationParams,
-  additionalParams?: Record<string, any>
+  additionalParams?: Record<string, unknown>
 ): string {
   const keyParts = [
     resource,

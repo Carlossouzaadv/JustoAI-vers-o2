@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils'
 const Popover = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & { open?: boolean; onOpenChange?: (open: boolean) => void }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
->(({ children, open, onOpenChange, ...props }, ref) => {
+>(({ children, _open, _onOpenChange, ...props }, ref) => {
   return (
     <div ref={ref} {...props}>
       {children}
@@ -41,8 +40,7 @@ const PopoverContent = React.forwardRef<
     align?: 'start' | 'center' | 'end'
     sideOffset?: number
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
->(({ className, align, sideOffset, ...props }, ref) => (
+>(({ className, _align, _sideOffset, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(

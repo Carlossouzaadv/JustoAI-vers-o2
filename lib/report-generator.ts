@@ -22,11 +22,20 @@ export interface ReportGenerationRequest {
   customTemplate?: string;
 }
 
+export interface ReportSummary {
+  totalProcesses: number;
+  contentLength: number;
+  audienceType: string;
+  generatedAt: string;
+  model?: string;
+  error?: string;
+}
+
 export interface ReportGenerationResult {
   success: boolean;
   reportId: string;
   fileUrls: Record<string, string>;
-  summary: any;
+  summary: ReportSummary | Record<string, unknown>;
   tokensUsed: number;
   cacheHit: boolean;
   cacheKey?: string;
@@ -59,7 +68,7 @@ export interface ReportTemplate {
   name: string;
   headerContent?: string;
   footerContent?: string;
-  styles: any;
+  styles: Record<string, unknown>;
 }
 
 export class ReportGenerator {
@@ -162,7 +171,7 @@ export class ReportGenerator {
     cacheKey?: string;
     reportId?: string;
     fileUrls?: Record<string, string>;
-    summary?: any;
+    summary?: Record<string, unknown>;
   }> {
     try {
       // Carregar últimas movimentações para gerar chave de cache
@@ -191,7 +200,7 @@ export class ReportGenerator {
         cacheKey,
         reportId: cached.id,
         fileUrls: cached.fileUrls as Record<string, string>,
-        summary: cached.cachedData
+        summary: cached.cachedData as Record<string, unknown>
       };
 
     } catch (error) {
@@ -299,7 +308,7 @@ export class ReportGenerator {
   /**
    * Constrói payload delta (apenas novidades)
    */
-  private buildDeltaPayload(processData: ProcessData[]): any {
+  private buildDeltaPayload(processData: ProcessData[]): Record<string, unknown> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -323,7 +332,7 @@ export class ReportGenerator {
   /**
    * Constrói payload completo
    */
-  private buildFullPayload(processData: ProcessData[]): any {
+  private buildFullPayload(processData: ProcessData[]): Record<string, unknown> {
     return {
       type: 'full',
       summary: 'Relatório completo de todos os processos',
@@ -360,11 +369,11 @@ export class ReportGenerator {
    */
   private async generateContentWithGemini(
     prompt: string,
-    payload: any,
+    payload: Record<string, unknown>,
     audienceType: AudienceType
   ): Promise<{
     content: string;
-    summary: any;
+    summary: ReportSummary;
     tokensUsed: number;
   }> {
     console.log(`${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...`);
@@ -402,7 +411,7 @@ export class ReportGenerator {
       return {
         content: mockContent,
         summary: {
-          totalProcesses: payload.totalProcesses || 0,
+          totalProcesses: (payload.totalProcesses as number) || 0,
           contentLength: mockContent.length,
           audienceType,
           generatedAt: new Date().toISOString(),
@@ -416,7 +425,7 @@ export class ReportGenerator {
   /**
    * Gera conteúdo mock para testes
    */
-  private generateMockContent(payload: any, audienceType: AudienceType): string {
+  private generateMockContent(payload: Record<string, unknown>, audienceType: AudienceType): string {
     const clientLanguage = audienceType === 'CLIENTE';
 
     return `
@@ -433,21 +442,27 @@ ${clientLanguage
 
 ## Processos Analisados
 
-${payload.processes.map((process: any, index: number) => `
+${(payload.processes as Array<Record<string, unknown>>).map((process: Record<string, unknown>, index: number) => {
+  const client = process.client as Record<string, unknown> | string;
+  const clientName = typeof client === 'object' ? (client.name as string) : client;
+  const recentMovements = process.recentMovements as unknown[] | undefined;
+  const movements = process.movements as unknown[] | undefined;
+  return `
 ### ${index + 1}. Processo ${process.number}
-**Cliente:** ${process.client.name || process.client}
+**Cliente:** ${clientName}
 **Status:** ${process.status}
 
-${process.recentMovements ?
-  `**Novidades:** ${process.recentMovements.length} movimentações recentes` :
-  `**Movimentações:** ${process.movements?.length || 0} registradas`
+${recentMovements ?
+  `**Novidades:** ${recentMovements.length} movimentações recentes` :
+  `**Movimentações:** ${movements?.length || 0} registradas`
 }
 
 ${clientLanguage ?
   'Situação atual favorável, sem pendências críticas.' :
   'Status processual dentro da normalidade esperada.'
 }
-`).join('\n')}
+`;
+}).join('\n')}
 
 ## ${clientLanguage ? 'Próximos Passos' : 'Recomendações'}
 
@@ -475,9 +490,11 @@ ${clientLanguage ?
       });
 
       return defaultTemplate ? {
-        ...defaultTemplate,
+        id: defaultTemplate.id,
+        name: defaultTemplate.name,
         headerContent: defaultTemplate.headerContent || undefined,
-        footerContent: defaultTemplate.footerContent || undefined
+        footerContent: defaultTemplate.footerContent || undefined,
+        styles: (defaultTemplate.styles as Record<string, unknown>) || {}
       } : null;
     }
 
@@ -489,9 +506,11 @@ ${clientLanguage ?
     });
 
     return template ? {
-      ...template,
+      id: template.id,
+      name: template.name,
       headerContent: template.headerContent || undefined,
-      footerContent: template.footerContent || undefined
+      footerContent: template.footerContent || undefined,
+      styles: (template.styles as Record<string, unknown>) || {}
     } : null;
   }
 
@@ -619,7 +638,7 @@ ${clientLanguage ?
   private async saveReportCache(
     cacheKey: string,
     request: ReportGenerationRequest,
-    result: any
+    result: { summary: ReportSummary; fileUrls: Record<string, string>; tokensUsed: number }
   ): Promise<void> {
     try {
       const expiresAt = new Date();
@@ -633,7 +652,7 @@ ${clientLanguage ?
           processIds: request.processIds,
           audienceType: request.audienceType,
           lastMovementTimestamp: new Date(),
-          cachedData: result.summary,
+          cachedData: result.summary as Record<string, unknown>,
           fileUrls: result.fileUrls,
           expiresAt
         }
