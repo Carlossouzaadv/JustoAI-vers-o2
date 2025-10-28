@@ -115,7 +115,7 @@ export const ENRICHMENT_PROMPTS = {
   v2_simple: (
     baseDescription: string,
     contextualDescription: string,
-    documentName?: string
+    _documentName?: string
   ): string => {
     return `Enriqueça este andamento jurídico adicionando contexto, mantendo máximo 180 caracteres.
 Base: "${baseDescription}"
@@ -129,7 +129,7 @@ Resultado (apenas texto enriquecido):`;
   v3_structured: (
     baseDescription: string,
     contextualDescription: string,
-    documentName?: string
+    _documentName?: string
   ): string => {
     return `Analise este andamento processual e retorne em JSON:
 {

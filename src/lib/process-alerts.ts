@@ -24,7 +24,7 @@ export interface AlertTemplate {
 export interface AlertCondition {
   field: string;
   operator: 'equals' | 'contains' | 'greater_than' | 'less_than' | 'in' | 'not_in';
-  value: any;
+  value: unknown;
   description: string;
 }
 
@@ -52,7 +52,7 @@ export class ProcessAlertManager {
    */
   async generateMovementAlerts(
     monitoredProcessId: string,
-    movements: any[]
+    movements: Record<string, unknown>[]
   ): Promise<string[]> {
     const alertIds: string[] = [];
 
@@ -107,8 +107,8 @@ export class ProcessAlertManager {
    * Avalia uma movimentação específica para gerar alertas
    */
   private async evaluateMovementForAlerts(
-    process: any,
-    movement: any
+    process: Record<string, unknown>,
+    movement: Record<string, unknown>
   ): Promise<Array<{
     title: string;
     message: string;
@@ -628,7 +628,7 @@ Ação necessária dentro do prazo.`,
  */
 export function formatAlertMessage(
   template: string,
-  variables: Record<string, any>
+  variables: Record<string, unknown>
 ): string {
   let message = template;
 

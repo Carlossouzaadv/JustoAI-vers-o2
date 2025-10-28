@@ -133,7 +133,7 @@ export class PerformanceOptimizer {
   // OTIMIZAÇÕES PUPPETEER
   // ================================
 
-  getPuppeteerConfig(): any {
+  getPuppeteerConfig(): Record<string, unknown> {
     return {
       headless: true,
       args: [
@@ -198,8 +198,10 @@ export class PerformanceOptimizer {
   getPageOptimizations() {
     return {
       // Request interception for maximum speed
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       interceptRequests: (page: any) => {
         page.setRequestInterception(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         page.on('request', (request: any) => {
           const resourceType = request.resourceType();
           const url = request.url();
@@ -227,7 +229,7 @@ export class PerformanceOptimizer {
       },
 
       // Page configuration for speed
-      configureForSpeed: async (page: any) => {
+      configureForSpeed: async (page: Record<string, unknown>) => {
         // Disable JavaScript (reports are static)
         await page.setJavaScriptEnabled(false);
 
@@ -351,7 +353,7 @@ export class PerformanceOptimizer {
   } {
     // Para 100 relatórios em < 5 minutos
     const targetTime = 5 * 60 * 1000; // 5 minutos em ms
-    const targetThroughput = 20; // 20 relatórios/min
+    // Target throughput: 20 relatórios/min (used for reference in calculations below)
 
     let batches: number;
     let batchSize: number;

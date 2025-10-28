@@ -216,37 +216,38 @@ export class ProcessApiClient {
     };
   }
 
-  private parseJuditResponse(apiData: any): ProcessData {
+  private parseJuditResponse(apiData: Record<string, unknown>): ProcessData {
+    const apiRecord = apiData as Record<string, unknown>;
     return {
-      processNumber: apiData.numero_processo || '',
-      court: apiData.tribunal || '',
-      subject: apiData.assunto || '',
-      value: apiData.valor_causa ? parseFloat(apiData.valor_causa) : undefined,
-      distributionDate: apiData.data_distribuicao ? new Date(apiData.data_distribuicao) : undefined,
-      status: apiData.situacao || 'ATIVO',
+      processNumber: (apiRecord.numero_processo as string) || '',
+      court: (apiRecord.tribunal as string) || '',
+      subject: (apiRecord.assunto as string) || '',
+      value: apiRecord.valor_causa ? parseFloat(apiRecord.valor_causa as string) : undefined,
+      distributionDate: apiRecord.data_distribuicao ? new Date(apiRecord.data_distribuicao as string) : undefined,
+      status: (apiRecord.situacao as string) || 'ATIVO',
 
       parties: {
-        plaintiffs: (apiData.partes?.requerentes || []).map((p: any) => ({
-          name: p.nome || '',
-          document: p.documento || '',
+        plaintiffs: ((apiRecord.partes as Record<string, unknown>)?.requerentes as Record<string, unknown>[] || []).map((p) => ({
+          name: (p.nome as string) || '',
+          document: (p.documento as string) || '',
           type: 'PLAINTIFF' as const,
-          address: p.endereco
+          address: p.endereco as string
         })),
-        defendants: (apiData.partes?.requeridos || []).map((p: any) => ({
-          name: p.nome || '',
-          document: p.documento || '',
+        defendants: ((apiRecord.partes as Record<string, unknown>)?.requeridos as Record<string, unknown>[] || []).map((p) => ({
+          name: (p.nome as string) || '',
+          document: (p.documento as string) || '',
           type: 'DEFENDANT' as const,
-          address: p.endereco
+          address: p.endereco as string
         })),
-        lawyers: (apiData.advogados || []).map((a: any) => ({
-          name: a.nome || '',
-          oabNumber: a.oab_numero || '',
-          oabState: a.oab_uf || '',
-          represents: a.representa || ''
+        lawyers: ((apiRecord.advogados as Record<string, unknown>[]) || []).map((a) => ({
+          name: (a.nome as string) || '',
+          oabNumber: (a.oab_numero as string) || '',
+          oabState: (a.oab_uf as string) || '',
+          represents: (a.representa as string) || ''
         }))
       },
 
-      movements: (apiData.movimentacoes || []).map((m: any) => ({
+      movements: ((apiRecord.movimentacoes as Record<string, unknown>[]) || []).map((m) => ({
         date: new Date(m.data),
         type: m.tipo || '',
         description: m.descricao || '',

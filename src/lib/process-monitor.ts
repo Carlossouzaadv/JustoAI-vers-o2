@@ -211,7 +211,7 @@ export class ProcessMonitor {
   /**
    * Sincroniza um processo individual
    */
-  private async syncProcess(process: any): Promise<{ newMovements: number; alertsGenerated: number }> {
+  private async syncProcess(process: Record<string, unknown>): Promise<{ newMovements: number; alertsGenerated: number }> {
     // Criar log de sincronização
     const syncLog = await prisma.processSyncLog.create({
       data: {
