@@ -90,16 +90,16 @@ export function sleep(ms: number): Promise<void> {
  * Debounce function
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function debounce<TFunc extends (...args: any[]) => any>(
+export function debounce<TFunc extends (..._args: any[]) => any>(
   func: TFunc,
   wait: number
-): (...args: Parameters<TFunc>) => void {
+): (..._args: Parameters<TFunc>) => void {
   let timeout: NodeJS.Timeout | null = null
 
-  return function executedFunction(...args: Parameters<TFunc>) {
+  return function executedFunction(..._args: Parameters<TFunc>) {
     const later = () => {
       timeout = null
-      func(...args)
+      func(..._args)
     }
 
     if (timeout) clearTimeout(timeout)

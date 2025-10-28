@@ -2,7 +2,7 @@
 // MOTOR DE TEMPLATES DOCX - Geração Profissional Microsoft Word
 // ================================================================
 
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, Table, TableRow, TableCell, WidthType, Header, Footer, PageNumber, NumberFormat } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, TableCell, WidthType, Header, Footer, PageNumber, NumberFormat } from 'docx';
 import { ICONS } from '@/lib/icons';
 import fs from 'fs/promises';
 import path from 'path';
@@ -163,7 +163,7 @@ export class DOCXTemplateEngine {
   /**
    * Gera estilos do documento
    */
-  private generateStyles(customization: DOCXCustomization): any {
+  private generateStyles(customization: DOCXCustomization): Record<string, unknown> {
     const primaryColorHex = customization.primaryColor.replace('#', '');
     const accentColorHex = customization.accentColor.replace('#', '');
 
@@ -612,7 +612,7 @@ export class DOCXTemplateEngine {
   /**
    * Gera seção de estatísticas
    */
-  private generateStatistics(processData: ProcessData[], options: DOCXTemplateOptions): Paragraph[] {
+  private generateStatistics(processData: ProcessData[], _options: DOCXTemplateOptions): Paragraph[] {
     const statusStats = this.calculateStatusStats(processData);
 
     const paragraphs: Paragraph[] = [
