@@ -3,8 +3,8 @@
 // ================================================================
 // Complete analysis service using real Gemini API with error handling and rate limiting
 
-import { AIModelRouter, ModelTier, UnifiedProcessSchema } from './ai-model-router';
-import { getGeminiClient, GeminiClient, formatGeminiError } from './gemini-client';
+import { AIModelRouter, ModelTier, UnifiedProcessSchema, ComplexityScore, ProcessingConfig } from './ai-model-router';
+import { getGeminiClient, GeminiClient } from './gemini-client';
 import { ICONS } from './icons';
 
 export interface AnalysisRequest {
@@ -40,7 +40,7 @@ export interface AnalysisResponse {
     };
     complexity: {
       score: number;
-      factors: any;
+      factors: Record<string, unknown>;
       tier: ModelTier;
     };
     timestamp: string;
@@ -146,11 +146,11 @@ export class RealAnalysisService {
    */
   private async processWithGemini(
     request: AnalysisRequest,
-    config: any,
-    complexity: any
+    config: ProcessingConfig,
+    complexity: ComplexityScore
   ): Promise<UnifiedProcessSchema> {
     const maxRetries = 3;
-    let lastError: any;
+    let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -240,9 +240,9 @@ METADADOS ADICIONAIS:`;
    * Validate and enhance Gemini API response
    */
   private validateAndEnhanceResult(
-    geminiResponse: any,
+    geminiResponse: Record<string, unknown>,
     request: AnalysisRequest,
-    complexity: any
+    complexity: ComplexityScore
   ): UnifiedProcessSchema {
     // Ensure all required sections exist
     const result: UnifiedProcessSchema = {
@@ -274,11 +274,11 @@ METADADOS ADICIONAIS:`;
   /**
    * Calculate overall confidence based on response completeness
    */
-  private calculateConfidence(response: any, complexity: any): number {
+  private calculateConfidence(response: Record<string, unknown>, complexity: ComplexityScore): number {
     let filledFields = 0;
     let totalFields = 0;
 
-    const countFields = (obj: any): void => {
+    const countFields = (obj: Record<string, unknown>): void => {
       if (obj && typeof obj === 'object') {
         Object.values(obj).forEach(value => {
           totalFields++;
@@ -302,7 +302,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Find missing required fields
    */
-  private findMissingFields(response: any): string[] {
+  private findMissingFields(response: Record<string, unknown>): string[] {
     const requiredFields = [
       'identificacao_basica.numero_processo',
       'identificacao_basica.tipo_processual',
@@ -325,14 +325,19 @@ METADADOS ADICIONAIS:`;
   /**
    * Get nested object value by dot notation path
    */
-  private getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj);
+  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce((current: unknown, key: string) => {
+      if (current && typeof current === 'object' && key in (current as Record<string, unknown>)) {
+        return (current as Record<string, unknown>)[key];
+      }
+      return undefined;
+    }, obj);
   }
 
   /**
    * Check cache for existing analysis
    */
-  private async checkCache(request: AnalysisRequest, complexity: any): Promise<any> {
+  private async checkCache(request: AnalysisRequest, complexity: ComplexityScore): Promise<UnifiedProcessSchema | null> {
     try {
       const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
       const cache = getAiCache();
@@ -358,7 +363,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Cache analysis result
    */
-  private async cacheResult(request: AnalysisRequest, result: any, complexity: any): Promise<void> {
+  private async cacheResult(request: AnalysisRequest, result: UnifiedProcessSchema, complexity: ComplexityScore): Promise<void> {
     try {
       const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
       const cache = getAiCache();
@@ -391,8 +396,8 @@ METADADOS ADICIONAIS:`;
    * Build successful response
    */
   private buildSuccessResponse(
-    data: any,
-    complexity: any,
+    data: UnifiedProcessSchema,
+    complexity: ComplexityScore,
     cached: boolean,
     processingTime: number
   ): AnalysisResponse {
@@ -443,7 +448,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Check if error is retryable
    */
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: Error | unknown): boolean {
     const retryableErrors = [
       'rate limit',
       'timeout',
@@ -463,12 +468,13 @@ METADADOS ADICIONAIS:`;
   /**
    * Format error for response
    */
-  private formatError(error: any): string {
-    if (error.code && error.error) {
-      return `Gemini API Error (${error.code}): ${error.error}`;
+  private formatError(error: Error | unknown): string {
+    if (error && typeof error === 'object' && 'code' in error && 'error' in error) {
+      const errorObj = error as Record<string, unknown>;
+      return `Gemini API Error (${errorObj.code}): ${errorObj.error}`;
     }
 
-    if (error.message) {
+    if (error instanceof Error) {
       return error.message;
     }
 
@@ -509,7 +515,7 @@ METADADOS ADICIONAIS:`;
     try {
       const result = await this.geminiClient.testConnection();
       return result;
-    } catch (error) {
+    } catch {
       return {
         success: false,
         latency: 0,

@@ -11,19 +11,27 @@ import IORedis, { Redis, RedisOptions } from 'ioredis';
 
 // Simple inline logger to avoid external dependencies that may not be in container
 const logger = {
-  info: (msg: any, data?: any) => console.log(`[INFO]`, msg, data || ''),
-  error: (msg: any, data?: any) => console.error(`[ERROR]`, msg, data || ''),
-  warn: (msg: any, data?: any) => console.warn(`[WARN]`, msg, data || ''),
-  debug: (msg: any, data?: any) => console.debug(`[DEBUG]`, msg, data || ''),
+  info: (msg: string | Record<string, unknown>, data?: string) => console.log(`[INFO]`, msg, data || ''),
+  error: (msg: string | Record<string, unknown>, data?: string) => console.error(`[ERROR]`, msg, data || ''),
+  warn: (msg: string | Record<string, unknown>, data?: string) => console.warn(`[WARN]`, msg, data || ''),
+  debug: (msg: string | Record<string, unknown>, data?: string) => console.debug(`[DEBUG]`, msg, data || ''),
 };
 
 // Circuit breaker import - lazy loaded to avoid circular dependency
-let circuitBreakerService: any = null;
+let circuitBreakerService: Record<string, unknown> | null = null;
 const getCircuitBreaker = () => {
   if (!circuitBreakerService) {
     try {
-      circuitBreakerService = require('./services/circuitBreakerService').circuitBreakerService;
-    } catch (e) {
+      // Using dynamic import to avoid circular dependencies
+      import('./services/circuitBreakerService')
+        .then((module) => {
+          circuitBreakerService = module.circuitBreakerService;
+        })
+        .catch(() => {
+          // Fallback if circuit breaker not available
+          return null;
+        });
+    } catch {
       // Fallback if circuit breaker not available
       return null;
     }
@@ -223,7 +231,7 @@ class MockRedis {
     return this.mockData.get(key) || null;
   }
 
-  async set(key: string, value: string, ...args: any[]) {
+  async set(key: string, value: string, ..._args: unknown[]) {
     console.log(`[MOCK REDIS] SET ${key}`);
     this.mockData.set(key, value);
     return 'OK';
@@ -234,11 +242,11 @@ class MockRedis {
     return this.mockData.delete(key) ? 1 : 0;
   }
 
-  async ttl(key: string) {
+  async ttl(_key: string) {
     return -1; // No TTL in mock
   }
 
-  async expire(key: string, seconds: number) {
+  async expire(_key: string, _seconds: number) {
     return 1; // Always success in mock
   }
 
@@ -246,7 +254,7 @@ class MockRedis {
     return this.mockData.has(key) ? 1 : 0;
   }
 
-  async keys(pattern: string) {
+  async keys(_pattern: string) {
     return Array.from(this.mockData.keys());
   }
 
@@ -346,7 +354,7 @@ export const getRedisClient = (): Redis | MockRedis => {
   let hasErrored = false;
   let fallbackToMock = false;
 
-  client.on('error', (error) => {
+  client.on('error', (error: Error) => {
     // Check for Upstash quota exceeded error
     const isQuotaExceededError = error.message?.includes('ERR max requests limit exceeded') ||
       error.message?.includes('max_requests_limit') ||
@@ -366,13 +374,14 @@ export const getRedisClient = (): Redis | MockRedis => {
     }
 
     const level = isQuotaExceededError ? 'error' : isMaxRetriesError ? 'warn' : 'error';
+    const errorCode = 'code' in error ? (error as Record<string, unknown>).code : undefined;
 
     logger[level](
       {
         component: 'redis',
         event: 'error',
         error_message: error.message,
-        error_code: (error as any).code,
+        error_code: errorCode,
         is_max_retries: isMaxRetriesError,
         is_quota_exceeded: isQuotaExceededError,
         mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
@@ -415,23 +424,21 @@ export const getRedisClient = (): Redis | MockRedis => {
 
   // In graceful mode, wrap the client to fall back to mock on connection errors
   if (!isStrictMode) {
-    const originalClient = client;
-
     // Create a proxy that falls back to mock if connection fails
     return new Proxy(client, {
-      get(target: any, prop: string | symbol) {
+      get(target: Redis, prop: string | symbol) {
         if (hasErrored && typeof prop === 'string' && !['on', 'once', 'off', 'connect', 'ping'].includes(prop)) {
           // Return mock client methods
           if (!fallbackToMock) {
             logger.warn({ component: 'redis' }, 'Falling back to MockRedis due to connection failure');
             fallbackToMock = true;
             redisClient = new MockRedis();
-            return (redisClient as any)[prop];
+            return (redisClient as Record<string, unknown>)[prop];
           }
         }
-        return target[prop];
+        return (target as Record<string, unknown>)[prop];
       }
-    }) as any;
+    }) as Redis | MockRedis;
   }
 
   redisClient = client;
