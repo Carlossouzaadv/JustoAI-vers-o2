@@ -293,7 +293,7 @@ export function getClientIP(request: NextRequest): string {
 
 // Custom Error class for API errors
 export class ApiError extends Error {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   constructor(
     message: string,
     public status: number = 400,

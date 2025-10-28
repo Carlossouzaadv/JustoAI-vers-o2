@@ -3,7 +3,7 @@
 // ================================================================
 // Implementa roteamento inteligente de modelos baseado em complexidade para economia de custos
 
-// eslint-disable-next-line no-unused-vars
+ 
 export enum ModelTier {
   LITE = 'gemini-2.5-flash-lite',   // Mais barato (95% economia)
   BALANCED = 'gemini-2.5-flash',  // Equilibrado
