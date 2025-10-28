@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ================================================================
 // TIMELINE MERGE SERVICE - Timeline Unificada Inteligente
 // ================================================================
 // Implementa deduplicação inteligente e ordenação cronológica
 // de andamentos processuais de múltiplas fontes
+// NOTE: This file uses any types due to complex Prisma query results.
+// TODO: Refactor with proper Prisma types when time allows.
 
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
+import type { PrismaClient, ProcessTimelineEntry } from '@prisma/client';
 
 export interface TimelineEntry {
   eventDate: Date;
@@ -13,7 +17,7 @@ export interface TimelineEntry {
   description: string;
   source: 'DOCUMENT_UPLOAD' | 'API_JUDIT' | 'MANUAL_ENTRY' | 'SYSTEM_IMPORT' | 'AI_EXTRACTION';
   sourceId?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   confidence?: number;
 }
 
@@ -46,11 +50,11 @@ export class TimelineMergeService {
    * Útil quando race condition deixa entry não imediatamente disponível
    */
   private async findEntryWithRetry(
-    prisma: any,
+    prisma: PrismaClient,
     caseId: string,
     contentHash: string,
     maxRetries: number = 3
-  ): Promise<any> {
+  ): Promise<ProcessTimelineEntry | null> {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const entry = await prisma.processTimelineEntry.findUnique({
         where: {
@@ -102,6 +106,7 @@ export class TimelineMergeService {
    * Mescla inteligentemente informações de múltiplas fontes
    * Combina descrições e usa dados de melhor fonte
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mergeIntelligently(
     existing: any,
     newEntry: TimelineEntry

@@ -66,7 +66,7 @@ const SYNC_CONFIG = {
 
 // === WORKER PROCESSOR ===
 
-syncQueue.process('sync-apis', async (job: Job<SyncJobData>) => {
+syncQueue().process('sync-apis', async (job: Job<SyncJobData>) => {
   const startTime = Date.now();
   const { workspaceId, type, processIds, forceUpdate = false } = job.data;
 
@@ -131,7 +131,7 @@ syncQueue.process('sync-apis', async (job: Job<SyncJobData>) => {
 
 // === WORKER PROCESSOR - SYNC MANUAL ===
 
-syncQueue.process('manual-sync', async (job: Job<SyncJobData>) => {
+syncQueue().process('manual-sync', async (job: Job<SyncJobData>) => {
   const startTime = Date.now();
   console.log(`${ICONS.SYNC} Starting manual sync process...`);
 
@@ -503,10 +503,10 @@ function sleep(ms: number): Promise<void> {
 export async function syncWorkerHealthCheck() {
   try {
     const [waiting, active, completed, failed] = await Promise.all([
-      syncQueue.getWaiting(),
-      syncQueue.getActive(),
-      syncQueue.getCompleted(),
-      syncQueue.getFailed(),
+      syncQueue().getWaiting(),
+      syncQueue().getActive(),
+      syncQueue().getCompleted(),
+      syncQueue().getFailed(),
     ]);
 
     return {

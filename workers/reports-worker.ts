@@ -76,7 +76,7 @@ const REPORTS_CONFIG = {
 
 // === WORKER PROCESSOR - RELATÓRIOS SEMANAIS ===
 
-reportsQueue.process('generate-scheduled-reports', async (job: Job<ReportsJobData>) => {
+reportsQueue().process('generate-scheduled-reports', async (job: Job<ReportsJobData>) => {
   const startTime = Date.now();
   console.log(`${ICONS.REPORT} Starting weekly reports generation...`);
 
@@ -119,7 +119,7 @@ reportsQueue.process('generate-scheduled-reports', async (job: Job<ReportsJobDat
 
 // === WORKER PROCESSOR - RELATÓRIO INDIVIDUAL ===
 
-reportsQueue.process('generate-report', async (job: Job<ReportsJobData>) => {
+reportsQueue().process('generate-report', async (job: Job<ReportsJobData>) => {
   const { scheduleId } = job.data;
   const startTime = Date.now();
 
@@ -608,10 +608,10 @@ function sleep(ms: number): Promise<void> {
 export async function reportsWorkerHealthCheck() {
   try {
     const [waiting, active, completed, failed] = await Promise.all([
-      reportsQueue.getWaiting(),
-      reportsQueue.getActive(),
-      reportsQueue.getCompleted(),
-      reportsQueue.getFailed(),
+      reportsQueue().getWaiting(),
+      reportsQueue().getActive(),
+      reportsQueue().getCompleted(),
+      reportsQueue().getFailed(),
     ]);
 
     const nextScheduledReports = await prisma.reportSchedule.count({

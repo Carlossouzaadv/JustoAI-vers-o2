@@ -105,7 +105,7 @@ export const processMonitorQueue = new Queue('process-monitor', {
 // PROCESSADOR PRINCIPAL
 // ================================================================
 
-processMonitorQueue.process(
+processMonitorQueue().process(
   'daily-monitor',
   MONITOR_CONFIG.CONCURRENT_WORKSPACES,
   async (job: Job<MonitorJobData>) => {
@@ -547,30 +547,19 @@ async function getProcessesForMonitoring(workspaceId: string) {
 
 async function categorizeProcesses(processes: any[]) {
   // Buscar configurações de tracking existentes
-  const trackingConfigs = await prisma.monitoredProcess.findMany({
-    where: {
-      id: { in: processes.map(p => p.id) }
-    },
-    select: {
-      id: true,
-      processNumber: true,
-      remoteTrackingId: true
-    }
-  });
+  // NOTE: Remote tracking field not in schema - separating tracking and polling processes
+  // TODO: Add remoteTrackingId field to MonitoredProcess schema if remote tracking needed
 
-  const trackingMap = new Map(trackingConfigs.map(c => [c.id, c.remoteTrackingId]));
-
-  const trackingProcesses = processes.filter(p =>
-    MONITOR_CONFIG.PREFER_TRACKING && (trackingMap.get(p.id) || MONITOR_CONFIG.TRACKING_ENABLED_BY_DEFAULT)
-  );
-
-  const pollingProcesses = processes.filter(p =>
-    !trackingProcesses.includes(p)
-  );
+  // For now, all processes use polling strategy
+  const trackingProcesses: typeof processes = [];
+  const pollingProcesses = processes;
 
   return { trackingProcesses, pollingProcesses };
 }
 
+// NOTE: Remote tracking field not in schema - these functions are disabled
+// TODO: Implement remote tracking when remoteTrackingId field is added to schema
+/*
 async function getExistingTrackings(workspaceId: string) {
   return await prisma.monitoredProcess.findMany({
     where: {
@@ -592,6 +581,16 @@ async function saveProcessTracking(processId: string, trackingId: string) {
     where: { id: processId },
     data: { remoteTrackingId: trackingId }
   });
+}
+*/
+
+// Placeholder implementations
+async function getExistingTrackings(_workspaceId: string) {
+  return [];
+}
+
+async function saveProcessTracking(_processId: string, _trackingId: string) {
+  // Not implemented - tracking field not in schema
 }
 
 async function getPendingWebhooks(processId: string) {
@@ -715,10 +714,10 @@ export async function addMonitoringJob(
 
 export async function getMonitoringStats() {
   const [waiting, active, completed, failed] = await Promise.all([
-    processMonitorQueue.getWaiting(),
-    processMonitorQueue.getActive(),
-    processMonitorQueue.getCompleted(),
-    processMonitorQueue.getFailed(),
+    processMonitorQueue().getWaiting(),
+    processMonitorQueue().getActive(),
+    processMonitorQueue().getCompleted(),
+    processMonitorQueue().getFailed(),
   ]);
 
   const juditClient = getJuditApiClient();

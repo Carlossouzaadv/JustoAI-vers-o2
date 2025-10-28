@@ -76,14 +76,14 @@ export const usageAggregatorQueue = new Queue('usage-aggregator', {
 // PROCESSADOR PRINCIPAL
 // ================================================================
 
-usageAggregatorQueue.process(
+usageAggregatorQueue().process(
   'daily_aggregation',
   AGGREGATOR_CONFIG.CONCURRENT_WORKSPACES,
   async (job: Job<AggregatorJobData>) => {
     const { workspaceId, date, force } = job.data;
     const targetDate = date || new Date().toISOString().split('T')[0];
 
-    console.log(`${ICONS.AGGREGATOR} Starting daily aggregation:`, {
+    console.log(`${ICONS.INFO} Starting daily aggregation:`, {
       workspace: workspaceId || 'all',
       date: targetDate,
       force
@@ -152,13 +152,13 @@ usageAggregatorQueue.process(
 );
 
 // Processador para cálculo de billing
-usageAggregatorQueue.process(
+usageAggregatorQueue().process(
   'billing_calculation',
   AGGREGATOR_CONFIG.CONCURRENT_WORKSPACES,
   async (job: Job<AggregatorJobData>) => {
     const { workspaceId } = job.data;
 
-    console.log(`${ICONS.BILLING} Starting billing calculation:`, {
+    console.log(`${ICONS.WARNING} Starting billing calculation:`, {
       workspace: workspaceId || 'all'
     });
 
@@ -222,7 +222,7 @@ async function aggregateWorkspaceDay(
   try {
     // Verificar se já foi agregado (a menos que force = true)
     if (!force) {
-      const existing = await prisma.workspaceUsageDaily.findUnique({
+      const existing = await prisma.usageEvent.findUnique({
         where: {
           workspaceId_date: {
             workspaceId,
@@ -241,7 +241,7 @@ async function aggregateWorkspaceDay(
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
 
-    const events = await prisma.usageEvents.findMany({
+    const events = await prisma.usageEvent.findMany({
       where: {
         workspaceId,
         createdAt: {
@@ -282,7 +282,7 @@ async function aggregateWorkspaceDay(
     const billingCalculation = usageTracker.calculateBillingEstimate(metrics);
 
     // Salvar agregação
-    const aggregatedData = await prisma.workspaceUsageDaily.upsert({
+    const aggregatedData = await prisma.usageEvent.upsert({
       where: {
         workspaceId_date: {
           workspaceId,
@@ -391,7 +391,7 @@ async function calculateMonthlyReportsSnapshot(workspaceId: string, date: string
   const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
   const endOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
 
-  const monthlyTotal = await prisma.workspaceUsageDaily.aggregate({
+  const monthlyTotal = await prisma.usageEvent.aggregate({
     where: {
       workspaceId,
       date: {
@@ -415,7 +415,7 @@ async function recalculateBilling(workspaceId: string): Promise<any> {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const usageRecords = await prisma.workspaceUsageDaily.findMany({
+    const usageRecords = await prisma.usageEvent.findMany({
       where: {
         workspaceId,
         date: {
@@ -440,7 +440,7 @@ async function recalculateBilling(workspaceId: string): Promise<any> {
 
       const billingCalculation = usageTracker.calculateBillingEstimate(metrics);
 
-      await prisma.workspaceUsageDaily.update({
+      await prisma.usageEvent.update({
         where: { id: record.id },
         data: {
           billingEstimatedCost: billingCalculation.totalEstimated
@@ -484,7 +484,7 @@ async function cleanupOldEvents(): Promise<void> {
   cutoffDate.setDate(cutoffDate.getDate() - AGGREGATOR_CONFIG.CLEANUP_OLD_EVENTS_DAYS);
 
   try {
-    const deleted = await prisma.usageEvents.deleteMany({
+    const deleted = await prisma.usageEvent.deleteMany({
       where: {
         createdAt: {
           lt: cutoffDate
@@ -532,7 +532,7 @@ export async function scheduleAggregation(
 }
 
 export async function runDailyAggregation(workspaceId?: string, date?: string): Promise<any> {
-  console.log(`${ICONS.AGGREGATOR} Running daily aggregation:`, { workspaceId, date });
+  console.log(`${ICONS.INFO} Running daily aggregation:`, { workspaceId, date });
 
   const job = await scheduleAggregation('daily_aggregation', {
     workspaceId,
@@ -545,10 +545,10 @@ export async function runDailyAggregation(workspaceId?: string, date?: string): 
 
 export async function getAggregationStats() {
   const [waiting, active, completed, failed] = await Promise.all([
-    usageAggregatorQueue.getWaiting(),
-    usageAggregatorQueue.getActive(),
-    usageAggregatorQueue.getCompleted(),
-    usageAggregatorQueue.getFailed(),
+    usageAggregatorQueue().getWaiting(),
+    usageAggregatorQueue().getActive(),
+    usageAggregatorQueue().getCompleted(),
+    usageAggregatorQueue().getFailed(),
   ]);
 
   return {

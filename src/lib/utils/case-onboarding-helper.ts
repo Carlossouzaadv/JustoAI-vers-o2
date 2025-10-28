@@ -16,6 +16,7 @@ export interface OnboardingError {
 }
 
 export interface OnboardingMetadata {
+  [key: string]: unknown;
   onboarding_errors?: OnboardingError[];
   last_onboarding_error?: OnboardingError;
   onboarding_retry_count?: number;
@@ -77,8 +78,8 @@ export async function recordOnboardingError(
       where: { id: caseId },
       data: {
         status: newStatus,
-        metadata: updatedMetadata,
-        onboardingStatus: 'failed'
+        metadata: updatedMetadata
+        // onboardingStatus remains unchanged - error is tracked in metadata
       }
     });
 

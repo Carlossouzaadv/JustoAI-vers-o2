@@ -231,16 +231,13 @@ export class TimelineEnricherService {
       );
 
       // Chamar Gemini Flash
-      const gemini = await getGeminiClient();
-      const result = await gemini.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.3, // Mais determinístico para este caso
-          maxOutputTokens: 256,
-        },
+      const gemini = getGeminiClient();
+      const result = await gemini.generateContent(prompt, {
+        temperature: 0.3, // Mais determinístico para este caso
+        maxTokens: 256,
       });
 
-      const enriched = result.response.text().trim();
+      const enriched = result.content.trim();
 
       return {
         enrichedDescription: enriched || baseDescription,
@@ -353,10 +350,9 @@ export class TimelineEnricherService {
   prepareRelatedEventData(
     baseEventId: string,
     newEvent: TimelineMovement
-  ): Prisma.ProcessTimelineEntryCreateInput {
+  ): Partial<Prisma.ProcessTimelineEntryCreateInput> {
     return {
-      caseId: '', // Será preenchido pelo caller
-      contentHash: '', // Será calculado pelo caller
+      // caseId and contentHash will be set by caller
       eventDate: newEvent.date,
       eventType: newEvent.type,
       description: newEvent.description,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Mapeamento automático de tipos de processos JUDIT para CaseType enum
  *

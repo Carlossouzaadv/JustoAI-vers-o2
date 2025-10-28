@@ -65,7 +65,7 @@ export const individualReportsQueue = new Queue('individual-reports', {
 // PROCESSADOR PRINCIPAL
 // ================================================================
 
-individualReportsQueue.process(
+individualReportsQueue().process(
   'scheduled-individual-report',
   INDIVIDUAL_REPORTS_CONFIG.MAX_CONCURRENT,
   async (job: Job<IndividualReportJobData>) => {
@@ -407,10 +407,10 @@ export async function addIndividualReportJob(
 export async function individualReportsWorkerHealthCheck() {
   try {
     const [waiting, active, completed, failed] = await Promise.all([
-      individualReportsQueue.getWaiting(),
-      individualReportsQueue.getActive(),
-      individualReportsQueue.getCompleted(),
-      individualReportsQueue.getFailed(),
+      individualReportsQueue().getWaiting(),
+      individualReportsQueue().getActive(),
+      individualReportsQueue().getCompleted(),
+      individualReportsQueue().getFailed(),
     ]);
 
     const pendingExecutions = await prisma.reportExecution.count({

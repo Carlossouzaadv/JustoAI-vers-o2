@@ -77,7 +77,7 @@ const CLEANUP_CONFIG = {
 
 // === WORKER PROCESSOR - LIMPEZA DIÁRIA ===
 
-cacheCleanupQueue.process('cleanup-expired-cache', async (job: Job<CacheCleanupJobData>) => {
+cacheCleanupQueue().process('cleanup-expired-cache', async (job: Job<CacheCleanupJobData>) => {
   const startTime = Date.now();
   console.log(`${ICONS.CLEANUP} Starting daily cache cleanup...`);
 
@@ -97,7 +97,7 @@ cacheCleanupQueue.process('cleanup-expired-cache', async (job: Job<CacheCleanupJ
 
 // === WORKER PROCESSOR - LIMPEZA CACHE IA ===
 
-cacheCleanupQueue.process('cleanup-ai-cache', async (job: Job<CacheCleanupJobData>) => {
+cacheCleanupQueue().process('cleanup-ai-cache', async (job: Job<CacheCleanupJobData>) => {
   const startTime = Date.now();
   console.log(`${ICONS.AI} Starting AI cache cleanup...`);
 
@@ -117,7 +117,7 @@ cacheCleanupQueue.process('cleanup-ai-cache', async (job: Job<CacheCleanupJobDat
 
 // === WORKER PROCESSOR - LIMPEZA MANUAL ===
 
-cacheCleanupQueue.process('manual-cleanup', async (job: Job<CacheCleanupJobData>) => {
+cacheCleanupQueue().process('manual-cleanup', async (job: Job<CacheCleanupJobData>) => {
   const { targetTypes, maxAge, forceCleanup } = job.data;
   const startTime = Date.now();
 
@@ -446,9 +446,13 @@ async function cleanupAICacheDatabase(): Promise<number> {
  */
 async function getMemoryStats(): Promise<number> {
   try {
-    const info = await redis.info('memory');
-    const memoryMatch = info.match(/used_memory:(\d+)/);
-    return memoryMatch ? parseInt(memoryMatch[1]) : 0;
+    // Try to get memory info from redis
+    if (typeof redis.info === 'function') {
+      const info = await redis.info('memory');
+      const memoryMatch = info.match(/used_memory:(\d+)/);
+      return memoryMatch ? parseInt(memoryMatch[1]) : 0;
+    }
+    return 0;
   } catch {
     return 0;
   }
@@ -511,18 +515,27 @@ function formatBytes(bytes: number): string {
  */
 export async function cacheCleanupWorkerHealthCheck() {
   try {
+    const queue = cacheCleanupQueue();
     const [waiting, active, completed, failed] = await Promise.all([
-      cacheCleanupQueue.getWaiting(),
-      cacheCleanupQueue.getActive(),
-      cacheCleanupQueue.getCompleted(),
-      cacheCleanupQueue.getFailed(),
+      queue.getWaiting(),
+      queue.getActive(),
+      queue.getCompleted(),
+      queue.getFailed(),
     ]);
 
     const redisMemory = await getMemoryStats();
-    const redisHealth = await redisUtils.healthCheck();
+    // Redis health check via info command
+    const redisHealthInfo = await (async () => {
+      try {
+        await redis.ping();
+        return 'healthy';
+      } catch {
+        return 'unhealthy';
+      }
+    })();
 
     return {
-      status: redisHealth ? 'healthy' : 'unhealthy',
+      status: redisHealthInfo === 'healthy' ? 'healthy' : 'unhealthy',
       queue: {
         waiting: waiting.length,
         active: active.length,
@@ -530,7 +543,7 @@ export async function cacheCleanupWorkerHealthCheck() {
         failed: failed.length,
       },
       redis: {
-        connected: redisHealth,
+        connected: redisHealthInfo === 'healthy',
         memoryUsage: formatBytes(redisMemory),
       },
       lastRun: completed[0]?.finishedOn ? new Date(completed[0].finishedOn) : null,

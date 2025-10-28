@@ -236,7 +236,7 @@ export async function mergeTimelines(
           const newEvent = await prisma.processTimelineEntry.create({
             data: {
               ...enricher.prepareRelatedEventData(association.baseEventId, movement),
-              caseId,
+              case: { connect: { id: caseId } },
               contentHash,
             },
           });
@@ -322,9 +322,9 @@ export async function mergeTimelines(
         await prisma.processTimelineEntry.update({
           where: { id: entry.id },
           data: {
-            linkedDocumentIds: [
-              ...new Set([...(entry.linkedDocumentIds || []), ...linkedDocumentIds]),
-            ],
+            linkedDocumentIds: Array.from(
+              new Set([...(entry.linkedDocumentIds || []), ...linkedDocumentIds])
+            ),
           },
         });
       }
