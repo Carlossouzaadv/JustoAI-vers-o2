@@ -3,7 +3,7 @@
 // ================================================================
 
 import { prisma } from '@/lib/prisma';
-import { Plan, AudienceType, ReportType, OutputFormat } from '@prisma/client';
+import { Plan } from '@prisma/client';
 import { ICONS } from '@/lib/icons';
 
 export interface QuotaLimits {
@@ -56,7 +56,7 @@ export class QuotaSystem {
     reportProcessesLimit: number;
     reportsUsedThisMonth: number;
     quotaResetDate: Date;
-    overrideLimits?: any;
+    overrideLimits?: Record<string, unknown>;
   }> {
     let quota = await prisma.workspaceQuota.findUnique({
       where: { workspaceId }
@@ -98,8 +98,7 @@ export class QuotaSystem {
    */
   async validateReportCreation(
     workspaceId: string,
-    processCount: number,
-    reportType: ReportType = 'COMPLETO'
+    processCount: number
   ): Promise<QuotaValidationResult> {
     const quota = await this.getWorkspaceQuota(workspaceId);
 

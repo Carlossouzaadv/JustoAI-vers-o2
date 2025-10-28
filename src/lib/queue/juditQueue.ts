@@ -8,12 +8,19 @@ import { getRedisConnection } from '../redis';
 import { queueLogger } from '../observability/logger';
 
 // Circuit breaker import - lazy loaded to avoid circular dependency
-let circuitBreakerService: any = null;
+let circuitBreakerService: Record<string, unknown> | null = null;
 const getCircuitBreaker = () => {
   if (!circuitBreakerService) {
     try {
-      circuitBreakerService = require('../services/circuitBreakerService').circuitBreakerService;
-    } catch (e) {
+      import('../services/circuitBreakerService')
+        .then((module) => {
+          circuitBreakerService = module.circuitBreakerService;
+        })
+        .catch(() => {
+          // Fallback if circuit breaker not available
+          return null;
+        });
+    } catch {
       return null;
     }
   }
@@ -76,7 +83,7 @@ class MockQueue {
 
   async add() {
     console.log('[JUDIT QUEUE] MOCK: Job added (not really processed)');
-    return { id: 'mock-' + Date.now(), data: {} } as any;
+    return { id: 'mock-' + Date.now(), data: {} } as Record<string, unknown>;
   }
   async getJob() { return null; }
   async getActive() { return []; }
@@ -122,7 +129,7 @@ let _juditOnboardingQueue: Queue<JuditOnboardingJobData, JuditOnboardingJobResul
 function getJuditQueue() {
   if (_juditOnboardingQueue === null) {
     if (isRedisDisabled()) {
-      _juditOnboardingQueue = new MockQueue(QUEUE_CONFIG.name) as any;
+      _juditOnboardingQueue = new MockQueue(QUEUE_CONFIG.name) as Queue<JuditOnboardingJobData, JuditOnboardingJobResult> | MockQueue;
     } else {
       _juditOnboardingQueue = new Queue<JuditOnboardingJobData, JuditOnboardingJobResult>(
         QUEUE_CONFIG.name,
@@ -137,12 +144,15 @@ function getJuditQueue() {
 }
 
 // Export both getter and lazy property
-export const juditOnboardingQueue = new Proxy({} as any, {
-  get: (target, prop) => {
-    const queue = getJuditQueue();
-    return (queue as any)[prop];
-  },
-});
+export const juditOnboardingQueue = new Proxy(
+  {} as Queue<JuditOnboardingJobData, JuditOnboardingJobResult> | MockQueue,
+  {
+    get: (_target, prop) => {
+      const queue = getJuditQueue();
+      return (queue as Record<string, unknown>)[prop as string];
+    },
+  }
+);
 
 // ================================================================
 // QUEUE OPERATIONS

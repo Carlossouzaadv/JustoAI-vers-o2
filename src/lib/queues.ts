@@ -86,7 +86,7 @@ export async function setupRecurringJobs() {
 /**
  * Adiciona job de notificação
  */
-export async function addNotificationJob(type: string, data: any, options = {}) {
+export async function addNotificationJob(type: string, data: Record<string, unknown>, options: Record<string, unknown> = {}) {
   return await getNotificationQueue().add(
     'send-notification',
     {
@@ -187,7 +187,7 @@ export async function closeAllQueues() {
 process.on('SIGINT', closeAllQueues);
 process.on('SIGTERM', closeAllQueues);
 
-export default {
+const queuesExport = {
   notificationQueue: getNotificationQueue,
   getAllQueues,
   setupRecurringJobs,
@@ -197,3 +197,5 @@ export default {
   clearAllQueues,
   closeAllQueues,
 };
+
+export default queuesExport;

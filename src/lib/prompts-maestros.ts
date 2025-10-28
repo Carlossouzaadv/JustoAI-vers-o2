@@ -4,7 +4,6 @@
 // Biblioteca centralizada de prompts otimizados para análise multi-frentes
 // de processos judiciais complexos
 
-import { ModelTier } from './ai-model-router';
 
 /**
  * Interface para respostas de análise multi-frentes
@@ -74,10 +73,7 @@ export class PromptsMaestros {
    * "Com base em todo o documento anexo, resuma os principais andamentos recentes do processo 5080281-82.2020.4.02.5101.
    * Organize a resposta por frentes de discussão..."
    */
-  static getAnaliseMultiFrentesIndividual(
-    numeroProcesso: string,
-    tier: ModelTier = ModelTier.BALANCED
-  ): string {
+  static getAnaliseMultiFrentesIndividual(numeroProcesso: string): string {
     return `Você é um especialista em análise jurídica de processos complexos. Sua expertise é identificar e organizar múltiplas frentes de discussão que ocorrem simultaneamente em processos judiciais.
 
 === ANÁLISE MULTI-FRENTES - PROCESSO INDIVIDUAL ===
