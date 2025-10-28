@@ -47,14 +47,14 @@ interface LogMessage {
 }
 
 interface Logger {
-  info: (msg: string, data?: LogMessage) => void;
-  error: (msg: string, data?: LogMessage) => void;
-  warn: (msg: string, data?: LogMessage) => void;
-  debug: (msg: string, data?: LogMessage) => void;
+  info: (_msg: string, _data?: LogMessage) => void;
+  error: (_msg: string, _data?: LogMessage) => void;
+  warn: (_msg: string, _data?: LogMessage) => void;
+  debug: (_msg: string, _data?: LogMessage) => void;
 }
 
 interface OperationTracker {
-  finish: (status: string, details?: LogMessage) => number;
+  finish: (_status: string, _details?: LogMessage) => number;
 }
 
 // Simple inline logger to avoid external dependencies
@@ -70,9 +70,9 @@ const logOperationStart = (logger: Logger, name: string, data?: LogMessage): Ope
   logger.debug?.(`[OPERATION] Starting ${name}`, data || {});
 
   return {
-    finish: (status: string, details?: LogMessage) => {
+    finish: (_status: string, _details?: LogMessage) => {
       const duration = Date.now() - startTime;
-      logger.info?.(`[OPERATION] ${name} finished: ${status}`, { duration_ms: duration, ...details });
+      logger.info?.(`[OPERATION] ${name} finished: ${_status}`, { duration_ms: duration, ..._details });
       return duration;
     }
   };
@@ -558,7 +558,7 @@ export async function testConnection(): Promise<{
 // EXPORTS
 // ================================================================
 
-export default {
+export const juditServiceExports = {
   sendRequest,
   createOnboarding,
   getOnboardingStatus,
@@ -566,3 +566,5 @@ export default {
   checkConfiguration,
   testConnection,
 };
+
+export default juditServiceExports;

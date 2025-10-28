@@ -11,7 +11,7 @@
 import { Prisma, ProcessTimelineEntry, TimelineSource, EventRelationType } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { getTimelineConfig } from '@/lib/config/timelineConfig';
-import { getSourcePriority, isJuditSource } from '@/lib/utils/timelineSourceUtils';
+import { isJuditSource } from '@/lib/utils/timelineSourceUtils';
 import { getGeminiClient } from '@/lib/gemini-client';
 import { buildEnrichmentPrompt } from '@/lib/prompts/enrichTimelineEvent';
 
@@ -22,7 +22,7 @@ export interface TimelineMovement {
   source: TimelineSource;
   sourceId?: string;
   confidence: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface AssociationResult {
@@ -75,7 +75,7 @@ export class TimelineEnricherService {
   async associateToBaseEvent(
     newEvent: TimelineMovement,
     existingEvents: ProcessTimelineEntry[],
-    caseId: string
+    _caseId: string
   ): Promise<AssociationResult> {
     // Se o evento novo é JUDIT, nunca é enriquecedor
     if (isJuditSource(newEvent.source)) {
@@ -331,7 +331,7 @@ export class TimelineEnricherService {
       metadata: {
         ...(baseEvent.metadata || {}),
         enrichmentHistory: [
-          ...((baseEvent.metadata as any)?.enrichmentHistory || []),
+          ...((baseEvent.metadata as Record<string, unknown>)?.enrichmentHistory as Array<unknown> || []),
           {
             timestamp: new Date(),
             source: newEvent.source,
@@ -396,7 +396,7 @@ export class TimelineEnricherService {
       metadata: {
         ...(baseEvent.metadata || {}),
         conflictTracking: [
-          ...((baseEvent.metadata as any)?.conflictTracking || []),
+          ...((baseEvent.metadata as Record<string, unknown>)?.conflictTracking as Array<unknown> || []),
           {
             timestamp: new Date(),
             source: newEvent.source,

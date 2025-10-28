@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ================================================================
 // JUDIT ATTACHMENT PROCESSOR
 // Download e processamento de anexos da API JUDIT
@@ -7,7 +7,6 @@
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import { extractTextFromPDF } from '@/lib/pdf-processor';
-import { getDocumentHashManager } from '@/lib/document-hash';
 
 // ================================================================
 // TYPES

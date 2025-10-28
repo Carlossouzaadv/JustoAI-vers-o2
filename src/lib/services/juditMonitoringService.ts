@@ -109,9 +109,10 @@ const log = {
   },
 };
 
-const sleep = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+// Helper function for delays (commented out - not currently used)
+// const sleep = (ms: number): Promise<void> => {
+//   return new Promise((resolve) => setTimeout(resolve, ms));
+// };
 
 // ================================================================
 // FUNÇÃO PRINCIPAL: SETUP DE MONITORAMENTO

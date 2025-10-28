@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { EventEmitter } from 'eventemitter3'
 import { logger, queueLogger } from '../observability/logger'
 
@@ -64,7 +63,7 @@ class CircuitBreakerService extends EventEmitter {
   /**
    * Detect if error is Upstash quota exceeded
    */
-  isQuotaExceededError(error: any): boolean {
+  isQuotaExceededError(error: unknown): boolean {
     if (!error) return false
 
     const errorStr = String(error.message || error)
@@ -78,7 +77,7 @@ class CircuitBreakerService extends EventEmitter {
   /**
    * Trigger circuit breaker when quota is detected
    */
-  triggerQuotaExceeded(error: any) {
+  triggerQuotaExceeded(error: unknown) {
     if (this.state === CircuitBreakerState.OPEN) {
       // Already open, don't spam logs
       return
@@ -201,7 +200,8 @@ class CircuitBreakerService extends EventEmitter {
 
     try {
       // Try a simple Redis PING
-      const redisClient = require('../redis').getRedisClient()
+      const { getRedisClient } = await import('../redis')
+      const redisClient = getRedisClient()
       if (redisClient && typeof redisClient.ping === 'function') {
         await redisClient.ping()
 
@@ -241,7 +241,8 @@ class CircuitBreakerService extends EventEmitter {
     })
 
     try {
-      const redisClient = require('../redis').getRedisClient()
+      const { getRedisClient } = await import('../redis')
+      const redisClient = getRedisClient()
       if (redisClient && typeof redisClient.ping === 'function') {
         await redisClient.ping()
 

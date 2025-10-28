@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ================================================================
 // TIMELINE UNIFIER SERVICE - V2 with Intelligent Enrichment
 // Unifica movimentos de PDF + JUDIT com enriquecimento inteligente
@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ICONS } from '@/lib/icons';
 import { getTimelineEnricherService, TimelineMovement } from './timelineEnricher';
-import { TimelineSource, EventRelationType } from '@prisma/client';
+import { TimelineSource } from '@prisma/client';
 
 // ================================================================
 // TYPES
@@ -204,7 +204,7 @@ export async function mergeTimelines(
             );
             enrichedDescription = enrichResult.enrichedDescription;
             enrichmentModel = enrichResult.model;
-          } catch (enrichError) {
+          } catch {
             // Fallback: concatenar simples
             console.warn(
               `${ICONS.WARNING} [Timeline Unifier v2] Enriquecimento falhou, usando fallback`
@@ -381,7 +381,7 @@ function extractMovementsFromPreview(previewSnapshot: any): TimelineMovement[] {
           model: previewSnapshot.model,
         },
       });
-    } catch (error) {
+    } catch {
       console.warn(
         `${ICONS.WARNING} [Timeline Unifier v2] Movimento inválido no preview:`,
         mov

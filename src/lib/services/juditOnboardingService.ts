@@ -7,34 +7,48 @@ import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
 import { recordOnboardingError } from '@/lib/utils/case-onboarding-helper';
 
+// Type definitions for logging
+interface LogMessage {
+  [key: string]: string | number | boolean | object | undefined;
+}
+
+interface Logger {
+  info: (_msg: string, _data?: LogMessage) => void;
+  error: (_msg: string, _data?: LogMessage) => void;
+  warn: (_msg: string, _data?: LogMessage) => void;
+  debug: (_msg: string, _data?: LogMessage) => void;
+}
+
+interface OperationTracker {
+  finish: (_status: string, _details?: LogMessage) => number;
+}
+
 // Observability stubs - inline to avoid external dependencies that may not be in container
-const juditLogger = {
-  info: (msg: any, data?: any) => console.log(`[JUDIT]`, msg, data || ''),
-  error: (msg: any, data?: any) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
-  warn: (msg: any, data?: any) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
-  debug: (msg: any, data?: any) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
+const juditLogger: Logger = {
+  info: (msg: string, data?: LogMessage) => console.log(`[JUDIT]`, msg, data || ''),
+  error: (msg: string, data?: LogMessage) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
+  warn: (msg: string, data?: LogMessage) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
+  debug: (msg: string, data?: LogMessage) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
 };
-const logOperationStart = (logger: any, name: string, data?: any) => {
+const logOperationStart = (logger: Logger, name: string, data?: LogMessage): OperationTracker => {
   const startTime = Date.now();
-  logger.debug?.(`[OPERATION] Starting ${name}`, data || '');
+  logger.debug?.(`[OPERATION] Starting ${name}`, data || {});
 
   return {
-    finish: (status: string, details?: any) => {
+    finish: (_status: string, _details?: LogMessage) => {
       const duration = Date.now() - startTime;
-      logger.info?.(`[OPERATION] ${name} finished: ${status}`, { duration_ms: duration, ...details });
+      logger.info?.(`[OPERATION] ${name} finished: ${_status}`, { duration_ms: duration, ..._details });
       return duration;
     }
   };
 };
 const juditMetrics = {
-  recordMetric: (name: any, value: any) => {},
   recordOnboarding: (status: 'success' | 'failure', durationMs: number) => {
     console.log(`[JUDIT-METRICS] Onboarding ${status}:`, { durationMs });
   },
 };
-const trackJuditCost = (data: any) => console.log(`[COST]`, data);
-const alertApiError = (error: any, context?: any) => console.error(`[ALERT-API-ERROR]`, error, context || '');
-const alertTimeout = (duration: any) => console.warn(`[ALERT-TIMEOUT]`, duration);
+const trackJuditCost = (data: LogMessage) => console.log(`[COST]`, data);
+const alertApiError = (error: unknown, context?: LogMessage) => console.error(`[ALERT-API-ERROR]`, error, context || '');
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -47,7 +61,7 @@ export interface ProcessRequestResult {
   processoId: string;
   requestId: string;
   numeroCnj: string;
-  dadosCompletos?: any;
+  dadosCompletos?: Record<string, unknown>;
   error?: string;
   attemptCount?: number;
   duration?: number;
@@ -67,16 +81,17 @@ interface JuditRequestPayload {
 interface JuditRequestResponse {
   request_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-interface JuditResponseData {
-  request_id: string;
-  all_pages_count?: number;
-  page?: number;
-  data?: any;
-  [key: string]: any;
-}
+// JuditResponseData interface is used for type checking responses
+// interface JuditResponseData {
+//   request_id: string;
+//   all_pages_count?: number;
+//   page?: number;
+//   data?: Record<string, unknown>;
+//   [key: string]: unknown;
+// }
 
 // ================================================================
 // CONFIGURAÇÕES OTIMIZADAS PARA WEBHOOK
@@ -99,9 +114,10 @@ const JUDIT_REQUEST_CONFIG = {
 // LOGS E UTILITÁRIOS
 // ================================================================
 
-const sleep = (ms: number): Promise<void> => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+// Helper function for delays (commented out - not currently used)
+// const sleep = (ms: number): Promise<void> => {
+//   return new Promise((resolve) => setTimeout(resolve, ms));
+// };
 
 // ================================================================
 // FUNÇÃO PRINCIPAL
@@ -402,7 +418,7 @@ export async function checkRequestStatus(requestId: string): Promise<string | nu
 /**
  * Busca dados completos de um processo já consultado
  */
-export async function getProcessoData(cnj: string): Promise<any | null> {
+export async function getProcessoData(cnj: string): Promise<Record<string, unknown> | null> {
   const processo = await prisma.processo.findUnique({
     where: { numeroCnj: cnj },
     select: {
@@ -438,79 +454,81 @@ export async function listProcessRequests(cnj: string) {
 // ================================================================
 
 /**
- * Extract document count from JUDIT response
+ * Extract document count from JUDIT response (currently unused - kept for reference)
  */
-function extractDocumentCount(dadosCompletos: any): number {
-  if (!dadosCompletos) return 0;
-
-  try {
-    // Check if data has attachments array (JUDIT API returns "attachments", not "documents")
-    if (dadosCompletos.data?.attachments) {
-      return Array.isArray(dadosCompletos.data.attachments)
-        ? dadosCompletos.data.attachments.length
-        : 0;
-    }
-
-    // Also check response_data (alternative structure)
-    if (dadosCompletos.response_data?.attachments) {
-      return Array.isArray(dadosCompletos.response_data.attachments)
-        ? dadosCompletos.response_data.attachments.length
-        : 0;
-    }
-
-    // Check pages array
-    if (dadosCompletos.pages && Array.isArray(dadosCompletos.pages)) {
-      return dadosCompletos.pages.reduce((total: number, page: any) => {
-        const pageDocs = page.data?.attachments || page.response_data?.attachments || [];
-        return total + (Array.isArray(pageDocs) ? pageDocs.length : 0);
-      }, 0);
-    }
-
-    return 0;
-  } catch (error) {
-    juditLogger.warn({
-      action: 'extract_document_count_failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return 0;
-  }
-}
+// function extractDocumentCount(dadosCompletos: Record<string, unknown>): number {
+//   if (!dadosCompletos) return 0;
+//
+//   try {
+//     const data = dadosCompletos as Record<string, unknown>;
+//     // Check if data has attachments array (JUDIT API returns "attachments", not "documents")
+//     if ((data?.data as Record<string, unknown>)?.attachments) {
+//       return Array.isArray((data.data as Record<string, unknown>).attachments)
+//         ? ((data.data as Record<string, unknown>).attachments as Array<unknown>).length
+//         : 0;
+//     }
+//
+//     // Also check response_data (alternative structure)
+//     if ((data?.response_data as Record<string, unknown>)?.attachments) {
+//       return Array.isArray((data.response_data as Record<string, unknown>).attachments)
+//         ? ((data.response_data as Record<string, unknown>).attachments as Array<unknown>).length
+//         : 0;
+//     }
+//
+//     // Check pages array
+//     if (data?.pages && Array.isArray(data.pages)) {
+//       return (data.pages as Array<Record<string, unknown>>).reduce((total: number, page: Record<string, unknown>) => {
+//         const pageDocs = (page.data as Record<string, unknown>)?.attachments || (page.response_data as Record<string, unknown>)?.attachments || [];
+//         return total + (Array.isArray(pageDocs) ? pageDocs.length : 0);
+//       }, 0);
+//     }
+//
+//     return 0;
+//   } catch (error) {
+//     juditLogger.warn({
+//       action: 'extract_document_count_failed',
+//       error: error instanceof Error ? error.message : 'Unknown error',
+//     });
+//     return 0;
+//   }
+// }
 
 /**
- * Extract movements count from JUDIT response
+ * Extract movements count from JUDIT response (currently unused - kept for reference)
  */
-function extractMovementsCount(dadosCompletos: any): number {
-  if (!dadosCompletos) return 0;
-
-  try {
-    // Check if data has steps array (JUDIT API returns "steps", not "movements")
-    if (dadosCompletos.data?.steps) {
-      return Array.isArray(dadosCompletos.data.steps)
-        ? dadosCompletos.data.steps.length
-        : 0;
-    }
-
-    // Also check response_data (alternative structure)
-    if (dadosCompletos.response_data?.steps) {
-      return Array.isArray(dadosCompletos.response_data.steps)
-        ? dadosCompletos.response_data.steps.length
-        : 0;
-    }
-
-    // Check pages array
-    if (dadosCompletos.pages && Array.isArray(dadosCompletos.pages)) {
-      return dadosCompletos.pages.reduce((total: number, page: any) => {
-        const pageMovements = page.data?.steps || page.response_data?.steps || [];
-        return total + (Array.isArray(pageMovements) ? pageMovements.length : 0);
-      }, 0);
-    }
-
-    return 0;
-  } catch (error) {
-    juditLogger.warn({
-      action: 'extract_movements_count_failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return 0;
-  }
-}
+// function extractMovementsCount(dadosCompletos: Record<string, unknown>): number {
+//   if (!dadosCompletos) return 0;
+//
+//   try {
+//     const data = dadosCompletos as Record<string, unknown>;
+//     // Check if data has steps array (JUDIT API returns "steps", not "movements")
+//     if ((data?.data as Record<string, unknown>)?.steps) {
+//       return Array.isArray((data.data as Record<string, unknown>).steps)
+//         ? ((data.data as Record<string, unknown>).steps as Array<unknown>).length
+//         : 0;
+//     }
+//
+//     // Also check response_data (alternative structure)
+//     if ((data?.response_data as Record<string, unknown>)?.steps) {
+//       return Array.isArray((data.response_data as Record<string, unknown>).steps)
+//         ? ((data.response_data as Record<string, unknown>).steps as Array<unknown>).length
+//         : 0;
+//     }
+//
+//     // Check pages array
+//     if (data?.pages && Array.isArray(data.pages)) {
+//       return (data.pages as Array<Record<string, unknown>>).reduce((total: number, page: Record<string, unknown>) => {
+//         const pageMovements = (page.data as Record<string, unknown>)?.steps || (page.response_data as Record<string, unknown>)?.steps || [];
+//         return total + (Array.isArray(pageMovements) ? pageMovements.length : 0);
+//       }, 0);
+//     }
+//
+//     return 0;
+//   } catch (error) {
+//     juditLogger.warn({
+//       action: 'extract_movements_count_failed',
+//       error: error instanceof Error ? error.message : 'Unknown error',
+//     });
+//     return 0;
+//   }
+// }

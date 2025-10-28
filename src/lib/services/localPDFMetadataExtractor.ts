@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // ================================================================
 // LOCAL PDF METADATA EXTRACTOR
 // Extrai metadata de documentos PDFs sem chamar serviço externo
@@ -125,7 +124,7 @@ function extractDatesFromText(text: string): DateExtractionResult[] {
             confidence,
           });
         }
-      } catch (e) {
+      } catch {
         // Skip invalid matches
       }
     }
@@ -389,7 +388,7 @@ function extractKeyInformation(text: string): Partial<PDFMetadata> {
 export async function extractPDFMetadata(
   text: string,
   fileName: string,
-  buffer?: Buffer
+  _buffer?: Buffer
 ): Promise<PDFMetadata> {
   try {
     console.log(`${ICONS.EXTRACT} [PDF Metadata] Extraindo metadata de: ${fileName}`);

@@ -82,7 +82,7 @@ export const creditService = {
     workspaceId: string,
     amount: number,
     category: 'FULL' | 'REPORT',
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   ): Promise<CreditsDebitResult> {
     console.log(
       `[CREDIT_DEBIT][MOCK] workspace=${workspaceId}, amount=${amount}, category=${category}`,

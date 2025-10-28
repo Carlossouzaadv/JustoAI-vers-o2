@@ -231,7 +231,7 @@ ${text}
 /**
  * Valida se preview snapshot tem estrutura mínima válida
  */
-export function validatePreviewSnapshot(preview: any): boolean {
+export function validatePreviewSnapshot(preview: unknown): boolean {
   if (!preview || typeof preview !== 'object') {
     return false;
   }
