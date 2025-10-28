@@ -13,7 +13,6 @@ import {
   PenTool,
   Download,
   Brain,
-  AlertCircle,
 } from 'lucide-react';
 
 /**

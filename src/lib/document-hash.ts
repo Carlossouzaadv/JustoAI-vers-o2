@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // ================================================================
 // DOCUMENT HASH UTILITY - Implementação SHA256 para Deduplicação
 // ================================================================

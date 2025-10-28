@@ -247,7 +247,7 @@ export class ReportGenerator {
   /**
    * Constrói prompt baseado no tipo de relatório e audiência
    */
-  private buildPrompt(request: ReportGenerationRequest, processData: ProcessData[]): string {
+  private buildPrompt(request: ReportGenerationRequest, _processData: ProcessData[]): string {
     const audienceMap = {
       CLIENTE: 'linguagem acessível para leigos, evitando jargões jurídicos',
       DIRETORIA: 'linguagem executiva, focando em impactos e resultados',
@@ -534,7 +534,7 @@ ${clientLanguage ?
     content: string,
     template: ReportTemplate | null,
     filePath: string,
-    processData: ProcessData[]
+    _processData: ProcessData[]
   ): Promise<void> {
     // TODO: Implementar geração real de PDF
     // Usando bibliotecas como puppeteer, jsPDF, ou PDFKit
@@ -555,7 +555,7 @@ ${clientLanguage ?
     content: string,
     template: ReportTemplate | null,
     filePath: string,
-    processData: ProcessData[]
+    _processData: ProcessData[]
   ): Promise<void> {
     // TODO: Implementar geração real de DOCX
     // Usando bibliotecas como docx ou officegen

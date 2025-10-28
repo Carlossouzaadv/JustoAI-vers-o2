@@ -899,7 +899,7 @@ export class DataTransformer {
     }
   }
 
-  private static transformCurrency(value: string, params: any): number {
+  private static transformCurrency(value: string, _params: any): number {
     try {
       // Remover símbolos monetários e converter para número
       const cleanValue = value.toString()
@@ -913,7 +913,7 @@ export class DataTransformer {
     }
   }
 
-  private static transformBoolean(value: any, params: any): boolean {
+  private static transformBoolean(value: any, _params: any): boolean {
     const truthyValues = ['sim', 'yes', 'true', '1', 'ativo', 'ativado'];
     return truthyValues.includes(value.toString().toLowerCase());
   }

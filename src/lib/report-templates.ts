@@ -3,7 +3,7 @@
 // ================================
 // Sistema de templates otimizado para geração rápida de PDFs executivos
 
-import { ICONS } from './icons';
+// ICONS imported but not used in this file - kept for reference
 
 // ================================
 // TIPOS E INTERFACES
@@ -75,7 +75,7 @@ export interface ProcessReportData {
 export interface ChartData {
   type: 'pie' | 'bar' | 'line';
   title: string;
-  data: any[];
+  data: Array<Record<string, unknown>>;
   labels: string[];
 }
 

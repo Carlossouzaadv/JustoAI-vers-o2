@@ -4,7 +4,7 @@
 // ================================================================
 // Combina PDF processing, text cleaning e AI routing para máxima economia
 
-import { PDFProcessor, ExtractionResult, PDFValidationResult } from './pdf-processor';
+import { PDFProcessor, ExtractionResult } from './pdf-processor';
 import { TextCleaner, CleaningResult } from './text-cleaner';
 import { AIModelRouter, ComplexityScore, ModelTier, ProcessingConfig, ModelCosts } from './ai-model-router';
 
@@ -161,7 +161,7 @@ export class TokenOptimizer {
    */
   async processWithOptimizedAI(
     optimizationResult: OptimizationResult,
-    aiProcessingFunction: (config: ProcessingConfig, text: string) => Promise<any>
+    aiProcessingFunction: (_config: ProcessingConfig, _text: string) => Promise<any>
   ): Promise<{
     result: any;
     modelUsed: ModelTier;
@@ -206,7 +206,7 @@ export class TokenOptimizer {
     extraction: ExtractionResult,
     cleaning: CleaningResult,
     complexity: ComplexityScore,
-    fileSizeMB: number
+    _fileSizeMB: number
   ): {
     totalTokenReduction: number;
     estimatedCostSaving: number;

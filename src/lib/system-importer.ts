@@ -586,12 +586,12 @@ export class SystemImporter {
     }
   }
 
-  private async createEvent(data: Record<string, any>, options: ImportOptions): Promise<void> {
+  private async createEvent(_data: Record<string, any>, _options: ImportOptions): Promise<void> {
     // Implementação similar para eventos
     this.session!.summary.eventsImported++;
   }
 
-  private async createDocument(data: Record<string, any>, options: ImportOptions): Promise<void> {
+  private async createDocument(_data: Record<string, any>, _options: ImportOptions): Promise<void> {
     // Implementação similar para documentos
     this.session!.summary.documentsImported++;
   }

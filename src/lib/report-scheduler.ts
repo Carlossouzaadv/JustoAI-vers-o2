@@ -308,7 +308,7 @@ export class ReportScheduler {
   /**
    * Encontra schedules que devem rodar hoje
    */
-  private async findSchedulesToRun(date: Date): Promise<any[]> {
+  private async findSchedulesToRun(date: Date): Promise<Array<Record<string, unknown>>> {
     const today = new Date(date);
     today.setHours(0, 0, 0, 0);
 
@@ -346,7 +346,7 @@ export class ReportScheduler {
   /**
    * Calcula próxima execução baseada na frequência
    */
-  private calculateNextRun(schedule: any): Date {
+  private calculateNextRun(schedule: Record<string, unknown>): Date {
     const next = new Date();
 
     switch (schedule.frequency) {
@@ -389,7 +389,7 @@ export class ReportScheduler {
   /**
    * Envia notificação do relatório (placeholder)
    */
-  private async sendReportNotification(execution: any, result: any): Promise<void> {
+  private async sendReportNotification(execution: Record<string, unknown>, _result: Record<string, unknown>): Promise<void> {
     // TODO: Implementar sistema de notificação
     console.log(`${ICONS.MAIL} Notificação enviada para: ${execution.recipients.join(', ')}`);
   }

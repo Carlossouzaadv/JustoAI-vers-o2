@@ -50,11 +50,11 @@ export interface CacheConfig {
 }
 
 interface RedisClient {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   get: (_key: string) => Promise<string | null>;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   setex: (_key: string, _ttl: number, _value: string) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   flushdb: () => Promise<void>;
 }
 
@@ -538,7 +538,7 @@ export function withCache(
   keyExtractor: (_args: unknown[]) => string
 ) {
   return function (_target: unknown, propertyName: string, descriptor: PropertyDescriptor) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
     descriptor.value = async function (this: unknown, ...args: unknown[]) {

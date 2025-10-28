@@ -297,7 +297,7 @@ export class ReportCacheManager {
     ]);
 
     // Calcular idade média do cache (simplificado)
-    const now = Date.now();
+    // const now = Date.now(); // Unused - kept for future implementation
     const averageAge = 24; // Mock - em horas, seria necessário implementar cálculo específico
 
     // Hit rate (placeholder - precisaria de métricas de uso)
@@ -320,7 +320,7 @@ export class ReportCacheManager {
   /**
    * Invalidação baseada em tags/categorias
    */
-  async invalidateByTags(tags: string[], workspaceId?: string): Promise<CacheInvalidationResult> {
+  async invalidateByTags(tags: string[], _workspaceId?: string): Promise<CacheInvalidationResult> {
     // Para implementação futura - invalidar cache por categorias
     // Ex: "client:123", "case-type:CIVIL", etc.
 
@@ -390,7 +390,7 @@ export class ReportCacheManager {
     reportType: string,
     processIds: string[],
     audienceType: string,
-    additionalData?: any
+    additionalData?: Record<string, unknown>
   ): string {
     const keyData = [
       workspaceId,
@@ -406,7 +406,7 @@ export class ReportCacheManager {
   /**
    * Gera entrada de cache (placeholder)
    */
-  private async generateCacheEntry(workspaceId: string, config: any): Promise<void> {
+  private async generateCacheEntry(workspaceId: string, config: Record<string, unknown>): Promise<void> {
     // Placeholder - integraria com ReportGenerator real
     const cacheKey = this.generateCacheKey(
       workspaceId,
@@ -422,9 +422,9 @@ export class ReportCacheManager {
       data: {
         cacheKey,
         workspaceId,
-        reportType: config.reportType as any,
-        processIds: config.processIds,
-        audienceType: config.audienceType as any,
+        reportType: config.reportType as string,
+        processIds: config.processIds as string[],
+        audienceType: config.audienceType as string,
         lastMovementTimestamp: new Date(),
         cachedData: { generated: true, timestamp: new Date() },
         expiresAt

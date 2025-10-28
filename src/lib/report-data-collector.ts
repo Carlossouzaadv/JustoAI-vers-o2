@@ -57,7 +57,7 @@ export interface DataCollectionStats {
 export class ReportDataCollector {
   private modelRouter: AIModelRouter;
 
-  constructor(apiKey?: string) {
+  constructor(_apiKey?: string) {
     this.modelRouter = new AIModelRouter();
   }
 
@@ -334,7 +334,7 @@ export class ReportDataCollector {
   /**
    * Extrai dados estruturados do processData JSON
    */
-  private parseProcessData(processData: any): {
+  private parseProcessData(processData: Record<string, unknown>): {
     subject?: string;
     financialInfo?: {
       valor_principal?: number;
@@ -370,9 +370,9 @@ export class ReportDataCollector {
   /**
    * Extrai informações financeiras do processData
    */
-  private extractFinancialInfo(data: any): any {
+  private extractFinancialInfo(data: Record<string, unknown>): Record<string, unknown> {
     try {
-      const financial: any = {};
+      const financial: Record<string, unknown> = {};
 
       // Buscar valores em diferentes formatos
       const possibleFields = [
@@ -417,7 +417,7 @@ export class ReportDataCollector {
   /**
    * Calcula próximo prazo baseado nas movimentações
    */
-  private calculateNextDeadline(movements: any[]): { date: Date; description: string; days_remaining: number } | undefined {
+  private calculateNextDeadline(movements: Array<Record<string, unknown>>): { date: Date; description: string; days_remaining: number } | undefined {
     try {
       if (!movements || movements.length === 0) {
         return undefined;
@@ -480,7 +480,7 @@ export class ReportDataCollector {
   /**
    * Gera insights gerais com IA
    */
-  private async generateAIInsights(processes: ProcessReportData[], summary: any): Promise<string[]> {
+  private async generateAIInsights(processes: ProcessReportData[], summary: Record<string, unknown>): Promise<string[]> {
     try {
       console.log(`${ICONS.PROCESS} Gerando insights de IA...`);
 
@@ -554,7 +554,7 @@ export class ReportDataCollector {
   /**
    * Gera gráficos para o relatório
    */
-  private async generateCharts(processes: ProcessReportData[], filters: ReportFilters): Promise<ChartData[]> {
+  private async generateCharts(processes: ProcessReportData[], _filters: ReportFilters): Promise<ChartData[]> {
     const charts: ChartData[] = [];
 
     // Gráfico de processos por status
@@ -642,7 +642,7 @@ export class ReportDataCollector {
     });
   }
 
-  private generateReportTitle(type: ReportType, filters: ReportFilters): string {
+  private generateReportTitle(type: ReportType, _filters: ReportFilters): string {
     switch (type) {
       case 'complete':
         return 'Relatório Completo de Processos Jurídicos';

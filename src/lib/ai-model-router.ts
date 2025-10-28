@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // ================================================================
 // AI MODEL ROUTER - Adaptado do model_router.py do JustoAI V1
 // ================================================================

@@ -106,7 +106,6 @@ export class TimelineMergeService {
    * Mescla inteligentemente informações de múltiplas fontes
    * Combina descrições e usa dados de melhor fonte
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private mergeIntelligently(
     existing: any,
     newEntry: TimelineEntry

@@ -415,12 +415,8 @@ export class UsageTracker {
     purchasedCredits: number;
     consumedCredits: number;
   }> {
-    // Créditos incluídos no plano
-    const policy = await prisma.workspaceQuota.findUnique({
-      where: { workspaceId }
-    });
-
-    const includedCredits = 0; // Usar modelo WorkspaceCredits para saldos
+    // TODO: Usar modelo WorkspaceCredits para saldos
+    const includedCredits = 0;
 
     // Transações de créditos
     const transactions = await prisma.creditTransaction.groupBy({
@@ -462,27 +458,10 @@ export class UsageTracker {
     });
   }
 
-  private async updateMonthlyReportSnapshot(workspaceId: string, reportType: 'scheduled' | 'on_demand'): Promise<void> {
-    const today = new Date().toISOString().split('T')[0];
-
-    // Calcular total de relatórios no mês
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-
-    // Calcular total de relatórios do mês usando UsageEvent
-    const monthlyReportEvents = await prisma.usageEvent.findMany({
-      where: {
-        workspaceId,
-        eventType: 'report_generation',
-        createdAt: {
-          gte: startOfMonth
-        }
-      }
-    });
-
-    const totalReportsMonth = monthlyReportEvents.length + 1; // +1 para o relatório atual
-
-    // Não precisamos mais atualizar um registro diário específico, os eventos já foram registrados
+  private async updateMonthlyReportSnapshot(workspaceId: string, _reportType: 'scheduled' | 'on_demand'): Promise<void> {
+    // TODO: Implement monthly report snapshot update
+    // This method should calculate and store monthly report statistics
+    // For now, monthly data is tracked through UsageEvent records
   }
 
   // ================================================================

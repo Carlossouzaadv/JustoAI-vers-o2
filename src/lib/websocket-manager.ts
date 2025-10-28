@@ -178,16 +178,14 @@ export class WebSocketManager {
     }
 
     try {
-      // Para SSE, formatamos como data: {json}\n\n
-      const sseData = `data: ${JSON.stringify(message)}\n\n`;
-
       // TODO: Implementar envio real via SSE
+      // const sseData = `data: ${JSON.stringify(message)}\n\n`;
       // connection.write(sseData);
 
       console.log(`${ICONS.SUCCESS} Mensagem enviada para ${connectionId}: ${message.type}`);
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}:`, error);
+    } catch {
+      console.error(`${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}`);
       this.removeConnection(connectionId);
     }
   }
