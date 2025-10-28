@@ -105,7 +105,7 @@ export async function POST(
           continue;
         }
 
-        let updateData: any = {
+        const updateData: any = {
           hasConflict: false,
           conflictDetails: null,
           reviewedBy: userId,
