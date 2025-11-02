@@ -35,7 +35,8 @@
       "Bash(npx tsc:*)",
       "Bash(npm run type-check:*)",
       "Bash(npm run lint:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(DIRECT_URL=\"$DATABASE_URL\" npx prisma migrate:*)"
     ],
     "deny": [],
     "ask": []

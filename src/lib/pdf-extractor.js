@@ -17,6 +17,7 @@ const ICONS = {
   SUCCESS: '✅',
   ERROR: '❌',
   LOG: '📝',
+  OCR: '🔍',
 };
 
 function log(prefix, message, data) {
@@ -25,17 +26,33 @@ function log(prefix, message, data) {
 }
 
 // ================================================================
-// PDF EXTRACTION WITH CASCADE
+// PDF EXTRACTION WITH CASCADE (including OCR fallback)
 // ================================================================
-async function extractTextFromPDF(pdfPath) {
-  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Iniciando extração de texto do PDF', { path: pdfPath });
+async function extractTextFromPDF(pdfPath, forceOCR = false) {
+  log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Iniciando extração de texto do PDF', {
+    path: pdfPath,
+    forceOCR: forceOCR
+  });
 
   try {
-    // Try pdf-parse first
+    // Se forceOCR=true, pular direto para OCR
+    if (forceOCR) {
+      log(`${ICONS.RAILWAY} ${ICONS.OCR}`, 'Flag forceOCR ativada, tentando OCR direto');
+      try {
+        return await extractTextWithOCR(pdfPath);
+      } catch (ocrError) {
+        log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `${ICONS.ERROR} OCR forçado falhou`, {
+          error: ocrError?.message?.substring(0, 100),
+        });
+        throw ocrError;
+      }
+    }
+
+    // Estratégia 1: Try pdf-parse first
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 1: pdf-parse');
 
     try {
-       
+
       const pdfParse = require('pdf-parse');
       const fileBuffer = await fs.readFile(pdfPath);
       const pdfData = await pdfParse(fileBuffer);
@@ -51,11 +68,11 @@ async function extractTextFromPDF(pdfPath) {
         error: pdfParseError?.message?.substring(0, 100),
       });
 
-      // Fallback to pdfjs-dist
+      // Estratégia 2: Fallback to pdfjs-dist
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 2: pdfjs-dist');
 
       try {
-         
+
         const pdfjs = require('pdfjs-dist');
 
         // Disable workers for Node.js environment
@@ -90,14 +107,24 @@ async function extractTextFromPDF(pdfPath) {
 
         return fullText.trim();
       } catch (pdfjsError) {
-        log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} pdfjs-dist também falhou`, {
+        // Estratégia 3: OCR como fallback final
+        log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `⚠️ pdfjs-dist falhou, tentando OCR`, {
           error: pdfjsError?.message?.substring(0, 100),
         });
-        throw pdfjsError;
+
+        try {
+          log(`${ICONS.RAILWAY} ${ICONS.OCR}`, 'Tentando método 3: OCR com Tesseract.js');
+          return await extractTextWithOCR(pdfPath);
+        } catch (ocrError) {
+          log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `${ICONS.ERROR} OCR também falhou`, {
+            error: ocrError?.message?.substring(0, 100),
+          });
+          throw ocrError;
+        }
       }
     }
   } catch (error) {
-    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha na extração de PDF`, {
+    log(`${ICONS.RAILWAY} ${ICONS.PDF}`, `${ICONS.ERROR} Falha em todas as estratégias de extração`, {
       error: error?.message,
     });
     throw error;
@@ -120,6 +147,96 @@ function cleanText(text) {
   log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Limpeza concluída', { outputLength: cleaned.length });
 
   return cleaned;
+}
+
+// ================================================================
+// OCR WITH TESSERACT.JS (para PDFs scanned/image-only)
+// ================================================================
+async function extractTextWithOCR(pdfPath) {
+  const startTime = Date.now();
+
+  try {
+    log(`${ICONS.RAILWAY} ${ICONS.OCR}`, 'Iniciando OCR com Tesseract.js', { path: pdfPath });
+
+    // Lazy-load Tesseract e pdfjs apenas quando OCR é solicitado
+    const Tesseract = require('tesseract.js');
+    const pdfjs = require('pdfjs-dist');
+    pdfjs.GlobalWorkerOptions = pdfjs.GlobalWorkerOptions || {};
+    pdfjs.GlobalWorkerOptions.workerSrc = null;
+
+    // Ler PDF
+    const fileBuffer = await fs.readFile(pdfPath);
+    const uint8Array = new Uint8Array(fileBuffer);
+    const pdf = await pdfjs.getDocument({ data: uint8Array }).promise;
+
+    let fullText = '';
+    const pageCount = Math.min(pdf.numPages, 50); // Limitar a 50 páginas para OCR (muito pesado)
+
+    log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `Processando ${pageCount} páginas com OCR`, { totalPages: pdf.numPages });
+
+    // Processar cada página com OCR
+    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
+      try {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 2 }); // 2x zoom para melhor OCR
+
+        // Renderizar página como canvas
+        const canvasFactory = {
+          create: (width, height) => {
+            const Canvas = require('canvas');
+            return Canvas.createCanvas(width, height);
+          }
+        };
+
+        const renderContext = {
+          canvasContext: null,
+          viewport: viewport,
+          canvasFactory: canvasFactory,
+        };
+
+        // Renderizar página
+        const canvas = canvasFactory.create(viewport.width, viewport.height);
+        renderContext.canvasContext = canvas.getContext('2d');
+
+        await page.render(renderContext).promise;
+
+        // Converter canvas para imagem e fazer OCR
+        const imageData = canvas.toDataURL('image/png');
+
+        // Usar Tesseract.js para OCR
+        const { data: { text } } = await Tesseract.recognize(imageData, 'por');
+
+        fullText += text + '\n';
+
+        const elapsed = Date.now() - startTime;
+        if (pageNum % 5 === 0) {
+          log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `Progresso OCR: ${pageNum}/${pageCount}`, { elapsed: `${elapsed}ms` });
+        }
+      } catch (pageError) {
+        log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `⚠️ Erro ao processar página ${pageNum}`, {
+          error: pageError?.message?.substring(0, 100),
+        });
+        // Continuar com próxima página
+      }
+    }
+
+    const duration = Date.now() - startTime;
+
+    log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `${ICONS.SUCCESS} OCR concluído`, {
+      pagesProcessed: pageCount,
+      textLength: fullText.length,
+      duration: `${duration}ms`,
+    });
+
+    return fullText.trim();
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    log(`${ICONS.RAILWAY} ${ICONS.OCR}`, `${ICONS.ERROR} Falha no OCR`, {
+      error: error?.message?.substring(0, 150),
+      duration: `${duration}ms`,
+    });
+    throw error;
+  }
 }
 
 // ================================================================
@@ -200,12 +317,18 @@ async function handlePdfProcessing(req) {
       size: buffer.length,
     });
 
+    // Verificar se forceOCR foi solicitado
+    const forceOCR = formData.get('forceOCR') === 'true';
+    if (forceOCR) {
+      log(`${ICONS.RAILWAY} ${ICONS.OCR}`, 'Flag forceOCR detectada na requisição');
+    }
+
     // Extract text
     const processingStartTime = Date.now();
     let extractedText = '';
 
     try {
-      extractedText = await extractTextFromPDF(tempFilePath);
+      extractedText = await extractTextFromPDF(tempFilePath, forceOCR);
     } catch (extractError) {
       log(`${ICONS.RAILWAY}`, `${ICONS.ERROR} Falha na extração`, {
         error: extractError?.message,

@@ -18,6 +18,7 @@ const ICONS = {
   WARNING: '⚠️',
   EXTRACT: '📝',
   VERCEL: '▲',
+  OCR: '🔍',
 };
 
 const DEBUG = process.env.DEBUG === 'true';
@@ -205,10 +206,10 @@ export class PDFProcessor {
   }
 
   /**
-   * Extração em cascata - Estratégia principal do V1
+   * Extração em cascata com OCR - Estratégia para PDFs complexos/scanned
    * 1. Método primário com Railway (pdf-parse ou pdfjs-dist)
-   * 2. Fallback se < 100 chars
-   * 3. OCR seria implementado com tesseract.js se necessário
+   * 2. OCR via Railway (Tesseract.js) se < 100 chars
+   * 3. Fallback vazio se OCR também falhar
    */
   async extractText(buffer: Buffer, fileName: string = 'document.pdf'): Promise<ExtractionResult> {
     try {
@@ -227,24 +228,26 @@ export class PDFProcessor {
         };
       }
 
-      // Estratégia 2: Fallback
-      const fallbackText = await this.extractWithFallback(buffer);
+      // Estratégia 2: OCR via Railway (para PDFs scanned/image-only)
+      log(`${ICONS.OCR}`, `Primary extraction insufficient (${primaryText.length} chars), tentando OCR`);
+      const ocrText = await this.extractWithOCR(buffer, fileName);
 
-      if (fallbackText.length >= this.MIN_TEXT_LENGTH) {
+      if (ocrText.length >= this.MIN_TEXT_LENGTH) {
         return {
-          text: fallbackText,
-          method: 'fallback',
+          text: ocrText,
+          method: 'ocr',
           success: true,
           quality: 'medium',
-          originalLength: fallbackText.length,
-          processedLength: fallbackText.length,
+          originalLength: ocrText.length,
+          processedLength: ocrText.length,
           reductionPercentage: 0
         };
       }
 
-      console.error(`${ICONS.ERROR} Text extraction failed for ${fileName}`);
+      // Estratégia 3: Fallback vazio
+      log(`${ICONS.WARNING}`, `Todas as estratégias falharam para ${fileName}`);
       return {
-        text: primaryText || fallbackText || '',
+        text: primaryText || ocrText || '',
         method: 'primary',
         success: false,
         quality: 'low',
@@ -290,6 +293,82 @@ export class PDFProcessor {
       return '';
     } catch (error) {
       console.error('❌ Erro no método fallback:', error);
+      return '';
+    }
+  }
+
+  /**
+   * Método OCR - Chama Railway com flag OCR para Tesseract.js
+   * Ideal para PDFs scanned/image-only que falharam em métodos anteriores
+   */
+  private async extractWithOCR(buffer: Buffer, fileName: string = 'document.pdf'): Promise<string> {
+    try {
+      const startTime = Date.now();
+      const baseUrl = getPdfProcessorUrl();
+      const url = `${baseUrl}/api/pdf/process`;
+
+      log(`${ICONS.OCR}`, `Iniciando extração OCR via Railway: ${fileName}`, {
+        buffer_size: buffer.length,
+        method: 'tesseract.js',
+      });
+
+      // Criar FormData com flag OCR
+      const formData = new FormData();
+      const blob = new Blob([buffer], { type: 'application/pdf' });
+      formData.append('file', blob, fileName);
+      formData.append('forceOCR', 'true'); // Flag para forçar OCR na Railway
+
+      // Timeout maior para OCR (mais lento)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 segundos para OCR
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          log(`${ICONS.ERROR}`, `OCR extraction failed (${response.status})`, {
+            duration_ms: Date.now() - startTime,
+          });
+          return '';
+        }
+
+        const result = await response.json();
+        const ocrText = result.data?.cleanedText || '';
+
+        log(`${ICONS.SUCCESS}`, `OCR extraction successful`, {
+          duration_ms: Date.now() - startTime,
+          text_length: ocrText.length,
+          file_name: fileName,
+        });
+
+        return ocrText;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+
+        const isTimeoutError = fetchError instanceof Error &&
+          (fetchError.name === 'AbortError' || fetchError.message.includes('timeout'));
+
+        if (isTimeoutError) {
+          log(`${ICONS.WARNING}`, `OCR timeout (120s exceeded)`, { file_name: fileName });
+        } else {
+          log(`${ICONS.ERROR}`, `OCR fetch error`, {
+            error: fetchError instanceof Error ? fetchError.message : 'Unknown',
+            file_name: fileName,
+          });
+        }
+
+        return '';
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      log(`${ICONS.ERROR}`, `OCR extraction error: ${errorMsg}`);
       return '';
     }
   }

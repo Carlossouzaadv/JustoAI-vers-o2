@@ -1549,6 +1549,88 @@ enum OutputFormat {
 }
 
 // ================================================================
+// WEBHOOK DELIVERY TRACKING (for observability and retry)
+// ================================================================
+
+model WebhookDelivery {
+  id              String                @id @default(cuid())
+  workspaceId     String
+  webhookType     String                // 'judit.tracking', 'judit.callback', etc
+  eventType       String                // 'movement', 'attachment', 'status_change'
+  processNumber   String
+  payload         Json                  // Full webhook payload
+  status          WebhookDeliveryStatus @default(PENDING)
+  statusCode      Int?                  // HTTP status code from delivery
+  error           String?               // Error message if failed
+  retryCount      Int                   @default(0)
+  maxRetries      Int                   @default(5)
+  nextRetryAt     DateTime?             // When to retry next
+  lastAttemptAt   DateTime?             // Last delivery attempt
+  deliveredAt     DateTime?             // Successful delivery time
+  signature       String?               // HMAC signature for security
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([nextRetryAt])
+  @@index([processNumber])
+  @@map("webhook_deliveries")
+}
+
+// ================================================================
+// JOB EXECUTION TRACKING (for better observability)
+// ================================================================
+
+model JobExecution {
+  id              String          @id @default(cuid())
+  workspaceId     String
+  jobType         String          // 'report_scheduler', 'judit_check', 'webhook_retry', etc
+  jobId           String          // Link to specific job (e.g., report schedule ID)
+  status          JobExecutionStatus @default(PENDING)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  duration        Int?            // milliseconds
+  input           Json?           // Job input parameters
+  output          Json?           // Job result/output
+  error           String?         // Error message if failed
+  errorStack      String?         // Full error stack trace
+  retryCount      Int             @default(0)
+  maxRetries      Int             @default(3)
+  nextRetryAt     DateTime?
+  tags            String[]        // for filtering/searching
+  metrics         Json?           // performance metrics
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([workspaceId])
+  @@index([jobType])
+  @@index([status])
+  @@index([startedAt])
+  @@map("job_executions")
+}
+
+// ================================================================
+// SYSTEM HEALTH METRICS (for monitoring dashboard)
+// ================================================================
+
+model SystemHealthMetric {
+  id              String          @id @default(cuid())
+  timestamp       DateTime        @default(now())
+  component       String          // 'database', 'supabase', 'resend', 'slack', 'judit_api', etc
+  status          HealthStatus    @default(UNKNOWN)
+  responseTimeMs  Int?
+  errorCount      Int             @default(0)
+  lastError       String?
+  metadata        Json?           // component-specific data
+  createdAt       DateTime        @default(now())
+
+  @@index([component])
+  @@index([timestamp])
+  @@map("system_health_metrics")
+}
+
+// ================================================================
 // JUDIT OBSERVABILITY ENUMS
 // ================================================================
 
@@ -1574,5 +1656,35 @@ enum AlertSeverity {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+// ================================================================
+// WEBHOOK AND JOB MONITORING ENUMS
+// ================================================================
+
+enum WebhookDeliveryStatus {
+  PENDING          // Waiting to be delivered
+  PROCESSING       // Currently being delivered
+  SUCCESS          // Successfully delivered
+  FAILED           // Delivery failed (not retrying)
+  RETRYING         // Failed but will retry
+  SKIPPED          // Skipped (e.g., duplicate)
+}
+
+enum JobExecutionStatus {
+  PENDING          // Waiting to start
+  RUNNING          // Currently executing
+  SUCCESS          // Completed successfully
+  FAILED           // Execution failed
+  RETRYING         // Failed but will retry
+  CANCELLED        // Cancelled by user
+  TIMEOUT          // Timed out
+}
+
+enum HealthStatus {
+  HEALTHY          // Component working normally
+  DEGRADED         // Component working but with issues
+  UNHEALTHY        // Component not working
+  UNKNOWN          // Status unknown
 }
 
