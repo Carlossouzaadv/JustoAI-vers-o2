@@ -11,6 +11,8 @@ import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
 import fs from 'fs/promises';
 import path from 'path';
+import { PDFTemplateEngine, PDFTemplateOptions } from './report-templates/pdf-template-engine';
+import { DOCXTemplateEngine, DOCXTemplateOptions } from './report-templates/docx-template-engine';
 
 // Interfaces para o gerador
 export interface ReportGenerationRequest {
@@ -64,6 +66,9 @@ export interface ReportTemplate {
 }
 
 export class ReportGenerator {
+  private pdfEngine = new PDFTemplateEngine();
+  private docxEngine = new DOCXTemplateEngine();
+
   /**
    * Gera relatório agendado completo
    */
@@ -536,16 +541,44 @@ ${clientLanguage ?
     filePath: string,
     _processData: ProcessData[]
   ): Promise<void> {
-    // TODO: Implementar geração real de PDF
-    // Usando bibliotecas como puppeteer, jsPDF, ou PDFKit
+    // ✅ Implementar geração real de PDF com Puppeteer
+    try {
+      console.log(`${ICONS.PROCESS} Gerando PDF: ${filePath}`);
 
-    console.log(`${ICONS.PROCESS} Gerando PDF: ${filePath}`);
+      // Aplicar template ao conteúdo HTML
+      const htmlContent = this.applyTemplate(content, template, 'PDF');
 
-    // Mock: criar arquivo de texto por enquanto
-    const pdfContent = this.applyTemplate(content, template, 'PDF');
-    await fs.writeFile(filePath, pdfContent, 'utf8');
+      // Usar PDF Template Engine para gerar PDF real
+      const pdfOptions: PDFTemplateOptions = {
+        reportType: 'JURIDICO',
+        audienceType: 'CLIENTE',
+        customization: {
+          companyName: 'JustoAI',
+          primaryColor: '#007bff',
+          secondaryColor: '#6c757d',
+          accentColor: '#28a745',
+          showPageNumbers: true,
+          showGeneratedBy: true
+        },
+        metadata: {
+          workspaceName: 'JustoAI V2',
+          generatedAt: new Date(),
+          generatedBy: 'ReportGenerator',
+          processCount: _processData.length
+        }
+      };
 
-    console.log(`${ICONS.SUCCESS} PDF simulado criado: ${filePath}`);
+      const result = await this.pdfEngine.generatePDF(htmlContent, pdfOptions, filePath);
+
+      if (result.success) {
+        console.log(`${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)`);
+      } else {
+        throw new Error(result.error || 'Erro desconhecido ao gerar PDF');
+      }
+    } catch (error) {
+      console.error(`${ICONS.ERROR} Erro ao gerar PDF:`, error);
+      throw error;
+    }
   }
 
   /**
@@ -557,16 +590,49 @@ ${clientLanguage ?
     filePath: string,
     _processData: ProcessData[]
   ): Promise<void> {
-    // TODO: Implementar geração real de DOCX
-    // Usando bibliotecas como docx ou officegen
+    // ✅ Implementar geração real de DOCX com docx library
+    try {
+      console.log(`${ICONS.PROCESS} Gerando DOCX: ${filePath}`);
 
-    console.log(`${ICONS.PROCESS} Gerando DOCX: ${filePath}`);
+      // Converter HTML para conteúdo estruturado para DOCX
+      const htmlContent = this.applyTemplate(content, template, 'DOCX');
 
-    // Mock: criar arquivo de texto por enquanto
-    const docxContent = this.applyTemplate(content, template, 'DOCX');
-    await fs.writeFile(filePath, docxContent, 'utf8');
+      // Usar DOCX Template Engine para gerar DOCX real
+      const docxOptions: DOCXTemplateOptions = {
+        reportType: 'JURIDICO',
+        audienceType: 'CLIENTE',
+        customization: {
+          companyName: 'JustoAI',
+          primaryColor: '#007bff',
+          secondaryColor: '#6c757d',
+          accentColor: '#28a745',
+          showPageNumbers: true,
+          showGeneratedBy: true
+        },
+        metadata: {
+          workspaceName: 'JustoAI V2',
+          generatedAt: new Date(),
+          generatedBy: 'ReportGenerator',
+          processCount: _processData.length
+        }
+      };
 
-    console.log(`${ICONS.SUCCESS} DOCX simulado criado: ${filePath}`);
+      const result = await this.docxEngine.generateDOCX(
+        htmlContent,
+        _processData,
+        docxOptions,
+        filePath
+      );
+
+      if (result.success) {
+        console.log(`${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)`);
+      } else {
+        throw new Error(result.error || 'Erro desconhecido ao gerar DOCX');
+      }
+    } catch (error) {
+      console.error(`${ICONS.ERROR} Erro ao gerar DOCX:`, error);
+      throw error;
+    }
   }
 
   /**
