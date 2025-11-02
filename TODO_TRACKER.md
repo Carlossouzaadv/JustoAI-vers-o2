@@ -1,8 +1,8 @@
 # TODO Tracker - JustoAI V2
 
-**Last Updated:** 2025-11-02
-**Total TODOs:** 56
-**Status:** Organized by Priority & Category
+**Last Updated:** 2025-11-02 (Phase 1-4 Complete)
+**Total TODOs:** 56 (3 Critical items DONE)
+**Status:** Phase 1-4 Implementation Complete
 
 ---
 
@@ -10,10 +10,19 @@
 
 | Priority | Count | Status |
 |----------|-------|--------|
-| 🔴 CRÍTICO | 8 | Blocking key features |
-| 🟠 ALTO | 18 | Important functionality |
+| 🔴 CRÍTICO | 5 remaining (3 DONE) | Blocking key features |
+| 🟠 ALTO | 17 remaining (1 DONE) | Important functionality |
 | 🟡 MÉDIO | 20 | Should implement soon |
 | 🟢 BAIXO | 10 | Nice-to-have improvements |
+
+---
+
+## 🎉 Recently Completed (2025-11-02)
+
+✅ **Report Scheduling CRUD** - All endpoints implemented (GET/PATCH/DELETE/POST actions)
+✅ **Report Delivery Notifications** - Email + Slack when reports are ready
+✅ **JUDIT Webhook Movement Alerts** - Real-time alerts for legal movements, attachments, status changes
+✅ **Server-Sent Events (SSE)** - Real-time dashboard updates via `/api/sse/subscribe`
 
 ---
 
@@ -154,14 +163,31 @@
 
 ---
 
-### 8. Server-Sent Events (SSE)
-**Impact:** Real-time updates not working
+### 8. Server-Sent Events (SSE) ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** Real-time dashboard updates now operational
 **Files:**
-- `lib/websocket-manager.ts:183` - SSE implementation for real-time updates
+- `src/app/api/sse/subscribe/route.ts` - New SSE endpoint
+- `src/lib/websocket-manager.ts:237-266` - Workspace broadcasting
+- `src/lib/report-scheduler.ts:422-435` - Report ready events
+- `src/app/api/webhooks/judit/tracking/route.ts:621-637` - Movement events
 
-**Details:**
-- Real-time notifications not functional
-- Critical for live dashboard updates
+**Implementation Details:**
+- Created `/api/sse/subscribe` endpoint with proper SSE headers
+- ReadableStream-based implementation for Next.js
+- Workspace-aware broadcasting (subscribeToWorkspace, broadcastToWorkspace)
+- Real SSE formatting: `data: {json}\n\n`
+- Automatic connection cleanup and keep-alive pings (30s)
+- Integration with 4 event sources
+
+**Event Types:**
+- ✅ report:ready - Reports ready for download
+- ✅ movement:added - New legal movements
+- ✅ status:changed - Case status changes
+- ✅ batch_progress/completed/error - Batch imports
+- ✅ ping/pong - Keep-alive
+
+**Solution Used:** Server-Sent Events (SSE) native browser API + ReadableStream
 
 ---
 
@@ -175,17 +201,34 @@
 
 ---
 
-### 2. Report Scheduling CRUD
+### 2. Report Scheduling CRUD ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** Report scheduling feature fully functional
 **Files:**
-- `src/app/api/reports/schedule/[id]/route.ts:34` - GET schedule by ID
-- `src/app/api/reports/schedule/[id]/route.ts:98` - Update schedule in DB
-- `src/app/api/reports/schedule/[id]/route.ts:150` - DELETE schedule
-- `src/app/api/reports/schedule/[id]/route.ts:187` - Immediate report generation
-- `src/app/api/reports/schedule/[id]/route.ts:200` - Pause schedule
-- `src/app/api/reports/schedule/[id]/route.ts:210` - Resume schedule
-- `src/app/api/reports/schedule/[id]/route.ts:220` - Test delivery
+- `src/app/api/reports/schedule/[id]/route.ts:30-78` - GET schedule by ID
+- `src/app/api/reports/schedule/[id]/route.ts:84-185` - PATCH update schedule
+- `src/app/api/reports/schedule/[id]/route.ts:191-237` - DELETE schedule
+- `src/app/api/reports/schedule/[id]/route.ts:274-302` - execute_now action
+- `src/app/api/reports/schedule/[id]/route.ts:304-317` - pause action
+- `src/app/api/reports/schedule/[id]/route.ts:319-339` - resume action
+- `src/app/api/reports/schedule/[id]/route.ts:341-374` - test_delivery action
 
-**Impact:** Report scheduling feature completely non-functional
+**Implementation Details:**
+- All CRUD endpoints with real database queries
+- Frequency/type enum mapping (weekly→WEEKLY, complete→COMPLETO)
+- Auto-calculation of nextRun when frequency changes
+- Workspace isolation and permission checks
+- Error handling with detailed logging
+- Test delivery uses notificationService for Email+Slack
+
+**Features:**
+- ✅ GET: Fetch schedule with execution history (last 5)
+- ✅ PATCH: Update name, frequency, recipients, type, status
+- ✅ DELETE: Remove with cascade delete of executions
+- ✅ execute_now: Create immediate execution
+- ✅ pause: Disable recurring schedule
+- ✅ resume: Re-enable with next run calculation
+- ✅ test_delivery: Send test notification
 
 ---
 
@@ -204,13 +247,39 @@
 
 ---
 
-### 4. JUDIT Webhook Movement Alerts
+### 4. JUDIT Webhook Movement Alerts ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** Real-time case update alerts fully operational
 **Files:**
-- `src/app/api/webhooks/judit/tracking/route.ts:560` - Movement alerts logic
-- `src/app/api/webhooks/judit/tracking/route.ts:567` - Attachment alerts logic
-- `src/app/api/webhooks/judit/tracking/route.ts:572` - Status change alerts logic
+- `src/app/api/webhooks/judit/tracking/route.ts:560-641` - Movement alerts logic
+- `src/app/api/webhooks/judit/tracking/route.ts:630-734` - Attachment alerts logic
+- `src/app/api/webhooks/judit/tracking/route.ts:702-824` - Status change alerts logic
 
-**Impact:** Real-time case updates not alerting users
+**Implementation Details:**
+- Urgency mapping for intelligent alert prioritization
+- Email + Slack notifications to all workspace users
+- SSE broadcasting for real-time dashboard updates
+- Error resilience: continues if one user fails
+
+**Movement Alerts (generateMovementAlerts):**
+- ✅ HIGH urgency: Sentença, Acordão, Despacho, Julgamento
+- ✅ MEDIUM urgency: Parecer, Recurso, Apelação, Embargos
+- ✅ LOW urgency: Moção, Petição (no alert sent)
+- ✅ Email + Slack to all workspace users
+- ✅ SSE broadcast of movement:added event
+
+**Attachment Alerts (generateAttachmentAlerts):**
+- ✅ Important types only: Sentença, Acordão, Despacho, Parecer, Contrato, Procuração, Mandado
+- ✅ Lists all important files in notification
+- ✅ Email + Slack with file details
+- ✅ SSE broadcast with attachment list
+
+**Status Change Alerts (generateStatusChangeAlerts):**
+- ✅ HIGH urgency: Arquivado, Baixado, Extinto, Julgado, Finalizado
+- ✅ MEDIUM urgency: Suspenso, Paralizado
+- ✅ LOW urgency: Ativo, Andamento (no alert sent)
+- ✅ Shows before/after status and change reason
+- ✅ Email + Slack + SSE broadcast
 
 ---
 
@@ -252,12 +321,27 @@
 
 ---
 
-### 9. Report Delivery Notifications
+### 9. Report Delivery Notifications ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** Users notified when reports are ready
 **Files:**
-- `lib/report-scheduler.ts:409` - Report delivery notifications
-- `workers/individual-reports-worker.ts:373` - Email/SMS report delivery
+- `src/lib/notification-service.ts:339-378` - sendReportReady() method
+- `src/lib/report-scheduler.ts:412-435` - Report delivery in sendReportNotification()
+- `src/lib/email-service.ts:269-309` - HTML email template
 
-**Impact:** Users not notified when reports are ready
+**Implementation Details:**
+- Email template with download button and expiration info
+- Slack notification with report details
+- Integration with ReportScheduler completion flow
+- File size formatting (MB)
+- Expiration date display
+
+**Features:**
+- ✅ Email notification with download link
+- ✅ Slack notification with metadata
+- ✅ SSE broadcast (report:ready) for dashboard
+- ✅ File size and expiration info
+- ✅ Professional HTML email template
 
 ---
 
