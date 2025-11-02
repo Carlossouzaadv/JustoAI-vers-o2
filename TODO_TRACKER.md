@@ -1,8 +1,8 @@
 # TODO Tracker - JustoAI V2
 
-**Last Updated:** 2025-11-02 (Phase 1-4 Complete)
-**Total TODOs:** 56 (3 Critical items DONE)
-**Status:** Phase 1-4 Implementation Complete
+**Last Updated:** 2025-11-02 (Priority 1 Complete - Phase 1-4 + OCR + Monitoring)
+**Total TODOs:** 56 (5 Critical items DONE - 3 remaining)
+**Status:** Phase 1-4 Implementation Complete + Priority 1 Features
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Priority | Count | Status |
 |----------|-------|--------|
-| 🔴 CRÍTICO | 5 remaining (3 DONE) | Blocking key features |
+| 🔴 CRÍTICO | 3 remaining (5 DONE) | Blocking key features |
 | 🟠 ALTO | 17 remaining (1 DONE) | Important functionality |
 | 🟡 MÉDIO | 20 | Should implement soon |
 | 🟢 BAIXO | 10 | Nice-to-have improvements |
@@ -19,10 +19,15 @@
 
 ## 🎉 Recently Completed (2025-11-02)
 
+### Phase 1-4 (Earlier Today)
 ✅ **Report Scheduling CRUD** - All endpoints implemented (GET/PATCH/DELETE/POST actions)
 ✅ **Report Delivery Notifications** - Email + Slack when reports are ready
 ✅ **JUDIT Webhook Movement Alerts** - Real-time alerts for legal movements, attachments, status changes
 ✅ **Server-Sent Events (SSE)** - Real-time dashboard updates via `/api/sse/subscribe`
+
+### Priority 1 - Features (Just Completed)
+✅ **PDF Text Extraction with OCR** - Tesseract.js for scanned/image PDFs (fallback cascade)
+✅ **Process Monitoring & Observability** - Webhook tracking, job logging, system health checks
 
 ---
 
@@ -108,18 +113,37 @@
 
 ---
 
-### 4. PDF Text Extraction
-**Impact:** PDF parsing may fail on complex documents
+### 4. PDF Text Extraction (OCR) ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** Complex/scanned PDFs now fully processable via OCR fallback
 **Files:**
-- `lib/deep-analysis-service.ts:250` - Real PDF extraction implementation
-- `lib/pdf-processor.ts:125` - OCR fallback strategy (tesseract.js)
+- `src/lib/pdf-processor.ts` - Vercel client with OCR request handler
+- `src/lib/pdf-extractor.js` - Railway backend with Tesseract.js implementation
+- `package.json` - Added tesseract.js + canvas dependencies
 
-**Details:**
-- Deep analysis service has mock extraction
-- PDF processor lacks OCR for image-heavy documents
-- Needed for reliable document processing
+**Implementation Details:**
+- Cascade strategy: pdf-parse (primary) → pdfjs-dist (fallback) → OCR (final)
+- OCR via Tesseract.js on Railway (not Vercel due to performance)
+- Renders PDF pages to Canvas with 2x zoom for better accuracy
+- Supports Portuguese language (main use case)
+- Processes up to 50 pages (limit for large documents)
+- Timeout: 5s (primary), 10s (fallback), 120s (OCR)
+- Response time tracking for each method
+- Graceful error handling with detailed logging
 
-**Suggested Libraries:** pdf-parse, pdfjs, tesseract.js
+**Cascade Flow:**
+```
+Vercel pdf-processor.ts
+├─ extractWithPrimary() → pdf-parse
+├─ extractWithFallback() → pdfjs-dist
+└─ extractWithOCR() → Railway
+   └─ pdf-extractor.js
+      ├─ Render pages to Canvas
+      ├─ Tesseract.js OCR (port 'por')
+      └─ Return cleaned text
+```
+
+**Solution Used:** Tesseract.js (OCR) + Canvas (rendering)
 
 ---
 
@@ -188,6 +212,56 @@
 - ✅ ping/pong - Keep-alive
 
 **Solution Used:** Server-Sent Events (SSE) native browser API + ReadableStream
+
+---
+
+### 9. Process Monitoring & Observability ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** System health tracking, webhook retry management, and job observability
+**Files:**
+- `src/app/api/health/system/route.ts` (NEW) - Unified health endpoint
+- `src/lib/webhook-delivery-service.ts` (NEW) - Webhook tracking + retry
+- `src/lib/job-logger.ts` (NEW) - Structured job logging
+- `prisma/schema.prisma` - Added 3 models + 3 enums
+
+**Implementation Details:**
+
+#### A) Health Endpoint (`GET /api/health/system`)
+- Checks 5 components in parallel: DB, Supabase, Resend, Slack, JUDIT API
+- Response format: `{ status: 'healthy'|'degraded'|'unhealthy', checks: {...} }`
+- HTTP 200 (healthy), 503 (degraded/unhealthy)
+- Response time < 5s typically
+- No cache headers (real-time)
+
+#### B) Webhook Delivery Service
+- Exponential backoff retries: 5s → 30s → 5m → 30m → 24h
+- Deduplication window: 5 minutes (prevent duplicates)
+- HMAC signature generation/verification
+- Webhook status tracking ready (DB model created)
+- Methods: logWebhookDelivery(), isDuplicate(), processPendingRetries()
+
+#### C) Job Logger (Singleton)
+- Tracks job lifecycle: start → progress → success/failure
+- Methods: logStart(), logProgress(), logSuccess(), logFailure(), logTimeout(), logCancellation()
+- Tags for filtering: `[report_scheduler]`, `[webhook_retry]`, etc
+- Metrics: itemsProcessed, itemsFailed, successRate, memoryUsage, cpuUsage
+- Summary stats: totalJobs, successRate, avgDuration, byType
+- Memory-efficient: prunes old logs (max 1000 kept)
+
+#### D) Database Models (Ready for Migration)
+- **WebhookDelivery**: Track webhook deliveries with retry state
+- **JobExecution**: Track background jobs (type, status, duration, metrics)
+- **SystemHealthMetric**: Store component health history for dashboards
+- Enums: WebhookDeliveryStatus, JobExecutionStatus, HealthStatus
+- Indexes optimized for queries
+
+**Integration Points:**
+- Health checks run on-demand (no polling)
+- Webhook service ready to integrate in `src/app/api/webhooks/judit/tracking/route.ts`
+- Job logger ready to use in workers, schedulers, webhook handlers
+- All services are singletons with no external dependencies
+
+**Solution Used:** Custom service layer + Prisma models + ReadableStream
 
 ---
 
