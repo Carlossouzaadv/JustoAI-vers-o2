@@ -8,6 +8,7 @@ import { getJuditApiClient } from '@/lib/judit-api-client';
 import { ICONS } from '@/lib/icons';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
+import { sendProcessAlert } from '@/lib/notification-service';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -557,21 +558,219 @@ async function syncProcessMovements(processId: string, movements: any[]) {
 }
 
 async function generateMovementAlerts(process: any, movement: any): Promise<number> {
-  // TODO: Implementar lógica de alertas para movimentações
-  // Por enquanto retornar 1 se movimento for importante
-  const isImportant = movement.type === 'sentenca' || movement.type === 'acordao';
-  return isImportant ? 1 : 0;
+  try {
+    // Definir urgência baseado no tipo de movimentação
+    const urgencyMap: Record<string, 'high' | 'medium' | 'low'> = {
+      'sentenca': 'high',      // Sentença judicial
+      'acordao': 'high',        // Acórdão (decisão de tribunal)
+      'despacho': 'high',       // Despacho importante
+      'deliberacao': 'high',    // Deliberação
+      'parecer': 'medium',      // Parecer
+      'julgamento': 'high',     // Julgamento
+      'recurso': 'medium',      // Recurso
+      'apelacao': 'medium',     // Apelação
+      'embargos': 'medium',     // Embargos
+      'moção': 'low',           // Moção
+      'petição': 'low',         // Petição comum
+      'informação': 'low'       // Informação
+    };
+
+    // Detectar urgência - padrão é MEDIUM se não encontrado
+    const movementType = movement.type?.toLowerCase() || '';
+    const urgency = urgencyMap[movementType] || 'medium';
+
+    // Verificar se é movimento importante para alertar
+    const isImportant = urgency !== 'low';
+
+    if (!isImportant) {
+      console.log(`${ICONS.INFO} Movimentação de baixa prioridade, sem alerta: ${movementType}`);
+      return 0;
+    }
+
+    // Buscar usuários do workspace para notificação
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: process.workspaceId },
+      include: { users: true }
+    });
+
+    if (!workspace || workspace.users.length === 0) {
+      console.warn(`${ICONS.WARNING} Sem usuários para notificar no workspace`);
+      return 0;
+    }
+
+    // Enviar alerta para cada usuário do workspace
+    let alertsGenerated = 0;
+    for (const user of workspace.users) {
+      try {
+        await sendProcessAlert(
+          user.email,
+          process.processNumber,
+          'NOVA_MOVIMENTACAO',
+          `Nova movimentação: ${movement.type}\n\nDescrição: ${movement.description}`,
+          urgency
+        );
+        alertsGenerated++;
+      } catch (error) {
+        console.error(`${ICONS.ERROR} Erro ao enviar alerta para ${user.email}:`, error);
+        // Continuar tentando enviar para outros usuários
+      }
+    }
+
+    if (alertsGenerated > 0) {
+      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s)`);
+    }
+
+    return alertsGenerated;
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, error);
+    return 0;
+  }
 }
 
 async function generateAttachmentAlerts(process: any, attachments: any[]): Promise<number> {
-  // TODO: Implementar lógica de alertas para anexos
-  return attachments.length;
+  try {
+    if (!attachments || attachments.length === 0) {
+      return 0;
+    }
+
+    // Definir tipos de anexos importantes
+    const importantTypes = [
+      'sentenca',      // Sentença
+      'acordao',       // Acórdão
+      'despacho',      // Despacho
+      'parecer',       // Parecer
+      'contrato',      // Contrato
+      'procuracao',    // Procuração
+      'mandado'        // Mandado
+    ];
+
+    // Filtrar apenas anexos importantes
+    const importantAttachments = attachments.filter(att => {
+      const attType = att.type?.toLowerCase() || '';
+      return importantTypes.some(type => attType.includes(type));
+    });
+
+    if (importantAttachments.length === 0) {
+      console.log(`${ICONS.INFO} Anexos recebidos mas nenhum é importante, sem alerta`);
+      return 0;
+    }
+
+    // Buscar usuários do workspace
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: process.workspaceId },
+      include: { users: true }
+    });
+
+    if (!workspace || workspace.users.length === 0) {
+      console.warn(`${ICONS.WARNING} Sem usuários para notificar sobre anexos`);
+      return 0;
+    }
+
+    // Criar descrição dos anexos
+    const attachmentsList = importantAttachments
+      .map((att, idx) => `${idx + 1}. ${att.name} (${att.type})`)
+      .join('\n');
+
+    // Enviar alerta para cada usuário
+    let alertsGenerated = 0;
+    for (const user of workspace.users) {
+      try {
+        await sendProcessAlert(
+          user.email,
+          process.processNumber,
+          'NOVOS_ANEXOS',
+          `Novos anexos foram adicionados ao processo:\n\n${attachmentsList}`,
+          'medium'
+        );
+        alertsGenerated++;
+      } catch (error) {
+        console.error(`${ICONS.ERROR} Erro ao enviar alerta de anexo para ${user.email}:`, error);
+      }
+    }
+
+    if (alertsGenerated > 0) {
+      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de anexo enviado(s)`);
+    }
+
+    return alertsGenerated;
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Erro ao gerar alertas de anexo:`, error);
+    return 0;
+  }
 }
 
 async function generateStatusChangeAlerts(process: any, status: any): Promise<number> {
-  // TODO: Implementar lógica de alertas para mudanças de status
-  const importantStatuses = ['arquivado', 'baixado', 'extinto'];
-  return importantStatuses.includes(status.current.toLowerCase()) ? 1 : 0;
+  try {
+    // Definir urgência baseado no tipo de mudança de status
+    const urgencyMap: Record<string, 'high' | 'medium' | 'low'> = {
+      'arquivado': 'high',      // Processo arquivado
+      'baixado': 'high',        // Processo baixado (encerrado)
+      'extinto': 'high',        // Processo extinto
+      'julgado': 'high',        // Processo julgado
+      'finalizado': 'high',     // Processo finalizado
+      'suspenso': 'medium',     // Processo suspenso
+      'paralizado': 'medium',   // Processo paralizado
+      'ativo': 'low',           // Processo ativo
+      'andamento': 'low'        // Processo em andamento
+    };
+
+    // Detectar urgência - padrão é LOW se não encontrado
+    const currentStatus = status.current?.toLowerCase() || '';
+    const urgency = urgencyMap[currentStatus] || 'low';
+
+    // Verificar se é mudança importante para alertar
+    const isImportant = urgency !== 'low';
+
+    if (!isImportant) {
+      console.log(`${ICONS.INFO} Mudança de status de baixa prioridade, sem alerta: ${currentStatus}`);
+      return 0;
+    }
+
+    // Buscar usuários do workspace
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: process.workspaceId },
+      include: { users: true }
+    });
+
+    if (!workspace || workspace.users.length === 0) {
+      console.warn(`${ICONS.WARNING} Sem usuários para notificar sobre mudança de status`);
+      return 0;
+    }
+
+    // Criar descrição da mudança
+    const statusChangeDescription = `
+Processo: ${process.processNumber}
+Status anterior: ${status.previous}
+Novo status: ${status.current}
+${status.reason ? `Motivo: ${status.reason}` : ''}
+    `.trim();
+
+    // Enviar alerta para cada usuário
+    let alertsGenerated = 0;
+    for (const user of workspace.users) {
+      try {
+        await sendProcessAlert(
+          user.email,
+          process.processNumber,
+          'MUDANCA_STATUS',
+          statusChangeDescription,
+          urgency
+        );
+        alertsGenerated++;
+      } catch (error) {
+        console.error(`${ICONS.ERROR} Erro ao enviar alerta de status para ${user.email}:`, error);
+      }
+    }
+
+    if (alertsGenerated > 0) {
+      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s)`);
+    }
+
+    return alertsGenerated;
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Erro ao gerar alertas de status:`, error);
+    return 0;
+  }
 }
 
 async function updateProcessLastWebhook(processId: string) {
