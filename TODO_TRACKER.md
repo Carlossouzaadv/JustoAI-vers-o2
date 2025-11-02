@@ -53,18 +53,23 @@
 
 ---
 
-### 3. File Storage (S3/Permanent)
-**Impact:** Uploaded files are temporary, not persistent
+### 3. File Storage (S3/Permanent) ✅ DONE
+**Status:** ✅ COMPLETED (2025-11-02)
+**Impact:** Files are now permanently stored in Supabase Storage
 **Files:**
-- `src/app/api/process/upload/route.ts:287` - Upload strategy selection
-- `src/app/api/process/upload/route.ts:298` - Replace temp paths with S3 URLs
+- `src/lib/services/supabaseStorageService.ts` - New storage service
+- `src/app/api/process/upload/route.ts:291-307` - Uses uploadCaseDocument
+- `src/app/api/documents/upload/route.ts:828-857` - Uses savePermanentFile
 
-**Details:**
-- Currently files stored in temporary location
-- Need S3 or alternative permanent storage
-- Affects document persistence across sessions
+**Implementation Details:**
+- Created `supabaseStorageService.ts` with complete Supabase Storage integration
+- 3 buckets: case-documents, case-attachments, reports
+- Organized storage: workspace/case/timestamp-filename
+- Graceful fallback: Uses /tmp if Supabase unavailable
+- Public URL generation and file management
+- See SUPABASE_STORAGE_SETUP.md for configuration
 
-**Suggested Solution:** AWS S3, Google Cloud Storage, or Supabase Storage
+**Solution Used:** Supabase Storage (integrated with existing Supabase setup)
 
 ---
 
