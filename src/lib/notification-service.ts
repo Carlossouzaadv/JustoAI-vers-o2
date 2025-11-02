@@ -334,6 +334,50 @@ export class NotificationService {
   }
 
   /**
+   * Send report ready notification when report is generated
+   */
+  async sendReportReady(
+    recipients: string[],
+    reportName: string,
+    downloadUrl: string,
+    fileSize?: number,
+    expiresAt?: Date
+  ): Promise<NotificationResult> {
+    const fileSize_MB = fileSize ? (fileSize / 1024 / 1024).toFixed(2) : 'N/A';
+    const expirationText = expiresAt
+      ? `Expira em: ${expiresAt.toLocaleString('pt-BR')}`
+      : 'Link permanente';
+
+    return this.sendNotification({
+      email: {
+        enabled: process.env.ALERT_EMAIL_ENABLED !== 'false',
+        recipients,
+        template: 'report-ready',
+        data: {
+          reportName,
+          downloadUrl,
+          fileSize: fileSize_MB,
+          expiresAt: expirationText,
+          generatedAt: new Date().toLocaleString('pt-BR'),
+          timestamp: new Date().toISOString()
+        }
+      },
+      slack: {
+        enabled: process.env.SLACK_WEBHOOK_URL ? true : false,
+        title: `✅ Relatório Pronto: ${reportName}`,
+        description: `Seu relatório foi gerado com sucesso e está pronto para download`,
+        severity: 'info',
+        details: {
+          'Relatório': reportName,
+          'Tamanho': `${fileSize_MB} MB`,
+          'Expiração': expirationText,
+          'Timestamp': new Date().toISOString()
+        }
+      }
+    });
+  }
+
+  /**
    * Test all notification channels
    */
   async testConnections(): Promise<{
@@ -410,3 +454,12 @@ export const sendDailyCheckSummary = (
     duration,
     adminEmails
   );
+
+export const sendReportReady = (
+  recipients: string[],
+  reportName: string,
+  downloadUrl: string,
+  fileSize?: number,
+  expiresAt?: Date
+) =>
+  getNotificationService().sendReportReady(recipients, reportName, downloadUrl, fileSize, expiresAt);

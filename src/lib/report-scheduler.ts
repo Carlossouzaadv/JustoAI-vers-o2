@@ -7,6 +7,7 @@ import { createHash } from 'crypto';
 import { QuotaSystem } from '@/lib/quota-system';
 import { ReportGenerator } from '@/lib/report-generator';
 import { ICONS } from '@/lib/icons';
+import { sendReportReady } from '@/lib/notification-service';
 
 export interface ScheduleConfig {
   windowStart: string;    // "23:00"
@@ -389,9 +390,38 @@ export class ReportScheduler {
   /**
    * Envia notificação do relatório (placeholder)
    */
-  private async sendReportNotification(execution: Record<string, unknown>, _result: Record<string, unknown>): Promise<void> {
-    // TODO: Implementar sistema de notificação
-    console.log(`${ICONS.MAIL} Notificação enviada para: ${execution.recipients.join(', ')}`);
+  private async sendReportNotification(execution: Record<string, unknown>, result: Record<string, unknown>): Promise<void> {
+    try {
+      const recipients = execution.recipients as string[];
+      const schedule = await prisma.reportSchedule.findUnique({
+        where: { id: execution.scheduleId as string }
+      });
+
+      if (!schedule || !recipients || recipients.length === 0) {
+        console.warn(`${ICONS.WARNING} [Report] Sem destinatários ou agendamento para notificação`);
+        return;
+      }
+
+      // Extrair informações do resultado
+      const fileName = (result.fileName as string) || `report-${Date.now()}`;
+      const fileSize = (result.fileSize as number) || 0;
+      const downloadUrl = (result.publicUrl as string) || '#';
+      const expiresAt = result.expiresAt ? new Date(result.expiresAt as string) : undefined;
+
+      // Enviar notificação
+      await sendReportReady(
+        recipients,
+        schedule.name,
+        downloadUrl,
+        fileSize,
+        expiresAt
+      );
+
+      console.log(`${ICONS.SUCCESS} [Report] Notificação enviada para: ${recipients.join(', ')}`);
+    } catch (error) {
+      console.error(`${ICONS.ERROR} [Report] Erro ao enviar notificação:`, error);
+      // Não lançar erro para não quebrar o fluxo de execução
+    }
   }
 
   /**

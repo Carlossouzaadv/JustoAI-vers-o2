@@ -6,6 +6,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
+import { prisma } from '@/lib/prisma';
+import { ReportScheduler } from '@/lib/report-scheduler';
+import { getNotificationService } from '@/lib/notification-service';
 
 const updateScheduleSchema = z.object({
   name: z.string().optional(),
@@ -31,33 +34,23 @@ export async function GET(
     const { user, workspace } = await validateAuthAndGetUser(req);
     const { id: scheduleId } = await params;
 
-    // TODO: Buscar do banco de dados
-    // Dados simulados
-    const schedule = {
-      id: scheduleId,
-      workspaceId: workspace.id,
-      name: 'Relatório Semanal - Empresa ABC',
-      clientId: 'client_1',
-      clientName: 'Empresa ABC Ltda',
-      processIds: ['proc_1', 'proc_2'],
-      frequency: 'weekly',
-      reportType: 'updates',
-      deliveryMethod: 'email',
-      deliveryTime: '07:00',
-      recipientEmail: 'contato@empresaabc.com',
-      isActive: true,
-      estimatedCost: {
-        monthly: 12.50,
-        perReport: 3.12,
-        tokensEstimate: 15600
-      },
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:00:00Z',
-      nextExecution: '2024-01-22T07:00:00Z',
-      lastExecution: null,
-      executionCount: 0,
-      executionHistory: []
-    };
+    // Buscar agendamento do banco
+    const schedule = await prisma.reportSchedule.findUnique({
+      where: { id: scheduleId },
+      include: {
+        executions: {
+          orderBy: { startedAt: 'desc' },
+          take: 5 // Últimas 5 execuções
+        }
+      }
+    });
+
+    if (!schedule) {
+      return NextResponse.json(
+        { success: false, error: 'Agendamento não encontrado' },
+        { status: 404 }
+      );
+    }
 
     if (schedule.workspaceId !== workspace.id) {
       return NextResponse.json(
@@ -68,7 +61,11 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      schedule
+      schedule: {
+        ...schedule,
+        isActive: schedule.enabled,
+        executionHistory: schedule.executions
+      }
     });
 
   } catch (error) {
@@ -95,27 +92,79 @@ export async function PATCH(
     const body = await req.json();
     const validatedData = updateScheduleSchema.parse(body);
 
-    // TODO: Implementar atualização no banco
-    console.log(`${ICONS.EDIT} Atualizando agendamento: ${scheduleId}`, validatedData);
+    // Buscar agendamento atual
+    const schedule = await prisma.reportSchedule.findUnique({
+      where: { id: scheduleId }
+    });
 
-    // Recalcular próxima execução se frequência ou horário mudaram
-    let nextExecution: string | undefined;
-    if (validatedData.frequency || validatedData.deliveryTime) {
-      // TODO: Buscar dados atuais e recalcular
-      nextExecution = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    if (!schedule) {
+      return NextResponse.json(
+        { success: false, error: 'Agendamento não encontrado' },
+        { status: 404 }
+      );
     }
 
-    const updatedSchedule = {
-      id: scheduleId,
-      ...validatedData,
-      updatedAt: new Date().toISOString(),
-      ...(nextExecution && { nextExecution })
-    };
+    if (schedule.workspaceId !== workspace.id) {
+      return NextResponse.json(
+        { success: false, error: 'Acesso negado' },
+        { status: 403 }
+      );
+    }
+
+    // Mapear dados para campos do schema Prisma
+    const updateData: Record<string, unknown> = {};
+    if (validatedData.name !== undefined) updateData.name = validatedData.name;
+    if (validatedData.processIds !== undefined) updateData.processIds = validatedData.processIds;
+    if (validatedData.frequency !== undefined) {
+      // Mapear 'weekly' -> 'WEEKLY', etc
+      const frequencyMap: Record<string, string> = {
+        'daily': 'DAILY',
+        'weekly': 'WEEKLY',
+        'biweekly': 'BIWEEKLY',
+        'monthly': 'MONTHLY'
+      };
+      updateData.frequency = frequencyMap[validatedData.frequency] || validatedData.frequency;
+    }
+    if (validatedData.reportType !== undefined) {
+      const typeMap: Record<string, string> = {
+        'complete': 'COMPLETO',
+        'updates': 'NOVIDADES'
+      };
+      updateData.type = typeMap[validatedData.reportType] || validatedData.reportType;
+    }
+    if (validatedData.recipientEmail !== undefined) {
+      updateData.recipients = [validatedData.recipientEmail];
+    }
+    if (validatedData.isActive !== undefined) {
+      updateData.enabled = validatedData.isActive;
+    }
+
+    // Recalcular próxima execução se necessário
+    if (validatedData.frequency || validatedData.deliveryTime) {
+      const nextRun = new Date();
+      nextRun.setDate(nextRun.getDate() + 7); // Próxima semana como padrão
+      if (validatedData.deliveryTime) {
+        const [hours, minutes] = validatedData.deliveryTime.split(':').map(Number);
+        nextRun.setHours(hours, minutes, 0, 0);
+      }
+      updateData.nextRun = nextRun;
+    }
+
+    // Atualizar no banco
+    const updatedSchedule = await prisma.reportSchedule.update({
+      where: { id: scheduleId },
+      data: updateData
+    });
+
+    console.log(`${ICONS.EDIT} Agendamento atualizado: ${scheduleId}`);
 
     return NextResponse.json({
       success: true,
       message: 'Agendamento atualizado com sucesso',
-      schedule: updatedSchedule
+      schedule: {
+        ...updatedSchedule,
+        isActive: updatedSchedule.enabled
+      }
     });
 
   } catch (error) {
@@ -147,8 +196,31 @@ export async function DELETE(
     const { user, workspace } = await validateAuthAndGetUser(req);
     const { id: scheduleId } = await params;
 
-    // TODO: Implementar exclusão no banco
-    console.log(`${ICONS.DELETE} Excluindo agendamento: ${scheduleId}`);
+    // Buscar agendamento para validar workspace
+    const schedule = await prisma.reportSchedule.findUnique({
+      where: { id: scheduleId }
+    });
+
+    if (!schedule) {
+      return NextResponse.json(
+        { success: false, error: 'Agendamento não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    if (schedule.workspaceId !== workspace.id) {
+      return NextResponse.json(
+        { success: false, error: 'Acesso negado' },
+        { status: 403 }
+      );
+    }
+
+    // Deletar agendamento (Cascade delete removerá execuções relacionadas)
+    await prisma.reportSchedule.delete({
+      where: { id: scheduleId }
+    });
+
+    console.log(`${ICONS.DELETE} Agendamento excluído: ${scheduleId}`);
 
     return NextResponse.json({
       success: true,
@@ -179,49 +251,127 @@ export async function POST(
     const body = await req.json();
     const { action } = body;
 
+    // Validar workspace
+    const schedule = await prisma.reportSchedule.findUnique({
+      where: { id: scheduleId }
+    });
+
+    if (!schedule) {
+      return NextResponse.json(
+        { success: false, error: 'Agendamento não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    if (schedule.workspaceId !== workspace.id) {
+      return NextResponse.json(
+        { success: false, error: 'Acesso negado' },
+        { status: 403 }
+      );
+    }
+
     switch (action) {
-      case 'execute_now':
-        // Executar relatório agora (fora do agendamento)
+      case 'execute_now': {
+        // Executar relatório imediatamente
         console.log(`${ICONS.ROCKET} Executando relatório imediatamente: ${scheduleId}`);
 
-        // TODO: Implementar geração imediata do relatório
-        // const result = await generateScheduledReport(scheduleId);
+        // Criar execução imediata
+        const execution = await prisma.reportExecution.create({
+          data: {
+            workspaceId: schedule.workspaceId,
+            scheduleId: schedule.id,
+            reportType: schedule.type,
+            parameters: schedule.filters || {},
+            recipients: schedule.recipients,
+            status: 'AGENDADO',
+            audienceType: schedule.audienceType,
+            outputFormats: schedule.outputFormats,
+            processCount: schedule.processIds.length,
+            quotaConsumed: 1,
+            scheduledFor: new Date() // Executar assim que possível
+          }
+        });
+
+        console.log(`${ICONS.SUCCESS} Execução criada: ${execution.id}`);
 
         return NextResponse.json({
           success: true,
           message: 'Relatório sendo gerado...',
-          executionId: `exec_${Date.now()}`
+          executionId: execution.id
         });
+      }
 
-      case 'pause':
+      case 'pause': {
         // Pausar agendamento
         console.log(`${ICONS.WARNING} Pausando agendamento: ${scheduleId}`);
 
-        // TODO: Implementar pausa no banco
+        await prisma.reportSchedule.update({
+          where: { id: scheduleId },
+          data: { enabled: false }
+        });
+
         return NextResponse.json({
           success: true,
           message: 'Agendamento pausado'
         });
+      }
 
-      case 'resume':
+      case 'resume': {
         // Retomar agendamento
         console.log(`${ICONS.SUCCESS} Retomando agendamento: ${scheduleId}`);
 
-        // TODO: Implementar retomada no banco
+        // Recalcular próxima execução
+        const nextRun = new Date();
+        nextRun.setDate(nextRun.getDate() + 1);
+
+        await prisma.reportSchedule.update({
+          where: { id: scheduleId },
+          data: {
+            enabled: true,
+            nextRun
+          }
+        });
+
         return NextResponse.json({
           success: true,
           message: 'Agendamento retomado'
         });
+      }
 
-      case 'test_delivery':
-        // Testar método de entrega
+      case 'test_delivery': {
+        // Testar entrega com notificação
         console.log(`${ICONS.INFO} Testando entrega: ${scheduleId}`);
 
-        // TODO: Implementar teste de entrega
+        const notificationService = getNotificationService();
+
+        // Enviar notificação de teste
+        await notificationService.sendNotification({
+          email: {
+            enabled: true,
+            recipients: schedule.recipients,
+            template: 'report-ready',
+            data: {
+              reportName: `${schedule.name} (TESTE)`,
+              generatedAt: new Date().toISOString(),
+              downloadUrl: '#',
+              testMode: true
+            }
+          },
+          slack: {
+            enabled: true,
+            title: '🧪 Teste de Entrega de Relatório',
+            description: `Teste de entrega do agendamento: ${schedule.name}`,
+            severity: 'info'
+          }
+        });
+
+        console.log(`${ICONS.SUCCESS} Teste de entrega enviado`);
+
         return NextResponse.json({
           success: true,
-          message: 'Teste de entrega enviado'
+          message: 'Teste de entrega enviado com sucesso'
         });
+      }
 
       default:
         return NextResponse.json(
