@@ -9,6 +9,7 @@ import { ICONS } from '@/lib/icons';
 import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { sendProcessAlert } from '@/lib/notification-service';
+import { getWebSocketManager } from '@/lib/websocket-manager';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -617,7 +618,23 @@ async function generateMovementAlerts(process: any, movement: any): Promise<numb
     }
 
     if (alertsGenerated > 0) {
-      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s)`);
+      // Broadcaster em tempo real via SSE
+      const wsManager = getWebSocketManager();
+      wsManager.broadcastToWorkspace(process.workspaceId, {
+        type: 'movement:added',
+        processId: process.id,
+        data: {
+          processNumber: process.processNumber,
+          movementType: movement.type,
+          movementDescription: movement.description,
+          date: movement.date,
+          urgency: urgency,
+          timestamp: new Date().toISOString()
+        },
+        timestamp: Date.now()
+      });
+
+      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s) + broadcaster SSE`);
     }
 
     return alertsGenerated;
@@ -689,7 +706,25 @@ async function generateAttachmentAlerts(process: any, attachments: any[]): Promi
     }
 
     if (alertsGenerated > 0) {
-      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de anexo enviado(s)`);
+      // Broadcaster em tempo real via SSE
+      const wsManager = getWebSocketManager();
+      wsManager.broadcastToWorkspace(process.workspaceId, {
+        type: 'movement:added',
+        processId: process.id,
+        data: {
+          processNumber: process.processNumber,
+          eventType: 'NOVOS_ANEXOS',
+          attachments: importantAttachments.map(att => ({
+            name: att.name,
+            type: att.type,
+            size: att.size
+          })),
+          timestamp: new Date().toISOString()
+        },
+        timestamp: Date.now()
+      });
+
+      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de anexo enviado(s) + broadcaster SSE`);
     }
 
     return alertsGenerated;
@@ -763,7 +798,23 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
     }
 
     if (alertsGenerated > 0) {
-      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s)`);
+      // Broadcaster em tempo real via SSE
+      const wsManager = getWebSocketManager();
+      wsManager.broadcastToWorkspace(process.workspaceId, {
+        type: 'status:changed',
+        processId: process.id,
+        data: {
+          processNumber: process.processNumber,
+          previousStatus: status.previous,
+          currentStatus: status.current,
+          reason: status.reason,
+          urgency: urgency,
+          timestamp: new Date().toISOString()
+        },
+        timestamp: Date.now()
+      });
+
+      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s) + broadcaster SSE`);
     }
 
     return alertsGenerated;

@@ -8,6 +8,7 @@ import { QuotaSystem } from '@/lib/quota-system';
 import { ReportGenerator } from '@/lib/report-generator';
 import { ICONS } from '@/lib/icons';
 import { sendReportReady } from '@/lib/notification-service';
+import { getWebSocketManager } from '@/lib/websocket-manager';
 
 export interface ScheduleConfig {
   windowStart: string;    // "23:00"
@@ -408,7 +409,7 @@ export class ReportScheduler {
       const downloadUrl = (result.publicUrl as string) || '#';
       const expiresAt = result.expiresAt ? new Date(result.expiresAt as string) : undefined;
 
-      // Enviar notificação
+      // Enviar notificação por Email + Slack
       await sendReportReady(
         recipients,
         schedule.name,
@@ -416,6 +417,22 @@ export class ReportScheduler {
         fileSize,
         expiresAt
       );
+
+      // Broadcaster em tempo real via SSE
+      const wsManager = getWebSocketManager();
+      wsManager.broadcastToWorkspace(schedule.workspaceId, {
+        type: 'report:ready',
+        data: {
+          scheduleId: schedule.id,
+          scheduleName: schedule.name,
+          reportType: schedule.type,
+          fileSize: fileSize,
+          downloadUrl,
+          expiresAt: expiresAt?.toISOString(),
+          generatedAt: new Date().toISOString()
+        },
+        timestamp: Date.now()
+      });
 
       console.log(`${ICONS.SUCCESS} [Report] Notificação enviada para: ${recipients.join(', ')}`);
     } catch (error) {
