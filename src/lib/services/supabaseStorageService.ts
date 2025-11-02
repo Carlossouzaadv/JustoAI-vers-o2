@@ -11,21 +11,40 @@
 import { createClient } from '@supabase/supabase-js';
 import { ICONS } from '@/lib/icons';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // Use service key for uploads
+// Lazy-loaded Supabase client (initialized only when needed, not at module import time)
+// This prevents build failures in environments where env vars aren't available yet
+let supabaseClient: ReturnType<typeof createClient> | null = null;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-    detectSessionInUrl: false
+function getSupabaseClient(): ReturnType<typeof createClient> {
+  // Return cached instance if already initialized
+  if (supabaseClient) {
+    return supabaseClient;
   }
-});
+
+  // Initialize client on first use
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error(
+      `${ICONS.ERROR} [Storage] Missing Supabase credentials\n` +
+      `Required: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY\n` +
+      `Storage operations will fail until environment variables are configured`
+    );
+    throw new Error('Missing Supabase environment variables - check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
+    }
+  });
+
+  console.log(`${ICONS.SUCCESS} [Storage] Supabase client initialized`);
+  return supabaseClient;
+}
 
 // Bucket names
 export const STORAGE_BUCKETS = {
@@ -63,7 +82,7 @@ export async function uploadToStorage(
     await ensureBucketExists(bucket);
 
     // Upload file
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(bucket)
       .upload(filePath, fileBuffer, {
         contentType: mimeType,
@@ -202,7 +221,7 @@ export async function uploadAttachment(
  * Get public URL for a file in storage
  */
 export function getPublicUrl(bucket: string, filePath: string): string {
-  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  const { data } = getSupabaseClient().storage.from(bucket).getPublicUrl(filePath);
   return data.publicUrl;
 }
 
@@ -214,7 +233,7 @@ export async function deleteFromStorage(
   filePath: string
 ): Promise<boolean> {
   try {
-    const { error } = await supabase.storage
+    const { error } = await getSupabaseClient().storage
       .from(bucket)
       .remove([filePath]);
 
@@ -239,7 +258,7 @@ export async function listStorageFiles(
   folderPath: string
 ): Promise<Array<{ name: string; id: string; updated_at: string; metadata: Record<string, unknown> }>> {
   try {
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(bucket)
       .list(folderPath);
 
@@ -262,7 +281,7 @@ export async function listStorageFiles(
 async function ensureBucketExists(bucketName: string): Promise<boolean> {
   try {
     // Try to get bucket info
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    const { data: buckets, error: listError } = await getSupabaseClient().storage.listBuckets();
 
     if (listError) {
       console.warn(`${ICONS.WARNING} [Storage] Could not list buckets:`, listError);
@@ -292,7 +311,7 @@ export async function downloadFromStorage(
   filePath: string
 ): Promise<Buffer | null> {
   try {
-    const { data, error } = await supabase.storage
+    const { data, error } = await getSupabaseClient().storage
       .from(bucket)
       .download(filePath);
 
