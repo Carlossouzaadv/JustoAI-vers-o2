@@ -5,11 +5,11 @@
 
  
 export enum ModelTier {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   LITE = 'gemini-2.5-flash-lite',   // Mais barato (95% economia)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   BALANCED = 'gemini-2.5-flash',  // Equilibrado
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   PRO = 'gemini-2.5-pro'          // Maior qualidade
 }
 

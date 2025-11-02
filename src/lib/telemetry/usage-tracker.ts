@@ -458,7 +458,7 @@ export class UsageTracker {
     });
   }
 
-  private async updateMonthlyReportSnapshot(workspaceId: string, _reportType: 'scheduled' | 'on_demand'): Promise<void> {
+  private async updateMonthlyReportSnapshot(_workspaceId: string, _reportType: 'scheduled' | 'on_demand'): Promise<void> {
     // TODO: Implement monthly report snapshot update
     // This method should calculate and store monthly report statistics
     // For now, monthly data is tracked through UsageEvent records

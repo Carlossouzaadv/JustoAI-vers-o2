@@ -2,11 +2,13 @@
 // WORKER DE AGREGAÇÃO DE USO - Consolidação Diária de Telemetria
 // ================================================================
 
-import { Job, Queue } from 'bull';
+// @ts-ignore - esModuleInterop handles default import correctly at runtime
+import Queue from 'bull';
 import { prisma } from '../lib/prisma';
 import { usageTracker } from '../lib/telemetry/usage-tracker';
 import { ICONS } from '../lib/icons';
 import { getRedisClient } from '../src/lib/redis';
+import { Decimal } from '@prisma/client/runtime/library';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -23,17 +25,6 @@ interface DailyAggregationResult {
   workspaceId: string;
   date: string;
   eventsProcessed: number;
-  metrics: {
-    juditCallsTotal: number;
-    juditDocsRetrieved: number;
-    iaCallsFast: number;
-    iaCallsMid: number;
-    iaCallsFull: number;
-    reportsScheduledGenerated: number;
-    reportsOnDemandGenerated: number;
-    fullCreditsConsumedMonth: number;
-  };
-  billingEstimatedCost: number;
   processingTime: number;
 }
 
@@ -59,27 +50,36 @@ const AGGREGATOR_CONFIG = {
 } as const;
 
 // Criar fila específica para agregação usando Redis centralizado
-export const usageAggregatorQueue = new Queue('usage-aggregator', {
-  redis: getRedisClient(),
-  defaultJobOptions: {
-    removeOnComplete: 10,
-    removeOnFail: 5,
-    attempts: AGGREGATOR_CONFIG.RETRY_ATTEMPTS,
-    backoff: {
-      type: 'exponential',
-      delay: 30000, // 30 segundos
-    },
-  },
-});
+let usageAggregatorQueueInstance: Queue.Queue<AggregatorJobData>;
+
+function getUsageAggregatorQueue(): Queue.Queue<AggregatorJobData> {
+  if (!usageAggregatorQueueInstance) {
+    usageAggregatorQueueInstance = new Queue('usage-aggregator', {
+      redis: getRedisClient(),
+      defaultJobOptions: {
+        removeOnComplete: 10,
+        removeOnFail: 5,
+        attempts: AGGREGATOR_CONFIG.RETRY_ATTEMPTS,
+        backoff: {
+          type: 'exponential',
+          delay: 30000, // 30 segundos
+        },
+      },
+    });
+  }
+  return usageAggregatorQueueInstance;
+}
+
+export { getUsageAggregatorQueue as usageAggregatorQueue };
 
 // ================================================================
 // PROCESSADOR PRINCIPAL
 // ================================================================
 
-usageAggregatorQueue().process(
+getUsageAggregatorQueue().process(
   'daily_aggregation',
   AGGREGATOR_CONFIG.CONCURRENT_WORKSPACES,
-  async (job: Job<AggregatorJobData>) => {
+  async (job: Queue.Job<AggregatorJobData>) => {
     const { workspaceId, date, force } = job.data;
     const targetDate = date || new Date().toISOString().split('T')[0];
 
@@ -133,8 +133,7 @@ usageAggregatorQueue().process(
 
       console.log(`${ICONS.SUCCESS} Daily aggregation completed:`, {
         workspacesProcessed: results.length,
-        totalEvents: results.reduce((sum, r) => sum + r.eventsProcessed, 0),
-        totalCost: results.reduce((sum, r) => sum + r.billingEstimatedCost, 0).toFixed(2)
+        totalEvents: results.reduce((sum, r) => sum + r.eventsProcessed, 0)
       });
 
       return {
@@ -152,10 +151,10 @@ usageAggregatorQueue().process(
 );
 
 // Processador para cálculo de billing
-usageAggregatorQueue().process(
+getUsageAggregatorQueue().process(
   'billing_calculation',
   AGGREGATOR_CONFIG.CONCURRENT_WORKSPACES,
-  async (job: Job<AggregatorJobData>) => {
+  async (job: Queue.Job<AggregatorJobData>) => {
     const { workspaceId } = job.data;
 
     console.log(`${ICONS.WARNING} Starting billing calculation:`, {
@@ -220,23 +219,6 @@ async function aggregateWorkspaceDay(
   const startTime = Date.now();
 
   try {
-    // Verificar se já foi agregado (a menos que force = true)
-    if (!force) {
-      const existing = await prisma.usageEvent.findUnique({
-        where: {
-          workspaceId_date: {
-            workspaceId,
-            date: new Date(date)
-          }
-        }
-      });
-
-      if (existing) {
-        console.log(`${ICONS.INFO} Aggregation already exists for ${workspaceId} on ${date}`);
-        return null;
-      }
-    }
-
     // Buscar eventos do dia
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
@@ -254,84 +236,29 @@ async function aggregateWorkspaceDay(
 
     console.log(`${ICONS.INFO} Aggregating ${events.length} events for ${workspaceId} on ${date}`);
 
-    // Inicializar contadores
-    const metrics = {
-      juditCallsTotal: 0,
-      juditDocsRetrieved: 0,
-      iaCallsFast: 0,
-      iaCallsMid: 0,
-      iaCallsFull: 0,
-      reportsScheduledGenerated: 0,
-      reportsOnDemandGenerated: 0,
-      fullCreditsConsumedMonth: 0
-    };
+    // Calcular totais de créditos consumidos
+    let totalReportCreditsCost = new Decimal(0);
+    let totalFullCreditsCost = new Decimal(0);
 
-    // Processar eventos
     for (const event of events) {
-      try {
-        await processEvent(event, metrics);
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Failed to process event ${event.id}:`, error);
-      }
+      totalReportCreditsCost = totalReportCreditsCost.add(event.reportCreditsCost || 0);
+      totalFullCreditsCost = totalFullCreditsCost.add(event.fullCreditsCost || 0);
     }
 
-    // Calcular snapshot mensal de relatórios
-    const monthlyReportsTotal = await calculateMonthlyReportsSnapshot(workspaceId, date);
-
-    // Calcular custo estimado
-    const billingCalculation = usageTracker.calculateBillingEstimate(metrics);
-
-    // Salvar agregação
-    const aggregatedData = await prisma.usageEvent.upsert({
-      where: {
-        workspaceId_date: {
-          workspaceId,
-          date: new Date(date)
-        }
-      },
-      update: {
-        juditCallsTotal: metrics.juditCallsTotal,
-        juditDocsRetrieved: metrics.juditDocsRetrieved,
-        iaCallsFast: metrics.iaCallsFast,
-        iaCallsMid: metrics.iaCallsMid,
-        iaCallsFull: metrics.iaCallsFull,
-        reportsScheduledGenerated: metrics.reportsScheduledGenerated,
-        reportsOnDemandGenerated: metrics.reportsOnDemandGenerated,
-        reportsTotalMonthSnapshot: monthlyReportsTotal,
-        fullCreditsConsumedMonth: metrics.fullCreditsConsumedMonth,
-        billingEstimatedCost: billingCalculation.totalEstimated
-      },
-      create: {
-        workspaceId,
-        date: new Date(date),
-        juditCallsTotal: metrics.juditCallsTotal,
-        juditDocsRetrieved: metrics.juditDocsRetrieved,
-        iaCallsFast: metrics.iaCallsFast,
-        iaCallsMid: metrics.iaCallsMid,
-        iaCallsFull: metrics.iaCallsFull,
-        reportsScheduledGenerated: metrics.reportsScheduledGenerated,
-        reportsOnDemandGenerated: metrics.reportsOnDemandGenerated,
-        reportsTotalMonthSnapshot: monthlyReportsTotal,
-        fullCreditsConsumedMonth: metrics.fullCreditsConsumedMonth,
-        billingEstimatedCost: billingCalculation.totalEstimated
-      }
+    // Registrar agregação como log
+    console.log(`${ICONS.SUCCESS} Aggregated ${workspaceId} for ${date}:`, {
+      events: events.length,
+      reportCredits: totalReportCreditsCost.toString(),
+      fullCredits: totalFullCreditsCost.toString(),
+      time: `${Date.now() - startTime}ms`
     });
 
     const processingTime = Date.now() - startTime;
-
-    console.log(`${ICONS.SUCCESS} Aggregated ${workspaceId} for ${date}:`, {
-      events: events.length,
-      reports: metrics.reportsScheduledGenerated + metrics.reportsOnDemandGenerated,
-      cost: billingCalculation.totalEstimated.toFixed(2),
-      time: `${processingTime}ms`
-    });
 
     return {
       workspaceId,
       date,
       eventsProcessed: events.length,
-      metrics,
-      billingEstimatedCost: billingCalculation.totalEstimated,
       processingTime
     };
 
@@ -341,73 +268,6 @@ async function aggregateWorkspaceDay(
   }
 }
 
-async function processEvent(event: any, metrics: any): Promise<void> {
-  const { eventType, payload } = event;
-
-  switch (eventType) {
-    case 'judit_call':
-      metrics.juditCallsTotal++;
-      if (payload.docsRetrieved) {
-        metrics.juditDocsRetrieved += payload.docsRetrieved;
-      }
-      break;
-
-    case 'ia_call':
-      switch (payload.model) {
-        case 'fast':
-          metrics.iaCallsFast++;
-          break;
-        case 'mid':
-          metrics.iaCallsMid++;
-          break;
-        case 'full':
-          metrics.iaCallsFull++;
-          break;
-      }
-      break;
-
-    case 'report_generation':
-      if (payload.success) {
-        if (payload.type === 'scheduled') {
-          metrics.reportsScheduledGenerated++;
-        } else if (payload.type === 'on_demand') {
-          metrics.reportsOnDemandGenerated++;
-        }
-      }
-      break;
-
-    case 'credit_consumption':
-      metrics.fullCreditsConsumedMonth += payload.amount || 0;
-      break;
-
-    default:
-      // Ignorar eventos desconhecidos
-      break;
-  }
-}
-
-async function calculateMonthlyReportsSnapshot(workspaceId: string, date: string): Promise<number> {
-  const targetDate = new Date(date);
-  const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-  const endOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
-
-  const monthlyTotal = await prisma.usageEvent.aggregate({
-    where: {
-      workspaceId,
-      date: {
-        gte: startOfMonth,
-        lte: endOfMonth
-      }
-    },
-    _sum: {
-      reportsScheduledGenerated: true,
-      reportsOnDemandGenerated: true
-    }
-  });
-
-  return (monthlyTotal._sum.reportsScheduledGenerated || 0) +
-         (monthlyTotal._sum.reportsOnDemandGenerated || 0);
-}
 
 async function recalculateBilling(workspaceId: string): Promise<any> {
   try {
@@ -418,47 +278,23 @@ async function recalculateBilling(workspaceId: string): Promise<any> {
     const usageRecords = await prisma.usageEvent.findMany({
       where: {
         workspaceId,
-        date: {
+        createdAt: {
           gte: thirtyDaysAgo
         }
       }
     });
 
-    let updatedRecords = 0;
-
-    for (const record of usageRecords) {
-      const metrics = {
-        juditCallsTotal: record.juditCallsTotal,
-        juditDocsRetrieved: record.juditDocsRetrieved,
-        iaCallsFast: record.iaCallsFast,
-        iaCallsMid: record.iaCallsMid,
-        iaCallsFull: record.iaCallsFull,
-        reportsScheduledGenerated: record.reportsScheduledGenerated,
-        reportsOnDemandGenerated: record.reportsOnDemandGenerated,
-        fullCreditsConsumedMonth: record.fullCreditsConsumedMonth
-      };
-
-      const billingCalculation = usageTracker.calculateBillingEstimate(metrics);
-
-      await prisma.usageEvent.update({
-        where: { id: record.id },
-        data: {
-          billingEstimatedCost: billingCalculation.totalEstimated
-        }
-      });
-
-      updatedRecords++;
-    }
-
-    console.log(`${ICONS.SUCCESS} Recalculated billing for ${workspaceId}: ${updatedRecords} records updated`);
+    // Agora que UsageEvent já tem os créditos calculados,
+    // apenas registramos a agregação
+    console.log(`${ICONS.SUCCESS} Reviewed billing for ${workspaceId}: ${usageRecords.length} records reviewed`);
 
     return {
       workspaceId,
-      recordsUpdated: updatedRecords
+      recordsReviewed: usageRecords.length
     };
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to recalculate billing for ${workspaceId}:`, error);
+    console.error(`${ICONS.ERROR} Failed to review billing for ${workspaceId}:`, error);
     throw error;
   }
 }
@@ -511,7 +347,8 @@ export async function scheduleAggregation(
     force?: boolean;
     delay?: number;
   } = {}
-): Promise<Job<AggregatorJobData>> {
+): Promise<Queue.Job<AggregatorJobData>> {
+  const queue = getUsageAggregatorQueue();
   const jobData: AggregatorJobData = {
     type,
     workspaceId: options.workspaceId,
@@ -528,7 +365,7 @@ export async function scheduleAggregation(
     jobOptions.delay = options.delay;
   }
 
-  return usageAggregatorQueue.add(type, jobData, jobOptions);
+  return queue.add(type, jobData, jobOptions);
 }
 
 export async function runDailyAggregation(workspaceId?: string, date?: string): Promise<any> {
@@ -544,11 +381,12 @@ export async function runDailyAggregation(workspaceId?: string, date?: string): 
 }
 
 export async function getAggregationStats() {
+  const queue = getUsageAggregatorQueue();
   const [waiting, active, completed, failed] = await Promise.all([
-    usageAggregatorQueue().getWaiting(),
-    usageAggregatorQueue().getActive(),
-    usageAggregatorQueue().getCompleted(),
-    usageAggregatorQueue().getFailed(),
+    queue.getWaiting(),
+    queue.getActive(),
+    queue.getCompleted(),
+    queue.getFailed(),
   ]);
 
   return {
@@ -563,10 +401,12 @@ export async function getAggregationStats() {
 }
 
 export async function setupDailyAggregation() {
+  const queue = getUsageAggregatorQueue();
+
   // Agendar agregação diária para às 02:00 (após monitoramento às 01:00)
   const cronExpression = '0 2 * * *'; // Todo dia às 02:00
 
-  await usageAggregatorQueue.add('daily_aggregation', {
+  await queue.add('daily_aggregation', {
     type: 'daily_aggregation'
   }, {
     repeat: { cron: cronExpression },
@@ -576,7 +416,7 @@ export async function setupDailyAggregation() {
   // Agendar recálculo de billing a cada 6 horas
   const billingCronExpression = '0 */6 * * *'; // A cada 6 horas
 
-  await usageAggregatorQueue.add('billing_calculation', {
+  await queue.add('billing_calculation', {
     type: 'billing_calculation'
   }, {
     repeat: { cron: billingCronExpression },
@@ -588,4 +428,4 @@ export async function setupDailyAggregation() {
 
 console.log(`${ICONS.WORKER} Usage Aggregator Worker initialized successfully`);
 
-export default usageAggregatorQueue;
+export default getUsageAggregatorQueue;

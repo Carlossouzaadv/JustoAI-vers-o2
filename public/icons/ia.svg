@@ -1,0 +1,23 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left brain hemisphere -->
+  <path d="M24 28C22 28 20 30 20 33C20 36 21 38 22 40C22 43 24 45 26 45C28 45 29 43 30 40C31 37 31 33 31 30C31 28.5 29.5 28 28 28H24Z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+
+  <!-- Right brain hemisphere -->
+  <path d="M40 28C42 28 44 30 44 33C44 36 43 38 42 40C42 43 40 45 38 45C36 45 35 43 34 40C33 37 33 33 33 30C33 28.5 34.5 28 36 28H40Z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+
+  <!-- Brain folds pattern -->
+  <path d="M28 32C27 34 27 38 28 40" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M36 32C37 34 37 38 36 40" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <path d="M32 28V32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M32 44V48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- Rays around brain -->
+  <line x1="16" y1="36" x2="20" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="44" y1="36" x2="48" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="19" y1="19" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="42" y1="42" x2="45" y2="45" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="12" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="32" y1="48" x2="32" y2="52" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="45" y1="19" x2="42" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <line x1="22" y1="42" x2="19" y2="45" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+</svg>

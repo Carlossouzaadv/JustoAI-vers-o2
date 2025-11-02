@@ -125,7 +125,7 @@ export class PDFTemplateEngine {
       };
 
       // Gerar PDF
-      const _pdfBuffer = await page.pdf(pdfOptions);
+      await page.pdf(pdfOptions);
       await page.close();
 
       // Verificar arquivo gerado
@@ -193,7 +193,7 @@ export class PDFTemplateEngine {
         </main>
 
         <footer class="document-footer">
-            ${customization.footerText || this.getDefaultFooter(options)}
+            ${customization.footerText || this.getDefaultFooter()}
         </footer>
     </div>
 </body>
@@ -617,7 +617,7 @@ export class PDFTemplateEngine {
   /**
    * Gera rodapé padrão
    */
-  private getDefaultFooter(_options: PDFTemplateOptions): string {
+  private getDefaultFooter(): string {
     const generateTime = new Date().toLocaleString('pt-BR');
 
     return `

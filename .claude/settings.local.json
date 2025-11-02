@@ -31,7 +31,9 @@
       "Bash(npm run lint)",
       "Bash(npm run db:migrate:*)",
       "Bash(tee:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
     "ask": []

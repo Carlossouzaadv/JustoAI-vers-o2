@@ -35,7 +35,7 @@ async function extractTextFromPDF(pdfPath) {
     log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 1: pdf-parse');
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const pdfParse = require('pdf-parse');
       const fileBuffer = await fs.readFile(pdfPath);
       const pdfData = await pdfParse(fileBuffer);
@@ -55,7 +55,7 @@ async function extractTextFromPDF(pdfPath) {
       log(`${ICONS.RAILWAY} ${ICONS.PDF}`, 'Tentando método 2: pdfjs-dist');
 
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+         
         const pdfjs = require('pdfjs-dist');
 
         // Disable workers for Node.js environment

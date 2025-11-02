@@ -74,8 +74,7 @@ export class TimelineEnricherService {
    */
   async associateToBaseEvent(
     newEvent: TimelineMovement,
-    existingEvents: ProcessTimelineEntry[],
-    _caseId: string
+    existingEvents: ProcessTimelineEntry[]
   ): Promise<AssociationResult> {
     // Se o evento novo é JUDIT, nunca é enriquecedor
     if (isJuditSource(newEvent.source)) {

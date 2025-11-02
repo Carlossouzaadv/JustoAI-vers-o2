@@ -125,7 +125,7 @@ export class PDFTemplateEngine {
       };
 
       // Gerar PDF
-      const pdfBuffer = await page.pdf(pdfOptions);
+      await page.pdf(pdfOptions);
       await page.close();
 
       // Verificar arquivo gerado
@@ -193,7 +193,7 @@ export class PDFTemplateEngine {
         </main>
 
         <footer class="document-footer">
-            ${customization.footerText || this.getDefaultFooter(options)}
+            ${customization.footerText || this.getDefaultFooter()}
         </footer>
     </div>
 </body>

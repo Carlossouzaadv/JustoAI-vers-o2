@@ -21,6 +21,7 @@ import { TextCleaner } from '@/lib/text-cleaner';
 import { AIModelRouter } from '@/lib/ai-model-router';
 import { mapAnalysisToPreview, extractCoreInfo } from '@/lib/ai-analysis-mapper';
 import { ICONS } from '@/lib/icons';
+import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
 
 // Configuração de runtime para suportar uploads de arquivos grandes
 // maxDuration: tempo máximo para a função executar (Vercel limit)
@@ -506,8 +507,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 15. SALVAR ARQUIVO FÍSICO
-    const finalPath = await saveFinalFile(buffer, file.name);
+    // 15. SALVAR ARQUIVO FÍSICO (PERMANENTE EM SUPABASE STORAGE)
+    const finalPath = await savePermanentFile(buffer, file.name, workspaceId, targetCaseId);
 
     // 16. CRIAR DOCUMENTO NO BANCO
     const document = await prisma.caseDocument.create({
@@ -816,10 +817,49 @@ async function saveTemporaryFile(buffer: Buffer, fileName: string): Promise<stri
   return tempPath;
 }
 
+/**
+ * Save file permanently to Supabase Storage with fallback to temp storage
+ * @param buffer - File content
+ * @param fileName - Original file name
+ * @param workspaceId - Workspace ID for storage path organization
+ * @param caseId - Case ID for storage path organization
+ * @returns URL or path to the stored file
+ */
+async function savePermanentFile(
+  buffer: Buffer,
+  fileName: string,
+  workspaceId: string,
+  caseId: string
+): Promise<string> {
+  try {
+    // Upload to Supabase Storage
+    const url = await uploadCaseDocument(
+      workspaceId,
+      caseId,
+      fileName,
+      buffer,
+      'application/pdf'
+    );
+
+    if (url) {
+      console.log(`${ICONS.SUCCESS} [Storage] Arquivo salvo permanentemente: ${url}`);
+      return url;
+    }
+
+    // If upload fails, fallback to temp storage
+    console.warn(`${ICONS.WARNING} [Storage] Supabase upload failed, using temporary storage`);
+    return await saveFinalFile(buffer, fileName);
+  } catch (error) {
+    console.error(`${ICONS.ERROR} [Storage] Error saving permanent file:`, error);
+    // Fallback to temporary storage
+    return await saveFinalFile(buffer, fileName);
+  }
+}
+
 async function saveFinalFile(buffer: Buffer, fileName: string): Promise<string> {
   // Use /tmp which is available in all environments (Vercel, Railway, local)
   // Note: /tmp is ephemeral on Vercel - files are deleted after function completes
-  // For persistent storage, integrate with S3, Supabase Storage, or similar
+  // For persistent storage, Supabase Storage is used (see savePermanentFile)
   const uploadsDir = '/tmp/justoai-uploads';
   if (!existsSync(uploadsDir)) {
     await mkdir(uploadsDir, { recursive: true });

@@ -387,8 +387,7 @@ function extractKeyInformation(text: string): Partial<PDFMetadata> {
  */
 export async function extractPDFMetadata(
   text: string,
-  fileName: string,
-  _buffer?: Buffer
+  fileName: string
 ): Promise<PDFMetadata> {
   try {
     console.log(`${ICONS.EXTRACT} [PDF Metadata] Extraindo metadata de: ${fileName}`);

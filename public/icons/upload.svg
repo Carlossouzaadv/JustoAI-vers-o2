@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document outline -->
+  <rect x="12" y="10" width="32" height="44" rx="2" stroke="currentColor" stroke-width="2.5" fill="none"/>
+
+  <!-- Document corner fold -->
+  <path d="M44 10V22H56V10Z" fill="currentColor" opacity="0.3"/>
+  <path d="M44 10L56 22" stroke="currentColor" stroke-width="2.5"/>
+
+  <!-- Chart/Graph line -->
+  <path d="M18 36L24 32L28 35L38 24" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Arrow pointing up -->
+  <path d="M38 24L40 18L42 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="40" y1="24" x2="40" y2="35" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

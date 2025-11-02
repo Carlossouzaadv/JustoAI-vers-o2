@@ -17,6 +17,7 @@ import { addOnboardingJob } from '@/lib/queue/juditQueue';
 import { getDocumentHashManager } from '@/lib/document-hash';
 import { extractPDFMetadata } from '@/lib/services/localPDFMetadataExtractor';
 import { updateCaseSummaryDescription } from '@/lib/services/summaryConsolidator';
+import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
 
 // ================================================================
 // VALIDATION SCHEMA
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest) {
 
     let documentMetadata;
     try {
-      documentMetadata = await extractPDFMetadata(cleanText, file.name, buffer);
+      documentMetadata = await extractPDFMetadata(cleanText, file.name);
       console.log(`${ICONS.SUCCESS} [Upload] Metadata extraída:`, {
         documentType: documentMetadata.documentType,
         documentDate: documentMetadata.documentDate?.toISOString(),
@@ -281,11 +282,30 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.SUCCESS} [Upload] Case criado: ${newCase.id}`);
 
     // ============================================================
-    // 12. SALVAR DOCUMENTO
+    // 12. SALVAR DOCUMENTO (PERMANENTE EM SUPABASE STORAGE)
     // ============================================================
 
-    // TODO: Implementar upload para S3 ou storage permanente
-    // Por enquanto, usar path temporário
+    // Upload to Supabase Storage with fallback to temp storage
+    let documentUrl = tempPath; // Default fallback
+    try {
+      const permanentUrl = await uploadCaseDocument(
+        workspaceId,
+        newCase.id,
+        file.name,
+        buffer,
+        file.type
+      );
+
+      if (permanentUrl) {
+        documentUrl = permanentUrl;
+        console.log(`${ICONS.SUCCESS} [Storage] Document stored permanently: ${permanentUrl}`);
+      } else {
+        console.warn(`${ICONS.WARNING} [Storage] Could not upload to Supabase, using temporary path`);
+      }
+    } catch (storageError) {
+      console.error(`${ICONS.ERROR} [Storage] Error uploading document:`, storageError);
+      console.warn(`${ICONS.INFO} Using temporary path as fallback`);
+    }
 
     const document = await prisma.caseDocument.create({
       data: {
@@ -295,8 +315,8 @@ export async function POST(request: NextRequest) {
         type: documentMetadata.documentTypeCategory as any, // Usar metadata extraída
         mimeType: file.type,
         size: file.size,
-        url: tempPath, // TODO: substituir por URL S3
-        path: tempPath,
+        url: documentUrl, // Supabase Storage URL or temp fallback
+        path: documentUrl,
         extractedText,
         cleanText,
         textSha: fileSha256,
