@@ -1,0 +1,30 @@
+# Railway-specific files (not needed on Vercel)
+src/lib/pdf-extractor.js
+prisma/migrations/
+
+# Development files
+.env.local
+.env.*.local
+.git
+.gitignore
+
+# Build artifacts
+.next/
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
