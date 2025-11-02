@@ -5,6 +5,7 @@
 
 import cron from 'node-cron';
 import { executeDailyCheck } from './dailyJuditCheck';
+import { sendJobSuccess, sendJobFailure } from '@/lib/notification-service';
 
 // ================================================================
 // TIPOS
@@ -56,12 +57,26 @@ const JOBS: JobConfig[] = [
         duration: `${(result.duration / 60000).toFixed(2)} min`,
       });
 
-      // TODO: Enviar notificação de sucesso
+      // ✅ Enviar notificação de sucesso
+      sendJobSuccess('Daily JUDIT Check', {
+        'Total': result.total,
+        'Bem-sucedidos': result.successful,
+        'Falhados': result.failed || 0,
+        'Com Novas Movimentações': result.withNewMovements,
+        'Duração (minutos)': (result.duration / 60000).toFixed(2)
+      }).catch((err) => {
+        log.error('Erro ao enviar notificação de sucesso', err);
+      });
     },
     onError: (error) => {
       log.error('Daily JUDIT Check falhou', error);
 
-      // TODO: Enviar alerta crítico via email/Slack
+      // ✅ Enviar alerta crítico via email/Slack
+      sendJobFailure('Daily JUDIT Check', error as Error, {
+        'Timestamp': new Date().toISOString()
+      }).catch((err) => {
+        log.error('Erro ao enviar alerta de falha', err);
+      });
     },
   },
 

@@ -10,6 +10,7 @@ import {
   updateProcessWithMovements,
   analyzeMovementsAndFetchAttachmentsIfNeeded,
 } from '@/lib/services/juditMonitoringService';
+import { sendDailyCheckSummary } from '@/lib/notification-service';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -449,22 +450,32 @@ export async function executeDailyCheck() {
   try {
     const result = await runDailyJuditCheck();
 
-    // Aqui você pode adicionar notificações, alertas, etc.
+    // ✅ Enviar notificação de sucesso com resumo
+    if (result.total > 0) {
+      sendDailyCheckSummary(
+        result.total,
+        result.successful,
+        result.failed,
+        result.withNewMovements,
+        result.duration
+      ).catch((err) => {
+        log.error('Erro ao enviar resumo do Daily Check', err);
+      });
+    }
+
+    // ✅ Alertas específicos
     if (result.failed > 0) {
       log.warn(`ATENÇÃO: ${result.failed} processos falharam na verificação`);
-      // TODO: Enviar alerta via email/slack
     }
 
     if (result.withNewMovements > 0) {
       log.success(`${result.withNewMovements} processos com novos andamentos`);
-      // TODO: Enviar resumo via email/slack
     }
 
     return result;
 
   } catch (error) {
     log.error('Erro crítico na execução do cron job', error);
-    // TODO: Enviar alerta crítico
     throw error;
   }
 }

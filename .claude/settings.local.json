@@ -33,7 +33,8 @@
       "Bash(tee:*)",
       "Bash(awk:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []
