@@ -6,7 +6,7 @@
 import { prisma } from './prisma';
 import { ICONS } from './icons';
 
-export type WorkspaceRole = 'admin' | 'member' | 'viewer';
+export type WorkspaceRole = 'ADMIN' | 'MEMBER' | 'VIEWER';
 
 export interface PermissionCheck {
   isAuthorized: boolean;
@@ -28,7 +28,7 @@ export async function isWorkspaceAdmin(
       where: {
         userId,
         workspaceId,
-        role: 'admin' // Assuming 'admin' role exists in schema
+        role: 'ADMIN'
       }
     });
 
@@ -132,11 +132,11 @@ export async function requireWorkspaceAdmin(
   userId: string,
   workspaceId: string
 ): Promise<{ authorized: true } | { authorized: false; error: string }> {
-  const check = await validateUserRole(userId, workspaceId, 'admin');
+  const check = await validateUserRole(userId, workspaceId, 'ADMIN');
 
   if (!check.isAuthorized) {
     console.warn(
-      `${ICONS.LOCK} Admin access denied for user ${userId} on workspace ${workspaceId}: ${check.denialReason}`
+      `${ICONS.SHIELD} Admin access denied for user ${userId} on workspace ${workspaceId}: ${check.denialReason}`
     );
     return {
       authorized: false,
@@ -144,7 +144,7 @@ export async function requireWorkspaceAdmin(
     };
   }
 
-  console.log(`${ICONS.LOCK} Admin access granted for user ${userId} on workspace ${workspaceId}`);
+  console.log(`${ICONS.SHIELD} Admin access granted for user ${userId} on workspace ${workspaceId}`);
   return { authorized: true };
 }
 
@@ -160,7 +160,7 @@ export async function requireWorkspaceRole(
 
   if (!check.isAuthorized) {
     console.warn(
-      `${ICONS.LOCK} Access denied for user ${userId} on workspace ${workspaceId}: ${check.denialReason}`
+      `${ICONS.SHIELD} Access denied for user ${userId} on workspace ${workspaceId}: ${check.denialReason}`
     );
     return {
       authorized: false,
@@ -169,9 +169,9 @@ export async function requireWorkspaceRole(
   }
 
   console.log(
-    `${ICONS.LOCK} Access granted (${check.role}) for user ${userId} on workspace ${workspaceId}`
+    `${ICONS.SHIELD} Access granted (${check.role}) for user ${userId} on workspace ${workspaceId}`
   );
-  return { authorized: true, role: check.role || 'member' };
+  return { authorized: true, role: check.role || 'MEMBER' };
 }
 
 /**
@@ -190,7 +190,7 @@ export async function getUserWorkspaceAccess(
 
     const access = userWorkspaces.map(uw => ({
       workspaceId: uw.workspaceId,
-      role: 'member' as WorkspaceRole // Default role
+      role: 'MEMBER' as WorkspaceRole // Default role
     }));
 
     return access;
@@ -220,7 +220,7 @@ export async function validateAdminRequest(
     return { valid: false, reason: 'Workspace ID not provided' };
   }
 
-  const check = await validateUserRole(userId, workspaceId, 'admin');
+  const check = await validateUserRole(userId, workspaceId, 'ADMIN');
 
   return {
     valid: check.isAuthorized,

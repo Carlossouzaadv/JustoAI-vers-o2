@@ -14,6 +14,7 @@ import {
   documentProcessingQueue as getDocumentProcessingQueue,
   notificationQueue as getNotificationQueue
 } from './queues';
+import { validateBullBoardAccess } from './bull-board-auth';
 
 // Call the getter functions to get the actual queue instances
 const syncQueue = getSyncQueue();
@@ -81,30 +82,57 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
 
 /**
  * Middleware para proteger o Bull Board
- * Só permite acesso para usuários autenticados e admins
+ * Só permite acesso para usuários admin autenticados
  */
-export function bullBoardAuthMiddleware(req: Express.Request, res: Express.Response, next: Express.NextFunction) {
-  // Em desenvolvimento, permitir acesso direto
-  if (process.env.NODE_ENV === 'development') {
-    return next();
+export async function bullBoardAuthMiddleware(
+  req: Express.Request,
+  res: Express.Response,
+  next: Express.NextFunction
+) {
+  try {
+    // Em desenvolvimento, permitir com token simples
+    if (process.env.NODE_ENV === 'development') {
+      const devToken = req.headers.authorization?.substring(7);
+      if (devToken === process.env.BULL_BOARD_ACCESS_TOKEN) {
+        return next();
+      }
+      // Se não houver token válido, permitir sem autenticação em dev (para debugging)
+      // mas log de warning
+      console.warn('⚠️  Bull Board accessed without proper token in development');
+      return next();
+    }
+
+    // Em produção, validação rigorosa
+    const validation = await validateBullBoardAccess(req);
+
+    if (!validation.authorized) {
+      console.warn(
+        `🔒 Bull Board access denied: ${validation.reason} (User: ${validation.userId}, Workspace: ${validation.workspaceId})`
+      );
+      return res.status(403).json({
+        error: 'Admin access required',
+        reason: validation.reason
+      });
+    }
+
+    // Attach user info to request for logging
+    (req as any).bullBoardUser = {
+      userId: validation.userId,
+      workspaceId: validation.workspaceId,
+      role: validation.role
+    };
+
+    console.log(
+      `✅ Bull Board access granted for user ${validation.userId} (role: ${validation.role})`
+    );
+
+    next();
+  } catch (error) {
+    console.error('🔴 Error validating Bull Board access:', error);
+    return res.status(500).json({
+      error: 'Internal server error validating access'
+    });
   }
-
-  // Verificar autenticação
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Authorization required' });
-  }
-
-  // Verificar se é admin (implementar lógica específica)
-  const token = authHeader.substring(7);
-
-  // TODO: Implementar verificação real de token e permissões
-  // Por enquanto, verificar uma chave simples para acesso admin
-  if (token !== process.env.BULL_BOARD_ACCESS_TOKEN) {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-
-  next();
 }
 
 // === ESTATÍSTICAS CUSTOMIZADAS ===
