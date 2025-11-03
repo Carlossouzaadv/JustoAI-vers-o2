@@ -523,19 +523,29 @@ http://localhost:3000/api/admin/observability
 ### Data Sources & Configuration
 
 ```bash
+# See docs/CONFIGURATION_REFERENCE.md for complete .env.local template
+# ⚠️ NEVER commit real API keys - use .env.example as reference only
+
 # .env.local - Sentry Configuration
-SENTRY_DSN=https://8a6efddb7bab038e0d0601edd41ea152@o4510178719039488.ingest.us.sentry.io/4510179104456704
-SENTRY_AUTH_TOKEN=sntrys_eyJpc3M...  # API token for Sentry API access
+SENTRY_DSN=https://[YOUR_SENTRY_KEY]@[YOUR_SENTRY_DOMAIN]/[PROJECT_ID]
+SENTRY_AUTH_TOKEN=sntrys_[YOUR_AUTH_TOKEN]
 
 # .env.local - Queue Monitoring
-BULL_BOARD_ACCESS_TOKEN=983efa93e679b1ddba6f2287598f9fd61fb2c9786c912b74230dde295271c935
+BULL_BOARD_ACCESS_TOKEN=[YOUR_RANDOM_TOKEN]
 SAVE_SYNC_STATS=true
 
-# .env.local - External Services
-RESEND_API_KEY=re_9xwwqQ9R_EcjRQuA6eD9Aj1xHmgAo8Tvz
-GOOGLE_API_KEY=AIzaSyBepx-oedsAOION2hvIbR5fYzUaU1Zs3kM
-JUDIT_API_KEY=4b851ddf-83f1-4f68-8f82-54af336b3d52
+# .env.local - External Services (Get from each service's dashboard)
+RESEND_API_KEY=re_[YOUR_RESEND_KEY]
+GOOGLE_API_KEY=[YOUR_GOOGLE_API_KEY]
+JUDIT_API_KEY=[YOUR_JUDIT_API_KEY]
 ```
+
+**⚠️ Security Rules:**
+- ✅ Keep `.env.local` in `.gitignore` (never commit)
+- ✅ Use `.env.example` as template
+- ❌ Never paste real keys in documentation
+- ❌ Never commit secrets to Git
+- See [docs/CONFIGURATION_REFERENCE.md](./docs/CONFIGURATION_REFERENCE.md) for setup guide (template only)
 
 ### Where Error Data Goes
 
