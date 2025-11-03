@@ -150,9 +150,10 @@ npm run test:watch   # Watch mode
 | **[resumo_projeto_atual.md](./resumo_projeto_atual.md)** | 📊 **START HERE** - Project overview, critical issues, & next sprint priorities |
 | **[TODO.md](./TODO.md)** | 📋 Consolidated 40-item TODO list with priorities, effort estimates, & checklists |
 | **[TODO_TRACKER.md](./TODO_TRACKER.md)** | 🎯 Sprint-focused tracker with recommended action plan |
+| **🆕 [docs/CONFIGURATION_REFERENCE.md](./docs/CONFIGURATION_REFERENCE.md)** | ⚙️ **ESSENTIAL** - Complete .env reference, all API keys, and configuration |
 | [CLAUDE.md](./CLAUDE.md) | Development guidelines for Claude Code |
-| **🆕 [docs/SENTRY_OBSERVABILITY.md](./docs/SENTRY_OBSERVABILITY.md)** | 🔍 **NEW** - Complete error tracking & observability dashboard guide |
-| **🆕 [docs/SENTRY_QUICK_START.md](./docs/SENTRY_QUICK_START.md)** | 🆕 Quick reference for daily monitoring |
+| **🆕 [docs/SENTRY_OBSERVABILITY.md](./docs/SENTRY_OBSERVABILITY.md)** | 🔍 Complete error tracking & observability dashboard guide |
+| **🆕 [docs/SENTRY_QUICK_START.md](./docs/SENTRY_QUICK_START.md)** | Quick reference for daily monitoring |
 | [docs/OCR_ARCHITECTURE.md](./docs/OCR_ARCHITECTURE.md) | PDF OCR implementation (Tesseract.js cascade) |
 | [docs/JUDIT_INTEGRATION.md](./docs/JUDIT_INTEGRATION.md) | JUDIT API integration guide |
 | [docs/ADMIN_PERMISSIONS.md](./docs/ADMIN_PERMISSIONS.md) | RBAC implementation guide |
