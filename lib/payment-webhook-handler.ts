@@ -7,6 +7,7 @@ import { prisma } from './prisma';
 import { getEmailService } from './email-service';
 import { ICONS } from './icons';
 import { randomUUID } from 'crypto';
+import { verifyPaymentWebhookSignature, validateWebhookConfig } from './payment-signature-verification';
 
 export interface PaymentWebhookPayload {
   provider: 'stripe' | 'mercadopago' | 'pagseguro' | 'pix' | 'custom';
@@ -453,15 +454,39 @@ export class PaymentWebhookHandler {
    * Verify webhook signature
    */
   private verifyWebhookSignature(provider: string, headers: Record<string, string>, body: string): boolean {
-    // Por enquanto, sempre válido - implementar verificação real conforme provider
     console.log(`${ICONS.SHIELD} Verificando assinatura do webhook ${provider}...`);
 
-    // TODO: Implementar verificação real de assinatura para cada provider
-    // Stripe: usar stripe.webhooks.constructEvent
-    // MercadoPago: verificar x-signature header
-    // etc.
+    try {
+      // Validate configuration before attempting verification
+      const config = validateWebhookConfig(provider);
+      if (!config.valid) {
+        console.error(
+          `${ICONS.ERROR} Webhook config incompleto para ${provider}. Faltam: ${config.missing.join(', ')}`
+        );
+        // Log error but fail secure - don't accept unsigned webhooks
+        return false;
+      }
 
-    return true;
+      // Perform signature verification
+      const isValid = verifyPaymentWebhookSignature(provider, headers, body);
+
+      if (!isValid) {
+        console.error(
+          `${ICONS.ERROR} Assinatura do webhook inválida ou não autenticada para ${provider}`
+        );
+        return false;
+      }
+
+      console.log(`${ICONS.SUCCESS} Webhook ${provider} autenticado com sucesso`);
+      return true;
+    } catch (error) {
+      console.error(
+        `${ICONS.ERROR} Erro ao verificar assinatura do webhook ${provider}:`,
+        error
+      );
+      // Fail secure - don't accept if verification errors
+      return false;
+    }
   }
 
   /**
