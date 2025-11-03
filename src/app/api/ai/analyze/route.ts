@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getRealAnalysisService } from '@/lib/real-analysis-service';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
+import { requireWorkspaceAdmin } from '@/lib/permission-validator';
 
 // ================================
 // VALIDAÇÃO DE INPUT
@@ -223,9 +224,23 @@ export async function DELETE(req: NextRequest) {
     // 1. Autenticação (apenas admins)
     const { user, workspace } = await validateAuthAndGetUser(req);
 
-    // TODO: Verificar se user é admin do workspace
+    // 2. Verificar se user é admin do workspace
+    const adminCheck = await requireWorkspaceAdmin(user.id, workspace.id);
+    if (!adminCheck.authorized) {
+      console.warn(
+        `${ICONS.LOCK} Acesso negado: ${adminCheck.error}`
+      );
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Acesso negado. Apenas admins podem limpar o cache.',
+          details: adminCheck.error
+        },
+        { status: 403 }
+      );
+    }
 
-    // 2. Limpar cache
+    // 3. Limpar cache
     const { getAiCache } = await import('@/lib/ai-cache-manager');
     const cache = getAiCache();
     await cache.clearAll();
