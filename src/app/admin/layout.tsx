@@ -81,6 +81,18 @@ export default function AdminLayout({
                   📊 JUDIT Dashboard
                 </a>
                 <a
+                  href="/admin/observability"
+                  className="text-slate-600 hover:text-slate-900 font-medium"
+                >
+                  🔍 Observabilidade
+                </a>
+                <a
+                  href="/admin/queues"
+                  className="text-slate-600 hover:text-slate-900 font-medium"
+                >
+                  ⚙️ Filas
+                </a>
+                <a
                   href="/"
                   className="text-slate-600 hover:text-slate-900 font-medium"
                 >
