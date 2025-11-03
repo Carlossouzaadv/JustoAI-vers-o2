@@ -15,16 +15,21 @@
 
 ---
 
-## ✅ CRITICAL ISSUES - ALL RESOLVED (Nov 3, 2025)
+## ✅ PROGRESS UPDATE - Nov 3, 2025 (TODAY)
 
-| Issue | Status | Completion |
-|-------|--------|------------|
-| ✅ Centralized Error Tracking (Sentry) | 🟢 COMPLETE | 3h - Real SDK with admin dashboard |
-| ✅ Payment Webhook Signature Verification | 🟢 COMPLETE | 4h - Provider-specific (5 types) |
-| ✅ Admin Permission Validation | 🟢 COMPLETE | 2.5h - Database-backed RBAC |
-| ✅ Bull Board Access Control | 🟢 COMPLETE | 1.5h - Admin-only middleware |
+### Completed This Session
+| Blocker | Status | What Was Done |
+|---------|--------|---------------|
+| **BLOCKER 1: Sentry Activation** | ✅ DONE | Real error tracking with Sentry Next.js SDK, server/client/edge configs, error boundary, Sentry admin dashboard active |
+| **BLOCKER 2: Webhook Verification** | ✅ DONE | HMAC-SHA256 signature verification for Stripe, MercadoPago, PagSeguro, Pix. Fixed critical security vulnerability. |
 
-**New:** 🔍 [Observability Dashboard](./docs/SENTRY_OBSERVABILITY.md) - See section below
+### Still Pending (Continue Tomorrow)
+| Blocker | Status | Effort | Priority |
+|---------|--------|--------|----------|
+| **BLOCKER 3: Admin Permission Validation** | ⏳ TODO | 2.5h | HIGH |
+| **BLOCKER 4: Bull Board RBAC** | ⏳ TODO | 1.5h | HIGH |
+| **FEATURE 1: Real Credit System** | ⏳ TODO | 3h | HIGH |
+| **FEATURE 2-6: Other Features** | ⏳ TODO | Varies | MEDIUM |
 
 **See [resumo_projeto_atual.md](./resumo_projeto_atual.md) and [TODO.md](./TODO.md) for full context**
 
@@ -143,7 +148,29 @@ npm run test:watch   # Watch mode
 
 ## 📚 Documentation
 
-**Essential Documentation (Read in This Order):**
+### 🆕 Session Summary (Nov 3, 2025)
+
+**Commit:** `feat(sentry): activate real error tracking and payment webhook verification`
+
+**What changed:**
+- 12 files modified/created
+- 542 insertions, 145 deletions
+- Build: ✅ Passed (exit code 0)
+
+**Key files:**
+| File | Type | Purpose |
+|------|------|---------|
+| `sentry.server.config.ts` | 📝 New | Server-side Sentry initialization |
+| `sentry.edge.config.ts` | 📝 New | Edge runtime configuration |
+| `src/instrumentation.ts` | 📝 New | Next.js startup hook |
+| `src/instrumentation-client.ts` | 📝 New | Client-side Sentry init |
+| `src/app/global-error.tsx` | 📝 New | React error boundary |
+| `src/lib/webhook-signature-verifiers.ts` | 📝 New | HMAC signature verification (4 providers) |
+| `src/lib/payment-webhook-handler.ts` | ✏️ Modified | Integrated real signature verification |
+| `src/lib/cors.ts` | ✏️ Modified | CORS violations to Sentry |
+| `src/lib/alerts/ops-alerts.ts` | ✏️ Modified | Real Sentry error capture |
+
+### 📖 Essential Documentation (Read in This Order)
 
 | Resource | Purpose |
 |----------|---------|
@@ -154,6 +181,7 @@ npm run test:watch   # Watch mode
 | [CLAUDE.md](./CLAUDE.md) | Development guidelines for Claude Code |
 | **🆕 [docs/SENTRY_OBSERVABILITY.md](./docs/SENTRY_OBSERVABILITY.md)** | 🔍 Complete error tracking & observability dashboard guide |
 | **🆕 [docs/SENTRY_QUICK_START.md](./docs/SENTRY_QUICK_START.md)** | Quick reference for daily monitoring |
+| **🆕 [docs/SENTRY_WIZARD_INTEGRATION.md](./docs/SENTRY_WIZARD_INTEGRATION.md)** | Complete Sentry wizard integration details |
 | [docs/OCR_ARCHITECTURE.md](./docs/OCR_ARCHITECTURE.md) | PDF OCR implementation (Tesseract.js cascade) |
 | [docs/JUDIT_INTEGRATION.md](./docs/JUDIT_INTEGRATION.md) | JUDIT API integration guide |
 | [docs/ADMIN_PERMISSIONS.md](./docs/ADMIN_PERMISSIONS.md) | RBAC implementation guide |
@@ -644,19 +672,125 @@ JustoAI Admin
 
 **For complete list see:** [TODO.md](./TODO.md) (40 items organized by priority)
 
-### ✅ RESOLVED (Nov 3, 2025)
-1. ✅ **Centralized error tracking** - Sentry live with admin dashboard
-2. ✅ **Payment signature verification** - Implemented for all 5 providers
-3. ✅ **Admin permission validation** - Database-backed RBAC on all endpoints
-4. ✅ **Bull Board access control** - Admin-only access enforced
+### ✅ COMPLETED TODAY - Nov 3, 2025
+
+#### BLOCKER 1: Sentry Real Error Tracking
+**Status:** ✅ Complete & Deployed
+
+**What was implemented:**
+- Sentry Next.js SDK integration via official wizard
+- Server-side error tracking (`sentry.server.config.ts`)
+- Client-side error tracking (`src/instrumentation-client.ts`)
+- Edge runtime support (`sentry.edge.config.ts`)
+- Global React error boundary (`src/app/global-error.tsx`)
+- Environment-aware trace sampling (10% in production, 100% in development)
+- Automatic error capture in ops-alerts.ts and cors.ts
+- CORS violations logged to Sentry with full context
+- Build verified: ✅ Exit code 0
+
+**Files created:**
+- `sentry.server.config.ts` (root) - Customized server initialization
+- `sentry.edge.config.ts` - Edge runtime config
+- `src/instrumentation.ts` - Next.js startup hook
+- `src/instrumentation-client.ts` - Client-side initialization
+- `src/app/global-error.tsx` - Error boundary
+
+**Bundle Impact:** +75kB (Sentry client SDK)
+
+#### BLOCKER 2: Payment Webhook Signature Verification
+**Status:** ✅ Complete & Deployed
+
+**What was implemented:**
+- HMAC-SHA256 signature verification for 4 payment providers
+- Stripe webhook signature verification
+- MercadoPago webhook signature verification
+- PagSeguro webhook signature verification
+- Pix webhook signature verification
+- Real verification integrated into payment-webhook-handler.ts
+- Invalid signatures logged to Sentry with context
+- Fixed critical security vulnerability (was always returning true)
+
+**Files created:**
+- `src/lib/webhook-signature-verifiers.ts` (250+ lines)
+
+**Files modified:**
+- `src/lib/payment-webhook-handler.ts` - Integrated real verification
+- Updated Sentry imports to use `@sentry/nextjs`
+
+**Security Fix:**
+- Before: `return true` (accepted all signatures)
+- After: Real HMAC-SHA256 verification per provider with error logging
+
+---
+
+## 🚀 NEXT STEPS - Continue Tomorrow (Nov 4+)
+
+### Immediate (Tomorrow - 4 hours)
+**BLOCKER 3 & 4: Access Control & Admin Protection**
+
+```bash
+# BLOCKER 3: Admin Permission Validation (2.5 hours)
+# File: src/app/api/admin/[endpoint].ts
+# Task: Add database-backed permission checks to all restricted endpoints
+# Check: user.role === 'ADMIN' in workspace permissions
+# Return: HTTP 403 if not authorized
+
+# BLOCKER 4: Bull Board RBAC (1.5 hours)
+# File: src/app/admin/queues/route.ts
+# Task: Implement admin-only access control
+# Method: Validate Clerk user + workspace admin role
+# Fallback: Redirect to unauthorized page
+```
+
+### High Priority (This Week - 7 hours)
+```bash
+# FEATURE 1: Replace Mock Credit System (3 hours)
+# File: src/lib/services/creditService.ts
+# Task: Replace 999 mock with real Prisma queries
+# Methods: checkCredits(), debitCredits(), getBalance()
+# Database: Use workspaceCredits and creditTransaction tables
+# Test: Verify credit deduction in payment webhook
+
+# FEATURE 2: Complete Document APIs (2 hours)
+# Endpoints: PATCH /api/documents/[id], DELETE /api/documents/[id]
+# Validation: User workspace ownership
+# Tests: Update metadata, delete with cascades
+
+# FEATURE 3: Case Notes CRUD (2 hours)
+# Schema: Create caseNotes table (schema already planned)
+# API: Full CRUD endpoints
+# UI: Integrate into case detail page
+```
+
+### Medium Priority (Week 2-3 - 8 hours)
+```bash
+# FEATURE 4: Real Telemetry & Cost Tracking
+# Replace mock dashboard data with real API queries
+# Implement daily cost projections
+
+# FEATURE 5: Excel Error Export & Retry
+# Implement retry mechanism for failed uploads
+# Generate downloadable error reports
+
+# FEATURE 6: Dashboard Real Data
+# Connect all dashboard charts to real API endpoints
+```
+
+### Testing & Deployment
+```bash
+# TESTING: Integration tests across core flows
+# DEPLOYMENT: Final security audit
+```
+
+---
 
 ### 🟠 HIGH PRIORITY (Next 2 weeks)
-- Real telemetry & cost tracking (currently mocked)
-- Document management APIs (update/delete)
-- Complete webhook handling pipeline
-- JUDIT attachment credit validation
-- Database caching for admin dashboard
-- Case notes implementation (schema dependent)
+- ⏳ Real telemetry & cost tracking (currently mocked)
+- ⏳ Document management APIs (update/delete)
+- ⏳ Complete webhook handling pipeline
+- ⏳ JUDIT attachment credit validation
+- ⏳ Database caching for admin dashboard
+- ⏳ Case notes implementation (schema dependent)
 
 ### 🟡 MEDIUM PRIORITY (Weeks 3-4)
 - Real credit system (stop returning 999)
