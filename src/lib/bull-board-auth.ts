@@ -6,7 +6,7 @@
 
 import type { Request } from 'express';
 import { validateAuthAndGetUser } from './auth';
-import { isWorkspaceAdmin } from '../../lib/permission-validator';
+import { isWorkspaceAdmin } from './permission-validator';
 import { ICONS } from './icons';
 
 export interface BullBoardAccessValidation {
