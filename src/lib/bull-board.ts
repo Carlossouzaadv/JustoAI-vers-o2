@@ -7,20 +7,11 @@ import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
-import {
-  syncQueue as getSyncQueue,
-  reportsQueue as getReportsQueue,
-  cacheCleanupQueue as getCacheCleanupQueue,
-  documentProcessingQueue as getDocumentProcessingQueue,
-  notificationQueue as getNotificationQueue
-} from './queues';
+import { notificationQueue as getNotificationQueue } from './queues';
 import { validateBullBoardAccess } from './bull-board-auth';
 
-// Call the getter functions to get the actual queue instances
-const syncQueue = getSyncQueue();
-const reportsQueue = getReportsQueue();
-const cacheCleanupQueue = getCacheCleanupQueue();
-const documentProcessingQueue = getDocumentProcessingQueue();
+// Call the getter function to get the actual queue instance
+// Note: Other queues (sync, reports, cache cleanup, document processing) have been disabled for cost optimization
 const notificationQueue = getNotificationQueue();
 
 // Augment Express namespace for compatibility
@@ -41,14 +32,11 @@ const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');
 
 /**
- * Configuração do Bull Board com todas as filas
+ * Configuração do Bull Board com todas as filas ativas
+ * Note: Only notification queue is active (others disabled for cost optimization)
  */
 const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   queues: [
-    new BullAdapter(syncQueue),
-    new BullAdapter(reportsQueue),
-    new BullAdapter(cacheCleanupQueue),
-    new BullAdapter(documentProcessingQueue),
     new BullAdapter(notificationQueue),
   ],
   serverAdapter: serverAdapter,
@@ -142,11 +130,8 @@ export async function bullBoardAuthMiddleware(
  */
 export async function getBullBoardStats() {
   try {
+    // Only notification queue is active (others disabled for cost optimization)
     const queues = [
-      { name: 'API Sync', queue: syncQueue },
-      { name: 'Automated Reports', queue: reportsQueue },
-      { name: 'Cache Cleanup', queue: cacheCleanupQueue },
-      { name: 'Document Processing', queue: documentProcessingQueue },
       { name: 'Notifications', queue: notificationQueue },
     ];
 
@@ -248,10 +233,10 @@ export async function getBullBoardStats() {
 // === CONTROLE DE FILAS ===
 
 /**
- * Pausa todas as filas
+ * Pausa todas as filas ativas
  */
 export async function pauseAllQueues() {
-  const queues = [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+  const queues = [notificationQueue];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -264,10 +249,10 @@ export async function pauseAllQueues() {
 }
 
 /**
- * Resume todas as filas
+ * Resume todas as filas ativas
  */
 export async function resumeAllQueues() {
-  const queues = [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+  const queues = [notificationQueue];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -287,7 +272,7 @@ export async function cleanAllQueues() {
     throw new Error('Cannot clean queues in production');
   }
 
-  const queues = [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+  const queues = [notificationQueue];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -304,10 +289,10 @@ export async function cleanAllQueues() {
  * Retry jobs falhados
  */
 export async function retryFailedJobs(queueName?: string) {
-  const queueMap = { syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue };
+  const queueMap = { notificationQueue };
   const queues = queueName && queueName in queueMap ?
     [queueMap[queueName as keyof typeof queueMap]] :
-    [syncQueue, reportsQueue, cacheCleanupQueue, documentProcessingQueue, notificationQueue];
+    [notificationQueue];
 
   const results = await Promise.allSettled(
     (Array.isArray(queues) ? queues : [queues]).map(async (queue) => {
