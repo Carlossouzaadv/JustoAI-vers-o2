@@ -5,6 +5,7 @@
 import { prisma } from '../prisma';
 import { usageTracker } from '../telemetry/usage-tracker';
 import { ICONS } from '../icons';
+import { captureException, captureMessage, addSentryContext } from '../sentry.server.config';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -471,15 +472,42 @@ export class OpsAlerts {
 
   private async sendSentryAlert(alert: AlertEvent): Promise<void> {
     try {
-      // TODO: Integrar com Sentry SDK
-      console.log(`${ICONS.ALERT} Sentry alert (simulated):`, {
-        level: alert.severity,
-        message: alert.title,
-        extra: alert.context
-      });
+      // Map alert severity to Sentry levels
+      const severityMap: Record<string, 'fatal' | 'error' | 'warning' | 'info'> = {
+        critical: 'fatal',
+        high: 'error',
+        medium: 'warning',
+        low: 'info'
+      };
 
+      const sentryLevel = severityMap[alert.severity] || 'info';
+
+      // Add workspace context if available
+      if (alert.workspaceId) {
+        addSentryContext('workspace', {
+          workspaceId: alert.workspaceId,
+          ...alert.context
+        });
+      }
+
+      // Capture the alert as a message to Sentry
+      captureMessage(
+        `[${alert.severity.toUpperCase()}] ${alert.title}: ${alert.message}`,
+        sentryLevel,
+        {
+          alert_id: alert.id,
+          rule_id: alert.ruleId,
+          workspace_id: alert.workspaceId,
+          channels: alert.channels,
+          timestamp: alert.timestamp.toISOString(),
+          ...alert.metadata
+        }
+      );
+
+      console.log(`${ICONS.SUCCESS} Alert sent to Sentry [${sentryLevel}]:`, alert.title);
     } catch (error) {
       console.error(`${ICONS.ERROR} Failed to send Sentry alert:`, error);
+      // Don't throw - alert failure shouldn't break the system
     }
   }
 
