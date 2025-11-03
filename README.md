@@ -15,15 +15,30 @@
 
 ---
 
+## ⚠️ CRITICAL ISSUES (Fix This Sprint)
+
+| Issue | Severity | Effort | Action |
+|-------|----------|--------|--------|
+| No Sentry error tracking | 🔴 CRITICAL | 2-4h | Activate SDK, configure alerts |
+| Payment webhook signature verification missing | 🔴 CRITICAL | 4-6h | Implement per-provider validation |
+| Admin permission validation incomplete | 🟠 HIGH | 2-3h | Add middleware checks |
+| Bull Board has no access control | 🟠 HIGH | 1-2h | Implement RBAC |
+
+**See [resumo_projeto_atual.md](./resumo_projeto_atual.md) and [TODO.md](./TODO.md) for full details**
+
+---
+
 ## 🎯 Overview
 
 **JustoAI V2** is an enterprise SaaS for legal process management with AI-powered analysis. Features intelligent document processing, real-time judicial monitoring (JUDIT integration), executive report generation, and complete cost tracking & observability.
 
-**Current Status:** ✅ **LIVE IN PRODUCTION**
+**Current Status:** ✅ **LIVE IN PRODUCTION** (with noted security gaps)
 - Frontend: https://justoai-v2.vercel.app (Vercel)
 - Backend API: Railway (production)
 - Database: Supabase PostgreSQL
 - Workers: Railway (BullMQ queues)
+
+**Last Updated:** 2025-11-03 | **Status:** Ready for next sprint after security fixes
 
 ---
 
@@ -115,20 +130,18 @@ npm run test:watch   # Watch mode
 
 ## 📚 Documentation
 
-**For detailed documentation, see:**
+**Essential Documentation (Read in This Order):**
 
 | Resource | Purpose |
 |----------|---------|
-| [TODO.md](./TODO.md) | **⚠️ CRITICAL** - Comprehensive TODO list with 42 items, priorities & effort estimates. **START HERE for feature tracking** |
+| **[resumo_projeto_atual.md](./resumo_projeto_atual.md)** | 📊 **START HERE** - Project overview, critical issues, & next sprint priorities |
+| **[TODO.md](./TODO.md)** | 📋 Consolidated 40-item TODO list with priorities, effort estimates, & checklists |
+| **[TODO_TRACKER.md](./TODO_TRACKER.md)** | 🎯 Sprint-focused tracker with recommended action plan |
 | [CLAUDE.md](./CLAUDE.md) | Development guidelines for Claude Code |
-| [TIMELINE_UNIFICADA_IMPLEMENTACAO.md](./TIMELINE_UNIFICADA_IMPLEMENTACAO.md) | 🚀 NEW - Unified Timeline implementation tracking with checkboxes (Oct 2025) |
-| [FASE 3 IMPLEMENTATION](./docs/FASE3_ANALYSIS.md) | ✨ 3-phase onboarding flow & strategic analysis (Oct 2025) |
-| [WEBHOOK_FIX_SUMMARY.md](./WEBHOOK_FIX_SUMMARY.md) | JUDIT webhook fixes - technical details |
-| [WEBHOOK_FIX_CHECKLIST.md](./WEBHOOK_FIX_CHECKLIST.md) | JUDIT webhook - deployment & testing checklist |
-| [DEPLOYMENT_WEBHOOK_FIX.md](./DEPLOYMENT_WEBHOOK_FIX.md) | JUDIT webhook - step-by-step deployment guide |
+| [docs/OCR_ARCHITECTURE.md](./docs/OCR_ARCHITECTURE.md) | PDF OCR implementation (Tesseract.js cascade) |
 | [docs/JUDIT_INTEGRATION.md](./docs/JUDIT_INTEGRATION.md) | JUDIT API integration guide |
-| [docs/PRODUCTION_SETUP.md](./docs/PRODUCTION_SETUP.md) | Production deployment checklist |
-| [docs/CIRCUIT_BREAKER.md](./docs/CIRCUIT_BREAKER.md) | Circuit breaker pattern implementation |
+| [NOTIFICATIONS_SETUP.md](./NOTIFICATIONS_SETUP.md) | Email (Resend) + Slack configuration |
+| [SUPABASE_STORAGE_SETUP.md](./SUPABASE_STORAGE_SETUP.md) | File storage configuration |
 
 **API Endpoints:** See `/api` route documentation or enable Swagger at `/api/swagger`
 
@@ -407,38 +420,40 @@ TIMELINE_CONFLICT_DETECTION_ENABLED=true         # Toggle conflict detection
 
 ---
 
-## 📋 Known Limitations & TODO Items
+## 📋 Known Limitations & Next Sprint Items
 
-**For complete list see:** [TODO.md](./TODO.md) (42 items with priorities & effort estimates)
+**For complete list see:** [TODO.md](./TODO.md) (40 items organized by priority)
 
-### 🚨 Critical Blockers (Needs Immediate Attention)
-- PDF/DOCX Report Generation - not fully implemented
-- Payment webhook signature verification - placeholder only
-- Report scheduling database operations - all CRUD missing
-- S3 file storage - using temporary paths instead
-- Email/SMS notifications - not integrated
+### 🔴 CRITICAL (Fix This Sprint)
+1. **No centralized error tracking** - Sentry mocked, needs activation
+2. **Payment signature verification** - Placeholder for all providers
+3. **Admin permission validation** - Missing on some endpoints
+4. **Bull Board access control** - No RBAC implemented
 
-### 🔴 High Priority (Core Features)
+### 🟠 HIGH PRIORITY (Next 2 weeks)
+- Real telemetry & cost tracking (currently mocked)
+- Document management APIs (update/delete)
 - Complete webhook handling pipeline
-- Document attachment processing
-- Import rollback & restart logic
-- Alert system integration
-- External error logging (Sentry)
+- JUDIT attachment credit validation
+- Database caching for admin dashboard
+- Case notes implementation (schema dependent)
 
-### 🟡 Medium Priority (Important Enhancements)
-- Credit system real implementation
-- Document management API endpoints
-- Dashboard real API integration
-- Case notes implementation
+### 🟡 MEDIUM PRIORITY (Weeks 3-4)
+- Real credit system (stop returning 999)
+- Dashboard real API calls
+- Excel upload error reporting
+- Worker statistics persistence
+- External logging (LogRocket/DataDog)
 
-### 🟢 Low Priority (Polish & Refactoring)
+### 🟢 LOW PRIORITY (Backlog)
 - PDF export feature
 - Contact form integration
+- Document tags/notes UI
 - Redis cache statistics
-- Timeline type refactoring
-- OCR fallback for scanned PDFs
+- Timeline refactoring
+- Admin authorization checks
 
-**See [TODO.md](./TODO.md) for complete breakdown by category, effort estimates, and implementation roadmap.**
+**See [TODO.md](./TODO.md) for detailed checklists and effort estimates**
 
 ---
 
