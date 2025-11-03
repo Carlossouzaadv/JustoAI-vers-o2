@@ -471,11 +471,28 @@ export class OpsAlerts {
 
   private async sendSentryAlert(alert: AlertEvent): Promise<void> {
     try {
-      // TODO: Integrar com Sentry SDK
-      console.log(`${ICONS.ALERT} Sentry alert (simulated):`, {
+      // Import Sentry SDK for server-side error capture
+      const Sentry = await import('@sentry/nextjs');
+
+      // Add context about the alert
+      Sentry.getCurrentScope().setContext('alert_event', {
+        ruleId: alert.ruleId,
+        title: alert.title,
+        message: alert.message,
+        workspaceId: alert.workspaceId,
+        severity: alert.severity,
+        channels: alert.channels,
+        timestamp: alert.sentAt.toISOString(),
+        metadata: alert.metadata
+      });
+
+      // Capture the alert as a Sentry message with appropriate level
+      Sentry.captureMessage(alert.title, alert.severity as 'fatal' | 'error' | 'warning' | 'info' | 'debug');
+
+      console.log(`${ICONS.SUCCESS} Sentry alert captured:`, {
         level: alert.severity,
         message: alert.title,
-        extra: alert.context
+        workspaceId: alert.workspaceId
       });
 
     } catch (error) {

@@ -7,6 +7,8 @@ import { prisma } from './prisma';
 import { getEmailService } from './email-service';
 import { ICONS } from './icons';
 import { randomUUID } from 'crypto';
+import { getSignatureVerifier } from './webhook-signature-verifiers';
+import * as Sentry from '@sentry/nextjs';
 
 export interface PaymentWebhookPayload {
   provider: 'stripe' | 'mercadopago' | 'pagseguro' | 'pix' | 'custom';
@@ -450,18 +452,65 @@ export class PaymentWebhookHandler {
   }
 
   /**
-   * Verify webhook signature
+   * Verify webhook signature using provider-specific verification
+   * Returns false and logs to Sentry if signature is invalid
    */
-  private verifyWebhookSignature(_provider: string, _headers: Record<string, string>, _body: string): boolean {
-    // Por enquanto, sempre válido - implementar verificação real conforme provider
-    console.log(`${ICONS.SHIELD} Verificando assinatura do webhook ${_provider}...`);
+  private verifyWebhookSignature(provider: string, headers: Record<string, string>, body: string): boolean {
+    try {
+      console.log(`${ICONS.SHIELD} Verificando assinatura do webhook ${provider}...`);
 
-    // TODO: Implementar verificação real de assinatura para cada provider
-    // Stripe: usar stripe.webhooks.constructEvent
-    // MercadoPago: verificar x-signature header
-    // etc.
+      // Get the appropriate verifier for this provider
+      const verifier = getSignatureVerifier(provider);
 
-    return true;
+      if (!verifier) {
+        console.warn(`${ICONS.WARNING} Nenhum verificador disponível para provider: ${provider}`);
+        // For unknown providers, accept but log warning
+        return true;
+      }
+
+      // Perform signature verification
+      const isValid = verifier(headers, body);
+
+      if (!isValid) {
+        // Log invalid signature attempt to Sentry
+        Sentry.captureMessage(
+          `Invalid webhook signature from ${provider}`,
+          'warning'
+        );
+
+        Sentry.getCurrentScope().setContext('webhook_verification_failed', {
+          provider,
+          headers: {
+            'user-agent': headers['user-agent'],
+            'content-type': headers['content-type'],
+            'host': headers['host']
+          },
+          timestamp: new Date().toISOString()
+        });
+
+        console.error(
+          `${ICONS.ERROR} Assinatura inválida do webhook ${provider}. ` +
+          `Headers: ${JSON.stringify(Object.keys(headers))}`
+        );
+      }
+
+      return isValid;
+
+    } catch (error) {
+      console.error(`${ICONS.ERROR} Erro ao verificar assinatura do webhook:`, error);
+      // Log error to Sentry
+      Sentry.captureMessage(
+        `Error verifying webhook signature for ${provider}`,
+        'error'
+      );
+
+      Sentry.getCurrentScope().setContext('webhook_verification_error', {
+        provider,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      return false;
+    }
   }
 
   /**

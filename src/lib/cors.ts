@@ -94,11 +94,11 @@ export function createSSECorsHeaders(origin: string | null | undefined): Headers
 /**
  * Logger de tentativas de acesso negadas
  */
-export function logDeniedAccess(
+export async function logDeniedAccess(
   origin: string | null | undefined,
   path: string,
   method: string
-): void {
+): Promise<void> {
   const timestamp = new Date().toISOString()
   const allowedOrigins = getAllowedOrigins()
 
@@ -110,8 +110,22 @@ export function logDeniedAccess(
     Allowed origins: ${allowedOrigins.join(', ')}`
   )
 
-  // Em produção, você pode querer enviar isso para um serviço de logging
+  // Em produção, enviar para Sentry para monitoramento
   if (process.env.NODE_ENV === 'production') {
-    // TODO: Implementar logging para serviço externo (ex: Sentry, LogRocket)
+    try {
+      const Sentry = await import('@sentry/nextjs');
+      Sentry.captureMessage(
+        `CORS access denied from origin: ${origin || 'undefined'}`,
+        'warning'
+      );
+      Sentry.getCurrentScope().setContext('cors_denied', {
+        origin: origin || 'undefined',
+        path,
+        method,
+        allowedOrigins
+      });
+    } catch (error) {
+      console.error('Failed to log CORS denial to Sentry:', error);
+    }
   }
 }

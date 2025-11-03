@@ -90,3 +90,6 @@ Thumbs.db
 # Cache directories
 .cache/
 .parcel-cache/
+
+# Sentry Config File
+.env.sentry-build-plugin
