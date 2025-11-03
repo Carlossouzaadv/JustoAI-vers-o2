@@ -119,6 +119,7 @@ npm run test:watch   # Watch mode
 
 | Resource | Purpose |
 |----------|---------|
+| [TODO.md](./TODO.md) | **⚠️ CRITICAL** - Comprehensive TODO list with 42 items, priorities & effort estimates. **START HERE for feature tracking** |
 | [CLAUDE.md](./CLAUDE.md) | Development guidelines for Claude Code |
 | [TIMELINE_UNIFICADA_IMPLEMENTACAO.md](./TIMELINE_UNIFICADA_IMPLEMENTACAO.md) | 🚀 NEW - Unified Timeline implementation tracking with checkboxes (Oct 2025) |
 | [FASE 3 IMPLEMENTATION](./docs/FASE3_ANALYSIS.md) | ✨ 3-phase onboarding flow & strategic analysis (Oct 2025) |
@@ -403,6 +404,41 @@ TIMELINE_CONFLICT_DETECTION_ENABLED=true         # Toggle conflict detection
 - Cost tracking with projections (96% optimization!)
 - Multi-channel alerts (email, Slack, webhooks)
 - Interactive monitoring dashboard
+
+---
+
+## 📋 Known Limitations & TODO Items
+
+**For complete list see:** [TODO.md](./TODO.md) (42 items with priorities & effort estimates)
+
+### 🚨 Critical Blockers (Needs Immediate Attention)
+- PDF/DOCX Report Generation - not fully implemented
+- Payment webhook signature verification - placeholder only
+- Report scheduling database operations - all CRUD missing
+- S3 file storage - using temporary paths instead
+- Email/SMS notifications - not integrated
+
+### 🔴 High Priority (Core Features)
+- Complete webhook handling pipeline
+- Document attachment processing
+- Import rollback & restart logic
+- Alert system integration
+- External error logging (Sentry)
+
+### 🟡 Medium Priority (Important Enhancements)
+- Credit system real implementation
+- Document management API endpoints
+- Dashboard real API integration
+- Case notes implementation
+
+### 🟢 Low Priority (Polish & Refactoring)
+- PDF export feature
+- Contact form integration
+- Redis cache statistics
+- Timeline type refactoring
+- OCR fallback for scanned PDFs
+
+**See [TODO.md](./TODO.md) for complete breakdown by category, effort estimates, and implementation roadmap.**
 
 ---
 
