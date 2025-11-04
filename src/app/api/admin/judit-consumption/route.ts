@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { validateAuthAndGetUser } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/permission-validator';
 
 // Constants
 const JUDIT_API_KEY = process.env.JUDIT_API_KEY;
@@ -70,36 +72,6 @@ interface ConsumptionReport {
 // ================================================================
 // Helper Functions
 // ================================================================
-
-async function isUserAuthenticated(request: NextRequest) {
-  try {
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: (cookiesToSet) => {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {}
-          }
-        }
-      }
-    );
-
-    const {
-      data: { session }
-    } = await supabase.auth.getSession();
-
-    return !!session?.user;
-  } catch {
-    return false;
-  }
-}
 
 async function fetchJuditData(startDate: string, endDate: string) {
   if (!JUDIT_API_KEY) {
@@ -301,6 +273,25 @@ async function saveCachedReport(report: ConsumptionReport): Promise<void> {
 
 export async function GET(request: NextRequest) {
   try {
+    // 1. Authenticate user
+    const { user, workspace } = await validateAuthAndGetUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
+    if (!adminCheck.authorized) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: 403 }
+      );
+    }
+
     // Check JUDIT_API_KEY is configured
     if (!JUDIT_API_KEY) {
       console.error('JUDIT_API_KEY is not configured');
@@ -310,15 +301,6 @@ export async function GET(request: NextRequest) {
           details: 'JUDIT_API_KEY not found. Add to .env: JUDIT_API_KEY=your_key'
         },
         { status: 503 }
-      );
-    }
-
-    // Check authentication
-    const isAuthenticated = await isUserAuthenticated(request);
-    if (!isAuthenticated) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
       );
     }
 

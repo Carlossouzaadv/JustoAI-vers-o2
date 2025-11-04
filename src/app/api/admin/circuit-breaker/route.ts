@@ -1,12 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { circuitBreakerService } from '@/lib/services/circuitBreakerService';
+import { validateAuthAndGetUser } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/permission-validator';
 
 /**
  * GET /api/admin/circuit-breaker
  * Get circuit breaker status
+ * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // 1. Authenticate user
+    const { user, workspace } = await validateAuthAndGetUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
+    if (!adminCheck.authorized) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: 403 }
+      );
+    }
+
     const status = circuitBreakerService.getStatus();
 
     return NextResponse.json({
@@ -27,9 +49,29 @@ export async function GET() {
 /**
  * POST /api/admin/circuit-breaker/resume
  * Manually attempt to resume the queue
+ * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
 export async function POST(request: NextRequest) {
   try {
+    // 1. Authenticate user
+    const { user, workspace } = await validateAuthAndGetUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
+    if (!adminCheck.authorized) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const action = body.action || 'resume';
 

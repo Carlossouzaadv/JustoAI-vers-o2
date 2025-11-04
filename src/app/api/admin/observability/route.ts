@@ -1,12 +1,12 @@
 /**
  * Admin Observability API
  * Aggregates data from Sentry, Bull Board, Redis, and other monitoring sources
- * Only accessible to workspace admins
+ * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
-import { requireWorkspaceAdmin } from '@/lib/permission-validator';
+import { requireAdminAccess } from '@/lib/permission-validator';
 import { getSentryProjectStats, getSentryReleases, getSentryHealth } from '@/lib/sentry-api-client';
 import { getBullBoardStats, systemHealthCheck } from '@/lib/bull-board';
 
@@ -15,17 +15,18 @@ export async function GET(req: NextRequest) {
     // 1. Authenticate and check admin permissions
     const { user, workspace } = await validateAuthAndGetUser();
 
-    if (!user || !workspace) {
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const adminCheck = await requireWorkspaceAdmin(user.id, workspace.id);
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
     if (!adminCheck.authorized) {
       return NextResponse.json(
-        { error: 'Admin access required' },
+        { error: adminCheck.error },
         { status: 403 }
       );
     }

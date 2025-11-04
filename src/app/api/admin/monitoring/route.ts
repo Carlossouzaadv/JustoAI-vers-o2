@@ -9,6 +9,8 @@ import { getJuditApiClient } from '@/lib/judit-api-client';
 // import { processMonitorQueue, addMonitoringJob, getMonitoringStats } from '@/workers/process-monitor-worker';
 import { telemetry } from '@/lib/monitoring-telemetry';
 import { ICONS } from '@/lib/icons';
+import { validateAuthAndGetUser } from '@/lib/auth';
+import { requireAdminAccess } from '@/lib/permission-validator';
 
 // ================================================================
 // WORKER FUNCTIONS (MOCKED - process-monitor-worker not implemented)
@@ -84,6 +86,25 @@ interface RecoveryAction {
 
 export async function GET(request: NextRequest) {
   try {
+    // 1. Authenticate user
+    const { user, workspace } = await validateAuthAndGetUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
+    if (!adminCheck.authorized) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: 403 }
+      );
+    }
+
     console.log(`${ICONS.ADMIN} Admin monitoring status request`);
 
     const systemStatus = await getSystemStatus();
@@ -105,6 +126,25 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Authenticate user
+    const { user, workspace } = await validateAuthAndGetUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
+    if (!adminCheck.authorized) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: 403 }
+      );
+    }
+
     const adminRequest: AdminRequest = await request.json();
     console.log(`${ICONS.ADMIN} Admin action requested:`, adminRequest.action);
 
@@ -780,6 +820,25 @@ function generateRecommendations(status: any): string[] {
 
 export async function PUT(request: NextRequest) {
   try {
+    // 1. Authenticate user
+    const { user, workspace } = await validateAuthAndGetUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check admin access (internal admin OR workspace admin)
+    const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
+    if (!adminCheck.authorized) {
+      return NextResponse.json(
+        { error: adminCheck.error },
+        { status: 403 }
+      );
+    }
+
     const { action, parameters } = await request.json();
 
     const availableActions: RecoveryAction[] = [

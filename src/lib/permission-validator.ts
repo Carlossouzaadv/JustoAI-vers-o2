@@ -17,6 +17,15 @@ export interface PermissionCheck {
 }
 
 /**
+ * Check if user is internal JustoAI admin (by email domain)
+ * Internal admins have full access to all dashboards and data
+ */
+export function isInternalAdmin(email: string | undefined): boolean {
+  if (!email) return false;
+  return email.toLowerCase().endsWith('@justoai.com.br');
+}
+
+/**
  * Check if user is admin of workspace
  */
 export async function isWorkspaceAdmin(
@@ -226,5 +235,66 @@ export async function validateAdminRequest(
     valid: check.isAuthorized,
     reason: check.denialReason,
     role: check.role
+  };
+}
+
+/**
+ * Validate access to admin endpoints
+ * Allows: Internal admins (@justoai.com.br) OR workspace admins
+ *
+ * @param email User email address
+ * @param userId User ID
+ * @param workspaceId Workspace ID
+ * @returns { authorized: true } | { authorized: false; error: string }
+ */
+export async function requireAdminAccess(
+  email: string | undefined,
+  userId: string | undefined,
+  workspaceId: string | undefined
+): Promise<{ authorized: true; isInternal: boolean } | { authorized: false; error: string }> {
+  if (!email || !userId) {
+    return {
+      authorized: false,
+      error: 'User not authenticated'
+    };
+  }
+
+  // Check if internal admin
+  if (isInternalAdmin(email)) {
+    console.log(
+      `${ICONS.SHIELD} Internal admin access granted for user ${userId} (${email})`
+    );
+    return {
+      authorized: true,
+      isInternal: true
+    };
+  }
+
+  // Check if workspace admin
+  if (!workspaceId) {
+    return {
+      authorized: false,
+      error: 'Workspace ID not provided'
+    };
+  }
+
+  const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
+
+  if (!isAdmin) {
+    console.warn(
+      `${ICONS.SHIELD} Admin access denied for user ${userId} (${email}) on workspace ${workspaceId}`
+    );
+    return {
+      authorized: false,
+      error: 'Admin access required'
+    };
+  }
+
+  console.log(
+    `${ICONS.SHIELD} Workspace admin access granted for user ${userId} (${email}) on workspace ${workspaceId}`
+  );
+  return {
+    authorized: true,
+    isInternal: false
   };
 }
