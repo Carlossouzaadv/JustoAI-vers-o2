@@ -4,6 +4,8 @@ import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
 import { getGeminiClient } from '@/lib/gemini-client';
 import { ModelTier } from '@/lib/ai-model-types';
+import { getCredits, debitCredits } from '@/lib/services/creditService';
+import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 
 export async function POST(
   request: NextRequest,
@@ -65,6 +67,25 @@ export async function POST(
     });
 
     console.log(`${ICONS.INFO} [Full Analysis] Prompt construído: ${prompt.length} chars`);
+
+    // Check credits before expensive operation
+    const isDivinity = isInternalDivinityAdmin(user.email);
+    if (!isDivinity) {
+      const credits = await getCredits(user.email, caseData.workspaceId);
+      if (credits.fullCredits < 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Créditos insuficientes para análise completa',
+            required: 1,
+            available: credits.fullCredits,
+            message: 'Você precisa de 1 crédito FULL para realizar uma análise completa. Entre em contato com o suporte para adquirir mais créditos.'
+          },
+          { status: 402 } // Payment Required
+        );
+      }
+    }
+
     console.log(`${ICONS.ROBOT} [Full Analysis] Chamando Gemini Pro...`);
 
     const gemini = getGeminiClient();
@@ -105,6 +126,23 @@ export async function POST(
     });
 
     console.log(`${ICONS.SUCCESS} [Full Analysis] Versão salva: ${version.id} (v${nextVersion})`);
+
+    // Debit credits if not a divinity admin
+    if (!isDivinity) {
+      const debitResult = await debitCredits(
+        user.email,
+        caseData.workspaceId,
+        1,
+        'FULL',
+        `Full analysis for case ${caseId} - v${nextVersion}`
+      );
+      if (!debitResult.success) {
+        console.warn(`${ICONS.WARNING} Failed to debit credits: ${debitResult.reason}`);
+        // Log but don't fail the request - the analysis was already completed
+      } else {
+        console.log(`${ICONS.SUCCESS} Credits debited: 1 FULL credit (new balance: ${debitResult.newBalance.fullCredits})`);
+      }
+    }
 
     await prisma.case.update({
       where: { id: caseId },

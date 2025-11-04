@@ -8,7 +8,8 @@ import { z } from 'zod';
 import { getRealAnalysisService } from '@/lib/real-analysis-service';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
-import { requireWorkspaceAdmin } from '@/lib/permission-validator';
+import { requireWorkspaceAdmin, isInternalDivinityAdmin } from '@/lib/permission-validator';
+import { getCredits, debitCredits } from '@/lib/services/creditService';
 
 // ================================
 // VALIDAÇÃO DE INPUT
@@ -58,6 +59,34 @@ export async function POST(req: NextRequest) {
 
     console.log(`${ICONS.INFO} Processando análise ${validatedData.analysis_type} com Gemini API`);
 
+    // 4.5. Determine credit cost based on analysis type
+    const creditCosts: Record<string, number> = {
+      'essential': 0,
+      'strategic': 1,
+      'report': 2
+    };
+    const creditCost = creditCosts[validatedData.analysis_type] || 0;
+
+    // 4.6. Check credits before expensive operation
+    const isDivinity = isInternalDivinityAdmin(user.email);
+    if (!isDivinity && creditCost > 0) {
+      const credits = await getCredits(user.email, workspace.id);
+      const availableCredits = validatedData.analysis_type === 'report' ? credits.fullCredits : credits.fullCredits;
+
+      if (availableCredits < creditCost) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Créditos insuficientes para análise ${validatedData.analysis_type}`,
+            required: creditCost,
+            available: availableCredits,
+            message: `Você precisa de ${creditCost} crédito(s) para realizar uma análise ${validatedData.analysis_type}. Entre em contato com o suporte para adquirir mais créditos.`
+          },
+          { status: 402 } // Payment Required
+        );
+      }
+    }
+
     // 5. Executar análise com Gemini real
     const result = await analysisService.analyze(analysisRequest);
 
@@ -73,7 +102,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Resposta de sucesso
+    // 6. Debit credits if not cached and not a divinity admin
+    if (!isDivinity && creditCost > 0 && !result.metadata.cached) {
+      const debitResult = await debitCredits(
+        user.email,
+        workspace.id,
+        creditCost,
+        'FULL',
+        `AI ${validatedData.analysis_type} analysis`
+      );
+      if (!debitResult.success) {
+        console.warn(`${ICONS.WARNING} Failed to debit credits: ${debitResult.reason}`);
+        // Log but don't fail the request - the analysis was already completed
+      } else {
+        console.log(`${ICONS.SUCCESS} Credits debited: ${creditCost} credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
+      }
+    }
+
+    // 7. Resposta de sucesso
     console.log(`${ICONS.SUCCESS} Análise concluída: ${validatedData.analysis_type} - Modelo: ${result.metadata.modelUsed}`);
 
     return NextResponse.json({

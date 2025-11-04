@@ -5,6 +5,8 @@ import { AIModelRouter } from '@/lib/ai-model-router';
 import { PDFProcessor } from '@/lib/pdf-processor';
 import { requireAuth } from '@/lib/api-utils';
 import { z } from 'zod';
+import { getCredits, debitCredits } from '@/lib/services/creditService';
+import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 
 const prisma = new PrismaClient();
 
@@ -115,7 +117,25 @@ export async function POST(
       );
     }
 
-    // 6. Análise IA ESTRATÉGICA COMPLETA (sempre cobra dos créditos completos)
+    // 6. Check credits before AI analysis (analyzeStrategic costs 1 credit)
+    const isDivinity = isInternalDivinityAdmin(user.email);
+    if (!isDivinity && pdfResult?.texto_ai_friendly) {
+      const credits = await getCredits(user.email, document.case.workspaceId);
+      if (credits.fullCredits < 1) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Créditos insuficientes para análise estratégica',
+            required: 1,
+            available: credits.fullCredits,
+            message: 'Você precisa de 1 crédito FULL para aprofundar a análise. Entre em contato com o suporte para adquirir mais créditos.'
+          },
+          { status: 402 } // Payment Required
+        );
+      }
+    }
+
+    // 7. Análise IA ESTRATÉGICA COMPLETA (sempre cobra dos créditos completos)
     // Esta função "Aprofundar Análise" sempre utiliza analyzeStrategic (não analyzeEssential)
     // para fornecer insights detalhados e deve ser cobrada dos créditos de análise completa
     let aiAnalysis = null;
@@ -177,6 +197,23 @@ export async function POST(
         }
       }
     });
+
+    // 8.5. Debit credits if AI analysis was performed and not a divinity admin
+    if (!isDivinity && aiAnalysis) {
+      const debitResult = await debitCredits(
+        user.email,
+        document.case.workspaceId,
+        1,
+        'FULL',
+        `Strategic analysis for document ${documentId} - Case ${document.caseId}`
+      );
+      if (!debitResult.success) {
+        console.warn(`Failed to debit credits: ${debitResult.reason}`);
+        // Log but don't fail the request - the analysis was already completed
+      } else {
+        console.log(`Credits debited: 1 FULL credit (new balance: ${debitResult.newBalance.fullCredits})`);
+      }
+    }
 
     // 9. Criar evento no caso
     await prisma.caseEvent.create({

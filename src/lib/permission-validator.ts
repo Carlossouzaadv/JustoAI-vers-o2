@@ -298,3 +298,9 @@ export async function requireAdminAccess(
     isInternal: false
   };
 }
+
+/**
+ * Alias for isInternalAdmin - used for divinity admin checks
+ * (internal JustoAI admins with @justoai.com.br email)
+ */
+export const isInternalDivinityAdmin = isInternalAdmin;

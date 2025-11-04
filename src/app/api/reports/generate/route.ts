@@ -10,6 +10,8 @@ import { getReportDataCollector } from '@/lib/report-data-collector';
 import { getCustomizationManager } from '@/lib/report-customization';
 import { generateBatchPDFs, getPDFGenerator } from '@/lib/pdf-generator';
 import { ICONS } from '@/lib/icons';
+import { getCredits, debitCredits } from '@/lib/services/creditService';
+import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import type { BatchGenerationJob } from '@/lib/pdf-generator';
 import type { ReportType } from '@/lib/report-templates';
 
@@ -142,17 +144,39 @@ export async function POST(req: NextRequest) {
       daysForUpdates: validatedData.options.days_for_updates
     });
 
-    // 5. Verificar se é batch processing
+    // 5. Check credits if AI insights are enabled
+    const isDivinity = isInternalDivinityAdmin(user.email);
+    let creditCost = 0;
+    if (validatedData.options.include_ai_insights && !isDivinity) {
+      creditCost = 1; // 1 credit per report with AI insights
+      const credits = await getCredits(user.email, workspace.id);
+      if (credits.fullCredits < creditCost) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Créditos insuficientes para relatório com análise de IA',
+            required: creditCost,
+            available: credits.fullCredits,
+            message: `Você precisa de ${creditCost} crédito FULL para gerar um relatório com análise de IA. Entre em contato com o suporte para adquirir mais créditos.`
+          },
+          { status: 402 } // Payment Required
+        );
+      }
+    }
+
+    // 6. Verificar se é batch processing
     if (validatedData.batch?.enabled && validatedData.batch.client_groups) {
       return await handleBatchGeneration(
         validatedData,
         customizationProfile,
         data,
-        workspace.id
+        workspace.id,
+        isDivinity,
+        user.email
       );
     }
 
-    // 6. Gerar PDF individual
+    // 7. Gerar PDF individual
     const startTime = Date.now();
     const generator = getPDFGenerator();
 
@@ -171,7 +195,24 @@ export async function POST(req: NextRequest) {
 
     console.log(`${ICONS.SUCCESS} Relatório gerado em ${generationTime}ms (${Math.round(pdfBuffer.length / 1024)}KB)`);
 
-    // 7. Retornar PDF como resposta
+    // 7.5. Debit credits if AI insights were used and not a divinity admin
+    if (creditCost > 0 && !isDivinity) {
+      const debitResult = await debitCredits(
+        user.email,
+        workspace.id,
+        creditCost,
+        'FULL',
+        `Report generation (${validatedData.report_type}) with AI insights`
+      );
+      if (!debitResult.success) {
+        console.warn(`Failed to debit credits: ${debitResult.reason}`);
+        // Log but don't fail the request - the report was already generated
+      } else {
+        console.log(`Credits debited: ${creditCost} FULL credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
+      }
+    }
+
+    // 8. Retornar PDF como resposta
     return new NextResponse(pdfBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
@@ -214,6 +255,27 @@ export async function PUT(req: NextRequest) {
     // 2. Validação do input
     const body = await req.json();
     const validatedData = batchGenerateSchema.parse(body);
+
+    // 2.5. Check credits for batch processing (1 credit per report with AI insights)
+    const isDivinity = isInternalDivinityAdmin(user.email);
+    const creditCostPerReport = 1; // 1 credit per report in batch
+    const estimatedCredits = validatedData.jobs.length * creditCostPerReport;
+
+    if (!isDivinity && estimatedCredits > 0) {
+      const credits = await getCredits(user.email, workspace.id);
+      if (credits.fullCredits < estimatedCredits) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Créditos insuficientes para processamento em lote',
+            required: estimatedCredits,
+            available: credits.fullCredits,
+            message: `Você precisa de ${estimatedCredits} crédito(s) FULL para processar ${validatedData.jobs.length} relatório(s). Entre em contato com o suporte para adquirir mais créditos.`
+          },
+          { status: 402 } // Payment Required
+        );
+      }
+    }
 
     // 3. Preparar jobs para batch
     const customizationManager = getCustomizationManager();
@@ -274,6 +336,24 @@ export async function PUT(req: NextRequest) {
     console.log(`${ICONS.SUCCESS} Batch concluído: ${stats.successful}/${stats.totalJobs} sucessos em ${totalTime}ms`);
     console.log(`${ICONS.INFO} Throughput: ${Math.round(stats.throughput)} relatórios/min`);
 
+    // 4.5. Debit credits for successful batch reports (only successful ones count)
+    if (!isDivinity && stats.successful > 0) {
+      const actualCreditsUsed = stats.successful * creditCostPerReport;
+      const debitResult = await debitCredits(
+        user.email,
+        workspace.id,
+        actualCreditsUsed,
+        'FULL',
+        `Batch report generation: ${stats.successful} reports`
+      );
+      if (!debitResult.success) {
+        console.warn(`Failed to debit credits: ${debitResult.reason}`);
+        // Log but don't fail the request - the batch was already generated
+      } else {
+        console.log(`Credits debited: ${actualCreditsUsed} FULL credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
+      }
+    }
+
     // 5. Retornar resultados
     return NextResponse.json({
       success: true,
@@ -316,7 +396,9 @@ async function handleBatchGeneration(
   validatedData: any,
   customizationProfile: any,
   baseData: any,
-  workspaceId: string
+  workspaceId: string,
+  isDivinity: boolean = false,
+  userEmail: string = ''
 ): Promise<NextResponse> {
   const dataCollector = getReportDataCollector();
   const customizationManager = getCustomizationManager();
