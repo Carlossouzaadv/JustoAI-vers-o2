@@ -70,7 +70,7 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
 
 /**
  * Middleware para proteger o Bull Board
- * Só permite acesso para usuários admin autenticados
+ * Allows: Internal admins (@justoai.com.br) OR workspace admins
  */
 export async function bullBoardAuthMiddleware(
   req: Express.Request,
@@ -78,7 +78,7 @@ export async function bullBoardAuthMiddleware(
   next: Express.NextFunction
 ) {
   try {
-    // Em desenvolvimento, permitir com token simples
+    // Em desenvolvimento, permitir com token simples (para testes rápidos)
     if (process.env.NODE_ENV === 'development') {
       const devToken = req.headers.authorization?.substring(7);
       if (devToken === process.env.BULL_BOARD_ACCESS_TOKEN) {
@@ -86,39 +86,43 @@ export async function bullBoardAuthMiddleware(
       }
       // Se não houver token válido, permitir sem autenticação em dev (para debugging)
       // mas log de warning
-      console.warn('⚠️  Bull Board accessed without proper token in development');
+      console.warn('⚠️ Bull Board accessed without proper token in development');
       return next();
     }
 
-    // Em produção, validação rigorosa
+    // Em produção, validação rigorosa com dois níveis de acesso
     const validation = await validateBullBoardAccess(req);
 
     if (!validation.authorized) {
       console.warn(
-        `🔒 Bull Board access denied: ${validation.reason} (User: ${validation.userId}, Workspace: ${validation.workspaceId})`
+        `🔒 Bull Board access denied: ${validation.reason} (User: ${validation.userId}, Email: ${validation.email})`
       );
       return res.status(403).json({
         error: 'Admin access required',
-        reason: validation.reason
+        reason: validation.reason,
+        email: validation.email
       });
     }
 
-    // Attach user info to request for logging
+    // Attach user info to request for logging and filtering
     (req as any).bullBoardUser = {
       userId: validation.userId,
+      email: validation.email,
       workspaceId: validation.workspaceId,
+      isInternal: validation.isInternal,
       role: validation.role
     };
 
     console.log(
-      `✅ Bull Board access granted for user ${validation.userId} (role: ${validation.role})`
+      `✅ Bull Board access granted for user ${validation.userId} (${validation.email}) - Role: ${validation.role}`
     );
 
     next();
   } catch (error) {
     console.error('🔴 Error validating Bull Board access:', error);
     return res.status(500).json({
-      error: 'Internal server error validating access'
+      error: 'Internal server error validating access',
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 }

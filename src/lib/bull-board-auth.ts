@@ -5,88 +5,108 @@
 // Only admins from authenticated workspaces can access
 
 import type { Request } from 'express';
-import { validateAuthAndGetUser } from './auth';
-import { isWorkspaceAdmin } from './permission-validator';
+import { isInternalAdmin, isWorkspaceAdmin } from './permission-validator';
 import { ICONS } from './icons';
+import { prisma } from './prisma';
 
 export interface BullBoardAccessValidation {
   authorized: boolean;
   userId?: string;
   workspaceId?: string;
+  email?: string;
+  isInternal?: boolean;
   role?: string;
   reason?: string;
 }
 
 /**
  * Validate Bull Board access from Express request
+ * Allows: Internal admins (@justoai.com.br) OR workspace admins
  *
  * Steps:
- * 1. Extract auth from headers
- * 2. Validate user is authenticated
- * 3. Check if user is admin of their workspace
- * 4. Log access attempt
+ * 1. Extract userId from request context
+ * 2. Get user from database to get email
+ * 3. Check if internal admin (@justoai.com.br) → FULL ACCESS
+ * 4. Check if workspace admin → SCOPED ACCESS
+ * 5. Deny access otherwise
  */
 export async function validateBullBoardAccess(
   req: Request
 ): Promise<BullBoardAccessValidation> {
   try {
-    // Try to get auth headers
-    const authHeader = req.headers.authorization;
-    const sessionToken = (req as any).session?.token;
+    // Try to extract user ID from request context (set by middleware)
+    const userId = (req as any).userId;
+    const workspaceId = (req as any).workspaceId;
 
-    if (!authHeader && !sessionToken) {
+    if (!userId) {
       return {
         authorized: false,
-        reason: 'No authentication credentials provided'
+        reason: 'User ID not available in request'
       };
     }
 
-    // Extract token
-    let token = '';
-    if (authHeader?.startsWith('Bearer ')) {
-      token = authHeader.substring(7);
-    } else if (sessionToken) {
-      token = sessionToken;
-    }
+    // Get user from database to check email
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
 
-    if (!token) {
-      return {
-        authorized: false,
-        reason: 'Invalid authentication token format'
-      };
-    }
-
-    // For Express requests, we need to validate differently
-    // Try to extract user from request context
-    let userId = (req as any).userId;
-    let workspaceId = (req as any).workspaceId;
-
-    // If not in context, try to validate from session/token
-    // This is a simplified approach - in production, validate JWT properly
-    if (!userId || !workspaceId) {
-      return {
-        authorized: false,
-        reason: 'User context not available in request'
-      };
-    }
-
-    // Check if user is admin
-    const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
-
-    if (!isAdmin) {
+    if (!user) {
       return {
         authorized: false,
         userId,
+        reason: 'User not found in database'
+      };
+    }
+
+    // Check if internal admin
+    if (isInternalAdmin(user.email)) {
+      console.log(
+        `${ICONS.SHIELD} Bull Board access granted (INTERNAL) for user ${userId} (${user.email})`
+      );
+      return {
+        authorized: true,
+        userId,
+        email: user.email,
+        isInternal: true,
+        role: 'INTERNAL_ADMIN'
+      };
+    }
+
+    // Check if workspace admin
+    if (!workspaceId) {
+      return {
+        authorized: false,
+        userId,
+        email: user.email,
+        reason: 'Workspace ID not available in request'
+      };
+    }
+
+    const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
+
+    if (!isAdmin) {
+      console.warn(
+        `${ICONS.SHIELD} Bull Board access denied for user ${userId} (${user.email}) - not a workspace admin`
+      );
+      return {
+        authorized: false,
+        userId,
+        email: user.email,
         workspaceId,
         reason: `User is not an admin of workspace ${workspaceId}`
       };
     }
 
+    console.log(
+      `${ICONS.SHIELD} Bull Board access granted (WORKSPACE) for user ${userId} (${user.email})`
+    );
     return {
       authorized: true,
       userId,
+      email: user.email,
       workspaceId,
-      role: 'ADMIN'
+      isInternal: false,
+      role: 'WORKSPACE_ADMIN'
     };
   } catch (error) {
     console.error(
@@ -96,7 +116,7 @@ export async function validateBullBoardAccess(
 
     return {
       authorized: false,
-      reason: 'Error validating access credentials'
+      reason: error instanceof Error ? error.message : 'Error validating access credentials'
     };
   }
 }
