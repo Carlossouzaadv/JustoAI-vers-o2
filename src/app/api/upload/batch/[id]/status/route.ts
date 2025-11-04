@@ -69,9 +69,16 @@ export async function GET(
 
     // Buscar erros se houver
     let errors: any[] = [];
+    let errorSummary: Record<string, number> = {};
     try {
       if (batch.errors) {
         errors = JSON.parse(batch.errors as string);
+
+        // Gerar resumo de erros por campo
+        for (const err of errors) {
+          const key = `${err.field}: ${err.error}`;
+          errorSummary[key] = (errorSummary[key] || 0) + 1;
+        }
       }
     } catch {
       // Ignorar erro de parsing
@@ -85,6 +92,24 @@ export async function GET(
       }
     } catch {
       // Ignorar erro de parsing
+    }
+
+    // Calcular estatísticas de retry
+    let retryStats = {
+      totalWithErrors: errors.length,
+      retryable: 0,
+      maxedOut: 0,
+      retryBreakdown: {} as Record<number, number>,
+    };
+
+    for (const err of errors) {
+      const retryCount = err.retryCount || 0;
+      if (retryCount < 3) {
+        retryStats.retryable++;
+      } else {
+        retryStats.maxedOut++;
+      }
+      retryStats.retryBreakdown[retryCount] = (retryStats.retryBreakdown[retryCount] || 0) + 1;
     }
 
     const response = {
@@ -105,8 +130,16 @@ export async function GET(
         workspace: batch.workspace
       },
       summary,
+      errorSummary: errorSummary, // Top error messages by frequency
+      retryStats, // Retry statistics
       errors: errors.slice(0, 10), // Limitar erros retornados
-      hasMoreErrors: errors.length > 10
+      hasMoreErrors: errors.length > 10,
+      actions: {
+        canDownloadErrors: errors.length > 0,
+        canRetry: retryStats.retryable > 0,
+        downloadErrorsUrl: `/api/upload/batch/${batch.id}/errors/download`,
+        retryUrl: `/api/upload/batch/${batch.id}/retry`
+      }
     };
 
     console.log(`${ICONS.SUCCESS} Status retornado: ${batch.status} (${progress}%)`);
