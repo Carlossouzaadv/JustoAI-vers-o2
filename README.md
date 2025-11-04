@@ -15,23 +15,34 @@
 
 ---
 
-## ✅ PROGRESS UPDATE - Nov 3, 2025 (TODAY)
+## ✅ PROGRESS UPDATE - Nov 4, 2025 (TODAY)
 
-### Completed This Session
-| Blocker | Status | What Was Done |
-|---------|--------|---------------|
-| **BLOCKER 1: Sentry Activation** | ✅ DONE | Real error tracking with Sentry Next.js SDK, server/client/edge configs, error boundary, Sentry admin dashboard active |
-| **BLOCKER 2: Webhook Verification** | ✅ DONE | HMAC-SHA256 signature verification for Stripe, MercadoPago, PagSeguro, Pix. Fixed critical security vulnerability. |
+### ✅ Completed This Session (Nov 3-4)
+| Item | Status | What Was Done | Commit |
+|------|--------|---------------|--------|
+| **BLOCKER 3: Admin Permission Validation** | ✅ DONE | Dual-tier admin system (internal @justoai.com.br + workspace admins), permission-validator middleware, updated 4 admin endpoints | `50187d8` |
+| **BLOCKER 4: Bull Board RBAC** | ✅ DONE | Bull Board access control, two-level auth, workspace-scoped access, queue dashboard page | `fdc666e` |
+| **FEATURE 1: Real Credit System (Foundation)** | ✅ DONE | CreditService with divinity admin support, admin endpoint to add credits, Prisma schema updates | `c393d58` |
+| **FEATURE 1: Credit Integration** | ✅ DONE | Integrated credit checks into 5 main endpoints (analysis/full, ai/analyze, documents, reports) | `02eab7a` |
+| **Account Recovery Feature** | ✅ DONE | Forgot password modal, resend verification email, 2 new auth endpoints, email templates | `65b5304` |
 
-### Still Pending (Continue Tomorrow)
-| Blocker | Status | Effort | Priority |
-|---------|--------|--------|----------|
-| **BLOCKER 3: Admin Permission Validation** | ⏳ TODO | 2.5h | HIGH |
-| **BLOCKER 4: Bull Board RBAC** | ⏳ TODO | 1.5h | HIGH |
-| **FEATURE 1: Real Credit System** | ⏳ TODO | 3h | HIGH |
-| **FEATURE 2-6: Other Features** | ⏳ TODO | Varies | MEDIUM |
+### 🔴 Critical Blockers - NEXT PRIORITY (1-2 weeks)
+| Blocker | Status | Effort | Description |
+|---------|--------|--------|-------------|
+| **BLOCKER 1: Error Tracking (Sentry)** | ❌ TODO | 2-4h | Enable real error capture, Slack alerts, observability dashboard |
+| **BLOCKER 2: Payment Webhook Verification** | ❌ TODO | 4-6h | HMAC signature validation for Stripe/PayPal/Pix webhooks - CRITICAL SECURITY |
 
-**See [resumo_projeto_atual.md](./resumo_projeto_atual.md) and [TODO.md](./TODO.md) for full context**
+### ✨ Features - MEDIUM PRIORITY (2-3 weeks)
+| Feature | Status | Effort | What |
+|---------|--------|--------|------|
+| **FEATURE 2: Document APIs** | ❌ TODO | 2h | Complete PATCH/DELETE for documents |
+| **FEATURE 3: Case Notes CRUD** | ❌ TODO | 2h | Add case notes system |
+| **FEATURE 4: Real Telemetry** | ❌ TODO | 3h | Dashboard with real metrics |
+| **FEATURE 5: Excel Export Retry** | ❌ TODO | 2h | Auto-retry for exports |
+| **FEATURE 6: Dashboard Real Data** | ❌ TODO | 2-3h | Real data in dashboard |
+
+**Status:** MVP is 90% feature-complete. Remaining work: 2 critical blockers + 6 features.
+**Timeline to Launch:** ~4 weeks (1-2 weeks blockers, 2-3 weeks features, 1 week testing)
 
 ---
 
