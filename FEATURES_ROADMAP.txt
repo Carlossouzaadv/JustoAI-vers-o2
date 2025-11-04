@@ -1,0 +1,247 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                     JUSTOAI MVP - FEATURES ROADMAP                          ║
+║                      All 4 Security Blockers COMPLETE ✅                     ║
+║                        Launch Target: December 1, 2025                      ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 REMAINING WORK: 6 FEATURES / 50-65 HOURS / 3-4 WEEKS
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ COMPLETED (4 Items)
+  [✓] BLOCKER 1: Sentry Error Tracking - Nov 4
+  [✓] BLOCKER 2: Payment Webhook Verification - Nov 4
+  [✓] BLOCKER 3: Admin Permission Validation - Nov 3
+  [✓] BLOCKER 4: Bull Board Access Control - Nov 3
+  [✓] FEATURE 1: Real Credit System - Nov 3
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 WEEK 1 (Nov 4-10) - START THESE IN PARALLEL - 20-29 Hours
+
+🟢 FEATURE 2: Document APIs (PATCH/DELETE)
+   Priority: HIGH | Effort: 5-7h | Difficulty: LOW
+   Dependencies: NONE
+
+   Tasks:
+   • PATCH /api/documents/[id] - Update metadata (name, tags, summary)
+   • DELETE /api/documents/[id] - Remove file from storage + DB cleanup
+
+   Files to modify:
+   └─ src/app/api/documents/[id]/route.ts (add PATCH + DELETE handlers)
+
+   Patterns:
+   • Auth: Copy from upload endpoint (proven)
+   • Supabase: Use SDKStorage like existing delete in upload
+   • Audit: Create CaseEvent for both operations
+
+─────────────────────────────────────────────────────────────────────────────
+
+🟢 FEATURE 3: Case Notes CRUD (GET/POST/PATCH/DELETE)
+   Priority: HIGH | Effort: 7-10h | Difficulty: LOW
+   Dependencies: NONE
+
+   Tasks:
+   • GET /api/cases/[id]/notes - Fetch with pagination
+   • POST /api/cases/[id]/notes - Create note
+   • PATCH /api/cases/[id]/notes/[noteId] - Update (author/admin only)
+   • DELETE /api/cases/[id]/notes/[noteId] - Delete (author/admin only)
+
+   Files to modify:
+   ├─ src/app/api/cases/[id]/notes/route.ts (replace stubs)
+   └─ src/app/api/cases/[id]/notes/[noteId]/route.ts (new)
+
+   Schema: Uses CaseEvent model with type='NOTE' (no migrations!)
+   Metadata: { title, tags[], priority, isPinned }
+
+─────────────────────────────────────────────────────────────────────────────
+
+🟡 FEATURE 5: Excel Export Retry & Error Handling
+   Priority: MEDIUM | Effort: 8-12h | Difficulty: MEDIUM
+   Dependencies: NONE
+
+   Tasks:
+   • Validation: Row-level field validation with specific errors
+   • Error Export: Download CSV of failed rows
+   • Retry Logic: Reprocess failed rows up to 3 times
+   • Status Enhancement: Show error summary and retry options
+
+   Files to create:
+   ├─ src/lib/excel-validation.ts (Zod schemas)
+   ├─ src/app/api/upload/batch/[id]/errors/download/route.ts
+   └─ src/app/api/upload/batch/[id]/retry/route.ts
+
+   Files to modify:
+   └─ src/app/api/upload/batch/[id]/status/route.ts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 WEEK 2-3 (Nov 10-24) - SEQUENTIAL (Must start after F2-3) - 20-25 Hours
+
+🟠 FEATURE 4: Real Telemetry Collection & Aggregation
+   Priority: CRITICAL | Effort: 20-25h | Difficulty: HIGH
+   Dependencies: NONE (but blocks F6)
+
+   ⚠️  BLOCKS FEATURE 6 - Must complete before F6 starts
+
+   Phase 1: JUDIT API Wrapper (3-5h)
+   • Wrap all JUDIT API calls
+   • Track: duration, success, cost, documents
+   • Save to JuditCostTracking model
+
+   Phase 2: Real Endpoints (4-6h)
+   • GET /api/telemetry/monthly-usage (replace mock)
+   • GET /api/telemetry/active-alerts (replace mock)
+   • Query real data from database
+
+   Phase 3: Integration Points (3-4h)
+   • Hook into: onboarding, analysis, reports, uploads
+   • Emit telemetry events
+
+   Phase 4: Daily Aggregation Job (4-5h)
+   • Create: src/jobs/telemetry-aggregation.ts
+   • Run daily at 23:00 UTC
+   • Aggregate + trigger alerts
+
+   Files to create:
+   ├─ src/lib/judit-api-wrapper.ts
+   ├─ src/jobs/telemetry-aggregation.ts
+   └─ Update multiple endpoints for integration
+
+   Schema: Uses JuditCostTracking, JuditAlert (no migrations!)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 WEEK 3-4 (Nov 17-Dec 1) - AFTER FEATURE 4 - 12-15 Hours
+
+🔵 FEATURE 6: Dashboard Real Data Integration
+   Priority: MEDIUM | Effort: 12-15h | Difficulty: MEDIUM
+   Dependencies: Feature 4 (telemetry endpoints)
+
+   ❌ CANNOT START UNTIL FEATURE 4 COMPLETE
+
+   Tasks:
+   • Dashboard Service: Aggregate stats from database
+   • API Endpoint: GET /api/dashboard/overview
+   • Frontend: Replace mocks with real data
+   • Caching: Redis invalidation strategy
+
+   Files to create:
+   ├─ src/lib/services/dashboardDataService.ts
+   └─ src/app/api/dashboard/overview/route.ts
+
+   Files to modify:
+   ├─ src/app/dashboard/components/*.tsx (all components)
+   └─ Multiple endpoints (cache invalidation)
+
+   What shows:
+   • Real process counts by status
+   • Real storage usage vs quota
+   • Real credit balance
+   • Real cost this month
+   • Recent activity (last 10 events)
+   • Active alerts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 CRITICAL DEPENDENCIES
+
+F4 Telemetry ──→ F6 Dashboard
+    ✅ MUST complete F4 before starting F6
+
+F2, F3, F5 ─ INDEPENDENT
+    ✅ Can run in parallel (no dependencies)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 DATABASE STATUS: ✅ NO MIGRATIONS NEEDED!
+
+All required database models exist:
+  ✓ CaseDocument (documents)
+  ✓ CaseEvent (notes, events)
+  ✓ UploadBatch & UploadBatchRow (uploads)
+  ✓ JuditCostTracking (telemetry)
+  ✓ JuditAlert (monitoring)
+  ✓ WorkspaceCredits (credits)
+
+Just need to USE them, not change them!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 IMPLEMENTATION GUIDES CREATED
+
+1. MVP_FEATURES_IMPLEMENTATION_GUIDE.md (5000+ lines)
+   • Complete implementation specs for all 6 features
+   • Code examples and patterns for each task
+   • Database schema review
+   • Testing checklists
+   • Risk assessment
+
+2. MVP_QUICK_START.md (2000+ lines)
+   • Quick reference timeline
+   • File structure and checklist
+   • Code patterns reference
+   • Daily standup questions
+   • Success indicators
+
+READ THESE BEFORE STARTING IMPLEMENTATION!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️  TIMELINE SUMMARY
+
+Nov 4  ─→ Nov 10: F2 + F3 + F5 (parallel)        20-29h  ✨ QUICK WINS
+Nov 10 ─→ Nov 24: F4 (sequential)                20-25h  ⚠️  CRITICAL PATH
+Nov 17 ─→ Dec 1:  F6 (after F4 done)             12-15h
+Nov 24 ─→ Dec 1:  QA + Testing + Deployment      3-5h
+
+TOTAL: 55-70 hours / 27 days / 1 person = ~2-3 hours/day
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SUCCESS CRITERIA
+
+Week 1 Complete (Nov 11):
+  □ F2: PATCH + DELETE working
+  □ F3: Full CRUD working
+  □ F5: Validation + retry working
+  □ All endpoints have Sentry integration
+  □ All unit tests passing
+
+Week 3 Complete (Nov 24):
+  □ F4: All phases complete
+  □ /api/telemetry/monthly-usage returning real data
+  □ Cost calculations verified against database
+
+Launch Day (Dec 1):
+  □ F6: Dashboard showing real data
+  □ All features integrated
+  □ No critical bugs in QA
+  □ Security audit passed
+  □ Performance benchmarks met
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 READY TO START!
+
+All blockers cleared. Database ready. Patterns documented.
+
+Next steps:
+1. Read MVP_QUICK_START.md (15 min overview)
+2. Read MVP_FEATURES_IMPLEMENTATION_GUIDE.md (detailed specs)
+3. Assign F2 → Engineer A, F3 → Engineer B, F5 → Engineer C
+4. Start Feature 2: PATCH /api/documents/[id]
+5. Daily standup on progress
+
+Questions? Refer to the implementation guides.
+Code patterns? Check existing endpoints (proven working).
+Database? No changes needed - all tables exist!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Document: FEATURES_ROADMAP.txt
+Created: November 4, 2025
+Status: Ready for implementation
+Launch: December 1, 2025 (27 days)
