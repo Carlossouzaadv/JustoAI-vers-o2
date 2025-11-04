@@ -6,6 +6,7 @@ import { getGeminiClient } from '@/lib/gemini-client';
 import { ModelTier } from '@/lib/ai-model-types';
 import { getCredits, debitCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
+import { captureApiError, setSentryUserContext, setSentryWorkspaceContext } from '@/lib/sentry-error-handler';
 
 export async function POST(
   request: NextRequest,
@@ -20,6 +21,10 @@ export async function POST(
     }
     const userId = user.id;
     const caseId = id;
+
+    // Set Sentry context for error tracking
+    setSentryUserContext(userId);
+
     console.log(`${ICONS.ROBOT} [Full Analysis] Iniciando para case ${caseId}`);
 
     const caseData = await prisma.case.findUnique({
@@ -168,6 +173,17 @@ export async function POST(
     });
 
   } catch (error) {
+    const duration = Date.now() - startTime;
+
+    // Capture error to Sentry with context
+    captureApiError(error, {
+      userId,
+      caseId: id,
+      endpoint: '/api/process/[id]/analysis/full',
+      method: 'POST',
+      duration,
+    });
+
     console.error(`${ICONS.ERROR} [Full Analysis] Erro:`, error);
     return NextResponse.json(
       {
