@@ -7,6 +7,7 @@ import { requireAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 import { getCredits, debitCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
+import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
 const prisma = new PrismaClient();
 
@@ -230,6 +231,24 @@ export async function POST(
           version: nextVersion
         }
       }
+    });
+
+    // 9.5. Track telemetry
+    await juditAPI.trackCall({
+      workspaceId: document.case.workspaceId,
+      operationType: JuditOperationType.ANALYSIS,
+      durationMs: Date.now() - Date.parse(new Date().toISOString()) + (analysisVersion.processingTime as number),
+      success: true,
+      requestId: analysisVersion.id,
+      metadata: {
+        eventType: 'document.analyzed',
+        documentId: document.id,
+        analysisType: 'PDF_UPLOAD',
+        model: routingInfo?.final_tier || 'gemini-2.5-flash',
+        confidence: analysisVersion.confidence,
+        forceReanalysis,
+        creditsUsed: aiAnalysis && !isDivinity ? 1 : 0,
+      },
     });
 
     // 10. Resposta de sucesso

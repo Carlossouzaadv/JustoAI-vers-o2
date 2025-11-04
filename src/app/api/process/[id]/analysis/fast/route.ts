@@ -10,6 +10,7 @@ import { successResponse, errorResponse, validateBody, requireAuth, withErrorHan
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { getCreditManager } from '@/lib/credit-system';
 import { ICONS } from '@/lib/icons';
+import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
 // Schema de validação
 const fastAnalysisSchema = z.object({
@@ -74,6 +75,21 @@ export const POST = withErrorHandler(async (
 
         // Incrementar contador de acesso ao cache
         await analysisService.incrementCacheAccess(analysisKey);
+
+        // Track cache hit telemetry
+        await juditAPI.trackCall({
+          workspaceId,
+          operationType: JuditOperationType.FETCH,
+          durationMs: 50,
+          success: true,
+          requestId: cachedResult.id,
+          metadata: {
+            eventType: 'analysis.cache_hit',
+            analysisId: cachedResult.id,
+            documentCount: attachedDocs.length,
+            cacheAge: Date.now() - cachedResult.createdAt.getTime(),
+          },
+        });
 
         return successResponse({
           analysisId: cachedResult.id,

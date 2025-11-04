@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { AIModelRouter } from '@/lib/ai-model-router';
 import { creditService } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
+import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
 interface AnalysisRequest {
   level: 'FAST' | 'FULL';
@@ -182,6 +183,24 @@ export async function POST(
     });
 
     console.log(`${ICONS.SUCCESS} Versão ${nextVersion} criada - ID: ${analysisVersion.id}`);
+
+    // Track analysis request telemetry
+    const analysisRequestTime = Date.now() - startTime;
+    await juditAPI.trackCall({
+      workspaceId,
+      operationType: JuditOperationType.ANALYSIS,
+      durationMs: analysisRequestTime,
+      success: true,
+      requestId: analysisVersion.id,
+      metadata: {
+        eventType: 'analysis.requested',
+        level,
+        model: modelUsed,
+        documentCount: documents.length,
+        textLength: fullText.length,
+        analysisType: level === 'FULL' ? 'complete' : 'strategic',
+      },
+    });
 
     // Processar em background
     processAnalysisInBackground(

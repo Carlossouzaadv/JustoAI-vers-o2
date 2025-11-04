@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { addOnboardingJob } from '@/lib/queue/juditQueue';
+import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
 // ================================================================
 // VALIDAÇÃO
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
     // 2. ADICIONAR À FILA
     // ============================================================
 
+    const startTime = Date.now();
     const { jobId } = await addOnboardingJob(cnj, {
       workspaceId,
       userId,
@@ -60,6 +62,27 @@ export async function POST(request: NextRequest) {
     });
 
     console.log(`[API] Onboarding job criado: ${jobId} - CNJ: ${cnj}`);
+
+    // ============================================================
+    // 2.5. TRACK TELEMETRY
+    // ============================================================
+
+    const durationMs = Date.now() - startTime;
+    if (workspaceId) {
+      await juditAPI.trackCall({
+        workspaceId,
+        operationType: JuditOperationType.MONITORING,
+        numeroCnj: cnj,
+        durationMs,
+        success: true,
+        requestId: jobId,
+        metadata: {
+          eventType: 'onboarding.started',
+          userId,
+          priority: priority || 5,
+        },
+      });
+    }
 
     // ============================================================
     // 3. RETORNAR 202 ACCEPTED

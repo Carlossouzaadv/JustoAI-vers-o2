@@ -88,9 +88,12 @@
    • GET /api/telemetry/monthly-usage - Real data aggregation
    • GET /api/telemetry/active-alerts - Unresolved alerts by severity
    
-   ⏳ PHASE 3: Integration Points (3-4h) - PENDING
-   • Hook into: onboarding, analysis, reports, uploads
-   • Emit telemetry events at critical points
+   ⏳ PHASE 3: Integration Points (3-4h) - IN PROGRESS
+   • ✅ Onboarding: /api/judit/onboarding (started, completed events)
+   • ✅ Analysis: /api/process/[id]/analysis (FULL/FAST analysis requests)
+   • ✅ Document Analysis: /api/documents/[id]/analyze (PDF analysis tracking)
+   • ⏳ Reports: /api/reports/individual, /api/reports/schedule (pending)
+   • ⏳ Uploads: /api/documents/upload, /api/processes/upload (pending)
    
    ⏳ PHASE 4: Daily Aggregation Job (4-5h) - PENDING
    • Cron job: Daily at 23:00 UTC

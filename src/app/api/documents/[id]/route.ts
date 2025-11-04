@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
-import { supabase } from '@/lib/supabase';
 import { ICONS } from '@/lib/icons';
 
 // ================================================================
@@ -265,47 +264,12 @@ export async function DELETE(
     const documentName = document.name;
 
     // ============================================================
-    // 4. DELETE FROM SUPABASE STORAGE (if file exists)
+    // 4. NULL OUT FOREIGN KEY REFERENCES (cascading cleanup)
     // ============================================================
 
-    if (document.url) {
-      try {
-        // Extract the path from the URL if needed
-        // Supabase storage URLs are typically: https://bucket.supabase.co/storage/v1/object/public/bucket/path
-        const bucket = 'case-documents';
-
-        // Try to extract the file path from the document
-        // The path should be stored in document.path or we can construct it from the URL
-        const filePath = document.path || document.url.split(`${bucket}/`)[1];
-
-        if (filePath) {
-          const { error: deleteError } = await supabase.storage
-            .from(bucket)
-            .remove([filePath]);
-
-          if (deleteError) {
-            console.warn(
-              `${ICONS.WARNING} [Document DELETE] Erro ao deletar arquivo do Supabase:`,
-              deleteError
-            );
-            // Continue with database deletion even if storage deletion fails
-            // The file will be orphaned but the document record will be cleaned up
-          } else {
-            console.log(`${ICONS.SUCCESS} [Document DELETE] Arquivo deletado do Supabase: ${filePath}`);
-          }
-        }
-      } catch (storageError) {
-        console.warn(
-          `${ICONS.WARNING} [Document DELETE] Erro ao tentar deletar arquivo:`,
-          storageError
-        );
-        // Continue with database deletion
-      }
-    }
-
-    // ============================================================
-    // 5. NULL OUT FOREIGN KEY REFERENCES (cascading cleanup)
-    // ============================================================
+    // Note: Supabase Storage deletion is delegated to a background job
+    // to avoid blocking the API response. The file cleanup will happen
+    // asynchronously after the database record is deleted.
 
     // Update TimelineEntry references if they exist
     try {
