@@ -1,16 +1,16 @@
 ╔════════════════════════════════════════════════════════════════════════════╗
 ║                     JUSTOAI MVP - FEATURES ROADMAP                          ║
-║                      All 4 Security Blockers COMPLETE ✅                     ║
+║                  Features 2,3,5 COMPLETE ✅ | F4 IN PROGRESS  ║
 ║                        Launch Target: December 1, 2025                      ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📋 REMAINING WORK: 2 FEATURES / 30-40 HOURS / 2 WEEKS
+📋 REMAINING WORK: 2 FEATURES / 32-40 HOURS / 2-3 WEEKS
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✅ COMPLETED (8 Items)
+✅ COMPLETED (8 Items - 20-29h)
   [✓] BLOCKER 1: Sentry Error Tracking - Nov 4
   [✓] BLOCKER 2: Payment Webhook Verification - Nov 4
   [✓] BLOCKER 3: Admin Permission Validation - Nov 3
@@ -22,140 +22,114 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📍 WEEK 1 (Nov 4-10) - START THESE IN PARALLEL - 20-29 Hours
-
-🟢 FEATURE 2: Document APIs (PATCH/DELETE)
+📍 FEATURE 2: Document APIs (PATCH/DELETE) - COMPLETE ✅
    Priority: HIGH | Effort: 5-7h | Difficulty: LOW
-   Dependencies: NONE
-
-   Tasks:
-   • PATCH /api/documents/[id] - Update metadata (name, tags, summary)
-   • DELETE /api/documents/[id] - Remove file from storage + DB cleanup
-
-   Files to modify:
-   └─ src/app/api/documents/[id]/route.ts (add PATCH + DELETE handlers)
-
-   Patterns:
-   • Auth: Copy from upload endpoint (proven)
-   • Supabase: Use SDKStorage like existing delete in upload
-   • Audit: Create CaseEvent for both operations
-
-─────────────────────────────────────────────────────────────────────────────
-
-🟢 FEATURE 3: Case Notes CRUD (GET/POST/PATCH/DELETE)
-   Priority: HIGH | Effort: 7-10h | Difficulty: LOW
-   Dependencies: NONE
-
-   Tasks:
-   • GET /api/cases/[id]/notes - Fetch with pagination
-   • POST /api/cases/[id]/notes - Create note
-   • PATCH /api/cases/[id]/notes/[noteId] - Update (author/admin only)
-   • DELETE /api/cases/[id]/notes/[noteId] - Delete (author/admin only)
-
-   Files to modify:
-   ├─ src/app/api/cases/[id]/notes/route.ts (replace stubs)
-   └─ src/app/api/cases/[id]/notes/[noteId]/route.ts (new)
-
-   Schema: Uses CaseEvent model with type='NOTE' (no migrations!)
-   Metadata: { title, tags[], priority, isPinned }
-
-─────────────────────────────────────────────────────────────────────────────
-
-🟡 FEATURE 5: Excel Export Retry & Error Handling
-   Priority: MEDIUM | Effort: 8-12h | Difficulty: MEDIUM
-   Dependencies: NONE
-
-   Tasks:
-   • Validation: Row-level field validation with specific errors
-   • Error Export: Download CSV of failed rows
-   • Retry Logic: Reprocess failed rows up to 3 times
-   • Status Enhancement: Show error summary and retry options
-
-   Files to create:
-   ├─ src/lib/excel-validation.ts (Zod schemas)
-   ├─ src/app/api/upload/batch/[id]/errors/download/route.ts
-   └─ src/app/api/upload/batch/[id]/retry/route.ts
-
-   Files to modify:
-   └─ src/app/api/upload/batch/[id]/status/route.ts
+   Status: COMPLETE (Nov 4)
+   
+   Implemented:
+   ✓ PATCH /api/documents/[id] - Update metadata (name, tags, summary)
+   ✓ DELETE /api/documents/[id] - Remove from Supabase + cascade cleanup
+   ✓ Full auth validation + Sentry integration
+   ✓ Audit events for all operations
+   
+   Files:
+   └─ src/app/api/documents/[id]/route.ts (NEW - 260 lines)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📍 WEEK 2-3 (Nov 10-24) - SEQUENTIAL (Must start after F2-3) - 20-25 Hours
+📍 FEATURE 3: Case Notes CRUD - COMPLETE ✅
+   Priority: HIGH | Effort: 7-10h | Difficulty: LOW
+   Status: COMPLETE (Nov 4)
+   
+   Implemented:
+   ✓ GET /api/cases/[id]/notes - Fetch with pagination, sorting
+   ✓ POST /api/cases/[id]/notes - Create note as CaseEvent
+   ✓ PATCH /api/cases/[id]/notes/[noteId] - Update (author-only)
+   ✓ DELETE /api/cases/[id]/notes/[noteId] - Delete (author-only)
+   ✓ Full RBAC + auth validation
+   
+   Files:
+   ├─ src/app/api/cases/[id]/notes/route.ts (UPDATED - 330 lines)
+   └─ src/app/api/cases/[id]/notes/[noteId]/route.ts (NEW - 320 lines)
 
-🟠 FEATURE 4: Real Telemetry Collection & Aggregation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 FEATURE 5: Excel Export Retry & Error Handling - COMPLETE ✅
+   Priority: MEDIUM | Effort: 8-12h | Difficulty: MEDIUM
+   Status: COMPLETE (Nov 4)
+   
+   Implemented:
+   ✓ Zod validation schemas for 10 field types (Legal-specific rules)
+   ✓ CSV error export endpoint (row, field, error, original value)
+   ✓ Retry logic up to 3 attempts with state tracking
+   ✓ Enhanced batch status with error summary + retry statistics
+   
+   Files:
+   ├─ src/lib/excel-validation.ts (NEW - 320 lines, with utilities)
+   ├─ src/app/api/upload/batch/[id]/errors/download/route.ts (NEW)
+   ├─ src/app/api/upload/batch/[id]/retry/route.ts (NEW - POST & GET)
+   └─ src/app/api/upload/batch/[id]/status/route.ts (UPDATED)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📍 FEATURE 4: Real Telemetry Collection & Aggregation - IN PROGRESS 🟠
    Priority: CRITICAL | Effort: 20-25h | Difficulty: HIGH
-   Dependencies: NONE (but blocks F6)
-
-   ⚠️  BLOCKS FEATURE 6 - Must complete before F6 starts
-
-   Phase 1: JUDIT API Wrapper (3-5h)
-   • Wrap all JUDIT API calls
-   • Track: duration, success, cost, documents
-   • Save to JuditCostTracking model
-
-   Phase 2: Real Endpoints (4-6h)
-   • GET /api/telemetry/monthly-usage (replace mock)
-   • GET /api/telemetry/active-alerts (replace mock)
-   • Query real data from database
-
-   Phase 3: Integration Points (3-4h)
+   Status: PHASE 1 & 2 COMPLETE (8-10h done)
+   Dependencies: Blocks Feature 6
+   
+   ✅ PHASE 1: JUDIT API Wrapper (3-5h) - COMPLETE
+   • judit-api-wrapper.ts (400 lines)
+   • Centralized JUDIT call tracking
+   • Cost calculation by operation type
+   • Auto-create JuditAlert on errors
+   • Methods: search(), monitoring(), fetch(), getMonthCosts(), getUnresolvedAlerts()
+   
+   ✅ PHASE 2: Real Telemetry Endpoints (4-6h) - COMPLETE
+   • GET /api/telemetry/monthly-usage - Real data aggregation
+   • GET /api/telemetry/active-alerts - Unresolved alerts by severity
+   
+   ⏳ PHASE 3: Integration Points (3-4h) - PENDING
    • Hook into: onboarding, analysis, reports, uploads
-   • Emit telemetry events
-
-   Phase 4: Daily Aggregation Job (4-5h)
-   • Create: src/jobs/telemetry-aggregation.ts
-   • Run daily at 23:00 UTC
+   • Emit telemetry events at critical points
+   
+   ⏳ PHASE 4: Daily Aggregation Job (4-5h) - PENDING
+   • Cron job: Daily at 23:00 UTC
    • Aggregate + trigger alerts
 
-   Files to create:
-   ├─ src/lib/judit-api-wrapper.ts
-   ├─ src/jobs/telemetry-aggregation.ts
-   └─ Update multiple endpoints for integration
-
-   Schema: Uses JuditCostTracking, JuditAlert (no migrations!)
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📍 WEEK 3-4 (Nov 17-Dec 1) - AFTER FEATURE 4 - 12-15 Hours
-
-🔵 FEATURE 6: Dashboard Real Data Integration
+📍 FEATURE 6: Dashboard Real Data Integration - PENDING 🔵
    Priority: MEDIUM | Effort: 12-15h | Difficulty: MEDIUM
+   Status: PENDING (waiting for F4 Phase 3&4)
    Dependencies: Feature 4 (telemetry endpoints)
-
-   ❌ CANNOT START UNTIL FEATURE 4 COMPLETE
-
+   
+   Cannot start until F4 complete.
+   
    Tasks:
    • Dashboard Service: Aggregate stats from database
    • API Endpoint: GET /api/dashboard/overview
    • Frontend: Replace mocks with real data
    • Caching: Redis invalidation strategy
 
-   Files to create:
-   ├─ src/lib/services/dashboardDataService.ts
-   └─ src/app/api/dashboard/overview/route.ts
-
-   Files to modify:
-   ├─ src/app/dashboard/components/*.tsx (all components)
-   └─ Multiple endpoints (cache invalidation)
-
-   What shows:
-   • Real process counts by status
-   • Real storage usage vs quota
-   • Real credit balance
-   • Real cost this month
-   • Recent activity (last 10 events)
-   • Active alerts
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🎯 CRITICAL DEPENDENCIES
 
 F4 Telemetry ──→ F6 Dashboard
-    ✅ MUST complete F4 before starting F6
+    ✅ F4 Phase 1&2 complete
+    ⏳ F4 Phase 3&4 in progress
+    ⏳ F6 ready to start once F4 Phase 3&4 done
 
-F2, F3, F5 ─ INDEPENDENT
-    ✅ Can run in parallel (no dependencies)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️  TIMELINE SUMMARY
+
+✅ Nov 4  :  F2 + F3 + F5 (completed)               20-29h  ✨ QUICK WINS
+🟠 Nov 4  → Nov 18: F4 Phase 1-4 (in progress)    20-25h  ⚠️  CRITICAL PATH
+⏳ Nov 18 → Dec 1:  F6 (after F4)                  12-15h
+⏳ Nov 24 → Dec 1:  QA + Testing + Deployment     3-5h
+
+REMAINING: 32-40 hours / 27 days / 1 person = ~1-2 hours/day
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -173,52 +147,22 @@ Just need to USE them, not change them!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📚 IMPLEMENTATION GUIDES CREATED
-
-1. MVP_FEATURES_IMPLEMENTATION_GUIDE.md (5000+ lines)
-   • Complete implementation specs for all 6 features
-   • Code examples and patterns for each task
-   • Database schema review
-   • Testing checklists
-   • Risk assessment
-
-2. MVP_QUICK_START.md (2000+ lines)
-   • Quick reference timeline
-   • File structure and checklist
-   • Code patterns reference
-   • Daily standup questions
-   • Success indicators
-
-READ THESE BEFORE STARTING IMPLEMENTATION!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-⏱️  TIMELINE SUMMARY
-
-✅ Nov 4  ─→ Nov 4:  F2 + F3 + F5 (completed)    20-29h  ✨ QUICK WINS
-📍 Nov 4  ─→ Nov 18: F4 (in progress)            20-25h  ⚠️  CRITICAL PATH
-📍 Nov 18 ─→ Dec 1:  F6 (after F4)               12-15h
-📍 Nov 24 ─→ Dec 1:  QA + Testing + Deployment  3-5h
-
-REMAINING: 35-45 hours / 27 days / 1 person = ~1-2 hours/day
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 ✅ SUCCESS CRITERIA
 
-Week 1 Complete (Nov 4) - ✅ ACHIEVED:
+✅ Week 1 Complete (Nov 4) - ACHIEVED:
   ✅ F2: PATCH + DELETE working
   ✅ F3: Full CRUD working
   ✅ F5: Validation + retry working
   ✅ All endpoints have Sentry integration
   ⏳ Unit tests ready (pending execution)
 
-Week 3 Complete (Nov 18) - IN PROGRESS:
-  ⏳ F4: All phases in progress
-  ⏳ /api/telemetry/monthly-usage endpoint
-  ⏳ Cost calculations from database
+🟠 Week 3 In Progress (Nov 4-18):
+  ✅ F4 Phase 1&2: API Wrapper + Real Endpoints
+  ⏳ F4 Phase 3: Integration Points
+  ⏳ F4 Phase 4: Daily Aggregation Job
+  ⏳ /api/telemetry/* endpoints returning real data
 
-Launch Day (Dec 1) - PENDING:
+⏳ Launch Day (Dec 1) - PENDING:
   ⏳ F6: Dashboard showing real data
   ⏳ All features integrated and tested
   ⏳ No critical bugs in QA
@@ -227,24 +171,29 @@ Launch Day (Dec 1) - PENDING:
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🚀 READY TO START!
+🚀 NEXT STEPS
 
-All blockers cleared. Database ready. Patterns documented.
+1. Complete F4 Phase 3: Integration Points (3-4h)
+   - Hook telemetry tracking into: onboarding, analysis, reports, uploads
+   - Emit events at critical business points
 
-Next steps:
-1. Read MVP_QUICK_START.md (15 min overview)
-2. Read MVP_FEATURES_IMPLEMENTATION_GUIDE.md (detailed specs)
-3. Assign F2 → Engineer A, F3 → Engineer B, F5 → Engineer C
-4. Start Feature 2: PATCH /api/documents/[id]
-5. Daily standup on progress
+2. Complete F4 Phase 4: Daily Aggregation Job (4-5h)
+   - Implement cron job for daily aggregation
+   - Alert trigger logic
 
-Questions? Refer to the implementation guides.
-Code patterns? Check existing endpoints (proven working).
-Database? No changes needed - all tables exist!
+3. Start F6: Dashboard Integration (12-15h)
+   - Dashboard service to aggregate stats
+   - Frontend integration with real data
+
+4. QA & Deployment (3-5h)
+   - Unit tests
+   - Integration tests
+   - Security audit
+   - Performance testing
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Document: FEATURES_ROADMAP.txt
-Created: November 4, 2025
-Status: Ready for implementation
+Updated: November 4, 2025
+Status: 5 of 6 features in progress or complete
 Launch: December 1, 2025 (27 days)
