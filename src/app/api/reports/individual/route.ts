@@ -10,6 +10,7 @@ import { ReportCacheManager } from '@/lib/report-cache-manager';
 import { addNotificationJob } from '@/lib/queues';
 import { ICONS } from '@/lib/icons';
 import { createHash } from 'crypto';
+import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
 // Tipos para o endpoint
 interface IndividualReportRequest {
@@ -78,6 +79,21 @@ export async function POST(request: NextRequest) {
 
       if (cacheResult.hit) {
         console.log(`${ICONS.SUCCESS} Cache hit encontrado - não haverá cobrança de créditos`);
+
+        // Track cache hit
+        await juditAPI.trackCall({
+          workspaceId,
+          operationType: JuditOperationType.REPORT,
+          durationMs: 0,
+          success: true,
+          requestId: cacheResult.reportId,
+          metadata: {
+            eventType: 'report.cache_hit',
+            reportType: type,
+            processCount: processIds.length,
+            cacheHit: true
+          }
+        });
 
         return NextResponse.json({
           success: true,
@@ -251,7 +267,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Salvar histórico de execução
-        await prisma.reportExecution.create({
+        const reportExecution = await prisma.reportExecution.create({
           data: {
             workspaceId,
             reportType: type === 'JURIDICO' ? 'COMPLETO' : 'NOVIDADES',
@@ -272,6 +288,23 @@ export async function POST(request: NextRequest) {
             outputFormats: format.map(f => f as 'PDF' | 'DOCX'),
             cacheHit: reportResult.cacheHit,
             quotaConsumed: reportCreditCost
+          }
+        });
+
+        // Track telemetry
+        await juditAPI.trackCall({
+          workspaceId,
+          operationType: JuditOperationType.REPORT,
+          durationMs: reportResult.processingTime,
+          success: true,
+          requestId: reportExecution.id,
+          metadata: {
+            eventType: 'report.generated',
+            reportType: type,
+            processCount: processIds.length,
+            outputFormats: format,
+            cacheHit: reportResult.cacheHit,
+            tokensUsed: reportResult.tokensUsed
           }
         });
 

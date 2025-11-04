@@ -22,6 +22,7 @@ import { AIModelRouter } from '@/lib/ai-model-router';
 import { mapAnalysisToPreview, extractCoreInfo } from '@/lib/ai-analysis-mapper';
 import { ICONS } from '@/lib/icons';
 import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
+import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
 // Configuração de runtime para suportar uploads de arquivos grandes
 // maxDuration: tempo máximo para a função executar (Vercel limit)
@@ -649,9 +650,35 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // 21. RESPOSTA DE SUCESSO
+    // 21. TELEMETRY TRACKING
     const processingTime = Date.now() - startTime;
 
+    try {
+      await juditAPI.trackCall({
+        workspaceId,
+        operationType: JuditOperationType.ANALYSIS,
+        durationMs: processingTime,
+        success: true,
+        requestId: document.id,
+        metadata: {
+          eventType: 'document.uploaded',
+          documentId: document.id,
+          caseId: targetCaseId,
+          fileName: file.name,
+          fileSize: file.size,
+          pageCount: extractionResult.pageCount,
+          aiAnalyzed: !!aiAnalysisResult,
+          cacheHit: cacheResult.hit,
+          processNumberExtracted: !!extractedProcessNumber,
+          juditJobQueued: !!juditJobId
+        }
+      });
+    } catch (trackingError) {
+      console.warn(`${ICONS.WARNING} Erro ao rastrear telemetria de upload:`, trackingError);
+      // Don't fail the upload due to telemetry issues
+    }
+
+    // 22. RESPOSTA DE SUCESSO
     return NextResponse.json({
       success: true,
       message: extractedProcessNumber ?
