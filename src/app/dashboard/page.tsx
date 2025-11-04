@@ -12,10 +12,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ICONS } from '@/lib/icons';
 import { getApiUrl } from '@/lib/api-client';
 import { useDashboard } from '@/hooks/use-dashboard';
+import { useTelemetry } from '@/hooks/use-telemetry';
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { UsageAlert } from '@/components/ui/usage-alert';
 import UsageBanner from '@/components/dashboard/usage-banner';
+import { CostMetricsCard } from '@/components/dashboard/cost-metrics-card';
+import { ApiUsageCard } from '@/components/dashboard/api-usage-card';
+import { TelemetryAlertsWidget } from '@/components/dashboard/telemetry-alerts-widget';
 import {
   SubscriptionPlan,
   UsageStats,
@@ -101,6 +105,7 @@ export default function DashboardPage() {
   const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
   const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
   const { workspaceId, loading: authLoading } = useAuth();
+  const { metrics, loading: telemetryLoading } = useTelemetry(workspaceId, 300000);
 
   // TODO: Get user plan and usage from context/auth
   const [userPlan] = useState<SubscriptionPlan>('professional');
@@ -375,6 +380,42 @@ export default function DashboardPage() {
         usage={userUsage}
         onUpgrade={() => window.open('/pricing', '_blank')}
       />
+
+      {/* Seção 0: Telemetria em Tempo Real */}
+      <section>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Cost Metrics Card */}
+          {metrics && (
+            <CostMetricsCard
+              totalCost={metrics.monthlyUsage.totalCost}
+              dailyAverage={metrics.monthlyUsage.dailyAverage}
+              trend={metrics.monthlyUsage.trend}
+              loading={telemetryLoading}
+            />
+          )}
+
+          {/* API Usage Card */}
+          {metrics && (
+            <ApiUsageCard
+              successRate={metrics.monthlyUsage.successRate}
+              avgResponseTime={metrics.monthlyUsage.avgResponseTime}
+              totalOperations={metrics.monthlyUsage.operations.reduce((sum, op) => sum + op.count, 0)}
+              loading={telemetryLoading}
+            />
+          )}
+
+          {/* Alerts Widget */}
+          {metrics && (
+            <TelemetryAlertsWidget
+              alerts={metrics.activeAlerts.alerts}
+              totalCount={metrics.activeAlerts.total}
+              criticalCount={metrics.activeAlerts.critical}
+              highCount={metrics.activeAlerts.high}
+              loading={telemetryLoading}
+            />
+          )}
+        </div>
+      </section>
 
       {/* Seção 1: Ações Imediatas */}
       <section>
