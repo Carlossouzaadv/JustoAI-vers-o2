@@ -512,7 +512,7 @@ export async function getCompressionStats(): Promise<{
   }
 }
 
-export default {
+const exported = {
   compressImage,
   generateThumbnail,
   compressBatchImages,
@@ -527,3 +527,5 @@ export default {
   getCompressionStats,
   COMPRESSION_CONFIG,
 };
+
+export default exported;

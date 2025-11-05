@@ -315,7 +315,7 @@ export function applyDefaultPagination(
   });
 }
 
-export default {
+const exported = {
   parsePaginationQuery,
   createPaginatedResponse,
   getPrismaConfig,
@@ -327,3 +327,5 @@ export default {
   applyDefaultPagination,
   PAGINATION_DEFAULTS,
 };
+
+export default exported;

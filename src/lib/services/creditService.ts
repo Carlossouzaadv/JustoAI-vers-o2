@@ -91,4 +91,5 @@ export async function getTransactionHistory(workspaceId: string, limit: number =
   return prisma.creditTransaction.findMany({ where: { workspaceId }, orderBy: { createdAt: 'desc' }, take: limit });
 }
 
-export default { getCredits, hasEnoughCredits, debitCredits, addCredits, getTransactionHistory };
+const creditService = { getCredits, hasEnoughCredits, debitCredits, addCredits, getTransactionHistory };
+export default creditService;

@@ -391,7 +391,7 @@ export {
   replaceQueues,
 };
 
-export default {
+const exported = {
   serverAdapter,
   bullBoardAuthMiddleware,
   getBullBoardStats,
@@ -401,3 +401,5 @@ export default {
   retryFailedJobs,
   systemHealthCheck,
 };
+
+export default exported;

@@ -320,7 +320,7 @@ export async function closeAllQueues() {
 process.on('SIGINT', closeAllQueues);
 process.on('SIGTERM', closeAllQueues);
 
-export default {
+const exported = {
   syncQueue: getSyncQueue,
   reportsQueue: getReportsQueue,
   cacheCleanupQueue: getCacheCleanupQueue,
@@ -334,3 +334,5 @@ export default {
   clearAllQueues,
   closeAllQueues,
 };
+
+export default exported;
