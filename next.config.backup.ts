@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 // Import polyfill patch that overrides require (commented out to fix build issues)
 // require('./self-polyfill-patch.js');

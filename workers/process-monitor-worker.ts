@@ -324,7 +324,7 @@ async function processTrackingProcesses(
 
   for (const process of processes) {
     const startTime = Date.now();
-    let result: ProcessMonitoringResult = {
+    const result: ProcessMonitoringResult = {
       processId: process.id,
       processNumber: process.processNumber,
       success: false,
@@ -422,7 +422,7 @@ async function processPollingProcesses(
         if (!process) continue;
 
         const startTime = Date.now();
-        let result: ProcessMonitoringResult = {
+        const result: ProcessMonitoringResult = {
           processId: process.id,
           processNumber: process.processNumber,
           success: false,

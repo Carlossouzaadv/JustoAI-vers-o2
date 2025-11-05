@@ -1,5 +1,5 @@
 import {withSentryConfig} from '@sentry/nextjs';
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 // ================================================================
 // ALLOWED HOSTS CONFIGURATION
@@ -106,9 +106,9 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  org: "justoai",
+  org: 'justoai',
 
-  project: "justoai",
+  project: 'justoai',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,

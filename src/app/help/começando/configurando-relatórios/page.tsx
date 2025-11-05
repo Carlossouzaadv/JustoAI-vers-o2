@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { HelpArticleLayout } from '@/components/help/help-article-layout';
 
 export default function ConfigurandoRelatoriosPage() {

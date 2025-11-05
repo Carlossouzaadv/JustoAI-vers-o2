@@ -92,7 +92,7 @@ getUsageAggregatorQueue().process(
     try {
       await job.progress(5);
 
-      let results: DailyAggregationResult[] = [];
+      const results: DailyAggregationResult[] = [];
 
       if (workspaceId) {
         // Agregar workspace específico
