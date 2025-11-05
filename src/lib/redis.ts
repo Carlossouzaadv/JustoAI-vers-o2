@@ -9,23 +9,33 @@
 
 import IORedis, { Redis, RedisOptions } from 'ioredis';
 
+// Logger interface for type-safe logging
+interface LogContext {
+  component?: string;
+  [key: string]: string | number | boolean | undefined;
+}
+
 // Simple inline logger to avoid external dependencies that may not be in container
 const logger = {
-  info: (msg: string | Record<string, unknown>, data?: string) => console.log(`[INFO]`, msg, data || ''),
-  error: (msg: string | Record<string, unknown>, data?: string) => console.error(`[ERROR]`, msg, data || ''),
-  warn: (msg: string | Record<string, unknown>, data?: string) => console.warn(`[WARN]`, msg, data || ''),
-  debug: (msg: string | Record<string, unknown>, data?: string) => console.debug(`[DEBUG]`, msg, data || ''),
+  info: (msg: string | LogContext, data?: string) => console.log(`[INFO]`, msg, data || ''),
+  error: (msg: string | LogContext, data?: string) => console.error(`[ERROR]`, msg, data || ''),
+  warn: (msg: string | LogContext, data?: string) => console.warn(`[WARN]`, msg, data || ''),
+  debug: (msg: string | LogContext, data?: string) => console.debug(`[DEBUG]`, msg, data || ''),
 };
 
-// Circuit breaker import - lazy loaded to avoid circular dependency
-let circuitBreakerService: Record<string, unknown> | null = null;
-const getCircuitBreaker = () => {
+// Circuit breaker service interface - lazy loaded to avoid circular dependency
+interface CircuitBreakerService {
+  triggerQuotaExceeded?: (error: Error) => void;
+}
+
+let circuitBreakerService: CircuitBreakerService | null = null;
+const getCircuitBreaker = (): CircuitBreakerService | null => {
   if (!circuitBreakerService) {
     try {
       // Using dynamic import to avoid circular dependencies
       import('./services/circuitBreakerService')
         .then((module) => {
-          circuitBreakerService = module.circuitBreakerService;
+          circuitBreakerService = module.circuitBreakerService as CircuitBreakerService;
         })
         .catch(() => {
           // Fallback if circuit breaker not available
@@ -374,7 +384,7 @@ export const getRedisClient = (): Redis | MockRedis => {
     }
 
     const level = isQuotaExceededError ? 'error' : isMaxRetriesError ? 'warn' : 'error';
-    const errorCode = 'code' in error ? (error as Record<string, unknown>).code : undefined;
+    const errorCode = 'code' in error ? (error as { code?: unknown }).code : undefined;
 
     logger[level](
       {
@@ -433,10 +443,10 @@ export const getRedisClient = (): Redis | MockRedis => {
             logger.warn({ component: 'redis' }, 'Falling back to MockRedis due to connection failure');
             fallbackToMock = true;
             redisClient = new MockRedis();
-            return (redisClient as Record<string, unknown>)[prop];
+            return (redisClient as unknown as { [key: string | symbol]: unknown })[prop];
           }
         }
-        return (target as Record<string, unknown>)[prop];
+        return (target as unknown as { [key: string | symbol]: unknown })[prop];
       }
     }) as Redis | MockRedis;
   }
