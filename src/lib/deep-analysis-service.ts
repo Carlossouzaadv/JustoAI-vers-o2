@@ -5,7 +5,7 @@
 //
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
-import { PrismaClient, AnalysisType, JobStatus, Prisma } from '@prisma/client';
+import { PrismaClient, AnalysisType, JobStatus, Prisma, CaseAnalysisVersion, AnalysisJob, MonitoredProcess } from '@prisma/client';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
 import { ICONS } from './icons';
@@ -36,6 +36,12 @@ export interface ProcessDocument {
   cleanText?: string;
 }
 
+export interface AnalysisDocument {
+  id: string;
+  name: string;
+  text: string;
+}
+
 export interface AnalysisVersionParams {
   processId: string;
   workspaceId: string;
@@ -45,7 +51,7 @@ export interface AnalysisVersionParams {
   fullCreditsUsed?: number;
   fastCreditsUsed?: number;
   analysisKey?: string;
-  sourceFilesMetadata: unknown[];
+  sourceFilesMetadata: Prisma.InputJsonValue[];
   createdBy?: string;
 }
 
@@ -337,7 +343,7 @@ export class DeepAnalysisService {
   /**
    * Verifica cache de análise
    */
-  async getCachedAnalysis(analysisKey: string, processId: string): Promise<unknown | null> {
+  async getCachedAnalysis(analysisKey: string, processId: string): Promise<CaseAnalysisVersion | null> {
     try {
       // Buscar no cache
       const cached = await prisma.analysisCache.findUnique({
@@ -409,7 +415,7 @@ export class DeepAnalysisService {
   /**
    * Busca job ativo para analysis_key
    */
-  async getActiveJob(analysisKey: string): Promise<unknown | null> {
+  async getActiveJob(analysisKey: string): Promise<AnalysisJob | null> {
     try {
       const job = await prisma.analysisJob.findFirst({
         where: {
@@ -429,7 +435,7 @@ export class DeepAnalysisService {
   /**
    * Busca job por version ID
    */
-  async getActiveJobByVersion(versionId: string): Promise<unknown | null> {
+  async getActiveJobByVersion(versionId: string): Promise<AnalysisJob | null> {
     try {
       const job = await prisma.analysisJob.findFirst({
         where: {
@@ -514,7 +520,7 @@ export class DeepAnalysisService {
   /**
    * Cria versão de análise
    */
-  async createAnalysisVersion(params: AnalysisVersionParams): Promise<unknown> {
+  async createAnalysisVersion(params: AnalysisVersionParams): Promise<CaseAnalysisVersion> {
     try {
       const version = await prisma.caseAnalysisVersion.create({
         data: {
@@ -544,7 +550,7 @@ export class DeepAnalysisService {
   /**
    * Cria job de análise
    */
-  async createAnalysisJob(params: AnalysisJobParams): Promise<unknown> {
+  async createAnalysisJob(params: AnalysisJobParams): Promise<AnalysisJob> {
     try {
       const job = await prisma.analysisJob.create({
         data: {
@@ -572,11 +578,11 @@ export class DeepAnalysisService {
   /**
    * Busca última análise por tipo
    */
-  async getLastAnalysis(processId: string, analysisType?: string): Promise<unknown | null> {
+  async getLastAnalysis(processId: string, analysisType?: string): Promise<CaseAnalysisVersion | null> {
     try {
-      const where: unknown = { caseId: processId };
+      const where: Prisma.CaseAnalysisVersionWhereInput = { caseId: processId };
       if (analysisType) {
-        where.analysisType = analysisType;
+        where.analysisType = analysisType as AnalysisType;
       }
 
       const analysis = await prisma.caseAnalysisVersion.findFirst({
@@ -701,7 +707,7 @@ export class DeepAnalysisService {
   /**
    * Constrói prompt para análise profunda com Gemini Pro
    */
-  private buildDeepAnalysisPrompt(process: unknown, documentTexts: unknown[]): string {
+  private buildDeepAnalysisPrompt(process: MonitoredProcess | null, documentTexts: AnalysisDocument[]): string {
     return `
 Você é um especialista em análise jurídica. Analise o processo judicial a seguir e forneça uma análise completa e detalhada.
 

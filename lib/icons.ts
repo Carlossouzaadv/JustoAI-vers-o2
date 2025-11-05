@@ -64,6 +64,7 @@ export const ICONS = {
   SYNC: '🔄',
   UPLOAD: '📤',
   DOWNLOAD: '📥',
+  EXTRACT: '📋',
   SPARKLES: '✨',
   ROBOT: '🤖',
   HEART: '❤️',
