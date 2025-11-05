@@ -21,6 +21,22 @@ export interface TimelineEntry {
   confidence?: number;
 }
 
+export interface AIAnalysisEvent {
+  data_andamento?: string;
+  date?: string | Date;
+  tipo_andamento?: string;
+  type?: string;
+  resumo_andamento?: string;
+  description?: string;
+  confidence?: number;
+}
+
+export interface AIAnalysisResult {
+  raw_events_extracted?: AIAnalysisEvent[];
+  events?: AIAnalysisEvent[];
+  [key: string]: unknown;
+}
+
 export interface TimelineMergeResult {
   newEntries: number;
   duplicatesSkipped: number;
@@ -107,7 +123,7 @@ export class TimelineMergeService {
    * Combina descrições e usa dados de melhor fonte
    */
   private mergeIntelligently(
-    existing: unknown,
+    existing: TimelineEntry,
     newEntry: TimelineEntry
   ): { merged: TimelineEntry; changed: boolean } {
     const existingPriority = this.getSourcePriority(existing.source);
@@ -146,7 +162,7 @@ export class TimelineMergeService {
       ...(existing.metadata || {}),
       ...(newEntry.metadata || {}),
       sources: [
-        ...(existing.metadata?.sources || [{ source: existing.source, date: existing.createdAt }]),
+        ...(existing.metadata?.sources || [{ source: existing.source, date: existing.eventDate }]),
         { source: newEntry.source, date: new Date(), description: newEntry.description }
       ],
       lastMerged: new Date().toISOString()
@@ -178,7 +194,7 @@ export class TimelineMergeService {
   async mergeEntries(
     caseId: string,
     entries: TimelineEntry[],
-    prisma: unknown
+    prisma: PrismaClient
   ): Promise<TimelineMergeResult> {
     console.log(`${ICONS.PROCESS} Mesclando ${entries.length} entradas na timeline do caso ${caseId}`);
 
@@ -279,10 +295,13 @@ export class TimelineMergeService {
             confidence: newEntry.confidence
           });
 
-        } catch (createError: unknown) {
+        } catch (createError) {
+          // Narrow unknown to Error type for safety
+          const err = createError instanceof Error ? createError : new Error(String(createError));
+
           // Se houver erro de constraint única, outra requisição criou a entrada
           // Recuperar e tentar merge com retry
-          if (createError?.code === 'P2002') {
+          if ('code' in err && err.code === 'P2002') {
             console.log(
               `${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição para ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
             );
@@ -342,9 +361,9 @@ export class TimelineMergeService {
             // Re-throw se for erro diferente
             console.error(
               `${ICONS.ERROR} Erro ao criar entrada (não é P2002):`,
-              { code: createError?.code, message: createError?.message }
+              { code: 'code' in err ? (err as any).code : undefined, message: err.message }
             );
-            throw createError;
+            throw err;
           }
         }
 
@@ -376,7 +395,7 @@ export class TimelineMergeService {
    */
   async getTimelineEntries(
     caseId: string,
-    prisma: unknown,
+    prisma: PrismaClient,
     options: {
       limit?: number;
       offset?: number;
@@ -384,7 +403,7 @@ export class TimelineMergeService {
       sources?: string[];
     } = {}
   ) {
-    const whereClause: unknown = { caseId };
+    const whereClause: Record<string, unknown> = { caseId };
 
     if (options.since) {
       whereClause.eventDate = { gte: options.since };
@@ -421,7 +440,7 @@ export class TimelineMergeService {
   /**
    * Extrai andamentos de texto analisado por IA
    */
-  extractTimelineFromAIAnalysis(aiResult: unknown, sourceId: string): TimelineEntry[] {
+  extractTimelineFromAIAnalysis(aiResult: AIAnalysisResult, sourceId: string): TimelineEntry[] {
     const entries: TimelineEntry[] = [];
 
     try {
@@ -483,8 +502,8 @@ export class TimelineMergeService {
    */
   async logAuditEvent(
     type: 'duplicate_upload' | 'new_upload' | 'timeline_merge',
-    details: unknown,
-    prisma: unknown
+    details: Record<string, unknown>,
+    prisma: PrismaClient
   ) {
     try {
       await prisma.globalLog.create({

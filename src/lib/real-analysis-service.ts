@@ -20,6 +20,14 @@ export interface AnalysisRequest {
   };
 }
 
+export interface ComplexityFactors {
+  [key: string]: unknown;
+}
+
+export interface GeminiResponse {
+  [key: string]: unknown;
+}
+
 export interface AnalysisResponse {
   success: boolean;
   data?: UnifiedProcessSchema;
@@ -40,7 +48,7 @@ export interface AnalysisResponse {
     };
     complexity: {
       score: number;
-      factors: Record<string, unknown>;
+      factors: ComplexityFactors;
       tier: ModelTier;
     };
     timestamp: string;
@@ -124,9 +132,12 @@ export class RealAnalysisService {
 
       this.updateStats(request.analysisType, ModelTier.BALANCED, processingTime, true);
 
+      // Narrow unknown to Error for type safety
+      const err = error instanceof Error ? error : new Error(String(error));
+
       return {
         success: false,
-        error: this.formatError(error),
+        error: this.formatError(err),
         metadata: {
           modelUsed: 'unknown',
           analysisType: request.analysisType,
@@ -173,11 +184,13 @@ export class RealAnalysisService {
         return validatedResult;
 
       } catch (error) {
-        lastError = error;
+        // Narrow unknown to Error for type safety
+        const err = error instanceof Error ? error : new Error(String(error));
+        lastError = err;
         console.error(`${ICONS.WARNING} Tentativa ${attempt} falhou:`, error);
 
         // Check if we should retry
-        if (attempt < maxRetries && this.shouldRetry(error)) {
+        if (attempt < maxRetries && this.shouldRetry(err)) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
           console.log(`${ICONS.INFO} Aguardando ${delay}ms antes da próxima tentativa...`);
           await this.sleep(delay);
@@ -274,7 +287,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Calculate overall confidence based on response completeness
    */
-  private calculateConfidence(response: Record<string, unknown>, complexity: ComplexityScore): number {
+  private calculateConfidence(response: GeminiResponse, complexity: ComplexityScore): number {
     let filledFields = 0;
     let totalFields = 0;
 
@@ -302,7 +315,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Find missing required fields
    */
-  private findMissingFields(response: Record<string, unknown>): string[] {
+  private findMissingFields(response: GeminiResponse): string[] {
     const requiredFields = [
       'identificacao_basica.numero_processo',
       'identificacao_basica.tipo_processual',
@@ -325,10 +338,10 @@ METADADOS ADICIONAIS:`;
   /**
    * Get nested object value by dot notation path
    */
-  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  private getNestedValue(obj: GeminiResponse, path: string): unknown {
     return path.split('.').reduce((current: unknown, key: string) => {
-      if (current && typeof current === 'object' && key in (current as Record<string, unknown>)) {
-        return (current as Record<string, unknown>)[key];
+      if (current && typeof current === 'object' && key in (current as GeminiResponse)) {
+        return (current as GeminiResponse)[key];
       }
       return undefined;
     }, obj);
@@ -448,7 +461,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Check if error is retryable
    */
-  private shouldRetry(error: Error | unknown): boolean {
+  private shouldRetry(error: Error): boolean {
     const retryableErrors = [
       'rate limit',
       'timeout',
@@ -468,17 +481,13 @@ METADADOS ADICIONAIS:`;
   /**
    * Format error for response
    */
-  private formatError(error: Error | unknown): string {
-    if (error && typeof error === 'object' && 'code' in error && 'error' in error) {
+  private formatError(error: Error): string {
+    if ('code' in error && 'error' in error) {
       const errorObj = error as Record<string, unknown>;
       return `Gemini API Error (${errorObj.code}): ${errorObj.error}`;
     }
 
-    if (error instanceof Error) {
-      return error.message;
-    }
-
-    return 'Unknown error occurred during analysis';
+    return error.message;
   }
 
   /**
