@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 import React from 'react';
 
@@ -108,13 +109,13 @@ export default function AdminLayout({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <a
+              <Link
                 href="/"
                 className="px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg transition text-sm font-medium"
                 title="Back to main app"
               >
                 ← Voltar ao App
-              </a>
+              </Link>
               <div className="text-xs text-slate-400 px-4 py-2 bg-slate-700 rounded-lg">
                 ⚠️ Restrito
               </div>

@@ -136,7 +136,7 @@ export function OnboardingProgress({
   useEffect(() => {
     if (!juditJobId || !pollingActive) return;
 
-    let pollInterval: NodeJS.Timeout;
+    const pollInterval = setInterval(() => {}, 0); // Will be reassigned immediately
     let attempts = 0;
     const maxAttempts = 600; // 10 minutos
 
