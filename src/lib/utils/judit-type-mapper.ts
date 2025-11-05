@@ -18,6 +18,53 @@
 
 import type { CaseType } from '@prisma/client';
 
+// Type definitions for JUDIT API responses
+export interface JuditClassification {
+  name?: string;
+  [key: string]: unknown;
+}
+
+export interface JuditResponseData {
+  classifications?: JuditClassification[];
+  subjects?: Array<{ name?: string; [key: string]: unknown }>;
+  phase?: string;
+  [key: string]: unknown;
+}
+
+export interface GeminiAnalysisData {
+  type?: string;
+  subject?: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+// Type guards for JUDIT response structures
+function isJuditResponseData(value: unknown): value is JuditResponseData {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    (obj.classifications === undefined || Array.isArray(obj.classifications)) &&
+    (obj.subjects === undefined || Array.isArray(obj.subjects)) &&
+    (obj.phase === undefined || typeof obj.phase === 'string')
+  );
+}
+
+function isJuditClassification(value: unknown): value is JuditClassification {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return obj.name === undefined || typeof obj.name === 'string';
+}
+
+function isGeminiAnalysisData(value: unknown): value is GeminiAnalysisData {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    (obj.type === undefined || typeof obj.type === 'string') &&
+    (obj.subject === undefined || typeof obj.subject === 'string') &&
+    (obj.description === undefined || typeof obj.description === 'string')
+  );
+}
+
 /**
  * Mapeia o tipo de classificação retornado pela JUDIT para o enum CaseType
  * @param juditClassification - String retornada em response_data.classifications[].name
@@ -124,13 +171,16 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
  * @returns CaseType enum value ou null se não conseguir extrair
  */
 export function extractCaseTypeFromJuditResponse(responseData: unknown): CaseType | null {
-  if (!responseData) return null;
+  if (!responseData || !isJuditResponseData(responseData)) {
+    console.warn('[CaseType Mapper] Invalid or missing JUDIT response data');
+    return null;
+  }
 
   // Tentar extrair do campo classifications (array)
   if (responseData.classifications && Array.isArray(responseData.classifications)) {
     // Preferir a primeira classificação não vazia
     for (const classification of responseData.classifications) {
-      if (classification.name) {
+      if (isJuditClassification(classification) && classification.name) {
         const mappedType = mapJuditClassificationToCaseType(classification.name);
         console.log(`[CaseType Mapper] Extraído de JUDIT: "${classification.name}" → ${mappedType}`);
         return mappedType;
@@ -139,7 +189,7 @@ export function extractCaseTypeFromJuditResponse(responseData: unknown): CaseTyp
   }
 
   // Fallback: tentar extrair do campo phase se existir
-  if (responseData.phase) {
+  if (responseData.phase && typeof responseData.phase === 'string') {
     const mappedType = mapJuditClassificationToCaseType(responseData.phase);
     if (mappedType !== 'OTHER') {
       console.log(`[CaseType Mapper] Extraído de phase: "${responseData.phase}" → ${mappedType}`);
@@ -157,16 +207,23 @@ export function extractCaseTypeFromJuditResponse(responseData: unknown): CaseTyp
  * Menos confiável que classifications, mas pode ajudar em casos edge
  */
 export function extractCaseTypeFromSubject(responseData: unknown): CaseType | null {
-  if (!responseData || !responseData.subjects || !Array.isArray(responseData.subjects)) {
+  if (!responseData || !isJuditResponseData(responseData)) {
+    return null;
+  }
+
+  if (!responseData.subjects || !Array.isArray(responseData.subjects)) {
     return null;
   }
 
   for (const subject of responseData.subjects) {
-    if (subject.name) {
-      const mappedType = mapJuditClassificationToCaseType(subject.name);
-      if (mappedType !== 'OTHER') {
-        console.log(`[CaseType Mapper] Extraído de subject: "${subject.name}" → ${mappedType}`);
-        return mappedType;
+    if (typeof subject === 'object' && subject !== null && 'name' in subject) {
+      const subjectName = (subject as { name?: unknown }).name;
+      if (typeof subjectName === 'string') {
+        const mappedType = mapJuditClassificationToCaseType(subjectName);
+        if (mappedType !== 'OTHER') {
+          console.log(`[CaseType Mapper] Extraído de subject: "${subjectName}" → ${mappedType}`);
+          return mappedType;
+        }
       }
     }
   }
@@ -184,10 +241,12 @@ export function extractCaseTypeFromSubject(responseData: unknown): CaseType | nu
 export async function extractCaseTypeFromGeminiAnalysis(
   documentAnalysis: unknown
 ): Promise<CaseType | null> {
-  if (!documentAnalysis) return null;
+  if (!documentAnalysis || !isGeminiAnalysisData(documentAnalysis)) {
+    return null;
+  }
 
   // Se documentAnalysis já tem um campo tipo/type, usar isso
-  if (documentAnalysis.type) {
+  if (documentAnalysis.type && typeof documentAnalysis.type === 'string') {
     const mappedType = mapJuditClassificationToCaseType(documentAnalysis.type);
     if (mappedType !== 'OTHER') {
       console.log(`[CaseType Mapper] Extraído de Gemini analysis.type: "${documentAnalysis.type}" → ${mappedType}`);
@@ -196,7 +255,7 @@ export async function extractCaseTypeFromGeminiAnalysis(
   }
 
   // Se tem um campo "subject" ou "assunto"
-  if (documentAnalysis.subject) {
+  if (documentAnalysis.subject && typeof documentAnalysis.subject === 'string') {
     const mappedType = mapJuditClassificationToCaseType(documentAnalysis.subject);
     if (mappedType !== 'OTHER') {
       console.log(`[CaseType Mapper] Extraído de Gemini analysis.subject: "${documentAnalysis.subject}" → ${mappedType}`);
@@ -205,7 +264,7 @@ export async function extractCaseTypeFromGeminiAnalysis(
   }
 
   // Se tem um campo description que mencione o tipo
-  if (documentAnalysis.description) {
+  if (documentAnalysis.description && typeof documentAnalysis.description === 'string') {
     const mappedType = mapJuditClassificationToCaseType(documentAnalysis.description);
     if (mappedType !== 'OTHER') {
       console.log(`[CaseType Mapper] Extraído de Gemini analysis.description: → ${mappedType}`);
