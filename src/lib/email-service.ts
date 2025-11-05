@@ -26,6 +26,42 @@ export interface EmailAttachment {
   contentType: string;
 }
 
+// Template-specific data types
+export interface ProcessAlertData {
+  processNumber: string;
+  alertType: string;
+  description: string;
+  urgency: 'high' | 'medium' | 'low';
+  timestamp: string;
+}
+
+export interface ReportReadyData {
+  reportName: string;
+  downloadUrl: string;
+  expiresAt?: string;
+  timestamp: string;
+}
+
+export interface PaymentSuccessData {
+  amount: string;
+  credits: number;
+  transactionId: string;
+  timestamp: string;
+}
+
+export interface SystemNotificationData {
+  subject?: string;
+  html?: string;
+  text?: string;
+  message?: string;
+}
+
+export interface CustomEmailData {
+  subject?: string;
+  html: string;
+  text?: string;
+}
+
 export interface EmailResult {
   success: boolean;
   messageId?: string;
@@ -223,7 +259,7 @@ export class EmailService {
     }
   }
 
-  private getProcessAlertTemplate(data: unknown): EmailTemplate {
+  private getProcessAlertTemplate(data: ProcessAlertData): EmailTemplate {
     const urgencyIcon = data.urgency === 'high' ? '🔴' : data.urgency === 'medium' ? '🟡' : '🟢';
 
     return {
@@ -266,7 +302,7 @@ export class EmailService {
     };
   }
 
-  private getReportReadyTemplate(data: unknown): EmailTemplate {
+  private getReportReadyTemplate(data: ReportReadyData): EmailTemplate {
     return {
       subject: `📊 Relatório Pronto - ${data.reportName}`,
       html: `
@@ -308,7 +344,7 @@ export class EmailService {
     };
   }
 
-  private getPaymentSuccessTemplate(data: unknown): EmailTemplate {
+  private getPaymentSuccessTemplate(data: PaymentSuccessData): EmailTemplate {
     return {
       subject: '✅ Pagamento Confirmado - JustoAI',
       html: `
@@ -351,7 +387,7 @@ export class EmailService {
     };
   }
 
-  private getSystemNotificationTemplate(data: unknown): EmailTemplate {
+  private getSystemNotificationTemplate(data: SystemNotificationData): EmailTemplate {
     return {
       subject: data.subject || 'Notificação do Sistema - JustoAI',
       html: `

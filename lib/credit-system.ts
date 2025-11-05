@@ -37,6 +37,52 @@ export interface CreditAllocationBreakdown {
   expiresAt?: Date;
 }
 
+// Metadata para transações de crédito
+export interface CreditTransactionMetadata {
+  description?: string;
+  userId?: string;
+  resourceId?: string;
+  reason?: string;
+  [key: string]: unknown;
+}
+
+// Type guard para validar metadata
+function sanitizeMetadata(metadata: unknown): Prisma.JsonNullValueInput | Prisma.InputJsonValue {
+  if (metadata === null || metadata === undefined) {
+    return null;
+  }
+
+  if (typeof metadata === 'object' && !Array.isArray(metadata)) {
+    return metadata as Prisma.InputJsonObject;
+  }
+
+  if (Array.isArray(metadata)) {
+    return metadata as Prisma.InputJsonArray;
+  }
+
+  // Fallback para valores primitivos seguros
+  return {};
+}
+
+// Type guard para CreditAllocation
+function isCreditAllocation(value: unknown): value is {
+  id: string;
+  type: 'MONTHLY' | 'BONUS' | 'PACK';
+  amount: Prisma.Decimal;
+  remainingAmount: Prisma.Decimal;
+  expiresAt: Date | null;
+} {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.id === 'string' &&
+    ['MONTHLY', 'BONUS', 'PACK'].includes(obj.type as string) &&
+    (obj.amount instanceof Prisma.Decimal || typeof obj.amount === 'number') &&
+    (obj.remainingAmount instanceof Prisma.Decimal || typeof obj.remainingAmount === 'number') &&
+    (obj.expiresAt instanceof Date || obj.expiresAt === null)
+  );
+}
+
 // Configurações default conforme especificação
 export const CREDIT_CONFIG = {
   REPORT_CREDIT_UNIT: 25, // Até 25 processos = 1 report credit
@@ -287,7 +333,7 @@ export class CreditManager {
           creditCategory: category,
           amount: toDebitFromThisAllocation,
           reason,
-          metadata
+          metadata: sanitizeMetadata(metadata)
         }
       });
 
@@ -481,13 +527,15 @@ export class CreditManager {
         ]
       });
 
-      return allocations.map((allocation: unknown) => ({
-        type: allocation.type as 'MONTHLY' | 'BONUS' | 'PACK',
-        amount: Number(allocation.amount),
-        remaining: Number(allocation.remainingAmount),
-        consumed: Number(allocation.amount) - Number(allocation.remainingAmount),
-        expiresAt: allocation.expiresAt || undefined
-      }));
+      return allocations
+        .filter(isCreditAllocation)
+        .map((allocation) => ({
+          type: allocation.type,
+          amount: Number(allocation.amount),
+          remaining: Number(allocation.remainingAmount),
+          consumed: Number(allocation.amount) - Number(allocation.remainingAmount),
+          expiresAt: allocation.expiresAt || undefined
+        }));
 
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao buscar breakdown:`, error);
@@ -501,7 +549,7 @@ export class CreditManager {
   async initializeWorkspaceCredits(
     workspaceId: string,
     planName: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE' = 'STARTER'
-  ): Promise<unknown> {
+  ): Promise<Prisma.WorkspaceCreditsGetPayload<true>> {
     try {
       const planConfig = CREDIT_CONFIG.PLANS[planName];
 

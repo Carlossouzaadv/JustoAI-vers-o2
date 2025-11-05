@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 const Popover = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & { open?: boolean; onOpenChange?: (open: boolean) => void }
->(({ children, _open, _onOpenChange, ...props }, ref) => {
+>(({ children, open: _open, onOpenChange: _onOpenChange, ...props }, ref) => {
   return (
     <div ref={ref} {...props}>
       {children}
@@ -40,7 +40,7 @@ const PopoverContent = React.forwardRef<
     align?: 'start' | 'center' | 'end'
     sideOffset?: number
   }
->(({ className, _align, _sideOffset, ...props }, ref) => (
+>(({ className, align: _align, sideOffset: _sideOffset, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(

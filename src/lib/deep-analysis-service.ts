@@ -5,7 +5,7 @@
 //
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
-import { PrismaClient, AnalysisType, JobStatus } from '@prisma/client';
+import { PrismaClient, AnalysisType, JobStatus, Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
 import { ICONS } from './icons';
@@ -17,7 +17,7 @@ import { getRedisClient } from './redis';
 const prisma = new PrismaClient();
 
 // Redis connection - lazy initialization (only connect when actually used)
-let redis: unknown = null;
+let redis: Redis | null = null;
 
 export interface AnalysisKeyParams {
   processId: string;
