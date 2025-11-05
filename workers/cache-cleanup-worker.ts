@@ -442,12 +442,24 @@ async function cleanupAICacheDatabase(): Promise<number> {
 }
 
 /**
+ * Type guard to check if redis has info method
+ */
+function hasInfoMethod(obj: unknown): obj is { info: (section?: string) => Promise<string> } {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'info' in obj &&
+    typeof (obj as Record<string, unknown>).info === 'function'
+  );
+}
+
+/**
  * Obtém estatísticas de memória
  */
 async function getMemoryStats(): Promise<number> {
   try {
     // Try to get memory info from redis
-    if (typeof redis.info === 'function') {
+    if (hasInfoMethod(redis)) {
       const info = await redis.info('memory');
       const memoryMatch = info.match(/used_memory:(\d+)/);
       return memoryMatch ? parseInt(memoryMatch[1]) : 0;
