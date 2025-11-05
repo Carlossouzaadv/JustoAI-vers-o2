@@ -257,12 +257,37 @@ export class WebSocketManager {
    * Broadcast de evento específico de processo para workspace
    */
   broadcastProcessEvent(workspaceId: string, processId: string, eventType: string, data: unknown): void {
+    // Validar se eventType é um tipo válido de mensagem
+    const validTypes: Array<WebSocketMessage['type']> = [
+      'process:updated',
+      'movement:added',
+      'report:ready',
+      'status:changed',
+      'alert:notification'
+    ];
+
+    const messageType = (validTypes.includes(eventType as WebSocketMessage['type']))
+      ? (eventType as WebSocketMessage['type'])
+      : 'process:updated';
+
     this.broadcastToWorkspace(workspaceId, {
-      type: (eventType as unknown) || 'process:updated',
+      type: messageType,
       processId,
       data,
       timestamp: Date.now()
     });
+  }
+
+  /**
+   * Type guard para verificar se a response tem método write
+   */
+  private hasWriteMethod(obj: unknown): obj is { write: (data: string) => void } {
+    return (
+      typeof obj === 'object' &&
+      obj !== null &&
+      'write' in obj &&
+      typeof (obj as Record<string, unknown>).write === 'function'
+    );
   }
 
   /**
@@ -282,8 +307,8 @@ export class WebSocketManager {
 
       // Enviar para cliente via Response
       // Em Next.js, a response é um ReadableStream que permite escrita
-      if ('write' in connection && typeof (connection as unknown).write === 'function') {
-        (connection as unknown).write(sseData);
+      if (this.hasWriteMethod(connection)) {
+        connection.write(sseData);
       } else {
         // Fallback: tentar enviar como json se não for SSE puro
         console.log(`${ICONS.INFO} Conexão ${connectionId} não suporta escrita direta`);
