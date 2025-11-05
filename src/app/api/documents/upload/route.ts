@@ -436,7 +436,7 @@ export async function POST(request: NextRequest) {
 
     // IMPORTANT: Only use cache if data has correct structure with lastMovements
     // Older cached results may be missing required fields
-    const isValidCacheData = (data: any): boolean => {
+    const isValidCacheData = (data: unknown): boolean => {
       return data &&
              typeof data === 'object' &&
              Array.isArray(data.lastMovements) &&
@@ -562,14 +562,14 @@ export async function POST(request: NextRequest) {
             analysisType: 'essential', // Análise rápida do upload é considerada "essencial"
             modelUsed: modelVersion,
             analysisKey: cacheResult.key || hashResult.textSha + '_' + modelVersion, // Chave para cache de análise
-            aiAnalysis: aiAnalysisResult as any, // JSON field
-            confidence: (aiAnalysisResult as any)?.metadados_analise?.confianca || 0.8,
+            aiAnalysis: aiAnalysisResult as unknown, // JSON field
+            confidence: (aiAnalysisResult as unknown)?.metadados_analise?.confianca || 0.8,
             processingTime: Date.now() - startTime,
             metadata: {
               source: 'upload_gemini',
               documentId: document.id,
               cacheKey: cacheResult.key,
-              model: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion
+              model: (aiAnalysisResult as unknown)._routing_info?.model_used || modelVersion
             }
           }
         });
@@ -712,9 +712,9 @@ export async function POST(request: NextRequest) {
         // Informações da análise (PREVIEW COMPLETO)
         analysis: aiAnalysisResult ? (() => {
           const previewData = mapAnalysisToPreview(aiAnalysisResult, {
-            modelUsed: (aiAnalysisResult as any)._routing_info?.model_used || modelVersion,
-            confidence: (aiAnalysisResult as any).metadados_analise?.confianca_geral || 0.8,
-            costEstimate: Number(((aiAnalysisResult as any)._routing_info?.cost_estimate?.estimatedCost) || 0)
+            modelUsed: (aiAnalysisResult as unknown)._routing_info?.model_used || modelVersion,
+            confidence: (aiAnalysisResult as unknown).metadados_analise?.confianca_geral || 0.8,
+            costEstimate: Number(((aiAnalysisResult as unknown)._routing_info?.cost_estimate?.estimatedCost) || 0)
           });
 
           // Log dos dados extraídos
@@ -899,7 +899,7 @@ async function saveFinalFile(buffer: Buffer, fileName: string): Promise<string> 
   return finalPath;
 }
 
-async function extractBasicProcessData(cleanText: string): Promise<any> {
+async function extractBasicProcessData(cleanText: string): Promise<unknown> {
   // Heurísticas simples para extrair dados básicos
   const lines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 

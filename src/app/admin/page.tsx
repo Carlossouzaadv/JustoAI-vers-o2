@@ -9,8 +9,8 @@ interface DashboardData {
     errors?: {
       total: number;
       rate: number;
-      recent: any[];
-      top: any[];
+      recent: unknown[];
+      top: unknown[];
     };
     health?: {
       status: 'healthy' | 'degraded' | 'critical';
@@ -92,7 +92,7 @@ export default function AdminHomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const copyToClipboard = (errorId: string, errorData: any) => {
+  const copyToClipboard = (errorId: string, errorData: unknown) => {
     const errorText = `
 ERROR REPORT
 ============
@@ -305,7 +305,7 @@ Navigate to: /admin/errors for full details
           </div>
 
           <div className="space-y-2">
-            {errors.recent.slice(0, 5).map((error: any, idx: number) => (
+            {errors.recent.slice(0, 5).map((error: unknown, idx: number) => (
               <div
                 key={idx}
                 className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100"

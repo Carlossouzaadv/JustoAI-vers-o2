@@ -90,7 +90,7 @@ export interface ValidationResult {
  */
 export function validateExcelRow(
   rowNumber: number,
-  rowData: Record<string, any>
+  rowData: Record<string, unknown>
 ): ValidationResult {
   try {
     const validated = excelRowSchema.parse(rowData);
@@ -122,7 +122,7 @@ export interface BatchValidationResult {
   }>;
   invalid: Array<{
     rowNumber: number;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     error: string;
     field: string;
   }>;
@@ -137,7 +137,7 @@ export interface BatchValidationResult {
  * Returns separated valid and invalid rows with error summary
  */
 export async function validateBatchRows(
-  rows: Array<Record<string, any>>
+  rows: Array<Record<string, unknown>>
 ): Promise<BatchValidationResult> {
   const valid = [];
   const invalid = [];
@@ -184,7 +184,7 @@ export interface ErrorRowForExport {
   rowNumber: number;
   field: string;
   error: string;
-  originalValue: any;
+  originalValue: unknown;
 }
 
 /**
@@ -193,7 +193,7 @@ export interface ErrorRowForExport {
 export function formatInvalidRowsForCsv(
   invalidRows: Array<{
     rowNumber: number;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
     error: string;
     field: string;
   }>
@@ -238,7 +238,7 @@ export function generateErrorCsv(errorRows: ErrorRowForExport[]): string {
 
 export interface RetryableRow {
   rowNumber: number;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   error: string;
   field: string;
   retryCount: number;

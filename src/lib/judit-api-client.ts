@@ -24,9 +24,9 @@ export interface JuditRequest {
 export interface JuditResponse {
   request_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  data?: any;
+  data?: unknown;
   error?: string;
-  attachments?: any[];
+  attachments?: unknown[];
   pages?: number;
   total_results?: number;
 }
@@ -593,21 +593,21 @@ export class JuditApiClient {
   /**
    * Método genérico POST
    */
-  async post<T = any>(serviceUrl: 'requests' | 'tracking', endpoint: string, data: any): Promise<T> {
+  async post<T = unknown>(serviceUrl: 'requests' | 'tracking', endpoint: string, data: unknown): Promise<T> {
     return await this.makeRequest('POST', serviceUrl, endpoint, data);
   }
 
   /**
    * Método genérico GET
    */
-  async get<T = any>(serviceUrl: 'requests' | 'tracking', endpoint: string): Promise<T> {
+  async get<T = unknown>(serviceUrl: 'requests' | 'tracking', endpoint: string): Promise<T> {
     return await this.makeRequest('GET', serviceUrl, endpoint);
   }
 
   /**
    * Método genérico DELETE
    */
-  async delete<T = any>(serviceUrl: 'requests' | 'tracking', endpoint: string): Promise<T> {
+  async delete<T = unknown>(serviceUrl: 'requests' | 'tracking', endpoint: string): Promise<T> {
     return await this.makeRequest('DELETE', serviceUrl, endpoint);
   }
 
@@ -635,8 +635,8 @@ export class JuditApiClient {
     method: string,
     serviceUrl: 'requests' | 'tracking',
     endpoint: string,
-    data?: any
-  ): Promise<any> {
+    data?: unknown
+  ): Promise<unknown> {
     return await this.executeWithRetry(async (attempt: number) => {
       const baseUrl = serviceUrl === 'tracking'
         ? JUDIT_CONFIG.TRACKING_SERVICE_URL
@@ -671,8 +671,8 @@ export class JuditApiClient {
           console.warn(`${ICONS.WARNING} Rate limit hit, retrying after ${delay}ms (attempt ${attempt})`);
 
           const error = new Error('Rate limit exceeded');
-          (error as any).retryable = true;
-          (error as any).retryAfter = delay;
+          (error as unknown).retryable = true;
+          (error as unknown).retryAfter = delay;
           throw error;
         }
 
@@ -680,7 +680,7 @@ export class JuditApiClient {
         // IMPORTANTE: Ler o response body UMA VEZ
         // Fetch API não permite consumir o stream múltiplas vezes
         // ============================================================
-        let responseBody: any;
+        let responseBody: unknown;
         let responseText: string = '';
 
         try {
@@ -695,25 +695,25 @@ export class JuditApiClient {
         }
 
         // Handle server errors that should be retried
-        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status as any)) {
+        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status as unknown)) {
           const error = new Error(`HTTP ${response.status}: ${responseText}`);
-          (error as any).retryable = true;
-          (error as any).statusCode = response.status;
+          (error as unknown).retryable = true;
+          (error as unknown).statusCode = response.status;
           throw error;
         }
 
         // Handle client errors that should NOT be retried
-        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status as any)) {
+        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status as unknown)) {
           const error = new Error(`HTTP ${response.status}: ${responseText}`);
-          (error as any).retryable = false;
-          (error as any).statusCode = response.status;
+          (error as unknown).retryable = false;
+          (error as unknown).statusCode = response.status;
           throw error;
         }
 
         if (!response.ok) {
           const error = new Error(`HTTP ${response.status}: ${responseText}`);
-          (error as any).retryable = response.status >= 500; // Retry server errors
-          (error as any).statusCode = response.status;
+          (error as unknown).retryable = response.status >= 500; // Retry server errors
+          (error as unknown).statusCode = response.status;
           throw error;
         }
 
@@ -726,16 +726,16 @@ export class JuditApiClient {
         // Handle timeout
         if (error instanceof Error && error.name === 'AbortError') {
           const timeoutError = new Error('Request timeout');
-          (timeoutError as any).retryable = true;
-          (timeoutError as any).isTimeout = true;
+          (timeoutError as unknown).retryable = true;
+          (timeoutError as unknown).isTimeout = true;
           throw timeoutError;
         }
 
         // Handle network errors
         if (error instanceof TypeError && error.message.includes('fetch')) {
           const networkError = new Error('Network error');
-          (networkError as any).retryable = true;
-          (networkError as any).isNetworkError = true;
+          (networkError as unknown).retryable = true;
+          (networkError as unknown).isNetworkError = true;
           throw networkError;
         }
 
@@ -754,7 +754,7 @@ export class JuditApiClient {
         lastError = error as Error;
 
         // Check if error is retryable
-        const isRetryable = (error as any).retryable !== false;
+        const isRetryable = (error as unknown).retryable !== false;
         const isLastAttempt = attempt === JUDIT_CONFIG.MAX_RETRY_ATTEMPTS;
 
         if (!isRetryable || isLastAttempt) {
@@ -764,10 +764,10 @@ export class JuditApiClient {
 
         // Calculate delay
         let delay: number;
-        if ((error as any).retryAfter) {
-          delay = (error as any).retryAfter;
+        if ((error as unknown).retryAfter) {
+          delay = (error as unknown).retryAfter;
         } else {
-          delay = this.calculateAdvancedBackoffDelay(attempt, error as any);
+          delay = this.calculateAdvancedBackoffDelay(attempt, error as unknown);
         }
 
         console.warn(`${ICONS.WARNING} Attempt ${attempt} failed, retrying in ${delay}ms:`, {
@@ -795,7 +795,7 @@ export class JuditApiClient {
     return Math.floor(exponentialDelay + jitterAmount);
   }
 
-  private calculateAdvancedBackoffDelay(attempt: number, error: any): number {
+  private calculateAdvancedBackoffDelay(attempt: number, error: unknown): number {
     let baseDelay = JUDIT_CONFIG.BASE_RETRY_DELAY_MS;
 
     // Adjust base delay based on error type

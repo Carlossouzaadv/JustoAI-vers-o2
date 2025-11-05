@@ -542,7 +542,7 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Tipo de Relatório *
           </label>
-          <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+          <Select value={formData.type} onValueChange={(value: unknown) => setFormData({ ...formData, type: value })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -559,7 +559,7 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Frequência *
           </label>
-          <Select value={formData.frequency} onValueChange={(value: any) => setFormData({ ...formData, frequency: value })}>
+          <Select value={formData.frequency} onValueChange={(value: unknown) => setFormData({ ...formData, frequency: value })}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

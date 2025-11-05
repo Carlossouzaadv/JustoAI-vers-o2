@@ -40,7 +40,7 @@ interface JuditWebhookPayload {
       current: string;
       reason?: string;
     };
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   };
   signature?: string;
 }
@@ -227,7 +227,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
 // ================================================================
 
 async function processMovementEvent(
-  process: any,
+  process: unknown,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -293,7 +293,7 @@ async function processMovementEvent(
 }
 
 async function processAttachmentEvent(
-  process: any,
+  process: unknown,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -325,7 +325,7 @@ async function processAttachmentEvent(
 }
 
 async function processStatusChangeEvent(
-  process: any,
+  process: unknown,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -368,7 +368,7 @@ async function processStatusChangeEvent(
 }
 
 async function processUpdateEvent(
-  process: any,
+  process: unknown,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -481,7 +481,7 @@ async function findProcessByTracking(trackingId: string, processNumber: string) 
   });
 }
 
-async function processMovementAttachments(movementId: string, attachments: any[]) {
+async function processMovementAttachments(movementId: string, attachments: unknown[]) {
   for (const attachment of attachments) {
     await prisma.processAttachment.create({
       data: {
@@ -497,7 +497,7 @@ async function processMovementAttachments(movementId: string, attachments: any[]
   }
 }
 
-async function processAttachments(processId: string, attachments: any[]) {
+async function processAttachments(processId: string, attachments: unknown[]) {
   const newAttachments = [];
 
   for (const attachment of attachments) {
@@ -528,7 +528,7 @@ async function processAttachments(processId: string, attachments: any[]) {
   return newAttachments;
 }
 
-async function syncProcessMovements(processId: string, movements: any[]) {
+async function syncProcessMovements(processId: string, movements: unknown[]) {
   const newMovements = [];
 
   for (const movement of movements) {
@@ -558,7 +558,7 @@ async function syncProcessMovements(processId: string, movements: any[]) {
   return newMovements;
 }
 
-async function generateMovementAlerts(process: any, movement: any): Promise<number> {
+async function generateMovementAlerts(process: unknown, movement: unknown): Promise<number> {
   try {
     // Definir urgência baseado no tipo de movimentação
     const urgencyMap: Record<string, 'high' | 'medium' | 'low'> = {
@@ -644,7 +644,7 @@ async function generateMovementAlerts(process: any, movement: any): Promise<numb
   }
 }
 
-async function generateAttachmentAlerts(process: any, attachments: any[]): Promise<number> {
+async function generateAttachmentAlerts(process: unknown, attachments: unknown[]): Promise<number> {
   try {
     if (!attachments || attachments.length === 0) {
       return 0;
@@ -734,7 +734,7 @@ async function generateAttachmentAlerts(process: any, attachments: any[]): Promi
   }
 }
 
-async function generateStatusChangeAlerts(process: any, status: any): Promise<number> {
+async function generateStatusChangeAlerts(process: unknown, status: unknown): Promise<number> {
   try {
     // Definir urgência baseado no tipo de mudança de status
     const urgencyMap: Record<string, 'high' | 'medium' | 'low'> = {
@@ -831,7 +831,7 @@ async function updateProcessLastWebhook(processId: string) {
   });
 }
 
-async function updateProcessMetadata(processId: string, data: any, webhookTimestamp: string) {
+async function updateProcessMetadata(processId: string, data: unknown, webhookTimestamp: string) {
   await prisma.monitoredProcess.update({
     where: { id: processId },
     data: {
@@ -857,13 +857,13 @@ async function saveWebhookRecord(payload: JuditWebhookPayload, result: WebhookPr
       attachmentsProcessed: result.attachmentsProcessed,
       processingTime: result.processingTime,
       error: result.error,
-      payload: payload as any,
+      payload: payload as unknown,
       timestamp: new Date(payload.timestamp)
     }
   });
 }
 
-async function logWebhookError(request: NextRequest, error: any, processingTime: number) {
+async function logWebhookError(request: NextRequest, error: unknown, processingTime: number) {
   try {
     const headers = Object.fromEntries(request.headers.entries());
     const url = request.url;
@@ -872,7 +872,7 @@ async function logWebhookError(request: NextRequest, error: any, processingTime:
       data: {
         url,
         method: 'POST',
-        headers: headers as any,
+        headers: headers as unknown,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         processingTime,

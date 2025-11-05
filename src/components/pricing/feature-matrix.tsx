@@ -25,7 +25,7 @@ interface FeatureMatrixProps {
 }
 
 export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixProps) {
-  const renderFeatureValue = (value: any, planId: string) => {
+  const renderFeatureValue = (value: unknown, planId: string) => {
     // Handle boolean values
     if (value === true) {
       return <Check className="w-4 h-4 text-green-500 mx-auto" />;

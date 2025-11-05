@@ -155,7 +155,7 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
                 key={key}
                 variant={filter === key ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setFilter(key as any)}
+                onClick={() => setFilter(key as unknown)}
               >
                 {key === 'all' ? 'Todos' :
                  key === 'complete' ? ICONS.SUCCESS :

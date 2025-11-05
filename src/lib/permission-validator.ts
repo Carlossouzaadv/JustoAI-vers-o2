@@ -68,7 +68,7 @@ export async function getUserWorkspaceRole(
     }
 
     // Assuming 'role' field exists - adjust based on actual schema
-    return (userWorkspace as any).role || 'member';
+    return (userWorkspace as unknown).role || 'member';
   } catch (error) {
     console.error(`${ICONS.ERROR} Error getting user role:`, error);
     return null;
@@ -103,7 +103,7 @@ export async function validateUserRole(
       };
     }
 
-    const userRole = (userWorkspace as any).role || 'member';
+    const userRole = (userWorkspace as unknown).role || 'member';
 
     // Check if user has required role
     if (!requiredRoles.includes(userRole as WorkspaceRole)) {

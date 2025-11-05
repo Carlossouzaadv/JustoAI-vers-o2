@@ -63,7 +63,7 @@ export function CostsChart({ data }: CostsChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '6px',
           }}
-          formatter={(value: any, name: string) => {
+          formatter={(value: unknown, name: string) => {
             if (name === 'cost') {
               return [`R$ ${value.toFixed(2)}`, 'Custo'];
             }

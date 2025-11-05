@@ -62,11 +62,11 @@ export async function GET(
         model: a.modelUsed,
         confidence: a.confidence,
         processingTime: a.processingTime,
-        summary: (a.aiAnalysis as any)?.summary || (a.aiAnalysis as any)?.resumo_executivo,
-        keyPoints: (a.aiAnalysis as any)?.keyPoints || (a.aiAnalysis as any)?.pontos_principais,
-        legalAssessment: (a.aiAnalysis as any)?.legalAssessment || (a.aiAnalysis as any)?.avaliacao_juridica,
-        riskAssessment: (a.aiAnalysis as any)?.riskAssessment || (a.aiAnalysis as any)?.analise_risco,
-        timelineAnalysis: (a.aiAnalysis as any)?.timelineAnalysis || (a.aiAnalysis as any)?.analise_cronograma,
+        summary: (a.aiAnalysis as unknown)?.summary || (a.aiAnalysis as unknown)?.resumo_executivo,
+        keyPoints: (a.aiAnalysis as unknown)?.keyPoints || (a.aiAnalysis as unknown)?.pontos_principais,
+        legalAssessment: (a.aiAnalysis as unknown)?.legalAssessment || (a.aiAnalysis as unknown)?.avaliacao_juridica,
+        riskAssessment: (a.aiAnalysis as unknown)?.riskAssessment || (a.aiAnalysis as unknown)?.analise_risco,
+        timelineAnalysis: (a.aiAnalysis as unknown)?.timelineAnalysis || (a.aiAnalysis as unknown)?.analise_cronograma,
         // Dados completos para referência
         data: a.aiAnalysis
       }))
@@ -115,7 +115,7 @@ export async function POST(
       undefined,
       workspaceId,
       creditCost,
-      creditCategory as any
+      creditCategory as unknown
     );
 
     if (!hasCredits) {
@@ -301,7 +301,7 @@ async function processAnalysisInBackground(
         undefined,
         workspaceId,
         1,
-        'FULL' as any,
+        'FULL' as unknown,
         'strategic_analysis'
       );
     }

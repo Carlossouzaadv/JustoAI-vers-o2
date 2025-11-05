@@ -390,7 +390,7 @@ export class ReportCacheManager {
     reportType: string,
     processIds: string[],
     audienceType: string,
-    additionalData?: any
+    additionalData?: unknown
   ): string {
     const keyData = [
       workspaceId,
@@ -406,7 +406,7 @@ export class ReportCacheManager {
   /**
    * Gera entrada de cache (placeholder)
    */
-  private async generateCacheEntry(workspaceId: string, config: any): Promise<void> {
+  private async generateCacheEntry(workspaceId: string, config: unknown): Promise<void> {
     // Placeholder - integraria com ReportGenerator real
     const cacheKey = this.generateCacheKey(
       workspaceId,
@@ -422,9 +422,9 @@ export class ReportCacheManager {
       data: {
         cacheKey,
         workspaceId,
-        reportType: config.reportType as any,
+        reportType: config.reportType as unknown,
         processIds: config.processIds,
-        audienceType: config.audienceType as any,
+        audienceType: config.audienceType as unknown,
         lastMovementTimestamp: new Date(),
         cachedData: { generated: true, timestamp: new Date() },
         expiresAt

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     // Parse dos filtros
     const filters: HistoryFilters = {
-      status: searchParams.get('status') as any,
+      status: searchParams.get('status') as unknown,
       dateFrom: searchParams.get('dateFrom') || undefined,
       dateTo: searchParams.get('dateTo') || undefined,
       limit: parseInt(searchParams.get('limit') || '20'),
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     console.log(`${ICONS.PROCESS} Buscando histórico de relatórios para workspace ${workspaceId}`);
 
     // Construir where clause
-    const whereClause: any = {
+    const whereClause: unknown = {
       workspaceId,
       // Filtrar apenas relatórios individuais (não schedules regulares)
       scheduleId: null
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
     // Transformar dados para resposta
     const historyItems: ReportHistoryItem[] = reports.map(report => {
-      const parameters = report.parameters as any;
+      const parameters = report.parameters as unknown;
       const processIds = parameters?.processIds || [];
 
       return {

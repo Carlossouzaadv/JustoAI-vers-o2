@@ -262,7 +262,7 @@ export default function PricingPage() {
         <PlanModal
           isOpen={showPlanModal}
           onClose={() => setShowPlanModal(false)}
-          plan={selectedPlanData as any}
+          plan={selectedPlanData as unknown}
           billingCycle={billingCycle}
           onStartTrial={handleStartTrial}
           onContactSales={handleContactSales}

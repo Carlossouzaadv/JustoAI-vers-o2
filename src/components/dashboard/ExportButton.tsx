@@ -10,7 +10,7 @@ import { Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ExportButtonProps {
-  data: any;
+  data: unknown;
   filename?: string;
   formats?: ('csv' | 'json' | 'pdf')[];
 }
@@ -22,7 +22,7 @@ export function ExportButton({
 }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const exportToCSV = (data: any) => {
+  const exportToCSV = (data: unknown) => {
     // Convert data to CSV format
     let csvContent = '';
 
@@ -38,7 +38,7 @@ export function ExportButton({
       csvContent += 'BREAKDOWN POR TIPO\n';
       csvContent += 'Tipo,Quantidade,Custo Total,Custo Médio\n';
       csvContent += data.breakdown
-        .map((item: any) =>
+        .map((item: unknown) =>
           [item.operationType, item.count, item.totalCost, item.avgCost].join(',')
         )
         .join('\n');
@@ -49,7 +49,7 @@ export function ExportButton({
       csvContent += 'CUSTOS DIÁRIOS\n';
       csvContent += 'Data,Custo,Operações\n';
       csvContent += data.dailyCosts
-        .map((item: any) => [item.date, item.cost, item.operations].join(','))
+        .map((item: unknown) => [item.date, item.cost, item.operations].join(','))
         .join('\n');
     }
 
@@ -68,7 +68,7 @@ export function ExportButton({
     document.body.removeChild(link);
   };
 
-  const exportToJSON = (data: any) => {
+  const exportToJSON = (data: unknown) => {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const link = document.createElement('a');

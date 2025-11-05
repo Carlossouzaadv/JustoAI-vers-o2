@@ -22,7 +22,7 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'enriched' | 'conflicts' | 'judit'>('all');
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<unknown>(null);
 
   useEffect(() => {
     loadTimelineEvents();

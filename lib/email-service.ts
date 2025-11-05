@@ -15,7 +15,7 @@ export interface EmailNotification {
   to: string | string[];
   subject: string;
   template: 'process-alert' | 'report-ready' | 'payment-success' | 'system-notification' | 'custom';
-  data: any;
+  data: unknown;
   priority?: 'high' | 'normal' | 'low';
   attachments?: EmailAttachment[];
 }
@@ -202,7 +202,7 @@ export class EmailService {
   /**
    * Get email template based on type
    */
-  private getTemplate(templateType: EmailNotification['template'], data: any): EmailTemplate {
+  private getTemplate(templateType: EmailNotification['template'], data: unknown): EmailTemplate {
     switch (templateType) {
       case 'process-alert':
         return this.getProcessAlertTemplate(data);
@@ -223,7 +223,7 @@ export class EmailService {
     }
   }
 
-  private getProcessAlertTemplate(data: any): EmailTemplate {
+  private getProcessAlertTemplate(data: unknown): EmailTemplate {
     const urgencyIcon = data.urgency === 'high' ? '🔴' : data.urgency === 'medium' ? '🟡' : '🟢';
 
     return {
@@ -266,7 +266,7 @@ export class EmailService {
     };
   }
 
-  private getReportReadyTemplate(data: any): EmailTemplate {
+  private getReportReadyTemplate(data: unknown): EmailTemplate {
     return {
       subject: `📊 Relatório Pronto - ${data.reportName}`,
       html: `
@@ -308,7 +308,7 @@ export class EmailService {
     };
   }
 
-  private getPaymentSuccessTemplate(data: any): EmailTemplate {
+  private getPaymentSuccessTemplate(data: unknown): EmailTemplate {
     return {
       subject: '✅ Pagamento Confirmado - JustoAI',
       html: `
@@ -351,7 +351,7 @@ export class EmailService {
     };
   }
 
-  private getSystemNotificationTemplate(data: any): EmailTemplate {
+  private getSystemNotificationTemplate(data: unknown): EmailTemplate {
     return {
       subject: data.subject || 'Notificação do Sistema - JustoAI',
       html: `

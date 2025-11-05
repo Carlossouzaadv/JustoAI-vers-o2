@@ -2,6 +2,7 @@
 // WEBHOOK DELIVERY SERVICE - Track and retry webhook deliveries
 // ================================================================
 
+import { createHmac } from 'crypto';
 import { ICONS } from '@/lib/icons';
 
 interface WebhookDeliveryData {
@@ -174,10 +175,8 @@ export class WebhookDeliveryService {
     payload: Record<string, unknown>,
     secret: string
   ): string {
-    const crypto = require('crypto');
     const body = JSON.stringify(payload);
-    return crypto
-      .createHmac('sha256', secret)
+    return createHmac('sha256', secret)
       .update(body)
       .digest('hex');
   }

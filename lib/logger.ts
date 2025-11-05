@@ -385,7 +385,7 @@ function logDatabaseOperation(
  * Middleware Express para logging de requests
  */
 function requestLoggingMiddleware() {
-  return (req: any, res: any, next: any) => {
+  return (req: unknown, res: unknown, next: unknown) => {
     const startTime = Date.now();
 
     // Gerar ID único para request
@@ -393,7 +393,7 @@ function requestLoggingMiddleware() {
 
     // Override do res.end para capturar response
     const originalEnd = res.end?.bind(res) || (() => {});
-    res.end = function(...args: any[]) {
+    res.end = function(...args: unknown[]) {
       const duration = Date.now() - startTime;
 
       logHttpRequest(
@@ -421,7 +421,7 @@ function requestLoggingMiddleware() {
  * Middleware para capturar erros não tratados
  */
 function errorLoggingMiddleware() {
-  return (err: Error, req: any, res: any, next: any) => {
+  return (err: Error, req: unknown, res: unknown, next: unknown) => {
     logError(
       `Unhandled error in ${req.method || 'UNKNOWN'} ${req.originalUrl || req.url || 'unknown'}`,
       err,

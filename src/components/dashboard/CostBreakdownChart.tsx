@@ -58,7 +58,7 @@ export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '6px',
           }}
-          formatter={(value: any, name: string, props: any) => {
+          formatter={(value: unknown, name: string, props: unknown) => {
             if (name === 'value') {
               return [
                 <div key="tooltip" className="text-sm">

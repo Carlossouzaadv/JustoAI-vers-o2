@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Build query
-    const where: any = {};
+    const where: unknown = {};
 
     if (workspaceId) {
       where.workspaceId = workspaceId;

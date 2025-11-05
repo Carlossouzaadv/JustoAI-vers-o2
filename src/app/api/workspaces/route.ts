@@ -36,7 +36,7 @@ async function GET(request: NextRequest) {
   const { page, limit, search, status } = query
 
   // Build filters
-  const where: any = {
+  const where: unknown = {
     users: {
       some: {
         userId: user.id,

@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
     const action = searchParams.get('action') || 'analyze';
 
     // Processar upload
-    const req = request as any;
-    const res = {} as any;
+    const req = request as unknown;
+    const res = {} as unknown;
 
     await uploadSingle(req, res);
 
@@ -469,7 +469,7 @@ async function importInBackground(
   workspaceId: string,
   buffer: Buffer,
   fileName: string,
-  config: any
+  config: unknown
 ) {
   try {
     console.log(`${ICONS.PROCESS} Processamento em background iniciado: ${fileName}`);

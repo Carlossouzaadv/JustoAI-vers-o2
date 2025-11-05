@@ -48,7 +48,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function GET(request: NextRequest) {
   try {
-    const response: any = {
+    const response: unknown = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       version: '2.0.0',

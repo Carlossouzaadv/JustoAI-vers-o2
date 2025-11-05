@@ -15,9 +15,9 @@ interface JobConfig {
   name: string;
   schedule: string;
   enabled: boolean;
-  task: () => Promise<any>;
-  onError?: (error: any) => void;
-  onSuccess?: (result: any) => void;
+  task: () => Promise<unknown>;
+  onError?: (error: unknown) => void;
+  onSuccess?: (result: unknown) => void;
 }
 
 // ================================================================
@@ -25,15 +25,15 @@ interface JobConfig {
 // ================================================================
 
 const log = {
-  info: (message: string, data?: any) => {
+  info: (message: string, data?: unknown) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [SCHEDULER] ${message}`, data || '');
   },
-  error: (message: string, error?: any) => {
+  error: (message: string, error?: unknown) => {
     const timestamp = new Date().toISOString();
     console.error(`[${timestamp}] [SCHEDULER ERROR] ${message}`, error || '');
   },
-  success: (message: string, data?: any) => {
+  success: (message: string, data?: unknown) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [SCHEDULER ✓] ${message}`, data || '');
   },

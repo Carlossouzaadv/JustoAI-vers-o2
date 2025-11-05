@@ -29,14 +29,14 @@ export async function POST(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: unknown) {
             try {
               cookieStore.set(name, value, options)
             } catch (error) {
               // Cookie setting might fail
             }
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: unknown) {
             try {
               cookieStore.delete(name)
             } catch (error) {
@@ -106,14 +106,14 @@ export async function GET(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: unknown) {
             try {
               cookieStore.set(name, value, options)
             } catch (error) {
               // Cookie setting might fail
             }
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: unknown) {
             try {
               cookieStore.delete(name)
             } catch (error) {

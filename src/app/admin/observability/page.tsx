@@ -8,8 +8,8 @@ interface ObservabilityData {
     errors?: {
       total: number;
       rate: number;
-      recent: any[];
-      top: any[];
+      recent: unknown[];
+      top: unknown[];
     };
     health?: {
       status: 'healthy' | 'degraded' | 'critical';
@@ -241,7 +241,7 @@ export default function ObservabilityPage() {
                 </tr>
               </thead>
               <tbody>
-                {errors.recent.map((error: any, idx: number) => (
+                {errors.recent.map((error: unknown, idx: number) => (
                   <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2 px-2">
                       <span className="text-gray-900 font-medium truncate block">{error.title}</span>
@@ -274,7 +274,7 @@ export default function ObservabilityPage() {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Top Erros (por ocorrências)</h2>
           <div className="space-y-2">
-            {errors.top.slice(0, 5).map((error: any, idx: number) => (
+            {errors.top.slice(0, 5).map((error: unknown, idx: number) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                 <div>
                   <p className="font-medium text-gray-900">{error.title}</p>

@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 // ================================================================
 
 function determineHealth(params: {
-  queueStats: any;
+  queueStats: unknown;
   errorRate: number;
   unresolvedAlerts: number;
   recentCosts: number;

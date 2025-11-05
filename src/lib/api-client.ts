@@ -36,7 +36,7 @@ export function getApiUrl(path: string): string {
 /**
  * Helper to build query strings
  */
-export function buildQueryString(params: Record<string, any>): string {
+export function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -51,7 +51,7 @@ export function buildQueryString(params: Record<string, any>): string {
  */
 export function getApiUrlWithParams(
   path: string,
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 ): string {
   let url = getApiUrl(path);
   if (params && Object.keys(params).length > 0) {
@@ -74,7 +74,7 @@ export const defaultFetchOptions: RequestInit = {
 /**
  * Make an API call with proper URL handling
  */
-export async function apiCall<T = any>(
+export async function apiCall<T = unknown>(
   path: string,
   options?: RequestInit
 ): Promise<T> {

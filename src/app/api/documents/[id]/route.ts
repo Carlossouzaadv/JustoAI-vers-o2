@@ -114,7 +114,7 @@ export async function PATCH(
     // 5. UPDATE DOCUMENT
     // ============================================================
 
-    const updateData: any = {};
+    const updateData: unknown = {};
 
     if (body.name !== undefined) {
       updateData.name = body.name;
@@ -127,7 +127,7 @@ export async function PATCH(
     if (body.summary !== undefined) {
       // Preserve existing metadata and update summary
       updateData.metadata = {
-        ...(document.metadata as Record<string, any> || {}),
+        ...(document.metadata as Record<string, unknown> || {}),
         summary: body.summary,
       };
     }
@@ -168,7 +168,7 @@ export async function PATCH(
         id: updatedDocument.id,
         name: updatedDocument.name,
         tags: updatedDocument.tags,
-        summary: (updatedDocument.metadata as Record<string, any>)?.summary || null,
+        summary: (updatedDocument.metadata as Record<string, unknown>)?.summary || null,
         updatedAt: updatedDocument.updatedAt,
       },
     });

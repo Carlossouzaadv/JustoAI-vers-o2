@@ -320,7 +320,7 @@ export default function ReportSchedulerModal({
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => setReportOptions(prev => ({ ...prev, tone: tone.value as any }))}
+              onClick={() => setReportOptions(prev => ({ ...prev, tone: tone.value as unknown }))}
             >
               <div className="flex items-start gap-3">
                 <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100'}`}>
@@ -358,7 +358,7 @@ export default function ReportSchedulerModal({
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => setReportOptions(prev => ({ ...prev, type: type.value as any }))}
+              onClick={() => setReportOptions(prev => ({ ...prev, type: type.value as unknown }))}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -499,7 +499,7 @@ export default function ReportSchedulerModal({
               <Label className="text-base font-medium">Prioridade</Label>
               <Select
                 value={reportOptions.priority}
-                onValueChange={(value) => setReportOptions(prev => ({ ...prev, priority: value as any }))}
+                onValueChange={(value) => setReportOptions(prev => ({ ...prev, priority: value as unknown }))}
               >
                 <SelectTrigger>
                   <SelectValue />

@@ -176,8 +176,8 @@ async function hasNextVersion(processId: string, versionNumber: number): Promise
 /**
  * Calcula diff entre duas versões (simplificado)
  */
-function calculateVersionDiff(previous: any, current: any): any {
-  const changes: any = {
+function calculateVersionDiff(previous: unknown, current: unknown): unknown {
+  const changes: unknown = {
     totalChanges: 0,
     summary: ''
   };

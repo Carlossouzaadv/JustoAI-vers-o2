@@ -101,7 +101,7 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
     }
   };
 
-  const updateField = (field: keyof ProcessSummaryData, value: any) => {
+  const updateField = (field: keyof ProcessSummaryData, value: unknown) => {
     if (!data) return;
     setData({ ...data, [field]: value });
   };

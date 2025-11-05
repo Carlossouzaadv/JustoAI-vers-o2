@@ -18,7 +18,7 @@ interface CreditPurchaseRequest {
   packageType: 'extra_reports_5' | 'extra_reports_20' | 'extra_reports_50' | 'custom';
   quantity?: number;
   paymentMethod?: 'credit_card' | 'pix' | 'boleto';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface CreditPackage {
@@ -46,7 +46,7 @@ interface CreditTransaction {
   amount: number;
   reason: string;
   createdAt: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ================================================================
@@ -210,9 +210,9 @@ async function getCreditTransactions(workspaceId: string): Promise<NextResponse>
       id: t.id,
       type: t.type as 'debit' | 'credit',
       amount: parseFloat(t.amount.toString()),
-      reason: (t.metadata as any)?.reason || 'Transação de crédito',
+      reason: (t.metadata as unknown)?.reason || 'Transação de crédito',
       createdAt: t.createdAt.toISOString(),
-      metadata: t.metadata as any
+      metadata: t.metadata as unknown
     }));
 
     return NextResponse.json({
@@ -512,8 +512,8 @@ async function simulatePaymentProcessing(
 }
 
 function generateRecommendations(
-  balance: any,
-  quotaStatus: any
+  balance: unknown,
+  quotaStatus: unknown
 ): string[] {
   const recommendations: string[] = [];
 
@@ -567,7 +567,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-async function handlePaymentWebhook(payload: any): Promise<NextResponse> {
+async function handlePaymentWebhook(payload: unknown): Promise<NextResponse> {
   try {
     const { getPaymentWebhookHandler } = await import('@/lib/payment-webhook-handler');
     const webhookHandler = getPaymentWebhookHandler();

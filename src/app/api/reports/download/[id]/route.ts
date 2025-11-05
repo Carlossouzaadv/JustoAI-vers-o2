@@ -65,12 +65,12 @@ export const GET = withErrorHandler(async (
     }
 
     // Verificar se o formato solicitado está disponível
-    if (!execution.outputFormats.includes(format as any)) {
+    if (!execution.outputFormats.includes(format as unknown)) {
       return errorResponse(`Formato ${format} não está disponível para este relatório`, 400);
     }
 
     // Obter URL do arquivo
-    const fileUrls = execution.fileUrls as any;
+    const fileUrls = execution.fileUrls as unknown;
     const fileUrl = fileUrls[format];
 
     if (!fileUrl) {

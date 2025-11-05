@@ -12,7 +12,7 @@ export interface NotificationOptions {
     enabled: boolean;
     recipients: string[];
     template: EmailNotification['template'];
-    data?: any;
+    data?: unknown;
   };
   slack?: {
     enabled: boolean;
@@ -149,7 +149,7 @@ export class NotificationService {
    */
   async sendJobSuccess(
     jobName: string,
-    results?: Record<string, any>,
+    results?: Record<string, unknown>,
     adminEmails?: string[]
   ): Promise<NotificationResult> {
     const resultDetails = results || {};
@@ -194,7 +194,7 @@ export class NotificationService {
   async sendJobFailure(
     jobName: string,
     error: Error,
-    results?: Record<string, any>,
+    results?: Record<string, unknown>,
     adminEmails?: string[]
   ): Promise<NotificationResult> {
     return this.sendCriticalAlert(
@@ -416,7 +416,7 @@ export const sendCriticalAlert = (
 
 export const sendJobSuccess = (
   jobName: string,
-  results?: Record<string, any>,
+  results?: Record<string, unknown>,
   adminEmails?: string[]
 ) =>
   getNotificationService().sendJobSuccess(jobName, results, adminEmails);
@@ -424,7 +424,7 @@ export const sendJobSuccess = (
 export const sendJobFailure = (
   jobName: string,
   error: Error,
-  results?: Record<string, any>,
+  results?: Record<string, unknown>,
   adminEmails?: string[]
 ) =>
   getNotificationService().sendJobFailure(jobName, error, results, adminEmails);

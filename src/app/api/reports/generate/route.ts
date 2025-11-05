@@ -393,9 +393,9 @@ export async function PUT(req: NextRequest) {
 // ================================
 
 async function handleBatchGeneration(
-  validatedData: any,
-  customizationProfile: any,
-  baseData: any,
+  validatedData: unknown,
+  customizationProfile: unknown,
+  baseData: unknown,
   workspaceId: string,
   isDivinity: boolean = false,
   userEmail: string = ''

@@ -17,7 +17,7 @@ interface TelemetryEvent {
   processId?: string;
   processNumber?: string;
   trackingId?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   timestamp: Date;
   cost?: number;
   success: boolean;
@@ -33,7 +33,7 @@ interface CostTracking {
   currency: 'BRL';
   processCount?: number;
   attachmentCount?: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -75,7 +75,7 @@ interface CostAlert {
   threshold: number;
   message: string;
   timestamp: Date;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 // ================================================================
@@ -84,7 +84,7 @@ interface CostAlert {
 
 export class MonitoringTelemetry {
   private static instance: MonitoringTelemetry;
-  private metricsCache: Map<string, any> = new Map();
+  private metricsCache: Map<string, unknown> = new Map();
   private costAccumulator: Map<string, number> = new Map();
   private alertsBuffer: CostAlert[] = [];
 
@@ -171,12 +171,12 @@ export class MonitoringTelemetry {
     };
   }
 
-  async getDailyCostSummary(workspaceId?: string, days = 30): Promise<any[]> {
+  async getDailyCostSummary(workspaceId?: string, days = 30): Promise<unknown[]> {
     console.log(`${ICONS.COST} Cost summary disabled - would query for workspace:`, workspaceId);
     return [];
   }
 
-  async getTrackingEfficiencyReport(workspaceId?: string): Promise<any> {
+  async getTrackingEfficiencyReport(workspaceId?: string): Promise<unknown> {
     console.log(`${ICONS.INFO} Efficiency report disabled - would query for workspace:`, workspaceId);
     return {
       trackingStats: [],

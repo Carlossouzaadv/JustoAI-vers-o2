@@ -41,7 +41,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     }
 
     // Construir filtros
-    const whereClause: any = { workspaceId };
+    const whereClause: unknown = { workspaceId };
 
     if (scheduleId) {
       whereClause.scheduleId = scheduleId;
@@ -122,7 +122,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
  * Calcula estatísticas de execução
  */
 async function calculateExecutionStatistics(workspaceId: string, scheduleId?: string) {
-  const whereClause: any = { workspaceId };
+  const whereClause: unknown = { workspaceId };
   if (scheduleId) {
     whereClause.scheduleId = scheduleId;
   }
@@ -208,7 +208,7 @@ async function calculateExecutionStatistics(workspaceId: string, scheduleId?: st
  * Calcula tendência mensal
  */
 async function getMonthlyTrend(workspaceId: string, scheduleId?: string) {
-  const whereClause: any = { workspaceId };
+  const whereClause: unknown = { workspaceId };
   if (scheduleId) {
     whereClause.scheduleId = scheduleId;
   }

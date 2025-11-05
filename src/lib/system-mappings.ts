@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
 // ================================
 // MAPEAMENTOS DE SISTEMAS JURÍDICOS
 // ================================
@@ -40,7 +40,7 @@ export interface SystemTransformRule {
 export interface SystemValidationRule {
   field: string;
   type: 'REQUIRED' | 'FORMAT' | 'RANGE' | 'UNIQUE' | 'REFERENCE';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   errorMessage: string;
 }
 
@@ -77,7 +77,7 @@ export type DataType =
 
 export interface TransformRule {
   type: 'DATE_FORMAT' | 'CURRENCY' | 'BOOLEAN' | 'SPLIT' | 'CONCAT' | 'REGEX' | 'LOOKUP' | 'NORMALIZE';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   description: string;
 }
 
@@ -780,7 +780,7 @@ export class SystemMappings {
   static detectSystem(columnNames: string[]): { system: SourceSystem; confidence: number } {
     const normalizedColumns = columnNames.map(name => name.toLowerCase().trim());
 
-    const systemScores: Record<SourceSystem, number> = {} as any;
+    const systemScores: Record<SourceSystem, number> = {} as unknown;
 
     // Calcular score para cada sistema
     Object.entries(this.mappings).forEach(([systemName, mapping]) => {
@@ -856,7 +856,7 @@ export class DataTransformer {
   /**
    * Aplica regras de transformação a um valor
    */
-  static transformValue(value: any, rule: TransformRule): any {
+  static transformValue(value: unknown, rule: TransformRule): unknown {
     if (!value && value !== 0) return value;
 
     switch (rule.type) {
@@ -883,7 +883,7 @@ export class DataTransformer {
     }
   }
 
-  private static transformDate(value: string, params: any): string {
+  private static transformDate(value: string, params: unknown): string {
     // Implementar conversão de formatos de data
     try {
       if (params.inputFormat === 'auto') {
@@ -899,7 +899,7 @@ export class DataTransformer {
     }
   }
 
-  private static transformCurrency(value: string, _params: any): number {
+  private static transformCurrency(value: string, _params: unknown): number {
     try {
       // Remover símbolos monetários e converter para número
       const cleanValue = value.toString()
@@ -913,12 +913,12 @@ export class DataTransformer {
     }
   }
 
-  private static transformBoolean(value: any, _params: any): boolean {
+  private static transformBoolean(value: unknown, _params: unknown): boolean {
     const truthyValues = ['sim', 'yes', 'true', '1', 'ativo', 'ativado'];
     return truthyValues.includes(value.toString().toLowerCase());
   }
 
-  private static transformNormalize(value: string, params: any): string {
+  private static transformNormalize(value: string, params: unknown): string {
     if (params.type === 'CPF_CNPJ') {
       // Normalizar CPF/CNPJ
       const digits = value.replace(/\D/g, '');
@@ -932,11 +932,11 @@ export class DataTransformer {
     return value;
   }
 
-  private static transformLookup(value: any, params: any): any {
+  private static transformLookup(value: unknown, params: unknown): unknown {
     return params.mapping[value] || value;
   }
 
-  private static transformRegex(value: string, params: any): string {
+  private static transformRegex(value: string, params: unknown): string {
     try {
       const regex = new RegExp(params.pattern, params.flags || '');
       return value.replace(regex, params.replacement || '');
@@ -954,7 +954,7 @@ export class DataValidator {
   /**
    * Valida um valor baseado em regras
    */
-  static validateValue(value: any, rules: SystemValidationRule[]): { isValid: boolean; errors: string[] } {
+  static validateValue(value: unknown, rules: SystemValidationRule[]): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     rules.forEach(rule => {

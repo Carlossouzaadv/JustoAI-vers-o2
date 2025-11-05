@@ -343,7 +343,7 @@ export async function DELETE(
 // FUNÇÃO AUXILIAR - SINCRONIZAÇÃO
 // ================================
 
-async function handleSyncProcess(process: any, force: boolean) {
+async function handleSyncProcess(process: unknown, force: boolean) {
   // Verificar se não está em cooldown (a menos que force = true)
   if (!force && process.lastSync) {
     const timeSinceLastSync = Date.now() - process.lastSync.getTime();

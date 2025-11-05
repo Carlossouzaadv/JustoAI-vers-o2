@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 /**
  * Pure Auth Helper Functions
  * These functions have NO dependencies on React hooks or contexts
- * Safe to call from any environment (browser, server, API routes)
+ * Safe to call from unknown environment (browser, server, API routes)
  */
 
 /**
@@ -66,7 +66,7 @@ export function getStoredUser() {
 /**
  * Set user data in localStorage
  */
-export function setStoredUser(user: any): boolean {
+export function setStoredUser(user: unknown): boolean {
   if (typeof window === 'undefined') return false;
   try {
     localStorage.setItem('user_data', JSON.stringify(user));

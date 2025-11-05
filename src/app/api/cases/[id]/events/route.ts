@@ -41,7 +41,7 @@ interface TimelineEvent {
     type: string;
     size: number;
   }>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export async function GET(
@@ -106,10 +106,10 @@ export async function GET(
       caseData.processo.dadosCompletos &&
       typeof caseData.processo.dadosCompletos === 'object'
     ) {
-      const dadosCompletos = caseData.processo.dadosCompletos as any;
+      const dadosCompletos = caseData.processo.dadosCompletos as unknown;
 
       if (dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
-        const juditEvents = dadosCompletos.steps.map((step: any, index: number) => ({
+        const juditEvents = dadosCompletos.steps.map((step: unknown, index: number) => ({
           id: `judit-step-${step.step_id || index}`,
           date: new Date(step.step_date).toISOString(),
           title: 'Andamento Processual',
@@ -138,11 +138,11 @@ export async function GET(
 
         // Tentar recuperar data do previewSnapshot.lastMovements (PDF inicial)
         if (caseData.previewSnapshot && typeof caseData.previewSnapshot === 'object') {
-          const preview = caseData.previewSnapshot as any;
+          const preview = caseData.previewSnapshot as unknown;
           if (preview.lastMovements && Array.isArray(preview.lastMovements)) {
             // Procurar movimento que corresponde ao documento
             const matchedMovement = preview.lastMovements.find(
-              (m: any) =>
+              (m: unknown) =>
                 m.description?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
                 m.description?.toLowerCase().includes(doc.name?.toLowerCase())
             );
@@ -159,11 +159,11 @@ export async function GET(
 
         // Se não encontrou no preview, tentar recuperar dos dados JUDIT
         if (realEventDate === doc.createdAt && caseData.processo?.dadosCompletos) {
-          const dadosCompletos = caseData.processo.dadosCompletos as any;
+          const dadosCompletos = caseData.processo.dadosCompletos as unknown;
           if (dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
             // Procurar step que corresponde ao documento
             const matchedStep = dadosCompletos.steps.find(
-              (s: any) =>
+              (s: unknown) =>
                 s.content?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
                 s.content?.toLowerCase().includes(doc.name?.toLowerCase())
             );

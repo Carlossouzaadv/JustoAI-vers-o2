@@ -226,8 +226,8 @@ export async function PUT(
 
     const UpdateConfigSchema = z.object({
       customMappings: z.record(z.string(), z.string()).optional(),
-      transformRules: z.record(z.string(), z.any()).optional(),
-      importSettings: z.record(z.string(), z.any()).optional()
+      transformRules: z.record(z.string(), z.unknown()).optional(),
+      importSettings: z.record(z.string(), z.unknown()).optional()
     });
 
     const { data: body, error: validationError } = await validateJson(request, UpdateConfigSchema);
@@ -252,7 +252,7 @@ export async function PUT(
       where: { id: (await params).id },
       data: {
         importSettings: {
-          ...(systemImport.importSettings as any || {}),
+          ...(systemImport.importSettings as unknown || {}),
           ...body.importSettings,
           customMappings: body.customMappings,
           transformRules: body.transformRules
@@ -394,7 +394,7 @@ export async function DELETE(
 // MÉTODOS AUXILIARES
 // ================================
 
-function calculateEstimatedTime(systemImport: any): string {
+function calculateEstimatedTime(systemImport: unknown): string {
   if (systemImport.progress <= 0) return 'Calculando...';
 
   const elapsed = Date.now() - systemImport.startedAt.getTime();
@@ -440,7 +440,7 @@ function getAvailableActions(status: string): string[] {
   return actions;
 }
 
-async function handleCancelImport(systemImport: any, force: boolean) {
+async function handleCancelImport(systemImport: unknown, force: boolean) {
   const canCancel = [
     'ANALYZING',
     'MAPPING',
@@ -487,7 +487,7 @@ async function handleCancelImport(systemImport: any, force: boolean) {
   });
 }
 
-async function handleRetryImport(systemImport: any, force: boolean) {
+async function handleRetryImport(systemImport: unknown, force: boolean) {
   if (systemImport.status === 'IMPORTING' && !force) {
     throw new ApiError('Importação já está em andamento', 400);
   }
@@ -530,7 +530,7 @@ async function handleRetryImport(systemImport: any, force: boolean) {
   });
 }
 
-async function handleDeleteImport(systemImport: any, force: boolean) {
+async function handleDeleteImport(systemImport: unknown, force: boolean) {
   const inProgress = [
     'ANALYZING',
     'MAPPING',

@@ -78,7 +78,7 @@ export async function POST(
       );
     }
 
-    const metadata = (caseData.metadata || {}) as any;
+    const metadata = (caseData.metadata || {}) as unknown;
     if (metadata.can_retry !== true) {
       return NextResponse.json(
         {

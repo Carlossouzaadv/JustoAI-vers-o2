@@ -12,7 +12,7 @@ const consumeSchema = z.object({
   reason: z.string().min(1, 'Reason is required'),
   resourceType: z.enum(['report', 'analysis', 'full_analysis']),
   resourceId: z.string().optional(),
-  metadata: z.record(z.any()).optional().default({})
+  metadata: z.record(z.unknown()).optional().default({})
 })
 
 export const POST = withErrorHandler(async (request: NextRequest) => {

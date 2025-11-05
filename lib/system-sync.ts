@@ -49,7 +49,7 @@ export class SystemSynchronizer {
       const systemImports = await prisma.systemImport.findMany({
         where: {
           workspaceId,
-          sourceSystem: sourceSystem as any,
+          sourceSystem: sourceSystem as unknown,
           status: 'COMPLETED'
         },
         include: {

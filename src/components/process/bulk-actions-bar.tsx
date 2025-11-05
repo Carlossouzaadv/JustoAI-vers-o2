@@ -36,12 +36,12 @@ export function BulkActionsBar({
 }: BulkActionsBarProps) {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<unknown>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { updateClientsInBulk, loading, error } = useBulkCaseUpdate();
 
-  const handleClientSelect = (client: any) => {
+  const handleClientSelect = (client: unknown) => {
     setSelectedClient(client);
     setIsClientModalOpen(false);
     setShowConfirm(true);

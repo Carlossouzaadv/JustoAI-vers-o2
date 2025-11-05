@@ -18,7 +18,7 @@ export interface IntelligentParseResult {
   // Análise do arquivo
   totalRows: number;
   headerRow: number;
-  dataPreview: any[][];
+  dataPreview: unknown[][];
 
   // Mapeamento automático
   columnMapping: ColumnMapping[];
@@ -105,7 +105,7 @@ export interface FileAnalysis {
 
 export interface TransformRule {
   type: 'DATE_FORMAT' | 'CURRENCY' | 'BOOLEAN' | 'SPLIT' | 'CONCAT' | 'REGEX' | 'LOOKUP';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   description: string;
 }
 
@@ -394,7 +394,7 @@ export class IntelligentParser {
             transformRule: mappedColumns[0]?.transformRule
           };
 
-          (result as any)[category].push(fieldMap);
+          (result as unknown)[category].push(fieldMap);
         }
       });
     });

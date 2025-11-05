@@ -216,7 +216,7 @@ export class ProcessApiClient {
     };
   }
 
-  private parseJuditResponse(apiData: any): ProcessData {
+  private parseJuditResponse(apiData: unknown): ProcessData {
     return {
       processNumber: apiData.numero_processo || '',
       court: apiData.tribunal || '',
@@ -226,19 +226,19 @@ export class ProcessApiClient {
       status: apiData.situacao || 'ATIVO',
 
       parties: {
-        plaintiffs: (apiData.partes?.requerentes || []).map((p: any) => ({
+        plaintiffs: (apiData.partes?.requerentes || []).map((p: unknown) => ({
           name: p.nome || '',
           document: p.documento || '',
           type: 'PLAINTIFF' as const,
           address: p.endereco
         })),
-        defendants: (apiData.partes?.requeridos || []).map((p: any) => ({
+        defendants: (apiData.partes?.requeridos || []).map((p: unknown) => ({
           name: p.nome || '',
           document: p.documento || '',
           type: 'DEFENDANT' as const,
           address: p.endereco
         })),
-        lawyers: (apiData.advogados || []).map((a: any) => ({
+        lawyers: (apiData.advogados || []).map((a: unknown) => ({
           name: a.nome || '',
           oabNumber: a.oab_numero || '',
           oabState: a.oab_uf || '',
@@ -246,7 +246,7 @@ export class ProcessApiClient {
         }))
       },
 
-      movements: (apiData.movimentacoes || []).map((m: any) => ({
+      movements: (apiData.movimentacoes || []).map((m: unknown) => ({
         date: new Date(m.data),
         type: m.tipo || '',
         description: m.descricao || '',

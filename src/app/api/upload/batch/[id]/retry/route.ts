@@ -316,7 +316,7 @@ export async function GET(
     // 4. GET RETRY STATUS FROM ERRORS JSON
     // ============================================================
 
-    let retryStats = {
+    const retryStats = {
       totalErrors: 0,
       retryable: 0,
       maxedOut: 0,

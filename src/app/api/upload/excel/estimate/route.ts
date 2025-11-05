@@ -147,12 +147,12 @@ async function checkExistingProcesses(
 /**
  * Categoriza erros por tipo para melhor UX
  */
-function categorizeErrors(errors: any[]): any {
+function categorizeErrors(errors: unknown[]): unknown {
   const categories = {
-    critical: [] as any[],
-    validation: [] as any[],
-    warning: [] as any[],
-    duplicate: [] as any[]
+    critical: [] as unknown[],
+    validation: [] as unknown[],
+    warning: [] as unknown[],
+    duplicate: [] as unknown[]
   };
 
   errors.forEach(error => {
@@ -192,7 +192,7 @@ function categorizeErrors(errors: any[]): any {
 /**
  * Gera recomendação baseada na análise (sem referências a custo)
  */
-function generateRecommendation(estimate: any, errorCategories: any): any {
+function generateRecommendation(estimate: unknown, errorCategories: unknown): unknown {
   const recommendations = [];
 
   // Verificar se há muitos erros críticos
@@ -240,7 +240,7 @@ function generateRecommendation(estimate: any, errorCategories: any): any {
 /**
  * Gera mensagem de confirmação personalizada (sem referências a custo)
  */
-function generateConfirmationMessage(estimate: any): string {
+function generateConfirmationMessage(estimate: unknown): string {
   const messages = [];
 
   if (estimate.newProcesses > 0) {

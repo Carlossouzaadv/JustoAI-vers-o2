@@ -21,7 +21,7 @@ const ICONS = {
 // ================================================================
 // MINIMALIST LOGGER - Only errors and critical status
 // ================================================================
-function log(level: 'error' | 'success', message: string, data?: any) {
+function log(level: 'error' | 'success', message: string, data?: unknown) {
   const timestamp = new Date().toISOString().split('T')[1]; // HH:MM:SS.mmm
 
   if (level === 'error') {
@@ -76,7 +76,7 @@ function executeWithTimeout(
   } catch (error) {
     const duration = Date.now() - startTime;
     console.error(`${ICONS.ERROR} [executeWithTimeout] Falha após ${duration}ms:`, {
-      error: (error as any)?.message,
+      error: (error as unknown)?.message,
       command,
     });
     throw error;

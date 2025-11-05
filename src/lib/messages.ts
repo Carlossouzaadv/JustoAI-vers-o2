@@ -268,7 +268,7 @@ export const HELP_MESSAGES = {
 // FUNÇÃO UTILITÁRIA PARA FORMATAÇÃO
 // ================================================================
 
-export function formatMessage(template: string, ...args: any[]): string {
+export function formatMessage(template: string, ...args: unknown[]): string {
   return template.replace(/{(\d+)}/g, (match, index) => {
     return args[index] !== undefined ? String(args[index]) : match;
   });
@@ -292,7 +292,7 @@ export function getMessage(
     help: HELP_MESSAGES,
   };
 
-  // @ts-ignore - Type checking is complex here but it's safe
+  // @ts-expect-error - Type checking is complex here but it's safe
   return messages[category]?.[key] || fallback;
 }
 

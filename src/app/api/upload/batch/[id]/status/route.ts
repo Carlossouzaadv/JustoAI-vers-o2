@@ -68,8 +68,8 @@ export async function GET(
     }
 
     // Buscar erros se houver
-    let errors: any[] = [];
-    let errorSummary: Record<string, number> = {};
+    let errors: unknown[] = [];
+    const errorSummary: Record<string, number> = {};
     try {
       if (batch.errors) {
         errors = JSON.parse(batch.errors as string);
@@ -85,7 +85,7 @@ export async function GET(
     }
 
     // Buscar resumo se disponível
-    let summary: any = {};
+    let summary: unknown = {};
     try {
       if (batch.summary) {
         summary = JSON.parse(batch.summary as string);
@@ -95,7 +95,7 @@ export async function GET(
     }
 
     // Calcular estatísticas de retry
-    let retryStats = {
+    const retryStats = {
       totalWithErrors: errors.length,
       retryable: 0,
       maxedOut: 0,

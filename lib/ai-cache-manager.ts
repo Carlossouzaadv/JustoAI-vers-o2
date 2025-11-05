@@ -244,8 +244,8 @@ export class AiCacheManager {
           cacheKey: cacheKey,
           type: 'ANALYSIS',
           prompt: analysisType,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          result: value as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-unknown
+          result: value as unknown,
           model: metadata?.model || 'unknown',
           tokens: metadata?.tokens_saved || 0,
           cost: 0.001,

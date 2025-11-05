@@ -141,7 +141,7 @@ class CircuitBreakerService extends EventEmitter {
     this.state = CircuitBreakerState.CLOSED
     this.retryAttemptCount = 0
 
-    // Clear any pending retry timeout
+    // Clear unknown pending retry timeout
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId)
       this.retryTimeoutId = null
@@ -154,7 +154,7 @@ class CircuitBreakerService extends EventEmitter {
    * Schedule automatic retry attempt based on config
    */
   private scheduleRetry() {
-    // Clear existing timeout if any
+    // Clear existing timeout if unknown
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId)
     }

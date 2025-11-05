@@ -51,7 +51,7 @@ export class DocumentHashManager {
   async checkDeduplication(
     textSha: string,
     workspaceId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<DeduplicationCheck> {
     console.log(`${ICONS.SEARCH} Verificando deduplicação para hash: ${textSha.substring(0, 16)}...`);
 

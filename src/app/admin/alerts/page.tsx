@@ -13,7 +13,7 @@ interface Alert {
   resolved: boolean;
   createdAt: string;
   resolvedAt?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 type SeverityFilter = 'all' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';

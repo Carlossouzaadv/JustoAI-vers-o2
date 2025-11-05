@@ -32,7 +32,7 @@ export interface JuditCallMetrics {
   attachmentsCost?: number;
   apiCallsCount?: number;
   requestId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface JuditResponse<T> {
@@ -145,7 +145,7 @@ export class JuditApiWrapper {
           data: {
             workspaceId: metrics.workspaceId,
             alertType: this.mapErrorToAlertType(metrics.errorCode),
-            severity: severity as any,
+            severity: severity as unknown,
             title: `JUDIT ${metrics.operationType} Error`,
             message: metrics.error,
             errorCode: metrics.errorCode,
@@ -189,7 +189,7 @@ export class JuditApiWrapper {
     numeroCnj: string,
     options: {
       requestId?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     } = {}
   ): Promise<JuditResponse<T>> {
     const startTime = Date.now();
@@ -268,7 +268,7 @@ export class JuditApiWrapper {
     numeroCnj: string,
     options: {
       requestId?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     } = {}
   ): Promise<JuditResponse<T>> {
     const startTime = Date.now();
@@ -344,7 +344,7 @@ export class JuditApiWrapper {
     documentIds: string[],
     options: {
       requestId?: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     } = {}
   ): Promise<JuditResponse<T>> {
     const startTime = Date.now();
@@ -464,7 +464,7 @@ export class JuditApiWrapper {
   /**
    * Get unresolved alerts for workspace
    */
-  static async getUnresolvedAlerts(workspaceId: string): Promise<any[]> {
+  static async getUnresolvedAlerts(workspaceId: string): Promise<unknown[]> {
     try {
       return await prisma.juditAlert.findMany({
         where: {

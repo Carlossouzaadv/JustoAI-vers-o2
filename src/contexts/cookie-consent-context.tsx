@@ -226,7 +226,7 @@ declare global {
     gtag?: (
       command: 'config' | 'event' | 'consent',
       targetId: string | 'default' | 'update',
-      config?: any
+      config?: unknown
     ) => void;
   }
 }

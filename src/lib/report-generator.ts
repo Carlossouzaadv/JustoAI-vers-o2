@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
 // ================================================================
 // GERADOR DE RELATÓRIOS - PDF e DOCX com Templates
 // ================================================================
@@ -29,7 +29,7 @@ export interface ReportGenerationResult {
   success: boolean;
   reportId: string;
   fileUrls: Record<string, string>;
-  summary: any;
+  summary: unknown;
   tokensUsed: number;
   cacheHit: boolean;
   cacheKey?: string;
@@ -62,7 +62,7 @@ export interface ReportTemplate {
   name: string;
   headerContent?: string;
   footerContent?: string;
-  styles: any;
+  styles: unknown;
 }
 
 export class ReportGenerator {
@@ -168,7 +168,7 @@ export class ReportGenerator {
     cacheKey?: string;
     reportId?: string;
     fileUrls?: Record<string, string>;
-    summary?: any;
+    summary?: unknown;
   }> {
     try {
       // Carregar últimas movimentações para gerar chave de cache
@@ -305,7 +305,7 @@ export class ReportGenerator {
   /**
    * Constrói payload delta (apenas novidades)
    */
-  private buildDeltaPayload(processData: ProcessData[]): any {
+  private buildDeltaPayload(processData: ProcessData[]): unknown {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -329,7 +329,7 @@ export class ReportGenerator {
   /**
    * Constrói payload completo
    */
-  private buildFullPayload(processData: ProcessData[]): any {
+  private buildFullPayload(processData: ProcessData[]): unknown {
     return {
       type: 'full',
       summary: 'Relatório completo de todos os processos',
@@ -366,11 +366,11 @@ export class ReportGenerator {
    */
   private async generateContentWithGemini(
     prompt: string,
-    payload: any,
+    payload: unknown,
     audienceType: AudienceType
   ): Promise<{
     content: string;
-    summary: any;
+    summary: unknown;
     tokensUsed: number;
   }> {
     console.log(`${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...`);
@@ -422,7 +422,7 @@ export class ReportGenerator {
   /**
    * Gera conteúdo mock para testes
    */
-  private generateMockContent(payload: any, audienceType: AudienceType): string {
+  private generateMockContent(payload: unknown, audienceType: AudienceType): string {
     const clientLanguage = audienceType === 'CLIENTE';
 
     return `
@@ -439,7 +439,7 @@ ${clientLanguage
 
 ## Processos Analisados
 
-${payload.processes.map((process: any, index: number) => `
+${payload.processes.map((process: unknown, index: number) => `
 ### ${index + 1}. Processo ${process.number}
 **Cliente:** ${process.client.name || process.client}
 **Status:** ${process.status}
@@ -686,7 +686,7 @@ ${clientLanguage ?
   private async saveReportCache(
     cacheKey: string,
     request: ReportGenerationRequest,
-    result: any
+    result: unknown
   ): Promise<void> {
     try {
       const expiresAt = new Date();

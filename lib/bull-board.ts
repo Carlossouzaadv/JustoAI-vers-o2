@@ -358,7 +358,7 @@ async function checkRedisHealth() {
 
     // Try to get Redis info (may not work with MockRedis)
     try {
-      const info = (await (redis as any).info?.('memory')) || '';
+      const info = (await (redis as unknown).info?.('memory')) || '';
       const memoryMatch = info.match?.(/used_memory_human:([^\r\n]+)/);
       if (memoryMatch) {
         memoryUsage = memoryMatch[1];

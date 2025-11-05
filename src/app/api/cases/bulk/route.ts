@@ -61,7 +61,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Construir objeto de update apenas com campos permitidos
-    const safeUpdates: Record<string, any> = {};
+    const safeUpdates: Record<string, unknown> = {};
     updateKeys.forEach(key => {
       safeUpdates[key] = updates[key];
     });

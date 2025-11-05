@@ -33,8 +33,8 @@ export interface JuditApiResponse {
   data?: {
     numero_processo: string;
     tribunal: string;
-    partes: any[];
-    movimentacoes: any[];
+    partes: unknown[];
+    movimentacoes: unknown[];
     situacao: string;
     classe: string;
     assunto: string;
@@ -174,7 +174,7 @@ export class ExcelUploadService {
     filePath: string,
     fileSize: number,
     workspaceId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<{ batchId: string; preview: ExcelProcessRow[] }> {
     console.log(`${ICONS.PROCESS} Criando batch no banco de dados...`);
 
@@ -211,7 +211,7 @@ export class ExcelUploadService {
     batchId: string,
     parseResult: ExcelParseResult,
     workspaceId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<void> {
     console.log(`${ICONS.PROCESS} Iniciando processamento em background para batch: ${batchId}`);
 
@@ -304,7 +304,7 @@ export class ExcelUploadService {
     rows: ExcelProcessRow[],
     workspaceId: string,
     batchId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<ProcessedRow[]> {
     const results: ProcessedRow[] = [];
     const totalSubbatches = Math.ceil(rows.length / this.config.SUBBATCH);
@@ -343,7 +343,7 @@ export class ExcelUploadService {
     row: ExcelProcessRow,
     workspaceId: string,
     batchId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<ProcessedRow> {
     if (this.config.DRY_RUN) {
       // Modo dry run - apenas validação
@@ -420,7 +420,7 @@ export class ExcelUploadService {
     row: ExcelProcessRow,
     workspaceId: string,
     batchId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<JuditApiResponse> {
     const payload: JuditApiPayload = {
       numero_processo: row.numeroProcesso,
@@ -431,7 +431,7 @@ export class ExcelUploadService {
     };
 
     const startTime = Date.now();
-    let telemetryData: any = {
+    let telemetryData: unknown = {
       workspaceId,
       batchId,
       processNumber: row.numeroProcesso,
@@ -517,9 +517,9 @@ export class ExcelUploadService {
    */
   private async createMonitoredProcess(
     row: ExcelProcessRow,
-    juditData: any,
+    juditData: unknown,
     workspaceId: string,
-    prisma: any
+    prisma: unknown
   ): Promise<void> {
     const processData = {
       workspaceId,
@@ -553,7 +553,7 @@ export class ExcelUploadService {
 
     // Criar movimentações se houver dados da Judit
     if (juditData?.movimentacoes?.length > 0) {
-      const movements = juditData.movimentacoes.slice(0, 100).map((mov: any) => ({
+      const movements = juditData.movimentacoes.slice(0, 100).map((mov: unknown) => ({
         processId: createdProcess.id,
         date: new Date(mov.data),
         type: mov.tipo,
@@ -615,7 +615,7 @@ export class ExcelUploadService {
     processed: number,
     successful: number,
     failed: number,
-    prisma: any
+    prisma: unknown
   ): Promise<void> {
     await prisma.processBatchUpload.update({
       where: { id: batchId },
@@ -679,7 +679,7 @@ export class ExcelUploadService {
   /**
    * Registra telemetria da chamada Judit
    */
-  private async logJuditTelemetry(data: any, prisma: any): Promise<void> {
+  private async logJuditTelemetry(data: unknown, prisma: unknown): Promise<void> {
     try {
       await prisma.juditTelemetry.create({
         data: {
@@ -733,7 +733,7 @@ export class ExcelUploadService {
    */
   private async callJuditAPISimple(numeroProcesso: string, tribunal: string): Promise<{
     success: boolean;
-    data?: any;
+    data?: unknown;
     error?: string;
   }> {
     const juditApiUrl = process.env.JUDIT_API_URL;
@@ -793,7 +793,7 @@ export class ExcelUploadService {
    */
   private async simulateJuditResponse(numeroProcesso: string, tribunal: string): Promise<{
     success: boolean;
-    data?: any;
+    data?: unknown;
     error?: string;
   }> {
     // Simular delay da API
@@ -835,18 +835,18 @@ export class ExcelUploadService {
   /**
    * Transforma resposta da API Judit para formato padrão
    */
-  private transformJuditResponse(juditData: any): any {
+  private transformJuditResponse(juditData: unknown): unknown {
     try {
       // Transformar dados da Judit para formato padrão do sistema
       return {
         numero_processo: juditData.lawsuit_cnj || juditData.number,
         tribunal: juditData.court || juditData.tribunal,
-        partes: juditData.parties?.map((party: any) => ({
+        partes: juditData.parties?.map((party: unknown) => ({
           nome: party.name || party.nome,
           tipo: party.type || party.tipo,
           cpf_cnpj: party.document || party.documento
         })) || [],
-        movimentacoes: juditData.movements?.map((mov: any) => ({
+        movimentacoes: juditData.movements?.map((mov: unknown) => ({
           data: mov.date || mov.data,
           tipo: mov.type || mov.tipo,
           descricao: mov.description || mov.descricao

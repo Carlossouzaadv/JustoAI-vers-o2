@@ -312,7 +312,7 @@ export async function POST(request: NextRequest) {
         caseId: newCase.id,
         name: file.name.replace('.pdf', ''),
         originalName: file.name,
-        type: documentMetadata.documentTypeCategory as any, // Usar metadata extraída
+        type: documentMetadata.documentTypeCategory as unknown, // Usar metadata extraída
         mimeType: file.type,
         size: file.size,
         url: documentUrl, // Supabase Storage URL or temp fallback
@@ -389,7 +389,7 @@ export async function POST(request: NextRequest) {
       await prisma.case.update({
         where: { id: newCase.id },
         data: {
-          previewSnapshot: previewResult.preview as any,
+          previewSnapshot: previewResult.preview as unknown,
           previewGeneratedAt: new Date(),
           onboardingStatus: 'previewed'
         }
@@ -416,7 +416,7 @@ export async function POST(request: NextRequest) {
                 claimValue: previewResult.preview.claimValue,
                 source: 'preview_initial'
               }
-            } as any,
+            } as unknown,
             confidence: 0.85,
             processingTime: previewDuration,
             metadata: {

@@ -31,7 +31,7 @@ export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
  * });
  * ```
  */
-export function withErrorHandler<T = any>(
+export function withErrorHandler<T = unknown>(
   handler: (req: NextRequest) => Promise<ApiResponse<T> | NextResponse>,
   options?: {
     logErrors?: boolean;
@@ -111,7 +111,7 @@ export class ApiError extends Error {
   constructor(
     public message: string,
     public statusCode: number = 400,
-    public context?: Record<string, any>
+    public context?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'ApiError';

@@ -85,7 +85,7 @@ export async function GET(
 /**
  * Calcula diff compacto entre duas versões
  */
-function calculateVersionDiff(current: any, previous: any) {
+function calculateVersionDiff(current: unknown, previous: unknown) {
   const diff = {
     analysisType: {
       changed: current.analysisType !== previous.analysisType,
@@ -112,7 +112,7 @@ function calculateVersionDiff(current: any, previous: any) {
 /**
  * Calcula diferenças no conteúdo da análise
  */
-function calculateContentDiff(currentAnalysis: any, previousAnalysis: any) {
+function calculateContentDiff(currentAnalysis: unknown, previousAnalysis: unknown) {
   if (!currentAnalysis || !previousAnalysis) {
     return {
       contentChanged: true,
@@ -161,7 +161,7 @@ function calculateContentDiff(currentAnalysis: any, previousAnalysis: any) {
 /**
  * Resume mudanças críticas entre versões
  */
-function summarizeChanges(current: any, previous: any) {
+function summarizeChanges(current: unknown, previous: unknown) {
   const changes = [];
 
   // Mudança de modelo

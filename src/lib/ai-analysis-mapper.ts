@@ -26,7 +26,7 @@ export interface OnboardingPreviewData {
  * Extrai apenas as informações essenciais para FASE 1
  */
 export function mapAnalysisToPreview(
-  analysis: any, // UnifiedProcessSchema retornado pelo Gemini
+  analysis: unknown, // UnifiedProcessSchema retornado pelo Gemini
   metadata?: {
     modelUsed?: string;
     confidence?: number;

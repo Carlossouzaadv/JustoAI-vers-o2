@@ -46,7 +46,7 @@ export interface AlertOptions {
   requestId?: string;
   trackingId?: string;
   jobId?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   notify?: boolean; // Whether to send notifications
 }
 

@@ -19,7 +19,7 @@ interface QuotaCheckResult {
   percentage: number;
   message: string;
   actions?: QuotaAction[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface QuotaAction {
@@ -263,7 +263,7 @@ export class QuotaEnforcement {
     policy: QuotaPolicy,
     current: number,
     limit: number,
-    options: any
+    options: unknown
   ): Promise<QuotaCheckResult> {
     const percentage = (current / limit) * 100;
 
@@ -317,7 +317,7 @@ export class QuotaEnforcement {
     current: number,
     limit: number,
     percentage: number,
-    options: any
+    options: unknown
   ): Promise<QuotaCheckResult> {
     const remaining = limit - current - 1; // -1 para o relatório atual
 
@@ -413,7 +413,7 @@ export class QuotaEnforcement {
   private async recordQuotaEvent(
     workspaceId: string,
     eventType: string,
-    payload: Record<string, any>
+    payload: Record<string, unknown>
   ): Promise<void> {
     await prisma.usageEvent.create({
       data: {
@@ -512,7 +512,7 @@ export class QuotaEnforcement {
     const updated = await prisma.workspaceQuota.update({
       where: { workspaceId },
       data: {
-        plan: updates.planId as any,
+        plan: updates.planId as unknown,
         reportsMonthlyLimit: updates.reportsMonthlyLimit,
         reportProcessesLimit: updates.processesLimit
       }

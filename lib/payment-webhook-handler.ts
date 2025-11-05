@@ -311,7 +311,7 @@ export class PaymentWebhookHandler {
         }
       });
 
-      if (originalTransaction && originalTransaction.metadata && (originalTransaction.metadata as any).status === 'COMPLETED') {
+      if (originalTransaction && originalTransaction.metadata && (originalTransaction.metadata as unknown).status === 'COMPLETED') {
         // Remover créditos do workspace
         await prisma.workspaceCredits.update({
           where: { workspaceId: originalTransaction.workspaceId },

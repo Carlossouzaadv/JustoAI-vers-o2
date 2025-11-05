@@ -21,7 +21,7 @@ const analyzeSchema = z.object({
   file_size_mb: z.number().optional().default(0),
   workspace_id: z.string().optional(),
   report_type: z.string().optional(),
-  report_data: z.any().optional(),
+  report_data: z.unknown().optional(),
   force_refresh: z.boolean().optional().default(false)
 });
 

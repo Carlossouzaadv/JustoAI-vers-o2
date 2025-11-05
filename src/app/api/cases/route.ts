@@ -154,7 +154,7 @@ async function GET(request: NextRequest) {
   }
 
   // Build filters
-  const where: any = {
+  const where: unknown = {
     workspaceId: { in: workspaceIds }
   }
 

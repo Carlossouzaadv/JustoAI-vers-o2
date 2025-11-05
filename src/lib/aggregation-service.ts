@@ -322,7 +322,7 @@ export class AggregationService {
       alertType: string;
       title: string;
       message: string;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }
   ): Promise<boolean> {
     try {

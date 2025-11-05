@@ -54,7 +54,7 @@ export function LatencyChart({ data }: LatencyChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '6px',
           }}
-          formatter={(value: any) => [`${value.toFixed(0)} ms`, 'Latência']}
+          formatter={(value: unknown) => [`${value.toFixed(0)} ms`, 'Latência']}
         />
         <Legend />
         <Bar dataKey="value" fill="#3b82f6" name="Latência (ms)" />

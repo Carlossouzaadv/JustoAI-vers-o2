@@ -187,7 +187,7 @@ export default function DashboardPage() {
             documentsProcessed: summary.documents || 0,
             monthlyGrowth: 0,
           },
-          recentActivity: (data.recentActivity || []).map((activity: any) => ({
+          recentActivity: (data.recentActivity || []).map((activity: unknown) => ({
             id: activity.id,
             type: 'upload',
             message: activity.description || '',

@@ -26,7 +26,7 @@ export interface DeepAnalysisModalProps {
     size: number;
     uploadedAt: string;
   }>;
-  onAnalysisComplete?: (result: any) => void;
+  onAnalysisComplete?: (result: unknown) => void;
 }
 
 type AnalysisType = 'FAST' | 'FULL';

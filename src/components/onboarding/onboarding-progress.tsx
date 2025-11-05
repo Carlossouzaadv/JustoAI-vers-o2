@@ -27,7 +27,7 @@ interface OnboardingProgressProps {
   caseId: string;
   juditJobId?: string;
   extractedProcessNumber?: string;
-  previewData?: any;
+  previewData?: unknown;
   onPhaseComplete?: (phase: 'PREVIEW' | 'ENRICHMENT') => void;
   onAnalyzeClick?: () => void;
 }
@@ -93,7 +93,7 @@ export function OnboardingProgress({
   });
 
   const [expandedPhase, setExpandedPhase] = useState<Phase | null>(previewData ? 'PREVIEW' : 'ENRICHMENT');
-  const [jobStatus, setJobStatus] = useState<any>(null);
+  const [jobStatus, setJobStatus] = useState<unknown>(null);
   const [pollingActive, setPollingActive] = useState(!!juditJobId);
   const [toast, setToast] = useState<Toast | null>(null);
   const [enrichmentCompleted, setEnrichmentCompleted] = useState(false);
@@ -531,8 +531,8 @@ function ExpandedPhaseContent({
   previewData
 }: {
   phase: Phase;
-  jobStatus?: any;
-  previewData?: any;
+  jobStatus?: unknown;
+  previewData?: unknown;
 }) {
   if (phase === 'ENRICHMENT' && jobStatus) {
     return (

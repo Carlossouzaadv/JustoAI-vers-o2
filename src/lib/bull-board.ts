@@ -105,7 +105,7 @@ export async function bullBoardAuthMiddleware(
     }
 
     // Attach user info to request for logging and filtering
-    (req as any).bullBoardUser = {
+    (req as unknown).bullBoardUser = {
       userId: validation.userId,
       email: validation.email,
       workspaceId: validation.workspaceId,

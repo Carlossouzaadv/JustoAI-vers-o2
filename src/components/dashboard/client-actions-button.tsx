@@ -42,7 +42,7 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
       const response = await fetch(getApiUrl(`/api/processes?clientId=${clientId}`));
       if (response.ok) {
         const data = await response.json();
-        const processOptions: ProcessOption[] = (data.processes || []).map((process: any) => ({
+        const processOptions: ProcessOption[] = (data.processes || []).map((process: unknown) => ({
           id: process.id,
           number: process.number,
           title: process.title,

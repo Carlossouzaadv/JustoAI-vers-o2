@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 // ================================
 // SISTEMA DE SINCRONIZAÇÃO BÁSICO
 // ================================
@@ -50,7 +50,7 @@ export class SystemSynchronizer {
       const systemImports = await prisma.systemImport.findMany({
         where: {
           workspaceId,
-          sourceSystem: sourceSystem as any,
+          sourceSystem: sourceSystem as unknown,
           status: 'COMPLETED'
         },
         include: {

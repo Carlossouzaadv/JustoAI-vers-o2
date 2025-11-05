@@ -28,7 +28,7 @@ export function useBulkCaseUpdate() {
   const updateCases = useCallback(
     async (
       caseIds: string[],
-      updates: Record<string, any>
+      updates: Record<string, unknown>
     ): Promise<BulkUpdateResult> => {
       setLoading(true);
       setError(null);

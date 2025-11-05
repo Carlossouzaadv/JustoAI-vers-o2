@@ -19,7 +19,7 @@ export const createWorkspaceSchema = z.object({
   description: z.string().max(500).optional(),
   logoUrl: z.string().url().optional(),
   plan: z.enum(['FREE', 'BASIC', 'PRO', 'ENTERPRISE']).default('FREE'),
-  settings: z.record(z.string(), z.any()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 })
 
 export const updateWorkspaceSchema = z.object({
@@ -28,7 +28,7 @@ export const updateWorkspaceSchema = z.object({
   logoUrl: z.string().url().optional(),
   plan: z.enum(['FREE', 'BASIC', 'PRO', 'ENTERPRISE']).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']).optional(),
-  settings: z.record(z.string(), z.any()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 })
 
 // Client schemas
@@ -45,7 +45,7 @@ export const createClientSchema = z.object({
   zipCode: z.string().max(10).optional(),
   country: z.string().max(3).default('BR'),
   notes: z.string().max(1000).optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export const updateClientSchema = z.object({
@@ -61,7 +61,7 @@ export const updateClientSchema = z.object({
   zipCode: z.string().max(10).optional(),
   country: z.string().max(3).optional(),
   notes: z.string().max(1000).optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 // User schemas
@@ -77,20 +77,20 @@ export const updateUserSchema = z.object({
   avatar: z.string().url().optional(),
   role: z.enum(['ADMIN', 'USER', 'VIEWER']).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']).optional(),
-  settings: z.record(z.string(), z.any()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 })
 
 // UserWorkspace schemas
 export const addUserToWorkspaceSchema = z.object({
   userId: idSchema,
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).default('MEMBER'),
-  permissions: z.record(z.string(), z.any()).optional(),
+  permissions: z.record(z.string(), z.unknown()).optional(),
 })
 
 export const updateUserWorkspaceSchema = z.object({
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']).optional(),
-  permissions: z.record(z.string(), z.any()).optional(),
+  permissions: z.record(z.string(), z.unknown()).optional(),
 })
 
 // Query params schemas

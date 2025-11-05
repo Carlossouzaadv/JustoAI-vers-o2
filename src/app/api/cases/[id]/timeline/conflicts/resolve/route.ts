@@ -105,7 +105,7 @@ export async function POST(
           continue;
         }
 
-        const updateData: any = {
+        const updateData: unknown = {
           hasConflict: false,
           conflictDetails: null,
           reviewedBy: userId,

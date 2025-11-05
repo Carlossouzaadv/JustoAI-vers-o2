@@ -428,7 +428,7 @@ export class ExcelProcessParser {
     }
 
     const normalized = value.toUpperCase();
-    if (!EXCEL_TEMPLATE_CONFIG.VALID_FREQUENCIES.includes(normalized as any)) {
+    if (!EXCEL_TEMPLATE_CONFIG.VALID_FREQUENCIES.includes(normalized as unknown)) {
       errors.push({
         linha: line,
         campo: 'frequenciaSync',
@@ -438,13 +438,13 @@ export class ExcelProcessParser {
       });
       row.frequenciaSync = 'DAILY';
     } else {
-      row.frequenciaSync = normalized as any;
+      row.frequenciaSync = normalized as unknown;
     }
   }
 
   private parseBoolean(value: string, field: string, line: number, errors: ExcelRowError[], row: Partial<ExcelProcessRow>): void {
     if (!value) {
-      (row as any)[field] = true; // Padrão
+      (row as unknown)[field] = true; // Padrão
       return;
     }
 
@@ -452,9 +452,9 @@ export class ExcelProcessParser {
     const validValues = EXCEL_TEMPLATE_CONFIG.VALID_BOOLEAN_VALUES;
 
     if (validValues.true.includes(normalized)) {
-      (row as any)[field] = true;
+      (row as unknown)[field] = true;
     } else if (validValues.false.includes(normalized)) {
-      (row as any)[field] = false;
+      (row as unknown)[field] = false;
     } else {
       errors.push({
         linha: line,
@@ -463,7 +463,7 @@ export class ExcelProcessParser {
         erro: `Valor deve ser: ${[...validValues.true, ...validValues.false].join(', ')}`,
         tipo: 'WARNING'
       });
-      (row as any)[field] = true;
+      (row as unknown)[field] = true;
     }
   }
 
@@ -506,7 +506,7 @@ export class ExcelProcessParser {
 
   private normalizeColumnName(columnName: string): string {
     const normalized = columnName.toLowerCase().trim();
-    return (EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING as any)[normalized] || normalized;
+    return (EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING as unknown)[normalized] || normalized;
   }
 
   private buildResult(totalRows: number, validRows: ExcelProcessRow[], errors: ExcelRowError[]): ExcelParseResult {

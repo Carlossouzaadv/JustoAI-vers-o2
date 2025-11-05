@@ -83,13 +83,13 @@ export function useOnboardingIntegration(config: OnboardingConfig = {}) {
   }, []);
 
   // Analytics/tracking para o onboarding
-  const trackOnboardingEvent = useCallback((event: string, data?: Record<string, any>) => {
+  const trackOnboardingEvent = useCallback((event: string, data?: Record<string, unknown>) => {
     // Integrar com sua solução de analytics
     console.log('Onboarding Event:', event, data);
 
     // Exemplo de integração com Google Analytics
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'onboarding', {
+    if (typeof window !== 'undefined' && (window as unknown).gtag) {
+      (window as unknown).gtag('event', 'onboarding', {
         event_category: 'user_engagement',
         event_label: event,
         custom_parameters: data

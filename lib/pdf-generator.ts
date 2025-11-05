@@ -69,7 +69,7 @@ export class PDFGenerator {
   private browser: Browser | null = null;
   private pagePool: Page[] = [];
   private readonly maxConcurrentPages: number;
-  private readonly puppeteerOptions: any;
+  private readonly puppeteerOptions: unknown;
 
   constructor(maxConcurrentPages: number = 10) {
     this.maxConcurrentPages = maxConcurrentPages;
@@ -208,7 +208,7 @@ export class PDFGenerator {
 
       // Gerar PDF
       const pdfBuffer = await page.pdf({
-        format: defaultOptions.format as any,
+        format: defaultOptions.format as unknown,
         landscape: defaultOptions.orientation === 'landscape',
         margin: defaultOptions.margin,
         printBackground: defaultOptions.printBackground,
@@ -397,7 +397,7 @@ export class PDFGenerator {
       };
 
       const pdfBuffer = await page.pdf({
-        format: defaultOptions.format as any,
+        format: defaultOptions.format as unknown,
         landscape: defaultOptions.orientation === 'landscape',
         margin: defaultOptions.margin,
         printBackground: defaultOptions.printBackground,

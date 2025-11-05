@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 // ================================================================
 // JUDIT ATTACHMENT PROCESSOR
 // Download e processamento de anexos da API JUDIT
@@ -49,7 +49,7 @@ const MAX_ATTACHMENT_SIZE = 50 * 1024 * 1024; // 50MB
  */
 export async function processJuditAttachments(
   caseId: string,
-  juditResponse: any,
+  juditResponse: unknown,
   cnj_code?: string,
   instance?: number
 ): Promise<AttachmentProcessResult> {
@@ -123,7 +123,7 @@ export async function processJuditAttachments(
  * Extrai lista de anexos do response JUDIT
  * A estrutura pode variar, ajustar conforme API real
  */
-function extractAttachmentsFromJuditResponse(juditResponse: any): JuditAttachment[] {
+function extractAttachmentsFromJuditResponse(juditResponse: unknown): JuditAttachment[] {
   const attachments: JuditAttachment[] = [];
 
   try {
@@ -310,7 +310,7 @@ async function downloadAndProcessAttachment(
         caseId,
         name: sanitizedName.replace(/\.(pdf|PDF)$/, ''),
         originalName: attachment.name,
-        type: documentType as any,
+        type: documentType as unknown,
         mimeType: attachment.extension === 'pdf' ? 'application/pdf' : 'application/octet-stream',
         size: buffer.length,
         url: `/api/documents/${undefined}/download`, // Será atualizado abaixo com o ID correto

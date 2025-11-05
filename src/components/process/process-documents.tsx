@@ -84,7 +84,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
         const caseDocuments = data.data?.documents || [];
 
         // Map case documents to DocumentFile format
-        const mappedDocuments: DocumentFile[] = caseDocuments.map((doc: any) => ({
+        const mappedDocuments: DocumentFile[] = caseDocuments.map((doc: unknown) => ({
           id: doc.id,
           name: doc.name,
           type: doc.mimeType || 'application/pdf',
@@ -484,7 +484,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             {/* Categoria */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Categoria</label>
-              <Select value={editCategory} onValueChange={(value: any) => setEditCategory(value)}>
+              <Select value={editCategory} onValueChange={(value: unknown) => setEditCategory(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

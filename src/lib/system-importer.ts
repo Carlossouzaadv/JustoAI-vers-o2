@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
 // ================================
 // SISTEMA DE IMPORTAÇÃO COMPLETA
 // ================================
@@ -39,7 +39,7 @@ export interface ImportError {
   line?: number;
   field?: string;
   value?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export interface ImportWarning {
@@ -65,7 +65,7 @@ export interface ImportOptions {
   validateOnly: boolean;
   batchSize: number;
   customMappings?: Record<string, string>;
-  transformRules?: Record<string, any>;
+  transformRules?: Record<string, unknown>;
 }
 
 export type SourceSystem =
@@ -143,7 +143,7 @@ export class SystemImporter {
         fileSize: buffer.length,
         originalHash: fileHash,
         status: 'ANALYZING',
-        importSettings: importOptions as any
+        importSettings: importOptions as unknown
       }
     });
 
@@ -320,9 +320,9 @@ export class SystemImporter {
 
   private async importCategory(
     category: string,
-    dataRows: any[][],
-    categoryMappings: any[],
-    systemMapping: any,
+    dataRows: unknown[][],
+    categoryMappings: unknown[],
+    systemMapping: unknown,
     options: ImportOptions
   ): Promise<void> {
     if (!this.session) return;
@@ -345,9 +345,9 @@ export class SystemImporter {
 
   private async processBatch(
     category: string,
-    batchRows: any[][],
-    categoryMappings: any[],
-    systemMapping: any,
+    batchRows: unknown[][],
+    categoryMappings: unknown[],
+    systemMapping: unknown,
     options: ImportOptions
   ): Promise<void> {
     if (!this.session) return;
@@ -376,16 +376,16 @@ export class SystemImporter {
 
   private async processRow(
     category: string,
-    row: any[],
+    row: unknown[],
     lineNumber: number,
-    categoryMappings: any[],
-    systemMapping: any,
+    categoryMappings: unknown[],
+    systemMapping: unknown,
     options: ImportOptions
   ): Promise<void> {
     if (!this.session) return;
 
     // Mapear dados da linha
-    const mappedData: Record<string, any> = {};
+    const mappedData: Record<string, unknown> = {};
 
     categoryMappings.forEach((mapping, colIndex) => {
       const value = row[colIndex];
@@ -446,7 +446,7 @@ export class SystemImporter {
     await prisma.importedDataItem.create({
       data: {
         systemImportId: this.session.id,
-        dataType: category as any,
+        dataType: category as unknown,
         status: 'IMPORTED',
         originalData: row,
         mappedData,
@@ -460,7 +460,7 @@ export class SystemImporter {
   // MÉTODOS DE CRIAÇÃO DE ENTIDADES
   // ================================
 
-  private async createClient(data: Record<string, any>, options: ImportOptions): Promise<void> {
+  private async createClient(data: Record<string, unknown>, options: ImportOptions): Promise<void> {
     if (!this.session) return;
 
     if (!data.client_name) {
@@ -514,7 +514,7 @@ export class SystemImporter {
     }
   }
 
-  private async createCase(data: Record<string, any>, options: ImportOptions): Promise<void> {
+  private async createCase(data: Record<string, unknown>, options: ImportOptions): Promise<void> {
     if (!this.session) return;
 
     if (!data.process_number && !data.case_code) {
@@ -586,12 +586,12 @@ export class SystemImporter {
     }
   }
 
-  private async createEvent(_data: Record<string, any>, _options: ImportOptions): Promise<void> {
+  private async createEvent(_data: Record<string, unknown>, _options: ImportOptions): Promise<void> {
     // Implementação similar para eventos
     this.session!.summary.eventsImported++;
   }
 
-  private async createDocument(_data: Record<string, any>, _options: ImportOptions): Promise<void> {
+  private async createDocument(_data: Record<string, unknown>, _options: ImportOptions): Promise<void> {
     // Implementação similar para documentos
     this.session!.summary.documentsImported++;
   }
@@ -600,7 +600,7 @@ export class SystemImporter {
   // MÉTODOS AUXILIARES
   // ================================
 
-  private async updateImportRecord(data: Partial<any>): Promise<void> {
+  private async updateImportRecord(data: Partial<unknown>): Promise<void> {
     if (!this.session) return;
 
     await prisma.systemImport.update({
@@ -625,10 +625,10 @@ export class SystemImporter {
     return userWorkspace.userId;
   }
 
-  private mapClientType(value: any): 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO' | undefined {
+  private mapClientType(value: unknown): 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO' | undefined {
     if (!value) return undefined;
 
-    const mappings: Record<string, any> = {
+    const mappings: Record<string, unknown> = {
       'pessoa fisica': 'INDIVIDUAL',
       'individual': 'INDIVIDUAL',
       'pessoa juridica': 'COMPANY',
@@ -643,10 +643,10 @@ export class SystemImporter {
     return mappings[value.toString().toLowerCase()] || undefined;
   }
 
-  private mapCaseType(value: any): 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' | null {
+  private mapCaseType(value: unknown): 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' | null {
     if (!value) return null;
 
-    const mappings: Record<string, any> = {
+    const mappings: Record<string, unknown> = {
       'civil': 'CIVIL',
       'civel': 'CIVIL',
       'criminal': 'CRIMINAL',
@@ -668,10 +668,10 @@ export class SystemImporter {
     return mappings[value.toString().toLowerCase()] || 'OTHER';
   }
 
-  private mapCaseStatus(value: any): 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED' | null {
+  private mapCaseStatus(value: unknown): 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED' | null {
     if (!value) return null;
 
-    const mappings: Record<string, any> = {
+    const mappings: Record<string, unknown> = {
       'ativo': 'ACTIVE',
       'active': 'ACTIVE',
       'em andamento': 'ACTIVE',

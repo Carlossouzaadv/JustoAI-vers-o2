@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
     let errors: ErrorItem[] = [];
     try {
       const sentryStats = await getSentryProjectStats();
-      errors = sentryStats.recentErrors.map((err: any) => ({
+      errors = sentryStats.recentErrors.map((err: unknown) => ({
         id: err.id || err.shortId,
         title: err.title,
         culprit: err.culprit,

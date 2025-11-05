@@ -67,13 +67,13 @@ interface AIAnalysisVersion {
   tokensUsed?: number;
   processingTime?: number;
   confidence?: number;
-  data?: any; // Raw data para acesso direto
+  data?: unknown; // Raw data para acesso direto
 }
 
 /**
  * Sanitiza dados de análise removendo valores null
  */
-function sanitizeAnalysisData(data: any): any {
+function sanitizeAnalysisData(data: unknown): unknown {
   if (!data) return null;
   if (data === null) return null;
 
@@ -82,7 +82,7 @@ function sanitizeAnalysisData(data: any): any {
   }
 
   if (typeof data === 'object') {
-    const sanitized: any = {};
+    const sanitized: unknown = {};
     for (const [key, value] of Object.entries(data)) {
       // Skip null/undefined values
       if (value === null || value === undefined) continue;
@@ -151,7 +151,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
       if (response.ok) {
         const data = await response.json();
         const analysisVersions = data.analyses || [];
-        const sanitizedAnalyses = analysisVersions.map((a: any) => {
+        const sanitizedAnalyses = analysisVersions.map((a: unknown) => {
           // Sanitizar dados para remover nulls que quebram React
           const sanitized = {
             id: a.id,
@@ -165,7 +165,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
             legalAssessment: sanitizeAnalysisData(a.legalAssessment) || undefined,
             riskAssessment: sanitizeAnalysisData(a.riskAssessment) || undefined,
             timelineAnalysis: sanitizeAnalysisData(a.timelineAnalysis) || undefined,
-            tokensUsed: (a.data as any)?.tokensUsed,
+            tokensUsed: (a.data as unknown)?.tokensUsed,
             processingTime: a.processingTime,
             confidence: a.confidence,
             data: a.data

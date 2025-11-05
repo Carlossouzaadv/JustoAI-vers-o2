@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     const { user, workspace } = await validateAuth(request);
 
     // Processar upload
-    const req = request as any;
-    const res = {} as any;
+    const req = request as unknown;
+    const res = {} as unknown;
 
     await uploadSingle(req, res);
 
@@ -214,14 +214,14 @@ export async function GET(request: NextRequest) {
 
 async function processValidRowsInBackground(
   batchId: string,
-  validRows: any[],
+  validRows: unknown[],
   workspaceId: string
 ) {
   try {
     const processApi = createProcessApiClient();
     let successful = 0;
     let failed = 0;
-    const errors: any[] = [];
+    const errors: unknown[] = [];
 
     console.log(`${ICONS.PROCESS} Processando ${validRows.length} processos em background`);
 
@@ -292,7 +292,7 @@ async function processValidRowsInBackground(
         // Se temos movimentações da API, criar registros
         if (processData?.movements && processData.movements.length > 0) {
           await Promise.all(
-            processData.movements.slice(0, 20).map(async (movement: any) => {
+            processData.movements.slice(0, 20).map(async (movement: unknown) => {
               return prisma.processMovement.create({
                 data: {
                   monitoredProcessId: monitoredProcess.id,

@@ -80,7 +80,7 @@ export async function GET(
     }
 
     if (!caseData) {
-      console.warn(`${ICONS.WARNING} Case not found using any identifier: ${caseId}`)
+      console.warn(`${ICONS.WARNING} Case not found using unknown identifier: ${caseId}`)
       return errorResponse('Caso não encontrado', 404)
     }
 

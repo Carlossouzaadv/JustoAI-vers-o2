@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 // ================================================================
 // WEBSOCKET MANAGER - Progresso em Tempo Real
 // ================================================================
@@ -21,7 +21,7 @@ export interface WebSocketMessage {
   batchId?: string;
   processId?: string;
   workspaceId?: string;
-  data?: any;
+  data?: unknown;
   timestamp: number;
 }
 
@@ -185,7 +185,7 @@ export class WebSocketManager {
   /**
    * Notifica conclusão do batch
    */
-  broadcastBatchCompleted(batchId: string, finalStatus: any): void {
+  broadcastBatchCompleted(batchId: string, finalStatus: unknown): void {
     const subscribers = this.batchSubscriptions.get(batchId);
     if (!subscribers || subscribers.size === 0) {
       return;
@@ -256,9 +256,9 @@ export class WebSocketManager {
   /**
    * Broadcast de evento específico de processo para workspace
    */
-  broadcastProcessEvent(workspaceId: string, processId: string, eventType: string, data: any): void {
+  broadcastProcessEvent(workspaceId: string, processId: string, eventType: string, data: unknown): void {
     this.broadcastToWorkspace(workspaceId, {
-      type: (eventType as any) || 'process:updated',
+      type: (eventType as unknown) || 'process:updated',
       processId,
       data,
       timestamp: Date.now()
@@ -282,8 +282,8 @@ export class WebSocketManager {
 
       // Enviar para cliente via Response
       // Em Next.js, a response é um ReadableStream que permite escrita
-      if ('write' in connection && typeof (connection as any).write === 'function') {
-        (connection as any).write(sseData);
+      if ('write' in connection && typeof (connection as unknown).write === 'function') {
+        (connection as unknown).write(sseData);
       } else {
         // Fallback: tentar enviar como json se não for SSE puro
         console.log(`${ICONS.INFO} Conexão ${connectionId} não suporta escrita direta`);
@@ -328,7 +328,7 @@ export class WebSocketManager {
   /**
    * Obtém estatísticas das conexões
    */
-  getStats(): any {
+  getStats(): unknown {
     const batchStats = Array.from(this.batchSubscriptions.entries()).map(([batchId, subscribers]) => ({
       batchId,
       subscribers: subscribers.size

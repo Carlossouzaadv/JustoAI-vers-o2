@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
 // ================================================================
 // TOKEN OPTIMIZER - Serviço Integrado de Otimização do JustoAI V2
 // ================================================================
@@ -37,7 +37,7 @@ export interface OptimizationOptions {
   userPlan: 'starter' | 'professional';
   aggressiveness: 'conservative' | 'balanced' | 'aggressive';
   preserveStructure: boolean;
-  customPatterns?: any[];
+  customPatterns?: unknown[];
 }
 
 export class TokenOptimizer {
@@ -161,12 +161,12 @@ export class TokenOptimizer {
    */
   async processWithOptimizedAI(
     optimizationResult: OptimizationResult,
-    aiProcessingFunction: (_config: ProcessingConfig, _text: string) => Promise<any>
+    aiProcessingFunction: (_config: ProcessingConfig, _text: string) => Promise<unknown>
   ): Promise<{
-    result: any;
+    result: unknown;
     modelUsed: ModelTier;
     actualCost: ModelCosts;
-    savingsReport: any;
+    savingsReport: unknown;
   }> {
 
     console.log('🤖 Iniciando processamento com IA otimizada...');
@@ -305,7 +305,7 @@ export class TokenOptimizer {
    */
   generateOptimizationReport(result: OptimizationResult): {
     summary: string;
-    metrics: any;
+    metrics: unknown;
     recommendations: string[];
   } {
 

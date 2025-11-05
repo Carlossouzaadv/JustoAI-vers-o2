@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 // ================================================================
 // TIMELINE MERGE SERVICE - Timeline Unificada Inteligente
 // ================================================================
 // Implementa deduplicação inteligente e ordenação cronológica
 // de andamentos processuais de múltiplas fontes
-// NOTE: This file uses any types due to complex Prisma query results.
+// NOTE: This file uses unknown types due to complex Prisma query results.
 // TODO: Refactor with proper Prisma types when time allows.
 
 import { getDocumentHashManager } from './document-hash';
@@ -107,7 +107,7 @@ export class TimelineMergeService {
    * Combina descrições e usa dados de melhor fonte
    */
   private mergeIntelligently(
-    existing: any,
+    existing: unknown,
     newEntry: TimelineEntry
   ): { merged: TimelineEntry; changed: boolean } {
     const existingPriority = this.getSourcePriority(existing.source);
@@ -178,7 +178,7 @@ export class TimelineMergeService {
   async mergeEntries(
     caseId: string,
     entries: TimelineEntry[],
-    prisma: any
+    prisma: unknown
   ): Promise<TimelineMergeResult> {
     console.log(`${ICONS.PROCESS} Mesclando ${entries.length} entradas na timeline do caso ${caseId}`);
 
@@ -279,7 +279,7 @@ export class TimelineMergeService {
             confidence: newEntry.confidence
           });
 
-        } catch (createError: any) {
+        } catch (createError: unknown) {
           // Se houver erro de constraint única, outra requisição criou a entrada
           // Recuperar e tentar merge com retry
           if (createError?.code === 'P2002') {
@@ -376,7 +376,7 @@ export class TimelineMergeService {
    */
   async getTimelineEntries(
     caseId: string,
-    prisma: any,
+    prisma: unknown,
     options: {
       limit?: number;
       offset?: number;
@@ -384,7 +384,7 @@ export class TimelineMergeService {
       sources?: string[];
     } = {}
   ) {
-    const whereClause: any = { caseId };
+    const whereClause: unknown = { caseId };
 
     if (options.since) {
       whereClause.eventDate = { gte: options.since };
@@ -421,7 +421,7 @@ export class TimelineMergeService {
   /**
    * Extrai andamentos de texto analisado por IA
    */
-  extractTimelineFromAIAnalysis(aiResult: any, sourceId: string): TimelineEntry[] {
+  extractTimelineFromAIAnalysis(aiResult: unknown, sourceId: string): TimelineEntry[] {
     const entries: TimelineEntry[] = [];
 
     try {
@@ -483,8 +483,8 @@ export class TimelineMergeService {
    */
   async logAuditEvent(
     type: 'duplicate_upload' | 'new_upload' | 'timeline_merge',
-    details: any,
-    prisma: any
+    details: unknown,
+    prisma: unknown
   ) {
     try {
       await prisma.globalLog.create({

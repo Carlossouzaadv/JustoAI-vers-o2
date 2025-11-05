@@ -186,7 +186,7 @@ export function EnrichedTimelineEvent({
             <div className="flex items-center gap-2 flex-wrap mb-3">
               {/* Badge de fonte principal (JUDIT ou outra) */}
               <Badge
-                variant={getSourceBadgeVariant(primarySource) as any}
+                variant={getSourceBadgeVariant(primarySource) as unknown}
                 className="text-xs"
               >
                 <span className="mr-1">{getSourceIcon(primarySource)}</span>

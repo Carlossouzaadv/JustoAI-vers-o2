@@ -41,7 +41,7 @@ interface CaseData {
   };
   documentCount: number;
   onboardingStatus: string;
-  previewSnapshot: any;
+  previewSnapshot: unknown;
   previewGeneratedAt: string;
   createdAt: string;
   updatedAt: string;

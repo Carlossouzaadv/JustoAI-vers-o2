@@ -8,7 +8,7 @@ import { ICONS } from './icons';
 export interface SlackMessage {
   channel?: string;
   text: string;
-  blocks?: any[];
+  blocks?: unknown[];
 }
 
 export interface SlackAlertOptions {
@@ -97,7 +97,7 @@ export class SlackService {
     title: string,
     description: string,
     error?: Error,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): Promise<SlackResult> {
     return this.sendAlert({
       title,
@@ -117,7 +117,7 @@ export class SlackService {
    */
   async sendJobSuccess(
     jobName: string,
-    results?: Record<string, any>
+    results?: Record<string, unknown>
   ): Promise<SlackResult> {
     return this.sendAlert({
       title: `✅ Job Completado: ${jobName}`,
@@ -136,7 +136,7 @@ export class SlackService {
   async sendJobFailure(
     jobName: string,
     error: Error,
-    results?: Record<string, any>
+    results?: Record<string, unknown>
   ): Promise<SlackResult> {
     return this.sendCriticalAlert(
       `❌ Job Falhou: ${jobName}`,
@@ -207,9 +207,9 @@ export class SlackService {
   /**
    * Build Slack block format
    */
-  private buildSlackBlocks(severity: string, options: SlackAlertOptions): any[] {
+  private buildSlackBlocks(severity: string, options: SlackAlertOptions): unknown[] {
     const color = this.getSeverityColor(options.severity);
-    const blocks: any[] = [
+    const blocks: unknown[] = [
       {
         type: 'header',
         text: {
@@ -357,19 +357,19 @@ export const sendSlackCriticalAlert = (
   title: string,
   description: string,
   error?: Error,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ) =>
   getSlackService().sendCriticalAlert(title, description, error, context);
 
 export const sendSlackJobSuccess = (
   jobName: string,
-  results?: Record<string, any>
+  results?: Record<string, unknown>
 ) =>
   getSlackService().sendJobSuccess(jobName, results);
 
 export const sendSlackJobFailure = (
   jobName: string,
   error: Error,
-  results?: Record<string, any>
+  results?: Record<string, unknown>
 ) =>
   getSlackService().sendJobFailure(jobName, error, results);

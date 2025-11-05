@@ -134,7 +134,7 @@ export default function UsageBanner({
   };
 
   // Converter alerta da API para banner
-  const convertToAlertBanner = (alert: any): AlertBanner => {
+  const convertToAlertBanner = (alert: unknown): AlertBanner => {
     const baseAlert: AlertBanner = {
       type: alert.type,
       severity: alert.severity === 'critical' ? 'error' : alert.severity === 'high' ? 'warning' : 'info',

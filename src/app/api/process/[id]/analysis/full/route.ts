@@ -196,20 +196,20 @@ export async function POST(
 }
 
 function buildFullAnalysisPrompt(data: {
-  caseData: any;
-  timeline: any[];
-  documents: any[];
-  juditData?: any;
+  caseData: unknown;
+  timeline: unknown[];
+  documents: unknown[];
+  juditData?: unknown;
 }): string {
   const { caseData, timeline, documents, juditData } = data;
 
   const timelineText = timeline
-    .map((m: any) => `[${m.eventDate.toISOString().split('T')[0]}] ${m.eventType}: ${m.description}`)
+    .map((m: unknown) => `[${m.eventDate.toISOString().split('T')[0]}] ${m.eventType}: ${m.description}`)
     .join('\n');
 
   const documentsText = documents
-    .filter((d: any) => d.extractedText)
-    .map((d: any) => `Documento "${d.name}":\n${d.extractedText?.substring(0, 2000)}...`)
+    .filter((d: unknown) => d.extractedText)
+    .map((d: unknown) => `Documento "${d.name}":\n${d.extractedText?.substring(0, 2000)}...`)
     .join('\n\n');
 
   const juditSummary = juditData

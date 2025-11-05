@@ -14,7 +14,7 @@ interface ProcessOnboardingStatusProps {
   caseId: string;
   processNumber?: string;
   juditJobId?: string;
-  previewData?: any;
+  previewData?: unknown;
   onAnalyzeClick?: () => void;
 }
 

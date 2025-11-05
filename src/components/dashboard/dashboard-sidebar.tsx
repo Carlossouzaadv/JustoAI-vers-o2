@@ -57,7 +57,7 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
         const data = await response.json();
 
         // Transform API response to match Client interface
-        const apiClients = (data.data || []).map((apiClient: any) => ({
+        const apiClients = (data.data || []).map((apiClient: unknown) => ({
           id: apiClient.id,
           name: apiClient.name,
           email: apiClient.email,

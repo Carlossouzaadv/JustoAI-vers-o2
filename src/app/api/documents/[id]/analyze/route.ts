@@ -92,7 +92,7 @@ export async function POST(
     const modelRouter = new AIModelRouter();
 
     // 5. Reprocessar PDF se necessário
-    let pdfResult: any = null;
+    let pdfResult: unknown = null;
 
     if (document.mimeType === 'application/pdf' && document.path) {
       const extractFields = customFields?.length

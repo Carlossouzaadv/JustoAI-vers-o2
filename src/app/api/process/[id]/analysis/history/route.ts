@@ -75,7 +75,7 @@ export const GET = withErrorHandler(async (
       // Buscar job mais recente para esta versão
       const latestJob = current.jobs[0] || null;
 
-      const versionData: any = {
+      const versionData: unknown = {
         id: current.id,
         versionNumber: current.versionNumber,
         analysisType: current.analysisType,
@@ -171,8 +171,8 @@ export const GET = withErrorHandler(async (
 /**
  * Calcula diff entre duas versões de análise
  */
-function calculateVersionDiff(previous: any, current: any): any {
-  const changes: any = {
+function calculateVersionDiff(previous: unknown, current: unknown): unknown {
+  const changes: unknown = {
     totalChanges: 0,
     criticalChanges: 0,
     summary: ''

@@ -21,7 +21,7 @@ interface UnifiedTimelineEntry {
   sourceIcon: string;
   sourceName: string;
   confidence: number;
-  metadata?: any;
+  metadata?: unknown;
   // ===== NOVO: Campos de enriquecimento =====
   isEnriched?: boolean;
   enrichedAt?: Date;
@@ -30,7 +30,7 @@ interface UnifiedTimelineEntry {
   originalTexts?: Record<string, string>;
   linkedDocumentIds?: string[];
   hasConflict?: boolean;
-  conflictDetails?: any;
+  conflictDetails?: unknown;
   relationType?: 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT';
   baseEventId?: string;
 }
@@ -79,7 +79,7 @@ const SOURCE_METADATA = {
 /**
  * Enriquece entrada de timeline com ícone, metadados de fonte e dados de enriquecimento
  */
-function enrichTimelineEntry(entry: any): UnifiedTimelineEntry {
+function enrichTimelineEntry(entry: unknown): UnifiedTimelineEntry {
   const sourceMetadata = SOURCE_METADATA[entry.source] || {
     icon: '📌',
     name: 'Outro',
@@ -88,7 +88,7 @@ function enrichTimelineEntry(entry: any): UnifiedTimelineEntry {
   };
 
   // Formatar documentos vinculados para o formato esperado pelo componente
-  const linkedDocuments = entry.linkedDocuments?.map((doc: any) => ({
+  const linkedDocuments = entry.linkedDocuments?.map((doc: unknown) => ({
     id: doc.id,
     name: doc.name || doc.originalName,
     // URL será preenchida pelo frontend se necessário

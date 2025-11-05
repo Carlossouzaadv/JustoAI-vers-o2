@@ -451,7 +451,7 @@ export class ReportCustomizationManager {
   /**
    * Converte perfil para formato usado pelos templates
    */
-  profileToCustomization(profile: CustomizationProfile): any {
+  profileToCustomization(profile: CustomizationProfile): unknown {
     return {
       client_logo: profile.logoBase64 || profile.logoUrl,
       company_name: profile.companyName,
@@ -491,7 +491,7 @@ export class ReportCustomizationManager {
     return generateReportTemplate(reportType, sampleData, customization);
   }
 
-  private generateSampleData(): any {
+  private generateSampleData(): unknown {
     return {
       title: 'Relatório Executivo - Prévia',
       subtitle: 'Exemplo de relatório personalizado',

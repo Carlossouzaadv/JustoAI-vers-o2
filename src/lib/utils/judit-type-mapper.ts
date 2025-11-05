@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 /**
  * Mapeamento automático de tipos de processos JUDIT para CaseType enum
  *
@@ -123,7 +123,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
  * @param responseData - Resposta completa da API JUDIT
  * @returns CaseType enum value ou null se não conseguir extrair
  */
-export function extractCaseTypeFromJuditResponse(responseData: any): CaseType | null {
+export function extractCaseTypeFromJuditResponse(responseData: unknown): CaseType | null {
   if (!responseData) return null;
 
   // Tentar extrair do campo classifications (array)
@@ -156,7 +156,7 @@ export function extractCaseTypeFromJuditResponse(responseData: any): CaseType | 
  * Fallback: Tenta extrair tipo do assunto do processo (subjects)
  * Menos confiável que classifications, mas pode ajudar em casos edge
  */
-export function extractCaseTypeFromSubject(responseData: any): CaseType | null {
+export function extractCaseTypeFromSubject(responseData: unknown): CaseType | null {
   if (!responseData || !responseData.subjects || !Array.isArray(responseData.subjects)) {
     return null;
   }
@@ -182,7 +182,7 @@ export function extractCaseTypeFromSubject(responseData: any): CaseType | null {
  * @returns CaseType ou null se não conseguir determinar
  */
 export async function extractCaseTypeFromGeminiAnalysis(
-  documentAnalysis: any
+  documentAnalysis: unknown
 ): Promise<CaseType | null> {
   if (!documentAnalysis) return null;
 

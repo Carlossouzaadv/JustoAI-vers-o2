@@ -86,7 +86,7 @@ export async function getSentryErrors(
 
     const events = await response.json();
 
-    return events.map((event: any) => ({
+    return events.map((event: unknown) => ({
       id: event.groupID || event.id,
       title: event.title || event.message || 'Unknown error',
       culprit: event.culprit || 'Unknown',
@@ -124,7 +124,7 @@ export async function getSentryProjectStats(): Promise<SentryProjectStats> {
     const topErrors = await getSentryErrors(10);
 
     // Calculate metrics from stats
-    const totalEvents = stats.reduce((sum: number, point: any) => {
+    const totalEvents = stats.reduce((sum: number, point: unknown) => {
       const val = Array.isArray(point) ? point[1] : point.received || 0;
       return sum + val;
     }, 0);
@@ -175,7 +175,7 @@ export async function getSentryReleases(limit: number = 5) {
     }
 
     const releases = await response.json();
-    return releases.map((release: any) => ({
+    return releases.map((release: unknown) => ({
       version: release.version,
       dateCreated: release.dateCreated,
       dateReleased: release.dateReleased,

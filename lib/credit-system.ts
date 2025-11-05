@@ -168,7 +168,7 @@ export class CreditManager {
     reportCredits: number,
     fullCredits: number,
     reason: string,
-    metadata: any = {}
+    metadata: unknown = {}
   ): Promise<CreditDebitResult> {
     console.log(`${ICONS.PROCESS} Debitando créditos: ${reportCredits} report, ${fullCredits} full`);
 
@@ -247,7 +247,7 @@ export class CreditManager {
     amount: number,
     category: 'REPORT' | 'FULL',
     reason: string,
-    metadata: any
+    metadata: unknown
   ): Promise<string[]> {
     const transactionIds: string[] = [];
     let remainingToDebit = amount;
@@ -481,7 +481,7 @@ export class CreditManager {
         ]
       });
 
-      return allocations.map((allocation: any) => ({
+      return allocations.map((allocation: unknown) => ({
         type: allocation.type as 'MONTHLY' | 'BONUS' | 'PACK',
         amount: Number(allocation.amount),
         remaining: Number(allocation.remainingAmount),
@@ -501,7 +501,7 @@ export class CreditManager {
   async initializeWorkspaceCredits(
     workspaceId: string,
     planName: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE' = 'STARTER'
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       const planConfig = CREDIT_CONFIG.PLANS[planName];
 

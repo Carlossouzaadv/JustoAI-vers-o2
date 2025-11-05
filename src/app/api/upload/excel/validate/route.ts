@@ -191,7 +191,7 @@ async function checkExistingProcesses(
 /**
  * Categoriza erros por tipo para UX amigável
  */
-function categorizeValidationErrors(errors: any[]): any {
+function categorizeValidationErrors(errors: unknown[]): unknown {
   const critical = [];
   const warnings = [];
   const info = [];
@@ -235,10 +235,10 @@ function categorizeValidationErrors(errors: any[]): any {
  * Gera resumo amigável para o usuário
  */
 function generateFriendlySummary(
-  summary: any,
+  summary: unknown,
   existingCount: number,
-  estimate: any
-): any {
+  estimate: unknown
+): unknown {
   const newProcesses = summary.valid - existingCount;
 
   return {
@@ -261,7 +261,7 @@ function generateFriendlySummary(
  * Gera mensagem de resumo amigável
  */
 function generateSummaryMessage(
-  summary: any,
+  summary: unknown,
   existingCount: number,
   newProcesses: number
 ): string {
@@ -293,7 +293,7 @@ function generateSummaryMessage(
 /**
  * Gera recomendação baseada nos dados
  */
-function generateRecommendation(summary: any, newProcesses: number): string {
+function generateRecommendation(summary: unknown, newProcesses: number): string {
   if (summary.invalid > summary.valid) {
     return 'Arquivo contém muitos erros. Recomendamos revisar antes de processar.';
   }

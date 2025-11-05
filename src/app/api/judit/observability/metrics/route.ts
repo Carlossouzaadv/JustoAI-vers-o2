@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       .reduce((acc, [key, value]) => {
         acc[key] = value;
         return acc;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, unknown>);
 
     // Calculate summary stats
     const summary = {
@@ -88,13 +88,13 @@ export async function GET(request: NextRequest) {
 // HELPERS
 // ================================================================
 
-function sumMetric(metrics: Record<string, any>, pattern: string): number {
+function sumMetric(metrics: Record<string, unknown>, pattern: string): number {
   return Object.entries(metrics)
     .filter(([key]) => key.includes(pattern))
     .reduce((sum, [, value]) => sum + (value.count || 0), 0);
 }
 
-function avgMetric(metrics: Record<string, any>, pattern: string): number {
+function avgMetric(metrics: Record<string, unknown>, pattern: string): number {
   const matching = Object.entries(metrics).filter(([key]) => key.includes(pattern));
 
   if (matching.length === 0) return 0;

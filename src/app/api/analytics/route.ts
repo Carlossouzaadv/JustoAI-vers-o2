@@ -79,7 +79,7 @@ async function GET(request: NextRequest) {
     const days = daysMap[period]
     const startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000))
 
-    const analyticsData: any = {}
+    const analyticsData: unknown = {}
 
     if (!metric || metric === 'processing_time') {
       // Get average processing time data

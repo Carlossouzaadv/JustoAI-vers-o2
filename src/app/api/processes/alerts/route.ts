@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     const offset = (query.page - 1) * query.limit;
 
     // Construir filtros
-    const where: any = {
+    const where: unknown = {
       monitoredProcess: {
         workspaceId: workspace.id
       }
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Configurar ordenação
-    let orderBy: any = {};
+    let orderBy: unknown = {};
 
     if (query.sortBy === 'severity') {
       // Ordenação especial para severidade (URGENT > HIGH > MEDIUM > LOW)

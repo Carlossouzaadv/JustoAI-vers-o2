@@ -38,12 +38,12 @@ interface JuditWebhookPayload {
     request_id: string;
     response_id?: string;
     response_type?: 'lawsuit' | 'application_info' | 'application_error';
-    response_data?: any;
+    response_data?: unknown;
     status?: string;
     created_at?: string;
     tags?: {
       cached_response?: boolean;
-      [key: string]: any;
+      [key: string]: unknown;
     };
   };
 }
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
         // ================================================================
         // JUDIT pode enviar múltiplos webhooks para o mesmo requestId
         // Verificar se este requestId já foi processado para este caso
-        const currentMetadata = (targetCase.metadata || {}) as any;
+        const currentMetadata = (targetCase.metadata || {}) as unknown;
         const processedRequestIds = (currentMetadata.processed_webhook_request_ids || []) as string[];
 
         if (processedRequestIds.includes(requestId)) {

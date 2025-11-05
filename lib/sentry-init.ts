@@ -25,7 +25,7 @@ export function setupSentryGlobal() {
   });
 
   // Setup unhandled promise rejection handler
-  process.on('unhandledRejection', (reason: any) => {
+  process.on('unhandledRejection', (reason: unknown) => {
     console.error('💥 Unhandled Rejection:', reason);
     const error = reason instanceof Error ? reason : new Error(String(reason));
     captureException(error, {

@@ -163,7 +163,7 @@ export class DOCXTemplateEngine {
   /**
    * Gera estilos do documento
    */
-  private generateStyles(customization: DOCXCustomization): any {
+  private generateStyles(customization: DOCXCustomization): unknown {
     const primaryColorHex = customization.primaryColor.replace('#', '');
     const accentColorHex = customization.accentColor.replace('#', '');
 

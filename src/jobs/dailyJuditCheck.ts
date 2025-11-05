@@ -63,19 +63,19 @@ const CRON_CONFIG = {
 // ================================================================
 
 const log = {
-  info: (message: string, data?: any) => {
+  info: (message: string, data?: unknown) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [DAILY JUDIT CHECK] ${message}`, data || '');
   },
-  error: (message: string, error?: any) => {
+  error: (message: string, error?: unknown) => {
     const timestamp = new Date().toISOString();
     console.error(`[${timestamp}] [DAILY JUDIT CHECK ERROR] ${message}`, error || '');
   },
-  warn: (message: string, data?: any) => {
+  warn: (message: string, data?: unknown) => {
     const timestamp = new Date().toISOString();
     console.warn(`[${timestamp}] [DAILY JUDIT CHECK WARN] ${message}`, data || '');
   },
-  success: (message: string, data?: any) => {
+  success: (message: string, data?: unknown) => {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] [DAILY JUDIT CHECK ✓] ${message}`, data || '');
   },
@@ -189,7 +189,7 @@ export async function runDailyJuditCheck(): Promise<BatchResult> {
 // ================================================================
 
 async function processMonitoringsInBatches(
-  monitorings: any[],
+  monitorings: unknown[],
   lookbackTimestamp: string
 ): Promise<BatchResult> {
   const total = monitorings.length;
@@ -266,7 +266,7 @@ async function processMonitoringsInBatches(
 // ================================================================
 
 async function processBatchWithConcurrency(
-  batch: any[],
+  batch: unknown[],
   lookbackTimestamp: string,
   concurrency: number
 ): Promise<CheckResult[]> {
@@ -312,7 +312,7 @@ async function processBatchWithConcurrency(
 // ================================================================
 
 async function checkSingleProcess(
-  monitoring: any,
+  monitoring: unknown,
   lookbackTimestamp: string,
   retryCount = 0
 ): Promise<CheckResult> {

@@ -64,12 +64,12 @@ export function Pricing() {
     }).format(price);
   };
 
-  const getCurrentPrice = (plan: any) => {
+  const getCurrentPrice = (plan: unknown) => {
     if (plan.custom_pricing) return null;
     return billingCycle === 'monthly' ? plan.price_monthly : plan.price_annual;
   };
 
-  const getPriceDisplay = (plan: any) => {
+  const getPriceDisplay = (plan: unknown) => {
     const currentPrice = getCurrentPrice(plan);
     if (!currentPrice) return null;
 

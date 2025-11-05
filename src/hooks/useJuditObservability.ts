@@ -56,7 +56,7 @@ export interface MetricsData {
     attachmentFetchesTriggered: number;
     queueJobsTotal: number;
   };
-  metrics: Record<string, any>;
+  metrics: Record<string, unknown>;
 }
 
 export interface CostsData {

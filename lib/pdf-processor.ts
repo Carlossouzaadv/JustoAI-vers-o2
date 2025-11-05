@@ -10,8 +10,8 @@ import { prisma } from './prisma';
 interface PDFData {
   text: string;
   numpages: number;
-  info: any;
-  metadata: any;
+  info: unknown;
+  metadata: unknown;
 }
 
 export interface ExtractionResult {
@@ -146,7 +146,7 @@ export class PDFProcessor {
    */
   private async extractWithPrimary(buffer: Buffer): Promise<string> {
     try {
-      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
+      const pdfParse = (await import('pdf-parse' as unknown)).default as (buffer: Buffer) => Promise<PDFData>;
 
       const startTime = Date.now();
       const pdfData = await pdfParse(buffer);
@@ -264,7 +264,7 @@ export class PDFProcessor {
    */
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
-      const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
+      const pdfParse = (await import('pdf-parse' as unknown)).default as (buffer: Buffer) => Promise<PDFData>;
       const pdfData = await pdfParse(buffer);
 
       // Detectar imagens verificando se há discrepância entre páginas e texto
@@ -356,7 +356,7 @@ export class PDFProcessor {
       // Extrair número de páginas
       let pageCount = 0;
       try {
-        const pdfParse = (await import('pdf-parse' as any)).default as (buffer: Buffer) => Promise<PDFData>;
+        const pdfParse = (await import('pdf-parse' as unknown)).default as (buffer: Buffer) => Promise<PDFData>;
         const pdfData = await pdfParse(buffer);
         pageCount = pdfData.numpages || 0;
       } catch (e) {
@@ -388,7 +388,7 @@ export class PDFProcessor {
   /**
    * Detecta presença de imagens no PDF
    */
-  private detectImagesInPDF(buffer: Buffer, pdfData: any): boolean {
+  private detectImagesInPDF(buffer: Buffer, pdfData: unknown): boolean {
     try {
       // Estratégias para detectar imagens:
 
@@ -423,7 +423,7 @@ export class PDFProcessor {
     caseId: string,
     analysisResult: PDFAnalysisResult,
     modelUsed: string,
-    aiAnalysis: any,
+    aiAnalysis: unknown,
     processingTime: number = 0
   ) {
     try {
@@ -457,7 +457,7 @@ export class PDFProcessor {
           workspaceId: case_.workspaceId,
           version: nextVersion,
           analysisType: 'PDF_UPLOAD',
-          extractedData: analysisResult as any,
+          extractedData: analysisResult as unknown,
           aiAnalysis,
           modelUsed,
           confidence,

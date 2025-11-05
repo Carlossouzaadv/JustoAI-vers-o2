@@ -69,8 +69,8 @@ export class PDFGenerator {
   private browser: Browser | null = null;
   private pagePool: Page[] = [];
   private readonly maxConcurrentPages: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private readonly puppeteerOptions: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-unknown
+  private readonly puppeteerOptions: unknown;
 
   constructor(maxConcurrentPages: number = 10) {
     this.maxConcurrentPages = maxConcurrentPages;

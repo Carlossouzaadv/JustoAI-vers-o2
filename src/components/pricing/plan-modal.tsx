@@ -102,7 +102,7 @@ export function PlanModal({
     }
   };
 
-  const renderFeatureValue = (feature: any) => {
+  const renderFeatureValue = (feature: unknown) => {
     if (feature.unlimited) {
       return (
         <Badge variant="secondary" className="bg-green-100 text-green-700">

@@ -33,7 +33,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       return errorResponse(balanceResult.error || 'Failed to get workspace credits', 500)
     }
 
-    const response: any = {
+    const response: unknown = {
       workspaceId,
       balance: balanceResult.credits,
       lastUpdated: new Date().toISOString()

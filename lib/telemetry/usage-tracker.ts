@@ -12,7 +12,7 @@ import { ICONS } from '../icons';
 interface UsageEvent {
   workspaceId: string;
   eventType: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   timestamp?: Date;
 }
 
@@ -218,7 +218,7 @@ export class UsageTracker {
     amount: number;
     reason: string;
     relatedReportId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     try {
       // Registrar transação de crédito
@@ -269,7 +269,7 @@ export class UsageTracker {
     amount: number;
     source: 'purchase' | 'bonus' | 'admin' | 'refund';
     transactionId?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     try {
       // Registrar transação de crédito
@@ -430,8 +430,8 @@ export class UsageTracker {
       }
     });
 
-    const credits = transactions.reduce((sum: number, t: any) => sum + (t.type === 'CREDIT' ? Number(t._sum.amount) || 0 : 0), 0);
-    const debits = transactions.reduce((sum: number, t: any) => sum + (t.type === 'DEBIT' ? Number(t._sum.amount) || 0 : 0), 0);
+    const credits = transactions.reduce((sum: number, t: unknown) => sum + (t.type === 'CREDIT' ? Number(t._sum.amount) || 0 : 0), 0);
+    const debits = transactions.reduce((sum: number, t: unknown) => sum + (t.type === 'DEBIT' ? Number(t._sum.amount) || 0 : 0), 0);
 
     const purchasedCredits = credits;
     const consumedCredits = debits;
@@ -509,7 +509,7 @@ export class UsageTracker {
   }
 
   // Método helper para processar eventos de uso
-  private processUsageEvents(events: any[]): UsageMetrics {
+  private processUsageEvents(events: unknown[]): UsageMetrics {
     const metrics: UsageMetrics = {
       juditCallsTotal: 0,
       juditDocsRetrieved: 0,
@@ -521,7 +521,7 @@ export class UsageTracker {
       fullCreditsConsumedMonth: 0
     };
 
-    events.forEach((event: any) => {
+    events.forEach((event: unknown) => {
       const payload = event.metadata || {};
 
       switch (event.eventType) {

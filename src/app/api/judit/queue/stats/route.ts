@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
 // UTILITÁRIOS
 // ================================================================
 
-function calculateHealth(stats: any): 'healthy' | 'warning' | 'critical' {
+function calculateHealth(stats: unknown): 'healthy' | 'warning' | 'critical' {
   const { active, waiting, failed } = stats;
   const totalActive = active + waiting;
 

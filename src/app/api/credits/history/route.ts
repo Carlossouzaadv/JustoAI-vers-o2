@@ -40,7 +40,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const creditSystem = getCreditManager()
 
     // Build filters
-    const filters: any = { workspaceId }
+    const filters: unknown = { workspaceId }
 
     if (type !== 'all') {
       filters.type = type

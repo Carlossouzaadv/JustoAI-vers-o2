@@ -40,7 +40,7 @@ export interface AnalysisResponse {
     };
     complexity: {
       score: number;
-      factors: any;
+      factors: unknown;
       tier: ModelTier;
     };
     timestamp: string;
@@ -146,11 +146,11 @@ export class RealAnalysisService {
    */
   private async processWithGemini(
     request: AnalysisRequest,
-    config: any,
-    complexity: any
+    config: unknown,
+    complexity: unknown
   ): Promise<UnifiedProcessSchema> {
     const maxRetries = 3;
-    let lastError: any;
+    let lastError: unknown;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -240,9 +240,9 @@ METADADOS ADICIONAIS:`;
    * Validate and enhance Gemini API response
    */
   private validateAndEnhanceResult(
-    geminiResponse: any,
+    geminiResponse: unknown,
     request: AnalysisRequest,
-    complexity: any
+    complexity: unknown
   ): UnifiedProcessSchema {
     // Ensure all required sections exist
     const result: UnifiedProcessSchema = {
@@ -274,11 +274,11 @@ METADADOS ADICIONAIS:`;
   /**
    * Calculate overall confidence based on response completeness
    */
-  private calculateConfidence(response: any, complexity: any): number {
+  private calculateConfidence(response: unknown, complexity: unknown): number {
     let filledFields = 0;
     let totalFields = 0;
 
-    const countFields = (obj: any): void => {
+    const countFields = (obj: unknown): void => {
       if (obj && typeof obj === 'object') {
         Object.values(obj).forEach(value => {
           totalFields++;
@@ -302,7 +302,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Find missing required fields
    */
-  private findMissingFields(response: any): string[] {
+  private findMissingFields(response: unknown): string[] {
     const requiredFields = [
       'identificacao_basica.numero_processo',
       'identificacao_basica.tipo_processual',
@@ -325,14 +325,14 @@ METADADOS ADICIONAIS:`;
   /**
    * Get nested object value by dot notation path
    */
-  private getNestedValue(obj: any, path: string): any {
+  private getNestedValue(obj: unknown, path: string): unknown {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   }
 
   /**
    * Check cache for existing analysis
    */
-  private async checkCache(request: AnalysisRequest, complexity: any): Promise<any> {
+  private async checkCache(request: AnalysisRequest, complexity: unknown): Promise<unknown> {
     try {
       const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
       const cache = getAiCache();
@@ -358,7 +358,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Cache analysis result
    */
-  private async cacheResult(request: AnalysisRequest, result: any, complexity: any): Promise<void> {
+  private async cacheResult(request: AnalysisRequest, result: unknown, complexity: unknown): Promise<void> {
     try {
       const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
       const cache = getAiCache();
@@ -391,8 +391,8 @@ METADADOS ADICIONAIS:`;
    * Build successful response
    */
   private buildSuccessResponse(
-    data: any,
-    complexity: any,
+    data: unknown,
+    complexity: unknown,
     cached: boolean,
     processingTime: number
   ): AnalysisResponse {
@@ -443,7 +443,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Check if error is retryable
    */
-  private shouldRetry(error: any): boolean {
+  private shouldRetry(error: unknown): boolean {
     const retryableErrors = [
       'rate limit',
       'timeout',
@@ -463,7 +463,7 @@ METADADOS ADICIONAIS:`;
   /**
    * Format error for response
    */
-  private formatError(error: any): string {
+  private formatError(error: unknown): string {
     if (error.code && error.error) {
       return `Gemini API Error (${error.code}): ${error.error}`;
     }

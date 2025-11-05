@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function testModel(geminiClient: any, model: ModelTier) {
+async function testModel(geminiClient: unknown, model: ModelTier) {
   const startTime = Date.now();
 
   try {
@@ -153,7 +153,7 @@ async function testModel(geminiClient: any, model: ModelTier) {
   }
 }
 
-async function testJsonGeneration(geminiClient: any) {
+async function testJsonGeneration(geminiClient: unknown) {
   const startTime = Date.now();
 
   try {

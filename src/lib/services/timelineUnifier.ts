@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-unknown */
 // ================================================================
 // TIMELINE UNIFIER SERVICE - V2 with Intelligent Enrichment
 // Unifica movimentos de PDF + JUDIT com enriquecimento inteligente
@@ -84,7 +84,7 @@ export async function mergeTimelines(
     // ============================================================
 
     const juditMovements = extractMovementsFromJudit(
-      caseData.processo?.dadosCompletos as any
+      caseData.processo?.dadosCompletos as unknown
     );
 
     console.log(
@@ -148,7 +148,7 @@ export async function mergeTimelines(
     // 4. EXTRAIR MOVIMENTOS DO PDF (PRIORIDADE 2)
     // ============================================================
 
-    const pdfMovements = extractMovementsFromPreview(caseData.previewSnapshot as any);
+    const pdfMovements = extractMovementsFromPreview(caseData.previewSnapshot as unknown);
 
     console.log(
       `${ICONS.INFO} [Timeline Unifier v2] Movimentos PDF encontrados: ${pdfMovements.length}`
@@ -361,7 +361,7 @@ export async function mergeTimelines(
 /**
  * Extrai movimentos do preview snapshot (Gemini Flash)
  */
-function extractMovementsFromPreview(previewSnapshot: any): TimelineMovement[] {
+function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement[] {
   const movements: TimelineMovement[] = [];
 
   if (!previewSnapshot || !previewSnapshot.lastMovements) {
@@ -395,7 +395,7 @@ function extractMovementsFromPreview(previewSnapshot: any): TimelineMovement[] {
 /**
  * Extrai movimentos do JUDIT response
  */
-function extractMovementsFromJudit(dadosCompletos: any): TimelineMovement[] {
+function extractMovementsFromJudit(dadosCompletos: unknown): TimelineMovement[] {
   const movements: TimelineMovement[] = [];
 
   if (!dadosCompletos) {

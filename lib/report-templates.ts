@@ -75,7 +75,7 @@ export interface ProcessReportData {
 export interface ChartData {
   type: 'pie' | 'bar' | 'line';
   title: string;
-  data: any[];
+  data: unknown[];
   labels: string[];
 }
 

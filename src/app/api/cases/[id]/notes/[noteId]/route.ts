@@ -151,7 +151,7 @@ export async function PATCH(
     // 6. UPDATE NOTE
     // ============================================================
 
-    const updateData: any = {};
+    const updateData: unknown = {};
 
     if (body.title !== undefined) {
       updateData.title = body.title;
@@ -167,7 +167,7 @@ export async function PATCH(
       body.isPinned !== undefined
     ) {
       // Preserve existing metadata and update only specified fields
-      const existingMetadata = (note.metadata as Record<string, any>) || {};
+      const existingMetadata = (note.metadata as Record<string, unknown>) || {};
 
       updateData.metadata = {
         ...existingMetadata,
@@ -202,16 +202,16 @@ export async function PATCH(
       success: true,
       note: {
         id: updatedNote.id,
-        title: (updatedNote.metadata as Record<string, any>)?.title || 'Sem título',
+        title: (updatedNote.metadata as Record<string, unknown>)?.title || 'Sem título',
         description: updatedNote.description,
         author: {
           id: updatedNote.user.id,
           email: updatedNote.user.email,
           name: updatedNote.user.name,
         },
-        tags: (updatedNote.metadata as Record<string, any>)?.tags || [],
-        priority: (updatedNote.metadata as Record<string, any>)?.priority || 'normal',
-        isPinned: (updatedNote.metadata as Record<string, any>)?.isPinned || false,
+        tags: (updatedNote.metadata as Record<string, unknown>)?.tags || [],
+        priority: (updatedNote.metadata as Record<string, unknown>)?.priority || 'normal',
+        isPinned: (updatedNote.metadata as Record<string, unknown>)?.isPinned || false,
         createdAt: updatedNote.createdAt,
         updatedAt: updatedNote.updatedAt,
       },

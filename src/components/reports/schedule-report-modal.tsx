@@ -24,7 +24,7 @@ export interface ScheduleReportModalProps {
     client: string;
     status: string;
   }>;
-  onScheduleComplete?: (result: any) => void;
+  onScheduleComplete?: (result: unknown) => void;
 }
 
 interface ScheduleForm {
@@ -49,7 +49,7 @@ export function ScheduleReportModal({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [quotaInfo, setQuotaInfo] = useState<any>(null);
+  const [quotaInfo, setQuotaInfo] = useState<unknown>(null);
 
   const [form, setForm] = useState<ScheduleForm>({
     name: '',
@@ -105,7 +105,7 @@ export function ScheduleReportModal({
     }
   };
 
-  const updateForm = (field: keyof ScheduleForm, value: any) => {
+  const updateForm = (field: keyof ScheduleForm, value: unknown) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 

@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
     const offset = (query.page - 1) * query.limit;
 
     // Construir filtros
-    const where: any = {
+    const where: unknown = {
       workspaceId: workspace.id
     };
 
@@ -427,7 +427,7 @@ export async function POST(request: NextRequest) {
 
     // Buscar dados iniciais do processo (se solicitado)
     let processData = null;
-    let initialMovements: any[] = [];
+    let initialMovements: unknown[] = [];
 
     if (body.fetchInitialData) {
       try {
@@ -614,7 +614,7 @@ export async function DELETE(request: NextRequest) {
       throw new ApiError('IDs ou números de processo devem ser fornecidos', 400);
     }
 
-    const where: any = {
+    const where: unknown = {
       workspaceId: workspace.id
     };
 

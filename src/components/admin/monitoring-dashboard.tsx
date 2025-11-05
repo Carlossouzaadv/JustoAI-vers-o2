@@ -53,10 +53,10 @@ interface SystemStatus {
     webhooks: ComponentStatus;
   };
   metrics: {
-    queueStats: any;
-    juditStats: any;
-    telemetryMetrics: any;
-    activeAlerts: any[];
+    queueStats: unknown;
+    juditStats: unknown;
+    telemetryMetrics: unknown;
+    activeAlerts: unknown[];
   };
   recommendations: string[];
 }
@@ -66,7 +66,7 @@ interface ComponentStatus {
   lastCheck: string;
   responseTime?: number;
   details: string;
-  metrics?: Record<string, any>;
+  metrics?: Record<string, unknown>;
 }
 
 interface RecoveryAction {
@@ -139,7 +139,7 @@ export default function MonitoringDashboard() {
   };
 
   // Executar ação administrativa
-  const executeAction = async (action: string, parameters: Record<string, any> = {}) => {
+  const executeAction = async (action: string, parameters: Record<string, unknown> = {}) => {
     try {
       setExecuting(action);
 

@@ -221,7 +221,7 @@ export class ImportReportGenerator {
   // ================================
 
   private async fetchImports(workspaceId: string, startDate?: Date, endDate?: Date) {
-    const whereClause: any = { workspaceId };
+    const whereClause: unknown = { workspaceId };
 
     if (startDate || endDate) {
       whereClause.createdAt = {};
@@ -244,7 +244,7 @@ export class ImportReportGenerator {
     });
   }
 
-  private async generateImportSummaries(imports: any[]): Promise<ImportSummary[]> {
+  private async generateImportSummaries(imports: unknown[]): Promise<ImportSummary[]> {
     return imports.map(imp => ({
       id: imp.id,
       fileName: imp.fileName,
@@ -259,12 +259,12 @@ export class ImportReportGenerator {
         ? Math.round((imp.finishedAt.getTime() - imp.startedAt.getTime()) / (1000 * 60))
         : 0,
       createdAt: imp.createdAt,
-      errors: (imp.errors || []).map((e: any) => e.message || e.toString())
+      errors: (imp.errors || []).map((e: unknown) => e.message || e.toString())
     }));
   }
 
-  private async generateSystemSummaries(imports: any[]): Promise<SystemSummary[]> {
-    const systemMap = new Map<string, any>();
+  private async generateSystemSummaries(imports: unknown[]): Promise<SystemSummary[]> {
+    const systemMap = new Map<string, unknown>();
 
     imports.forEach(imp => {
       if (!systemMap.has(imp.sourceSystem)) {
@@ -290,7 +290,7 @@ export class ImportReportGenerator {
       }
 
       if (imp.errors && imp.errors.length > 0) {
-        summary.errors.push(...imp.errors.map((e: any) => e.message || e.toString()));
+        summary.errors.push(...imp.errors.map((e: unknown) => e.message || e.toString()));
       }
 
       if (imp.createdAt > summary.lastImportDate) {
@@ -341,7 +341,7 @@ export class ImportReportGenerator {
     return timeline;
   }
 
-  private async calculateMetrics(imports: any[]): Promise<ReportMetrics> {
+  private async calculateMetrics(imports: unknown[]): Promise<ReportMetrics> {
     const totalImports = imports.length;
     const successfulImports = imports.filter(imp => imp.status === 'COMPLETED').length;
     const failedImports = imports.filter(imp => imp.status === 'FAILED').length;
@@ -377,12 +377,12 @@ export class ImportReportGenerator {
     };
   }
 
-  private async analyzeErrors(imports: any[]): Promise<ErrorSummary[]> {
-    const errorMap = new Map<string, any>();
+  private async analyzeErrors(imports: unknown[]): Promise<ErrorSummary[]> {
+    const errorMap = new Map<string, unknown>();
 
     imports.forEach(imp => {
       if (imp.errors && imp.errors.length > 0) {
-        imp.errors.forEach((error: any) => {
+        imp.errors.forEach((error: unknown) => {
           const message = error.message || error.toString();
           const type = error.type || 'UNKNOWN';
 
@@ -414,7 +414,7 @@ export class ImportReportGenerator {
     }));
   }
 
-  private async generateRecommendations(imports: any[]): Promise<string[]> {
+  private async generateRecommendations(imports: unknown[]): Promise<string[]> {
     const recommendations: string[] = [];
     const failureRate = imports.length > 0
       ? (imports.filter(imp => imp.status === 'FAILED').length / imports.length) * 100
@@ -551,7 +551,7 @@ export class ImportReportGenerator {
     return 'LOW';
   }
 
-  private findPeakImportDay(imports: any[]): string | undefined {
+  private findPeakImportDay(imports: unknown[]): string | undefined {
     const dayCounts = imports.reduce((acc, imp) => {
       const day = imp.createdAt.toISOString().split('T')[0];
       acc[day] = (acc[day] || 0) + 1;
@@ -567,7 +567,7 @@ export class ImportReportGenerator {
     return peakDay[0] || undefined;
   }
 
-  private async generateSystemComparison(imports: any[]): Promise<SystemSummary[]> {
+  private async generateSystemComparison(imports: unknown[]): Promise<SystemSummary[]> {
     return this.generateSystemSummaries(imports);
   }
 
@@ -634,12 +634,12 @@ export class ImportReportGenerator {
     };
   }
 
-  private async findErrorPatterns(imports: any[]): Promise<any[]> {
+  private async findErrorPatterns(imports: unknown[]): Promise<unknown[]> {
     // Implementação simplificada de detecção de padrões
     return [];
   }
 
-  private async generateErrorRecommendations(errors: ErrorSummary[], patterns: any[]): Promise<string[]> {
+  private async generateErrorRecommendations(errors: ErrorSummary[], patterns: unknown[]): Promise<string[]> {
     const recommendations: string[] = [];
 
     const criticalErrors = errors.filter(e => e.severity === 'HIGH');

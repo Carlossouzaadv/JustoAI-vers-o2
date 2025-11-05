@@ -334,7 +334,7 @@ export class ReportDataCollector {
   /**
    * Extrai dados estruturados do processData JSON
    */
-  private parseProcessData(processData: any): {
+  private parseProcessData(processData: unknown): {
     subject?: string;
     financialInfo?: {
       valor_principal?: number;
@@ -370,9 +370,9 @@ export class ReportDataCollector {
   /**
    * Extrai informações financeiras do processData
    */
-  private extractFinancialInfo(data: any): any {
+  private extractFinancialInfo(data: unknown): unknown {
     try {
-      const financial: any = {};
+      const financial: unknown = {};
 
       // Buscar valores em diferentes formatos
       const possibleFields = [
@@ -417,7 +417,7 @@ export class ReportDataCollector {
   /**
    * Calcula próximo prazo baseado nas movimentações
    */
-  private calculateNextDeadline(movements: any[]): { date: Date; description: string; days_remaining: number } | undefined {
+  private calculateNextDeadline(movements: unknown[]): { date: Date; description: string; days_remaining: number } | undefined {
     try {
       if (!movements || movements.length === 0) {
         return undefined;
@@ -480,7 +480,7 @@ export class ReportDataCollector {
   /**
    * Gera insights gerais com IA
    */
-  private async generateAIInsights(processes: ProcessReportData[], summary: any): Promise<string[]> {
+  private async generateAIInsights(processes: ProcessReportData[], summary: unknown): Promise<string[]> {
     try {
       console.log(`${ICONS.PROCESS} Gerando insights de IA...`);
 
@@ -539,7 +539,7 @@ export class ReportDataCollector {
   /**
    * Gera insights executivos
    */
-  private async generateExecutiveInsights(processes: ProcessReportData[], summary: any): Promise<string[]> {
+  private async generateExecutiveInsights(processes: ProcessReportData[], summary: unknown): Promise<string[]> {
     return [
       `${processes.filter(p => p.priority === 'URGENT').length} processos críticos identificados`,
       `Taxa de atividade: ${Math.round((summary.active_processes / summary.total_processes) * 100)}%`,

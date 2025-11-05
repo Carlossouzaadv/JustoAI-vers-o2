@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         };
 
         // Registrar conexão
-        wsManager.addConnection(connectionId, mockResponse as any, workspace.id);
+        wsManager.addConnection(connectionId, mockResponse as unknown, workspace.id);
 
         // Enviar mensagem de boas-vindas/confirmação de conexão
         const welcomeMessage = {
@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
         controller.enqueue(encoder.encode(sseData));
 
         // Cleanup ao desconectar
-        const originalOnClose = (controller as any).close;
-        (controller as any).close = () => {
+        const originalOnClose = (controller as unknown).close;
+        (controller as unknown).close = () => {
           console.log(`${ICONS.INFO} SSE: Cliente desconectado - ${connectionId}`);
           wsManager.removeConnection(connectionId);
           if (originalOnClose) originalOnClose.call(controller);

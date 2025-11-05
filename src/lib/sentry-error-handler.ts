@@ -16,7 +16,7 @@ export interface ErrorContext {
   endpoint?: string;
   method?: string;
   path?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -64,9 +64,9 @@ export function captureApiError(
  *   });
  */
 export function withErrorCapture(
-  handler: (request: Request, context?: any) => Promise<NextResponse | Response>
+  handler: (request: Request, context?: unknown) => Promise<NextResponse | Response>
 ) {
-  return async (request: Request, context?: any) => {
+  return async (request: Request, context?: unknown) => {
     const startTime = Date.now();
     const endpoint = new URL(request.url).pathname;
     const method = request.method;
@@ -130,7 +130,7 @@ export function clearSentryContext(): void {
 export function captureSentryMessage(
   message: string,
   level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info',
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   if (context) {
     Sentry.setContext('message_context', context);

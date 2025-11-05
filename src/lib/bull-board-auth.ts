@@ -35,8 +35,8 @@ export async function validateBullBoardAccess(
 ): Promise<BullBoardAccessValidation> {
   try {
     // Try to extract user ID from request context (set by middleware)
-    const userId = (req as any).userId;
-    const workspaceId = (req as any).workspaceId;
+    const userId = (req as unknown).userId;
+    const workspaceId = (req as unknown).workspaceId;
 
     if (!userId) {
       return {
@@ -126,12 +126,12 @@ export async function validateBullBoardAccess(
  * Note: Bull Board uses Express, so this is for reference only
  */
 export async function validateBullBoardAccessNextJS(
-  req: any
+  req: unknown
 ): Promise<BullBoardAccessValidation> {
   try {
     // For Next.js routes, extract user from request context
-    const userId = (req as any).userId;
-    const workspaceId = (req as any).workspaceId;
+    const userId = (req as unknown).userId;
+    const workspaceId = (req as unknown).workspaceId;
 
     if (!userId || !workspaceId) {
       return {

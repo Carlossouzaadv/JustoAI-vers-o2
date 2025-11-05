@@ -185,11 +185,11 @@ export class GeminiClient {
   async generateJsonContent(
     prompt: string,
     config: Partial<GeminiConfig> = {}
-  ): Promise<any> {
+  ): Promise<unknown> {
     // Add JSON instruction to prompt
     const jsonPrompt = `${prompt}
 
-IMPORTANT: Return your response in valid JSON format only. Do not include any text before or after the JSON.`;
+IMPORTANT: Return your response in valid JSON format only. Do not include unknown text before or after the JSON.`;
 
     const response = await this.generateContent(jsonPrompt, {
       ...config,
@@ -260,7 +260,7 @@ IMPORTANT: Return your response in valid JSON format only. Do not include any te
   /**
    * Create standardized Gemini error
    */
-  private createGeminiError(statusCode: number, errorData: any): GeminiError {
+  private createGeminiError(statusCode: number, errorData: unknown): GeminiError {
     const retryableCodes = [429, 500, 502, 503, 504];
 
     return {
@@ -359,7 +359,7 @@ export function getGeminiClient(): GeminiClient {
 /**
  * Helper function to format Gemini errors for API responses
  */
-export function formatGeminiError(error: any): { message: string; code: number; retryable: boolean } {
+export function formatGeminiError(error: unknown): { message: string; code: number; retryable: boolean } {
   if (error.code && error.error) {
     return {
       message: error.error,

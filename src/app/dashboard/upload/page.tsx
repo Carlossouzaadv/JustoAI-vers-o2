@@ -22,14 +22,14 @@ interface UploadedFile {
   file: File;
   status: 'pending' | 'uploading' | 'analyzing' | 'completed' | 'error';
   progress: number;
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 
 interface AnalysisResult {
   documentType: string;
   confidence: number;
-  extractedFields: Record<string, any>;
+  extractedFields: Record<string, unknown>;
   summary: string;
   risks: string[];
   recommendations: string[];
@@ -41,7 +41,7 @@ export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [documentType, setDocumentType] = useState<'single-pdf' | 'full-analysis' | 'excel-batch' | ''>('');
   const [showDuplicateConfirmation, setShowDuplicateConfirmation] = useState(false);
-  const [detectedProcess, setDetectedProcess] = useState<any>(null);
+  const [detectedProcess, setDetectedProcess] = useState<unknown>(null);
 
   // Available cases from API (loaded dynamically)
   const [availableCases, setAvailableCases] = useState<Array<{ id: string; title: string; client: string }>>([]);
@@ -56,7 +56,7 @@ export default function UploadPage() {
         if (response.ok) {
           const data = await response.json();
           const cases = data.data || data.cases || [];
-          setAvailableCases(cases.map((c: any) => ({
+          setAvailableCases(cases.map((c: unknown) => ({
             id: c.id,
             title: c.title,
             client: c.client?.name || 'Unknown'
@@ -126,7 +126,7 @@ export default function UploadPage() {
   };
 
   // Upload file to API
-  const uploadFileToAPI = async (file: File): Promise<any> => {
+  const uploadFileToAPI = async (file: File): Promise<unknown> => {
     const formData = new FormData();
     formData.append('file', file);
     if (selectedCase) {

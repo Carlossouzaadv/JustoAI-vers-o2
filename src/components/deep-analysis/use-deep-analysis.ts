@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 interface UseDeepAnalysisProps {
   processId: string;
   workspaceId: string;
-  onAnalysisComplete?: (result: any) => void;
+  onAnalysisComplete?: (result: unknown) => void;
 }
 
 export function useDeepAnalysis({
@@ -21,7 +21,7 @@ export function useDeepAnalysis({
     setIsModalOpen(false);
   }, []);
 
-  const handleAnalysisComplete = useCallback((result: any) => {
+  const handleAnalysisComplete = useCallback((result: unknown) => {
     onAnalysisComplete?.(result);
     setIsModalOpen(false);
   }, [onAnalysisComplete]);

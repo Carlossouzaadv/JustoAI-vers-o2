@@ -21,7 +21,7 @@ async function getWorkerFunctions() {
   // In production, this would connect to actual BullMQ worker
   return {
     processMonitorQueue: null,
-    addMonitoringJob: async (jobName: string, data?: any) => ({
+    addMonitoringJob: async (jobName: string, data?: unknown) => ({
       id: `mock-${Date.now()}`,
       name: jobName,
       data
@@ -41,7 +41,7 @@ interface AdminRequest {
   action: 'status' | 'restart_worker' | 'clear_queue' | 'force_sync' | 'circuit_breaker' | 'rate_limiter' | 'emergency_stop' | 'health_check';
   workspaceId?: string;
   processId?: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 interface SystemStatus {
@@ -55,10 +55,10 @@ interface SystemStatus {
     webhooks: ComponentStatus;
   };
   metrics: {
-    queueStats: any;
-    juditStats: any;
-    telemetryMetrics: any;
-    activeAlerts: any[];
+    queueStats: unknown;
+    juditStats: unknown;
+    telemetryMetrics: unknown;
+    activeAlerts: unknown[];
   };
   recommendations: string[];
 }
@@ -68,7 +68,7 @@ interface ComponentStatus {
   lastCheck: Date;
   responseTime?: number;
   details: string;
-  metrics?: Record<string, any>;
+  metrics?: Record<string, unknown>;
 }
 
 interface RecoveryAction {
@@ -477,7 +477,7 @@ async function checkWebhookStatus(): Promise<ComponentStatus> {
 // AÇÕES ADMINISTRATIVAS
 // ================================================================
 
-async function executeAdminAction(request: AdminRequest): Promise<any> {
+async function executeAdminAction(request: AdminRequest): Promise<unknown> {
   switch (request.action) {
     case 'status':
       return await getSystemStatus();
@@ -508,7 +508,7 @@ async function executeAdminAction(request: AdminRequest): Promise<any> {
   }
 }
 
-async function restartMonitoringWorker(): Promise<any> {
+async function restartMonitoringWorker(): Promise<unknown> {
   console.log(`${ICONS.RESTART} Restarting monitoring worker`);
 
   try {
@@ -545,7 +545,7 @@ async function restartMonitoringWorker(): Promise<any> {
   }
 }
 
-async function clearMonitoringQueue(): Promise<any> {
+async function clearMonitoringQueue(): Promise<unknown> {
   console.log(`${ICONS.CLEAR} Clearing monitoring queue`);
 
   try {
@@ -577,7 +577,7 @@ async function clearMonitoringQueue(): Promise<any> {
   }
 }
 
-async function forceSyncWorkspace(workspaceId?: string, processId?: string): Promise<any> {
+async function forceSyncWorkspace(workspaceId?: string, processId?: string): Promise<unknown> {
   console.log(`${ICONS.SYNC} Force syncing workspace: ${workspaceId || 'all'}, process: ${processId || 'all'}`);
 
   try {
@@ -602,7 +602,7 @@ async function forceSyncWorkspace(workspaceId?: string, processId?: string): Pro
   }
 }
 
-async function manageCircuitBreaker(operation?: string): Promise<any> {
+async function manageCircuitBreaker(operation?: string): Promise<unknown> {
   const juditClient = getJuditApiClient();
 
   switch (operation) {
@@ -631,7 +631,7 @@ async function manageCircuitBreaker(operation?: string): Promise<any> {
   }
 }
 
-async function manageRateLimiter(operation?: string): Promise<any> {
+async function manageRateLimiter(operation?: string): Promise<unknown> {
   const juditClient = getJuditApiClient();
 
   switch (operation) {
@@ -651,7 +651,7 @@ async function manageRateLimiter(operation?: string): Promise<any> {
   }
 }
 
-async function emergencyStopMonitoring(): Promise<any> {
+async function emergencyStopMonitoring(): Promise<unknown> {
   console.warn(`${ICONS.EMERGENCY} EMERGENCY STOP - Halting all monitoring operations`);
 
   try {
@@ -689,7 +689,7 @@ async function emergencyStopMonitoring(): Promise<any> {
   }
 }
 
-async function performHealthCheck(): Promise<any> {
+async function performHealthCheck(): Promise<unknown> {
   console.log(`${ICONS.HEALTH} Performing comprehensive health check`);
 
   const checks = {
@@ -700,7 +700,7 @@ async function performHealthCheck(): Promise<any> {
     webhooks: false
   };
 
-  const details: Record<string, any> = {};
+  const details: Record<string, unknown> = {};
 
   try {
     // Database check
@@ -781,7 +781,7 @@ function determineOverallStatus(componentStatuses: ComponentStatus[]): SystemSta
   }
 }
 
-function generateRecommendations(status: any): string[] {
+function generateRecommendations(status: unknown): string[] {
   const recommendations: string[] = [];
 
   if (status.overall === 'critical') {

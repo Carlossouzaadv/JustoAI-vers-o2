@@ -56,7 +56,7 @@ export class QuotaSystem {
     reportProcessesLimit: number;
     reportsUsedThisMonth: number;
     quotaResetDate: Date;
-    overrideLimits?: any;
+    overrideLimits?: unknown;
   }> {
     let quota = await prisma.workspaceQuota.findUnique({
       where: { workspaceId }

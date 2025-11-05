@@ -8,7 +8,7 @@ import { ICONS } from './icons';
 export interface WebSocketMessage {
   type: 'batch_progress' | 'batch_completed' | 'batch_error' | 'ping' | 'pong';
   batchId?: string;
-  data?: any;
+  data?: unknown;
   timestamp: number;
 }
 
@@ -120,7 +120,7 @@ export class WebSocketManager {
   /**
    * Notifica conclusão do batch
    */
-  broadcastBatchCompleted(batchId: string, finalStatus: any): void {
+  broadcastBatchCompleted(batchId: string, finalStatus: unknown): void {
     const subscribers = this.batchSubscriptions.get(batchId);
     if (!subscribers || subscribers.size === 0) {
       return;
@@ -222,7 +222,7 @@ export class WebSocketManager {
   /**
    * Obtém estatísticas das conexões
    */
-  getStats(): any {
+  getStats(): unknown {
     const batchStats = Array.from(this.batchSubscriptions.entries()).map(([batchId, subscribers]) => ({
       batchId,
       subscribers: subscribers.size

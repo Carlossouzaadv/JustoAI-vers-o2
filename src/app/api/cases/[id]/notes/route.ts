@@ -128,16 +128,16 @@ export async function GET(
 
     const formattedNotes = notes.map((note) => ({
       id: note.id,
-      title: (note.metadata as Record<string, any>)?.title || 'Sem título',
+      title: (note.metadata as Record<string, unknown>)?.title || 'Sem título',
       description: note.description,
       author: {
         id: note.user.id,
         email: note.user.email,
         name: note.user.name,
       },
-      tags: (note.metadata as Record<string, any>)?.tags || [],
-      priority: (note.metadata as Record<string, any>)?.priority || 'normal',
-      isPinned: (note.metadata as Record<string, any>)?.isPinned || false,
+      tags: (note.metadata as Record<string, unknown>)?.tags || [],
+      priority: (note.metadata as Record<string, unknown>)?.priority || 'normal',
+      isPinned: (note.metadata as Record<string, unknown>)?.isPinned || false,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
     }));
@@ -292,16 +292,16 @@ export async function POST(
         success: true,
         note: {
           id: note.id,
-          title: (note.metadata as Record<string, any>)?.title || 'Sem título',
+          title: (note.metadata as Record<string, unknown>)?.title || 'Sem título',
           description: note.description,
           author: {
             id: note.user.id,
             email: note.user.email,
             name: note.user.name,
           },
-          tags: (note.metadata as Record<string, any>)?.tags || [],
-          priority: (note.metadata as Record<string, any>)?.priority || 'normal',
-          isPinned: (note.metadata as Record<string, any>)?.isPinned || false,
+          tags: (note.metadata as Record<string, unknown>)?.tags || [],
+          priority: (note.metadata as Record<string, unknown>)?.priority || 'normal',
+          isPinned: (note.metadata as Record<string, unknown>)?.isPinned || false,
           createdAt: note.createdAt,
           updatedAt: note.updatedAt,
         },
