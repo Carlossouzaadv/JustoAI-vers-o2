@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { AIModelRouter } from '@/lib/ai-model-router';
-import { creditService } from '@/lib/services/creditService';
+import { hasEnoughCredits, debitCredits } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
@@ -108,17 +108,20 @@ export async function POST(
       );
     }
 
-    // Verificar créditos (mock - sempre retorna sucesso)
-    const creditCheck = await creditService.checkCredits(
+    // Verificar créditos
+    const creditCost = level === 'FULL' ? 1 : 0;
+    const creditCategory = level === 'FULL' ? 'FULL' : 'REPORT';
+    const hasCredits = await hasEnoughCredits(
+      undefined,
       workspaceId,
-      level === 'FULL' ? 1 : 0,
-      level === 'FULL' ? 'FULL' : 'REPORT'
+      creditCost,
+      creditCategory as any
     );
 
-    if (!creditCheck.available) {
-      console.error(`${ICONS.ERROR} Créditos insuficientes:`, creditCheck);
+    if (!hasCredits) {
+      console.error(`${ICONS.ERROR} Créditos insuficientes para análise ${level}`);
       return NextResponse.json(
-        { error: 'Créditos insuficientes', details: creditCheck },
+        { error: 'Créditos insuficientes', details: 'Sua conta não tem créditos suficientes para esta análise' },
         { status: 402 }
       );
     }
@@ -292,18 +295,14 @@ async function processAnalysisInBackground(
       }
     });
 
-    // Debitar crédito (mock)
+    // Debitar crédito
     if (level === 'FULL') {
-      await creditService.debitCredits(
+      await debitCredits(
+        undefined,
         workspaceId,
         1,
-        'FULL',
-        {
-          reason: 'strategic_analysis',
-          caseId: processId,
-          analysisId: analysisVersionId,
-          level
-        }
+        'FULL' as any,
+        'strategic_analysis'
       );
     }
 
