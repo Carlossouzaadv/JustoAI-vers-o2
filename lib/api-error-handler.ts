@@ -4,7 +4,7 @@
 // Use this to wrap your API route handlers for automatic error tracking
 
 import { NextRequest, NextResponse } from 'next/server';
-import { captureException, addSentryContext, setSentryUser } from './sentry.server.config';
+import { captureException, addSentryContext, setSentryUser } from '../sentry.server.config';
 
 interface ErrorResponse {
   success: false;

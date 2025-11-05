@@ -3,7 +3,7 @@
 // ================================================================
 // Call this once at application startup to enable global error tracking
 
-import { initSentryServer, captureException } from './sentry.server.config';
+import { initSentryServer, captureException } from '../sentry.server.config';
 
 /**
  * Initialize Sentry and setup global error handlers

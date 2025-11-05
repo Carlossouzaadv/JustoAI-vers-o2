@@ -22,10 +22,8 @@ Sentry.init({
 
   // Capture console logs
   integrations: [
-    new Sentry.Integrations.Http({ tracing: true }),
-    new Sentry.Integrations.OnUncaughtException(),
-    new Sentry.Integrations.OnUnhandledRejection(),
-    Sentry.consoleLoggingIntegration({ levels: ['log', 'warn', 'error'] }),
+    Sentry.httpIntegration({ tracing: true }),
+    Sentry.consoleIntegration({ levels: ['log', 'warn', 'error'] }),
   ],
 
   // Enable sending user PII (Personally Identifiable Information)
@@ -53,3 +51,36 @@ Sentry.init({
     return event;
   },
 });
+
+// Export Sentry utilities
+export const initSentryServer = () => {
+  // Sentry is already initialized above
+  return Sentry;
+};
+
+export const captureException = (
+  error: Error,
+  context?: Record<string, unknown>
+) => {
+  if (context) {
+    Sentry.captureException(error, { extra: context });
+  } else {
+    Sentry.captureException(error);
+  }
+};
+
+export const captureMessage = (message: string, level?: 'info' | 'warning' | 'error') => {
+  Sentry.captureMessage(message, level || 'info');
+};
+
+export const addSentryContext = (key: string, value: unknown) => {
+  Sentry.setContext(key, value as Record<string, unknown>);
+};
+
+export const setSentryUser = (userId: string | null, email?: string) => {
+  if (userId) {
+    Sentry.setUser({ id: userId, email });
+  } else {
+    Sentry.setUser(null);
+  }
+};

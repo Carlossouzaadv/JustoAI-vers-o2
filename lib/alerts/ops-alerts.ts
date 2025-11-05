@@ -5,7 +5,7 @@
 import { prisma } from '../prisma';
 import { usageTracker } from '../telemetry/usage-tracker';
 import { ICONS } from '../icons';
-import { captureException, captureMessage, addSentryContext } from '../sentry.server.config';
+import { captureException, captureMessage, addSentryContext } from '../../sentry.server.config';
 
 // ================================================================
 // TIPOS E INTERFACES
