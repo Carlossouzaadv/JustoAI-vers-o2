@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown */
+
 /**
  * Pure Auth Helper Functions
  * These functions have NO dependencies on React hooks or contexts

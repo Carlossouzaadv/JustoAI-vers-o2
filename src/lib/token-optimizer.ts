@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
+
 // ================================================================
 // TOKEN OPTIMIZER - Serviço Integrado de Otimização do JustoAI V2
 // ================================================================

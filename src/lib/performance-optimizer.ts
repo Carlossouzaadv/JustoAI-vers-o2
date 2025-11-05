@@ -198,10 +198,10 @@ export class PerformanceOptimizer {
   getPageOptimizations() {
     return {
       // Request interception for maximum speed
-      // eslint-disable-next-line @typescript-eslint/no-explicit-unknown
+      
       interceptRequests: (page: unknown) => {
         page.setRequestInterception(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-unknown
+        
         page.on('request', (request: unknown) => {
           const resourceType = request.resourceType();
           const url = request.url();

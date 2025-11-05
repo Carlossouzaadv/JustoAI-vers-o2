@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
+
 // ================================
 // MAPEAMENTOS DE SISTEMAS JURÍDICOS
 // ================================

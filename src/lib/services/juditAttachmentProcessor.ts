@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown */
+
 // ================================================================
 // JUDIT ATTACHMENT PROCESSOR
 // Download e processamento de anexos da API JUDIT

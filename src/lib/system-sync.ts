@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown */
+
 // ================================
 // SISTEMA DE SINCRONIZAÇÃO BÁSICO
 // ================================

@@ -4,6 +4,7 @@
 // Sistema otimizado para processar 100 relatórios em < 5 minutos
 
 import puppeteer, { Browser, Page } from 'puppeteer';
+import { promises as fs } from 'fs';
 import { ICONS } from './icons';
 import {
   generateReportTemplate,
@@ -286,7 +287,6 @@ export class PDFGenerator {
 
           // Salvar arquivo se especificado
           if (job.outputPath) {
-            const fs = require('fs').promises;
             await fs.writeFile(job.outputPath, pdfBuffer);
             result.outputPath = job.outputPath;
           }

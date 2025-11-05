@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown, @typescript-eslint/no-unused-vars */
+
 // ================================================================
 // GERADOR DE RELATÓRIOS - PDF e DOCX com Templates
 // ================================================================

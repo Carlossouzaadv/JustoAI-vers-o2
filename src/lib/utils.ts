@@ -89,7 +89,7 @@ export function sleep(ms: number): Promise<void> {
 /**
  * Debounce function
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-unknown
+
 export function debounce<TFunc extends (..._args: unknown[]) => unknown>(
   func: TFunc,
   wait: number

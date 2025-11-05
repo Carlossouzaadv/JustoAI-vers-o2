@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown */
+
 // ================================================================
 // TIMELINE UNIFIER SERVICE - V2 with Intelligent Enrichment
 // Unifica movimentos de PDF + JUDIT com enriquecimento inteligente

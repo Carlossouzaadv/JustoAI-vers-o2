@@ -4,6 +4,7 @@
 // Sistema otimizado para processar 100 relatórios em < 5 minutos
 
 import puppeteer, { Browser, Page } from 'puppeteer';
+import { promises as fs } from 'fs';
 import { ICONS } from './icons';
 import {
   generateReportTemplate,
@@ -69,7 +70,7 @@ export class PDFGenerator {
   private browser: Browser | null = null;
   private pagePool: Page[] = [];
   private readonly maxConcurrentPages: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-unknown
+  
   private readonly puppeteerOptions: unknown;
 
   constructor(maxConcurrentPages: number = 10) {
@@ -287,8 +288,6 @@ export class PDFGenerator {
 
           // Salvar arquivo se especificado
           if (job.outputPath) {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const fs = require('fs').promises;
             await fs.writeFile(job.outputPath, pdfBuffer);
             result.outputPath = job.outputPath;
           }

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-unknown */
+
 // ================================================================
 // TIMELINE MERGE SERVICE - Timeline Unificada Inteligente
 // ================================================================
