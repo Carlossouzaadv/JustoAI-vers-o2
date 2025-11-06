@@ -3,10 +3,10 @@
 // ================================================================
 
 import { Job } from 'bull';
-import { prisma } from '../lib/prisma';
-import { getCreditManager } from '../lib/credit-system';
-import { ReportGenerator } from '../lib/report-generator';
-import { ICONS } from '../lib/icons';
+import { prisma } from '@/lib/prisma';
+import { getCreditManager } from '@/lib/credit-system';
+import { ReportGenerator } from '@/lib/report-generator';
+import { ICONS } from '@/lib/icons';
 import { createHash } from 'crypto';
 
 // Imports do Prisma

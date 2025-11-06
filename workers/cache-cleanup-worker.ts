@@ -5,10 +5,10 @@
  */
 
 import { Job } from 'bull';
-import { cacheCleanupQueue } from '../lib/queues';
-import { prisma } from '../lib/prisma';
+import { cacheCleanupQueue } from '@/lib/queues';
+import { prisma } from '@/lib/prisma';
 import { getRedisClient } from '../src/lib/redis';
-import { ICONS } from '../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 // Get Redis client instance
 const redis = getRedisClient();

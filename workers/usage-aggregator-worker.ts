@@ -4,9 +4,9 @@
 
 // @ts-ignore - esModuleInterop handles default import correctly at runtime
 import Queue from 'bull';
-import { prisma } from '../lib/prisma';
-import { usageTracker } from '../lib/telemetry/usage-tracker';
-import { ICONS } from '../lib/icons';
+import { prisma } from '@/lib/prisma';
+import { usageTracker } from '@/lib/telemetry/usage-tracker';
+import { ICONS } from '@/lib/icons';
 import { getRedisClient } from '../src/lib/redis';
 import { Decimal } from '@prisma/client/runtime/library';
 

@@ -5,14 +5,14 @@
  */
 
 import { Job } from 'bull';
-import { reportsQueue } from '../lib/queues';
-import { prisma } from '../lib/prisma';
-import PDFGenerator from '../lib/pdf-generator';
-import { ReportDataCollector } from '../lib/report-data-collector';
+import { reportsQueue } from '@/lib/queues';
+import { prisma } from '@/lib/prisma';
+import PDFGenerator from '@/lib/pdf-generator';
+import { ReportDataCollector } from '@/lib/report-data-collector';
 import { getRedisClient } from '../src/lib/redis';
-import { addNotificationJob } from '../lib/queues';
+import { addNotificationJob } from '@/lib/queues';
 import { addIndividualReportJob } from './individual-reports-worker';
-import { ICONS } from '../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 // Get Redis client and create utility wrapper
 const redis = getRedisClient();

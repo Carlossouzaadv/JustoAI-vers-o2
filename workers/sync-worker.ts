@@ -5,11 +5,11 @@
  */
 
 import { Job } from 'bull';
-import { syncQueue } from '../lib/queues';
-import { prisma } from '../lib/prisma';
-import { ProcessApiClient, createProcessApiClient } from '../lib/process-apis';
+import { syncQueue } from '@/lib/queues';
+import { prisma } from '@/lib/prisma';
+import { ProcessApiClient, createProcessApiClient } from '@/lib/process-apis';
 import { getRedisClient } from '../src/lib/redis';
-import { ICONS } from '../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 // Get Redis client instance
 const redis = getRedisClient();

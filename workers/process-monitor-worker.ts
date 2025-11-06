@@ -3,9 +3,9 @@
 // ================================================================
 
 import { Job } from 'bull';
-import { prisma } from '../lib/prisma';
-import { getJuditApiClient } from '../lib/judit-api-client';
-import { ICONS } from '../lib/icons';
+import { prisma } from '@/lib/prisma';
+import { getJuditApiClient } from '@/lib/judit-api-client';
+import { ICONS } from '@/lib/icons';
 import { Queue } from 'bull';
 import { getRedisClient } from '../src/lib/redis';
 

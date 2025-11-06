@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { addCorsHeaders, createPreflightResponse, validateCorsOrigin } from './lib/cors'
-import { addSecurityHeaders } from './lib/security-headers'
+import { addCorsHeaders, createPreflightResponse, validateCorsOrigin } from '@/lib/cors'
+import { addSecurityHeaders } from '@/lib/security-headers'
 
 export async function middleware(request: NextRequest) {
   // Create response - must be updated as middleware runs
