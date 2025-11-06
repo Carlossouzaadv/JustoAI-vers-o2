@@ -2,7 +2,11 @@
 // API ENDPOINT - Análise IA (GET análises / POST criar nova)
 // ================================================================
 // GET  /api/process/{id}/analysis - Recuperar análises salvas
-// POST /api/process/{id}/analysis?level=FAST|FULL - Gerar nova análise
+// POST /api/process/{id}/analysis - Gerar nova análise (com dupla validação)
+//
+// Padrão de Validação Zod:
+// - URL params: RouteIdParamSchema (valida que [id] é UUID válido)
+// - Request body: CreateAnalysisPayloadSchema (valida level, workspaceId, etc)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -10,14 +14,12 @@ import { AIModelRouter } from '@/lib/ai-model-router';
 import { hasEnoughCredits, debitCredits } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
-
-interface AnalysisRequest {
-  level: 'FAST' | 'FULL';
-  includeDocuments?: boolean;
-  includeTimeline?: boolean;
-  uploadedFile?: string; // Para FULL - path do arquivo uploaded
-  workspaceId: string; // Required for credit system
-}
+import {
+  CreateAnalysisPayloadSchema,
+  CreateAnalysisPayload,
+  RouteIdParamSchema,
+  RouteIdParam,
+} from '@/lib/types/api-schemas';
 
 /**
  * GET - Recuperar análises salvas do processo
@@ -85,28 +87,50 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: processId } = await params;
-
   try {
+    // ============================================================
+    // STEP 1: VALIDAÇÃO DE PARÂMETROS DA ROTA (params)
+    // ============================================================
+    const resolvedParams = await params;
+    const paramParseResult = RouteIdParamSchema.safeParse(resolvedParams);
+
+    if (!paramParseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'ID do processo inválido na URL.',
+          errors: paramParseResult.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { id: processId } = paramParseResult.data;
     console.log(`${ICONS.PROCESS} Iniciando análise para processo: ${processId}`);
 
-    const body: AnalysisRequest = await request.json();
-    const { level, includeDocuments = true, includeTimeline = true, workspaceId } = body;
+    // ============================================================
+    // STEP 2: VALIDAÇÃO DO BODY DA REQUISIÇÃO (JSON)
+    // ============================================================
+    const rawBody: unknown = await request.json();
+    const bodyParseResult = CreateAnalysisPayloadSchema.safeParse(rawBody);
 
-    // Validar campos obrigatórios
-    if (!workspaceId) {
+    if (!bodyParseResult.success) {
       return NextResponse.json(
-        { error: 'workspaceId é obrigatório' },
+        {
+          success: false,
+          message: 'Payload de análise inválido.',
+          errors: bodyParseResult.error.flatten(),
+        },
         { status: 400 }
       );
     }
 
-    if (!['FAST', 'FULL'].includes(level)) {
-      return NextResponse.json(
-        { error: 'Nível de análise deve ser FAST ou FULL' },
-        { status: 400 }
-      );
-    }
+    const { level, includeDocuments, includeTimeline, workspaceId }: CreateAnalysisPayload =
+      bodyParseResult.data;
+
+    // ============================================================
+    // STEP 3: LÓGICA DO SERVIÇO (Validação Concluída)
+    // ============================================================
 
     // Verificar créditos
     const creditCost = level === 'FULL' ? 1 : 0;
@@ -115,7 +139,7 @@ export async function POST(
       undefined,
       workspaceId,
       creditCost,
-      creditCategory as unknown
+      creditCategory
     );
 
     if (!hasCredits) {
@@ -301,7 +325,7 @@ async function processAnalysisInBackground(
         undefined,
         workspaceId,
         1,
-        'FULL' as unknown,
+        'FULL',
         'strategic_analysis'
       );
     }
