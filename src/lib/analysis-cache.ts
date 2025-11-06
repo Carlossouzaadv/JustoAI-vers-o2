@@ -5,15 +5,25 @@
 // para evitar double-processing conforme especificação
 //
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
+//
+// Type-safe cache operations com Redis types from src/lib/types/redis.ts
 
 import { createHash } from 'crypto';
+import type { Redis } from 'ioredis';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { getRedisClient } from './redis';
+import {
+  type AnalysisCacheEntry,
+  type CachedValueResult,
+  type DistributedLockEntry,
+  CacheKeys,
+  isAnalysisCacheEntry,
+} from './types/redis';
 
-export interface AnalysisCacheResult {
+export interface AnalysisCacheResult<T = Record<string, unknown>> {
   hit: boolean;
-  data?: unknown;
+  data?: T;
   age?: number; // Idade do cache em segundos
   key: string;
 }
@@ -62,43 +72,70 @@ export class AnalysisCacheManager {
   /**
    * Verifica cache de análise conforme especificação
    * Cache é válido apenas se não houve movimentações após a criação
+   * Type-safe: usa type guards para validar dados do Redis
    */
   async checkAnalysisCache(
     textShas: string[],
     modelVersion: string,
     promptSignature: string,
     lastMovementDate?: Date
-  ): Promise<AnalysisCacheResult> {
+  ): Promise<AnalysisCacheResult<Record<string, unknown>>> {
     try {
       const analysisKey = this.generateAnalysisKey(textShas, modelVersion, promptSignature, lastMovementDate);
-      const cacheKey = `analysis:${analysisKey}`;
+      const cacheKey = CacheKeys.analysisFull(analysisKey);
 
       const [data, ttl] = await Promise.all([
-        this.redis.get(cacheKey),
-        this.redis.ttl(cacheKey)
+        this.redis.get(cacheKey) as Promise<string | null>,
+        this.redis.ttl(cacheKey) as Promise<number>
       ]);
 
-      if (data) {
-        const parsedData = JSON.parse(data);
-        const cacheCreatedAt = new Date(parsedData.cachedAt);
+      if (!data) {
+        return {
+          hit: false,
+          key: analysisKey
+        };
+      }
 
-        // Verificar se cache ainda é válido baseado na especificação:
-        // "Se um relatório foi gerado há 10 dias, mas o processo não teve
-        // nenhuma movimentação desde então, o relatório cacheado ainda é 100% válido"
-        const isValidByMovement = !lastMovementDate || cacheCreatedAt > lastMovementDate;
+      let parsedData: AnalysisCacheEntry;
+      try {
+        parsedData = JSON.parse(data) as unknown as AnalysisCacheEntry;
+      } catch (parseError) {
+        console.error(`${ICONS.ERROR} Failed to parse cache data:`, parseError);
+        await this.redis.del(cacheKey);
+        return {
+          hit: false,
+          key: analysisKey
+        };
+      }
 
-        if (isValidByMovement) {
-          console.log(`${ICONS.SUCCESS} Cache HIT`);
-          return {
-            hit: true,
-            data: parsedData.result,
-            age: this.ANALYSIS_CACHE_TTL - ttl,
-            key: analysisKey
-          };
-        } else {
-          // Cache inválido por nova movimentação
-          await this.redis.del(cacheKey);
-        }
+      // Type-safe validation: use type guard
+      if (!isAnalysisCacheEntry(parsedData)) {
+        console.warn(`${ICONS.WARNING} Invalid cache entry structure, invalidating`);
+        await this.redis.del(cacheKey);
+        return {
+          hit: false,
+          key: analysisKey
+        };
+      }
+
+      const cacheCreatedAt = new Date(parsedData.createdAt);
+
+      // Verificar se cache ainda é válido baseado na especificação:
+      // "Se um relatório foi gerado há 10 dias, mas o processo não teve
+      // nenhuma movimentação desde então, o relatório cacheado ainda é 100% válido"
+      const isValidByMovement = !lastMovementDate || cacheCreatedAt > lastMovementDate;
+
+      if (isValidByMovement) {
+        console.log(`${ICONS.SUCCESS} Cache HIT`);
+        return {
+          hit: true,
+          data: parsedData.result.analysis || parsedData.result,
+          age: ttl > 0 ? this.ANALYSIS_CACHE_TTL - ttl : 0,
+          key: analysisKey
+        };
+      } else {
+        // Cache inválido por nova movimentação
+        await this.redis.del(cacheKey);
       }
 
       return {
@@ -126,28 +163,31 @@ export class AnalysisCacheManager {
 
   /**
    * Salva resultado de análise no cache
+   * Type-safe: garante que analysisResult é armazenado corretamente
    */
   async saveAnalysisCache(
     textShas: string[],
     modelVersion: string,
     promptSignature: string,
-    analysisResult: unknown,
+    analysisResult: Record<string, unknown>,
     lastMovementDate?: Date,
-    _workspaceId?: string
+    workspaceId?: string
   ): Promise<boolean> {
     try {
       const analysisKey = this.generateAnalysisKey(textShas, modelVersion, promptSignature, lastMovementDate);
-      const cacheKey = `analysis:${analysisKey}`;
+      const cacheKey = CacheKeys.analysisFull(analysisKey);
 
-      const cacheData = {
-        textShas,
+      const cacheData: AnalysisCacheEntry = {
+        caseId: workspaceId || '',
+        analysisType: 'FULL',
+        result: {
+          analysis: analysisResult,
+        },
         modelVersion,
-        promptSignature,
-        lastMovementDate: lastMovementDate?.toISOString(),
-        result: analysisResult,
-        workspaceId: _workspaceId,
-        cachedAt: new Date().toISOString(),
-        ttl: this.ANALYSIS_CACHE_TTL
+        tokensUsed: 0,
+        costEstimated: 0,
+        expiresAt: Date.now() + (this.ANALYSIS_CACHE_TTL * 1000),
+        createdAt: Date.now(),
       };
 
       await this.redis.setex(cacheKey, this.ANALYSIS_CACHE_TTL, JSON.stringify(cacheData));
@@ -168,6 +208,7 @@ export class AnalysisCacheManager {
 
   /**
    * Adquire lock Redis para evitar double-processing
+   * Type-safe: usa CacheKeys builder para chave de lock
    *
    * Em modo graceful (web), se Redis não está disponível:
    * - Retorna acquired=false (sem lock, mas permite processamento)
@@ -177,10 +218,10 @@ export class AnalysisCacheManager {
    */
   async acquireLock(analysisKey: string): Promise<CacheLockResult> {
     try {
-      const lockKey = `lock:analysis:${analysisKey}`;
+      const lockKey = CacheKeys.lock(analysisKey);
 
       // SETNX com TTL
-      const result = await this.redis.set(lockKey, Date.now().toString(), 'EX', this.LOCK_TTL, 'NX');
+      const result = await (this.redis.set(lockKey, Date.now().toString(), 'EX', this.LOCK_TTL, 'NX') as Promise<string | null>);
 
       if (result === 'OK') {
         return {
@@ -191,7 +232,7 @@ export class AnalysisCacheManager {
       }
 
       // Lock já existe, verificar TTL restante
-      const ttl = await this.redis.ttl(lockKey);
+      const ttl = await (this.redis.ttl(lockKey) as Promise<number>);
 
       return {
         acquired: false,
@@ -343,8 +384,16 @@ export class AnalysisCacheManager {
 
   /**
    * Busca última data de movimentação do processo
+   * Type-safe: processId parameter agora é usado corretamente
    */
-  async getLastMovementDate(_processId: string, prisma: { processMovement: { findFirst: (args: unknown) => Promise<{ date: Date } | null> } }): Promise<Date | null> {
+  async getLastMovementDate(
+    processId: string,
+    prisma: {
+      processMovement: {
+        findFirst: (args: unknown) => Promise<{ date: Date } | null>;
+      };
+    }
+  ): Promise<Date | null> {
     try {
       const lastMovement = await prisma.processMovement.findFirst({
         where: {
@@ -358,7 +407,7 @@ export class AnalysisCacheManager {
         select: {
           date: true
         }
-      });
+      } as unknown);
 
       return lastMovement?.date || null;
     } catch (error) {
@@ -394,34 +443,45 @@ export class AnalysisCacheManager {
 
   /**
    * Invalida cache quando há nova movimentação
+   * Type-safe: usa type guard para validação de cache entries
    */
-  async invalidateCacheForProcess(_processId: string): Promise<void> {
+  async invalidateCacheForProcess(processId: string): Promise<void> {
     try {
       // Buscar todas as chaves de cache relacionadas ao processo
-      const pattern = 'analysis:*';
-      const keys = await this.redis.keys(pattern);
+      const pattern = CacheKeys.analysisFull('*');
+      const keys = await (this.redis.keys(pattern) as Promise<string[]>);
 
       let invalidatedCount = 0;
 
       for (const key of keys) {
         try {
-          const data = await this.redis.get(key);
-          if (data) {
-            const parsedData = JSON.parse(data);
-            // Verificar se é análise relacionada ao processo
-            // (seria melhor ter processId na chave, mas por ora fazemos essa verificação)
-            if (parsedData.workspaceId) {
+          const data = await (this.redis.get(key) as Promise<string | null>);
+          if (!data) continue;
+
+          let parsedData: unknown;
+          try {
+            parsedData = JSON.parse(data) as unknown;
+          } catch {
+            continue;
+          }
+
+          // Type-safe validation
+          if (isAnalysisCacheEntry(parsedData)) {
+            if (parsedData.caseId === processId) {
               await this.redis.del(key);
               invalidatedCount++;
             }
           }
         } catch (error) {
-          // Ignorar erros de parsing individual
+          // Ignorar erros de processamento individual
+          console.debug(`${ICONS.WARNING} Error processing cache key ${key}:`, error);
         }
       }
 
       if (invalidatedCount > 0) {
-        console.log(`${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${processId}`);
+        console.log(
+          `${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${processId}`
+        );
       }
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao invalidar cache:`, error);

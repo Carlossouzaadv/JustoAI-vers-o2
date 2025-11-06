@@ -12,6 +12,19 @@ import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
 import { getRedisClient } from './redis';
+import type {
+  AnalysisMetadata,
+  AIAnalysisData,
+  CaseMetadata,
+  ExtractedAnalysisData,
+  ProcessDocument as ProcessDocumentType,
+} from './types/json-fields';
+import {
+  isAIAnalysisData,
+  isAnalysisMetadata,
+  parseJsonWithGuard,
+  createAIAnalysisData,
+} from './types/type-guards';
 
 
 const prisma = new PrismaClient();
@@ -64,7 +77,7 @@ export interface AnalysisJobParams {
   filesMetadata: ProcessDocument[];
   resultVersionId: string;
   lockToken: string;
-  metadata?: unknown;
+  metadata?: AnalysisMetadata;
 }
 
 export interface LockResult {
@@ -519,9 +532,17 @@ export class DeepAnalysisService {
 
   /**
    * Cria versão de análise
+   * Valida sourceFilesMetadata antes de salvar no banco
    */
   async createAnalysisVersion(params: AnalysisVersionParams): Promise<CaseAnalysisVersion> {
     try {
+      // sourceFilesMetadata deve ser um array de objetos que podem ser serializados como JSON
+      // Prisma.InputJsonValue permite qualquer JSON-serializable value
+      // Validamos que é um array antes de persistir
+      if (!Array.isArray(params.sourceFilesMetadata)) {
+        throw new Error('sourceFilesMetadata must be an array');
+      }
+
       const version = await prisma.caseAnalysisVersion.create({
         data: {
           case: {
@@ -549,9 +570,21 @@ export class DeepAnalysisService {
 
   /**
    * Cria job de análise
+   * Valida metadata e filesMetadata antes de salvar
    */
   async createAnalysisJob(params: AnalysisJobParams): Promise<AnalysisJob> {
     try {
+      // Valida metadata se fornecida
+      const validatedMetadata: AnalysisMetadata = params.metadata || {};
+      if (!isAnalysisMetadata(validatedMetadata)) {
+        throw new Error('Invalid metadata: failed type validation');
+      }
+
+      // filesMetadata deve ser serializável para JSON
+      if (!Array.isArray(params.filesMetadata)) {
+        throw new Error('filesMetadata must be an array');
+      }
+
       const job = await prisma.analysisJob.create({
         data: {
           processId: params.processId,
@@ -562,7 +595,7 @@ export class DeepAnalysisService {
           filesMetadata: JSON.stringify(params.filesMetadata),
           resultVersionId: params.resultVersionId,
           lockToken: params.lockToken,
-          metadata: params.metadata || {},
+          metadata: validatedMetadata,
           status: JobStatus.QUEUED
         }
       });
@@ -599,6 +632,7 @@ export class DeepAnalysisService {
 
   /**
    * Processa análise em background com Gemini Pro
+   * Valida tipos de dados retornados do Gemini antes de persistir
    */
   async processAnalysisInBackground(jobId: string): Promise<void> {
     console.log(`${ICONS.PROCESS} Iniciando processamento background para job: ${jobId}`);
@@ -633,11 +667,12 @@ export class DeepAnalysisService {
         }
       });
 
-      // Extrair texto dos documentos
+      // Extrair texto dos documentos com validação de tipo
       const documentTexts = documents.map(doc => ({
         id: doc.id,
         name: doc.name,
-        text: doc.extractedText || 'Texto não extraído'
+        // extractedText pode vir como unknown do Prisma, garantir string
+        text: typeof doc.extractedText === 'string' ? doc.extractedText : 'Texto não extraído'
       }));
 
       // Atualizar progresso
@@ -656,17 +691,32 @@ export class DeepAnalysisService {
 
       // Usar Gemini Pro para análise completa
       const geminiClient = getGeminiClient();
-      const analysisResult = await geminiClient.generateJsonContent(analysisPrompt, {
+      const rawAnalysisResult = await geminiClient.generateJsonContent(analysisPrompt, {
         model: ModelTier.PRO,
         maxTokens: 8000,
         temperature: 0.2
       });
+
+      // Validar resultado da análise contra tipo esperado
+      // Se não for AIAnalysisData válido, lançar erro
+      const analysisResult = createAIAnalysisData(rawAnalysisResult);
 
       // Atualizar progresso
       await prisma.analysisJob.update({
         where: { id: jobId },
         data: { progress: 75 }
       });
+
+      // Extrair confidence do metadata, com fallback seguro
+      let confidenceValue = 0.85;
+      if (analysisResult.metadados_analise && typeof analysisResult.metadados_analise === 'object') {
+        const metadata = analysisResult.metadados_analise as Record<string, unknown>;
+        if (typeof metadata.confidencia === 'number') {
+          confidenceValue = metadata.confidencia;
+        } else if (typeof metadata.confidence === 'number') {
+          confidenceValue = metadata.confidence;
+        }
+      }
 
       // Salvar resultado da análise
       await prisma.caseAnalysisVersion.update({
@@ -676,7 +726,7 @@ export class DeepAnalysisService {
           status: JobStatus.COMPLETED,
           modelUsed: 'gemini-2.5-pro',
           processingTime: Date.now() - (job.startedAt?.getTime() || Date.now()),
-          confidence: analysisResult.metadata?.confidencia || 0.85
+          confidence: confidenceValue
         }
       });
 
