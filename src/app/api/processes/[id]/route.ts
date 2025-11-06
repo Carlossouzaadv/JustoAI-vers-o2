@@ -2,6 +2,7 @@
 // API PROCESSO MONITORADO ESPECÍFICO
 // ================================
 // CRUD e ações específicas para um processo monitorado
+// Type-safe with Zod validation (inputs) and Type Guards (outputs)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -10,6 +11,9 @@ import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { createProcessApiClient } from '@/lib/process-apis';
 import { ICONS } from '@/lib/icons';
+import { RouteIdParamSchema } from '@/lib/types/api-schemas';
+import { isMonitoredProcessData } from '@/lib/types/type-guards';
+import type { MonitoredProcessData } from '@/lib/types/json-fields';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -40,13 +44,28 @@ export async function GET(
 ) {
   try {
     const { workspace } = await validateAuth(request);
+
+    // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
+    const paramParseResult = RouteIdParamSchema.safeParse(await params);
+
+    if (!paramParseResult.success) {
+      return errorResponse(
+        'ID do processo inválido na URL. ' + paramParseResult.error.message,
+        400
+      );
+    }
+
+    const { id } = paramParseResult.data;
+
+    // --- VALIDAÇÃO 2: INPUT (Query Parameters) ---
     const { searchParams } = new URL(request.url);
     const includeMovements = searchParams.get('includeMovements') === 'true';
-    const movementsLimit = parseInt(searchParams.get('movementsLimit') || '50');
+    const movementsLimit = Math.min(Math.max(parseInt(searchParams.get('movementsLimit') || '50'), 1), 1000);
 
+    // --- LÓGICA DO SERVIÇO (Busca no DB) ---
     const process = await prisma.monitoredProcess.findFirst({
       where: {
-        id: (await params).id,
+        id,
         workspaceId: workspace.id
       },
       include: {
@@ -121,6 +140,20 @@ export async function GET(
       throw new ApiError('Processo monitorado não encontrado', 404);
     }
 
+    // --- VALIDAÇÃO 2: OUTPUT (JSON do Prisma) ---
+    // Validar o campo processData (Json?)
+    if (!isMonitoredProcessData(process.processData)) {
+      console.warn(`Dados corrompidos para o processo ID: ${id}`);
+      // Falha segura: retorne um erro 500
+      return NextResponse.json({
+        success: false,
+        message: 'Processo encontrado, mas os dados estão corrompidos.',
+      }, { status: 500 });
+    }
+
+    // A partir daqui, process.processData foi validado
+    const validatedProcessData: MonitoredProcessData | null = process.processData;
+
     // Estatísticas das movimentações (se incluídas)
     let movementStats = null;
     if (includeMovements && process.movements) {
@@ -140,7 +173,10 @@ export async function GET(
     }
 
     return apiResponse({
-      process,
+      process: {
+        ...process,
+        processData: validatedProcessData
+      },
       stats: {
         movements: movementStats,
         alerts: {
@@ -171,13 +207,27 @@ export async function PUT(
 ) {
   try {
     const { workspace } = await validateAuth(request);
+
+    // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
+    const paramParseResult = RouteIdParamSchema.safeParse(await params);
+
+    if (!paramParseResult.success) {
+      return errorResponse(
+        'ID do processo inválido na URL. ' + paramParseResult.error.message,
+        400
+      );
+    }
+
+    const { id } = paramParseResult.data;
+
+    // --- VALIDAÇÃO 2: INPUT (Body) ---
     const { data: body, error: validationError } = await validateJson(request, UpdateProcessSchema);
     if (validationError) return validationError;
 
-    // Verificar se processo existe
+    // --- LÓGICA DO SERVIÇO (Busca no DB) ---
     const existingProcess = await prisma.monitoredProcess.findFirst({
       where: {
-        id: (await params).id,
+        id,
         workspaceId: workspace.id
       }
     });
@@ -202,7 +252,7 @@ export async function PUT(
 
     // Atualizar processo
     const updatedProcess = await prisma.monitoredProcess.update({
-      where: { id: (await params).id },
+      where: { id },
       data: {
         ...body,
         updatedAt: new Date()
@@ -250,13 +300,27 @@ export async function POST(
 ) {
   try {
     const { workspace } = await validateAuth(request);
+
+    // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
+    const paramParseResult = RouteIdParamSchema.safeParse(await params);
+
+    if (!paramParseResult.success) {
+      return errorResponse(
+        'ID do processo inválido na URL. ' + paramParseResult.error.message,
+        400
+      );
+    }
+
+    const { id } = paramParseResult.data;
+
+    // --- VALIDAÇÃO 2: INPUT (Body) ---
     const { data: body, error: validationError } = await validateJson(request, SyncActionSchema);
     if (validationError) return validationError;
 
-    // Verificar se processo existe
+    // --- LÓGICA DO SERVIÇO (Busca no DB) ---
     const process = await prisma.monitoredProcess.findFirst({
       where: {
-        id: (await params).id,
+        id,
         workspaceId: workspace.id
       }
     });
@@ -293,9 +357,22 @@ export async function DELETE(
   try {
     const { workspace } = await validateAuth(request);
 
+    // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
+    const paramParseResult = RouteIdParamSchema.safeParse(await params);
+
+    if (!paramParseResult.success) {
+      return errorResponse(
+        'ID do processo inválido na URL. ' + paramParseResult.error.message,
+        400
+      );
+    }
+
+    const { id } = paramParseResult.data;
+
+    // --- LÓGICA DO SERVIÇO (Busca no DB) ---
     const process = await prisma.monitoredProcess.findFirst({
       where: {
-        id: (await params).id,
+        id,
         workspaceId: workspace.id
       },
       select: {
@@ -311,11 +388,11 @@ export async function DELETE(
 
     // Remover processo (cascade automático)
     await prisma.monitoredProcess.delete({
-      where: { id: (await params).id }
+      where: { id }
     });
 
     console.log(`${ICONS.SUCCESS} Processo removido:`, {
-      id: (await params).id,
+      id,
       processNumber: process.processNumber
     });
 

@@ -29,6 +29,7 @@ import type {
   ReportFileUrls,
   CachedReportData,
   ReportFilters,
+  MonitoredProcessData,
 } from './json-fields';
 
 /**
@@ -971,6 +972,60 @@ export function isCachedReportData(value: unknown): value is CachedReportData {
         return false;
       }
     }
+  }
+
+  return true;
+}
+
+/**
+ * Check if a value is a valid MonitoredProcessData
+ */
+export function isMonitoredProcessData(value: unknown): value is MonitoredProcessData {
+  if (value === null) {
+    // null is allowed (optional field)
+    return true;
+  }
+
+  if (typeof value !== 'object') {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  if (obj.processNumber !== undefined && typeof obj.processNumber !== 'string') {
+    return false;
+  }
+
+  if (obj.courtCode !== undefined && typeof obj.courtCode !== 'string') {
+    return false;
+  }
+
+  if (obj.status !== undefined && typeof obj.status !== 'string') {
+    return false;
+  }
+
+  if (obj.lastMovementDate !== undefined && typeof obj.lastMovementDate !== 'string') {
+    return false;
+  }
+
+  if (obj.judge !== undefined && typeof obj.judge !== 'string') {
+    return false;
+  }
+
+  if (obj.parties !== undefined) {
+    if (!Array.isArray(obj.parties)) {
+      return false;
+    }
+    if (!obj.parties.every((party) => typeof party === 'string')) {
+      return false;
+    }
+  }
+
+  if (obj.movements !== undefined) {
+    if (!Array.isArray(obj.movements)) {
+      return false;
+    }
+    // Each movement is allowed to be unknown (flexible structure)
   }
 
   return true;

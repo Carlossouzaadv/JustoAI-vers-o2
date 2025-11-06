@@ -22,6 +22,8 @@ import {
   GetAnalysisQuerySchema,
   GetAnalysisQuery,
 } from '@/lib/types/api-schemas';
+import { isAIAnalysisData } from '@/lib/types/type-guards';
+import type { AIAnalysisData } from '@/lib/types/json-fields';
 
 /**
  * GET - Recuperar análises salvas do processo
@@ -106,23 +108,65 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      analyses: analyses.map((a) => ({
-        id: a.id,
-        version: a.version,
-        createdAt: a.createdAt,
-        status: a.status,
-        analysisType: a.analysisType,
-        model: a.modelUsed,
-        confidence: a.confidence,
-        processingTime: a.processingTime,
-        summary: (a.aiAnalysis as unknown)?.summary || (a.aiAnalysis as unknown)?.resumo_executivo,
-        keyPoints: (a.aiAnalysis as unknown)?.keyPoints || (a.aiAnalysis as unknown)?.pontos_principais,
-        legalAssessment: (a.aiAnalysis as unknown)?.legalAssessment || (a.aiAnalysis as unknown)?.avaliacao_juridica,
-        riskAssessment: (a.aiAnalysis as unknown)?.riskAssessment || (a.aiAnalysis as unknown)?.analise_risco,
-        timelineAnalysis: (a.aiAnalysis as unknown)?.timelineAnalysis || (a.aiAnalysis as unknown)?.analise_cronograma,
-        // Dados completos para referência
-        data: a.aiAnalysis,
-      })),
+      analyses: analyses.map((a) => {
+        // --- VALIDAÇÃO DO OUTPUT (JSON) ---
+        // Validar o campo 'aiAnalysis' usando type-guard
+        if (!isAIAnalysisData(a.aiAnalysis)) {
+          // Se os dados no DB estiverem corrompidos ou em formato antigo,
+          // retorne um objeto seguro e logue o erro.
+          console.warn(`Dados de análise corrompidos para o ID: ${a.id}`);
+          return {
+            id: a.id,
+            version: a.version,
+            createdAt: a.createdAt,
+            status: a.status,
+            analysisType: a.analysisType,
+            model: a.modelUsed,
+            confidence: a.confidence,
+            processingTime: a.processingTime,
+            summary: 'Erro: Dados de análise inválidos.',
+            keyPoints: [],
+            legalAssessment: undefined,
+            riskAssessment: undefined,
+            timelineAnalysis: undefined,
+            data: null,
+          };
+        }
+
+        // A partir daqui, 'a.aiAnalysis' é 100% type-safe
+        const analysisData: AIAnalysisData = a.aiAnalysis;
+
+        // --- CONSTRUÇÃO DA RESPOSTA SEGURA ---
+        return {
+          id: a.id,
+          version: a.version,
+          createdAt: a.createdAt,
+          status: a.status,
+          analysisType: a.analysisType,
+          model: a.modelUsed,
+          confidence: a.confidence,
+          processingTime: a.processingTime,
+          // Acesso 100% type-safe ao objeto validado (sem casting)
+          // analysisData é 100% provado pelo isAIAnalysisData
+          summary:
+            analysisData.analise_estrategica?.summary ||
+            analysisData.analise_estrategica?.resumo_executivo,
+          keyPoints:
+            analysisData.analise_estrategica?.keyPoints ||
+            analysisData.analise_estrategica?.pontos_principais,
+          legalAssessment:
+            analysisData.analise_estrategica?.legalAssessment ||
+            analysisData.analise_estrategica?.avaliacao_juridica,
+          riskAssessment:
+            analysisData.analise_estrategica?.riskAssessment ||
+            analysisData.analise_estrategica?.analise_risco,
+          timelineAnalysis:
+            analysisData.situacao_processual?.timelineAnalysis ||
+            analysisData.situacao_processual?.analise_cronograma,
+          // Envia o objeto completo e validado
+          data: analysisData,
+        };
+      }),
     });
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar análises:`, error);
