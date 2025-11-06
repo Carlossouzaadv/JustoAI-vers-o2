@@ -18,7 +18,7 @@ export default function ContactPage() {
     e.preventDefault();
     // TODO: Implement form submission
     console.log('Form submitted:', formData);
-    alert('Sua mensagem foi enviada! Nossa equipe responderá em breve.');
+    alert('Sua mensagem foi enviada! Nossa equipe responderá em breve.breve.quot;');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -37,7 +37,7 @@ export default function ContactPage() {
               Entre em Contato
             </h1>
             <p className="text-xl text-neutral-700 max-w-2xl mx-auto">
-              Estamos aqui para ajudar. Envie sua mensagem e nossa equipe responderá em breve.
+              Estamos aqui para ajudar. Envie sua mensagem e nossa equipe responderá em breve.breve.quot;
             </p>
           </div>
 

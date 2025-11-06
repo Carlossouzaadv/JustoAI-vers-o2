@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { getCreditManager } from '@/lib/credit-system';
 import { ReportGenerator } from '@/lib/report-generator';
 import { ICONS } from '@/lib/icons';
+import { getRedisClient } from '@/lib/redis';
 import { createHash } from 'crypto';
 
 // Imports do Prisma
@@ -46,7 +47,6 @@ const INDIVIDUAL_REPORTS_CONFIG = {
 
 // Criar fila específica para relatórios individuais
 import { Queue } from 'bull';
-import { getRedisClient } from '../src/lib/redis';
 
 export const individualReportsQueue = new Queue('individual-reports', {
   redis: getRedisClient(),

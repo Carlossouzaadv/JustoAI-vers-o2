@@ -394,7 +394,7 @@ Enviado de: JustoAI Admin Dashboard
         <p className="text-sm text-blue-900 mb-3 font-semibold">💡 Como usar</p>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Clique no botão 📋 para copiar o erro completo com contexto</li>
-          <li>• Use o botão "+" para expandir detalhes do erro (stack trace, tags)</li>
+          <li>• Use o botão &quot;+&quot; para expandir detalhes do erro (stack trace, tags)</li>
           <li>• Clique no ícone de link externo para abrir o erro diretamente no Sentry</li>
           <li>• Use os filtros para encontrar erros específicos ou por período</li>
         </ul>

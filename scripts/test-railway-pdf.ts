@@ -117,7 +117,6 @@ async function testRailwayHealth(): Promise<boolean> {
 
     const response = await fetch(healthUrl, {
       method: 'GET',
-      timeout: 10000,
     });
 
     if (response.ok) {
@@ -268,7 +267,6 @@ startxref
     const response = await fetch(pdfProcessUrl, {
       method: 'POST',
       body: formData,
-      timeout: 30000,
     });
 
     log(ICONS.INFO, `Resposta do Railway:`, {

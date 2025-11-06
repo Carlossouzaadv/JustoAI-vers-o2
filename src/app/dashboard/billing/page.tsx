@@ -145,7 +145,7 @@ export default function BillingPage() {
 
         {creditStatus === 'warning' && (
           <div className="bg-yellow-100 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-            📌 Você tem poucos créditos disponíveis. Considere comprar mais em breve.
+            📌 Você tem poucos créditos disponíveis. Considere comprar mais em breve.breve.quot;
           </div>
         )}
 

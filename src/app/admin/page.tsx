@@ -367,7 +367,7 @@ Navigate to: /admin/errors for full details
         <p className="text-sm text-blue-900 mb-3 font-semibold">💡 Dicas</p>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Clique nos botões 📋 dos erros para copiar o contexto direto pro Claude Code</li>
-          <li>• Use a aba "Erros" para filtrar por severidade, tipo ou período</li>
+          <li>• Use a aba &quot;Erros&quot; para filtrar por severidade, tipo ou período</li>
           <li>• Todos os dashboards se atualizam automaticamente a cada 30 segundos</li>
           <li>• Navegue com a barra lateral para acessar Logs, Alertas e Status do sistema</li>
         </ul>

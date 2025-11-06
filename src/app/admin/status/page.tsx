@@ -342,7 +342,7 @@ export default function StatusPage() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-900 mb-3 font-semibold">💡 Como usar</p>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Clique em "Atualizar" para fazer uma nova verificação manual</li>
+          <li>• Clique em &quot;Atualizar&quot; para fazer uma nova verificação manual</li>
           <li>• O status geral é determinado pelo componente mais crítico</li>
           <li>• Tempo de resposta mostra latência do último check</li>
           <li>• Recomendações aparecem quando há problemas detectados</li>

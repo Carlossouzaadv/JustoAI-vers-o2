@@ -210,7 +210,7 @@ export async function POST(
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
-          { success: false, error: 'Validação inválida', details: error.errors },
+          { success: false, error: 'Validação inválida', details: error.flatten() },
           { status: 400 }
         );
       }

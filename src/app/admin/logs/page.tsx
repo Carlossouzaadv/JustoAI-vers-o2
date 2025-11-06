@@ -365,8 +365,8 @@ export default function LogsPage() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-900 mb-3 font-semibold">💡 Como usar</p>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Use "Live" para ativar atualização automática a cada 5 segundos</li>
-          <li>• Clique na seta para expandir detalhes do log (metadados, stack traces)</li>
+          <li>• Use &quot;Live&quot; para ativar atualização automática a cada 5 segundos</li>
+          <li>• Clique na seta &quot; para expandir detalhes do log (metadados, stack traces)</li>
           <li>• Use os filtros para encontrar logs específicos por nível, serviço ou mensagem</li>
           <li>• Download em JSON para análise externa ou backup</li>
           <li>Note: Dados de demonstração. APIs reais serão conectadas em breve.</li>

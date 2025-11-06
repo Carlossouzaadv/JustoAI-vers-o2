@@ -7,7 +7,7 @@
 import { Job } from 'bull';
 import { cacheCleanupQueue } from '@/lib/queues';
 import { prisma } from '@/lib/prisma';
-import { getRedisClient } from '../src/lib/redis';
+import { getRedisClient } from '@/lib/redis';
 import { ICONS } from '@/lib/icons';
 
 // Get Redis client instance

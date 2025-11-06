@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'Dados inválidos',
-          details: validation.error.errors,
+          details: validation.error.flatten(),
         },
         { status: 400 }
       );

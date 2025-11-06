@@ -22,7 +22,7 @@ Sentry.init({
 
   // Capture console logs
   integrations: [
-    Sentry.httpIntegration({ tracing: true }),
+    Sentry.httpIntegration(),
     Sentry.consoleIntegration({ levels: ['log', 'warn', 'error'] }),
   ],
 

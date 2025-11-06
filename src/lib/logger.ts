@@ -9,6 +9,7 @@ import path from 'path';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 
 // Augment Express namespace for compatibility
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
   namespace Express {
     interface Request extends ExpressRequest {}

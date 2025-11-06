@@ -424,7 +424,7 @@ export default function AlertsPage() {
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Use o ícone ✓ para marcar alertas como resolvidos</li>
           <li>• Use a lixeira para remover alertas resolvidos</li>
-          <li>• Clique "+" para expandir detalhes e metadados do alerta</li>
+          <li>• Clique &quot;+&quot; para expandir detalhes e metadados do alerta</li>
           <li>• Alertas críticos aparecem sempre no topo e em destaque vermelho</li>
           <li>Note: Dados de demonstração. APIs reais serão conectadas em breve.</li>
         </ul>

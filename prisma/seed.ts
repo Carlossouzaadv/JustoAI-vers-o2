@@ -195,6 +195,7 @@ async function main() {
   // 7. Create Case Analysis Version
   await prisma.caseAnalysisVersion.create({
     data: {
+      workspaceId: workspace.id,
       caseId: case1.id,
       version: 1,
       analysisType: 'RISK_ASSESSMENT',

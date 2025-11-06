@@ -15,6 +15,7 @@ import { validateBullBoardAccess } from './bull-board-auth';
 const notificationQueue = getNotificationQueue();
 
 // Augment Express namespace for compatibility
+// eslint-disable-next-line @typescript-eslint/no-namespace
 declare global {
   namespace Express {
     interface Request extends ExpressRequest {}
