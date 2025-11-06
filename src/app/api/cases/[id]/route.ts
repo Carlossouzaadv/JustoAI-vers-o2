@@ -1,4 +1,5 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import {
   successResponse,
@@ -6,10 +7,19 @@ import {
   requireAuth,
   requireWorkspaceAccess,
 } from '@/lib/api-utils'
+import {
+  RouteIdParamSchema,
+  UpdateCasePayloadSchema,
+  type UpdateCasePayload,
+} from '@/lib/types/api-schemas'
 import { ICONS } from '@/lib/icons'
 
 /**
  * GET /api/cases/[id] - Get a specific case with full details
+ *
+ * Validation:
+ * - Route param [id] must be a valid UUID
+ * - User must have access to the case's workspace
  */
 export async function GET(
   request: NextRequest,
@@ -19,7 +29,19 @@ export async function GET(
     const { user, error: authError } = await requireAuth(request)
     if (!user) return authError!
 
-    const caseId = (await params).id
+    // --- VALIDATION 1: ROUTE PARAMETERS ---
+    const awaitedParams = await params
+    const paramParseResult = RouteIdParamSchema.safeParse(awaitedParams)
+
+    if (!paramParseResult.success) {
+      return NextResponse.json({
+        success: false,
+        message: 'ID do caso inválido na URL.',
+        errors: paramParseResult.error.flatten(),
+      }, { status: 400 })
+    }
+
+    const { id: caseId } = paramParseResult.data
 
     console.log(`${ICONS.SEARCH} [API] Fetching case: ${caseId}`)
 
@@ -41,7 +63,7 @@ export async function GET(
           size: true,
           createdAt: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'desc' as const },
         take: 20,
       },
       _count: {
@@ -119,7 +141,13 @@ export async function GET(
 }
 
 /**
- * PATCH /api/cases/[id] - Update a case (e.g., associate client)
+ * PATCH /api/cases/[id] - Update a case
+ *
+ * Validation:
+ * - Route param [id] must be a valid UUID
+ * - Request body must match UpdateCasePayloadSchema
+ * - At least one field must be provided for update
+ * - User must have access to the case's workspace
  */
 export async function PATCH(
   request: NextRequest,
@@ -129,8 +157,33 @@ export async function PATCH(
     const { user, error: authError } = await requireAuth(request)
     if (!user) return authError!
 
-    const caseId = (await params).id
-    const body = await request.json()
+    // --- VALIDATION 1: ROUTE PARAMETERS ---
+    const awaitedParams = await params
+    const paramParseResult = RouteIdParamSchema.safeParse(awaitedParams)
+
+    if (!paramParseResult.success) {
+      return NextResponse.json({
+        success: false,
+        message: 'ID do caso inválido na URL.',
+        errors: paramParseResult.error.flatten(),
+      }, { status: 400 })
+    }
+
+    const { id: caseId } = paramParseResult.data
+
+    // --- VALIDATION 2: REQUEST BODY ---
+    const rawBody: unknown = await request.json()
+    const bodyParseResult = UpdateCasePayloadSchema.safeParse(rawBody)
+
+    if (!bodyParseResult.success) {
+      return NextResponse.json({
+        success: false,
+        message: 'Dados de atualização inválidos.',
+        errors: bodyParseResult.error.flatten(),
+      }, { status: 400 })
+    }
+
+    const updateData: UpdateCasePayload = bodyParseResult.data
 
     console.log(`${ICONS.EDIT} [API] Updating case: ${caseId}`)
 
@@ -151,10 +204,10 @@ export async function PATCH(
     )
     if (!hasAccess) return accessError!
 
-    // Update case
+    // Update case with validated data
     const updatedCase = await prisma.case.update({
       where: { id: caseId },
-      data: body,
+      data: updateData,
       include: {
         client: {
           select: {
@@ -172,7 +225,7 @@ export async function PATCH(
             size: true,
             createdAt: true,
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: 'desc' as const },
           take: 20,
         },
         _count: {
@@ -189,5 +242,70 @@ export async function PATCH(
   } catch (error) {
     console.error(`${ICONS.ERROR} Error updating case:`, error)
     return errorResponse('Erro ao atualizar caso', 500)
+  }
+}
+
+/**
+ * DELETE /api/cases/[id] - Delete a case
+ *
+ * Validation:
+ * - Route param [id] must be a valid UUID
+ * - User must have access to the case's workspace
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { user, error: authError } = await requireAuth(request)
+    if (!user) return authError!
+
+    // --- VALIDATION 1: ROUTE PARAMETERS ---
+    const awaitedParams = await params
+    const paramParseResult = RouteIdParamSchema.safeParse(awaitedParams)
+
+    if (!paramParseResult.success) {
+      return NextResponse.json({
+        success: false,
+        message: 'ID do caso inválido na URL.',
+        errors: paramParseResult.error.flatten(),
+      }, { status: 400 })
+    }
+
+    const { id: caseId } = paramParseResult.data
+
+    console.log(`${ICONS.EDIT} [API] Deleting case: ${caseId}`)
+
+    // Fetch case to verify ownership
+    const caseData = await prisma.case.findUnique({
+      where: { id: caseId },
+      select: { workspaceId: true, number: true },
+    })
+
+    if (!caseData) {
+      return errorResponse('Caso não encontrado', 404)
+    }
+
+    // Check access
+    const { hasAccess, error: accessError } = await requireWorkspaceAccess(
+      user.id,
+      caseData.workspaceId
+    )
+    if (!hasAccess) return accessError!
+
+    // Delete case
+    await prisma.case.delete({
+      where: { id: caseId },
+    })
+
+    console.log(`${ICONS.SUCCESS} Case deleted successfully: ${caseId} (number: ${caseData.number})`)
+
+    return successResponse(
+      { id: caseId },
+      'Caso deletado com sucesso'
+    )
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Error deleting case:`, error)
+    return errorResponse('Erro ao deletar caso', 500)
   }
 }

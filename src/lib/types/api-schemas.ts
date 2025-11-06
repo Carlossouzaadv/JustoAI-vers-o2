@@ -314,6 +314,63 @@ export const CreateCaseResponseSchema = z.object({
 export type CreateCaseResponse = z.infer<typeof CreateCaseResponseSchema>;
 
 // ================================================================
+// CASE UPDATE SCHEMAS
+// ================================================================
+
+/**
+ * PATCH /api/cases/[id]
+ * Update an existing case
+ */
+export const UpdateCasePayloadSchema = z.object({
+  clientId: CuidSchema.optional(),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  type: CaseTypeSchema.optional(),
+  status: CaseStatusSchema.optional(),
+  priority: PriorityLevelSchema.optional(),
+  value: z.number().min(0).optional(),
+  startDate: DateTimeSchema.optional(),
+  expectedEndDate: DateTimeSchema.optional(),
+}).refine(obj => Object.values(obj).some(v => v !== undefined), 'At least one field to update is required');
+
+export type UpdateCasePayload = z.infer<typeof UpdateCasePayloadSchema>;
+
+/**
+ * PATCH /api/cases/[id] Response
+ */
+export const UpdateCaseResponseSchema = z.object({
+  success: z.boolean(),
+  data: z.object({
+    id: UuidSchema,
+    number: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    type: CaseTypeSchema,
+    status: CaseStatusSchema,
+    priority: PriorityLevelSchema,
+    client: z.object({
+      id: CuidSchema,
+      name: z.string(),
+      email: z.string().email().optional(),
+      type: z.string().optional(),
+    }).optional(),
+    documents: z.array(z.object({
+      id: UuidSchema,
+      name: z.string(),
+      type: z.string(),
+      size: z.number().int().min(0),
+      createdAt: DateTimeSchema,
+    })).optional(),
+    documentCount: z.number().int().min(0).optional(),
+    createdAt: DateTimeSchema,
+    updatedAt: DateTimeSchema,
+  }).optional(),
+  message: z.string().optional(),
+}).passthrough();
+
+export type UpdateCaseResponse = z.infer<typeof UpdateCaseResponseSchema>;
+
+// ================================================================
 // CASE BULK UPDATE SCHEMAS
 // ================================================================
 

@@ -7,6 +7,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ExcelUploadService, DEFAULT_CONFIG } from '@/lib/excel-upload-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import {
+  ExcelUploadPayloadSchema,
+  ExcelUploadPayload,
+} from '@/lib/types/api-schemas';
 
 const uploadService = new ExcelUploadService();
 
@@ -33,25 +37,35 @@ export async function POST(request: NextRequest) {
 
     // Extrair dados do FormData
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const workspaceId = formData.get('workspaceId') as string;
 
-    // Validações básicas
-    if (!file) {
+    // 1. Extraia os campos do FormData para um objeto 'raw'
+    const rawData = {
+      workspaceId: formData.get('workspaceId'),
+    };
+
+    // 2. Valide o objeto 'raw' com Zod
+    const parseResult = ExcelUploadPayloadSchema.safeParse(rawData);
+
+    if (!parseResult.success) {
+      return NextResponse.json({
+        success: false,
+        message: 'Payload de upload de Excel inválido.',
+        errors: parseResult.error.flatten(),
+      }, { status: 400 });
+    }
+
+    // 3. Use os dados 100% type-safe
+    const data: ExcelUploadPayload = parseResult.data;
+
+    // Extrair arquivo com type-safety
+    const file = formData.get('file');
+
+    // Type guard para File
+    if (!(file instanceof File)) {
       return NextResponse.json(
         {
           success: false,
           error: 'Arquivo não fornecido'
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!workspaceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'WorkspaceId é obrigatório'
         },
         { status: 400 }
       );
@@ -86,23 +100,23 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.PROCESS} Arquivo recebido: ${file.name} (${file.size} bytes)`);
 
     // FASE 1: Parsing e validação inicial (síncrono rápido)
-    const parseResult = await uploadService.parseAndValidate(
+    const excelParseResult = await uploadService.parseAndValidate(
       buffer,
       file.name,
-      workspaceId
+      data.workspaceId
     );
 
-    if (!parseResult.success) {
-      console.log(`${ICONS.ERROR} Falha no parsing:`, parseResult.errors);
+    if (!excelParseResult.success) {
+      console.log(`${ICONS.ERROR} Falha no parsing:`, excelParseResult.errors);
 
       return NextResponse.json({
         success: false,
         error: 'Erro na validação do arquivo',
-        details: parseResult.errors
+        details: excelParseResult.errors
       }, { status: 400 });
     }
 
-    const { parseResult: parsed, estimate, preview } = parseResult;
+    const { parseResult: parsed, estimate, preview } = excelParseResult;
 
     // Verificar se há linhas válidas para processar
     if (parsed!.summary.valid === 0) {
@@ -116,7 +130,7 @@ export async function POST(request: NextRequest) {
     // FASE 2: Criação do batch (imediato)
     // Salvar arquivo temporariamente
     const timestamp = Date.now();
-    const filePath = `/tmp/excel_uploads/${workspaceId}/${timestamp}_${file.name}`;
+    const filePath = `/tmp/excel_uploads/${data.workspaceId}/${timestamp}_${file.name}`;
 
     // TODO: Implementar salvamento real do arquivo
     // await saveFileToStorage(buffer, filePath);
@@ -126,7 +140,7 @@ export async function POST(request: NextRequest) {
       file.name,
       filePath,
       file.size,
-      workspaceId,
+      data.workspaceId,
       prisma
     );
 
@@ -138,7 +152,7 @@ export async function POST(request: NextRequest) {
       uploadService.processInBackground(
         batchInfo.batchId,
         parsed!,
-        workspaceId,
+        data.workspaceId,
         prisma
       ).catch(error => {
         console.error(`${ICONS.ERROR} Erro no processamento background:`, error);
