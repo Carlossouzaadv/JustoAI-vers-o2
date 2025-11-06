@@ -5,7 +5,8 @@
 
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ICONS } from './icons';
-
+import { isCreditTransactionMetadata } from './types/type-guards';
+import type { CreditTransactionMetadata } from './types/json-fields';
 
 // Tipos principais
 export interface CreditCost {
@@ -249,6 +250,11 @@ export class CreditManager {
     reason: string,
     metadata: unknown
   ): Promise<string[]> {
+    // Validate metadata if provided
+    const validatedMetadata: CreditTransactionMetadata | undefined = (metadata && typeof metadata === 'object')
+      ? (isCreditTransactionMetadata(metadata) ? metadata : {})
+      : undefined;
+
     const transactionIds: string[] = [];
     let remainingToDebit = amount;
 
@@ -287,7 +293,7 @@ export class CreditManager {
           creditCategory: category,
           amount: toDebitFromThisAllocation,
           reason,
-          metadata
+          metadata: validatedMetadata
         }
       });
 
@@ -481,13 +487,23 @@ export class CreditManager {
         ]
       });
 
-      return allocations.map((allocation: unknown) => ({
-        type: allocation.type as 'MONTHLY' | 'BONUS' | 'PACK',
-        amount: Number(allocation.amount),
-        remaining: Number(allocation.remainingAmount),
-        consumed: Number(allocation.amount) - Number(allocation.remainingAmount),
-        expiresAt: allocation.expiresAt || undefined
-      }));
+      return allocations.map((allocation) => {
+        // Validate allocation type at runtime
+        const type = allocation.type;
+
+        if (type !== 'MONTHLY' && type !== 'BONUS' && type !== 'PACK') {
+          throw new Error(`Invalid allocation type received from database: ${type}`);
+        }
+
+        // After validation, type is narrowed to the expected union
+        return {
+          type,
+          amount: Number(allocation.amount),
+          remaining: Number(allocation.remainingAmount),
+          consumed: Number(allocation.amount) - Number(allocation.remainingAmount),
+          expiresAt: allocation.expiresAt || undefined
+        };
+      });
 
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao buscar breakdown:`, error);

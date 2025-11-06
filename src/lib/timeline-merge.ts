@@ -4,12 +4,17 @@
 // ================================================================
 // Implementa deduplicação inteligente e ordenação cronológica
 // de andamentos processuais de múltiplas fontes
-// NOTE: This file uses unknown types due to complex Prisma query results.
-// TODO: Refactor with proper Prisma types when time allows.
 
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import type { PrismaClient, ProcessTimelineEntry } from '@prisma/client';
+import type { TimelineConflictDetails, TimelineOriginalTexts, TimelineSourceMetadata } from './types/json-fields';
+import {
+  isTimelineConflictDetails,
+  isTimelineOriginalTexts,
+  isTimelineMergedMetadata,
+  isTimelineSourceMetadata,
+} from './types/type-guards';
 
 export interface TimelineEntry {
   eventDate: Date;
@@ -121,6 +126,7 @@ export class TimelineMergeService {
   /**
    * Mescla inteligentemente informações de múltiplas fontes
    * Combina descrições e usa dados de melhor fonte
+   * Valida metadados antes de fazer spread operators
    */
   private mergeIntelligently(
     existing: TimelineEntry,
@@ -157,15 +163,46 @@ export class TimelineMergeService {
       existing.confidence || 1.0
     );
 
-    // Mesclar metadados
-    const mergedMetadata = {
-      ...(existing.metadata || {}),
-      ...(newEntry.metadata || {}),
-      sources: [
-        ...(existing.metadata?.sources || [{ source: existing.source, date: existing.eventDate }]),
-        { source: newEntry.source, date: new Date(), description: newEntry.description }
-      ],
-      lastMerged: new Date().toISOString()
+    // Mesclar metadados com validação
+    // Validar metadados existentes antes de usar
+    const validatedExistingMetadata = existing.metadata && isTimelineMergedMetadata(existing.metadata)
+      ? existing.metadata
+      : {};
+    const validatedNewMetadata = newEntry.metadata && isTimelineMergedMetadata(newEntry.metadata)
+      ? newEntry.metadata
+      : {};
+
+    // Construir sources array validado
+    const existingSources: TimelineSourceMetadata[] = [];
+    if (validatedExistingMetadata.sources && Array.isArray(validatedExistingMetadata.sources)) {
+      for (const source of validatedExistingMetadata.sources) {
+        if (isTimelineSourceMetadata(source)) {
+          existingSources.push(source);
+        }
+      }
+    }
+
+    // Se não há sources, criar um a partir da entrada existente
+    if (existingSources.length === 0) {
+      existingSources.push({
+        source: existing.source,
+        date: existing.eventDate,
+      });
+    }
+
+    // Adicionar novo source
+    existingSources.push({
+      source: newEntry.source,
+      date: new Date(),
+      description: newEntry.description,
+    });
+
+    // Mesclar metadados com type safety
+    const mergedMetadata: Record<string, unknown> = {
+      ...validatedExistingMetadata,
+      ...validatedNewMetadata,
+      sources: existingSources,
+      lastMerged: new Date().toISOString(),
     };
 
     const merged: TimelineEntry = {
@@ -296,12 +333,17 @@ export class TimelineMergeService {
           });
 
         } catch (createError) {
-          // Narrow unknown to Error type for safety
+          // Narrow unknown to Error type for safety, with Prisma error code handling
           const err = createError instanceof Error ? createError : new Error(String(createError));
+
+          // Check for Prisma unique constraint error (P2002) safely
+          const prismaErrorCode = 'code' in err && typeof (err as Record<string, unknown>).code === 'string'
+            ? (err as Record<string, unknown>).code
+            : null;
 
           // Se houver erro de constraint única, outra requisição criou a entrada
           // Recuperar e tentar merge com retry
-          if ('code' in err && err.code === 'P2002') {
+          if (prismaErrorCode === 'P2002') {
             console.log(
               `${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição para ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}`
             );
@@ -361,7 +403,7 @@ export class TimelineMergeService {
             // Re-throw se for erro diferente
             console.error(
               `${ICONS.ERROR} Erro ao criar entrada (não é P2002):`,
-              { code: 'code' in err ? (err as any).code : undefined, message: err.message }
+              { code: prismaErrorCode, message: err.message }
             );
             throw err;
           }
@@ -439,6 +481,7 @@ export class TimelineMergeService {
 
   /**
    * Extrai andamentos de texto analisado por IA
+   * Valida cada evento com type checking antes de usar
    */
   extractTimelineFromAIAnalysis(aiResult: AIAnalysisResult, sourceId: string): TimelineEntry[] {
     const entries: TimelineEntry[] = [];
@@ -447,40 +490,92 @@ export class TimelineMergeService {
       // Verificar se há andamentos extraídos no resultado da IA
       const rawEvents = aiResult.raw_events_extracted || aiResult.events || [];
 
+      // Validar que rawEvents é um array
+      if (!Array.isArray(rawEvents)) {
+        console.warn(`${ICONS.WARNING} raw_events_extracted não é um array válido`);
+        return entries;
+      }
+
       for (const event of rawEvents) {
         try {
+          // Type check do evento antes de usar seus campos
+          if (typeof event !== 'object' || event === null) {
+            console.warn(`${ICONS.WARNING} Evento não é um objeto válido`);
+            continue;
+          }
+
+          const eventObj = event as Record<string, unknown>;
+
           // Tentar parsear data em diferentes formatos
           let eventDate: Date;
 
-          if (event.data_andamento) {
+          const dataAndamento = eventObj.data_andamento;
+          const dateField = eventObj.date;
+
+          if (typeof dataAndamento === 'string' && dataAndamento.includes('/')) {
             // Formato brasileiro DD/MM/AAAA
-            const [day, month, year] = event.data_andamento.split('/');
-            eventDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-          } else if (event.date) {
-            eventDate = new Date(event.date);
+            const [day, month, year] = dataAndamento.split('/');
+            const dayNum = parseInt(day, 10);
+            const monthNum = parseInt(month, 10);
+            const yearNum = parseInt(year, 10);
+
+            if (!isNaN(dayNum) && !isNaN(monthNum) && !isNaN(yearNum)) {
+              eventDate = new Date(yearNum, monthNum - 1, dayNum);
+            } else {
+              // Data inválida, usar fallback
+              eventDate = new Date();
+            }
+          } else if (dateField instanceof Date) {
+            eventDate = dateField;
+          } else if (typeof dateField === 'string') {
+            eventDate = new Date(dateField);
           } else {
-            // Se não há data, usar data atual como fallback
+            // Se não há data válida, usar data atual como fallback
             eventDate = new Date();
           }
 
-          // Validar data
+          // Validar data resultante
           if (isNaN(eventDate.getTime())) {
-            console.warn(`${ICONS.WARNING} Data inválida para evento: ${event.tipo_andamento || event.type}`);
+            console.warn(`${ICONS.WARNING} Data inválida para evento: ${eventObj.tipo_andamento || eventObj.type}`);
             continue;
+          }
+
+          // Extrair campos com type safety
+          const eventType = typeof eventObj.tipo_andamento === 'string'
+            ? eventObj.tipo_andamento
+            : typeof eventObj.type === 'string'
+            ? eventObj.type
+            : 'Andamento';
+
+          const description = typeof eventObj.resumo_andamento === 'string'
+            ? eventObj.resumo_andamento
+            : typeof eventObj.description === 'string'
+            ? eventObj.description
+            : 'Sem descrição';
+
+          const confidence = typeof eventObj.confidence === 'number'
+            ? eventObj.confidence
+            : 0.8;
+
+          // Validar metadata antes de incluir no metadata spread
+          const eventMetadata: Record<string, unknown> = {
+            extracted_from: 'ai_analysis',
+            confidence,
+          };
+
+          // Adicionar original_data se for um objeto válido
+          if (typeof event === 'object' && event !== null) {
+            eventMetadata.original_data = event;
           }
 
           entries.push({
             eventDate,
-            eventType: event.tipo_andamento || event.type || 'Andamento',
-            description: event.resumo_andamento || event.description || 'Sem descrição',
+            eventType,
+            description,
             source: 'AI_EXTRACTION',
             sourceId,
-            metadata: {
-              extracted_from: 'ai_analysis',
-              confidence: event.confidence || 0.8,
-              original_data: event
-            },
-            confidence: event.confidence || 0.8
+            metadata: eventMetadata,
+            confidence
           });
 
         } catch (eventError) {

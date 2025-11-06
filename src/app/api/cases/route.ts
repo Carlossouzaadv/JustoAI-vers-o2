@@ -1,43 +1,23 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import {
   successResponse,
   errorResponse,
   paginatedResponse,
   requireAuth,
-  validateBody,
   validateQuery,
   requireWorkspaceAccess,
   rateLimit,
   getClientIP
 } from '@/lib/api-utils'
-import { z } from 'zod'
-
-// Validation schemas
-const createCaseSchema = z.object({
-  workspaceId: z.string().cuid(),
-  clientId: z.string().cuid(),
-  title: z.string().min(1, 'Title is required').max(200),
-  description: z.string().optional(),
-  processNumber: z.string().optional(),
-  type: z.enum(['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'TAX', 'ADMINISTRATIVE']),
-  status: z.enum(['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED']).default('ACTIVE'),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
-  value: z.number().optional(),
-  startDate: z.string().datetime().optional(),
-  expectedEndDate: z.string().datetime().optional(),
-})
-
-const caseQuerySchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(20),
-  search: z.string().optional(),
-  status: z.enum(['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED']).optional(),
-  type: z.enum(['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'TAX', 'ADMINISTRATIVE']).optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
-  clientId: z.string().cuid().optional(),
-  workspaceId: z.string().cuid().optional(),
-})
+import {
+  CreateCasePayloadSchema,
+  CreateCasePayload,
+  CasesListQuerySchema,
+  CasesListQuery,
+  parseCreateCase,
+  parseCasesListQuery
+} from '@/lib/types/api-schemas'
 
 /**
  * @swagger
@@ -124,9 +104,18 @@ async function GET(request: NextRequest) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  // Query validation
-  const { data: query, error: queryError } = validateQuery(request, caseQuerySchema)
-  if (!query) return queryError!
+  // Query validation using centralized schema
+  const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries())
+  const parseResult = parseCasesListQuery(searchParams)
+  if (!parseResult.success) {
+    return NextResponse.json({
+      success: false,
+      message: 'Invalid query parameters',
+      errors: parseResult.error
+    }, { status: 400 })
+  }
+
+  const query = parseResult.data
 
   const { page, limit, search, status, type, priority, clientId, workspaceId } = query
 
@@ -320,9 +309,18 @@ async function POST(request: NextRequest) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  // Body validation
-  const { data: input, error: validationError } = await validateBody(request, createCaseSchema)
-  if (!input) return validationError!
+  // Body validation using centralized schema
+  const rawBody: unknown = await request.json()
+  const parseResult = parseCreateCase(rawBody)
+  if (!parseResult.success) {
+    return NextResponse.json({
+      success: false,
+      message: 'Invalid request body',
+      errors: parseResult.error
+    }, { status: 400 })
+  }
+
+  const input: CreateCasePayload = parseResult.data
 
   // Workspace access check
   const { hasAccess, error: accessError } = await requireWorkspaceAccess(user.id, input.workspaceId)

@@ -9,21 +9,19 @@ import { ICONS } from './icons';
 import { randomUUID } from 'crypto';
 import { getSignatureVerifier } from './webhook-signature-verifiers';
 import * as Sentry from '@sentry/nextjs';
-
-export interface PaymentWebhookPayload {
-  provider: 'stripe' | 'mercadopago' | 'pagseguro' | 'pix' | 'custom';
-  event: 'payment.success' | 'payment.failed' | 'payment.pending' | 'payment.refunded';
-  transactionId: string;
-  amount: number;
-  currency: string;
-  metadata?: {
-    userId?: string;
-    planId?: string;
-    credits?: number;
-    [key: string]: unknown;
-  };
-  rawPayload: unknown;
-}
+import {
+  PaymentWebhookPayload,
+  PaymentWebhookPayloadSchema,
+  StripeWebhook,
+  StripeWebhookSchema,
+  MercadoPagoWebhook,
+  MercadoPagoWebhookSchema,
+  PagSeguroWebhook,
+  PagSeguroWebhookSchema,
+  parsePaymentWebhook,
+  parseStripeWebhook,
+  parseMercadoPagoWebhook,
+} from './types/external-api';
 
 export interface PaymentProcessingResult {
   success: boolean;
@@ -312,7 +310,16 @@ export class PaymentWebhookHandler {
         }
       });
 
-      if (originalTransaction && originalTransaction.metadata && (originalTransaction.metadata as Record<string, unknown>).status === 'COMPLETED') {
+      // Check if metadata exists and has a status property that is 'COMPLETED'
+      const isCompletedTransaction = (): boolean => {
+        if (!originalTransaction?.metadata || typeof originalTransaction.metadata !== 'object') {
+          return false;
+        }
+        const meta = originalTransaction.metadata as Record<string, unknown>;
+        return meta.status === 'COMPLETED';
+      };
+
+      if (isCompletedTransaction()) {
         // Remover créditos do workspace
         await prisma.workspaceCredits.update({
           where: { workspaceId: originalTransaction.workspaceId },
@@ -355,62 +362,92 @@ export class PaymentWebhookHandler {
 
   /**
    * Parse webhook payload based on provider
+   * Uses Zod validation for type-safe parsing
    */
   private parseWebhookPayload(provider: string, rawBody: string): PaymentWebhookPayload {
-    const data = JSON.parse(rawBody) as Record<string, unknown>;
+    let rawData: unknown;
+
+    try {
+      rawData = JSON.parse(rawBody);
+    } catch (error) {
+      throw new Error(`Invalid JSON in webhook body: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 
     switch (provider.toLowerCase()) {
       case 'stripe':
-        return this.parseStripePayload(data);
+        return this.parseStripePayload(rawData);
       case 'mercadopago':
-        return this.parseMercadoPagoPayload(data);
+        return this.parseMercadoPagoPayload(rawData);
       case 'pagseguro':
-        return this.parsePagSeguroPayload(data);
+        return this.parsePagSeguroPayload(rawData);
       default:
-        // Generic/custom payload format
+        // Generic/custom payload format - validate with PaymentWebhookPayloadSchema
+        const validationResult = PaymentWebhookPayloadSchema.safeParse(rawData);
+        if (validationResult.success) {
+          return validationResult.data;
+        }
+        // If validation fails, return a minimal payload with defaults
         return {
           provider: 'custom',
-          event: (data.event as PaymentWebhookPayload['event']) || 'payment.success',
-          transactionId: (data.transactionId as string) || (data.id as string),
-          amount: (data.amount as number) || 0,
-          currency: (data.currency as string) || 'BRL',
-          metadata: (data.metadata as Record<string, unknown>) || {},
-          rawPayload: data
+          event: 'payment.success',
+          transactionId: 'unknown',
+          amount: 0,
+          currency: 'BRL',
+          rawPayload: rawData
         };
     }
   }
 
-  private parseStripePayload(data: Record<string, unknown>): PaymentWebhookPayload {
-    const eventType = data.type as string;
+  private parseStripePayload(rawData: unknown): PaymentWebhookPayload {
+    // Validate raw data against Stripe schema
+    const validationResult = parseStripeWebhook(rawData);
+
+    if (!validationResult.success) {
+      throw new Error(`Invalid Stripe webhook payload: ${validationResult.error}`);
+    }
+
+    const data: StripeWebhook = validationResult.data;
     let event: PaymentWebhookPayload['event'] = 'payment.success';
 
-    if (eventType.includes('payment_intent.succeeded')) {
+    // Map Stripe event types to our normalized event types
+    if (data.type.includes('payment_intent.succeeded')) {
       event = 'payment.success';
-    } else if (eventType.includes('payment_intent.payment_failed')) {
+    } else if (data.type.includes('payment_intent.payment_failed')) {
       event = 'payment.failed';
-    } else if (eventType.includes('charge.dispute.created')) {
+    } else if (data.type.includes('charge.dispute.created')) {
       event = 'payment.refunded';
     }
 
-    const dataObj = data.data as Record<string, unknown>;
-    const objectData = dataObj.object as Record<string, unknown>;
+    // Extract object data from validated payload
+    const objectData = data.data.object;
+    const amount = objectData.amount / 100; // Stripe uses cents
+    const currency = objectData.currency.toUpperCase();
+    const metadata = objectData.metadata || {};
 
     return {
       provider: 'stripe',
       event,
-      transactionId: objectData.id as string,
-      amount: (objectData.amount as number) / 100, // Stripe usa centavos
-      currency: (objectData.currency as string).toUpperCase(),
-      metadata: (objectData.metadata as Record<string, unknown>) || {},
+      transactionId: objectData.id,
+      amount,
+      currency,
+      metadata,
       rawPayload: data
     };
   }
 
-  private parseMercadoPagoPayload(data: Record<string, unknown>): PaymentWebhookPayload {
+  private parseMercadoPagoPayload(rawData: unknown): PaymentWebhookPayload {
+    // Validate raw data against MercadoPago schema
+    const validationResult = parseMercadoPagoWebhook(rawData);
+
+    if (!validationResult.success) {
+      throw new Error(`Invalid MercadoPago webhook payload: ${validationResult.error}`);
+    }
+
+    const data: MercadoPagoWebhook = validationResult.data;
     let event: PaymentWebhookPayload['event'] = 'payment.success';
 
-    const dataObj = data.data as Record<string, unknown> | undefined;
-    const status = dataObj?.status || data.status;
+    // Determine event type from status (check nested data first, then top-level)
+    const status = data.data?.status ?? data.status;
 
     switch (status) {
       case 'approved':
@@ -427,26 +464,39 @@ export class PaymentWebhookHandler {
         break;
     }
 
+    // Extract transaction ID and amount (check nested data first, then top-level)
+    const transactionId = data.data?.id ?? data.id ?? 'unknown';
+    const amount = data.data?.transaction_amount ?? data.transaction_amount ?? 0;
+    const metadata = data.metadata || {};
+
     return {
       provider: 'mercadopago',
       event,
-      transactionId: (dataObj?.id || data.id) as string,
-      amount: ((dataObj?.transaction_amount || data.transaction_amount) as number) || 0,
+      transactionId,
+      amount,
       currency: 'BRL',
-      metadata: (data.metadata as Record<string, unknown>) || {},
+      metadata,
       rawPayload: data
     };
   }
 
-  private parsePagSeguroPayload(data: Record<string, unknown>): PaymentWebhookPayload {
-    // Implementar parsing específico do PagSeguro
+  private parsePagSeguroPayload(rawData: unknown): PaymentWebhookPayload {
+    // Validate raw data against PagSeguro schema
+    const validationResult = PagSeguroWebhookSchema.safeParse(rawData);
+
+    if (!validationResult.success) {
+      throw new Error(`Invalid PagSeguro webhook payload: ${validationResult.error.message}`);
+    }
+
+    const data: PagSeguroWebhook = validationResult.data;
+
     return {
       provider: 'pagseguro',
-      event: 'payment.success',
-      transactionId: (data.id as string) || 'unknown',
-      amount: (data.amount as number) || 0,
+      event: 'payment.success', // PagSeguro-specific event mapping could be added here
+      transactionId: data.id ?? 'unknown',
+      amount: data.amount ?? 0,
       currency: 'BRL',
-      metadata: (data.metadata as Record<string, unknown>) || {},
+      metadata: data.metadata || {},
       rawPayload: data
     };
   }

@@ -6,6 +6,7 @@
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
 import { recordOnboardingError } from '@/lib/utils/case-onboarding-helper';
+import { parseJuditResponse, JuditRequestResponse } from '@/lib/types/external-api';
 
 // Type definitions for logging
 interface LogMessage {
@@ -78,11 +79,8 @@ interface JuditRequestPayload {
   cache_ttl_in_days?: number; // Cache JUDIT por N dias (evita reconsultas desnecessárias)
 }
 
-interface JuditRequestResponse {
-  request_id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  [key: string]: unknown;
-}
+// JuditRequestResponse is now imported from '@/lib/types/external-api'
+// No longer defining it locally to avoid conflicts
 
 // JuditResponseData interface is used for type checking responses
 // interface JuditResponseData {
@@ -359,12 +357,33 @@ async function initiateRequest(
   });
 
   // Fazer requisição POST para /requests
-  const response = await juditClient.post<JuditRequestResponse>(
+  // A resposta vem como 'unknown' da rede - validar com Zod
+  const rawResponse: unknown = await juditClient.post<unknown>(
     'requests',
     '/requests',
     payload
   );
 
+  // ================================================================
+  // VALIDAÇÃO ZOD - TIPO-SEGURO EM RUNTIME
+  // ================================================================
+  // Não usamos 'as JuditRequestResponse' (proibido!)
+  // Usamos parseJuditResponse().safeParse() para garantir tipo-segurança
+  const validationResult = parseJuditResponse(rawResponse);
+
+  if (!validationResult.success) {
+    // Se a API JUDIT mudar o contrato ou a resposta vier corrompida,
+    // capturamos aqui antes que o erro se espalhe
+    juditLogger.error({
+      action: 'judit_response_validation_failed',
+      error: validationResult.error,
+      rawResponse: JSON.stringify(rawResponse),
+    });
+    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult.error}`);
+  }
+
+  // A partir desta linha, 'response' é 100% type-safe
+  const response: JuditRequestResponse = validationResult.data;
   const requestId = response.request_id;
 
   if (!requestId) {

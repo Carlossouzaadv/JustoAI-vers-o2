@@ -4,10 +4,16 @@
 // ================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
+
+// API Schema imports (SINGLE SOURCE OF TRUTH)
+import {
+  ProcessUploadPayloadSchema,
+  ProcessUploadPayload,
+  parseProcessUpload
+} from '@/lib/types/api-schemas';
 
 // Services
 import { extractTextFromPDF } from '@/lib/pdf-processor';
@@ -18,17 +24,6 @@ import { getDocumentHashManager } from '@/lib/document-hash';
 import { extractPDFMetadata } from '@/lib/services/localPDFMetadataExtractor';
 import { updateCaseSummaryDescription } from '@/lib/services/summaryConsolidator';
 import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
-
-// ================================================================
-// VALIDATION SCHEMA
-// ================================================================
-
-const uploadSchema = z.object({
-  workspaceId: z.string().cuid(),
-  manualCnj: z.string().optional(), // CNJ fornecido manualmente se detecção falhar
-  clientId: z.string().cuid().optional(), // Cliente associado (opcional)
-  skipEnrichment: z.boolean().default(false) // Se true, não dispara JUDIT
-});
 
 // ================================================================
 // CONSTANTS
@@ -60,21 +55,43 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.UPLOAD} [Upload] Iniciando upload - User: ${userId}`);
 
     // ============================================================
-    // 2. PARSE FORM DATA
+    // 2. PARSE FORM DATA & VALIDATE WITH ZOD
     // ============================================================
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const workspaceId = formData.get('workspaceId') as string;
-    const manualCnj = formData.get('manualCnj') as string | null;
-    const clientId = formData.get('clientId') as string | null;
-    const skipEnrichment = formData.get('skipEnrichment') === 'true';
+    const file = formData.get('file');
+
+    // Extract form fields for Zod validation
+    const rawPayload = {
+      workspaceId: formData.get('workspaceId'),
+      manualCnj: formData.get('manualCnj'),
+      clientId: formData.get('clientId'),
+      skipEnrichment: formData.get('skipEnrichment') === 'true'
+    };
+
+    // Validate payload using Zod (SINGLE SOURCE OF TRUTH)
+    const parseResult = ProcessUploadPayloadSchema.safeParse(rawPayload);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Payload de upload inválido.',
+          details: parseResult.error.flatten()
+        },
+        { status: 400 }
+      );
+    }
+
+    // Type-safe payload from Zod validation
+    const data: ProcessUploadPayload = parseResult.data;
+    const { workspaceId, manualCnj, clientId, skipEnrichment } = data;
 
     // ============================================================
-    // 3. VALIDAÇÕES BÁSICAS
+    // 3. VALIDAÇÕES DO ARQUIVO
     // ============================================================
 
-    if (!file) {
+    if (!file || !(file instanceof File)) {
       return NextResponse.json(
         { success: false, error: 'Nenhum arquivo fornecido' },
         { status: 400 }
@@ -98,7 +115,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar workspace
+    // ============================================================
+    // 4. VALIDAR WORKSPACE
+    // ============================================================
+
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId }
     });
@@ -312,7 +332,7 @@ export async function POST(request: NextRequest) {
         caseId: newCase.id,
         name: file.name.replace('.pdf', ''),
         originalName: file.name,
-        type: documentMetadata.documentTypeCategory as unknown, // Usar metadata extraída
+        type: documentMetadata.documentTypeCategory, // Type-safe from metadata
         mimeType: file.type,
         size: file.size,
         url: documentUrl, // Supabase Storage URL or temp fallback
@@ -389,7 +409,7 @@ export async function POST(request: NextRequest) {
       await prisma.case.update({
         where: { id: newCase.id },
         data: {
-          previewSnapshot: previewResult.preview as unknown,
+          previewSnapshot: previewResult.preview,
           previewGeneratedAt: new Date(),
           onboardingStatus: 'previewed'
         }
@@ -416,7 +436,7 @@ export async function POST(request: NextRequest) {
                 claimValue: previewResult.preview.claimValue,
                 source: 'preview_initial'
               }
-            } as unknown,
+            },
             confidence: 0.85,
             processingTime: previewDuration,
             metadata: {

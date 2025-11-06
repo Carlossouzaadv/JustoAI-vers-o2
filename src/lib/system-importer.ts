@@ -11,6 +11,20 @@ import { SystemMappings, DataTransformer, DataValidator } from './system-mapping
 import { ICONS } from './icons';
 import crypto from 'crypto';
 
+// Type guard imports for runtime validation
+import {
+  isSystemImportSettings,
+  isSystemImportDataPreview,
+  isSystemImportValidation,
+  isSystemImportSummary,
+} from './types/type-guards';
+import type {
+  SystemImportSettings,
+  SystemImportDataPreview,
+  SystemImportValidation,
+  SystemImportSummary,
+} from './types/json-fields';
+
 // ================================
 // TIPOS E INTERFACES
 // ================================
@@ -135,6 +149,18 @@ export class SystemImporter {
     }
 
     // Criar sessão de importação no banco
+    // ================================================================
+    // VALIDAÇÃO TYPE-SAFE DO importSettings
+    // ================================================================
+    // Validar que importOptions está estruturalmente correto antes de persistir
+    const rawSettings: unknown = importOptions;
+    if (!isSystemImportSettings(rawSettings)) {
+      throw new Error(
+        'Configurações de importação inválidas: estrutura não atende aos requisitos esperados'
+      );
+    }
+    const importSettings: SystemImportSettings = rawSettings;
+
     const systemImport = await prisma.systemImport.create({
       data: {
         workspaceId,
@@ -143,7 +169,7 @@ export class SystemImporter {
         fileSize: buffer.length,
         originalHash: fileHash,
         status: 'ANALYZING',
-        importSettings: importOptions as unknown
+        importSettings
       }
     });
 
@@ -184,6 +210,27 @@ export class SystemImporter {
       this.session.sourceSystem = parseResult.detectedSystem;
       this.session.totalRows = parseResult.totalRows;
 
+      // ================================================================
+      // VALIDAÇÃO TYPE-SAFE DOS DADOS DO PARSE RESULT
+      // ================================================================
+      // Validar dataPreview antes de persistir
+      const rawDataPreview: unknown = parseResult.dataPreview;
+      if (!isSystemImportDataPreview(rawDataPreview)) {
+        throw new Error(
+          'Preview de dados inválido: estrutura não atende aos requisitos esperados'
+        );
+      }
+      const dataPreview: SystemImportDataPreview = rawDataPreview;
+
+      // Validar validation result antes de persistir
+      const rawValidation: unknown = parseResult.validationResult;
+      if (!isSystemImportValidation(rawValidation)) {
+        throw new Error(
+          'Resultado da validação inválido: estrutura não atende aos requisitos esperados'
+        );
+      }
+      const validation: SystemImportValidation = rawValidation;
+
       // Atualizar banco com resultados da análise
       await this.updateImportRecord({
         sourceSystem: parseResult.detectedSystem,
@@ -191,8 +238,8 @@ export class SystemImporter {
         status: 'MAPPING',
         totalRows: parseResult.totalRows,
         columnMapping: parseResult.columnMapping,
-        dataPreview: parseResult.dataPreview,
-        validation: parseResult.validationResult
+        dataPreview,
+        validation
       });
 
       // Fase 2: Importação dos dados
@@ -204,6 +251,17 @@ export class SystemImporter {
       // Finalizar sessão
       this.session.status = 'COMPLETED';
       this.session.finishedAt = new Date();
+
+      // ================================================================
+      // VALIDAÇÃO TYPE-SAFE DO SUMMARY ANTES DE PERSISTIR
+      // ================================================================
+      const rawSummary: unknown = this.session.summary;
+      if (!isSystemImportSummary(rawSummary)) {
+        throw new Error(
+          'Resumo da importação inválido: estrutura não atende aos requisitos esperados'
+        );
+      }
+      const summary: SystemImportSummary = rawSummary;
 
       await this.updateImportRecord({
         status: 'COMPLETED',
@@ -217,7 +275,7 @@ export class SystemImporter {
         importedDocuments: this.session.summary.documentsImported,
         errors: this.session.errors,
         warnings: this.session.warnings,
-        summary: this.session.summary
+        summary
       });
 
       console.log(`${ICONS.SUCCESS} Importação concluída:`, {
@@ -443,10 +501,12 @@ export class SystemImporter {
     }
 
     // Registrar item importado
+    // Category é garantido como string (vem do switch statement acima)
+    // Não usar type casting - category é estruturalmente válido
     await prisma.importedDataItem.create({
       data: {
         systemImportId: this.session.id,
-        dataType: category as unknown,
+        dataType: category,
         status: 'IMPORTED',
         originalData: row,
         mappedData,
@@ -600,8 +660,41 @@ export class SystemImporter {
   // MÉTODOS AUXILIARES
   // ================================
 
-  private async updateImportRecord(data: Partial<unknown>): Promise<void> {
+  private async updateImportRecord(data: Record<string, unknown>): Promise<void> {
     if (!this.session) return;
+
+    // ================================================================
+    // VALIDAÇÃO TYPE-SAFE DOS DADOS DA ATUALIZAÇÃO
+    // ================================================================
+    // Validar que os dados contêm apenas campos esperados
+    const allowedFields = new Set([
+      'sourceSystem',
+      'detectedFormat',
+      'status',
+      'totalRows',
+      'columnMapping',
+      'dataPreview',
+      'validation',
+      'finishedAt',
+      'processedRows',
+      'successfulRows',
+      'failedRows',
+      'importedCases',
+      'importedClients',
+      'importedEvents',
+      'importedDocuments',
+      'errors',
+      'warnings',
+      'summary',
+      'progress'
+    ]);
+
+    // Verificar que todos os campos fornecidos são permitidos
+    for (const key of Object.keys(data)) {
+      if (!allowedFields.has(key)) {
+        console.warn(`Campo não reconhecido em updateImportRecord: ${key}`);
+      }
+    }
 
     await prisma.systemImport.update({
       where: { id: this.session.id },

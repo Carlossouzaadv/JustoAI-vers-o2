@@ -13,6 +13,18 @@ import fs from 'fs/promises';
 import path from 'path';
 import { PDFTemplateEngine, PDFTemplateOptions } from './report-templates/pdf-template-engine';
 import { DOCXTemplateEngine, DOCXTemplateOptions } from './report-templates/docx-template-engine';
+import {
+  ReportParameters,
+  ReportResult,
+  ReportFileUrls,
+  CachedReportData,
+  ReportFilters,
+} from '@/lib/types/json-fields';
+import {
+  isReportFileUrls,
+  isCachedReportData,
+  isReportResult,
+} from '@/lib/types/type-guards';
 
 // Interfaces para o gerador
 export interface ReportGenerationRequest {
@@ -192,12 +204,27 @@ export class ReportGenerator {
         return { hit: false };
       }
 
+      // Validar fileUrls com type guard
+      if (!isReportFileUrls(cached.fileUrls)) {
+        console.warn(`${ICONS.WARNING} Cache fileUrls validation failed, skipping cache`);
+        return { hit: false };
+      }
+
+      // Validar cachedData se for CachedReportData
+      if (cached.cachedData !== null && !isCachedReportData(cached.cachedData)) {
+        console.warn(`${ICONS.WARNING} Cache data validation failed, skipping cache`);
+        return { hit: false };
+      }
+
+      const fileUrls: ReportFileUrls = cached.fileUrls;
+      const cachedData: CachedReportData | null = cached.cachedData ? (cached.cachedData as CachedReportData) : null;
+
       return {
         hit: true,
         cacheKey,
         reportId: cached.id,
-        fileUrls: cached.fileUrls as Record<string, string>,
-        summary: cached.cachedData
+        fileUrls,
+        summary: cachedData
       };
 
     } catch (error) {
@@ -375,6 +402,13 @@ export class ReportGenerator {
   }> {
     console.log(`${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...`);
 
+    // Validar payload é um objeto com propriedades básicas
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('Payload inválido: deve ser um objeto');
+    }
+
+    const payloadObj = payload as Record<string, unknown>;
+
     try {
       const geminiClient = getGeminiClient();
 
@@ -389,10 +423,12 @@ export class ReportGenerator {
 
       console.log(`${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}`);
 
+      const totalProcesses = typeof payloadObj.totalProcesses === 'number' ? payloadObj.totalProcesses : 0;
+
       return {
         content: result.content || this.generateMockContent(payload, audienceType),
         summary: result.summary || {
-          totalProcesses: payload.totalProcesses || 0,
+          totalProcesses,
           contentLength: (result.content || '').length,
           audienceType,
           generatedAt: new Date().toISOString(),
@@ -405,10 +441,12 @@ export class ReportGenerator {
 
       // Fallback para conteúdo mock em caso de erro
       const mockContent = this.generateMockContent(payload, audienceType);
+      const totalProcesses = typeof payloadObj.totalProcesses === 'number' ? payloadObj.totalProcesses : 0;
+
       return {
         content: mockContent,
         summary: {
-          totalProcesses: payload.totalProcesses || 0,
+          totalProcesses,
           contentLength: mockContent.length,
           audienceType,
           generatedAt: new Date().toISOString(),
@@ -689,6 +727,21 @@ ${clientLanguage ?
     result: unknown
   ): Promise<void> {
     try {
+      // Validar que result é um objeto com as propriedades esperadas
+      if (typeof result !== 'object' || result === null) {
+        throw new Error('Resultado de cache deve ser um objeto');
+      }
+
+      const resultObj = result as Record<string, unknown>;
+
+      // Validar fileUrls
+      if (!isReportFileUrls(resultObj.fileUrls)) {
+        throw new Error('FileUrls inválidos: falha na validação de tipo');
+      }
+
+      const fileUrls: ReportFileUrls = resultObj.fileUrls;
+      const summary = resultObj.summary;
+
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // Cache por 7 dias
 
@@ -700,8 +753,8 @@ ${clientLanguage ?
           processIds: request.processIds,
           audienceType: request.audienceType,
           lastMovementTimestamp: new Date(),
-          cachedData: result.summary,
-          fileUrls: result.fileUrls,
+          cachedData: summary,
+          fileUrls,
           expiresAt
         }
       });

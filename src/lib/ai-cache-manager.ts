@@ -2,9 +2,11 @@
 // AI CACHE MANAGER - SISTEMA MULTI-NÍVEL
 // ================================
 // Cache inteligente com Redis (1h) + PostgreSQL (7 dias) + memória local
+// Type-safe implementation using redis.ts types and CacheKeys builder
 
 import { ICONS } from './icons';
 import prisma from './prisma';
+import { CacheKeys, CachedValueResult } from './types/redis';
 
 // ================================
 // TIPOS E INTERFACES
@@ -49,10 +51,49 @@ export interface CacheConfig {
   aggressive_mode: boolean; // CRÍTICO para economia
 }
 
+/**
+ * Redis Client interface for type-safe operations
+ */
 interface RedisClient {
   get: (key: string) => Promise<string | null>;
   setex: (key: string, ttl: number, value: string) => Promise<void>;
   flushdb: () => Promise<void>;
+}
+
+// ================================
+// TYPE GUARDS FOR CACHE DATA VALIDATION
+// ================================
+
+/**
+ * Validates that a value can be serialized/deserialized from cache
+ */
+function isSerializableValue(value: unknown): value is unknown {
+  if (value === null || value === undefined) {
+    return false;
+  }
+
+  const type = typeof value;
+  if (type === 'string' || type === 'number' || type === 'boolean') {
+    return true;
+  }
+
+  if (type === 'object') {
+    try {
+      JSON.stringify(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Validates parsed JSON from cache is a valid object
+ */
+function isParsedCacheData(data: unknown): data is Record<string, unknown> {
+  return typeof data === 'object' && data !== null && !Array.isArray(data);
 }
 
 // ================================
@@ -103,7 +144,7 @@ export class AiCacheManager {
       // });
       // await this.redisClient.connect();
       console.log(`${ICONS.SUCCESS} Redis conectado (cache nível 2)`);
-    } catch {
+    } catch (_error) {
       console.warn(`${ICONS.WARNING} Redis não disponível, usando apenas memória + PostgreSQL`);
       this.config.enable_redis = false;
     }
@@ -115,6 +156,7 @@ export class AiCacheManager {
 
   /**
    * Busca em cache (3 níveis: memória → Redis → PostgreSQL)
+   * Valida todos os dados com type guards antes de retornar
    */
   async get(
     key: string,
@@ -124,7 +166,7 @@ export class AiCacheManager {
 
     // NÍVEL 1: Memória (mais rápido)
     const memoryResult = this.getFromMemory(cacheKey);
-    if (memoryResult) {
+    if (memoryResult !== null) {
       this.stats.memory_hits++;
       console.log(`${ICONS.CACHE} Cache HIT (memória): ${analysisType}`);
       return memoryResult;
@@ -135,13 +177,24 @@ export class AiCacheManager {
     if (this.config.enable_redis && this.redisClient) {
       try {
         const redisResult = await this.redisClient.get(`ai:${cacheKey}`);
-        if (redisResult) {
-          const parsed = JSON.parse(redisResult);
-          // Recolocar na memória para próximas consultas
-          this.setInMemory(cacheKey, parsed);
-          this.stats.redis_hits++;
-          console.log(`${ICONS.CACHE} Cache HIT (Redis): ${analysisType}`);
-          return parsed;
+        if (redisResult !== null) {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(redisResult);
+          } catch (_parseError) {
+            console.warn(`${ICONS.WARNING} Failed to parse Redis data for key: ${cacheKey}`);
+            this.stats.redis_misses++;
+            // Continue to next level
+          }
+
+          // Validate parsed data before using
+          if (parsed !== undefined && isParsedCacheData(parsed)) {
+            // Recolocar na memória para próximas consultas
+            this.setInMemory(cacheKey, parsed);
+            this.stats.redis_hits++;
+            console.log(`${ICONS.CACHE} Cache HIT (Redis): ${analysisType}`);
+            return parsed;
+          }
         }
         this.stats.redis_misses++;
       } catch (error) {
@@ -160,28 +213,36 @@ export class AiCacheManager {
         }
       });
 
-      if (dbResult) {
+      if (dbResult !== null) {
         const data = dbResult.result;
 
-        // Recolocar nos caches superiores
-        this.setInMemory(cacheKey, data);
-        if (this.config.enable_redis && this.redisClient) {
-          await this.redisClient.setex(
-            `ai:${cacheKey}`,
-            this.config.redis_ttl,
-            JSON.stringify(data)
-          );
+        // Validate data from database before using
+        if (data !== null && isSerializableValue(data)) {
+          // Recolocar nos caches superiores
+          this.setInMemory(cacheKey, data);
+          if (this.config.enable_redis && this.redisClient) {
+            try {
+              await this.redisClient.setex(
+                `ai:${cacheKey}`,
+                this.config.redis_ttl,
+                JSON.stringify(data)
+              );
+            } catch (_redisError) {
+              // Log but don't fail - continue with in-memory cache
+              console.warn(`${ICONS.WARNING} Failed to update Redis cache`);
+            }
+          }
+
+          // Atualizar hit count
+          await prisma.aiCache.update({
+            where: { id: dbResult.id },
+            data: { hits: { increment: 1 } }
+          });
+
+          this.stats.postgres_hits++;
+          console.log(`${ICONS.CACHE} Cache HIT (PostgreSQL): ${analysisType}`);
+          return data;
         }
-
-        // Atualizar hit count
-        await prisma.aiCache.update({
-          where: { id: dbResult.id },
-          data: { hits: { increment: 1 } }
-        });
-
-        this.stats.postgres_hits++;
-        console.log(`${ICONS.CACHE} Cache HIT (PostgreSQL): ${analysisType}`);
-        return data;
       }
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro no cache PostgreSQL:`, error);
@@ -193,6 +254,7 @@ export class AiCacheManager {
 
   /**
    * Salva em cache (todos os níveis)
+   * Valida o valor antes de armazenar em todas as camadas
    */
   async set(
     key: string,
@@ -205,6 +267,12 @@ export class AiCacheManager {
       workspaceId?: string;
     }
   ): Promise<void> {
+    // Validate value before caching
+    if (!isSerializableValue(value)) {
+      console.warn(`${ICONS.WARNING} Cannot cache non-serializable value for key: ${key}`);
+      return;
+    }
+
     const cacheKey = this.buildCacheKey(key, analysisType);
 
     // NÍVEL 1: Memória
@@ -213,10 +281,11 @@ export class AiCacheManager {
     // NÍVEL 2: Redis
     if (this.config.enable_redis && this.redisClient) {
       try {
+        const serialized = JSON.stringify(value);
         await this.redisClient.setex(
           `ai:${cacheKey}`,
           this.config.redis_ttl,
-          JSON.stringify(value)
+          serialized
         );
       } catch (error) {
         console.warn(`${ICONS.WARNING} Erro ao salvar no Redis:`, error);
@@ -232,7 +301,7 @@ export class AiCacheManager {
       }
 
       const expiresAt = new Date();
-      expiresAt.setTime(expiresAt.getTime() + this.config.postgres_ttl * 1000);
+      expiresAt.setSeconds(expiresAt.getSeconds() + this.config.postgres_ttl);
 
       await prisma.aiCache.create({
         data: {
@@ -317,12 +386,12 @@ export class AiCacheManager {
   // UTILITÁRIOS PRIVADOS
   // ================================
 
-  private buildCacheKey(key: string, type: string): string {
+  private buildCacheKey(_key: string, type: string): string {
     if (this.config.aggressive_mode) {
       // Modo agressivo: cache mais genérico para máxima reutilização
-      return `${type}:${this.hashString(key)}`;
+      return `${type}:${this.hashString(_key)}`;
     }
-    return `${type}:${key}`;
+    return `${type}:${_key}`;
   }
 
   private getTierFromComplexity(score: number): string {
@@ -346,20 +415,20 @@ export class AiCacheManager {
   // CACHE MEMÓRIA
   // ================================
 
-  private getFromMemory(key: string): unknown {
-    const entry = this.memoryCache.get(key);
+  private getFromMemory(_key: string): unknown {
+    const entry = this.memoryCache.get(_key);
     if (entry && entry.expires > Date.now()) {
       entry.hits++;
       return entry.data;
     }
     if (entry) {
-      this.memoryCache.delete(key); // Expirou
+      this.memoryCache.delete(_key); // Expirou
     }
     return null;
   }
 
-  private setInMemory(key: string, data: unknown): void {
-    this.memoryCache.set(key, {
+  private setInMemory(_key: string, data: unknown): void {
+    this.memoryCache.set(_key, {
       data,
       expires: Date.now() + this.config.memory_ttl,
       hits: 0
@@ -528,30 +597,34 @@ export function generateTextHash(text: string): string {
 
 /**
  * Decorator para cache automático em funções de análise
+ * Type-safe wrapper for decorated methods
  */
 export function withCache(
   analysisType: 'essential' | 'strategic' | 'report',
-  keyExtractor: (args: unknown[]) => string
+  keyExtractor: (..._args: unknown[]) => string
 ) {
   return function (_target: unknown, _propertyName: string, descriptor: PropertyDescriptor) {
-     
-    const method = descriptor.value as (...args: unknown[]) => Promise<unknown>;
+    // Validate descriptor value is a method
+    const originalMethod = descriptor.value;
+    if (typeof originalMethod !== 'function') {
+      throw new Error('withCache decorator can only be applied to methods');
+    }
 
-    descriptor.value = async function (this: unknown, ...args: unknown[]) {
+    descriptor.value = async function (this: unknown, ..._args: unknown[]): Promise<unknown> {
       const cache = getAiCache();
-      const key = keyExtractor(args);
+      const key = keyExtractor(_args);
 
       // Tentar buscar no cache primeiro
       const cached = await cache.get(key, analysisType);
-      if (cached) {
-        console.log(`${ICONS.CACHE} Cache hit para ${analysisType}: ${propertyName}`);
+      if (cached !== null) {
+        console.log(`${ICONS.CACHE} Cache hit para ${analysisType}: ${_propertyName}`);
         return cached;
       }
 
       // Executar função original
-      const result = await method.apply(this, args);
+      const result = await originalMethod.apply(this, _args);
 
-      // Salvar no cache
+      // Salvar no cache (valida antes)
       await cache.set(key, result, analysisType);
 
       return result;
