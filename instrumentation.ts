@@ -11,7 +11,7 @@
 export async function register() {
   // Only initialize on server side
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const { setupSentryGlobal } = await import('./lib/sentry-init');
+    const { setupSentryGlobal } = await import('./sentry.server.config');
     setupSentryGlobal();
   }
 }

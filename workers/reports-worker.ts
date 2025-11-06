@@ -476,7 +476,7 @@ function calculateNextExecution(frequency: string): Date {
  */
 async function recordReportExecution(scheduleId: string, pdfResult: any, workspaceId: string, reportType: string) {
   try {
-    const { prisma } = await import('../lib/prisma');
+    const { prisma } = await import('@/lib/prisma');
 
     await prisma.reportExecution.create({
       data: {
@@ -504,7 +504,7 @@ async function recordReportExecution(scheduleId: string, pdfResult: any, workspa
  */
 async function getReportCustomization(workspaceId: string) {
   try {
-    const { prisma } = await import('../lib/prisma');
+    const { prisma } = await import('@/lib/prisma');
 
     const customization = await prisma.reportCustomization.findFirst({
       where: {
