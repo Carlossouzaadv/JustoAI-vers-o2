@@ -5,7 +5,6 @@ import {
   errorResponse,
   paginatedResponse,
   requireAuth,
-  validateQuery,
   requireWorkspaceAccess,
   rateLimit,
   getClientIP
@@ -14,9 +13,7 @@ import {
   CreateCasePayloadSchema,
   CreateCasePayload,
   CasesListQuerySchema,
-  CasesListQuery,
-  parseCreateCase,
-  parseCasesListQuery
+  CasesListQuery
 } from '@/lib/types/api-schemas'
 
 /**
@@ -93,7 +90,15 @@ import {
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-// GET /api/cases - List cases
+/**
+ * GET /api/cases - List cases
+ *
+ * Validation:
+ * - All query parameters validated with CasesListQuerySchema
+ * - Page defaults to 1, limit defaults to 20
+ * - Optional filters: status, type, priority, clientId, workspaceId
+ * - Search term applies to title, description, processNumber, client.name
+ */
 async function GET(request: NextRequest) {
   // Rate limiting
   const clientIP = getClientIP(request)
@@ -104,19 +109,21 @@ async function GET(request: NextRequest) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  // Query validation using centralized schema
-  const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries())
-  const parseResult = parseCasesListQuery(searchParams)
-  if (!parseResult.success) {
+  // --- VALIDATION: QUERY PARAMETERS ---
+  // Extract searchParams into an object (Zod expects object, not URLSearchParams)
+  const rawParams: unknown = Object.fromEntries(request.nextUrl.searchParams.entries())
+  const paramParseResult = CasesListQuerySchema.safeParse(rawParams)
+
+  if (!paramParseResult.success) {
     return NextResponse.json({
       success: false,
-      message: 'Invalid query parameters',
-      errors: parseResult.error
+      message: 'Parâmetros de busca (query) inválidos.',
+      errors: paramParseResult.error.flatten(),
     }, { status: 400 })
   }
 
-  const query = parseResult.data
-
+  // Destructure type-safe query parameters
+  const query: CasesListQuery = paramParseResult.data
   const { page, limit, search, status, type, priority, clientId, workspaceId } = query
 
   // If workspaceId is provided, check access
@@ -298,7 +305,15 @@ async function GET(request: NextRequest) {
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-// POST /api/cases - Create case
+/**
+ * POST /api/cases - Create case
+ *
+ * Validation:
+ * - Request body validated with CreateCasePayloadSchema
+ * - Required: workspaceId, clientId, title, type
+ * - Optional: description, processNumber, status, priority, value, startDate, expectedEndDate
+ * - Client must exist and belong to the workspace
+ */
 async function POST(request: NextRequest) {
   // Rate limiting (stricter for creates)
   const clientIP = getClientIP(request)
@@ -309,18 +324,19 @@ async function POST(request: NextRequest) {
   const { user, error: authError } = await requireAuth(request)
   if (!user) return authError!
 
-  // Body validation using centralized schema
+  // --- VALIDATION: REQUEST BODY ---
   const rawBody: unknown = await request.json()
-  const parseResult = parseCreateCase(rawBody)
-  if (!parseResult.success) {
+  const bodyParseResult = CreateCasePayloadSchema.safeParse(rawBody)
+
+  if (!bodyParseResult.success) {
     return NextResponse.json({
       success: false,
-      message: 'Invalid request body',
-      errors: parseResult.error
+      message: 'Dados de criação do caso inválidos.',
+      errors: bodyParseResult.error.flatten(),
     }, { status: 400 })
   }
 
-  const input: CreateCasePayload = parseResult.data
+  const input: CreateCasePayload = bodyParseResult.data
 
   // Workspace access check
   const { hasAccess, error: accessError } = await requireWorkspaceAccess(user.id, input.workspaceId)
