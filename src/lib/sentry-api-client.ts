@@ -86,16 +86,21 @@ export async function getSentryErrors(
 
     const events = await response.json();
 
-    return events.map((event: unknown) => ({
-      id: event.groupID || event.id,
-      title: event.title || event.message || 'Unknown error',
-      culprit: event.culprit || 'Unknown',
-      level: event.level || 'error',
-      count: event.count || 1,
-      userCount: event.userCount || 0,
-      firstSeen: event.firstSeen || new Date().toISOString(),
-      lastSeen: event.lastSeen || new Date().toISOString(),
-      platform: event.platform || 'node',
+    if (!Array.isArray(events)) {
+      console.warn('Sentry events response is not an array');
+      return [];
+    }
+
+    return events.map((event: Record<string, unknown>): SentryError => ({
+      id: typeof event.groupID === 'string' ? event.groupID : (typeof event.id === 'string' ? event.id : 'unknown'),
+      title: typeof event.title === 'string' ? event.title : (typeof event.message === 'string' ? event.message : 'Unknown error'),
+      culprit: typeof event.culprit === 'string' ? event.culprit : 'Unknown',
+      level: (event.level === 'fatal' || event.level === 'error' || event.level === 'warning' || event.level === 'info' || event.level === 'debug') ? event.level : 'error',
+      count: typeof event.count === 'number' ? event.count : 1,
+      userCount: typeof event.userCount === 'number' ? event.userCount : 0,
+      firstSeen: typeof event.firstSeen === 'string' ? event.firstSeen : new Date().toISOString(),
+      lastSeen: typeof event.lastSeen === 'string' ? event.lastSeen : new Date().toISOString(),
+      platform: typeof event.platform === 'string' ? event.platform : 'node',
     }));
   } catch (error) {
     console.error('Error fetching Sentry errors:', error);
@@ -124,9 +129,15 @@ export async function getSentryProjectStats(): Promise<SentryProjectStats> {
     const topErrors = await getSentryErrors(10);
 
     // Calculate metrics from stats
-    const totalEvents = stats.reduce((sum: number, point: unknown) => {
-      const val = Array.isArray(point) ? point[1] : point.received || 0;
-      return sum + val;
+    const statsArray = Array.isArray(stats) ? stats : [];
+    const totalEvents = statsArray.reduce((sum: number, point: unknown) => {
+      if (Array.isArray(point) && typeof point[1] === 'number') {
+        return sum + point[1];
+      }
+      if (typeof point === 'object' && point !== null && 'received' in point && typeof point.received === 'number') {
+        return sum + point.received;
+      }
+      return sum;
     }, 0);
 
     const errorRate = totalEvents > 0 ? (recentErrors.length / totalEvents) * 100 : 0;
@@ -175,11 +186,16 @@ export async function getSentryReleases(limit: number = 5) {
     }
 
     const releases = await response.json();
-    return releases.map((release: unknown) => ({
-      version: release.version,
-      dateCreated: release.dateCreated,
-      dateReleased: release.dateReleased,
-      newGroups: release.newGroups,
+
+    if (!Array.isArray(releases)) {
+      return [];
+    }
+
+    return releases.map((release: Record<string, unknown>) => ({
+      version: typeof release.version === 'string' ? release.version : 'unknown',
+      dateCreated: typeof release.dateCreated === 'string' ? release.dateCreated : new Date().toISOString(),
+      dateReleased: typeof release.dateReleased === 'string' ? release.dateReleased : undefined,
+      newGroups: typeof release.newGroups === 'number' ? release.newGroups : 0,
     }));
   } catch (error) {
     console.error('Error fetching Sentry releases:', error);

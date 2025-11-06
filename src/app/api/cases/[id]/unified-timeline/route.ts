@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
+import { ProcessTimelineEntry, CaseDocument, TimelineSource, EventRelationType } from '@prisma/client';
 
 // ================================================================
 // TYPES
@@ -76,10 +77,25 @@ const SOURCE_METADATA = {
 // HELPER FUNCTIONS
 // ================================================================
 
+interface LinkedDocument {
+  id: string;
+  name: string;
+  originalName: string;
+  type: string | null;
+}
+
+type TimelineEntryInput = ProcessTimelineEntry & {
+  linkedDocuments?: LinkedDocument[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 /**
  * Enriquece entrada de timeline com ícone, metadados de fonte e dados de enriquecimento
  */
-function enrichTimelineEntry(entry: unknown): UnifiedTimelineEntry {
+function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
   const sourceMetadata = SOURCE_METADATA[entry.source] || {
     icon: '📌',
     name: 'Outro',
@@ -88,11 +104,13 @@ function enrichTimelineEntry(entry: unknown): UnifiedTimelineEntry {
   };
 
   // Formatar documentos vinculados para o formato esperado pelo componente
-  const linkedDocuments = entry.linkedDocuments?.map((doc: unknown) => ({
+  const linkedDocuments = entry.linkedDocuments?.map((doc: LinkedDocument) => ({
     id: doc.id,
     name: doc.name || doc.originalName,
     // URL será preenchida pelo frontend se necessário
   })) || [];
+
+  const metadata = isRecord(entry.metadata) ? entry.metadata : {};
 
   return {
     id: entry.id,
@@ -104,20 +122,20 @@ function enrichTimelineEntry(entry: unknown): UnifiedTimelineEntry {
     sourceName: sourceMetadata.name,
     confidence: entry.confidence || 0.8,
     metadata: {
-      ...entry.metadata,
+      ...metadata,
       sourceColor: sourceMetadata.color,
       sourceBadge: sourceMetadata.badge,
       linkedDocuments, // Incluir documentos nos metadados também
     },
     // ===== NOVO: Campos de enriquecimento =====
-    isEnriched: entry.isEnriched,
-    enrichedAt: entry.enrichedAt,
-    enrichmentModel: entry.enrichmentModel,
+    isEnriched: undefined,
+    enrichedAt: undefined,
+    enrichmentModel: undefined,
     contributingSources: entry.contributingSources,
-    originalTexts: entry.originalTexts as Record<string, string>,
+    originalTexts: isRecord(entry.originalTexts) ? entry.originalTexts as Record<string, string> : undefined,
     linkedDocumentIds: entry.linkedDocumentIds,
-    hasConflict: entry.hasConflict,
-    conflictDetails: entry.conflictDetails,
+    hasConflict: undefined,
+    conflictDetails: undefined,
     relationType: entry.relationType,
     baseEventId: entry.baseEventId,
   };
@@ -272,21 +290,34 @@ export async function GET(
     });
 
     // Converter documentos em entradas de timeline
-    const documentTimelineEntries = documents.map((doc) => ({
-      id: `doc-${doc.id}`,
-      eventDate: doc.documentDate || doc.createdAt,
-      eventType: doc.type || 'DOCUMENTO',
-      description: `📎 ${doc.name || doc.originalName}`,
-      source: 'DOCUMENT_UPLOAD' as const,
-      sourceId: doc.id,
-      metadata: {
-        ...doc.metadata,
-        documentType: doc.type,
-        originalName: doc.originalName
-      },
-      confidence: 0.8,
-      createdAt: doc.createdAt
-    }));
+    const documentTimelineEntries: TimelineEntryInput[] = documents.map((doc) => {
+      const metadata = isRecord(doc.metadata) ? doc.metadata : {};
+      return {
+        id: `doc-${doc.id}`,
+        caseId,
+        contentHash: '',
+        eventDate: doc.documentDate || doc.createdAt,
+        eventType: doc.type || 'DOCUMENTO',
+        description: `📎 ${doc.name || doc.originalName}`,
+        normalizedContent: '',
+        source: 'DOCUMENT_UPLOAD' as TimelineSource,
+        sourceId: doc.id,
+        metadata: {
+          ...metadata,
+          documentType: doc.type,
+          originalName: doc.originalName
+        },
+        confidence: 0.8,
+        createdAt: doc.createdAt,
+        updatedAt: doc.createdAt,
+        baseEventId: null,
+        enrichedByIds: [],
+        relationType: null,
+        originalTexts: null,
+        contributingSources: [],
+        linkedDocumentIds: []
+      };
+    });
 
     console.log(
       `${ICONS.SUCCESS} [Unified Timeline] ${documentTimelineEntries.length} documentos convertidos para timeline`

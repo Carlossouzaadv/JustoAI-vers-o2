@@ -103,6 +103,17 @@ export type ImportStatus =
   | 'FAILED'
   | 'CANCELLED';
 
+interface ColumnMapping {
+  sourceField: string;
+  targetField: string;
+  category: string;
+}
+
+interface SystemMappingData {
+  system: string;
+  columnMappings: ColumnMapping[];
+}
+
 // ================================
 // CLASSE PRINCIPAL DO IMPORTADOR
 // ================================
@@ -378,9 +389,9 @@ export class SystemImporter {
 
   private async importCategory(
     category: string,
-    dataRows: unknown[][],
-    categoryMappings: unknown[],
-    systemMapping: unknown,
+    dataRows: Array<Array<string | number | boolean | null>>,
+    categoryMappings: ColumnMapping[],
+    systemMapping: SystemMappingData,
     options: ImportOptions
   ): Promise<void> {
     if (!this.session) return;
@@ -403,9 +414,9 @@ export class SystemImporter {
 
   private async processBatch(
     category: string,
-    batchRows: unknown[][],
-    categoryMappings: unknown[],
-    systemMapping: unknown,
+    batchRows: Array<Array<string | number | boolean | null>>,
+    categoryMappings: ColumnMapping[],
+    systemMapping: SystemMappingData,
     options: ImportOptions
   ): Promise<void> {
     if (!this.session) return;
@@ -434,10 +445,10 @@ export class SystemImporter {
 
   private async processRow(
     category: string,
-    row: unknown[],
+    row: Array<string | number | boolean | null>,
     lineNumber: number,
-    categoryMappings: unknown[],
-    systemMapping: unknown,
+    categoryMappings: ColumnMapping[],
+    systemMapping: SystemMappingData,
     options: ImportOptions
   ): Promise<void> {
     if (!this.session) return;
@@ -523,7 +534,8 @@ export class SystemImporter {
   private async createClient(data: Record<string, unknown>, options: ImportOptions): Promise<void> {
     if (!this.session) return;
 
-    if (!data.client_name) {
+    const clientName = typeof data.client_name === 'string' ? data.client_name : null;
+    if (!clientName) {
       this.session.warnings.push({
         type: 'MISSING_OPTIONAL',
         message: 'Nome do cliente é obrigatório',
@@ -536,7 +548,7 @@ export class SystemImporter {
     const existingClient = await prisma.client.findFirst({
       where: {
         workspaceId: this.session.workspaceId,
-        name: data.client_name
+        name: clientName
       }
     });
 
@@ -550,10 +562,10 @@ export class SystemImporter {
         await prisma.client.update({
           where: { id: existingClient.id },
           data: {
-            name: data.client_name,
-            email: data.email,
-            phone: data.phone,
-            document: data.document,
+            name: clientName,
+            email: typeof data.email === 'string' ? data.email : undefined,
+            phone: typeof data.phone === 'string' ? data.phone : undefined,
+            document: typeof data.document === 'string' ? data.document : undefined,
             type: this.mapClientType(data.client_type) ?? 'INDIVIDUAL'
           }
         });
@@ -562,10 +574,10 @@ export class SystemImporter {
       await prisma.client.create({
         data: {
           workspaceId: this.session.workspaceId,
-          name: data.client_name,
-          email: data.email,
-          phone: data.phone,
-          document: data.document,
+          name: clientName,
+          email: typeof data.email === 'string' ? data.email : undefined,
+          phone: typeof data.phone === 'string' ? data.phone : undefined,
+          document: typeof data.document === 'string' ? data.document : undefined,
           type: this.mapClientType(data.client_type) ?? 'INDIVIDUAL'
         }
       });
@@ -577,7 +589,10 @@ export class SystemImporter {
   private async createCase(data: Record<string, unknown>, options: ImportOptions): Promise<void> {
     if (!this.session) return;
 
-    if (!data.process_number && !data.case_code) {
+    const processNumber = typeof data.process_number === 'string' ? data.process_number : null;
+    const caseCode = typeof data.case_code === 'string' ? data.case_code : null;
+
+    if (!processNumber && !caseCode) {
       this.session.warnings.push({
         type: 'MISSING_OPTIONAL',
         message: 'Número do processo ou código do caso é obrigatório'
@@ -587,11 +602,12 @@ export class SystemImporter {
 
     // Buscar cliente relacionado
     let clientId: string | null = null;
-    if (data.client_name) {
+    const clientName = typeof data.client_name === 'string' ? data.client_name : null;
+    if (clientName) {
       const client = await prisma.client.findFirst({
         where: {
           workspaceId: this.session.workspaceId,
-          name: data.client_name
+          name: clientName
         }
       });
       clientId = client?.id || null;
@@ -607,13 +623,19 @@ export class SystemImporter {
     }
 
     // Verificar se caso já existe
-    const identifier = data.process_number || data.case_code;
+    const identifier = processNumber || caseCode;
+    const caseTitle = typeof data.title === 'string' ? data.title : null;
+
+    if (!identifier) {
+      return; // Should never happen due to earlier check
+    }
+
     const existingCase = await prisma.case.findFirst({
       where: {
         workspaceId: this.session.workspaceId,
         OR: [
           { number: identifier },
-          { title: data.title }
+          ...(caseTitle ? [{ title: caseTitle }] : [])
         ]
       }
     });
@@ -627,18 +649,23 @@ export class SystemImporter {
       // Criar usuário padrão se não existir
       const userId = await this.getDefaultUserId();
 
+      const caseDescription = typeof data.description === 'string' ? data.description : undefined;
+      const claimValueRaw = data.claim_value;
+      const claimValue = typeof claimValueRaw === 'number' ? claimValueRaw :
+                         typeof claimValueRaw === 'string' ? parseFloat(claimValueRaw) : undefined;
+
       await prisma.case.create({
         data: {
           workspaceId: this.session.workspaceId,
           clientId: clientId,
           number: identifier,
-          title: data.title || 'Caso Importado',
-          description: data.description,
+          title: caseTitle || 'Caso Importado',
+          description: caseDescription,
           type: this.mapCaseType(data.case_type) || 'CIVIL',
           status: this.mapCaseStatus(data.status) || 'ACTIVE',
           priority: 'MEDIUM',
           createdById: userId,
-          claimValue: data.claim_value ? parseFloat(data.claim_value.toString()) : undefined
+          claimValue
         }
       });
 
@@ -721,7 +748,7 @@ export class SystemImporter {
   private mapClientType(value: unknown): 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO' | undefined {
     if (!value) return undefined;
 
-    const mappings: Record<string, unknown> = {
+    const mappings: Record<string, 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO'> = {
       'pessoa fisica': 'INDIVIDUAL',
       'individual': 'INDIVIDUAL',
       'pessoa juridica': 'COMPANY',
@@ -733,13 +760,14 @@ export class SystemImporter {
       'ngo': 'NGO'
     };
 
-    return mappings[value.toString().toLowerCase()] || undefined;
+    const mapped = mappings[value.toString().toLowerCase()];
+    return mapped || undefined;
   }
 
   private mapCaseType(value: unknown): 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' | null {
     if (!value) return null;
 
-    const mappings: Record<string, unknown> = {
+    const mappings: Record<string, 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX'> = {
       'civil': 'CIVIL',
       'civel': 'CIVIL',
       'criminal': 'CRIMINAL',
@@ -758,13 +786,14 @@ export class SystemImporter {
       'tax': 'TAX'
     };
 
-    return mappings[value.toString().toLowerCase()] || 'OTHER';
+    const mapped = mappings[value.toString().toLowerCase()];
+    return mapped || 'OTHER';
   }
 
   private mapCaseStatus(value: unknown): 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED' | null {
     if (!value) return null;
 
-    const mappings: Record<string, unknown> = {
+    const mappings: Record<string, 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED'> = {
       'ativo': 'ACTIVE',
       'active': 'ACTIVE',
       'em andamento': 'ACTIVE',
@@ -779,7 +808,8 @@ export class SystemImporter {
       'cancelled': 'CANCELLED'
     };
 
-    return mappings[value.toString().toLowerCase()] || null;
+    const mapped = mappings[value.toString().toLowerCase()];
+    return mapped || null;
   }
 }
 

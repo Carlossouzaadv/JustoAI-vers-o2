@@ -11,6 +11,7 @@ import { telemetry } from '@/lib/monitoring-telemetry';
 import { ICONS } from '@/lib/icons';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
+import { getErrorMessage } from '@/lib/error-handling';
 
 // ================================================================
 // WORKER FUNCTIONS (MOCKED - process-monitor-worker not implemented)
@@ -115,11 +116,12 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to get admin status:`, error);
+    const errorMessage = getErrorMessage(error);
+    console.error(`${ICONS.ERROR} Failed to get admin status:`, errorMessage);
 
     return NextResponse.json({
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage
     }, { status: 500 });
   }
 }
@@ -166,11 +168,12 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Admin action failed:`, error);
+    const errorMessage = getErrorMessage(error);
+    console.error(`${ICONS.ERROR} Admin action failed:`, errorMessage);
 
     return NextResponse.json({
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage
     }, { status: 500 });
   }
 }
@@ -303,7 +306,7 @@ async function checkJuditApiStatus(): Promise<ComponentStatus> {
       status: 'critical',
       lastCheck: new Date(),
       responseTime: Date.now() - startTime,
-      details: `API unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `API unreachable: ${getErrorMessage(error)}`,
       metrics: { error: true }
     };
   }
@@ -339,7 +342,7 @@ async function checkMonitoringWorkerStatus(): Promise<ComponentStatus> {
     return {
       status: 'critical',
       lastCheck: new Date(),
-      details: `Worker unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Worker unreachable: ${getErrorMessage(error)}`,
       metrics: { error: true }
     };
   }
@@ -374,7 +377,7 @@ async function checkDatabaseStatus(): Promise<ComponentStatus> {
       status: 'critical',
       lastCheck: new Date(),
       responseTime: Date.now() - startTime,
-      details: `Database unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Database unreachable: ${getErrorMessage(error)}`,
       metrics: { error: true }
     };
   }
@@ -420,7 +423,7 @@ async function checkRedisStatus(): Promise<ComponentStatus> {
       status: 'critical',
       lastCheck: new Date(),
       responseTime: Date.now() - startTime,
-      details: `Redis unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Redis unreachable: ${getErrorMessage(error)}`,
       metrics: { error: true }
     };
   }
@@ -467,7 +470,7 @@ async function checkWebhookStatus(): Promise<ComponentStatus> {
     return {
       status: 'critical',
       lastCheck: new Date(),
-      details: `Webhook system unreachable: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      details: `Webhook system unreachable: ${getErrorMessage(error)}`,
       metrics: { error: true }
     };
   }
@@ -708,7 +711,7 @@ async function performHealthCheck(): Promise<unknown> {
     checks.database = true;
     details.database = 'Connected successfully';
   } catch (error) {
-    details.database = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    details.database = `Failed: ${getErrorMessage(error)}`;
   }
 
   try {
@@ -718,7 +721,7 @@ async function performHealthCheck(): Promise<unknown> {
     checks.redis = isReady;
     details.redis = isReady ? 'Connected successfully' : 'Not ready';
   } catch (error) {
-    details.redis = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    details.redis = `Failed: ${getErrorMessage(error)}`;
   }
 
   try {
@@ -728,7 +731,7 @@ async function performHealthCheck(): Promise<unknown> {
     checks.juditApi = true;
     details.juditApi = 'API responding normally';
   } catch (error) {
-    details.juditApi = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    details.juditApi = `Failed: ${getErrorMessage(error)}`;
   }
 
   try {
@@ -738,7 +741,7 @@ async function performHealthCheck(): Promise<unknown> {
     checks.workers = stats.queue.active >= 0; // Worker is responding
     details.workers = `Queue stats retrieved: ${stats.queue.waiting} waiting, ${stats.queue.active} active`;
   } catch (error) {
-    details.workers = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    details.workers = `Failed: ${getErrorMessage(error)}`;
   }
 
   try {
@@ -747,7 +750,7 @@ async function performHealthCheck(): Promise<unknown> {
     checks.webhooks = true;
     details.webhooks = `${pendingCount} pending webhooks`;
   } catch (error) {
-    details.webhooks = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    details.webhooks = `Failed: ${getErrorMessage(error)}`;
   }
 
   const overallHealth = Object.values(checks).every(check => check);
@@ -781,7 +784,7 @@ function determineOverallStatus(componentStatuses: ComponentStatus[]): SystemSta
   }
 }
 
-function generateRecommendations(status: unknown): string[] {
+function generateRecommendations(status: any): string[] {
   const recommendations: string[] = [];
 
   if (status.overall === 'critical') {
@@ -897,11 +900,12 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Recovery action failed:`, error);
+    const errorMessage = getErrorMessage(error);
+    console.error(`${ICONS.ERROR} Recovery action failed:`, errorMessage);
 
     return NextResponse.json({
       status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: errorMessage
     }, { status: 500 });
   }
 }

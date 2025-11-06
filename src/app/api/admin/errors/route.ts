@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { getSentryProjectStats } from '@/lib/sentry-api-client';
+import { getErrorMessage } from '@/lib/error-handling';
 
 interface ErrorItem {
   id: string;
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
     let errors: ErrorItem[] = [];
     try {
       const sentryStats = await getSentryProjectStats();
-      errors = sentryStats.recentErrors.map((err: unknown) => ({
+      errors = sentryStats.recentErrors.map((err: any) => ({
         id: err.id || err.shortId,
         title: err.title,
         culprit: err.culprit,
@@ -84,7 +85,7 @@ export async function GET(req: NextRequest) {
         },
       }));
     } catch (err) {
-      console.warn('Failed to fetch Sentry errors:', err);
+      console.warn('Failed to fetch Sentry errors:', getErrorMessage(err));
       // Continue with empty list if Sentry fails
     }
 
@@ -147,11 +148,12 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error fetching errors:', error);
+    const errorMessage = getErrorMessage(error);
+    console.error('Error fetching errors:', errorMessage);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch errors',
+        error: errorMessage,
       },
       { status: 500 }
     );

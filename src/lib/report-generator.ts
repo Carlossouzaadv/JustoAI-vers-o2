@@ -37,11 +37,21 @@ export interface ReportGenerationRequest {
   customTemplate?: string;
 }
 
+export interface ReportSummary {
+  totalProcesses: number;
+  contentLength?: number;
+  audienceType?: string;
+  generatedAt?: string;
+  model?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
 export interface ReportGenerationResult {
   success: boolean;
   reportId: string;
   fileUrls: Record<string, string>;
-  summary: unknown;
+  summary: ReportSummary;
   tokensUsed: number;
   cacheHit: boolean;
   cacheKey?: string;
@@ -332,7 +342,7 @@ export class ReportGenerator {
   /**
    * Constrói payload delta (apenas novidades)
    */
-  private buildDeltaPayload(processData: ProcessData[]): unknown {
+  private buildDeltaPayload(processData: ProcessData[]): Record<string, unknown> {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -356,7 +366,7 @@ export class ReportGenerator {
   /**
    * Constrói payload completo
    */
-  private buildFullPayload(processData: ProcessData[]): unknown {
+  private buildFullPayload(processData: ProcessData[]): Record<string, unknown> {
     return {
       type: 'full',
       summary: 'Relatório completo de todos os processos',
@@ -393,21 +403,14 @@ export class ReportGenerator {
    */
   private async generateContentWithGemini(
     prompt: string,
-    payload: unknown,
+    payload: Record<string, unknown>,
     audienceType: AudienceType
   ): Promise<{
     content: string;
-    summary: unknown;
+    summary: ReportSummary;
     tokensUsed: number;
   }> {
     console.log(`${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...`);
-
-    // Validar payload é um objeto com propriedades básicas
-    if (typeof payload !== 'object' || payload === null) {
-      throw new Error('Payload inválido: deve ser um objeto');
-    }
-
-    const payloadObj = payload as Record<string, unknown>;
 
     try {
       const geminiClient = getGeminiClient();
@@ -423,17 +426,19 @@ export class ReportGenerator {
 
       console.log(`${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}`);
 
-      const totalProcesses = typeof payloadObj.totalProcesses === 'number' ? payloadObj.totalProcesses : 0;
+      const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
+
+      const summary: ReportSummary = {
+        totalProcesses,
+        contentLength: (result.content || '').length,
+        audienceType,
+        generatedAt: new Date().toISOString(),
+        model: modelTier
+      };
 
       return {
         content: result.content || this.generateMockContent(payload, audienceType),
-        summary: result.summary || {
-          totalProcesses,
-          contentLength: (result.content || '').length,
-          audienceType,
-          generatedAt: new Date().toISOString(),
-          model: modelTier
-        },
+        summary,
         tokensUsed: result.metadata?.tokensUsed || Math.floor((result.content || '').length / 4)
       };
     } catch (error) {
@@ -441,17 +446,19 @@ export class ReportGenerator {
 
       // Fallback para conteúdo mock em caso de erro
       const mockContent = this.generateMockContent(payload, audienceType);
-      const totalProcesses = typeof payloadObj.totalProcesses === 'number' ? payloadObj.totalProcesses : 0;
+      const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
+
+      const summary: ReportSummary = {
+        totalProcesses,
+        contentLength: mockContent.length,
+        audienceType,
+        generatedAt: new Date().toISOString(),
+        error: 'Fallback para conteúdo mock devido a erro na API'
+      };
 
       return {
         content: mockContent,
-        summary: {
-          totalProcesses,
-          contentLength: mockContent.length,
-          audienceType,
-          generatedAt: new Date().toISOString(),
-          error: 'Fallback para conteúdo mock devido a erro na API'
-        },
+        summary,
         tokensUsed: Math.floor(mockContent.length / 4)
       };
     }
@@ -460,7 +467,7 @@ export class ReportGenerator {
   /**
    * Gera conteúdo mock para testes
    */
-  private generateMockContent(payload: unknown, audienceType: AudienceType): string {
+  private generateMockContent(payload: Record<string, unknown>, audienceType: AudienceType): string {
     const clientLanguage = audienceType === 'CLIENTE';
 
     return `
@@ -724,23 +731,20 @@ ${clientLanguage ?
   private async saveReportCache(
     cacheKey: string,
     request: ReportGenerationRequest,
-    result: unknown
+    result: {
+      summary: ReportSummary;
+      fileUrls: Record<string, string>;
+      tokensUsed: number;
+    }
   ): Promise<void> {
     try {
-      // Validar que result é um objeto com as propriedades esperadas
-      if (typeof result !== 'object' || result === null) {
-        throw new Error('Resultado de cache deve ser um objeto');
-      }
-
-      const resultObj = result as Record<string, unknown>;
-
       // Validar fileUrls
-      if (!isReportFileUrls(resultObj.fileUrls)) {
+      if (!isReportFileUrls(result.fileUrls)) {
         throw new Error('FileUrls inválidos: falha na validação de tipo');
       }
 
-      const fileUrls: ReportFileUrls = resultObj.fileUrls;
-      const summary = resultObj.summary;
+      const fileUrls: ReportFileUrls = result.fileUrls;
+      const summary = result.summary;
 
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // Cache por 7 dias

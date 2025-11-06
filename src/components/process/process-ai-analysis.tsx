@@ -70,10 +70,12 @@ interface AIAnalysisVersion {
   data?: unknown; // Raw data para acesso direto
 }
 
+type SanitizedData = string | number | boolean | SanitizedData[] | { [key: string]: SanitizedData } | null;
+
 /**
  * Sanitiza dados de análise removendo valores null
  */
-function sanitizeAnalysisData(data: unknown): unknown {
+function sanitizeAnalysisData(data: unknown): SanitizedData {
   if (!data) return null;
   if (data === null) return null;
 
@@ -82,7 +84,7 @@ function sanitizeAnalysisData(data: unknown): unknown {
   }
 
   if (typeof data === 'object') {
-    const sanitized: unknown = {};
+    const sanitized: { [key: string]: SanitizedData } = {};
     for (const [key, value] of Object.entries(data)) {
       // Skip null/undefined values
       if (value === null || value === undefined) continue;
@@ -91,7 +93,11 @@ function sanitizeAnalysisData(data: unknown): unknown {
     return Object.keys(sanitized).length > 0 ? sanitized : null;
   }
 
-  return data;
+  if (typeof data === 'string' || typeof data === 'number' || typeof data === 'boolean') {
+    return data;
+  }
+
+  return null;
 }
 
 interface ProcessAIAnalysisProps {
@@ -150,24 +156,25 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
       const response = await fetch(`/api/process/${processId}/analysis`);
       if (response.ok) {
         const data = await response.json();
-        const analysisVersions = data.analyses || [];
-        const sanitizedAnalyses = analysisVersions.map((a: unknown) => {
+        const analysisVersions = Array.isArray(data.analyses) ? data.analyses : [];
+
+        const sanitizedAnalyses: AIAnalysisVersion[] = analysisVersions.map((a: Record<string, unknown>) => {
           // Sanitizar dados para remover nulls que quebram React
-          const sanitized = {
-            id: a.id,
-            version: a.version,
-            createdAt: a.createdAt,
-            status: a.status || 'completed',
-            analysisType: a.analysisType || 'essential',
-            model: a.model || 'gemini-flash',
-            summary: a.summary || undefined,
-            keyPoints: sanitizeAnalysisData(a.keyPoints) || undefined,
-            legalAssessment: sanitizeAnalysisData(a.legalAssessment) || undefined,
-            riskAssessment: sanitizeAnalysisData(a.riskAssessment) || undefined,
-            timelineAnalysis: sanitizeAnalysisData(a.timelineAnalysis) || undefined,
-            tokensUsed: (a.data as unknown)?.tokensUsed,
-            processingTime: a.processingTime,
-            confidence: a.confidence,
+          const sanitized: AIAnalysisVersion = {
+            id: typeof a.id === 'string' ? a.id : '',
+            version: typeof a.version === 'number' ? a.version : 0,
+            createdAt: typeof a.createdAt === 'string' ? a.createdAt : new Date().toISOString(),
+            status: (a.status === 'generating' || a.status === 'completed' || a.status === 'error') ? a.status : 'completed',
+            analysisType: (a.analysisType === 'essential' || a.analysisType === 'strategic' || a.analysisType === 'complete') ? a.analysisType : 'essential',
+            model: (a.model === 'gemini-flash-8b' || a.model === 'gemini-flash' || a.model === 'gemini-pro') ? a.model : 'gemini-flash',
+            summary: typeof a.summary === 'string' ? a.summary : undefined,
+            keyPoints: Array.isArray(a.keyPoints) ? a.keyPoints.filter((k): k is string => typeof k === 'string') : undefined,
+            legalAssessment: typeof a.legalAssessment === 'object' && a.legalAssessment !== null ? a.legalAssessment as AIAnalysisVersion['legalAssessment'] : undefined,
+            riskAssessment: typeof a.riskAssessment === 'object' && a.riskAssessment !== null ? a.riskAssessment as AIAnalysisVersion['riskAssessment'] : undefined,
+            timelineAnalysis: typeof a.timelineAnalysis === 'object' && a.timelineAnalysis !== null ? a.timelineAnalysis as AIAnalysisVersion['timelineAnalysis'] : undefined,
+            tokensUsed: typeof a.tokensUsed === 'number' ? a.tokensUsed : undefined,
+            processingTime: typeof a.processingTime === 'number' ? a.processingTime : undefined,
+            confidence: typeof a.confidence === 'number' ? a.confidence : undefined,
             data: a.data
           };
           return sanitized;

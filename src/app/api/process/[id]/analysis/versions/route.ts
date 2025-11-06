@@ -6,8 +6,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { ICONS } from '@/lib/icons';
+import type { CaseAnalysisVersion, ProcessStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Types
+interface VersionDiffDetail {
+  analysisType: {
+    changed: boolean;
+    from: string;
+    to: string;
+  };
+  model: {
+    changed: boolean;
+    from: string;
+    to: string;
+  };
+  confidence: {
+    changed: boolean;
+    from: number | null;
+    to: number | null;
+    delta: number;
+  };
+  content: {
+    contentChanged: boolean;
+    changes?: string[];
+    summary: string;
+  };
+}
+
+interface ChangeDetail {
+  type: string;
+  description: string;
+  impact: 'low' | 'medium' | 'high';
+}
+
+interface VersionChangeSummary {
+  totalChanges: number;
+  criticalChanges: number;
+  changes: ChangeDetail[];
+  hasSignificantChanges: boolean;
+  summary: string;
+}
 
 export async function GET(
   request: NextRequest,
@@ -21,21 +61,7 @@ export async function GET(
     // Buscar todas as versões de análise
     const versions = await prisma.caseAnalysisVersion.findMany({
       where: { caseId: processId },
-      orderBy: { version: 'desc' },
-      select: {
-        id: true,
-        version: true,
-        status: true,
-        analysisType: true,
-        modelUsed: true,
-        confidence: true,
-        processingTime: true,
-        createdAt: true,
-        updatedAt: true,
-        aiAnalysis: true,
-        metadata: true,
-        error: true
-      }
+      orderBy: { version: 'desc' }
     });
 
     if (versions.length === 0) {
@@ -85,8 +111,8 @@ export async function GET(
 /**
  * Calcula diff compacto entre duas versões
  */
-function calculateVersionDiff(current: unknown, previous: unknown) {
-  const diff = {
+function calculateVersionDiff(current: CaseAnalysisVersion, previous: CaseAnalysisVersion): VersionDiffDetail {
+  const diff: VersionDiffDetail = {
     analysisType: {
       changed: current.analysisType !== previous.analysisType,
       from: previous.analysisType,
@@ -112,7 +138,10 @@ function calculateVersionDiff(current: unknown, previous: unknown) {
 /**
  * Calcula diferenças no conteúdo da análise
  */
-function calculateContentDiff(currentAnalysis: unknown, previousAnalysis: unknown) {
+function calculateContentDiff(
+  currentAnalysis: unknown,
+  previousAnalysis: unknown
+): { contentChanged: boolean; changes?: string[]; summary: string } {
   if (!currentAnalysis || !previousAnalysis) {
     return {
       contentChanged: true,
@@ -120,15 +149,26 @@ function calculateContentDiff(currentAnalysis: unknown, previousAnalysis: unknow
     };
   }
 
-  const changes = [];
+  const changes: string[] = [];
+
+  // Type guards for analysis objects
+  const isCurrent = typeof currentAnalysis === 'object' && currentAnalysis !== null;
+  const isPrevious = typeof previousAnalysis === 'object' && previousAnalysis !== null;
+
+  if (!isCurrent || !isPrevious) {
+    return {
+      contentChanged: true,
+      summary: 'Estrutura de análise inválida'
+    };
+  }
 
   // Verificar mudanças nos pontos principais
-  if (currentAnalysis.keyPoints && previousAnalysis.keyPoints) {
+  if ('keyPoints' in currentAnalysis && 'keyPoints' in previousAnalysis) {
     const currentPoints = Array.isArray(currentAnalysis.keyPoints) ? currentAnalysis.keyPoints : [];
     const previousPoints = Array.isArray(previousAnalysis.keyPoints) ? previousAnalysis.keyPoints : [];
 
-    const newPoints = currentPoints.filter((point: string) => !previousPoints.includes(point));
-    const removedPoints = previousPoints.filter((point: string) => !currentPoints.includes(point));
+    const newPoints = currentPoints.filter((point: unknown) => !previousPoints.includes(point));
+    const removedPoints = previousPoints.filter((point: unknown) => !currentPoints.includes(point));
 
     if (newPoints.length > 0) {
       changes.push(`${newPoints.length} novo${newPoints.length > 1 ? 's' : ''} ponto${newPoints.length > 1 ? 's' : ''} principal${newPoints.length > 1 ? 'is' : ''}`);
@@ -140,14 +180,21 @@ function calculateContentDiff(currentAnalysis: unknown, previousAnalysis: unknow
   }
 
   // Verificar mudança no resumo
-  if (currentAnalysis.summary !== previousAnalysis.summary) {
-    changes.push('Resumo atualizado');
+  if ('summary' in currentAnalysis && 'summary' in previousAnalysis) {
+    if (currentAnalysis.summary !== previousAnalysis.summary) {
+      changes.push('Resumo atualizado');
+    }
   }
 
   // Verificar mudanças na avaliação de risco
-  if (currentAnalysis.riskAssessment && previousAnalysis.riskAssessment) {
-    if (currentAnalysis.riskAssessment.level !== previousAnalysis.riskAssessment.level) {
-      changes.push(`Risco alterado: ${previousAnalysis.riskAssessment.level} → ${currentAnalysis.riskAssessment.level}`);
+  if ('riskAssessment' in currentAnalysis && 'riskAssessment' in previousAnalysis) {
+    const currRisk = currentAnalysis.riskAssessment;
+    const prevRisk = previousAnalysis.riskAssessment;
+
+    if (currRisk && prevRisk && typeof currRisk === 'object' && typeof prevRisk === 'object' && 'level' in currRisk && 'level' in prevRisk) {
+      if (currRisk.level !== prevRisk.level) {
+        changes.push(`Risco alterado: ${prevRisk.level} → ${currRisk.level}`);
+      }
     }
   }
 
@@ -161,8 +208,8 @@ function calculateContentDiff(currentAnalysis: unknown, previousAnalysis: unknow
 /**
  * Resume mudanças críticas entre versões
  */
-function summarizeChanges(current: unknown, previous: unknown) {
-  const changes = [];
+function summarizeChanges(current: CaseAnalysisVersion, previous: CaseAnalysisVersion): VersionChangeSummary {
+  const changes: ChangeDetail[] = [];
 
   // Mudança de modelo
   if (current.modelUsed !== previous.modelUsed) {
@@ -192,11 +239,13 @@ function summarizeChanges(current: unknown, previous: unknown) {
     });
   }
 
-  // Verificar se há novos andamentos detectados
-  const currentMetadata = current.metadata || {};
-  const previousMetadata = previous.metadata || {};
+  // Verificar se há novos andamentos detectados (metadata is Json type)
+  const currentMetadata = current.metadata && typeof current.metadata === 'object' && current.metadata !== null ? current.metadata : {};
+  const previousMetadata = previous.metadata && typeof previous.metadata === 'object' && previous.metadata !== null ? previous.metadata : {};
 
-  if (currentMetadata.documentCount > previousMetadata.documentCount) {
+  if ('documentCount' in currentMetadata && 'documentCount' in previousMetadata &&
+      typeof currentMetadata.documentCount === 'number' && typeof previousMetadata.documentCount === 'number' &&
+      currentMetadata.documentCount > previousMetadata.documentCount) {
     const newDocs = currentMetadata.documentCount - previousMetadata.documentCount;
     changes.push({
       type: 'new_documents',

@@ -9,6 +9,7 @@ import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { ICONS } from '@/lib/icons';
+import { SystemImport, ImportedDataItem } from '@prisma/client';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -394,7 +395,7 @@ export async function DELETE(
 // MÉTODOS AUXILIARES
 // ================================
 
-function calculateEstimatedTime(systemImport: unknown): string {
+function calculateEstimatedTime(systemImport: SystemImport): string {
   if (systemImport.progress <= 0) return 'Calculando...';
 
   const elapsed = Date.now() - systemImport.startedAt.getTime();
@@ -440,7 +441,21 @@ function getAvailableActions(status: string): string[] {
   return actions;
 }
 
-async function handleCancelImport(systemImport: unknown, force: boolean) {
+interface ImportError {
+  type: string;
+  message: string;
+  timestamp: string;
+}
+
+function isImportErrorArray(value: unknown): value is ImportError[] {
+  if (!Array.isArray(value)) return false;
+  return value.every(
+    item => typeof item === 'object' && item !== null &&
+    'type' in item && 'message' in item
+  );
+}
+
+async function handleCancelImport(systemImport: SystemImport, force: boolean) {
   const canCancel = [
     'ANALYZING',
     'MAPPING',
@@ -455,13 +470,17 @@ async function handleCancelImport(systemImport: unknown, force: boolean) {
     );
   }
 
+  const existingErrors: ImportError[] = isImportErrorArray(systemImport.errors)
+    ? systemImport.errors
+    : [];
+
   await prisma.systemImport.update({
     where: { id: systemImport.id },
     data: {
       status: 'CANCELLED',
       finishedAt: new Date(),
       errors: [
-        ...(systemImport.errors || []),
+        ...existingErrors,
         {
           type: 'USER_CANCELLED',
           message: 'Importação cancelada pelo usuário',
@@ -487,7 +506,7 @@ async function handleCancelImport(systemImport: unknown, force: boolean) {
   });
 }
 
-async function handleRetryImport(systemImport: unknown, force: boolean) {
+async function handleRetryImport(systemImport: SystemImport, force: boolean) {
   if (systemImport.status === 'IMPORTING' && !force) {
     throw new ApiError('Importação já está em andamento', 400);
   }
@@ -530,7 +549,7 @@ async function handleRetryImport(systemImport: unknown, force: boolean) {
   });
 }
 
-async function handleDeleteImport(systemImport: unknown, force: boolean) {
+async function handleDeleteImport(systemImport: SystemImport, force: boolean) {
   const inProgress = [
     'ANALYZING',
     'MAPPING',

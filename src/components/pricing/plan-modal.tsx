@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Check, Star, ArrowRight, Users, BarChart3, FileText, Zap } from 'lucide-react';
 
-interface PlanModalProps {
+export interface PlanModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: {

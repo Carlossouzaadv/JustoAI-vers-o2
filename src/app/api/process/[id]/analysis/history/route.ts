@@ -9,6 +9,84 @@ import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import type { CaseAnalysisVersion, AnalysisJob, ProcessStatus, JobStatus } from '@prisma/client';
+
+// Types
+type VersionWithJobs = CaseAnalysisVersion & {
+  jobs: AnalysisJob[];
+};
+
+interface VersionDiff {
+  analysisType?: {
+    changed: boolean;
+    from: string;
+    to: string;
+  };
+  model?: {
+    changed: boolean;
+    from: string;
+    to: string;
+  };
+  confidence?: {
+    changed: boolean;
+    from: number | null;
+    to: number | null;
+    delta: number;
+  };
+  sourceFiles?: {
+    changed: boolean;
+    from: number;
+    to: number;
+    delta: number;
+  };
+  creditsUsed?: {
+    changed: boolean;
+    from: number;
+    to: number;
+    delta: number;
+  };
+  totalChanges: number;
+  criticalChanges: number;
+  summary: string;
+}
+
+interface ProcessedVersion {
+  id: string;
+  versionNumber: number;
+  analysisType: string;
+  modelUsed: string;
+  status: ProcessStatus;
+  creditsUsed: {
+    full: number;
+    fast: number;
+    total: number;
+  };
+  confidenceScore: number;
+  processingTime: number;
+  sourceFiles: {
+    count: number;
+    files: unknown;
+  };
+  createdAt: Date;
+  createdBy: string | null;
+  reportUrl: string | null;
+  errorMessage: string | null;
+  isLatest: boolean;
+  diff: VersionDiff | null;
+  job: {
+    id: string;
+    status: JobStatus;
+    progress: number;
+    startedAt: Date | null;
+    finishedAt: Date | null;
+    workerId: string | null;
+    retryCount: number;
+  } | null;
+  content?: {
+    summary: unknown;
+    insights: unknown;
+  };
+}
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
@@ -41,10 +119,10 @@ export const GET = withErrorHandler(async (
     // Buscar todas as versões de análise
     const versions = await prisma.caseAnalysisVersion.findMany({
       where: {
-        processId,
+        caseId: processId,
         workspaceId
       },
-      orderBy: { versionNumber: 'desc' },
+      orderBy: { version: 'desc' },
       include: {
         jobs: {
           orderBy: { createdAt: 'desc' },
@@ -63,7 +141,7 @@ export const GET = withErrorHandler(async (
     }
 
     // Processar versões com diff
-    const processedVersions = [];
+    const processedVersions: ProcessedVersion[] = [];
 
     for (let i = 0; i < versions.length; i++) {
       const current = versions[i];
@@ -75,27 +153,31 @@ export const GET = withErrorHandler(async (
       // Buscar job mais recente para esta versão
       const latestJob = current.jobs[0] || null;
 
-      const versionData: unknown = {
+      const versionData: ProcessedVersion = {
         id: current.id,
-        versionNumber: current.versionNumber,
+        versionNumber: current.version,
         analysisType: current.analysisType,
         modelUsed: current.modelUsed,
         status: current.status,
         creditsUsed: {
-          full: current.fullCreditsUsed,
-          fast: current.fastCreditsUsed,
-          total: Number(current.fullCreditsUsed) + Number(current.fastCreditsUsed)
+          full: current.costEstimate,
+          fast: 0,
+          total: current.costEstimate
         },
-        confidenceScore: current.confidenceScore,
-        processingTime: current.processingTimeMs,
+        confidenceScore: current.confidence,
+        processingTime: current.processingTime,
         sourceFiles: {
-          count: Array.isArray(current.sourceFilesMetadata) ? current.sourceFilesMetadata.length : 0,
-          files: current.sourceFilesMetadata
+          count: current.metadata && typeof current.metadata === 'object' && 'sourceFiles' in current.metadata && Array.isArray(current.metadata.sourceFiles)
+            ? current.metadata.sourceFiles.length
+            : 0,
+          files: current.metadata && typeof current.metadata === 'object' && 'sourceFiles' in current.metadata
+            ? current.metadata.sourceFiles
+            : null
         },
         createdAt: current.createdAt,
-        createdBy: current.createdBy,
-        reportUrl: current.reportUrl,
-        errorMessage: current.errorMessage,
+        createdBy: null,
+        reportUrl: null,
+        errorMessage: current.error,
         isLatest: i === 0,
         diff,
         job: latestJob ? {
@@ -112,8 +194,8 @@ export const GET = withErrorHandler(async (
       // Incluir conteúdo completo se solicitado
       if (includeContent && current.status === 'COMPLETED') {
         versionData.content = {
-          summary: current.summaryJson,
-          insights: current.insightsJson
+          summary: current.aiAnalysis,
+          insights: current.extractedData
         };
       }
 
@@ -134,12 +216,12 @@ export const GET = withErrorHandler(async (
         pending: versions.filter(v => v.status === 'PENDING').length
       },
       totalCreditsUsed: {
-        full: versions.reduce((sum, v) => sum + Number(v.fullCreditsUsed), 0),
-        fast: versions.reduce((sum, v) => sum + Number(v.fastCreditsUsed), 0)
+        full: versions.reduce((sum, v) => sum + v.costEstimate, 0),
+        fast: 0
       },
       avgConfidence: versions
-        .filter(v => v.confidenceScore && v.status === 'COMPLETED')
-        .reduce((sum, v, _, arr) => sum + Number(v.confidenceScore!) / arr.length, 0),
+        .filter(v => v.confidence && v.status === 'COMPLETED')
+        .reduce((sum, v, _, arr) => sum + v.confidence / arr.length, 0),
       dateRange: {
         first: versions[versions.length - 1]?.createdAt,
         last: versions[0]?.createdAt
@@ -171,8 +253,8 @@ export const GET = withErrorHandler(async (
 /**
  * Calcula diff entre duas versões de análise
  */
-function calculateVersionDiff(previous: unknown, current: unknown): unknown {
-  const changes: unknown = {
+function calculateVersionDiff(previous: VersionWithJobs, current: VersionWithJobs): VersionDiff {
+  const changes: VersionDiff = {
     totalChanges: 0,
     criticalChanges: 0,
     summary: ''
@@ -203,28 +285,34 @@ function calculateVersionDiff(previous: unknown, current: unknown): unknown {
   }
 
   // Mudança de confiança
-  if (previous.confidenceScore && current.confidenceScore) {
-    const confDiff = Number(current.confidenceScore) - Number(previous.confidenceScore);
-    if (Math.abs(confDiff) > 0.05) { // Mudança significativa > 5%
-      changes.confidence = {
-        changed: true,
-        from: previous.confidenceScore,
-        to: current.confidenceScore,
-        delta: confDiff
-      };
-      changes.totalChanges++;
+  const confDiff = current.confidence - previous.confidence;
+  if (Math.abs(confDiff) > 0.05) { // Mudança significativa > 5%
+    changes.confidence = {
+      changed: true,
+      from: previous.confidence,
+      to: current.confidence,
+      delta: confDiff
+    };
+    changes.totalChanges++;
 
-      if (confDiff > 0) {
-        summaryParts.push(`Confiança aumentou: +${(confDiff * 100).toFixed(1)}%`);
-      } else {
-        summaryParts.push(`Confiança diminuiu: ${(confDiff * 100).toFixed(1)}%`);
-      }
+    if (confDiff > 0) {
+      summaryParts.push(`Confiança aumentou: +${(confDiff * 100).toFixed(1)}%`);
+    } else {
+      summaryParts.push(`Confiança diminuiu: ${(confDiff * 100).toFixed(1)}%`);
     }
   }
 
+  // Helper to get source files count from metadata
+  const getSourceFilesCount = (version: VersionWithJobs): number => {
+    if (version.metadata && typeof version.metadata === 'object' && 'sourceFiles' in version.metadata && Array.isArray(version.metadata.sourceFiles)) {
+      return version.metadata.sourceFiles.length;
+    }
+    return 0;
+  };
+
   // Mudança no número de arquivos
-  const prevFiles = Array.isArray(previous.sourceFilesMetadata) ? previous.sourceFilesMetadata.length : 0;
-  const currFiles = Array.isArray(current.sourceFilesMetadata) ? current.sourceFilesMetadata.length : 0;
+  const prevFiles = getSourceFilesCount(previous);
+  const currFiles = getSourceFilesCount(current);
 
   if (prevFiles !== currFiles) {
     changes.sourceFiles = {
@@ -243,8 +331,8 @@ function calculateVersionDiff(previous: unknown, current: unknown): unknown {
   }
 
   // Mudança nos créditos usados
-  const prevCredits = Number(previous.fullCreditsUsed) + Number(previous.fastCreditsUsed);
-  const currCredits = Number(current.fullCreditsUsed) + Number(current.fastCreditsUsed);
+  const prevCredits = previous.costEstimate;
+  const currCredits = current.costEstimate;
 
   if (prevCredits !== currCredits) {
     changes.creditsUsed = {
@@ -256,7 +344,7 @@ function calculateVersionDiff(previous: unknown, current: unknown): unknown {
     changes.totalChanges++;
 
     if (currCredits > prevCredits) {
-      summaryParts.push(`+${currCredits - prevCredits} créditos`);
+      summaryParts.push(`+${(currCredits - prevCredits).toFixed(2)} créditos`);
     }
   }
 

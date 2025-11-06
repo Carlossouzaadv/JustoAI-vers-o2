@@ -9,6 +9,7 @@ import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { CaseAnalysisVersion, AnalysisJob } from '@prisma/client';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
@@ -45,9 +46,9 @@ export const GET = withErrorHandler(async (
     // Buscar versão específica
     const analysis = await prisma.caseAnalysisVersion.findFirst({
       where: {
-        processId,
+        caseId: processId,
         workspaceId,
-        versionNumber
+        version: versionNumber
       },
       include: {
         jobs: {
@@ -64,9 +65,9 @@ export const GET = withErrorHandler(async (
     // Buscar versão anterior para diff
     const previousAnalysis = await prisma.caseAnalysisVersion.findFirst({
       where: {
-        processId,
+        caseId: processId,
         workspaceId,
-        versionNumber: versionNumber - 1
+        version: versionNumber - 1
       }
     });
 
@@ -80,32 +81,32 @@ export const GET = withErrorHandler(async (
     const responseData = {
       analysis: {
         id: analysis.id,
-        processId: analysis.processId,
-        versionNumber: analysis.versionNumber,
+        processId: analysis.caseId,
+        versionNumber: analysis.version,
         analysisType: analysis.analysisType,
         modelUsed: analysis.modelUsed,
         status: analysis.status,
         creditsUsed: {
-          full: analysis.fullCreditsUsed,
-          fast: analysis.fastCreditsUsed,
-          total: Number(analysis.fullCreditsUsed) + Number(analysis.fastCreditsUsed)
+          full: 0, // Not available in schema
+          fast: 0, // Not available in schema
+          total: analysis.costEstimate
         },
         content: {
-          summary: analysis.summaryJson,
-          insights: analysis.insightsJson
+          summary: analysis.aiAnalysis,
+          insights: analysis.extractedData
         },
-        confidenceScore: analysis.confidenceScore,
-        processingTime: analysis.processingTimeMs,
+        confidenceScore: analysis.confidence,
+        processingTime: analysis.processingTime,
         sourceFiles: {
-          count: Array.isArray(analysis.sourceFilesMetadata) ? analysis.sourceFilesMetadata.length : 0,
-          files: analysis.sourceFilesMetadata
+          count: 0, // Not available in schema
+          files: []  // Not available in schema
         },
-        reportUrl: analysis.reportUrl,
+        reportUrl: null, // Not available in schema
         analysisKey: analysis.analysisKey,
         createdAt: analysis.createdAt,
         updatedAt: analysis.updatedAt,
-        createdBy: analysis.createdBy,
-        errorMessage: analysis.errorMessage
+        createdBy: null, // Not available in schema
+        errorMessage: analysis.error
       },
       job: latestJob ? {
         id: latestJob.id,
@@ -144,12 +145,12 @@ export const GET = withErrorHandler(async (
 async function isLatestVersion(processId: string, versionNumber: number): Promise<boolean> {
   try {
     const latest = await prisma.caseAnalysisVersion.findFirst({
-      where: { processId },
-      orderBy: { versionNumber: 'desc' },
-      select: { versionNumber: true }
+      where: { caseId: processId },
+      orderBy: { version: 'desc' },
+      select: { version: true }
     });
 
-    return latest?.versionNumber === versionNumber;
+    return latest?.version === versionNumber;
   } catch (error) {
     return false;
   }
@@ -162,8 +163,8 @@ async function hasNextVersion(processId: string, versionNumber: number): Promise
   try {
     const next = await prisma.caseAnalysisVersion.findFirst({
       where: {
-        processId,
-        versionNumber: { gt: versionNumber }
+        caseId: processId,
+        version: { gt: versionNumber }
       }
     });
 
@@ -173,11 +174,32 @@ async function hasNextVersion(processId: string, versionNumber: number): Promise
   }
 }
 
+interface VersionDiff {
+  analysisType?: {
+    from: string;
+    to: string;
+  };
+  model?: {
+    from: string;
+    to: string;
+  };
+  confidence?: {
+    from: number;
+    to: number;
+    delta: number;
+  };
+  totalChanges: number;
+  summary: string;
+}
+
 /**
  * Calcula diff entre duas versões (simplificado)
  */
-function calculateVersionDiff(previous: unknown, current: unknown): unknown {
-  const changes: unknown = {
+function calculateVersionDiff(
+  previous: CaseAnalysisVersion,
+  current: CaseAnalysisVersion
+): VersionDiff {
+  const changes: Partial<VersionDiff> = {
     totalChanges: 0,
     summary: ''
   };
@@ -203,12 +225,12 @@ function calculateVersionDiff(previous: unknown, current: unknown): unknown {
   }
 
   // Confiança
-  if (previous.confidenceScore && current.confidenceScore) {
-    const confDiff = Number(current.confidenceScore) - Number(previous.confidenceScore);
+  if (previous.confidence && current.confidence) {
+    const confDiff = Number(current.confidence) - Number(previous.confidence);
     if (Math.abs(confDiff) > 0.05) {
       changes.confidence = {
-        from: previous.confidenceScore,
-        to: current.confidenceScore,
+        from: Number(previous.confidence),
+        to: Number(current.confidence),
         delta: confDiff
       };
 
@@ -220,10 +242,14 @@ function calculateVersionDiff(previous: unknown, current: unknown): unknown {
     }
   }
 
-  changes.totalChanges = summaryParts.length;
-  changes.summary = summaryParts.length > 0
+  const totalChanges = summaryParts.length;
+  const summary = summaryParts.length > 0
     ? summaryParts.join(', ')
     : 'Nenhuma mudança estrutural detectada';
 
-  return changes;
+  return {
+    ...changes,
+    totalChanges,
+    summary
+  } as VersionDiff;
 }

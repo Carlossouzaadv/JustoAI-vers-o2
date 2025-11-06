@@ -92,18 +92,37 @@ export async function POST(
     const modelRouter = new AIModelRouter();
 
     // 5. Reprocessar PDF se necessário
-    let pdfResult: unknown = null;
+    interface PDFProcessResult {
+      success: boolean;
+      error?: string;
+      texto_ai_friendly?: string;
+      file_size_mb?: number;
+      extracted_fields?: string[];
+      [key: string]: unknown;
+    }
+
+    let pdfResult: PDFProcessResult | null = null;
 
     if (document.mimeType === 'application/pdf' && document.path) {
       const extractFields = customFields?.length
         ? customFields
         : pdfProcessor.getDefaultExtractionFields();
 
-      pdfResult = await pdfProcessor.processComplete({
+      const rawResult = await pdfProcessor.processComplete({
         pdf_path: document.path,
         extract_fields: extractFields,
         custom_fields: customFields
       });
+
+      // Validate result structure
+      if (typeof rawResult === 'object' && rawResult !== null && 'success' in rawResult) {
+        pdfResult = rawResult as PDFProcessResult;
+      } else {
+        return NextResponse.json(
+          { error: 'Invalid PDF processor response' },
+          { status: 500 }
+        );
+      }
 
       if (!pdfResult.success) {
         return NextResponse.json(
@@ -139,8 +158,23 @@ export async function POST(
     // 7. Análise IA ESTRATÉGICA COMPLETA (sempre cobra dos créditos completos)
     // Esta função "Aprofundar Análise" sempre utiliza analyzeStrategic (não analyzeEssential)
     // para fornecer insights detalhados e deve ser cobrada dos créditos de análise completa
-    let aiAnalysis = null;
-    let routingInfo = null;
+    interface AIAnalysisResult {
+      tipo_processo?: string;
+      complexidade?: string;
+      resumo?: string;
+      _routing_info?: {
+        final_tier?: string;
+        complexity_score?: number;
+        cost_estimate?: {
+          estimated_cost_usd?: number;
+        };
+        escalated?: boolean;
+      };
+      [key: string]: unknown;
+    }
+
+    let aiAnalysis: AIAnalysisResult | null = null;
+    let routingInfo: AIAnalysisResult['_routing_info'] | null = null;
 
     if (pdfResult?.texto_ai_friendly) {
       try {
@@ -149,8 +183,11 @@ export async function POST(
           pdfResult.file_size_mb || 0
         );
 
-        aiAnalysis = analysisResult;
-        routingInfo = analysisResult._routing_info;
+        // Validate analysis result
+        if (typeof analysisResult === 'object' && analysisResult !== null) {
+          aiAnalysis = analysisResult as AIAnalysisResult;
+          routingInfo = aiAnalysis._routing_info || null;
+        }
 
       } catch (aiError) {
         console.error('Erro na análise IA:', aiError);

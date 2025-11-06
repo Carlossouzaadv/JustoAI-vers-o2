@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, AlertCircle, CheckCircle, AlertTriangle, Zap, TrendingUp, Timer, Copy, ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getErrorMessage } from '@/lib/error-handling';
 
 interface DashboardData {
   sentry?: {
@@ -80,7 +81,7 @@ export default function AdminHomePage() {
           setLastUpdate(new Date());
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch data');
+        setError(getErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -92,7 +93,7 @@ export default function AdminHomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const copyToClipboard = (errorId: string, errorData: unknown) => {
+  const copyToClipboard = (errorId: string, errorData: any) => {
     const errorText = `
 ERROR REPORT
 ============
@@ -305,7 +306,7 @@ Navigate to: /admin/errors for full details
           </div>
 
           <div className="space-y-2">
-            {errors.recent.slice(0, 5).map((error: unknown, idx: number) => (
+            {errors.recent.slice(0, 5).map((error: any, idx: number) => (
               <div
                 key={idx}
                 className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100"

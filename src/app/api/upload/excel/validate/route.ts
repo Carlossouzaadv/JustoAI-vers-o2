@@ -8,6 +8,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ExcelUploadService } from '@/lib/excel-upload-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import type { ExcelParseResult, ExcelRowError } from '@/lib/excel-parser';
+
+// Types
+interface BatchEstimate {
+  estimatedTime: number;
+  totalProcesses: number;
+}
+
+interface ValidationError {
+  line: number;
+  field: string;
+  value: string;
+  message: string;
+}
+
+interface CategorizedErrors {
+  critical: ValidationError[];
+  warnings: ValidationError[];
+  info: ValidationError[];
+  totalErrors: number;
+}
+
+interface ValidationSummary {
+  total: number;
+  valid: number;
+  invalid: number;
+  duplicates: number;
+  warnings: number;
+}
 
 const uploadService = new ExcelUploadService();
 
@@ -101,23 +130,37 @@ export async function POST(request: NextRequest) {
 
     const { parseResult: parsed, estimate, preview } = parseResult;
 
+    // Type guard - these should be defined if success is true
+    if (!parsed || !estimate || !preview) {
+      return NextResponse.json({
+        success: false,
+        error: 'Erro na estrutura de resposta do parsing'
+      }, { status: 500 });
+    }
+
+    // Add total field to summary for compatibility
+    const summaryWithTotal: ValidationSummary = {
+      ...parsed.summary,
+      total: parsed.totalRows
+    };
+
     // Verificar processos existentes no workspace (para duplicatas)
     const existingProcesses = await checkExistingProcesses(
-      parsed!.validRows.map(row => row.numeroProcesso),
+      parsed.validRows.map(row => row.numeroProcesso),
       workspaceId
     );
 
     // Categorizar erros para UX amigável
-    const errorsByType = categorizeValidationErrors(parsed!.errors);
+    const errorsByType = categorizeValidationErrors(parsed.errors);
 
     // Gerar resumo amigável
     const friendlySummary = generateFriendlySummary(
-      parsed!.summary,
+      summaryWithTotal,
       existingProcesses.length,
-      estimate!
+      estimate
     );
 
-    console.log(`${ICONS.SUCCESS} Validação concluída: ${parsed!.summary.valid} linhas válidas`);
+    console.log(`${ICONS.SUCCESS} Validação concluída: ${parsed.summary.valid} linhas válidas`);
 
     return NextResponse.json({
       success: true,
@@ -128,24 +171,24 @@ export async function POST(request: NextRequest) {
         sizeFormatted: formatFileSize(file.size)
       },
       summary: friendlySummary,
-      preview: preview!.slice(0, 10), // Exatamente 10 linhas conforme spec
+      preview: preview.slice(0, 10), // Exatamente 10 linhas conforme spec
       details: {
-        totalLines: parsed!.summary.total,
-        validLines: parsed!.summary.valid,
-        invalidLines: parsed!.summary.invalid,
-        duplicateLines: parsed!.summary.duplicates,
+        totalLines: summaryWithTotal.total,
+        validLines: parsed.summary.valid,
+        invalidLines: parsed.summary.invalid,
+        duplicateLines: parsed.summary.duplicates,
         existingInWorkspace: existingProcesses.length,
-        newProcesses: parsed!.summary.valid - existingProcesses.length
+        newProcesses: parsed.summary.valid - existingProcesses.length
       },
       consumption: {
-        juditQueries: parsed!.summary.valid - existingProcesses.length,
-        message: `Este arquivo consumirá ${parsed!.summary.valid - existingProcesses.length} consultas ao judiciário`
+        juditQueries: parsed.summary.valid - existingProcesses.length,
+        message: `Este arquivo consumirá ${parsed.summary.valid - existingProcesses.length} consultas ao judiciário`
       },
       errors: errorsByType,
-      canProceed: parsed!.summary.valid > 0 && errorsByType.critical.length === 0,
+      canProceed: parsed.summary.valid > 0 && errorsByType.critical.length === 0,
       validationReport: {
         downloadUrl: null, // TODO: Implementar geração de CSV com erros
-        hasErrors: parsed!.errors.length > 0
+        hasErrors: parsed.errors.length > 0
       }
     });
 
@@ -171,16 +214,16 @@ async function checkExistingProcesses(
     const existing = await prisma.monitoredProcess.findMany({
       where: {
         workspaceId,
-        number: {
+        processNumber: {
           in: processNumbers
         }
       },
       select: {
-        number: true
+        processNumber: true
       }
     });
 
-    return existing.map(p => p.number);
+    return existing.map(p => p.processNumber);
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao verificar processos existentes:`, error);
@@ -191,10 +234,10 @@ async function checkExistingProcesses(
 /**
  * Categoriza erros por tipo para UX amigável
  */
-function categorizeValidationErrors(errors: unknown[]): unknown {
-  const critical = [];
-  const warnings = [];
-  const info = [];
+function categorizeValidationErrors(errors: ExcelRowError[]): CategorizedErrors {
+  const critical: ValidationError[] = [];
+  const warnings: ValidationError[] = [];
+  const info: ValidationError[] = [];
 
   for (const error of errors) {
     if (error.tipo === 'ERROR') {
@@ -235,10 +278,10 @@ function categorizeValidationErrors(errors: unknown[]): unknown {
  * Gera resumo amigável para o usuário
  */
 function generateFriendlySummary(
-  summary: unknown,
+  summary: ValidationSummary,
   existingCount: number,
-  estimate: unknown
-): unknown {
+  estimate: BatchEstimate
+) {
   const newProcesses = summary.valid - existingCount;
 
   return {
@@ -261,7 +304,7 @@ function generateFriendlySummary(
  * Gera mensagem de resumo amigável
  */
 function generateSummaryMessage(
-  summary: unknown,
+  summary: ValidationSummary,
   existingCount: number,
   newProcesses: number
 ): string {
@@ -293,7 +336,7 @@ function generateSummaryMessage(
 /**
  * Gera recomendação baseada nos dados
  */
-function generateRecommendation(summary: unknown, newProcesses: number): string {
+function generateRecommendation(summary: ValidationSummary, newProcesses: number): string {
   if (summary.invalid > summary.valid) {
     return 'Arquivo contém muitos erros. Recomendamos revisar antes de processar.';
   }

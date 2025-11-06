@@ -144,15 +144,33 @@ async function checkExistingProcesses(
   }
 }
 
+interface ParseError {
+  tipo: string;
+  erro: string;
+  linha?: number;
+}
+
+interface ErrorCategory {
+  count: number;
+  errors: ParseError[];
+}
+
+interface CategorizedErrors {
+  critical: ErrorCategory;
+  validation: ErrorCategory;
+  warning: ErrorCategory;
+  duplicate: ErrorCategory;
+}
+
 /**
  * Categoriza erros por tipo para melhor UX
  */
-function categorizeErrors(errors: unknown[]): unknown {
+function categorizeErrors(errors: ParseError[]): CategorizedErrors {
   const categories = {
-    critical: [] as unknown[],
-    validation: [] as unknown[],
-    warning: [] as unknown[],
-    duplicate: [] as unknown[]
+    critical: [] as ParseError[],
+    validation: [] as ParseError[],
+    warning: [] as ParseError[],
+    duplicate: [] as ParseError[]
   };
 
   errors.forEach(error => {
@@ -189,11 +207,30 @@ function categorizeErrors(errors: unknown[]): unknown {
   };
 }
 
+interface Estimate {
+  existingProcesses: number;
+  newProcesses: number;
+  juditQueries: number;
+  estimatedTime: number;
+  [key: string]: unknown;
+}
+
+interface Recommendation {
+  type: 'error' | 'warning' | 'info';
+  message: string;
+  action: string;
+}
+
+interface RecommendationResult {
+  canProceed: boolean;
+  recommendations: Recommendation[];
+}
+
 /**
  * Gera recomendação baseada na análise (sem referências a custo)
  */
-function generateRecommendation(estimate: unknown, errorCategories: unknown): unknown {
-  const recommendations = [];
+function generateRecommendation(estimate: Estimate, errorCategories: CategorizedErrors): RecommendationResult {
+  const recommendations: Recommendation[] = [];
 
   // Verificar se há muitos erros críticos
   if (errorCategories.critical.count > 0) {
@@ -240,8 +277,8 @@ function generateRecommendation(estimate: unknown, errorCategories: unknown): un
 /**
  * Gera mensagem de confirmação personalizada (sem referências a custo)
  */
-function generateConfirmationMessage(estimate: unknown): string {
-  const messages = [];
+function generateConfirmationMessage(estimate: Estimate): string {
+  const messages: string[] = [];
 
   if (estimate.newProcesses > 0) {
     messages.push(`${estimate.newProcesses} novos processos serão adicionados`);

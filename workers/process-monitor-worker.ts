@@ -3,10 +3,10 @@
 // ================================================================
 
 import { Job } from 'bull';
+import Queue from 'bull';
 import { prisma } from '@/lib/prisma';
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { ICONS } from '@/lib/icons';
-import { Queue } from 'bull';
 import { getRedisClient } from '@/lib/redis';
 
 // ================================================================
@@ -88,7 +88,7 @@ const MONITOR_CONFIG = {
 } as const;
 
 // Criar fila específica para monitoramento usando Redis centralizado
-export const processMonitorQueue = new Queue('process-monitor', {
+export const processMonitorQueue = new Queue<MonitorJobData, ProcessMonitoringResult>('process-monitor', {
   redis: getRedisClient(),
   defaultJobOptions: {
     removeOnComplete: 50,

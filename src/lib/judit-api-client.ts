@@ -9,6 +9,21 @@ import { prisma } from './prisma';
 // TIPOS E INTERFACES
 // ================================================================
 
+class JuditApiError extends Error {
+  retryable: boolean;
+  statusCode?: number;
+  retryAfter?: number;
+  isTimeout?: boolean;
+  isNetworkError?: boolean;
+
+  constructor(message: string, retryable: boolean = true, statusCode?: number) {
+    super(message);
+    this.name = 'JuditApiError';
+    this.retryable = retryable;
+    this.statusCode = statusCode;
+  }
+}
+
 export interface JuditRequest {
   search: {
     search_type: 'lawsuit_cnj';
@@ -21,12 +36,34 @@ export interface JuditRequest {
   };
 }
 
+export interface JuditProcessData {
+  movimentacoes?: Array<{
+    data: string;
+    descricao: string;
+    tipo?: string;
+  }>;
+  partes?: Array<{
+    nome: string;
+    tipo: string;
+    advogados?: string[];
+  }>;
+  [key: string]: unknown;
+}
+
+export interface JuditAttachment {
+  id: string;
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+}
+
 export interface JuditResponse {
   request_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  data?: unknown;
+  data?: JuditProcessData;
   error?: string;
-  attachments?: unknown[];
+  attachments?: JuditAttachment[];
   pages?: number;
   total_results?: number;
 }
@@ -320,7 +357,7 @@ export class JuditApiClient {
       await this.rateLimiter.waitForTokens(1);
 
       const startTime = Date.now();
-      const response = await this.makeRequest('POST', 'tracking', '/tracking', {
+      const response = await this.makeRequest<{ tracking_id: string }>('POST', 'tracking', '/tracking', {
         process_cnj: processNumber,
         recurrence: '1 day',
         callback_url: callbackUrl,
@@ -350,7 +387,7 @@ export class JuditApiClient {
       await this.rateLimiter.waitForTokens(1);
 
       const startTime = Date.now();
-      const response = await this.makeRequest('GET', 'tracking', '/tracking');
+      const response = await this.makeRequest<{ trackings?: JuditTracking[] }>('GET', 'tracking', '/tracking');
 
       this.updateStats(true, Date.now() - startTime);
 
@@ -459,7 +496,7 @@ export class JuditApiClient {
         }
       };
 
-      const response = await this.makeRequest('POST', 'requests', '/requests', requestData);
+      const response = await this.makeRequest<{ request_id: string }>('POST', 'requests', '/requests', requestData);
       const responseTime = Date.now() - startTime;
 
       this.updateStats(true, responseTime);
@@ -502,7 +539,7 @@ export class JuditApiClient {
         await this.rateLimiter.waitForTokens(1);
 
         const startTime = Date.now();
-        const response = await this.makeRequest('GET', 'requests', `/responses?request_id=${requestId}&page_size=100`);
+        const response = await this.makeRequest<JuditResponse>('GET', 'requests', `/responses?request_id=${requestId}&page_size=100`);
         const responseTime = Date.now() - startTime;
 
         this.updateStats(true, responseTime);
@@ -631,12 +668,12 @@ export class JuditApiClient {
     };
   }
 
-  private async makeRequest(
+  private async makeRequest<T = unknown>(
     method: string,
     serviceUrl: 'requests' | 'tracking',
     endpoint: string,
     data?: unknown
-  ): Promise<unknown> {
+  ): Promise<T> {
     return await this.executeWithRetry(async (attempt: number) => {
       const baseUrl = serviceUrl === 'tracking'
         ? JUDIT_CONFIG.TRACKING_SERVICE_URL
@@ -670,9 +707,8 @@ export class JuditApiClient {
 
           console.warn(`${ICONS.WARNING} Rate limit hit, retrying after ${delay}ms (attempt ${attempt})`);
 
-          const error = new Error('Rate limit exceeded');
-          (error as unknown).retryable = true;
-          (error as unknown).retryAfter = delay;
+          const error = new JuditApiError('Rate limit exceeded', true, 429);
+          error.retryAfter = delay;
           throw error;
         }
 
@@ -680,40 +716,35 @@ export class JuditApiClient {
         // IMPORTANTE: Ler o response body UMA VEZ
         // Fetch API não permite consumir o stream múltiplas vezes
         // ============================================================
-        let responseBody: unknown;
+        let responseBody: T;
         let responseText: string = '';
 
         try {
           // Primeiro, tentar parsear como JSON
-          responseBody = await response.json();
+          responseBody = await response.json() as T;
           responseText = JSON.stringify(responseBody);
         } catch (parseError) {
           // Se JSON falhar, ler como texto
           // Neste ponto, o stream pode estar parcialmente consumido
           // Então fazemos um fallback para texto bruto
           responseText = `[JSON Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown'}]`;
+          throw new Error(responseText);
         }
 
         // Handle server errors that should be retried
-        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status as unknown)) {
-          const error = new Error(`HTTP ${response.status}: ${responseText}`);
-          (error as unknown).retryable = true;
-          (error as unknown).statusCode = response.status;
+        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status)) {
+          const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, true, response.status);
           throw error;
         }
 
         // Handle client errors that should NOT be retried
-        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status as unknown)) {
-          const error = new Error(`HTTP ${response.status}: ${responseText}`);
-          (error as unknown).retryable = false;
-          (error as unknown).statusCode = response.status;
+        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status)) {
+          const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, false, response.status);
           throw error;
         }
 
         if (!response.ok) {
-          const error = new Error(`HTTP ${response.status}: ${responseText}`);
-          (error as unknown).retryable = response.status >= 500; // Retry server errors
-          (error as unknown).statusCode = response.status;
+          const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, response.status >= 500, response.status);
           throw error;
         }
 
@@ -725,17 +756,15 @@ export class JuditApiClient {
 
         // Handle timeout
         if (error instanceof Error && error.name === 'AbortError') {
-          const timeoutError = new Error('Request timeout');
-          (timeoutError as unknown).retryable = true;
-          (timeoutError as unknown).isTimeout = true;
+          const timeoutError = new JuditApiError('Request timeout', true);
+          timeoutError.isTimeout = true;
           throw timeoutError;
         }
 
         // Handle network errors
         if (error instanceof TypeError && error.message.includes('fetch')) {
-          const networkError = new Error('Network error');
-          (networkError as unknown).retryable = true;
-          (networkError as unknown).isNetworkError = true;
+          const networkError = new JuditApiError('Network error', true);
+          networkError.isNetworkError = true;
           throw networkError;
         }
 
@@ -754,7 +783,8 @@ export class JuditApiClient {
         lastError = error as Error;
 
         // Check if error is retryable
-        const isRetryable = (error as unknown).retryable !== false;
+        const juditError = error instanceof JuditApiError ? error : null;
+        const isRetryable = juditError ? juditError.retryable : true;
         const isLastAttempt = attempt === JUDIT_CONFIG.MAX_RETRY_ATTEMPTS;
 
         if (!isRetryable || isLastAttempt) {
@@ -764,10 +794,10 @@ export class JuditApiClient {
 
         // Calculate delay
         let delay: number;
-        if ((error as unknown).retryAfter) {
-          delay = (error as unknown).retryAfter;
+        if (juditError?.retryAfter) {
+          delay = juditError.retryAfter;
         } else {
-          delay = this.calculateAdvancedBackoffDelay(attempt, error as unknown);
+          delay = this.calculateAdvancedBackoffDelay(attempt, juditError);
         }
 
         console.warn(`${ICONS.WARNING} Attempt ${attempt} failed, retrying in ${delay}ms:`, {
@@ -795,20 +825,20 @@ export class JuditApiClient {
     return Math.floor(exponentialDelay + jitterAmount);
   }
 
-  private calculateAdvancedBackoffDelay(attempt: number, error: unknown): number {
+  private calculateAdvancedBackoffDelay(attempt: number, error: JuditApiError | null): number {
     let baseDelay = JUDIT_CONFIG.BASE_RETRY_DELAY_MS;
 
     // Adjust base delay based on error type
-    if (error.isTimeout) {
+    if (error?.isTimeout) {
       // Longer delays for timeouts
       baseDelay *= 2;
-    } else if (error.isNetworkError) {
+    } else if (error?.isNetworkError) {
       // Moderate delays for network errors
       baseDelay *= 1.5;
-    } else if (error.statusCode === 503) {
+    } else if (error?.statusCode === 503) {
       // Service unavailable - longer delays
       baseDelay *= 3;
-    } else if (error.statusCode === 502 || error.statusCode === 504) {
+    } else if (error?.statusCode === 502 || error?.statusCode === 504) {
       // Gateway errors - moderate delays
       baseDelay *= 2;
     }

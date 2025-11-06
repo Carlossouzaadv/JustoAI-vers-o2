@@ -5,6 +5,8 @@
 
 import prisma from './prisma';
 import { ICONS } from './icons';
+import { SystemImport } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 // ================================
 // TIPOS E INTERFACES
@@ -220,14 +222,20 @@ export class ImportReportGenerator {
   // MÉTODOS PRIVADOS DE GERAÇÃO
   // ================================
 
-  private async fetchImports(workspaceId: string, startDate?: Date, endDate?: Date) {
-    const whereClause: unknown = { workspaceId };
-
-    if (startDate || endDate) {
-      whereClause.createdAt = {};
-      if (startDate) whereClause.createdAt.gte = startDate;
-      if (endDate) whereClause.createdAt.lte = endDate;
-    }
+  private async fetchImports(
+    workspaceId: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<SystemImport[]> {
+    const whereClause: Prisma.SystemImportWhereInput = {
+      workspaceId,
+      ...(startDate || endDate ? {
+        createdAt: {
+          ...(startDate && { gte: startDate }),
+          ...(endDate && { lte: endDate })
+        }
+      } : {})
+    };
 
     return await prisma.systemImport.findMany({
       where: whereClause,
@@ -244,7 +252,7 @@ export class ImportReportGenerator {
     });
   }
 
-  private async generateImportSummaries(imports: unknown[]): Promise<ImportSummary[]> {
+  private async generateImportSummaries(imports: SystemImport[]): Promise<ImportSummary[]> {
     return imports.map(imp => ({
       id: imp.id,
       fileName: imp.fileName,
@@ -259,12 +267,24 @@ export class ImportReportGenerator {
         ? Math.round((imp.finishedAt.getTime() - imp.startedAt.getTime()) / (1000 * 60))
         : 0,
       createdAt: imp.createdAt,
-      errors: (imp.errors || []).map((e: unknown) => e.message || e.toString())
+      errors: Array.isArray(imp.errors)
+        ? imp.errors.filter((e): e is string => typeof e === 'string')
+        : []
     }));
   }
 
-  private async generateSystemSummaries(imports: unknown[]): Promise<SystemSummary[]> {
-    const systemMap = new Map<string, unknown>();
+  private async generateSystemSummaries(imports: SystemImport[]): Promise<SystemSummary[]> {
+    interface SystemStats {
+      system: string;
+      totalImports: number;
+      successfulImports: number;
+      failedImports: number;
+      totalRowsProcessed: number;
+      errors: string[];
+      lastImportDate: Date;
+    }
+
+    const systemMap = new Map<string, SystemStats>();
 
     imports.forEach(imp => {
       if (!systemMap.has(imp.sourceSystem)) {
@@ -279,7 +299,7 @@ export class ImportReportGenerator {
         });
       }
 
-      const summary = systemMap.get(imp.sourceSystem);
+      const summary = systemMap.get(imp.sourceSystem)!;
       summary.totalImports++;
       summary.totalRowsProcessed += imp.totalRows || 0;
 
@@ -289,8 +309,8 @@ export class ImportReportGenerator {
         summary.failedImports++;
       }
 
-      if (imp.errors && imp.errors.length > 0) {
-        summary.errors.push(...imp.errors.map((e: unknown) => e.message || e.toString()));
+      if (imp.errors && Array.isArray(imp.errors)) {
+        summary.errors.push(...imp.errors.filter((e): e is string => typeof e === 'string'));
       }
 
       if (imp.createdAt > summary.lastImportDate) {
@@ -299,7 +319,12 @@ export class ImportReportGenerator {
     });
 
     return Array.from(systemMap.values()).map(summary => ({
-      ...summary,
+      system: summary.system,
+      totalImports: summary.totalImports,
+      successfulImports: summary.successfulImports,
+      failedImports: summary.failedImports,
+      totalRowsProcessed: summary.totalRowsProcessed,
+      lastImportDate: summary.lastImportDate,
       averageSuccessRate: summary.totalImports > 0
         ? (summary.successfulImports / summary.totalImports) * 100
         : 0,
@@ -341,13 +366,15 @@ export class ImportReportGenerator {
     return timeline;
   }
 
-  private async calculateMetrics(imports: unknown[]): Promise<ReportMetrics> {
+  private async calculateMetrics(imports: SystemImport[]): Promise<ReportMetrics> {
     const totalImports = imports.length;
     const successfulImports = imports.filter(imp => imp.status === 'COMPLETED').length;
     const failedImports = imports.filter(imp => imp.status === 'FAILED').length;
 
     const durations = imports
-      .filter(imp => imp.finishedAt && imp.startedAt)
+      .filter((imp): imp is (SystemImport & { finishedAt: Date; startedAt: Date }) =>
+        imp.finishedAt !== null && imp.startedAt !== null
+      )
       .map(imp => (imp.finishedAt.getTime() - imp.startedAt.getTime()) / (1000 * 60));
 
     const systemCounts = imports.reduce((acc, imp) => {
@@ -377,27 +404,36 @@ export class ImportReportGenerator {
     };
   }
 
-  private async analyzeErrors(imports: unknown[]): Promise<ErrorSummary[]> {
-    const errorMap = new Map<string, unknown>();
+  private async analyzeErrors(imports: SystemImport[]): Promise<ErrorSummary[]> {
+    interface ErrorInfo {
+      type: string;
+      message: string;
+      count: number;
+      affectedSystems: Set<string>;
+      lastOccurrence: Date;
+      severity: 'LOW' | 'MEDIUM' | 'HIGH';
+    }
+
+    const errorMap = new Map<string, ErrorInfo>();
 
     imports.forEach(imp => {
-      if (imp.errors && imp.errors.length > 0) {
+      if (Array.isArray(imp.errors) && imp.errors.length > 0) {
         imp.errors.forEach((error: unknown) => {
-          const message = error.message || error.toString();
-          const type = error.type || 'UNKNOWN';
+          const message = typeof error === 'string' ? error : (error && typeof error === 'object' && 'message' in error ? (error as Record<string, any>).message : 'Unknown error');
+          const type = (error && typeof error === 'object' && 'type' in error) ? (error as Record<string, any>).type : 'UNKNOWN';
 
           if (!errorMap.has(message)) {
             errorMap.set(message, {
-              type,
+              type: typeof type === 'string' ? type : 'UNKNOWN',
               message,
               count: 0,
               affectedSystems: new Set<string>(),
               lastOccurrence: imp.createdAt,
-              severity: this.assessErrorSeverity(message, type)
+              severity: this.assessErrorSeverity(message, typeof type === 'string' ? type : 'UNKNOWN')
             });
           }
 
-          const errorSummary = errorMap.get(message);
+          const errorSummary = errorMap.get(message)!;
           errorSummary.count++;
           errorSummary.affectedSystems.add(imp.sourceSystem);
 
@@ -409,12 +445,16 @@ export class ImportReportGenerator {
     });
 
     return Array.from(errorMap.values()).map(error => ({
-      ...error,
-      affectedSystems: Array.from(error.affectedSystems)
+      type: error.type,
+      message: error.message,
+      count: error.count,
+      affectedSystems: Array.from(error.affectedSystems),
+      lastOccurrence: error.lastOccurrence,
+      severity: error.severity
     }));
   }
 
-  private async generateRecommendations(imports: unknown[]): Promise<string[]> {
+  private async generateRecommendations(imports: SystemImport[]): Promise<string[]> {
     const recommendations: string[] = [];
     const failureRate = imports.length > 0
       ? (imports.filter(imp => imp.status === 'FAILED').length / imports.length) * 100
@@ -551,7 +591,7 @@ export class ImportReportGenerator {
     return 'LOW';
   }
 
-  private findPeakImportDay(imports: unknown[]): string | undefined {
+  private findPeakImportDay(imports: SystemImport[]): string | undefined {
     const dayCounts = imports.reduce((acc, imp) => {
       const day = imp.createdAt.toISOString().split('T')[0];
       acc[day] = (acc[day] || 0) + 1;
@@ -567,7 +607,7 @@ export class ImportReportGenerator {
     return peakDay[0] || undefined;
   }
 
-  private async generateSystemComparison(imports: unknown[]): Promise<SystemSummary[]> {
+  private async generateSystemComparison(imports: SystemImport[]): Promise<SystemSummary[]> {
     return this.generateSystemSummaries(imports);
   }
 
@@ -634,7 +674,7 @@ export class ImportReportGenerator {
     };
   }
 
-  private async findErrorPatterns(imports: unknown[]): Promise<unknown[]> {
+  private async findErrorPatterns(imports: SystemImport[]): Promise<unknown[]> {
     // Implementação simplificada de detecção de padrões
     return [];
   }

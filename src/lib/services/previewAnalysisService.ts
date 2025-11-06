@@ -228,45 +228,52 @@ ${text}
 // VALIDATION HELPERS
 // ================================================================
 
-/**
- * Valida se preview snapshot tem estrutura mínima válida
- */
-export function validatePreviewSnapshot(preview: unknown): boolean {
+function isPreviewSnapshot(preview: unknown): preview is PreviewSnapshot {
   if (!preview || typeof preview !== 'object') {
     return false;
   }
 
+  const p = preview as Partial<PreviewSnapshot>;
+
   // Campos obrigatórios
-  if (typeof preview.summary !== 'string' || preview.summary.trim().length === 0) {
+  if (typeof p.summary !== 'string' || p.summary.trim().length === 0) {
     return false;
   }
 
-  if (!Array.isArray(preview.parties) || preview.parties.length === 0) {
+  if (!Array.isArray(p.parties) || p.parties.length === 0) {
     return false;
   }
 
-  if (typeof preview.subject !== 'string' || preview.subject.trim().length === 0) {
+  if (typeof p.subject !== 'string' || p.subject.trim().length === 0) {
     return false;
   }
 
-  if (typeof preview.object !== 'string' || preview.object.trim().length === 0) {
+  if (typeof p.object !== 'string' || p.object.trim().length === 0) {
     return false;
   }
 
-  if (!Array.isArray(preview.lastMovements)) {
+  if (!Array.isArray(p.lastMovements)) {
     return false;
   }
 
   // Validar estrutura de movimentos (se houver)
-  if (preview.lastMovements.length > 0) {
-    for (const movement of preview.lastMovements) {
-      if (!movement.date || !movement.type || !movement.description) {
+  if (p.lastMovements.length > 0) {
+    for (const movement of p.lastMovements) {
+      const m = movement as Partial<PreviewMovement>;
+      if (!m.date || !m.type || !m.description) {
         return false;
       }
     }
   }
 
   return true;
+}
+
+/**
+ * Valida se preview snapshot tem estrutura mínima válida
+ */
+export function validatePreviewSnapshot(preview: unknown): boolean {
+  return isPreviewSnapshot(preview);
 }
 
 /**

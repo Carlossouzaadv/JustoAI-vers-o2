@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, createContext } from 'react';
+import { useState, createContext, useContext } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { DashboardSidebar } from '@/components/dashboard/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
@@ -15,6 +15,15 @@ export interface DashboardContextType {
 
 // Exported context for use in separate hook file (prevents TDZ during minification)
 export const DashboardContext = createContext<DashboardContextType | null>(null);
+
+// Hook para acessar o context
+export function useDashboard() {
+  const context = useContext(DashboardContext);
+  if (!context) {
+    throw new Error('useDashboard must be used within DashboardLayout');
+  }
+  return context;
+}
 
 export default function DashboardLayout({
   children,

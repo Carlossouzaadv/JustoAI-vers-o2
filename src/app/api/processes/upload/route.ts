@@ -212,16 +212,48 @@ export async function GET(request: NextRequest) {
 // PROCESSAMENTO EM BACKGROUND
 // ================================
 
+interface ValidRow {
+  linha: number;
+  numeroProcesso: string;
+  tribunal?: string;
+  nomeCliente?: string;
+  frequenciaSync?: string;
+  alertasAtivos?: boolean;
+  emailsAlerta?: string[];
+}
+
+interface ProcessMovement {
+  date: string;
+  type: string;
+  description: string;
+  category?: string;
+  importance?: string;
+  requiresAction?: boolean;
+  deadline?: string;
+}
+
+interface ProcessApiData {
+  movements?: ProcessMovement[];
+  [key: string]: unknown;
+}
+
+interface ProcessingError {
+  linha: number;
+  processo: string;
+  erro: string;
+}
+
 async function processValidRowsInBackground(
   batchId: string,
-  validRows: unknown[],
+  validRows: ValidRow[],
   workspaceId: string
 ) {
+
   try {
     const processApi = createProcessApiClient();
     let successful = 0;
     let failed = 0;
-    const errors: unknown[] = [];
+    const errors: ProcessingError[] = [];
 
     console.log(`${ICONS.PROCESS} Processando ${validRows.length} processos em background`);
 
@@ -254,7 +286,7 @@ async function processValidRowsInBackground(
         }
 
         // Buscar dados do processo via API
-        let processData = null;
+        let processData: ProcessApiData | null = null;
         try {
           const apiResult = await processApi.searchProcess({
             processNumber: normalizedNumber,
@@ -265,7 +297,7 @@ async function processValidRowsInBackground(
           });
 
           if (apiResult.success) {
-            processData = apiResult.data;
+            processData = apiResult.data as ProcessApiData;
           }
         } catch (apiError) {
           console.log(`${ICONS.WARNING} API falhou para processo ${normalizedNumber}:`, apiError);
@@ -292,7 +324,7 @@ async function processValidRowsInBackground(
         // Se temos movimentações da API, criar registros
         if (processData?.movements && processData.movements.length > 0) {
           await Promise.all(
-            processData.movements.slice(0, 20).map(async (movement: unknown) => {
+            processData.movements.slice(0, 20).map(async (movement: ProcessMovement) => {
               return prisma.processMovement.create({
                 data: {
                   monitoredProcessId: monitoredProcess.id,

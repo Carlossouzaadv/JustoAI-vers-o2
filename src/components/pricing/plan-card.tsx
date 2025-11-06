@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star, ArrowRight } from 'lucide-react';
 
-interface PlanCardProps {
+export interface PlanCardProps {
   plan: {
     id: string;
     name: string;

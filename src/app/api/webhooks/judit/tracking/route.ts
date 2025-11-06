@@ -10,10 +10,36 @@ import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { sendProcessAlert } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
+import { MonitoredProcess, ProcessMovement, ProcessAttachment } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 // ================================================================
 // TIPOS E INTERFACES
 // ================================================================
+
+interface AttachmentData {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  url?: string;
+  important?: boolean;
+}
+
+interface MovementData {
+  id: string;
+  type: string;
+  date: string;
+  description: string;
+  content: string;
+  attachments?: AttachmentData[];
+}
+
+interface StatusData {
+  previous: string;
+  current: string;
+  reason?: string;
+}
 
 interface JuditWebhookPayload {
   tracking_id: string;
@@ -21,28 +47,26 @@ interface JuditWebhookPayload {
   event_type: 'movement' | 'attachment' | 'status_change' | 'update';
   timestamp: string;
   data: {
-    movement?: {
-      id: string;
-      type: string;
-      date: string;
-      description: string;
-      content: string;
-      attachments?: Array<{
-        id: string;
-        name: string;
-        type: string;
-        size: number;
-        url?: string;
-      }>;
-    };
-    status?: {
-      previous: string;
-      current: string;
-      reason?: string;
-    };
+    movement?: MovementData;
+    status?: StatusData;
     metadata?: Record<string, unknown>;
   };
   signature?: string;
+}
+
+// Type for MonitoredProcess with workspace relation
+type MonitoredProcessWithWorkspace = MonitoredProcess & {
+  workspace: {
+    id: string;
+    name: string;
+  };
+};
+
+// Type for process data from Judit API
+interface JuditProcessData {
+  attachments?: AttachmentData[];
+  movimentacoes?: MovementData[];
+  metadata?: Record<string, unknown>;
 }
 
 interface WebhookProcessingResult {
@@ -227,7 +251,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
 // ================================================================
 
 async function processMovementEvent(
-  process: unknown,
+  process: MonitoredProcessWithWorkspace,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -273,7 +297,7 @@ async function processMovementEvent(
     result.newMovements++;
 
     // Processar anexos da movimentação
-    if (movement.attachments?.length > 0) {
+    if (movement.attachments && movement.attachments.length > 0) {
       await processMovementAttachments(newMovement.id, movement.attachments);
       result.attachmentsProcessed += movement.attachments.length;
     }
@@ -293,7 +317,7 @@ async function processMovementEvent(
 }
 
 async function processAttachmentEvent(
-  process: unknown,
+  process: MonitoredProcessWithWorkspace,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -302,9 +326,9 @@ async function processAttachmentEvent(
   try {
     // Buscar attachments na Judit para obter dados completos
     const juditClient = getJuditApiClient();
-    const processData = await juditClient.getProcessDetails(process.processNumber);
+    const processData = await juditClient.getProcessDetails(process.processNumber) as JuditProcessData;
 
-    if (processData.attachments?.length > 0) {
+    if (processData.attachments && processData.attachments.length > 0) {
       const newAttachments = await processAttachments(process.id, processData.attachments);
       result.attachmentsProcessed = newAttachments.length;
 
@@ -325,7 +349,7 @@ async function processAttachmentEvent(
 }
 
 async function processStatusChangeEvent(
-  process: unknown,
+  process: MonitoredProcessWithWorkspace,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -338,6 +362,11 @@ async function processStatusChangeEvent(
   console.log(`${ICONS.STATUS} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}`);
 
   try {
+    // Build metadata safely
+    const existingMetadata = (process.metadata && typeof process.metadata === 'object' && !Array.isArray(process.metadata))
+      ? process.metadata as Record<string, unknown>
+      : {};
+
     // Atualizar status do processo
     await prisma.monitoredProcess.update({
       where: { id: process.id },
@@ -345,7 +374,7 @@ async function processStatusChangeEvent(
         status: status.current,
         statusChangedAt: new Date(),
         metadata: {
-          ...process.metadata,
+          ...existingMetadata,
           previousStatus: status.previous,
           statusChangeReason: status.reason,
           statusChangeWebhook: payload.timestamp
@@ -368,7 +397,7 @@ async function processStatusChangeEvent(
 }
 
 async function processUpdateEvent(
-  process: unknown,
+  process: MonitoredProcessWithWorkspace,
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
@@ -377,16 +406,16 @@ async function processUpdateEvent(
   try {
     // Para updates gerais, fazer uma busca completa dos dados atualizados
     const juditClient = getJuditApiClient();
-    const updatedData = await juditClient.getProcessDetails(process.processNumber);
+    const updatedData = await juditClient.getProcessDetails(process.processNumber) as JuditProcessData;
 
     // Processar movimentações novas
-    if (updatedData.movimentacoes?.length > 0) {
+    if (updatedData.movimentacoes && updatedData.movimentacoes.length > 0) {
       const newMovements = await syncProcessMovements(process.id, updatedData.movimentacoes);
       result.newMovements = newMovements.length;
     }
 
     // Processar anexos novos
-    if (updatedData.attachments?.length > 0) {
+    if (updatedData.attachments && updatedData.attachments.length > 0) {
       const newAttachments = await processAttachments(process.id, updatedData.attachments);
       result.attachmentsProcessed = newAttachments.length;
     }
@@ -465,7 +494,7 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload): Promise<boolean
   return false;
 }
 
-async function findProcessByTracking(trackingId: string, processNumber: string) {
+async function findProcessByTracking(trackingId: string, processNumber: string): Promise<MonitoredProcessWithWorkspace | null> {
   return await prisma.monitoredProcess.findFirst({
     where: {
       OR: [
@@ -481,7 +510,7 @@ async function findProcessByTracking(trackingId: string, processNumber: string) 
   });
 }
 
-async function processMovementAttachments(movementId: string, attachments: unknown[]) {
+async function processMovementAttachments(movementId: string, attachments: AttachmentData[]): Promise<void> {
   for (const attachment of attachments) {
     await prisma.processAttachment.create({
       data: {
@@ -497,8 +526,8 @@ async function processMovementAttachments(movementId: string, attachments: unkno
   }
 }
 
-async function processAttachments(processId: string, attachments: unknown[]) {
-  const newAttachments = [];
+async function processAttachments(processId: string, attachments: AttachmentData[]): Promise<ProcessAttachment[]> {
+  const newAttachments: ProcessAttachment[] = [];
 
   for (const attachment of attachments) {
     const existing = await prisma.processAttachment.findFirst({
@@ -528,8 +557,8 @@ async function processAttachments(processId: string, attachments: unknown[]) {
   return newAttachments;
 }
 
-async function syncProcessMovements(processId: string, movements: unknown[]) {
-  const newMovements = [];
+async function syncProcessMovements(processId: string, movements: MovementData[]): Promise<ProcessMovement[]> {
+  const newMovements: ProcessMovement[] = [];
 
   for (const movement of movements) {
     const existing = await prisma.processMovement.findFirst({
@@ -558,7 +587,7 @@ async function syncProcessMovements(processId: string, movements: unknown[]) {
   return newMovements;
 }
 
-async function generateMovementAlerts(process: unknown, movement: unknown): Promise<number> {
+async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, movement: ProcessMovement): Promise<number> {
   try {
     // Definir urgência baseado no tipo de movimentação
     const urgencyMap: Record<string, 'high' | 'medium' | 'low'> = {
@@ -644,7 +673,7 @@ async function generateMovementAlerts(process: unknown, movement: unknown): Prom
   }
 }
 
-async function generateAttachmentAlerts(process: unknown, attachments: unknown[]): Promise<number> {
+async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, attachments: ProcessAttachment[]): Promise<number> {
   try {
     if (!attachments || attachments.length === 0) {
       return 0;
@@ -685,7 +714,7 @@ async function generateAttachmentAlerts(process: unknown, attachments: unknown[]
 
     // Criar descrição dos anexos
     const attachmentsList = importantAttachments
-      .map((att, idx) => `${idx + 1}. ${att.name} (${att.type})`)
+      .map((att, idx) => `${idx + 1}. ${att.name} (${att.type || 'tipo desconhecido'})`)
       .join('\n');
 
     // Enviar alerta para cada usuário
@@ -734,7 +763,7 @@ async function generateAttachmentAlerts(process: unknown, attachments: unknown[]
   }
 }
 
-async function generateStatusChangeAlerts(process: unknown, status: unknown): Promise<number> {
+async function generateStatusChangeAlerts(process: MonitoredProcessWithWorkspace, status: StatusData): Promise<number> {
   try {
     // Definir urgência baseado no tipo de mudança de status
     const urgencyMap: Record<string, 'high' | 'medium' | 'low'> = {
@@ -831,14 +860,18 @@ async function updateProcessLastWebhook(processId: string) {
   });
 }
 
-async function updateProcessMetadata(processId: string, data: unknown, webhookTimestamp: string) {
+async function updateProcessMetadata(processId: string, data: JuditProcessData, webhookTimestamp: string): Promise<void> {
+  const dataMetadata = (data.metadata && typeof data.metadata === 'object' && !Array.isArray(data.metadata))
+    ? data.metadata
+    : {};
+
   await prisma.monitoredProcess.update({
     where: { id: processId },
     data: {
       metadata: {
         lastWebhookUpdate: webhookTimestamp,
         lastDataSync: new Date().toISOString(),
-        ...data.metadata
+        ...dataMetadata
       }
     }
   });

@@ -1581,6 +1581,58 @@ model WebhookDelivery {
 }
 
 // ================================================================
+// WEBHOOK QUEUE TRACKING (for processing and monitoring)
+// ================================================================
+
+model WebhookQueue {
+  id              String                @id @default(cuid())
+  workspaceId     String
+  eventType       String                // 'movement', 'attachment', 'status_change'
+  processNumber   String
+  payload         Json                  // Webhook event payload
+  status          WebhookQueueStatus    @default(PENDING)
+  priority        Int                   @default(0)
+  processedAt     DateTime?
+  error           String?
+  retryCount      Int                   @default(0)
+  maxRetries      Int                   @default(3)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([processedAt])
+  @@index([priority, createdAt])
+  @@map("webhook_queue")
+}
+
+// ================================================================
+// WEBHOOK ERROR TRACKING (for monitoring and alerts)
+// ================================================================
+
+model WebhookError {
+  id              String                @id @default(cuid())
+  workspaceId     String
+  webhookQueueId  String?               // Reference to the webhook that caused the error
+  eventType       String                // Type of webhook event
+  processNumber   String?
+  errorCode       String?
+  errorMessage    String
+  errorStack      String?
+  payload         Json?                 // The payload that caused the error
+  severity        AlertSeverity         @default(MEDIUM)
+  resolved        Boolean               @default(false)
+  resolvedAt      DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([workspaceId])
+  @@index([severity, resolved])
+  @@index([createdAt])
+  @@map("webhook_errors")
+}
+
+// ================================================================
 // JOB EXECUTION TRACKING (for better observability)
 // ================================================================
 
@@ -1671,6 +1723,15 @@ enum WebhookDeliveryStatus {
   FAILED           // Delivery failed (not retrying)
   RETRYING         // Failed but will retry
   SKIPPED          // Skipped (e.g., duplicate)
+}
+
+enum WebhookQueueStatus {
+  PENDING          // Waiting to be processed
+  PROCESSING       // Currently being processed
+  SUCCESS          // Successfully processed
+  FAILED           // Processing failed (not retrying)
+  RETRYING         // Failed but will retry
+  SKIPPED          // Skipped
 }
 
 enum JobExecutionStatus {
