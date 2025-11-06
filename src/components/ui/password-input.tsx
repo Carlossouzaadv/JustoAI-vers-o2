@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-import { getPasswordStrength } from '../../../lib/validations/auth';
+import { getPasswordStrength } from '@/lib/validations/auth';
 
 interface PasswordInputProps {
   id: string;

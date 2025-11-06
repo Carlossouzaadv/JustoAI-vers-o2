@@ -13,8 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { PasswordInput } from '@/components/ui/password-input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { ConsentCheckbox, MarketingConsent } from '@/components/ui/consent-checkbox';
-import { ICONS } from '../../../lib/icons';
-import { signupSchema, type SignupFormData } from '../../../lib/validations/auth';
+import { ICONS } from '@/lib/icons';
+import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
 import { createClient } from '@supabase/supabase-js';
 
 export default function SignupPage() {

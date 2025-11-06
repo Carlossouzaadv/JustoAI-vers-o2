@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DashboardOnboarding } from './onboarding-tour';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 // Este é um exemplo de como integrar o onboarding no dashboard
 // Você deve adicionar os atributos data-onboarding nos elementos correspondentes do seu dashboard real

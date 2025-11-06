@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 export default function PartnersPage() {
   return (

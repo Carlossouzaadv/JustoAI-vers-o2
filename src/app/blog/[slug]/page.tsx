@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { ICONS } from '../../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 import { getArticleById, articles } from '../data/articles';
 
 interface BlogPostPageProps {

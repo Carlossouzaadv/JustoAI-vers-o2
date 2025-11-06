@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 const assets = [
   {

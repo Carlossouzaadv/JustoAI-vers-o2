@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 export default function ContatoSuportePage() {
   const [formData, setFormData] = useState({

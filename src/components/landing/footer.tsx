@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 const footerLinks = {
   product: [

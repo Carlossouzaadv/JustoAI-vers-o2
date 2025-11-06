@@ -13,8 +13,8 @@ import {
   formatLimitMessage,
   getAnalysisRemaining,
   getPlanLimits
-} from '../../../lib/subscription-limits';
-import { ICONS } from '../../../lib/icons';
+} from '@/lib/subscription-limits';
+import { ICONS } from '@/lib/icons';
 
 interface UsageAlertProps {
   plan: SubscriptionPlan;

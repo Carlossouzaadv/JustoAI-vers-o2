@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 export default function AboutPage() {
   return (

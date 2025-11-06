@@ -6,16 +6,16 @@
 // ================================================================
 
 import { Worker, Job } from 'bullmq';
-import { getRedisConnection } from '../lib/redis';
-import { performFullProcessRequest } from '../lib/services/juditOnboardingService';
-import { checkConfiguration } from '../lib/services/juditService';
-import { queueLogger, logOperationStart } from '../lib/observability/logger';
-import { circuitBreakerService } from '../lib/services/circuitBreakerService';
-import { prisma } from '../lib/prisma';
+import { getRedisConnection } from '@/lib/redis';
+import { performFullProcessRequest } from '@/lib/services/juditOnboardingService';
+import { checkConfiguration } from '@/lib/services/juditService';
+import { queueLogger, logOperationStart } from '@/lib/observability/logger';
+import { circuitBreakerService } from '@/lib/services/circuitBreakerService';
+import { prisma } from '@/lib/prisma';
 import type {
   JuditOnboardingJobData,
   JuditOnboardingJobResult,
-} from '../lib/queue/juditQueue';
+} from '@/lib/queue/juditQueue';
 
 // ================================================================
 // CONFIGURAÇÃO REDIS

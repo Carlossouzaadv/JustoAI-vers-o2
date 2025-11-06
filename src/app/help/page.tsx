@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 import { FloatingChat } from '@/components/ai-assistant/floating-chat';
 
 const helpCategories = [

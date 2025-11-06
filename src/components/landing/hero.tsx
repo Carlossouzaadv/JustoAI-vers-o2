@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ICONS } from '../../../lib/icons';
+import { ICONS } from '@/lib/icons';
 
 const containerVariants = {
   hidden: { opacity: 0 },

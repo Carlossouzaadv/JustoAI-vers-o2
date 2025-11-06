@@ -286,6 +286,52 @@ User Upload                 Queue Processing              JUDIT Webhook
 
 ---
 
+## 🏛️ Development Patterns
+
+### Single Source of Truth (SSOT) Architecture
+
+The entire shared library code lives **exclusively** in `src/lib/`. This ensures:
+
+- **Consistency:** One authoritative location for all utilities, services, types
+- **Maintainability:** No duplicate implementations scattered across the codebase
+- **Refactorability:** Safe to move code without worrying about hidden references
+- **Team Alignment:** Clear folder structure everyone understands
+
+#### Import Pattern
+
+All imports from the library **MUST** use the path alias `@/lib/` to maintain portability:
+
+**✅ Correct:**
+```typescript
+import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
+import { logError } from "@/lib/logger";
+```
+
+**❌ Incorrect (will fail ESLint):**
+```typescript
+import { prisma } from "../../lib/prisma";  // ❌ Relative import
+import { sendEmail } from "../lib/email";   // ❌ Relative import
+```
+
+#### Enforcement
+
+The ESLint rule `@typescript-eslint/no-restricted-imports` automatically prevents relative imports from escaping `src/lib/`. This rule:
+
+- Blocks all patterns: `../lib`, `../../lib`, `../../../lib`, `../../../../lib`
+- Fires at build time (`npm run lint`)
+- Enforces consistent imports across the entire project
+- Prevents accidental import paths that break during refactors
+
+#### Benefits
+
+1. **Zero Import Path Hell:** No need to count `../` levels when importing
+2. **Automatic Refactoring Safety:** Move a file → imports stay valid
+3. **Type Safety:** Path aliases enable exact type resolution
+4. **Team Productivity:** Everyone uses the same convention from day one
+
+---
+
 ## 🔒 Security
 
 - ✅ Authentication via Supabase Auth + JWT
