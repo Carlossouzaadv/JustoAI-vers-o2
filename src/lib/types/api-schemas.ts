@@ -182,6 +182,16 @@ export const GetAnalysisResponseSchema = z.object({
 
 export type GetAnalysisResponse = z.infer<typeof GetAnalysisResponseSchema>;
 
+/**
+ * GET /api/process/[id]/analysis Query Parameters
+ * Optional filtering for analysis retrieval
+ */
+export const GetAnalysisQuerySchema = z.object({
+  level: AnalysisLevelSchema.optional(),
+});
+
+export type GetAnalysisQuery = z.infer<typeof GetAnalysisQuerySchema>;
+
 // ================================================================
 // CASE LIST SCHEMAS
 // ================================================================
@@ -405,6 +415,31 @@ export const BulkUpdateCasesResponseSchema = z.object({
 
 export type BulkUpdateCasesResponse = z.infer<typeof BulkUpdateCasesResponseSchema>;
 
+/**
+ * DELETE /api/cases/bulk
+ * Delete multiple cases in a single request
+ */
+export const BulkDeleteCasesPayloadSchema = z.object({
+  caseIds: z.array(UuidSchema)
+    .min(1, { message: 'At least one case ID is required.' })
+    .refine(ids => new Set(ids).size === ids.length, { message: 'Duplicate case IDs are not allowed.' }),
+});
+
+export type BulkDeleteCasesPayload = z.infer<typeof BulkDeleteCasesPayloadSchema>;
+
+/**
+ * DELETE /api/cases/bulk Response
+ */
+export const BulkDeleteCasesResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  deleted: z.number().int().min(0).optional(),
+  failed: z.number().int().min(0).optional(),
+  eventsCreated: z.number().int().min(0).optional(),
+}).passthrough();
+
+export type BulkDeleteCasesResponse = z.infer<typeof BulkDeleteCasesResponseSchema>;
+
 // ================================================================
 // EXCEL UPLOAD SCHEMAS
 // ================================================================
@@ -575,6 +610,24 @@ export function parseBulkUpdateCases(
 ): { success: true; data: BulkUpdateCasesPayload } | { success: false; error: string } {
   try {
     const parsed = BulkUpdateCasesPayloadSchema.parse(data);
+    return { success: true, data: parsed };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { success: false, error: formatZodError(error) };
+    }
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Safely parse and validate bulk delete cases payload
+ */
+export function parseBulkDeleteCases(
+  data: unknown
+): { success: true; data: BulkDeleteCasesPayload } | { success: false; error: string } {
+  try {
+    const parsed = BulkDeleteCasesPayloadSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
     if (error instanceof z.ZodError) {

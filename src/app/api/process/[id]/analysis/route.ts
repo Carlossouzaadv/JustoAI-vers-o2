@@ -19,23 +19,74 @@ import {
   CreateAnalysisPayload,
   RouteIdParamSchema,
   RouteIdParam,
+  GetAnalysisQuerySchema,
+  GetAnalysisQuery,
 } from '@/lib/types/api-schemas';
 
 /**
  * GET - Recuperar análises salvas do processo
+ * Dupla validação: params (route ID) + query (filtros opcionais)
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: processId } = await params;
-
   try {
-    console.log(`${ICONS.SEARCH} Buscando análises para processo: ${processId}`);
+    // ============================================================
+    // STEP 1: VALIDAÇÃO DE PARÂMETROS DA ROTA (params)
+    // ============================================================
+    const resolvedParams = await params;
+    const paramParseResult = RouteIdParamSchema.safeParse(resolvedParams);
+
+    if (!paramParseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'ID do processo inválido na URL.',
+          errors: paramParseResult.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { id: processId } = paramParseResult.data;
+
+    // ============================================================
+    // STEP 2: VALIDAÇÃO DE QUERY PARAMETERS (searchParams)
+    // ============================================================
+    const rawQuery = Object.fromEntries(request.nextUrl.searchParams.entries());
+    const queryParseResult = GetAnalysisQuerySchema.safeParse(rawQuery);
+
+    if (!queryParseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Parâmetros de query inválidos.',
+          errors: queryParseResult.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const query: GetAnalysisQuery = queryParseResult.data;
+
+    console.log(
+      `${ICONS.SEARCH} Buscando análises para processo: ${processId}${
+        query.level ? ` (level: ${query.level})` : ''
+      }`
+    );
+
+    // ============================================================
+    // STEP 3: LÓGICA DO SERVIÇO (Validação Concluída)
+    // ============================================================
 
     // Buscar todas as análises do processo, ordenadas por versão (mais recentes primeiro)
+    // Filtrar por nível se especificado
     const analyses = await prisma.caseAnalysisVersion.findMany({
-      where: { caseId: processId },
+      where: {
+        caseId: processId,
+        ...(query.level && { analysisType: query.level === 'FULL' ? 'complete' : 'strategic' }),
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -47,15 +98,15 @@ export async function GET(
         confidence: true,
         processingTime: true,
         createdAt: true,
-        metadata: true
-      }
+        metadata: true,
+      },
     });
 
     console.log(`${ICONS.SUCCESS} Encontradas ${analyses.length} análise(s)`);
 
     return NextResponse.json({
       success: true,
-      analyses: analyses.map(a => ({
+      analyses: analyses.map((a) => ({
         id: a.id,
         version: a.version,
         createdAt: a.createdAt,
@@ -70,10 +121,9 @@ export async function GET(
         riskAssessment: (a.aiAnalysis as unknown)?.riskAssessment || (a.aiAnalysis as unknown)?.analise_risco,
         timelineAnalysis: (a.aiAnalysis as unknown)?.timelineAnalysis || (a.aiAnalysis as unknown)?.analise_cronograma,
         // Dados completos para referência
-        data: a.aiAnalysis
-      }))
+        data: a.aiAnalysis,
+      })),
     });
-
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar análises:`, error);
     return NextResponse.json(

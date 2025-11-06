@@ -12,6 +12,8 @@ import { validateAuthAndGetUser } from '@/lib/auth';
 import {
   BulkUpdateCasesPayloadSchema,
   BulkUpdateCasesPayload,
+  BulkDeleteCasesPayloadSchema,
+  BulkDeleteCasesPayload,
 } from '@/lib/types/api-schemas';
 
 /**
@@ -171,6 +173,146 @@ export async function PATCH(request: NextRequest) {
     });
   } catch (error) {
     console.error('[Bulk Update API] Error:', error);
+
+    if (error instanceof SyntaxError) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'JSON inválido'
+        },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Desconhecido'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/cases/bulk
+ *
+ * Deleta múltiplos casos em uma única requisição
+ * Requer validação com Zod: caseIds (array[UUID])
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // ============================================================
+    // AUTENTICAÇÃO
+    // ============================================================
+    const authData = await validateAuthAndGetUser(request);
+    const user = authData.user;
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // ============================================================
+    // VALIDAÇÃO DE BODY (JSON) COM ZOD
+    // ============================================================
+    const rawBody: unknown = await request.json();
+    const bodyParseResult = BulkDeleteCasesPayloadSchema.safeParse(rawBody);
+
+    if (!bodyParseResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Payload de deleção em massa inválido.',
+          errors: bodyParseResult.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { caseIds }: BulkDeleteCasesPayload = bodyParseResult.data;
+
+    // ============================================================
+    // VERIFICAR ACESSO AO WORKSPACE
+    // ============================================================
+
+    // Buscar workspace dos casos para verificar acesso
+    const casesWorkspace = await prisma.case.findFirst({
+      where: {
+        id: { in: caseIds }
+      },
+      select: { workspaceId: true }
+    });
+
+    if (!casesWorkspace) {
+      return NextResponse.json(
+        { success: false, message: 'Casos não encontrados' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar que user tem acesso ao workspace
+    const workspace = await prisma.workspace.findFirst({
+      where: {
+        id: casesWorkspace.workspaceId,
+        members: {
+          some: {
+            userId: user.id
+          }
+        }
+      }
+    });
+
+    if (!workspace) {
+      return NextResponse.json(
+        { success: false, message: 'Acesso negado - sem acesso ao workspace' },
+        { status: 403 }
+      );
+    }
+
+    // ============================================================
+    // DELETAR CASOS
+    // ============================================================
+
+    const result = await prisma.case.deleteMany({
+      where: {
+        id: { in: caseIds },
+        workspaceId: workspace.id // Garantir que só deleta casos do workspace
+      }
+    });
+
+    // ============================================================
+    // REGISTRAR EVENTOS (AUDITORIA)
+    // ============================================================
+
+    const caseEvents = await prisma.caseEvent.createMany({
+      data: caseIds.map(caseId => ({
+        caseId,
+        userId: user.id,
+        type: 'BULK_DELETE',
+        title: 'Deleção em massa',
+        description: 'Caso deletado em operação em massa',
+        metadata: {
+          bulkOperationId: crypto.getRandomValues(new Uint8Array(16)).join(''),
+          deletedAt: new Date().toISOString()
+        }
+      }))
+    });
+
+    console.log(`[Bulk Delete] ${result.count} casos deletados pelo user ${user.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: `${result.count} caso(s) deletado(s) com sucesso`,
+      deleted: result.count,
+      failed: caseIds.length - result.count,
+      eventsCreated: caseEvents.count
+    });
+  } catch (error) {
+    console.error('[Bulk Delete API] Error:', error);
 
     if (error instanceof SyntaxError) {
       return NextResponse.json(
