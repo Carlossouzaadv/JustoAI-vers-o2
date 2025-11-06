@@ -1,6 +1,18 @@
+// ================================================================
+// API ENDPOINT - Bulk Update Cases (PATCH)
+// ================================================================
+// PATCH /api/cases/bulk - Atualizar múltiplos casos em uma requisição
+//
+// Padrão de Validação Zod:
+// - Request body: BulkUpdateCasesPayloadSchema (valida caseIds e updates)
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { validateAuthAndGetUser } from '@/lib/auth';
+import {
+  BulkUpdateCasesPayloadSchema,
+  BulkUpdateCasesPayload,
+} from '@/lib/types/api-schemas';
 
 /**
  * PATCH /api/cases/bulk
@@ -8,67 +20,46 @@ import { validateAuthAndGetUser } from '@/lib/auth';
  * Atualiza múltiplos casos em uma única requisição
  * Util para operações em massa como: atribuir cliente, mudar status, etc
  *
- * Body:
- * {
- *   caseIds: string[];
- *   updates: {
- *     clientId?: string;
- *     status?: string;
- *     priority?: string;
- *     // ... outros campos
- *   }
- * }
+ * Validação com Zod: caseIds (array[UUID]), updates (objetos)
  */
 export async function PATCH(request: NextRequest) {
   try {
+    // ============================================================
+    // AUTENTICAÇÃO
+    // ============================================================
     const authData = await validateAuthAndGetUser(request);
     const user = authData.user;
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const body = await request.json();
-    const { caseIds, updates } = body;
+    // ============================================================
+    // VALIDAÇÃO DE BODY (JSON) COM ZOD
+    // ============================================================
+    const rawBody: unknown = await request.json();
+    const bodyParseResult = BulkUpdateCasesPayloadSchema.safeParse(rawBody);
 
-    // Validar input
-    if (!Array.isArray(caseIds) || caseIds.length === 0) {
+    if (!bodyParseResult.success) {
       return NextResponse.json(
-        { error: 'Invalid input: caseIds must be a non-empty array' },
+        {
+          success: false,
+          message: 'Payload de bulk update inválido.',
+          errors: bodyParseResult.error.flatten(),
+        },
         { status: 400 }
       );
     }
 
-    if (!updates || typeof updates !== 'object' || Object.keys(updates).length === 0) {
-      return NextResponse.json(
-        { error: 'Invalid input: updates must be a non-empty object' },
-        { status: 400 }
-      );
-    }
+    const { caseIds, updates }: BulkUpdateCasesPayload = bodyParseResult.data;
+    const updateKeys = Object.keys(updates).filter(key => updates[key as keyof typeof updates] !== undefined);
 
-    // Limitar campos atualizáveis (segurança)
-    const allowedFields = ['clientId', 'status', 'priority', 'title', 'description'];
-    const updateKeys = Object.keys(updates).filter(key => allowedFields.includes(key));
-
-    if (updateKeys.length === 0) {
-      return NextResponse.json(
-        { error: 'No valid fields to update' },
-        { status: 400 }
-      );
-    }
-
-    // Construir objeto de update apenas com campos permitidos
-    const safeUpdates: Record<string, unknown> = {};
-    updateKeys.forEach(key => {
-      safeUpdates[key] = updates[key];
-    });
-
-    // ================================================================
+    // ============================================================
     // VERIFICAR ACESSO AO WORKSPACE
-    // ================================================================
+    // ============================================================
 
     // Buscar workspace dos casos para verificar acesso
     const casesWorkspace = await prisma.case.findFirst({
@@ -80,7 +71,7 @@ export async function PATCH(request: NextRequest) {
 
     if (!casesWorkspace) {
       return NextResponse.json(
-        { error: 'Cases not found' },
+        { success: false, message: 'Casos não encontrados' },
         { status: 404 }
       );
     }
@@ -99,31 +90,40 @@ export async function PATCH(request: NextRequest) {
 
     if (!workspace) {
       return NextResponse.json(
-        { error: 'Forbidden - no access to workspace' },
+        { success: false, message: 'Acesso negado - sem acesso ao workspace' },
         { status: 403 }
       );
     }
 
-    // ================================================================
-    // ATUALIZAR CASOS
-    // ================================================================
+    // ============================================================
+    // VALIDAÇÃO ADICIONAL: clientId (se fornecido)
+    // ============================================================
 
     // Se está atualizando clientId, validar que cliente existe e pertence ao workspace
-    if (safeUpdates.clientId) {
+    if (updates.clientId) {
       const client = await prisma.client.findUnique({
-        where: { id: safeUpdates.clientId },
+        where: { id: updates.clientId },
         select: { id: true, workspaceId: true }
       });
 
       if (!client || client.workspaceId !== workspace.id) {
         return NextResponse.json(
-          { error: 'Invalid client - client does not exist or is from different workspace' },
+          {
+            success: false,
+            message: 'Cliente inválido - cliente não existe ou pertence a outro workspace',
+          },
           { status: 400 }
         );
       }
     }
 
-    // Atualizar todos os casos
+    // ============================================================
+    // ATUALIZAR CASOS
+    // ============================================================
+
+    // Construir objeto de update com valores validados por Zod
+    const safeUpdates = { ...updates };
+
     const result = await prisma.case.updateMany({
       where: {
         id: { in: caseIds },
@@ -135,9 +135,9 @@ export async function PATCH(request: NextRequest) {
       }
     });
 
-    // ================================================================
+    // ============================================================
     // REGISTRAR EVENTOS (AUDITORIA)
-    // ================================================================
+    // ============================================================
 
     // Criar evento para cada caso atualizado
     const updateSummary = Object.entries(safeUpdates)
@@ -174,13 +174,20 @@ export async function PATCH(request: NextRequest) {
 
     if (error instanceof SyntaxError) {
       return NextResponse.json(
-        { error: 'Invalid JSON' },
+        {
+          success: false,
+          message: 'JSON inválido'
+        },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        message: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Desconhecido'
+      },
       { status: 500 }
     );
   }
