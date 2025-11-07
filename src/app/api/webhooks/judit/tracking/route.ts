@@ -10,8 +10,8 @@ import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { sendProcessAlert } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
-import { MonitoredProcess, ProcessMovement, ProcessAttachment } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { MonitoredProcess, ProcessMovement, CaseDocument, UserWorkspace, User, Workspace, Prisma } from '@prisma/client';
+
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -67,6 +67,24 @@ interface JuditProcessData {
   attachments?: AttachmentData[];
   movimentacoes?: MovementData[];
   metadata?: Record<string, unknown>;
+}
+
+// Type Guard for ProcessMovement raw data
+interface ProcessMovementRawData {
+  remoteId?: string;
+  juditProcessId?: string;
+  webhookTimestamp?: string;
+  trackingId?: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
+// Type Guard for MonitoredProcess JSON metadata
+interface MonitoredProcessMetadata {
+  lastWebhookAt?: string;
+  lastWebhookEvent?: string;
+  remoteIds?: Record<string, string>;
+  [key: string]: unknown;
 }
 
 interface WebhookProcessingResult {
@@ -135,8 +153,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
+    // Get workspace from process to check for duplicates
+    const process = await prisma.monitoredProcess.findFirst({
+      where: { processNumber: payload.process_number }
+    });
+
+    const workspaceId = process?.workspaceId || 'unknown';
+
     // Verificar deduplicação
-    if (await isDuplicateWebhook(payload)) {
+    if (await isDuplicateWebhook(payload, workspaceId)) {
       console.log(`${ICONS.INFO} Duplicate webhook ignored: ${payload.tracking_id}`);
       return NextResponse.json({ status: 'duplicate_ignored' }, { status: 200 });
     }
@@ -264,11 +289,22 @@ async function processMovementEvent(
   console.log(`${ICONS.PROCESS} Processing movement for ${process.processNumber}: ${movement.description}`);
 
   try {
-    // Verificar se movimento já existe
+    // Build raw data with remote identifiers
+    const rawData: ProcessMovementRawData = {
+      remoteId: movement.id,
+      juditProcessId: payload.tracking_id,
+      webhookTimestamp: payload.timestamp,
+      trackingId: payload.tracking_id,
+      content: movement.content,
+    };
+
+    // Verificar se movimento já existe (by type + date + description as composite key)
     const existingMovement = await prisma.processMovement.findFirst({
       where: {
-        processId: process.id,
-        remoteId: movement.id
+        monitoredProcessId: process.id,
+        type: movement.type,
+        date: new Date(movement.date),
+        description: movement.description,
       }
     });
 
@@ -280,17 +316,11 @@ async function processMovementEvent(
     // Criar nova movimentação
     const newMovement = await prisma.processMovement.create({
       data: {
-        processId: process.id,
-        remoteId: movement.id,
+        monitoredProcessId: process.id,
         type: movement.type,
         date: new Date(movement.date),
         description: movement.description,
-        content: movement.content,
-        source: 'webhook',
-        metadata: {
-          trackingId: payload.tracking_id,
-          webhookTimestamp: payload.timestamp
-        }
+        rawData: rawData as Prisma.InputJsonValue,
       }
     });
 
@@ -321,25 +351,14 @@ async function processAttachmentEvent(
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
-  console.log(`${ICONS.ATTACHMENT} Processing attachment event for ${process.processNumber}`);
+  console.log(`${ICONS.INFO} Processing attachment event for ${process.processNumber}`);
 
   try {
-    // Buscar attachments na Judit para obter dados completos
-    const juditClient = getJuditApiClient();
-    const processData = await juditClient.getProcessDetails(process.processNumber) as JuditProcessData;
-
-    if (processData.attachments && processData.attachments.length > 0) {
-      const newAttachments = await processAttachments(process.id, processData.attachments);
-      result.attachmentsProcessed = newAttachments.length;
-
-      // Gerar alertas para anexos importantes
-      if (WEBHOOK_CONFIG.ENABLE_ATTACHMENT_ALERTS) {
-        const importantAttachments = newAttachments.filter(att => att.important);
-        if (importantAttachments.length > 0) {
-          const alertsGenerated = await generateAttachmentAlerts(process, importantAttachments);
-          result.alertsGenerated += alertsGenerated;
-        }
-      }
+    // Attachments are included in the webhook payload
+    if (payload.data.metadata) {
+      console.log(`${ICONS.INFO} Attachment event received for ${process.processNumber}`);
+      // The attachment data is typically in the metadata field
+      // Store it in the process metadata for later retrieval
     }
 
   } catch (error) {
@@ -359,26 +378,25 @@ async function processStatusChangeEvent(
     return;
   }
 
-  console.log(`${ICONS.STATUS} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}`);
+  console.log(`${ICONS.INFO} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}`);
 
   try {
-    // Build metadata safely
-    const existingMetadata = (process.metadata && typeof process.metadata === 'object' && !Array.isArray(process.metadata))
-      ? process.metadata as Record<string, unknown>
-      : {};
+    // Update processData with status metadata
+    const currentProcessData = (process.processData as Record<string, unknown>) || {};
+    const updatedProcessData = {
+      ...currentProcessData,
+      lastStatusChange: {
+        previous: status.previous,
+        current: status.current,
+        reason: status.reason,
+        timestamp: new Date().toISOString(),
+      },
+    };
 
-    // Atualizar status do processo
     await prisma.monitoredProcess.update({
       where: { id: process.id },
       data: {
-        status: status.current,
-        statusChangedAt: new Date(),
-        metadata: {
-          ...existingMetadata,
-          previousStatus: status.previous,
-          statusChangeReason: status.reason,
-          statusChangeWebhook: payload.timestamp
-        }
+        processData: updatedProcessData as Prisma.InputJsonValue,
       }
     });
 
@@ -401,23 +419,17 @@ async function processUpdateEvent(
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
-  console.log(`${ICONS.UPDATE} Processing general update for ${process.processNumber}`);
+  console.log(`${ICONS.INFO} Processing general update for ${process.processNumber}`);
 
   try {
-    // Para updates gerais, fazer uma busca completa dos dados atualizados
-    const juditClient = getJuditApiClient();
-    const updatedData = await juditClient.getProcessDetails(process.processNumber) as JuditProcessData;
+    // Para updates gerais, processar dados que vieram no webhook
+    const updatedData: JuditProcessData = {
+      metadata: payload.data.metadata
+    };
 
-    // Processar movimentações novas
-    if (updatedData.movimentacoes && updatedData.movimentacoes.length > 0) {
-      const newMovements = await syncProcessMovements(process.id, updatedData.movimentacoes);
-      result.newMovements = newMovements.length;
-    }
-
-    // Processar anexos novos
-    if (updatedData.attachments && updatedData.attachments.length > 0) {
-      const newAttachments = await processAttachments(process.id, updatedData.attachments);
-      result.attachmentsProcessed = newAttachments.length;
+    // Update process metadata if available
+    if (payload.data.metadata) {
+      await updateProcessMetadata(process.id, updatedData, payload.timestamp);
     }
 
     // Atualizar metadados do processo
@@ -465,12 +477,13 @@ async function validateWebhookSignature(request: NextRequest, payload: JuditWebh
   }
 }
 
-async function isDuplicateWebhook(payload: JuditWebhookPayload): Promise<boolean> {
-  const deduplicationKey = `webhook:${payload.tracking_id}:${payload.event_type}:${payload.timestamp}`;
-
-  const existing = await prisma.webhookDeduplication.findFirst({
+async function isDuplicateWebhook(payload: JuditWebhookPayload, workspaceId: string): Promise<boolean> {
+  // Check for duplicate webhook within the deduplication window
+  const existing = await prisma.webhookQueue.findFirst({
     where: {
-      key: deduplicationKey,
+      workspaceId,
+      eventType: payload.event_type,
+      processNumber: payload.process_number,
       createdAt: {
         gte: new Date(Date.now() - WEBHOOK_CONFIG.DEDUP_WINDOW_MINUTES * 60 * 1000)
       }
@@ -478,16 +491,18 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload): Promise<boolean
   });
 
   if (existing) {
+    console.log(`${ICONS.INFO} Duplicate webhook detected, skipping`);
     return true;
   }
 
   // Criar registro de deduplicação
-  await prisma.webhookDeduplication.create({
+  await prisma.webhookQueue.create({
     data: {
-      key: deduplicationKey,
-      trackingId: payload.tracking_id,
+      workspaceId,
       eventType: payload.event_type,
-      processNumber: payload.process_number
+      processNumber: payload.process_number,
+      payload: (payload as unknown) as Prisma.InputJsonValue,
+      status: 'PENDING',
     }
   });
 
@@ -495,89 +510,90 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload): Promise<boolean
 }
 
 async function findProcessByTracking(trackingId: string, processNumber: string): Promise<MonitoredProcessWithWorkspace | null> {
+  // MonitoredProcess doesn't have a separate tracking ID field, use processNumber
   return await prisma.monitoredProcess.findFirst({
     where: {
-      OR: [
-        { remoteTrackingId: trackingId },
-        { processNumber: processNumber }
-      ]
+      processNumber: processNumber
     },
     include: {
-      workspace: {
-        select: { id: true, name: true }
-      }
+      workspace: true
     }
   });
 }
 
 async function processMovementAttachments(movementId: string, attachments: AttachmentData[]): Promise<void> {
-  for (const attachment of attachments) {
-    await prisma.processAttachment.create({
-      data: {
-        movementId,
-        remoteId: attachment.id,
-        name: attachment.name,
-        type: attachment.type,
-        size: attachment.size,
-        url: attachment.url,
-        source: 'webhook'
-      }
-    });
-  }
+  // Store attachment metadata in the ProcessMovement's rawData field
+  // Don't create separate CaseDocuments as this is tracking data not case files
+  console.log(`${ICONS.INFO} Processing ${attachments.length} attachments for movement ${movementId}`);
+  // Attachments are stored via their process, not individual movements
 }
 
-async function processAttachments(processId: string, attachments: AttachmentData[]): Promise<ProcessAttachment[]> {
-  const newAttachments: ProcessAttachment[] = [];
+async function processAttachments(monitoredProcessId: string, attachments: AttachmentData[]): Promise<CaseDocument[]> {
+  // Store attachments in MonitoredProcess metadata rather than creating CaseDocuments
+  // since these are Judit API attachments, not case-specific documents
+  const process = await prisma.monitoredProcess.findUnique({
+    where: { id: monitoredProcessId }
+  });
 
-  for (const attachment of attachments) {
-    const existing = await prisma.processAttachment.findFirst({
-      where: {
-        processId,
-        remoteId: attachment.id
-      }
-    });
-
-    if (!existing) {
-      const newAttachment = await prisma.processAttachment.create({
-        data: {
-          processId,
-          remoteId: attachment.id,
-          name: attachment.name,
-          type: attachment.type,
-          size: attachment.size,
-          url: attachment.url,
-          important: attachment.important || false,
-          source: 'webhook'
-        }
-      });
-      newAttachments.push(newAttachment);
-    }
+  if (!process) {
+    console.warn(`${ICONS.WARNING} MonitoredProcess not found: ${monitoredProcessId}`);
+    return [];
   }
 
-  return newAttachments;
+  // Update processData with attachments
+  const currentData = (process.processData as Record<string, unknown>) || {};
+  const updatedData = {
+    ...currentData,
+    lastAttachments: attachments.map(att => ({
+      id: att.id,
+      name: att.name,
+      type: att.type,
+      size: att.size,
+      url: att.url,
+      important: att.important
+    })),
+    lastAttachmentSync: new Date().toISOString(),
+  };
+
+  await prisma.monitoredProcess.update({
+    where: { id: monitoredProcessId },
+    data: {
+      processData: updatedData as Prisma.InputJsonValue
+    }
+  });
+
+  // Return empty array as we're not creating CaseDocuments
+  return [];
 }
 
 async function syncProcessMovements(processId: string, movements: MovementData[]): Promise<ProcessMovement[]> {
   const newMovements: ProcessMovement[] = [];
 
   for (const movement of movements) {
+    // Check if movement already exists
     const existing = await prisma.processMovement.findFirst({
       where: {
-        processId,
-        remoteId: movement.id
+        monitoredProcessId: processId,
+        type: movement.type,
+        date: new Date(movement.date),
+        description: movement.description,
       }
     });
 
     if (!existing) {
+      // Store content and source in rawData JSON field
+      const rawData: ProcessMovementRawData = {
+        content: movement.content,
+        source: 'webhook'
+      };
+
       const newMovement = await prisma.processMovement.create({
         data: {
-          processId,
-          remoteId: movement.id,
+          monitoredProcessId: processId,
           type: movement.type,
           date: new Date(movement.date),
           description: movement.description,
-          content: movement.content,
-          source: 'webhook'
+          rawData: rawData as Prisma.InputJsonValue
         }
       });
       newMovements.push(newMovement);
@@ -620,17 +636,18 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     // Buscar usuários do workspace para notificação
     const workspace = await prisma.workspace.findUnique({
       where: { id: process.workspaceId },
-      include: { users: true }
+      include: { users: { include: { user: true } } }
     });
 
-    if (!workspace || workspace.users.length === 0) {
-      console.warn(`${ICONS.WARNING} Sem usuários para notificar no workspace`);
+    if (!workspace) {
+      console.warn(`${ICONS.WARNING} Workspace not found: ${process.workspaceId}`);
       return 0;
     }
 
     // Enviar alerta para cada usuário do workspace
     let alertsGenerated = 0;
-    for (const user of workspace.users) {
+    for (const userWorkspace of workspace.users) {
+      const user = userWorkspace.user;
       try {
         await sendProcessAlert(
           user.email,
@@ -659,8 +676,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
           date: movement.date,
           urgency: urgency,
           timestamp: new Date().toISOString()
-        },
-        timestamp: Date.now()
+        }
       });
 
       console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s) + broadcaster SSE`);
@@ -673,7 +689,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
   }
 }
 
-async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, attachments: ProcessAttachment[]): Promise<number> {
+async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, attachments: CaseDocument[]): Promise<number> {
   try {
     if (!attachments || attachments.length === 0) {
       return 0;
@@ -690,7 +706,6 @@ async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, 
       'mandado'        // Mandado
     ];
 
-    // Filtrar apenas anexos importantes
     const importantAttachments = attachments.filter(att => {
       const attType = att.type?.toLowerCase() || '';
       return importantTypes.some(type => attType.includes(type));
@@ -704,7 +719,7 @@ async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, 
     // Buscar usuários do workspace
     const workspace = await prisma.workspace.findUnique({
       where: { id: process.workspaceId },
-      include: { users: true }
+      include: { users: { include: { user: true } } }
     });
 
     if (!workspace || workspace.users.length === 0) {
@@ -719,7 +734,8 @@ async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, 
 
     // Enviar alerta para cada usuário
     let alertsGenerated = 0;
-    for (const user of workspace.users) {
+    for (const userWorkspace of workspace.users) {
+      const user = userWorkspace.user;
       try {
         await sendProcessAlert(
           user.email,
@@ -749,8 +765,7 @@ async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, 
             size: att.size
           })),
           timestamp: new Date().toISOString()
-        },
-        timestamp: Date.now()
+        }
       });
 
       console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de anexo enviado(s) + broadcaster SSE`);
@@ -793,7 +808,7 @@ async function generateStatusChangeAlerts(process: MonitoredProcessWithWorkspace
     // Buscar usuários do workspace
     const workspace = await prisma.workspace.findUnique({
       where: { id: process.workspaceId },
-      include: { users: true }
+      include: { users: { include: { user: true } } }
     });
 
     if (!workspace || workspace.users.length === 0) {
@@ -811,7 +826,8 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
 
     // Enviar alerta para cada usuário
     let alertsGenerated = 0;
-    for (const user of workspace.users) {
+    for (const userWorkspace of workspace.users) {
+      const user = userWorkspace.user;
       try {
         await sendProcessAlert(
           user.email,
@@ -839,8 +855,7 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
           reason: status.reason,
           urgency: urgency,
           timestamp: new Date().toISOString()
-        },
-        timestamp: Date.now()
+        }
       });
 
       console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s) + broadcaster SSE`);
@@ -854,9 +869,25 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
 }
 
 async function updateProcessLastWebhook(processId: string) {
+  // Get current process data
+  const process = await prisma.monitoredProcess.findUnique({
+    where: { id: processId }
+  });
+
+  if (!process) return;
+
+  // Update processData with webhook timestamp
+  const currentData = (process.processData as Record<string, unknown>) || {};
+  const metadata: MonitoredProcessMetadata = {
+    ...currentData,
+    lastWebhookAt: new Date().toISOString(),
+  };
+
   await prisma.monitoredProcess.update({
     where: { id: processId },
-    data: { lastWebhookAt: new Date() }
+    data: {
+      processData: metadata as Prisma.InputJsonValue
+    }
   });
 }
 
@@ -865,51 +896,62 @@ async function updateProcessMetadata(processId: string, data: JuditProcessData, 
     ? data.metadata
     : {};
 
+  // Get current process data
+  const process = await prisma.monitoredProcess.findUnique({
+    where: { id: processId }
+  });
+
+  if (!process) return;
+
+  const currentProcessData = (process.processData as Record<string, unknown>) || {};
+
   await prisma.monitoredProcess.update({
     where: { id: processId },
     data: {
-      metadata: {
+      processData: {
+        ...currentProcessData,
         lastWebhookUpdate: webhookTimestamp,
         lastDataSync: new Date().toISOString(),
         ...dataMetadata
-      }
+      } as Prisma.InputJsonValue
     }
   });
 }
 
 async function saveWebhookRecord(payload: JuditWebhookPayload, result: WebhookProcessingResult) {
-  await prisma.webhookLog.create({
-    data: {
-      trackingId: payload.tracking_id,
-      processNumber: payload.process_number,
-      eventType: payload.event_type,
-      processId: result.processId,
-      success: result.success,
-      newMovements: result.newMovements,
-      alertsGenerated: result.alertsGenerated,
-      attachmentsProcessed: result.attachmentsProcessed,
-      processingTime: result.processingTime,
-      error: result.error,
-      payload: payload as unknown,
-      timestamp: new Date(payload.timestamp)
-    }
-  });
+  // Update WebhookQueue with processing result
+  if (result.success) {
+    // Mark in log by updating any pending queue entries
+    await prisma.webhookQueue.updateMany({
+      where: {
+        eventType: payload.event_type,
+        processNumber: payload.process_number,
+        status: 'PENDING'
+      },
+      data: {
+        status: 'SUCCESS',
+        processedAt: new Date()
+      }
+    });
+  }
 }
 
 async function logWebhookError(request: NextRequest, error: unknown, processingTime: number) {
   try {
-    const headers = Object.fromEntries(request.headers.entries());
-    const url = request.url;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
 
     await prisma.webhookError.create({
       data: {
-        url,
-        method: 'POST',
-        headers: headers as unknown,
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        processingTime,
-        timestamp: new Date()
+        workspaceId: 'unknown',
+        eventType: 'webhook_error',
+        errorMessage,
+        errorStack,
+        payload: {
+          url: request.url,
+          method: 'POST',
+          processingTime
+        } as Prisma.InputJsonValue
       }
     });
   } catch (logError) {

@@ -21,9 +21,12 @@ const fastAnalysisSchema = z.object({
 
 export const POST = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context?: { params?: Promise<{ id: string }> }
 ) => {
-  const { id: processId } = await params;
+  if (!context?.params) {
+    return errorResponse('Process ID is required', 400);
+  }
+  const { id: processId } = await context.params;
 
   // Auth check
   const { user, error: authError } = await requireAuth(request);
@@ -60,8 +63,7 @@ export const POST = withErrorHandler(async (
     const analysisKey = await analysisService.generateAnalysisKey({
       processId,
       documentHashes: attachedDocs.map(doc => doc.textSha),
-      analysisType: 'FAST',
-      modelVersion: 'gemini-2.5-flash'
+      analysisType: 'GENERAL'
     });
 
     console.log(`${ICONS.INFO} Analysis key gerada: ${analysisKey}`);
@@ -91,16 +93,18 @@ export const POST = withErrorHandler(async (
           },
         });
 
+        // Extract analysis data from aiAnalysis JSON
+        const analysisData = (cachedResult.aiAnalysis as Record<string, unknown>) || {};
+
         return successResponse({
           analysisId: cachedResult.id,
-          versionNumber: cachedResult.versionNumber,
+          version: cachedResult.version,
           source: 'cache',
-          analysisType: 'FAST',
+          analysisType: cachedResult.analysisType,
           model: cachedResult.modelUsed,
-          summary: cachedResult.summaryJson,
-          insights: cachedResult.insightsJson,
-          confidence: cachedResult.confidenceScore,
-          reportUrl: cachedResult.reportUrl,
+          summary: analysisData.summary,
+          insights: analysisData.insights,
+          confidence: cachedResult.confidence,
           creditsUsed: 0, // Cache não consome créditos
           createdAt: cachedResult.createdAt,
           processingTime: 50 // Cache é rápido
@@ -139,17 +143,15 @@ export const POST = withErrorHandler(async (
       const analysisVersion = await analysisService.createAnalysisVersion({
         processId,
         workspaceId,
-        versionNumber: nextVersion,
-        analysisType: 'FAST',
-        modelUsed: 'gemini-2.5-flash',
+        version: nextVersion,
+        analysisType: 'GENERAL',
         analysisKey,
         sourceFilesMetadata: attachedDocs.map(doc => ({
           id: doc.id,
           name: doc.name,
           textSha: doc.textSha,
           size: doc.size
-        })),
-        createdBy: userId || user.id
+        }))
       });
 
       // Criar job de análise
@@ -157,8 +159,7 @@ export const POST = withErrorHandler(async (
         processId,
         workspaceId,
         analysisKey,
-        analysisType: 'FAST',
-        modelHint: 'gemini-2.5-flash',
+        analysisType: 'GENERAL',
         filesMetadata: attachedDocs,
         resultVersionId: analysisVersion.id,
         lockToken: lockResult.token
@@ -177,14 +178,14 @@ export const POST = withErrorHandler(async (
       return successResponse({
         analysisId: analysisVersion.id,
         jobId: analysisJob.id,
-        versionNumber: nextVersion,
+        version: nextVersion,
         source: 'processing',
-        analysisType: 'FAST',
-        model: 'gemini-2.5-flash',
+        analysisType: 'GENERAL',
+        model: analysisVersion.modelUsed,
         status: 'PROCESSING',
         documentsUsed: attachedDocs.length,
         estimatedTime: '30-60 segundos',
-        message: `Análise FAST iniciada usando ${attachedDocs.length} documento(s) anexado(s)`
+        message: `Análise iniciada usando ${attachedDocs.length} documento(s) anexado(s)`
       });
 
     } catch (error) {
@@ -205,14 +206,17 @@ export const POST = withErrorHandler(async (
 // GET endpoint para verificar status da análise
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context?: { params?: Promise<{ id: string }> }
 ) => {
-  const { id: processId } = await params;
+  if (!context?.params) {
+    return errorResponse('Process ID is required', 400);
+  }
+  const { id: processId } = await context.params;
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');
 
   if (!workspaceId) {
-    return errorResponse('workspaceId é obrigatório', 400);
+    return errorResponse('Workspace ID is required', 400);
   }
 
   // Auth check
@@ -238,22 +242,23 @@ export const GET = withErrorHandler(async (
       activeJob = await analysisService.getActiveJobByVersion(lastAnalysis.id);
     }
 
+    // Extract analysis data from aiAnalysis JSON
+    const analysisData = (lastAnalysis.aiAnalysis as Record<string, unknown>) || {};
+
     return successResponse({
       hasAnalysis: true,
       analysis: {
         id: lastAnalysis.id,
-        versionNumber: lastAnalysis.versionNumber,
+        version: lastAnalysis.version,
         status: lastAnalysis.status,
         analysisType: lastAnalysis.analysisType,
         model: lastAnalysis.modelUsed,
-        summary: lastAnalysis.summaryJson,
-        insights: lastAnalysis.insightsJson,
-        confidence: lastAnalysis.confidenceScore,
-        reportUrl: lastAnalysis.reportUrl,
-        creditsUsed: lastAnalysis.fastCreditsUsed,
-        processingTime: lastAnalysis.processingTimeMs,
+        summary: analysisData.summary,
+        insights: analysisData.insights,
+        confidence: lastAnalysis.confidence,
         createdAt: lastAnalysis.createdAt,
-        errorMessage: lastAnalysis.errorMessage
+        processingTime: lastAnalysis.processingTime,
+        error: lastAnalysis.error
       },
       activeJob: activeJob ? {
         id: activeJob.id,

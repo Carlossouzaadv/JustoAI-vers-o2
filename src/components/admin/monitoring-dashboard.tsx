@@ -42,6 +42,47 @@ import { ptBR } from 'date-fns/locale';
 // TIPOS E INTERFACES
 // ================================================================
 
+interface ComponentStatus {
+  status: 'healthy' | 'degraded' | 'critical' | 'offline';
+  lastCheck: string;
+  responseTime?: number;
+  details: string;
+  metrics?: Record<string, unknown>;
+}
+
+interface QueueStats {
+  queue: {
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+  };
+}
+
+interface JuditStats {
+  totalCalls: number;
+  successfulCalls: number;
+  rateLimitHits: number;
+  circuitBreakerState: 'open' | 'closed' | 'half-open';
+  averageResponseTime: number;
+}
+
+interface TelemetryMetrics {
+  daily: {
+    totalApiCalls: number;
+    totalWebhooks: number;
+    totalCost: number;
+    processesMonitored: number;
+    trackingsActive: number;
+  };
+}
+
+interface Alert {
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+}
+
 interface SystemStatus {
   timestamp: string;
   overall: 'healthy' | 'degraded' | 'critical' | 'offline';
@@ -53,20 +94,12 @@ interface SystemStatus {
     webhooks: ComponentStatus;
   };
   metrics: {
-    queueStats: unknown;
-    juditStats: unknown;
-    telemetryMetrics: unknown;
-    activeAlerts: unknown[];
+    queueStats: QueueStats;
+    juditStats: JuditStats;
+    telemetryMetrics: TelemetryMetrics;
+    activeAlerts: Alert[];
   };
   recommendations: string[];
-}
-
-interface ComponentStatus {
-  status: 'healthy' | 'degraded' | 'critical' | 'offline';
-  lastCheck: string;
-  responseTime?: number;
-  details: string;
-  metrics?: Record<string, unknown>;
 }
 
 interface RecoveryAction {
@@ -76,6 +109,102 @@ interface RecoveryAction {
   risk: 'low' | 'medium' | 'high';
   estimatedDuration: string;
   requiredParameters?: string[];
+}
+
+// ================================================================
+// TYPE GUARDS
+// ================================================================
+
+function isComponentStatus(data: unknown): data is ComponentStatus {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.status === 'string' &&
+    ['healthy', 'degraded', 'critical', 'offline'].includes(obj.status as string) &&
+    typeof obj.lastCheck === 'string' &&
+    typeof obj.details === 'string'
+  );
+}
+
+function isQueueStats(data: unknown): data is QueueStats {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  const queue = obj.queue;
+  if (typeof queue !== 'object' || queue === null) return false;
+  const q = queue as Record<string, unknown>;
+  return (
+    typeof q.waiting === 'number' &&
+    typeof q.active === 'number' &&
+    typeof q.completed === 'number' &&
+    typeof q.failed === 'number'
+  );
+}
+
+function isJuditStats(data: unknown): data is JuditStats {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.totalCalls === 'number' &&
+    typeof obj.successfulCalls === 'number' &&
+    typeof obj.rateLimitHits === 'number' &&
+    typeof obj.circuitBreakerState === 'string' &&
+    ['open', 'closed', 'half-open'].includes(obj.circuitBreakerState as string) &&
+    typeof obj.averageResponseTime === 'number'
+  );
+}
+
+function isTelemetryMetrics(data: unknown): data is TelemetryMetrics {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  const daily = obj.daily;
+  if (typeof daily !== 'object' || daily === null) return false;
+  const d = daily as Record<string, unknown>;
+  return (
+    typeof d.totalApiCalls === 'number' &&
+    typeof d.totalWebhooks === 'number' &&
+    typeof d.totalCost === 'number' &&
+    typeof d.processesMonitored === 'number' &&
+    typeof d.trackingsActive === 'number'
+  );
+}
+
+function isAlert(data: unknown): data is Alert {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.type === 'string' &&
+    typeof obj.severity === 'string' &&
+    ['low', 'medium', 'high', 'critical'].includes(obj.severity as string) &&
+    typeof obj.message === 'string'
+  );
+}
+
+function isSystemStatus(data: unknown): data is SystemStatus {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  const components = obj.components;
+  if (typeof components !== 'object' || components === null) return false;
+  const c = components as Record<string, unknown>;
+
+  return (
+    typeof obj.timestamp === 'string' &&
+    typeof obj.overall === 'string' &&
+    ['healthy', 'degraded', 'critical', 'offline'].includes(obj.overall as string) &&
+    isComponentStatus(c.juditApi) &&
+    isComponentStatus(c.monitoringWorker) &&
+    isComponentStatus(c.database) &&
+    isComponentStatus(c.redis) &&
+    isComponentStatus(c.webhooks) &&
+    typeof obj.metrics === 'object' &&
+    obj.metrics !== null &&
+    isQueueStats((obj.metrics as Record<string, unknown>).queueStats) &&
+    isJuditStats((obj.metrics as Record<string, unknown>).juditStats) &&
+    isTelemetryMetrics((obj.metrics as Record<string, unknown>).telemetryMetrics) &&
+    Array.isArray((obj.metrics as Record<string, unknown>).activeAlerts) &&
+    ((obj.metrics as Record<string, unknown>).activeAlerts as unknown[]).every(isAlert) &&
+    Array.isArray(obj.recommendations) &&
+    (obj.recommendations as unknown[]).every(r => typeof r === 'string')
+  );
 }
 
 export default function MonitoringDashboard() {
@@ -114,8 +243,10 @@ export default function MonitoringDashboard() {
       const response = await fetch('/api/admin/monitoring');
       const data = await response.json();
 
-      if (data.status === 'success') {
+      if (data.status === 'success' && isSystemStatus(data.data)) {
         setSystemStatus(data.data);
+      } else {
+        console.error('Status inválido recebido:', data.data);
       }
     } catch (error) {
       console.error('Erro ao carregar status:', error);
@@ -340,34 +471,36 @@ export default function MonitoringDashboard() {
             </Card>
 
             {/* Queue Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Fila de Monitoramento
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Aguardando:</span>
-                    <span className="font-medium">{systemStatus.metrics.queueStats.queue.waiting}</span>
+            {isQueueStats(systemStatus.metrics.queueStats) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Fila de Monitoramento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Aguardando:</span>
+                      <span className="font-medium">{systemStatus.metrics.queueStats.queue.waiting}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Ativo:</span>
+                      <span className="font-medium">{systemStatus.metrics.queueStats.queue.active}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Completado:</span>
+                      <span className="font-medium text-green-600">{systemStatus.metrics.queueStats.queue.completed}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Falhado:</span>
+                      <span className="font-medium text-red-600">{systemStatus.metrics.queueStats.queue.failed}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Ativo:</span>
-                    <span className="font-medium">{systemStatus.metrics.queueStats.queue.active}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Completado:</span>
-                    <span className="font-medium text-green-600">{systemStatus.metrics.queueStats.queue.completed}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Falhado:</span>
-                    <span className="font-medium text-red-600">{systemStatus.metrics.queueStats.queue.failed}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Alertas ativos */}
             <Card>
@@ -452,72 +585,76 @@ export default function MonitoringDashboard() {
         <TabsContent value="metrics" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Métricas da API Judit */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Métricas API Judit</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Total de Chamadas:</span>
-                    <span className="font-medium">{systemStatus.metrics.juditStats.totalCalls}</span>
+            {isJuditStats(systemStatus.metrics.juditStats) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Métricas API Judit</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Total de Chamadas:</span>
+                      <span className="font-medium">{systemStatus.metrics.juditStats.totalCalls}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Taxa de Sucesso:</span>
+                      <span className="font-medium">
+                        {systemStatus.metrics.juditStats.totalCalls > 0
+                          ? ((systemStatus.metrics.juditStats.successfulCalls / systemStatus.metrics.juditStats.totalCalls) * 100).toFixed(1)
+                          : 100}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Rate Limits:</span>
+                      <span className="font-medium">{systemStatus.metrics.juditStats.rateLimitHits}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Circuit Breaker:</span>
+                      <Badge variant={systemStatus.metrics.juditStats.circuitBreakerState === 'closed' ? 'default' : 'destructive'}>
+                        {systemStatus.metrics.juditStats.circuitBreakerState}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tempo Médio:</span>
+                      <span className="font-medium">{Math.round(systemStatus.metrics.juditStats.averageResponseTime)}ms</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Taxa de Sucesso:</span>
-                    <span className="font-medium">
-                      {systemStatus.metrics.juditStats.totalCalls > 0
-                        ? ((systemStatus.metrics.juditStats.successfulCalls / systemStatus.metrics.juditStats.totalCalls) * 100).toFixed(1)
-                        : 100}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Rate Limits:</span>
-                    <span className="font-medium">{systemStatus.metrics.juditStats.rateLimitHits}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Circuit Breaker:</span>
-                    <Badge variant={systemStatus.metrics.juditStats.circuitBreakerState === 'closed' ? 'default' : 'destructive'}>
-                      {systemStatus.metrics.juditStats.circuitBreakerState}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tempo Médio:</span>
-                    <span className="font-medium">{Math.round(systemStatus.metrics.juditStats.averageResponseTime)}ms</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Métricas de Telemetria */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Métricas Diárias</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Chamadas API:</span>
-                    <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.totalApiCalls}</span>
+            {isTelemetryMetrics(systemStatus.metrics.telemetryMetrics) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Métricas Diárias</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Chamadas API:</span>
+                      <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.totalApiCalls}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Webhooks:</span>
+                      <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.totalWebhooks}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Custo Total:</span>
+                      <span className="font-medium">R$ {systemStatus.metrics.telemetryMetrics.daily.totalCost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Processos Monitorados:</span>
+                      <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.processesMonitored}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Trackings Ativos:</span>
+                      <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.trackingsActive}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Webhooks:</span>
-                    <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.totalWebhooks}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Custo Total:</span>
-                    <span className="font-medium">R$ {systemStatus.metrics.telemetryMetrics.daily.totalCost.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Processos Monitorados:</span>
-                    <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.processesMonitored}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Trackings Ativos:</span>
-                    <span className="font-medium">{systemStatus.metrics.telemetryMetrics.daily.trackingsActive}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -617,16 +754,19 @@ export default function MonitoringDashboard() {
                   <p className="text-gray-500">Nenhum alerta ativo</p>
                 ) : (
                   <div className="space-y-2">
-                    {systemStatus.metrics.activeAlerts.slice(0, 5).map((alert, index) => (
-                      <div key={index} className="p-2 bg-orange-50 border border-orange-200 rounded">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm font-medium">{alert.type}</span>
-                          <Badge variant="secondary">{alert.severity}</Badge>
+                    {systemStatus.metrics.activeAlerts.slice(0, 5).map((alert, index) => {
+                      if (!isAlert(alert)) return null;
+                      return (
+                        <div key={index} className="p-2 bg-orange-50 border border-orange-200 rounded">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-orange-600" />
+                            <span className="text-sm font-medium">{alert.type}</span>
+                            <Badge variant="secondary">{alert.severity}</Badge>
+                          </div>
+                          <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
                         </div>
-                        <p className="text-xs text-gray-600 mt-1">{alert.message}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

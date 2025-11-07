@@ -43,7 +43,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
 
     // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
     const paramParseResult = RouteIdParamSchema.safeParse(await params);
@@ -156,10 +156,10 @@ export async function GET(
 
     // Estatísticas das movimentações (se incluídas)
     let movementStats = null;
-    if (includeMovements && process.movements) {
-      const unreadCount = process.movements.filter(m => !m.read).length;
-      const actionRequiredCount = process.movements.filter(m => m.requiresAction && !m.archived).length;
-      const byCategory = process.movements.reduce((acc, m) => {
+    if (includeMovements && process.movements && Array.isArray(process.movements)) {
+      const unreadCount = process.movements.filter((m: typeof process.movements[number]) => !m.read).length;
+      const actionRequiredCount = process.movements.filter((m: typeof process.movements[number]) => m.requiresAction && !m.archived).length;
+      const byCategory = process.movements.reduce((acc: Record<string, number>, m: typeof process.movements[number]) => {
         acc[m.category] = (acc[m.category] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
@@ -206,7 +206,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
 
     // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
     const paramParseResult = RouteIdParamSchema.safeParse(await params);
@@ -221,8 +221,14 @@ export async function PUT(
     const { id } = paramParseResult.data;
 
     // --- VALIDAÇÃO 2: INPUT (Body) ---
-    const { data: body, error: validationError } = await validateJson(request, UpdateProcessSchema);
+    const { data: bodyRaw, error: validationError } = await validateJson(request, UpdateProcessSchema);
     if (validationError) return validationError;
+
+    // Type guard for body
+    if (!bodyRaw) {
+      throw new ApiError('Corpo da requisição inválido', 400);
+    }
+    const body: z.infer<typeof UpdateProcessSchema> = bodyRaw;
 
     // --- LÓGICA DO SERVIÇO (Busca no DB) ---
     const existingProcess = await prisma.monitoredProcess.findFirst({
@@ -299,7 +305,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
 
     // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
     const paramParseResult = RouteIdParamSchema.safeParse(await params);
@@ -314,8 +320,14 @@ export async function POST(
     const { id } = paramParseResult.data;
 
     // --- VALIDAÇÃO 2: INPUT (Body) ---
-    const { data: body, error: validationError } = await validateJson(request, SyncActionSchema);
+    const { data: bodyRaw, error: validationError } = await validateJson(request, SyncActionSchema);
     if (validationError) return validationError;
+
+    // Type guard for body
+    if (!bodyRaw) {
+      throw new ApiError('Corpo da requisição inválido', 400);
+    }
+    const body: z.infer<typeof SyncActionSchema> = bodyRaw;
 
     // --- LÓGICA DO SERVIÇO (Busca no DB) ---
     const process = await prisma.monitoredProcess.findFirst({
@@ -330,6 +342,9 @@ export async function POST(
     }
 
     if (body.action === 'sync') {
+      if (!isMonitoredProcessForSync(process)) {
+        throw new ApiError('Dados do processo inválidos', 500);
+      }
       return await handleSyncProcess(process, body.force);
     }
 
@@ -355,7 +370,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
 
     // --- VALIDAÇÃO 1: INPUT (Parâmetros da Rota) ---
     const paramParseResult = RouteIdParamSchema.safeParse(await params);
@@ -417,10 +432,46 @@ export async function DELETE(
 }
 
 // ================================
+// TYPE DEFINITIONS - SINCRONIZAÇÃO
+// ================================
+
+interface MonitoredProcessForSync {
+  id: string;
+  processNumber: string;
+  lastSync: Date | null;
+  alertsEnabled: boolean;
+  alertRecipients: string[];
+}
+
+/**
+ * Type guard for MonitoredProcess - Narrowing Seguro
+ * Sem 'as any': usa 'in' operator para validação segura
+ */
+function isMonitoredProcessForSync(value: unknown): value is MonitoredProcessForSync {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  // Cast seguro apenas para permitir indexação dinâmica
+  const v = value as Record<PropertyKey, unknown>;
+
+  return (
+    'id' in v &&
+    typeof v.id === 'string' &&
+    'processNumber' in v &&
+    typeof v.processNumber === 'string' &&
+    'alertsEnabled' in v &&
+    typeof v.alertsEnabled === 'boolean' &&
+    'alertRecipients' in v &&
+    Array.isArray(v.alertRecipients)
+  );
+}
+
+// ================================
 // FUNÇÃO AUXILIAR - SINCRONIZAÇÃO
 // ================================
 
-async function handleSyncProcess(process: unknown, force: boolean) {
+async function handleSyncProcess(process: MonitoredProcessForSync, force: boolean) {
   // Verificar se não está em cooldown (a menos que force = true)
   if (!force && process.lastSync) {
     const timeSinceLastSync = Date.now() - process.lastSync.getTime();
@@ -452,7 +503,7 @@ async function handleSyncProcess(process: unknown, force: boolean) {
     // Buscar movimentações recentes
     const recentMovements = await processApi.getRecentMovements(
       process.processNumber,
-      process.lastSync
+      process.lastSync ?? undefined
     );
 
     const duration = Date.now() - startTime;

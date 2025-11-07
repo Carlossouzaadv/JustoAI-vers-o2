@@ -59,6 +59,34 @@ export interface SummaryData {
 }
 
 // ================================
+// TYPE GUARDS
+// ================================
+
+/**
+ * Extracts analysis text from AI model response
+ * Safely validates the object structure without casting
+ */
+function extractAnalysisTextFromResult(result: unknown): string {
+  if (typeof result !== 'object' || result === null) {
+    return '';
+  }
+
+  const resultObj = result as Record<string, unknown>;
+
+  // Check for 'analysis' property first
+  if (typeof resultObj.analysis === 'string') {
+    return resultObj.analysis;
+  }
+
+  // Fall back to 'content' property
+  if (typeof resultObj.content === 'string') {
+    return resultObj.content;
+  }
+
+  return '';
+}
+
+// ================================
 // CLASSE PRINCIPAL
 // ================================
 
@@ -312,7 +340,10 @@ export class ReportDataCollector {
       }
 
       // Extrair dados do processData JSON
-      const processData = this.parseProcessData(process.processData);
+      const processDataObj = typeof process.processData === 'object' && process.processData !== null
+        ? (process.processData as Record<string, unknown>)
+        : {};
+      const processData = this.parseProcessData(processDataObj);
       const nextDeadline = this.calculateNextDeadline(process.movements);
 
       return {
@@ -378,7 +409,7 @@ export class ReportDataCollector {
   /**
    * Extrai informações financeiras do processData
    */
-  private extractFinancialInfo(data: Record<string, unknown>): Record<string, unknown> {
+  private extractFinancialInfo(data: Record<string, unknown>): Record<string, unknown> | undefined {
     try {
       const financial: Record<string, unknown> = {};
 
@@ -407,7 +438,9 @@ export class ReportDataCollector {
 
       // Calcular total se não fornecido
       if (!financial.total && (financial.valor_principal || financial.multas)) {
-        financial.total = (financial.valor_principal || 0) + (financial.multas || 0);
+        const principal = typeof financial.valor_principal === 'number' ? financial.valor_principal : 0;
+        const multas = typeof financial.multas === 'number' ? financial.multas : 0;
+        financial.total = principal + multas;
       }
 
       // Adicionar moeda padrão
@@ -436,7 +469,8 @@ export class ReportDataCollector {
 
       for (const movement of movements) {
         // Buscar por padrões de prazo na descrição
-        const description = movement.description || '';
+        const descriptionRaw = movement.description;
+        const description = typeof descriptionRaw === 'string' ? descriptionRaw : '';
         const deadlinePatterns = [
           /prazo.*?(\d{1,2}).*?dias?/i,
           /prazo.*?até.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
@@ -455,7 +489,8 @@ export class ReportDataCollector {
             } else {
               // Número de dias
               const days = parseInt(match[1]);
-              deadlineDate = new Date(movement.date);
+              const movementDate = movement.date instanceof Date ? movement.date : new Date(String(movement.date || ''));
+              deadlineDate = new Date(movementDate);
               deadlineDate.setDate(deadlineDate.getDate() + days);
             }
 
@@ -501,13 +536,15 @@ export class ReportDataCollector {
         total_processes: processes.length
       };
 
+      const workspaceId = typeof summary.workspace_id === 'string' ? summary.workspace_id : '';
       const result = await this.modelRouter.analyzeEssential(
         `Analise estes dados jurídicos e forneça insights executivos:\n\n${JSON.stringify(data, null, 2)}`,
-        summary.workspace_id
+        workspaceId
       );
 
-      // Extrair insights da resposta da IA
-      const insights = this.extractInsights(result.analysis || result.content || '');
+      // Extrair insights da resposta da IA - use type-safe helper function
+      const analysisText = extractAnalysisTextFromResult(result);
+      const insights = this.extractInsights(analysisText);
       return insights.slice(0, 5); // Máximo 5 insights
 
     } catch (error) {
@@ -574,7 +611,7 @@ export class ReportDataCollector {
     charts.push({
       type: 'pie',
       title: 'Processos por Status',
-      data: Array.from(statusCount.values()),
+      data: Array.from(statusCount.values()).map(v => ({ value: v })),
       labels: Array.from(statusCount.keys())
     });
 
@@ -587,7 +624,7 @@ export class ReportDataCollector {
     charts.push({
       type: 'bar',
       title: 'Processos por Prioridade',
-      data: Array.from(priorityCount.values()),
+      data: Array.from(priorityCount.values()).map(v => ({ value: v })),
       labels: Array.from(priorityCount.keys())
     });
 
@@ -600,7 +637,7 @@ export class ReportDataCollector {
     charts.push({
       type: 'bar',
       title: 'Processos por Tribunal',
-      data: Array.from(courtCount.values()),
+      data: Array.from(courtCount.values()).map(v => ({ value: v })),
       labels: Array.from(courtCount.keys())
     });
 
@@ -627,7 +664,7 @@ export class ReportDataCollector {
       charts.push({
         type: 'bar',
         title: 'Valor Total por Cliente (R$)',
-        data: Array.from(valueByClient.values()),
+        data: Array.from(valueByClient.values()).map(v => ({ value: v })),
         labels: Array.from(valueByClient.keys())
       });
     }

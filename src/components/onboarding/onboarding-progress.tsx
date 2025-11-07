@@ -53,6 +53,53 @@ interface Toast {
   type: 'success' | 'info' | 'error';
 }
 
+// Preview Data structures
+interface PreviewData {
+  modelUsed?: string;
+  resumo?: string;
+  partes?: string;
+  objeto?: string;
+  valores?: string;
+  proximosPassos?: string;
+  [key: string]: unknown;
+}
+
+// Job Status structures
+interface JobStatusResult {
+  timelineEntries?: number;
+  attachmentsCount?: number;
+  [key: string]: unknown;
+}
+
+interface JobStatus {
+  status: string;
+  statusDescription?: string;
+  progress?: number;
+  error?: string;
+  result?: JobStatusResult;
+  [key: string]: unknown;
+}
+
+// ===== TYPE GUARDS =====
+
+function isPreviewData(data: unknown): data is PreviewData {
+  if (typeof data !== 'object' || data === null) return false;
+  // PreviewData is flexible - any object can be PreviewData
+  return true;
+}
+
+function isJobStatus(data: unknown): data is JobStatus {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return typeof obj.status === 'string';
+}
+
+function isJobStatusResult(data: unknown): data is JobStatusResult {
+  if (typeof data !== 'object' || data === null) return false;
+  // JobStatusResult is flexible - any object can be JobStatusResult
+  return true;
+}
+
 const CACHE_KEY = 'onboarding-progress-state';
 
 export function OnboardingProgress({
@@ -71,7 +118,7 @@ export function OnboardingProgress({
       status: 'completed',
       progress: 100,
       icon: <CheckCircle2 className="w-5 h-5 text-green-500" />,
-      details: previewData ? `Análise com ${previewData.modelUsed || 'Gemini'}` : undefined,
+      details: previewData && isPreviewData(previewData) ? `Análise com ${(previewData as PreviewData).modelUsed || 'Gemini'}` : undefined,
       expandable: true
     },
     ENRICHMENT: {
@@ -136,7 +183,7 @@ export function OnboardingProgress({
   useEffect(() => {
     if (!juditJobId || !pollingActive) return;
 
-    const pollInterval = setInterval(() => {}, 0); // Will be reassigned immediately
+    let pollInterval: NodeJS.Timeout | null = null;
     let attempts = 0;
     const maxAttempts = 600; // 10 minutos
 
@@ -158,7 +205,8 @@ export function OnboardingProgress({
         }
 
         const jobData = data.data;
-        setJobStatus(jobData);
+        if (isJobStatus(jobData)) {
+          setJobStatus(jobData);
 
         // Atualizar phases baseado no status
         setPhases(prev => {
@@ -199,6 +247,7 @@ export function OnboardingProgress({
 
           return updated;
         });
+        }
 
         attempts++;
         if (attempts >= maxAttempts) {
@@ -218,7 +267,11 @@ export function OnboardingProgress({
     // Depois a cada segundo
     pollInterval = setInterval(pollStatus, 1000);
 
-    return () => clearInterval(pollInterval);
+    return () => {
+      if (pollInterval !== null) {
+        clearInterval(pollInterval);
+      }
+    };
   }, [juditJobId, pollingActive, onPhaseComplete, enrichmentCompleted]);
 
   // ====== HELPERS ======
@@ -488,7 +541,7 @@ export function OnboardingProgress({
 
       {/* Status da JUDIT em tempo real */}
       <AnimatePresence>
-        {jobStatus && phases.ENRICHMENT.status === 'in_progress' && (
+        {phases.ENRICHMENT.status === 'in_progress' && jobStatus && isJobStatus(jobStatus) ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -509,7 +562,7 @@ export function OnboardingProgress({
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Status:</span>
-                  <span className="text-gray-600">{jobStatus.statusDescription}</span>
+                  <span className="text-gray-600">{jobStatus.statusDescription || 'Processando'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-medium">Progresso:</span>
@@ -518,7 +571,7 @@ export function OnboardingProgress({
               </CardContent>
             </Card>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
@@ -534,7 +587,7 @@ function ExpandedPhaseContent({
   jobStatus?: unknown;
   previewData?: unknown;
 }) {
-  if (phase === 'ENRICHMENT' && jobStatus) {
+  if (phase === 'ENRICHMENT' && jobStatus && isJobStatus(jobStatus)) {
     return (
       <motion.div
         className="space-y-3"
@@ -558,7 +611,7 @@ function ExpandedPhaseContent({
           </ul>
         </div>
 
-        {jobStatus.result && (
+        {jobStatus.result && isJobStatusResult(jobStatus.result) && (
           <div className="bg-blue-100 rounded-lg p-3 border border-blue-200">
             <p className="text-sm font-medium text-blue-900 mb-2">Dados Carregados</p>
             <div className="text-sm text-blue-800 space-y-1">
@@ -608,6 +661,11 @@ function ExpandedPhaseContent({
           </p>
         </motion.div>
       );
+    }
+
+    // Type-narrow previewData
+    if (!isPreviewData(previewData)) {
+      return null;
     }
 
     return (

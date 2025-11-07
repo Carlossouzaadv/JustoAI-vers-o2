@@ -780,7 +780,7 @@ export class SystemMappings {
   static detectSystem(columnNames: string[]): { system: SourceSystem; confidence: number } {
     const normalizedColumns = columnNames.map(name => name.toLowerCase().trim());
 
-    const systemScores: Record<SourceSystem, number> = {} as unknown;
+    const systemScores: Partial<Record<SourceSystem, number>> = {};
 
     // Calcular score para cada sistema
     Object.entries(this.mappings).forEach(([systemName, mapping]) => {
@@ -852,6 +852,91 @@ export class SystemMappings {
 // UTILITÁRIOS DE TRANSFORMAÇÃO
 // ================================
 
+// Type guards para narrowing de params
+interface DateFormatParams extends Record<string, unknown> {
+  inputFormat?: string;
+  outputFormat?: string;
+}
+
+interface CurrencyParams extends Record<string, unknown> {
+  currency?: string;
+  removeSymbols?: boolean;
+  decimal?: number;
+}
+
+interface NormalizeParams extends Record<string, unknown> {
+  type?: string;
+  pattern?: string;
+  flags?: string;
+}
+
+interface LookupParams extends Record<string, unknown> {
+  mapping?: Record<string, unknown>;
+}
+
+interface RegexParams extends Record<string, unknown> {
+  pattern?: string;
+  flags?: string;
+  replacement?: string;
+}
+
+function isDateFormatParams(params: unknown): params is DateFormatParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return (
+    typeof p.inputFormat === 'string' || typeof p.inputFormat === 'undefined' &&
+    typeof p.outputFormat === 'string' || typeof p.outputFormat === 'undefined'
+  );
+}
+
+function isCurrencyParams(params: unknown): params is CurrencyParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return (
+    typeof p.currency === 'string' || typeof p.currency === 'undefined' &&
+    typeof p.removeSymbols === 'boolean' || typeof p.removeSymbols === 'undefined' &&
+    typeof p.decimal === 'number' || typeof p.decimal === 'undefined'
+  );
+}
+
+function isNormalizeParams(params: unknown): params is NormalizeParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return (
+    typeof p.type === 'string' || typeof p.type === 'undefined' &&
+    typeof p.pattern === 'string' || typeof p.pattern === 'undefined' &&
+    typeof p.flags === 'string' || typeof p.flags === 'undefined'
+  );
+}
+
+function isLookupParams(params: unknown): params is LookupParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return (
+    typeof p.mapping === 'object' || p.mapping === null || typeof p.mapping === 'undefined'
+  );
+}
+
+function isRegexParams(params: unknown): params is RegexParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return (
+    typeof p.pattern === 'string' || typeof p.pattern === 'undefined' &&
+    typeof p.flags === 'string' || typeof p.flags === 'undefined' &&
+    typeof p.replacement === 'string' || typeof p.replacement === 'undefined'
+  );
+}
+
 export class DataTransformer {
   /**
    * Aplica regras de transformação a um valor
@@ -861,30 +946,44 @@ export class DataTransformer {
 
     switch (rule.type) {
       case 'DATE_FORMAT':
-        return this.transformDate(value, rule.parameters);
+        if (isDateFormatParams(rule.parameters)) {
+          return this.transformDate(String(value), rule.parameters);
+        }
+        return value;
 
       case 'CURRENCY':
-        return this.transformCurrency(value, rule.parameters);
+        if (isCurrencyParams(rule.parameters)) {
+          return this.transformCurrency(String(value), rule.parameters);
+        }
+        return value;
 
       case 'BOOLEAN':
-        return this.transformBoolean(value, rule.parameters);
+        return this.transformBoolean(value);
 
       case 'NORMALIZE':
-        return this.transformNormalize(value, rule.parameters);
+        if (isNormalizeParams(rule.parameters)) {
+          return this.transformNormalize(String(value), rule.parameters);
+        }
+        return value;
 
       case 'LOOKUP':
-        return this.transformLookup(value, rule.parameters);
+        if (isLookupParams(rule.parameters)) {
+          return this.transformLookup(value, rule.parameters);
+        }
+        return value;
 
       case 'REGEX':
-        return this.transformRegex(value, rule.parameters);
+        if (isRegexParams(rule.parameters)) {
+          return this.transformRegex(String(value), rule.parameters);
+        }
+        return value;
 
       default:
         return value;
     }
   }
 
-  private static transformDate(value: string, params: unknown): string {
-    // Implementar conversão de formatos de data
+  private static transformDate(value: string, params: DateFormatParams): string {
     try {
       if (params.inputFormat === 'auto') {
         // Detectar formato automaticamente
@@ -899,7 +998,7 @@ export class DataTransformer {
     }
   }
 
-  private static transformCurrency(value: string, _params: unknown): number {
+  private static transformCurrency(value: string, _params: CurrencyParams): number {
     try {
       // Remover símbolos monetários e converter para número
       const cleanValue = value.toString()
@@ -913,12 +1012,12 @@ export class DataTransformer {
     }
   }
 
-  private static transformBoolean(value: unknown, _params: unknown): boolean {
+  private static transformBoolean(value: unknown): boolean {
     const truthyValues = ['sim', 'yes', 'true', '1', 'ativo', 'ativado'];
-    return truthyValues.includes(value.toString().toLowerCase());
+    return truthyValues.includes(String(value).toLowerCase());
   }
 
-  private static transformNormalize(value: string, params: unknown): string {
+  private static transformNormalize(value: string, params: NormalizeParams): string {
     if (params.type === 'CPF_CNPJ') {
       // Normalizar CPF/CNPJ
       const digits = value.replace(/\D/g, '');
@@ -932,14 +1031,23 @@ export class DataTransformer {
     return value;
   }
 
-  private static transformLookup(value: unknown, params: unknown): unknown {
-    return params.mapping[value] || value;
+  private static transformLookup(value: unknown, params: LookupParams): unknown {
+    if (!params.mapping || typeof params.mapping !== 'object' || params.mapping === null) {
+      return value;
+    }
+    const mapping = params.mapping as Record<string, unknown>;
+    return mapping[String(value)] || value;
   }
 
-  private static transformRegex(value: string, params: unknown): string {
+  private static transformRegex(value: string, params: RegexParams): string {
     try {
-      const regex = new RegExp(params.pattern, params.flags || '');
-      return value.replace(regex, params.replacement || '');
+      if (typeof params.pattern !== 'string') return value;
+
+      const flags = typeof params.flags === 'string' ? params.flags : '';
+      const regex = new RegExp(params.pattern, flags);
+      const replacement = typeof params.replacement === 'string' ? params.replacement : '';
+
+      return value.replace(regex, replacement);
     } catch {
       return value;
     }
@@ -949,6 +1057,35 @@ export class DataTransformer {
 // ================================
 // VALIDADOR DE DADOS
 // ================================
+
+// Type guards para validação
+interface FormatValidationParams extends Record<string, unknown> {
+  pattern?: RegExp;
+}
+
+interface RangeValidationParams extends Record<string, unknown> {
+  min?: number;
+  max?: number;
+}
+
+function isFormatValidationParams(params: unknown): params is FormatValidationParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return p.pattern instanceof RegExp || typeof p.pattern === 'undefined';
+}
+
+function isRangeValidationParams(params: unknown): params is RangeValidationParams {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return (
+    typeof p.min === 'number' || typeof p.min === 'undefined' &&
+    typeof p.max === 'number' || typeof p.max === 'undefined'
+  );
+}
 
 export class DataValidator {
   /**
@@ -966,19 +1103,26 @@ export class DataValidator {
           break;
 
         case 'FORMAT':
-          if (value && rule.parameters.pattern && !rule.parameters.pattern.test(value)) {
-            errors.push(rule.errorMessage);
+          if (value && isFormatValidationParams(rule.parameters) && rule.parameters.pattern instanceof RegExp) {
+            if (!rule.parameters.pattern.test(String(value))) {
+              errors.push(rule.errorMessage);
+            }
           }
           break;
 
         case 'RANGE':
-          const num = Number(value);
-          if (!isNaN(num)) {
-            if (rule.parameters.min !== undefined && num < rule.parameters.min) {
-              errors.push(rule.errorMessage);
-            }
-            if (rule.parameters.max !== undefined && num > rule.parameters.max) {
-              errors.push(rule.errorMessage);
+          if (isRangeValidationParams(rule.parameters)) {
+            const num = Number(value);
+            if (!isNaN(num)) {
+              const min = rule.parameters.min;
+              const max = rule.parameters.max;
+
+              if (typeof min === 'number' && num < min) {
+                errors.push(rule.errorMessage);
+              }
+              if (typeof max === 'number' && num > max) {
+                errors.push(rule.errorMessage);
+              }
             }
           }
           break;

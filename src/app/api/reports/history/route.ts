@@ -7,6 +7,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { Prisma, ExecutionStatus } from '@prisma/client';
+
+/**
+ * Type guard para validar ExecutionStatus
+ */
+function isValidExecutionStatus(value: unknown): value is ExecutionStatus {
+  if (typeof value !== 'string') return false;
+  return Object.values(ExecutionStatus).includes(value as ExecutionStatus);
+}
+
+/**
+ * Constrói where clause seguro para ReportExecution
+ */
+function buildReportExecutionWhereClause(
+  workspaceId: string,
+  scheduleId?: string | null,
+  status?: string | null
+): Prisma.ReportExecutionWhereInput {
+  const where: Prisma.ReportExecutionWhereInput = { workspaceId };
+
+  if (scheduleId) {
+    where.scheduleId = scheduleId;
+  }
+
+  // Type narrowing: validar e converter status para ExecutionStatus
+  if (status && isValidExecutionStatus(status)) {
+    where.status = status as ExecutionStatus;
+  }
+
+  return where;
+}
 
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const { user, error: authError } = await requireAuth(request);
@@ -40,16 +71,8 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       return errorResponse('Workspace não encontrado ou acesso negado', 404);
     }
 
-    // Construir filtros
-    const whereClause: unknown = { workspaceId };
-
-    if (scheduleId) {
-      whereClause.scheduleId = scheduleId;
-    }
-
-    if (status) {
-      whereClause.status = status;
-    }
+    // Construir filtros com type safety
+    const whereClause = buildReportExecutionWhereClause(workspaceId, scheduleId, status);
 
     // Buscar execuções com paginação
     const [executions, totalCount] = await Promise.all([
@@ -76,28 +99,35 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     ]);
 
     // Calcular estatísticas
-    const statistics = await calculateExecutionStatistics(workspaceId, scheduleId);
+    const statistics = await calculateExecutionStatistics(whereClause);
 
     const responseData = {
-      executions: executions.map(execution => ({
-        id: execution.id,
-        scheduleId: execution.scheduleId,
-        scheduleName: execution.schedule?.name || 'Relatório manual',
-        reportType: execution.reportType,
-        audienceType: execution.audienceType,
-        status: execution.status,
-        startedAt: execution.startedAt,
-        completedAt: execution.completedAt,
-        duration: execution.duration,
-        processCount: execution.processCount,
-        outputFormats: execution.outputFormats,
-        fileUrls: execution.fileUrls,
-        tokensUsed: execution.tokensUsed,
-        cacheHit: execution.cacheHit,
-        quotaConsumed: execution.quotaConsumed,
-        error: execution.error,
-        retryCount: execution.retryCount
-      })),
+      executions: executions.map(execution => {
+        // Type narrowing: schedule é optional na relação include
+        const scheduleName = execution.schedule && 'name' in execution.schedule
+          ? execution.schedule.name
+          : 'Relatório manual';
+
+        return {
+          id: execution.id,
+          scheduleId: execution.scheduleId,
+          scheduleName,
+          reportType: execution.reportType,
+          audienceType: execution.audienceType,
+          status: execution.status,
+          startedAt: execution.startedAt,
+          completedAt: execution.completedAt,
+          duration: execution.duration,
+          processCount: execution.processCount,
+          outputFormats: execution.outputFormats,
+          fileUrls: execution.fileUrls,
+          tokensUsed: execution.tokensUsed,
+          cacheHit: execution.cacheHit,
+          quotaConsumed: execution.quotaConsumed,
+          error: execution.error,
+          retryCount: execution.retryCount
+        };
+      }),
       pagination: {
         total: totalCount,
         limit,
@@ -121,12 +151,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 /**
  * Calcula estatísticas de execução
  */
-async function calculateExecutionStatistics(workspaceId: string, scheduleId?: string) {
-  const whereClause: unknown = { workspaceId };
-  if (scheduleId) {
-    whereClause.scheduleId = scheduleId;
-  }
-
+async function calculateExecutionStatistics(whereClause: Prisma.ReportExecutionWhereInput) {
   // Estatísticas dos últimos 30 dias
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -145,17 +170,17 @@ async function calculateExecutionStatistics(workspaceId: string, scheduleId?: st
 
     // Execuções bem-sucedidas
     prisma.reportExecution.count({
-      where: { ...whereClause, status: 'CONCLUIDO' }
+      where: { ...whereClause, status: ExecutionStatus.COMPLETED }
     }),
 
     // Execuções falhadas
     prisma.reportExecution.count({
-      where: { ...whereClause, status: 'FALHOU' }
+      where: { ...whereClause, status: ExecutionStatus.FAILED }
     }),
 
     // Duração média
     prisma.reportExecution.aggregate({
-      where: { ...whereClause, status: 'CONCLUIDO' },
+      where: { ...whereClause, status: ExecutionStatus.COMPLETED },
       _avg: { duration: true }
     }),
 
@@ -175,7 +200,7 @@ async function calculateExecutionStatistics(workspaceId: string, scheduleId?: st
     }),
 
     // Tendência mensal (últimos 6 meses)
-    getMonthlyTrend(workspaceId, scheduleId)
+    getMonthlyTrend(whereClause)
   ]);
 
   const successRate = totalExecutions > 0
@@ -186,6 +211,19 @@ async function calculateExecutionStatistics(workspaceId: string, scheduleId?: st
     ? (failedExecutions / totalExecutions) * 100
     : 0;
 
+  // Type narrowing: avgDuration._avg pode ser undefined
+  const avgDurationValue = avgDuration._avg && avgDuration._avg.duration !== null && avgDuration._avg.duration !== undefined
+    ? Math.round(avgDuration._avg.duration)
+    : 0;
+
+  // Type narrowing: statusBreakdown items têm _count.id quando _count: { id: true }
+  const statusBreakdownMap = statusBreakdown.reduce((acc, item) => {
+    if (typeof item._count === 'object' && item._count !== null && 'id' in item._count) {
+      acc[item.status] = item._count.id;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
   return {
     overview: {
       totalExecutions,
@@ -193,13 +231,10 @@ async function calculateExecutionStatistics(workspaceId: string, scheduleId?: st
       failedExecutions,
       successRate: Math.round(successRate * 100) / 100,
       failureRate: Math.round(failureRate * 100) / 100,
-      avgDuration: Math.round(avgDuration._avg.duration || 0),
+      avgDuration: avgDurationValue,
       recentExecutions
     },
-    statusBreakdown: statusBreakdown.reduce((acc, item) => {
-      acc[item.status] = item._count.id;
-      return acc;
-    }, {} as Record<string, number>),
+    statusBreakdown: statusBreakdownMap,
     monthlyTrend
   };
 }
@@ -207,12 +242,7 @@ async function calculateExecutionStatistics(workspaceId: string, scheduleId?: st
 /**
  * Calcula tendência mensal
  */
-async function getMonthlyTrend(workspaceId: string, scheduleId?: string) {
-  const whereClause: unknown = { workspaceId };
-  if (scheduleId) {
-    whereClause.scheduleId = scheduleId;
-  }
-
+async function getMonthlyTrend(whereClause: Prisma.ReportExecutionWhereInput) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -250,11 +280,14 @@ async function getMonthlyTrend(workspaceId: string, scheduleId?: string) {
 
     monthlyData[monthKey].total++;
 
-    if (execution.status === 'CONCLUIDO') {
-      monthlyData[monthKey].successful++;
-      monthlyData[monthKey].avgDuration += execution.duration || 0;
-    } else if (execution.status === 'FALHOU') {
-      monthlyData[monthKey].failed++;
+    // Type narrowing: validar se status é um dos valores esperados
+    if (isValidExecutionStatus(execution.status)) {
+      if (execution.status === ExecutionStatus.COMPLETED) {
+        monthlyData[monthKey].successful++;
+        monthlyData[monthKey].avgDuration += execution.duration || 0;
+      } else if (execution.status === ExecutionStatus.FAILED) {
+        monthlyData[monthKey].failed++;
+      }
     }
   });
 

@@ -8,18 +8,81 @@ import { getCredits, debitCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { captureApiError, setSentryUserContext, setSentryWorkspaceContext } from '@/lib/sentry-error-handler';
 
+// Type Guards - Narrowing Seguro (Mandato Inegociável)
+function isAnalysisResult(data: unknown): data is Record<PropertyKey, unknown> {
+  return typeof data === 'object' && data !== null;
+}
+
+function isTokenUsageObject(data: unknown): data is Record<string, unknown> {
+  return typeof data === 'object' && data !== null && 'totalTokens' in data;
+}
+
+function isMovement(data: unknown): data is { eventDate: Date; eventType: string; description: string } {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const m = data as Record<PropertyKey, unknown>;
+  return (
+    'eventDate' in m &&
+    m.eventDate instanceof Date &&
+    'eventType' in m &&
+    typeof m.eventType === 'string' &&
+    'description' in m &&
+    typeof m.description === 'string'
+  );
+}
+
+function isDocumentEntry(data: unknown): data is { name: string; extractedText?: string } {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const d = data as Record<PropertyKey, unknown>;
+  return (
+    'name' in d &&
+    typeof d.name === 'string' &&
+    ((!('extractedText' in d)) || typeof d.extractedText === 'string')
+  );
+}
+
+function isCaseDataValid(data: unknown): data is { number?: string | number; title?: string; status?: string; type?: string } {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const caseData = data as Record<PropertyKey, unknown>;
+  return (
+    (!('number' in caseData) || typeof caseData.number === 'string' || typeof caseData.number === 'number') &&
+    (!('title' in caseData) || typeof caseData.title === 'string') &&
+    (!('status' in caseData) || typeof caseData.status === 'string') &&
+    (!('type' in caseData) || typeof caseData.type === 'string')
+  );
+}
+
+function isDebitResultWithBalance(data: unknown): data is { success: boolean; newBalance?: { fullCredits: number } } {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const result = data as Record<PropertyKey, unknown>;
+  return (
+    'success' in result &&
+    typeof result.success === 'boolean' &&
+    ((!('newBalance' in result)) || (typeof result.newBalance === 'object' && result.newBalance !== null && 'fullCredits' in (result.newBalance as Record<PropertyKey, unknown>)))
+  );
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const startTime = Date.now();
+  let userId = '';
+
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return unauthorizedResponse('Não autenticado');
     }
-    const userId = user.id;
+    userId = user.id;
     const caseId = id;
 
     // Set Sentry context for error tracking
@@ -65,9 +128,14 @@ export async function POST(
 
     const nextVersion = (lastVersion?.version || 0) + 1;
     const prompt = buildFullAnalysisPrompt({
-      caseData,
-      timeline: caseData.timelineEntries,
-      documents: caseData.documents,
+      caseData: {
+        number: String(caseData.number || ''),
+        title: String(caseData.title || ''),
+        status: String(caseData.status || ''),
+        type: String(caseData.type || '')
+      },
+      timeline: (caseData.timelineEntries || []) as TimelineEntry[],
+      documents: (caseData.documents || []) as DocumentEntry[],
       juditData: caseData.processo?.dadosCompletos
     });
 
@@ -96,15 +164,33 @@ export async function POST(
     const gemini = getGeminiClient();
     const analysisStartTime = Date.now();
 
-    const analysis = await gemini.generateJsonContent(prompt, {
+    const analysisRaw = await gemini.generateJsonContent(prompt, {
       model: ModelTier.PRO,
       maxTokens: 8000,
-      temperature: 0.2,
-      timeout: 120000
+      temperature: 0.2
     });
+
+    // Validar analysis com type guard
+    const analysis = analysisRaw ?? {};
+    if (!isAnalysisResult(analysis)) {
+      throw new Error('Invalid analysis result format');
+    }
+
+    // Extract typed values from analysis com narrowing seguro
+    const confidence = typeof analysis.confidence === 'number' ? analysis.confidence : 0.85;
+
+    // Validar usage com type guard
+    const rawUsage = analysis.usage;
+    let tokensUsed = 0;
+    if (isTokenUsageObject(rawUsage)) {
+      tokensUsed = typeof rawUsage.totalTokens === 'number' ? rawUsage.totalTokens : 0;
+    }
 
     const analysisDuration = Date.now() - analysisStartTime;
     console.log(`${ICONS.SUCCESS} [Full Analysis] Análise gerada em ${analysisDuration}ms`);
+
+    // Converter para JSON seguro para Prisma (JSON.parse/stringify garante serialização segura)
+    const analysisForDb = JSON.parse(JSON.stringify(analysis));
 
     const version = await prisma.caseAnalysisVersion.create({
       data: {
@@ -116,16 +202,16 @@ export async function POST(
         },
         version: nextVersion,
         status: 'COMPLETED',
-        aiAnalysis: analysis,
+        aiAnalysis: analysisForDb,
         analysisType: 'FULL',
-        confidence: analysis.confidence || 0.85,
+        confidence,
         modelUsed: 'gemini-2.5-pro',
         processingTime: analysisDuration,
         costEstimate: 1.0,
         metadata: {
           userId,
           requestedAt: new Date().toISOString(),
-          tokensUsed: analysis.usage?.totalTokens || 0
+          tokensUsed
         }
       }
     });
@@ -141,11 +227,18 @@ export async function POST(
         'FULL',
         `Full analysis for case ${caseId} - v${nextVersion}`
       );
-      if (!debitResult.success) {
-        console.warn(`${ICONS.WARNING} Failed to debit credits: ${debitResult.reason}`);
+
+      // Validar debitResult com type guard
+      if (!isDebitResultWithBalance(debitResult)) {
+        console.warn(`${ICONS.WARNING} Failed to debit credits: invalid response format`);
+      } else if (!debitResult.success) {
+        console.warn(`${ICONS.WARNING} Failed to debit credits`);
         // Log but don't fail the request - the analysis was already completed
-      } else {
+      } else if (debitResult.newBalance) {
+        // Type guard já garantiu que newBalance tem a estrutura correta
         console.log(`${ICONS.SUCCESS} Credits debited: 1 FULL credit (new balance: ${debitResult.newBalance.fullCredits})`);
+      } else {
+        console.warn(`${ICONS.WARNING} Credits debited but new balance unavailable`);
       }
     }
 
@@ -163,7 +256,7 @@ export async function POST(
       success: true,
       analysisId: version.id,
       version: nextVersion,
-      analysis: analysis,
+      analysis: analysisForDb,
       creditsUsed: 1.0,
       timing: {
         total: totalDuration,
@@ -195,35 +288,63 @@ export async function POST(
   }
 }
 
+// Type definitions for buildFullAnalysisPrompt
+interface TimelineEntry {
+  eventDate: Date;
+  eventType: string;
+  description: string;
+}
+
+interface DocumentEntry {
+  name: string;
+  extractedText?: string;
+}
+
+interface CaseDataForPrompt {
+  number: string;
+  title: string;
+  status: string;
+  type: string;
+}
+
 function buildFullAnalysisPrompt(data: {
-  caseData: unknown;
-  timeline: unknown[];
-  documents: unknown[];
+  caseData: CaseDataForPrompt;
+  timeline: TimelineEntry[];
+  documents: DocumentEntry[];
   juditData?: unknown;
 }): string {
   const { caseData, timeline, documents, juditData } = data;
 
+  // Validar timeline entries com type guard
   const timelineText = timeline
-    .map((m: unknown) => `[${m.eventDate.toISOString().split('T')[0]}] ${m.eventType}: ${m.description}`)
+    .filter(isMovement)
+    .map((m) => `[${m.eventDate.toISOString().split('T')[0]}] ${m.eventType}: ${m.description}`)
     .join('\n');
 
+  // Validar document entries com type guard
   const documentsText = documents
-    .filter((d: unknown) => d.extractedText)
-    .map((d: unknown) => `Documento "${d.name}":\n${d.extractedText?.substring(0, 2000)}...`)
+    .filter(isDocumentEntry)
+    .filter((d) => d.extractedText)
+    .map((d) => `Documento "${d.name}":\n${d.extractedText?.substring(0, 2000)}...`)
     .join('\n\n');
 
   const juditSummary = juditData
     ? JSON.stringify(juditData).substring(0, 5000)
     : 'Dados JUDIT não disponíveis';
 
+  // Validar caseData com type guard
+  if (!isCaseDataValid(caseData)) {
+    throw new Error('Invalid case data format');
+  }
+
   return `Você é um advogado especialista em análise estratégica de processos jurídicos.
 Analise profundamente o processo abaixo e forneça uma análise estratégica completa.
 
 # DADOS DO PROCESSO
-**Número**: ${caseData.number}
-**Título**: ${caseData.title}
-**Status**: ${caseData.status}
-**Tipo**: ${caseData.type}
+**Número**: ${caseData.number || 'Não informado'}
+**Título**: ${caseData.title || 'Não informado'}
+**Status**: ${caseData.status || 'Não informado'}
+**Tipo**: ${caseData.type || 'Não informado'}
 
 # TIMELINE DE PRINCIPAIS MOVIMENTAÇÕES
 ${timelineText}

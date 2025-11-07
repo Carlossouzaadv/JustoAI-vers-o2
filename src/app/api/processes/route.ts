@@ -14,6 +14,7 @@ import {
   normalizeProcessNumber
 } from '@/lib/process-apis';
 import { ICONS } from '@/lib/icons';
+import type { Prisma } from '@prisma/client';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -146,7 +147,7 @@ const QuerySchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
 
     // Validar query parameters
@@ -164,7 +165,7 @@ export async function GET(request: NextRequest) {
     const offset = (query.page - 1) * query.limit;
 
     // Construir filtros
-    const where: unknown = {
+    const where: Prisma.MonitoredProcessWhereInput = {
       workspaceId: workspace.id
     };
 
@@ -385,7 +386,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { user, workspace } = await validateAuth(request);
+    const { user, workspace } = await validateAuth();
     const { data: body, error: validationError } = await validateJson(request, CreateProcessSchema);
     if (validationError) return validationError;
 
@@ -427,7 +428,7 @@ export async function POST(request: NextRequest) {
 
     // Buscar dados iniciais do processo (se solicitado)
     let processData = null;
-    let initialMovements: unknown[] = [];
+    let initialMovements: any[] = [];
 
     if (body.fetchInitialData) {
       try {
@@ -491,7 +492,7 @@ export async function POST(request: NextRequest) {
           requiresAction: movement.requiresAction,
           deadline: movement.deadline ? new Date(movement.deadline) : null,
           rawData: JSON.parse(JSON.stringify(movement))
-        }))
+        })) as Prisma.ProcessMovementCreateManyInput[]
       });
     }
 
@@ -604,7 +605,7 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
 
     const ids = searchParams.get('ids')?.split(',').filter(Boolean);
@@ -614,7 +615,7 @@ export async function DELETE(request: NextRequest) {
       throw new ApiError('IDs ou números de processo devem ser fornecidos', 400);
     }
 
-    const where: unknown = {
+    const where: Prisma.MonitoredProcessWhereInput = {
       workspaceId: workspace.id
     };
 

@@ -23,6 +23,21 @@ export interface DistributionResult {
   distributionHash: number;
 }
 
+interface ReportScheduleData {
+  id: string;
+  workspaceId: string;
+  type: string;
+  processIds: string[];
+  filters?: Record<string, unknown>;
+  recipients: string[];
+  audienceType: string;
+  outputFormats: string[];
+  frequency: string;
+  enabled: boolean;
+  nextRun: Date;
+  lastRun?: Date;
+}
+
 export class ReportScheduler {
   private quotaSystem = new QuotaSystem();
   private reportGenerator = new ReportGenerator();
@@ -310,14 +325,14 @@ export class ReportScheduler {
   /**
    * Encontra schedules que devem rodar hoje
    */
-  private async findSchedulesToRun(date: Date): Promise<Array<Record<string, unknown>>> {
+  private async findSchedulesToRun(date: Date): Promise<ReportScheduleData[]> {
     const today = new Date(date);
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return await prisma.reportSchedule.findMany({
+    const schedules = await prisma.reportSchedule.findMany({
       where: {
         enabled: true,
         OR: [
@@ -343,12 +358,14 @@ export class ReportScheduler {
         }
       }
     });
+
+    return schedules as ReportScheduleData[];
   }
 
   /**
    * Calcula próxima execução baseada na frequência
    */
-  private calculateNextRun(schedule: Record<string, unknown>): Date {
+  private calculateNextRun(schedule: ReportScheduleData): Date {
     const next = new Date();
 
     switch (schedule.frequency) {

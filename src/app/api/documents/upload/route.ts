@@ -9,7 +9,7 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { requireAuth } from '@/lib/api-utils';
 import { getDocumentHashManager } from '@/lib/document-hash';
 import { getAnalysisCacheManager } from '@/lib/analysis-cache';
@@ -82,13 +82,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const file = formData.get('file') as File;
-    const caseId = formData.get('caseId') as string;
-    const processNumber = formData.get('processNumber') as string;
-    const requestedWorkspaceId = formData.get('workspaceId') as string;
+    // Type guard for FormData values
+    const file = formData.get('file');
+    const caseId = formData.get('caseId');
+    const processNumber = formData.get('processNumber');
+    const requestedWorkspaceId = formData.get('workspaceId');
 
-    // 3. VALIDAÇÕES BÁSICAS
-    if (!file) {
+    // 3. VALIDAÇÕES BÁSICAS - Type guards com verificações seguras
+    if (!file || !(file instanceof File)) {
       return NextResponse.json(
         { error: 'Arquivo PDF é obrigatório' },
         { status: 400 }
@@ -109,10 +110,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Type guard for string fields
+    const caseIdStr = typeof caseId === 'string' ? caseId : undefined;
+    const processNumberStr = typeof processNumber === 'string' ? processNumber : undefined;
+    const requestedWorkspaceIdStr = typeof requestedWorkspaceId === 'string' ? requestedWorkspaceId : undefined;
+
     // 4. OBTER WORKSPACE DO USUÁRIO
     // IMPORTANT: Use the workspace requested by the frontend, not just the user's first workspace
     // This prevents uploading to the wrong workspace when a user has multiple workspaces
-    let workspaceId = requestedWorkspaceId;
+    let workspaceId = requestedWorkspaceIdStr;
 
     // If no workspace requested, use user's first workspace (fallback)
     if (!workspaceId) {
@@ -391,7 +397,7 @@ export async function POST(request: NextRequest) {
 
     } else {
       // Usar caseId fornecido ou processo existente
-      targetCaseId = existingProcess?.id || caseId;
+      targetCaseId = existingProcess?.id || caseIdStr;
 
       if (!targetCaseId) {
         return NextResponse.json(
@@ -401,10 +407,10 @@ export async function POST(request: NextRequest) {
       }
 
       // VALIDATE: Se um caseId foi fornecido, verificar se pertence ao workspace
-      if (caseId && !existingProcess) {
+      if (caseIdStr && !existingProcess) {
         const providedCase = await prisma.case.findFirst({
           where: {
-            id: caseId,
+            id: caseIdStr,
             workspaceId // Garante que o case pertence ao workspace do usuário
           }
         });
@@ -432,16 +438,34 @@ export async function POST(request: NextRequest) {
       promptSignature
     );
 
-    let aiAnalysisResult = null;
+    interface AIAnalysisResult {
+      lastMovements?: unknown[];
+      summary?: unknown;
+      parties?: unknown;
+      cost?: { estimatedCost?: number };
+      metadados_analise?: { confianca?: number; confianca_geral?: number };
+      _routing_info?: { model_used?: string; cost_estimate?: { estimatedCost?: number } };
+      [key: string]: unknown;
+    }
+
+    let aiAnalysisResult: AIAnalysisResult | null = null;
 
     // IMPORTANT: Only use cache if data has correct structure with lastMovements
     // Older cached results may be missing required fields
-    const isValidCacheData = (data: unknown): boolean => {
-      return data &&
-             typeof data === 'object' &&
-             Array.isArray(data.lastMovements) &&
-             data.summary &&
-             data.parties;
+    interface ValidCacheData {
+      lastMovements?: unknown[];
+      summary?: unknown;
+      parties?: unknown;
+      [key: string]: unknown;
+    }
+
+    const isValidCacheData = (data: unknown): data is ValidCacheData => {
+      if (!data || typeof data !== 'object') return false;
+      // Type guard using property existence checks (no casting)
+      const hasLastMovements = 'lastMovements' in data && Array.isArray((data as Record<string, unknown>).lastMovements);
+      const hasSummary = 'summary' in data && (data as Record<string, unknown>).summary !== undefined;
+      const hasParties = 'parties' in data && (data as Record<string, unknown>).parties !== undefined;
+      return hasLastMovements && hasSummary && hasParties;
     };
 
     if (cacheResult.hit && isValidCacheData(cacheResult.data)) {
@@ -562,14 +586,14 @@ export async function POST(request: NextRequest) {
             analysisType: 'essential', // Análise rápida do upload é considerada "essencial"
             modelUsed: modelVersion,
             analysisKey: cacheResult.key || hashResult.textSha + '_' + modelVersion, // Chave para cache de análise
-            aiAnalysis: aiAnalysisResult as unknown, // JSON field
-            confidence: (aiAnalysisResult as unknown)?.metadados_analise?.confianca || 0.8,
+            aiAnalysis: aiAnalysisResult || null, // JSON field with fallback to null
+            confidence: aiAnalysisResult?.metadados_analise?.confianca || 0.8,
             processingTime: Date.now() - startTime,
             metadata: {
               source: 'upload_gemini',
               documentId: document.id,
               cacheKey: cacheResult.key,
-              model: (aiAnalysisResult as unknown)._routing_info?.model_used || modelVersion
+              model: aiAnalysisResult?._routing_info?.model_used || modelVersion
             }
           }
         });
@@ -712,9 +736,9 @@ export async function POST(request: NextRequest) {
         // Informações da análise (PREVIEW COMPLETO)
         analysis: aiAnalysisResult ? (() => {
           const previewData = mapAnalysisToPreview(aiAnalysisResult, {
-            modelUsed: (aiAnalysisResult as unknown)._routing_info?.model_used || modelVersion,
-            confidence: (aiAnalysisResult as unknown).metadados_analise?.confianca_geral || 0.8,
-            costEstimate: Number(((aiAnalysisResult as unknown)._routing_info?.cost_estimate?.estimatedCost) || 0)
+            modelUsed: aiAnalysisResult._routing_info?.model_used || modelVersion,
+            confidence: aiAnalysisResult.metadados_analise?.confianca_geral || 0.8,
+            costEstimate: Number((aiAnalysisResult._routing_info?.cost_estimate?.estimatedCost) || 0)
           });
 
           // Log dos dados extraídos
@@ -899,7 +923,13 @@ async function saveFinalFile(buffer: Buffer, fileName: string): Promise<string> 
   return finalPath;
 }
 
-async function extractBasicProcessData(cleanText: string): Promise<unknown> {
+interface BasicProcessData {
+  title: string;
+  description: string;
+  claimValue: number | null;
+}
+
+async function extractBasicProcessData(cleanText: string): Promise<BasicProcessData> {
   // Heurísticas simples para extrair dados básicos
   const lines = cleanText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 

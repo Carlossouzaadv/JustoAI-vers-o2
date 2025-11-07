@@ -57,9 +57,9 @@ export async function GET(
       include: {
         workspace: {
           include: {
-            users: {
-              where: { userId: user.id },
-            },
+                            userWorkspaces: {
+                              where: { userId: user.id },
+                            },
           },
         },
       },
@@ -72,8 +72,7 @@ export async function GET(
       );
     }
 
-    if (!caseData.workspace?.users || caseData.workspace.users.length === 0) {
-      console.warn(`${ICONS.WARNING} [Case Notes GET] Acesso negado para usuário ${user.id} ao case ${caseId}`);
+    if (!caseData.workspace?.userWorkspaces || caseData.workspace.userWorkspaces.length === 0) {
       return NextResponse.json(
         { success: false, error: 'Acesso negado' },
         { status: 403 }
@@ -89,6 +88,8 @@ export async function GET(
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
     const sort = url.searchParams.get('sort') || 'newest'; // 'newest', 'oldest', 'pinned'
 
+    const orderBy: any = { createdAt: sort === 'oldest' ? 'asc' : 'desc' };
+
     console.log(`${ICONS.INFO} [Case Notes GET] Pagination: page=${page}, limit=${limit}, sort=${sort}`);
 
     // ============================================================
@@ -101,19 +102,7 @@ export async function GET(
           caseId,
           type: 'NOTE',
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              name: true,
-            },
-          },
-        },
-        orderBy:
-          sort === 'pinned'
-            ? [{ metadata: { sort: 'desc' } }, { createdAt: 'desc' }]
-            : { createdAt: sort === 'oldest' ? 'asc' : 'desc' },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -130,11 +119,6 @@ export async function GET(
       id: note.id,
       title: (note.metadata as Record<string, unknown>)?.title || 'Sem título',
       description: note.description,
-      author: {
-        id: note.user.id,
-        email: note.user.email,
-        name: note.user.name,
-      },
       tags: (note.metadata as Record<string, unknown>)?.tags || [],
       priority: (note.metadata as Record<string, unknown>)?.priority || 'normal',
       isPinned: (note.metadata as Record<string, unknown>)?.isPinned || false,
@@ -229,10 +213,9 @@ export async function POST(
       include: {
         workspace: {
           include: {
-            users: {
-              where: { userId: user.id },
-            },
-          },
+                            userWorkspaces: {
+                              where: { userId: user.id },
+                            },          },
         },
       },
     });
@@ -244,7 +227,7 @@ export async function POST(
       );
     }
 
-    if (!caseData.workspace?.users || caseData.workspace.users.length === 0) {
+    if (!caseData.workspace?.userWorkspaces || caseData.workspace.userWorkspaces.length === 0) {
       console.warn(`${ICONS.WARNING} [Case Notes POST] Acesso negado para usuário ${user.id} ao case ${caseId}`);
       return NextResponse.json(
         { success: false, error: 'Acesso negado' },
@@ -268,16 +251,7 @@ export async function POST(
           tags: body.tags || [],
           priority: body.priority || 'normal',
           isPinned: body.isPinned || false,
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
+        } as any,
       },
     });
 
@@ -294,11 +268,6 @@ export async function POST(
           id: note.id,
           title: (note.metadata as Record<string, unknown>)?.title || 'Sem título',
           description: note.description,
-          author: {
-            id: note.user.id,
-            email: note.user.email,
-            name: note.user.name,
-          },
           tags: (note.metadata as Record<string, unknown>)?.tags || [],
           priority: (note.metadata as Record<string, unknown>)?.priority || 'normal',
           isPinned: (note.metadata as Record<string, unknown>)?.isPinned || false,

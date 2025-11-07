@@ -1,6 +1,6 @@
-# Claude Code Development Guide for JustoAI V2
+# Gemini Code Development Guide for JustoAI V2
 
-This document provides guidance for AI-assisted development on this project using Claude Code and similar tools.
+This document provides guidance for AI-assisted development on this project using Gemini and similar tools.
 
 ---
 
@@ -53,7 +53,7 @@ This document provides guidance for AI-assisted development on this project usin
 * **Authentication:** Handled by **Clerk**. Avoid implementing manual password/session logic.
 * **Database Safety:** Use the **Drizzle ORM** to prevent SQL injection. Do not concatenate user input in raw SQL queries.
 * **XSS & CSRF:** React/Next.js provide default protection against XSS. Sanitize any HTML or user-generated content before rendering if necessary (e.g., DOMPurify).
-* **Dependencies:** Be cautious of eval or executing dynamic code. Avoid introducing packages with known vulnerabilities (Claude should prefer built-in solutions if external libs are risky).
+* **Dependencies:** Be cautious of eval or executing dynamic code. Avoid introducing packages with known vulnerabilities (Gemini should prefer built-in solutions if external libs are risky).
 
 ---
 
@@ -69,84 +69,10 @@ Concurrency issues (e.g., two users editing the same data simultaneously).
 ---
 
 ### Workflow & Planning Guidelines
-* **For any complex or multi-step task,** Claude should first output a clear plan or outline of the approach (E.g., list the steps or modules needed).
+* **For any complex or multi-step task,** Gemini should first output a clear plan or outline of the approach (E.g., list the steps or modules needed).
 * **Incremental Development:** Implement in logical chunks. After each chunk, verify it aligns with the plan and passes tests before moving on.
 * **Think Aloud:** Use extended reasoning (“think harder or ultrathink”) for complex decisions. It’s okay to spend more tokens to ensure a solid approach rather than rushing coding.
 * **User Approval:** Pause for confirmation after providing a plan or major design decision. Only proceed once the user/developer confirms.
-* **Error Recovery:** If a solution isn’t working, Claude should backtrack and rethink rather than stubbornly persisting. Consider alternative approaches if tests fail or constraints are hit.
+* **Error Recovery:** If a solution isn’t working, Gemini should backtrack and rethink rather than stubbornly persisting. Consider alternative approaches if tests fail or constraints are hit.
 * **If I say ‘pense’, enter Plan Mode.**
 * **Don't write 500-line components (break them up!)**
-
-### O Mandato Inegociável de Type Safety
-Este é o requisito técnico **NÃO-NEGOCIÁVEL** para todo o código TypeScript escrito neste projeto. Aderência a este mandato é a principal prioridade, acima da velocidade ou da "conveniência".
----
-#### 1\. As Proibições (O que NUNCA fazer)
-Qualquer uso dos seguintes itens é considerado uma **violação do mandato** e deve ser corrigido:
-  * **ZERO `any`:** `any` é proibido. Ele destrói a segurança de tipos.
-  * **ZERO `as` (Casting Perigoso):** O uso de `as Type`, `as any`, ou `<Type>data` para forçar um tipo é proibido. Isso é "Supressão de Erro", não "Correção de Erro".
-  * **ZERO `@ts-ignore` / `@ts-expect-error`:** Suprimir erros de tipo é proibido.
----
-#### 2\. As Soluções (O Método Correto)
-Todos os problemas de tipo devem ser resolvidos usando *narrowing* seguro.
-**REGRA PARA DADOS `unknown` (ex: de API, JSON, `map`):**
-  * **Use Type Guards:** Crie e use predicados de tipo para validar a estrutura dos dados.
-    ```typescript
-    // CORRETO
-    function isMyType(data: unknown): data is MyType {
-      return (
-        typeof data === 'object' &&
-        data !== null &&
-        'myProp' in data &&
-        typeof (data as MyType).myProp === 'string'
-      );
-    }
-
-    const data: unknown = getData();
-    if (isMyType(data)) {
-      // 'data' agora é 'MyType'. Seguro para usar.
-      console.log(data.myProp); 
-    }
-    ```
-  * **Use Narrowing Padrão:** Use `if`, `typeof`, `instanceof`, e o operador `in`.
-**REGRA PARA ERROS `unknown` (em `catch blocks`):**
-  * **Use um Helper:** Use uma função helper para extrair a mensagem de erro de forma segura.
-    ```typescript
-    // CORRETO
-    function getErrorMessage(error: unknown): string {
-      if (error instanceof Error) {
-        return error.message;
-      }
-      return String(error);
-    }
-
-    try {
-      // ...código...
-    } catch (error) {
-      console.error(getErrorMessage(error)); // 100% seguro
-    }
-    ```
-
-**REGRA PARA VALIDAÇÃO (Zod / Schemas):**
-  * **Use Anotação de Tipo, NÃO Casting:**
-    ```typescript
-    type MySchemaType = z.infer<typeof mySchema>;
-
-    // CORRETO
-    const validatedData: MySchemaType = mySchema.parse(requestBody);
-
-    // ERRADO (VIOLAÇÃO)
-    const validatedData = mySchema.parse(requestBody) as MySchemaType;
-    ```
-
-**REGRA PARA O ÚNICO "CASTING SEGURO" (Exceção):**
-  * O único uso de `as` permitido é para habilitar o *narrowing* com o operador `in`, e **somente** após uma verificação de `object`.
-    ```typescript
-    // ACEITÁVEL (Narrowing Seguro)
-    function isMyType(data: unknown): data is MyType {
-      if (typeof data !== 'object' || data === null) {
-        return false;
-      }
-      // 'as' é usado APÓS a verificação, apenas para habilitar o 'in'.
-      return 'myProp' in data && typeof (data as MyType).myProp === 'string';
-    }
-    ```

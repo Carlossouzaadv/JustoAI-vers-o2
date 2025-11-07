@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, ReactNode } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   Dialog,
@@ -16,18 +16,47 @@ import { Upload, Loader2, AlertTriangle } from 'lucide-react';
 import { OnboardingProgress } from './onboarding-progress';
 import { ICONS } from '@/lib/icons';
 
+// Type Guards and Type Definitions
+interface UploadResultFile {
+  name?: string;
+  size?: number;
+  textLength?: number;
+}
+
+interface UploadResultProcessing {
+  totalTime?: number;
+}
+
+interface UploadResult {
+  caseId: string;
+  juditJobId?: string;
+  extractedProcessNumber?: string;
+  analysis?: unknown;
+  file?: UploadResultFile;
+  processing?: UploadResultProcessing;
+}
+
+// Type Guard for UploadResult
+function isUploadResult(data: unknown): data is UploadResult {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return typeof obj.caseId === 'string';
+}
+
 interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceId: string;
-  onUploadSuccess?: (data: unknown) => void;
+  onUploadSuccess?: (data: UploadResult) => void;
 }
 
 export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess }: UploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadResult, setUploadResult] = useState<unknown>(null);
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -63,14 +92,21 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Upload failed: ${response.statusText}`);
+        const errorData = await response.json() as Record<string, unknown>;
+        throw new Error((errorData.error as string) || `Upload failed: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as Record<string, unknown>;
+      const data = result.data;
+
+      // Validate result using type guard
+      if (!isUploadResult(data)) {
+        throw new Error('Invalid upload response format');
+      }
+
       setUploadProgress(100);
-      setUploadResult(result.data);
-      onUploadSuccess?.(result.data);
+      setUploadResult(data);
+      onUploadSuccess?.(data);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -92,7 +128,10 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
   };
 
   const handleAnalyze = async () => {
-    if (!uploadResult?.caseId) return;
+    // Type guard check with narrowing
+    if (!uploadResult || !isUploadResult(uploadResult)) {
+      return;
+    }
 
     try {
       // Navigate to process page with analysis tab open
@@ -138,7 +177,7 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
                 {file && (
                   <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
                     <p className="text-sm text-blue-900 font-medium">
-                      {ICONS.FILE} {file.name}
+                      {ICONS.DOCUMENT} {file.name}
                     </p>
                     <p className="text-xs text-blue-700">
                       {(file.size / 1024 / 1024).toFixed(2)}MB
@@ -180,59 +219,61 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
           {/* Seção 2: Progresso das Fases */}
           {(uploading || uploadResult) && (
             <div className="space-y-4">
-              <OnboardingProgress
-                caseId={uploadResult?.caseId}
-                juditJobId={uploadResult?.juditJobId}
-                extractedProcessNumber={uploadResult?.extractedProcessNumber}
-                previewData={uploadResult?.analysis}
-                onPhaseComplete={(phase) => {
-                  if (phase === 'ENRICHMENT') {
-                    console.log('FASE 2 concluída, FASE 3 disponível');
-                  }
-                }}
-                onAnalyzeClick={handleAnalyze}
-              />
+              {uploadResult && isUploadResult(uploadResult) && (
+                <>
+                  <OnboardingProgress
+                    caseId={uploadResult.caseId}
+                    juditJobId={uploadResult.juditJobId}
+                    extractedProcessNumber={uploadResult.extractedProcessNumber}
+                    previewData={uploadResult.analysis}
+                    onPhaseComplete={(phase) => {
+                      if (phase === 'ENRICHMENT') {
+                        console.log('FASE 2 concluída, FASE 3 disponível');
+                      }
+                    }}
+                    onAnalyzeClick={handleAnalyze}
+                  />
 
-              {/* Informações Extras */}
-              {uploadResult && (
-                <Card className="p-4 bg-gray-50">
-                  <h4 className="font-semibold text-sm mb-3">Resumo do Upload</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Arquivo</p>
-                      <p className="font-medium">{file?.name}</p>
+                  {/* Informações Extras */}
+                  <Card className="p-4 bg-gray-50">
+                    <h4 className="font-semibold text-sm mb-3">Resumo do Upload</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-600">Arquivo</p>
+                        <p className="font-medium">{file?.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Tamanho</p>
+                        <p className="font-medium">
+                          {uploadResult.file?.size
+                            ? `${(uploadResult.file.size / 1024 / 1024).toFixed(2)}MB`
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Texto Extraído</p>
+                        <p className="font-medium">
+                          {uploadResult.file?.textLength?.toLocaleString() || '0'} caracteres
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-600">Tempo Total</p>
+                        <p className="font-medium">
+                          {uploadResult.processing?.totalTime
+                            ? `${(uploadResult.processing.totalTime / 1000).toFixed(1)}s`
+                            : 'N/A'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-gray-600">Tamanho</p>
-                      <p className="font-medium">
-                        {uploadResult?.file?.size
-                          ? `${(uploadResult.file.size / 1024 / 1024).toFixed(2)}MB`
-                          : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Texto Extraído</p>
-                      <p className="font-medium">
-                        {uploadResult?.file?.textLength?.toLocaleString() || '0'} caracteres
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Tempo Total</p>
-                      <p className="font-medium">
-                        {uploadResult?.processing?.totalTime
-                          ? `${(uploadResult.processing.totalTime / 1000).toFixed(1)}s`
-                          : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </>
               )}
             </div>
           )}
 
           {/* Botões de Ação */}
           <div className="flex gap-3 justify-end pt-4 border-t">
-            {uploadResult ? (
+            {uploadResult && isUploadResult(uploadResult) ? (
               <>
                 <Button
                   variant="outline"

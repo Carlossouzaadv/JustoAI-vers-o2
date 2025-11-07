@@ -178,7 +178,7 @@ export class RealAnalysisService {
         });
 
         // Validate and enhance the response
-        const validatedResult = this.validateAndEnhanceResult(geminiResponse, request, complexity);
+        const validatedResult = this.validateAndEnhanceResult(geminiResponse as Record<string, unknown>, request, complexity);
 
         console.log(`${ICONS.SUCCESS} Análise bem-sucedida na tentativa ${attempt}`);
         return validatedResult;
@@ -257,22 +257,30 @@ METADADOS ADICIONAIS:`;
     request: AnalysisRequest,
     complexity: ComplexityScore
   ): UnifiedProcessSchema {
-    // Ensure all required sections exist
+    // Type guard helper for geminiResponse properties
+    const getResponseField = (key: string): Record<string, unknown> => {
+      const field = geminiResponse[key];
+      return (field && typeof field === 'object') ? (field as Record<string, unknown>) : {};
+    };
+
+    const metadadosOriginal = getResponseField('metadados_analise');
+
+    // Ensure all required sections exist with proper fallback
     const result: UnifiedProcessSchema = {
-      identificacao_basica: geminiResponse.identificacao_basica || {},
-      partes_envolvidas: geminiResponse.partes_envolvidas || {},
-      valores_financeiros: geminiResponse.valores_financeiros || {},
-      campos_especializados: geminiResponse.campos_especializados || {},
-      situacao_processual: geminiResponse.situacao_processual || {},
-      analise_estrategica: geminiResponse.analise_estrategica || {},
-      documentos_relacionados: geminiResponse.documentos_relacionados || {},
+      identificacao_basica: getResponseField('identificacao_basica') || {},
+      partes_envolvidas: getResponseField('partes_envolvidas') || {},
+      valores_financeiros: getResponseField('valores_financeiros') || {},
+      campos_especializados: getResponseField('campos_especializados') || {},
+      situacao_processual: getResponseField('situacao_processual') || {},
+      analise_estrategica: getResponseField('analise_estrategica') || {},
+      documentos_relacionados: getResponseField('documentos_relacionados') || {},
       metadados_analise: {
         data_analise: new Date().toISOString(),
         modelo_utilizado: complexity.recommendedTier,
         confianca_geral: this.calculateConfidence(geminiResponse, complexity),
-        observacoes_ia: geminiResponse.metadados_analise?.observacoes_ia || null,
+        observacoes_ia: typeof metadadosOriginal.observacoes_ia === 'string' ? metadadosOriginal.observacoes_ia : null,
         campos_nao_encontrados: this.findMissingFields(geminiResponse),
-        ...geminiResponse.metadados_analise
+        ...(metadadosOriginal || {})
       }
     };
 
@@ -291,20 +299,23 @@ METADADOS ADICIONAIS:`;
     let filledFields = 0;
     let totalFields = 0;
 
-    const countFields = (obj: Record<string, unknown>): void => {
-      if (obj && typeof obj === 'object') {
-        Object.values(obj).forEach(value => {
+    const countFields = (value: unknown): void => {
+      if (value && typeof value === 'object') {
+        const obj = value as Record<string, unknown>;
+        Object.values(obj).forEach(field => {
           totalFields++;
-          if (value !== null && value !== undefined && value !== '') {
+          if (field !== null && field !== undefined && field !== '') {
             filledFields++;
           }
         });
       }
     };
 
-    countFields(response.identificacao_basica);
-    countFields(response.partes_envolvidas);
-    countFields(response.valores_financeiros);
+    // Safe property access with type guards
+    const resp = response as Record<string, unknown>;
+    countFields(resp.identificacao_basica);
+    countFields(resp.partes_envolvidas);
+    countFields(resp.valores_financeiros);
 
     const completeness = totalFields > 0 ? filledFields / totalFields : 0;
     const complexityFactor = Math.min(complexity.confidence || 0.5, 1);
@@ -357,13 +368,19 @@ METADADOS ADICIONAIS:`;
       const textHash = generateTextHash(request.text);
 
       switch (request.analysisType) {
-        case 'essential':
-          return await cache.getEssential(textHash);
-        case 'strategic':
-          return await cache.getStrategic(textHash, complexity.totalScore);
-        case 'report':
+        case 'essential': {
+          const result = await cache.getEssential(textHash);
+          return result as UnifiedProcessSchema | null;
+        }
+        case 'strategic': {
+          const result = await cache.getStrategic(textHash, complexity.totalScore);
+          return result as UnifiedProcessSchema | null;
+        }
+        case 'report': {
           const reportHash = generateTextHash(request.text + request.analysisType);
-          return await cache.getReport(reportHash);
+          const result = await cache.getReport(reportHash);
+          return result as UnifiedProcessSchema | null;
+        }
         default:
           return null;
       }
@@ -414,9 +431,31 @@ METADADOS ADICIONAIS:`;
     cached: boolean,
     processingTime: number
   ): AnalysisResponse {
+    // Safely access _routing_info if it exists using type narrowing
+    let promptTokens = 0;
+    let completionTokens = 0;
+    let analysisType = 'unknown';
+
+    // Type guard: check if data has _routing_info property
+    if ('_routing_info' in data) {
+      const routingInfo = (data as Record<string, unknown>)._routing_info;
+      if (routingInfo && typeof routingInfo === 'object') {
+        const routingObj = routingInfo as Record<string, unknown>;
+        if (typeof routingObj.prompt_tokens === 'number') {
+          promptTokens = routingObj.prompt_tokens;
+        }
+        if (typeof routingObj.completion_tokens === 'number') {
+          completionTokens = routingObj.completion_tokens;
+        }
+        if (typeof routingObj.analysis_type === 'string') {
+          analysisType = routingObj.analysis_type;
+        }
+      }
+    }
+
     const tokenUsage = {
-      prompt: data._routing_info?.prompt_tokens || this.router.estimateTokens(''),
-      completion: data._routing_info?.completion_tokens || this.router.estimateTokens(JSON.stringify(data)),
+      prompt: promptTokens || this.router.estimateTokens(''),
+      completion: completionTokens || this.router.estimateTokens(JSON.stringify(data)),
       total: 0
     };
     tokenUsage.total = tokenUsage.prompt + tokenUsage.completion;
@@ -428,7 +467,7 @@ METADADOS ADICIONAIS:`;
       data,
       metadata: {
         modelUsed: this.getModelName(complexity.recommendedTier),
-        analysisType: data._routing_info?.analysis_type || 'unknown',
+        analysisType,
         cached,
         processingTime,
         tokenUsage,

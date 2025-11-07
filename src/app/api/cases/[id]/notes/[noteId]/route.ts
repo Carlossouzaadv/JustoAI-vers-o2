@@ -80,7 +80,7 @@ export async function PATCH(
           include: {
             workspace: {
               include: {
-                users: {
+                userWorkspaces: {
                   where: { userId: user.id },
                 },
               },
@@ -121,7 +121,7 @@ export async function PATCH(
     // 4. VERIFY WORKSPACE ACCESS
     // ============================================================
 
-    if (!note.case?.workspace?.users || note.case.workspace.users.length === 0) {
+    if (!note.case?.workspace?.userWorkspaces || note.case.workspace.userWorkspaces.length === 0) {
       console.warn(
         `${ICONS.WARNING} [Case Notes PATCH] Acesso negado para usuário ${user.id} ao case ${caseId}`
       );
@@ -151,7 +151,7 @@ export async function PATCH(
     // 6. UPDATE NOTE
     // ============================================================
 
-    const updateData: unknown = {};
+    const updateData: { title?: string; description?: string; metadata?: any } = {};
 
     if (body.title !== undefined) {
       updateData.title = body.title;
@@ -181,15 +181,6 @@ export async function PATCH(
     const updatedNote = await prisma.caseEvent.update({
       where: { id: noteId },
       data: updateData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
     });
 
     console.log(`${ICONS.SUCCESS} [Case Notes PATCH] Nota ${noteId} atualizada com sucesso`);
@@ -204,11 +195,6 @@ export async function PATCH(
         id: updatedNote.id,
         title: (updatedNote.metadata as Record<string, unknown>)?.title || 'Sem título',
         description: updatedNote.description,
-        author: {
-          id: updatedNote.user.id,
-          email: updatedNote.user.email,
-          name: updatedNote.user.name,
-        },
         tags: (updatedNote.metadata as Record<string, unknown>)?.tags || [],
         priority: (updatedNote.metadata as Record<string, unknown>)?.priority || 'normal',
         isPinned: (updatedNote.metadata as Record<string, unknown>)?.isPinned || false,
@@ -273,7 +259,7 @@ export async function DELETE(
           include: {
             workspace: {
               include: {
-                users: {
+                userWorkspaces: {
                   where: { userId: user.id },
                 },
               },
@@ -314,7 +300,7 @@ export async function DELETE(
     // 3. VERIFY WORKSPACE ACCESS
     // ============================================================
 
-    if (!note.case?.workspace?.users || note.case.workspace.users.length === 0) {
+    if (!note.case?.workspace?.userWorkspaces || note.case.workspace.userWorkspaces.length === 0) {
       console.warn(
         `${ICONS.WARNING} [Case Notes DELETE] Acesso negado para usuário ${user.id} ao case ${caseId}`
       );

@@ -35,13 +35,58 @@ interface AnalysisResult {
   recommendations: string[];
 }
 
+interface CaseData {
+  id: string;
+  title: string;
+  client?: { name?: string };
+  [key: string]: unknown;
+}
+
+interface UploadResponse {
+  documentType?: string;
+  confidence?: number;
+  extractedFields?: Record<string, unknown>;
+  summary?: string;
+  risks?: string[];
+  recommendations?: string[];
+  [key: string]: unknown;
+}
+
+interface DetectedProcess {
+  id: string;
+  title: string;
+  [key: string]: unknown;
+}
+
+function isCaseData(data: unknown): data is CaseData {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return typeof obj.id === 'string';
+}
+
+function isUploadResponse(data: unknown): data is UploadResponse {
+  return typeof data === 'object' && data !== null;
+}
+
+function isDetectedProcess(data: unknown): data is DetectedProcess {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return typeof obj.id === 'string' && typeof obj.title === 'string';
+}
+
+function isAnalysisResult(data: unknown): data is AnalysisResult {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return typeof obj.documentType === 'string' && typeof obj.confidence === 'number';
+}
+
 export default function UploadPage() {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedCase, setSelectedCase] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [documentType, setDocumentType] = useState<'single-pdf' | 'full-analysis' | 'excel-batch' | ''>('');
   const [showDuplicateConfirmation, setShowDuplicateConfirmation] = useState(false);
-  const [detectedProcess, setDetectedProcess] = useState<unknown>(null);
+  const [detectedProcess, setDetectedProcess] = useState<DetectedProcess | null>(null);
 
   // Available cases from API (loaded dynamically)
   const [availableCases, setAvailableCases] = useState<Array<{ id: string; title: string; client: string }>>([]);
@@ -56,7 +101,7 @@ export default function UploadPage() {
         if (response.ok) {
           const data = await response.json();
           const cases = data.data || data.cases || [];
-          setAvailableCases(cases.map((c: unknown) => ({
+          setAvailableCases(cases.filter(isCaseData).map((c: CaseData) => ({
             id: c.id,
             title: c.title,
             client: c.client?.name || 'Unknown'
@@ -176,20 +221,22 @@ export default function UploadPage() {
         ));
 
         // The backend will return the analysis result
-        const analysisResult: AnalysisResult = {
-          documentType: uploadResponse.documentType || 'Documento',
-          confidence: uploadResponse.confidence || 0.85,
-          extractedFields: uploadResponse.extractedFields || {},
-          summary: uploadResponse.summary || 'Documento processado com sucesso',
-          risks: uploadResponse.risks || [],
-          recommendations: uploadResponse.recommendations || []
-        };
+        if (isUploadResponse(uploadResponse)) {
+          const analysisResult: AnalysisResult = {
+            documentType: uploadResponse.documentType || 'Documento',
+            confidence: uploadResponse.confidence || 0.85,
+            extractedFields: uploadResponse.extractedFields || {},
+            summary: uploadResponse.summary || 'Documento processado com sucesso',
+            risks: uploadResponse.risks || [],
+            recommendations: uploadResponse.recommendations || []
+          };
 
-        setFiles(prev => prev.map(f =>
-          f.id === fileItem.id
-            ? { ...f, status: 'completed', progress: 100, result: analysisResult }
-            : f
-        ));
+          setFiles(prev => prev.map(f =>
+            f.id === fileItem.id
+              ? { ...f, status: 'completed', progress: 100, result: analysisResult }
+              : f
+          ));
+        }
 
       } catch (error) {
         console.error('Erro ao fazer upload:', error);
@@ -380,7 +427,7 @@ export default function UploadPage() {
       )}
 
       {/* Duplicate Process Detection Modal */}
-      {showDuplicateConfirmation && detectedProcess && (
+      {showDuplicateConfirmation && isDetectedProcess(detectedProcess) && (
         <Card className="p-6 bg-yellow-50 border-yellow-200">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
@@ -489,7 +536,7 @@ export default function UploadPage() {
                   </div>
                 )}
 
-                {fileItem.status === 'completed' && fileItem.result && (
+                {fileItem.status === 'completed' && isAnalysisResult(fileItem.result) && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-2 space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-green-900">Análise Concluída</h4>

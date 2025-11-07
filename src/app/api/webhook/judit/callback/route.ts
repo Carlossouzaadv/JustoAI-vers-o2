@@ -16,6 +16,11 @@ import { getTimelineMergeService } from '@/lib/timeline-merge';
 import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
 import {
   extractCaseTypeFromJuditResponse,
   extractCaseTypeFromSubject,
@@ -102,7 +107,7 @@ export async function POST(request: NextRequest) {
       console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Resposta recebida:`, {
         responseType,
         cached: isCachedResponse,
-        cnj: responseData?.code,
+        cnj: isRecord(responseData) && responseData.code,
       });
 
       // Encontrar o processo que iniciou essa requisição COM CASE ID EXPLÍCITO
@@ -128,7 +133,6 @@ export async function POST(request: NextRequest) {
         targetCase = await prisma.case.findUnique({
           where: { id: juditRequest.caseId }
         });
-
         if (!targetCase) {
           console.error(
             `${ICONS.ERROR} [JUDIT Webhook] Case não encontrado com ID explícito:`,
@@ -143,28 +147,6 @@ export async function POST(request: NextRequest) {
         console.log(
           `${ICONS.SUCCESS} [JUDIT Webhook] Usando case ID explícito: ${targetCase.id}`
         );
-      } else {
-        // FALLBACK: Buscar caso relacionado via Processo (legacy, menos confiável)
-        const processo = await prisma.processo.findUnique({
-          where: { id: juditRequest.processoId },
-          include: { case: true }
-        });
-
-        if (!processo) {
-          console.error(`${ICONS.ERROR} [JUDIT Webhook] Processo não encontrado:`, juditRequest.processoId);
-          return NextResponse.json(
-            { error: 'Processo não encontrado' },
-            { status: 404 }
-          );
-        }
-
-        targetCase = processo.case;
-
-        if (!targetCase) {
-          console.warn(
-            `${ICONS.WARNING} [JUDIT Webhook] Processo ${juditRequest.processoId} não tem case associado`
-          );
-        }
       }
 
       // Se há um caso associado, atualizar com dados da JUDIT
@@ -174,8 +156,8 @@ export async function POST(request: NextRequest) {
         // ================================================================
         // JUDIT pode enviar múltiplos webhooks para o mesmo requestId
         // Verificar se este requestId já foi processado para este caso
-        const currentMetadata = (targetCase.metadata || {}) as unknown;
-        const processedRequestIds = (currentMetadata.processed_webhook_request_ids || []) as string[];
+        const currentMetadata = (targetCase.metadata || {}) as Record<string, unknown>;
+        const processedRequestIds = (isRecord(currentMetadata) && Array.isArray(currentMetadata.processed_webhook_request_ids) ? currentMetadata.processed_webhook_request_ids : []) as string[];
 
         if (processedRequestIds.includes(requestId)) {
           console.warn(
@@ -187,13 +169,11 @@ export async function POST(request: NextRequest) {
             message: 'Webhook duplicado ignorado (já processado)',
             isDuplicate: true,
             cached: isCachedResponse,
-            cnj: responseData?.code
+            cnj: isRecord(responseData) ? responseData.code as string : ''
           });
-        }
 
-        // Salvar dados completos no processo
-        await prisma.processo.update({
-          where: { id: juditRequest.processoId },
+        await prisma.juditRequest.update({
+          where: { requestId },
           data: {
             dadosCompletos: responseData,
             ultimaAtualizacao: new Date()
@@ -230,14 +210,14 @@ export async function POST(request: NextRequest) {
 
         // Processar anexos (com retry silencioso se falhar)
         try {
-          if (responseData.attachments && Array.isArray(responseData.attachments) && responseData.attachments.length > 0) {
+          if (isRecord(responseData) && responseData.attachments && Array.isArray(responseData.attachments) && responseData.attachments.length > 0) {
             console.log(`${ICONS.PROCESS} [JUDIT Webhook] Iniciando processamento de ${responseData.attachments.length} anexos`);
 
             const attachmentResult = await processJuditAttachments(
               targetCase.id,
               responseData,
-              responseData.code, // cnj_code
-              responseData.instance // instance
+              isRecord(responseData) ? responseData.code as string : '', // cnj_code
+              isRecord(responseData) ? responseData.instance as string : '' // instance
             );
 
             console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Anexos processados:`, {
@@ -262,13 +242,13 @@ export async function POST(request: NextRequest) {
           let mappedCaseType = targetCase.type; // Manter tipo atual por padrão
 
           // Tentar extrair do classifications (preferencial)
-          const classificationType = extractCaseTypeFromJuditResponse(responseData);
+          const classificationType = extractCaseTypeFromJuditResponse(isRecord(responseData) ? responseData : {});
           if (classificationType) {
             mappedCaseType = classificationType;
             console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo mapeado automaticamente: ${mappedCaseType}`);
           } else {
             // Fallback: tentar extrair do subject
-            const subjectType = extractCaseTypeFromSubject(responseData);
+            const subjectType = extractCaseTypeFromSubject(isRecord(responseData) ? responseData : {});
             if (subjectType) {
               mappedCaseType = subjectType;
               console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo extraído de subject: ${mappedCaseType}`);
@@ -287,19 +267,20 @@ export async function POST(request: NextRequest) {
               onboardingStatus: 'enriched',
               enrichmentCompletedAt: new Date(),
               metadata: {
-                ...(currentMetadata),
+                ...(isRecord(currentMetadata) ? currentMetadata : {}),
                 judit_data_retrieved: true,
                 judit_callback_received_at: new Date().toISOString(),
                 auto_mapped_case_type: mappedCaseType, // Log da mudança para auditoria
                 // NOVO: Registrar requestId como processado para idempotência
                 processed_webhook_request_ids: [...processedRequestIds, requestId],
-              }
+              } as any
             }
           });
 
           console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${targetCase.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`);
         }
-      }
+      } // Fechamento do if(targetCase)
+    }
 
       // Atualizar status do request no banco
       await prisma.juditRequest.update({
@@ -319,7 +300,7 @@ export async function POST(request: NextRequest) {
     // CASE 2: request_completed - JUDIT finalizou tudo
     // ================================================================
     if (eventType === 'request_completed' ||
-        (webhook.payload.response_type === 'application_info' && webhook.payload.response_data?.code === 600)) {
+        (webhook.payload.response_type === 'application_info' && isRecord(webhook.payload.response_data) && webhook.payload.response_data?.code === 600)) {
 
       console.log(`${ICONS.SUCCESS} [JUDIT Webhook] REQUEST COMPLETED - Processamento finalizado:`, requestId);
 
@@ -345,8 +326,8 @@ export async function POST(request: NextRequest) {
     // CASE 3: application_error - JUDIT reportou erro
     // ================================================================
     if (eventType === 'application_error') {
-      const errorCode = webhook.payload.response_data?.code;
-      const errorMessage = webhook.payload.response_data?.message;
+      const errorCode = isRecord(webhook.payload.response_data) ? webhook.payload.response_data.code : undefined;
+      const errorMessage = isRecord(webhook.payload.response_data) ? webhook.payload.response_data.message : undefined;
 
       console.error(`${ICONS.ERROR} [JUDIT Webhook] Erro reportado pela JUDIT:`, {
         errorCode,

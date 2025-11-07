@@ -83,6 +83,10 @@ const batchGenerateSchema = z.object({
   concurrent_limit: z.number().min(1).max(20).default(10)
 });
 
+// Type exports - NO CASTING
+type GenerateReportInput = z.infer<typeof generateReportSchema>;
+type BatchGenerateInput = z.infer<typeof batchGenerateSchema>;
+
 // ================================
 // GERAÇÃO INDIVIDUAL
 // ================================
@@ -92,11 +96,11 @@ export async function POST(req: NextRequest) {
     console.log(`${ICONS.PROCESS} Nova requisição de geração de relatório`);
 
     // 1. Autenticação
-    const { user, workspace } = await validateAuthAndGetUser(req);
+    const { user, workspace } = await validateAuthAndGetUser();
 
     // 2. Validação do input
     const body = await req.json();
-    const validatedData = generateReportSchema.parse(body);
+    const validatedData: GenerateReportInput = generateReportSchema.parse(body);
 
     // 3. Obter perfil de customização
     const customizationManager = getCustomizationManager();
@@ -207,13 +211,13 @@ export async function POST(req: NextRequest) {
       if (!debitResult.success) {
         console.warn(`Failed to debit credits: ${debitResult.reason}`);
         // Log but don't fail the request - the report was already generated
-      } else {
+      } else if (debitResult.newBalance) {
         console.log(`Credits debited: ${creditCost} FULL credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
       }
     }
 
     // 8. Retornar PDF como resposta
-    return new NextResponse(pdfBuffer as unknown as BodyInit, {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -254,7 +258,7 @@ export async function PUT(req: NextRequest) {
 
     // 2. Validação do input
     const body = await req.json();
-    const validatedData = batchGenerateSchema.parse(body);
+    const validatedData: BatchGenerateInput = batchGenerateSchema.parse(body);
 
     // 2.5. Check credits for batch processing (1 credit per report with AI insights)
     const isDivinity = isInternalDivinityAdmin(user.email);
@@ -318,7 +322,7 @@ export async function PUT(req: NextRequest) {
         id: job.id,
         reportType: job.report_type as ReportType,
         data,
-        customization,
+        customization: customization || {},
         options: {
           format: 'A4',
           orientation: 'portrait'
@@ -349,7 +353,7 @@ export async function PUT(req: NextRequest) {
       if (!debitResult.success) {
         console.warn(`Failed to debit credits: ${debitResult.reason}`);
         // Log but don't fail the request - the batch was already generated
-      } else {
+      } else if (debitResult.newBalance) {
         console.log(`Credits debited: ${actualCreditsUsed} FULL credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
       }
     }
@@ -393,7 +397,7 @@ export async function PUT(req: NextRequest) {
 // ================================
 
 async function handleBatchGeneration(
-  validatedData: unknown,
+  validatedData: GenerateReportInput,
   customizationProfile: unknown,
   baseData: unknown,
   workspaceId: string,
@@ -406,19 +410,28 @@ async function handleBatchGeneration(
 
   const batchJobs: BatchGenerationJob[] = [];
 
+  // Type guard: batch deve existir e ter client_groups
+  if (!validatedData.batch?.enabled || !validatedData.batch?.client_groups) {
+    return NextResponse.json(
+      { success: false, error: 'Batch não configurado corretamente' },
+      { status: 400 }
+    );
+  }
+
   // Gerar um job para cada grupo de clientes
-  for (const group of validatedData.batch.client_groups) {
+  const clientGroups = validatedData.batch.client_groups;
+  for (const group of clientGroups) {
     const filters = {
       workspaceId,
       clientIds: group.client_ids,
-      dateRange: validatedData.filters.date_range ? {
+      dateRange: validatedData.filters?.date_range ? {
         from: new Date(validatedData.filters.date_range.from),
         to: new Date(validatedData.filters.date_range.to)
       } : undefined
     };
 
     const { data } = await dataCollector.collectReportData({
-      type: validatedData.report_type,
+      type: validatedData.report_type as ReportType,
       filters,
       includeCharts: validatedData.options.include_charts,
       includeAIInsights: validatedData.options.include_ai_insights,
@@ -427,12 +440,12 @@ async function handleBatchGeneration(
 
     batchJobs.push({
       id: `batch_${group.group_name}`,
-      reportType: validatedData.report_type,
+      reportType: validatedData.report_type as ReportType,
       data: {
         ...data,
         title: `${data.title} - ${group.group_name}`
       },
-      customization,
+      customization: customization || {},
       options: {
         format: validatedData.options.format,
         orientation: validatedData.options.orientation

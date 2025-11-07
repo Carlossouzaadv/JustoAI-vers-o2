@@ -47,22 +47,45 @@ interface LogMessage {
 }
 
 interface Logger {
-  info: (_msg: string, _data?: LogMessage) => void;
-  error: (_msg: string, _data?: LogMessage) => void;
-  warn: (_msg: string, _data?: LogMessage) => void;
-  debug: (_msg: string, _data?: LogMessage) => void;
+  info: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
+  error: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
+  warn: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
+  debug: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
 }
 
 interface OperationTracker {
   finish: (_status: string, _details?: LogMessage) => number;
 }
 
+// Helper function to normalize logger arguments
+function normalizeLogArgs(msgOrData: string | LogMessage, data?: LogMessage): [string, LogMessage] {
+  if (typeof msgOrData === 'string') {
+    return [msgOrData, data || {}];
+  }
+  // msgOrData is an object, extract action as message if available
+  const action = typeof msgOrData.action === 'string' ? msgOrData.action : 'unknown';
+  const message = typeof msgOrData.message === 'string' ? msgOrData.message : action;
+  return [message, msgOrData as LogMessage];
+}
+
 // Simple inline logger to avoid external dependencies
 const juditLogger: Logger = {
-  info: (msg: string, data?: LogMessage) => console.log(`[JUDIT]`, msg, data || ''),
-  error: (msg: string, data?: LogMessage) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
-  warn: (msg: string, data?: LogMessage) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
-  debug: (msg: string, data?: LogMessage) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
+  info: (msgOrData: string | LogMessage, data?: LogMessage) => {
+    const [msg, logData] = normalizeLogArgs(msgOrData, data);
+    console.log(`[JUDIT]`, msg, logData || '');
+  },
+  error: (msgOrData: string | LogMessage, data?: LogMessage) => {
+    const [msg, logData] = normalizeLogArgs(msgOrData, data);
+    console.error(`[JUDIT-ERROR]`, msg, logData || '');
+  },
+  warn: (msgOrData: string | LogMessage, data?: LogMessage) => {
+    const [msg, logData] = normalizeLogArgs(msgOrData, data);
+    console.warn(`[JUDIT-WARN]`, msg, logData || '');
+  },
+  debug: (msgOrData: string | LogMessage, data?: LogMessage) => {
+    const [msg, logData] = normalizeLogArgs(msgOrData, data);
+    console.debug(`[JUDIT-DEBUG]`, msg, logData || '');
+  },
 };
 
 const logOperationStart = (logger: Logger, name: string, data?: LogMessage): OperationTracker => {
@@ -157,9 +180,8 @@ function getJuditConfig(): JuditConfig {
 
   // Warn if using fallback
   if (!process.env.JUDIT_API_BASE_URL) {
-    juditLogger.warn({
+    juditLogger.warn('JUDIT_API_BASE_URL not set, using fallback', {
       action: 'config_warning',
-      message: 'JUDIT_API_BASE_URL not set, using fallback',
       fallback: baseUrl,
     });
   }
@@ -169,9 +191,8 @@ function getJuditConfig(): JuditConfig {
 
   // Warn if API key is missing (but don't throw)
   if (!apiKey) {
-    juditLogger.warn({
+    juditLogger.warn('JUDIT_API_KEY not set - API calls will fail', {
       action: 'config_warning',
-      message: 'JUDIT_API_KEY not set - API calls will fail',
       hint: 'Set JUDIT_API_KEY environment variable to enable JUDIT integration',
     });
   }
@@ -209,12 +230,12 @@ export async function sendRequest<T = Record<string, unknown>>(
 
   // Validate API key is present
   if (!config.apiKey) {
-    juditLogger.error({
+    juditLogger.error(JSON.stringify({
       action: 'send_request_failed',
       endpoint,
       method,
       error: 'JUDIT_API_KEY not configured',
-    });
+    }));
 
     return {
       success: false,
@@ -247,13 +268,13 @@ export async function sendRequest<T = Record<string, unknown>>(
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
-    juditLogger.debug({
+    juditLogger.debug(JSON.stringify({
       action: 'send_request_start',
       method,
       endpoint,
       url,
       has_body: !!body,
-    });
+    }));
 
     // Make request
     const response = await fetch(url, {
@@ -274,13 +295,13 @@ export async function sendRequest<T = Record<string, unknown>>(
     } else {
       // Non-JSON response
       const text = await response.text();
-      juditLogger.warn({
+      juditLogger.warn(JSON.stringify({
         action: 'non_json_response',
         endpoint,
         status: response.status,
-        content_type: contentType,
+        content_type: contentType ?? 'unknown',
         response_preview: text.substring(0, 200),
-      });
+      }));
     }
 
     // Check if request was successful
@@ -290,14 +311,14 @@ export async function sendRequest<T = Record<string, unknown>>(
         status_text: response.statusText,
       });
 
-      juditLogger.error({
+      juditLogger.error(JSON.stringify({
         action: 'send_request_error',
         endpoint,
         method,
         status_code: response.status,
         status_text: response.statusText,
         duration_ms: duration,
-      });
+      }));
 
       return {
         success: false,
@@ -310,13 +331,13 @@ export async function sendRequest<T = Record<string, unknown>>(
     // Success
     const duration = operation.finish('success');
 
-    juditLogger.info({
+    juditLogger.info(JSON.stringify({
       action: 'send_request_success',
       endpoint,
       method,
       status_code: response.status,
       duration_ms: duration,
-    });
+    }));
 
     return {
       success: true,
@@ -334,13 +355,13 @@ export async function sendRequest<T = Record<string, unknown>>(
         timeout_ms: timeout,
       });
 
-      juditLogger.error({
+      juditLogger.error(JSON.stringify({
         action: 'send_request_timeout',
         endpoint,
         method,
         timeout_ms: timeout,
         duration_ms: duration,
-      });
+      }));
 
       return {
         success: false,
@@ -354,14 +375,14 @@ export async function sendRequest<T = Record<string, unknown>>(
       error: error instanceof Error ? error.message : String(error),
     });
 
-    juditLogger.error({
+    juditLogger.error(JSON.stringify({
       action: 'send_request_error',
       endpoint,
       method,
       error: error instanceof Error ? error.message : String(error),
       error_stack: error instanceof Error ? error.stack : undefined,
       duration_ms: duration,
-    });
+    }));
 
     return {
       success: false,
@@ -388,11 +409,11 @@ export async function createOnboarding(
   cnj: string,
   withAttachments: boolean = false
 ): Promise<JuditApiResponse<OnboardingResponse>> {
-  juditLogger.info({
+  juditLogger.info(JSON.stringify({
     action: 'create_onboarding_start',
     cnj,
     with_attachments: withAttachments,
-  });
+  }));
 
   // Build payload
   const payload: OnboardingPayload = {
@@ -408,22 +429,22 @@ export async function createOnboarding(
   const response = await sendRequest<OnboardingResponse>(
     '/requests',
     'POST',
-    payload
+    payload as unknown as Record<string, unknown>
   );
 
   if (response.success && response.data) {
-    juditLogger.info({
+    juditLogger.info(JSON.stringify({
       action: 'create_onboarding_success',
       cnj,
       request_id: response.data.request_id,
       status: response.data.status,
-    });
+    }));
   } else {
-    juditLogger.error({
+    juditLogger.error(JSON.stringify({
       action: 'create_onboarding_failed',
       cnj,
       error: response.error,
-    });
+    }));
   }
 
   return response;
@@ -438,10 +459,10 @@ export async function createOnboarding(
 export async function getOnboardingStatus(
   requestId: string
 ): Promise<JuditApiResponse<StatusResponse>> {
-  juditLogger.debug({
+  juditLogger.debug(JSON.stringify({
     action: 'get_onboarding_status',
     request_id: requestId,
-  });
+  }));
 
   const response = await sendRequest<StatusResponse>(
     `/requests/${requestId}`,
@@ -449,11 +470,11 @@ export async function getOnboardingStatus(
   );
 
   if (response.success && response.data) {
-    juditLogger.debug({
+    juditLogger.debug(JSON.stringify({
       action: 'get_onboarding_status_success',
       request_id: requestId,
       status: response.data.status,
-    });
+    }));
   }
 
   return response;
@@ -471,10 +492,10 @@ export async function getOnboardingStatus(
 export async function processDocument(
   document: File | Buffer | string
 ): Promise<JuditApiResponse<Record<string, unknown>>> {
-  juditLogger.info({
+  juditLogger.info(JSON.stringify({
     action: 'process_document_start',
     document_type: typeof document,
-  });
+  }));
 
   // TODO: Implement document processing
   // This could involve:
@@ -483,10 +504,10 @@ export async function processDocument(
   // - Analyzing document content
   // - Extracting structured data
 
-  juditLogger.warn({
+  juditLogger.warn(JSON.stringify({
     action: 'process_document_not_implemented',
     message: 'Document processing not yet implemented',
-  });
+  }));
 
   return {
     success: false,

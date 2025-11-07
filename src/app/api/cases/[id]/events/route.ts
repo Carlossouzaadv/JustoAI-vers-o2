@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+
 /**
  * GET /api/cases/[id]/events
  *
@@ -106,20 +111,20 @@ export async function GET(
       caseData.processo.dadosCompletos &&
       typeof caseData.processo.dadosCompletos === 'object'
     ) {
-      const dadosCompletos = caseData.processo.dadosCompletos as unknown;
+      const dadosCompletos = caseData.processo.dadosCompletos as Record<string, unknown>;
 
-      if (dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
-        const juditEvents = dadosCompletos.steps.map((step: unknown, index: number) => ({
-          id: `judit-step-${step.step_id || index}`,
-          date: new Date(step.step_date).toISOString(),
+      if (isRecord(dadosCompletos) && dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
+        const juditEvents = dadosCompletos.steps.map((step: Record<string, unknown>, index: number) => ({
+          id: `judit-step-${(step as any).step_id || index}`,
+          date: new Date((step as any).step_date).toISOString(),
           title: 'Andamento Processual',
-          description: step.content,
+          description: (step as any).content,
           type: 'decision' as const,
           source: 'api_monitoring' as const,
           metadata: {
-            stepId: step.step_id,
-            stepType: step.step_type,
-            private: step.private,
+            stepId: (step as any).step_id,
+            stepType: (step as any).step_type,
+            private: (step as any).private,
             source: 'JUDIT API',
           },
         }));
@@ -138,18 +143,18 @@ export async function GET(
 
         // Tentar recuperar data do previewSnapshot.lastMovements (PDF inicial)
         if (caseData.previewSnapshot && typeof caseData.previewSnapshot === 'object') {
-          const preview = caseData.previewSnapshot as unknown;
-          if (preview.lastMovements && Array.isArray(preview.lastMovements)) {
+          const preview = caseData.previewSnapshot as Record<string, unknown>;
+          if (isRecord(preview) && preview.lastMovements && Array.isArray(preview.lastMovements)) {
             // Procurar movimento que corresponde ao documento
             const matchedMovement = preview.lastMovements.find(
-              (m: unknown) =>
-                m.description?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
-                m.description?.toLowerCase().includes(doc.name?.toLowerCase())
+              (m: Record<string, unknown>) =>
+                (m as any).description?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
+                (m as any).description?.toLowerCase().includes(doc.name?.toLowerCase())
             );
 
-            if (matchedMovement && matchedMovement.date) {
+            if (matchedMovement && (matchedMovement as any).date) {
               try {
-                realEventDate = new Date(matchedMovement.date);
+                realEventDate = new Date((matchedMovement as any).date);
               } catch (e) {
                 // Manter date original se não conseguir parsear
               }
@@ -159,18 +164,18 @@ export async function GET(
 
         // Se não encontrou no preview, tentar recuperar dos dados JUDIT
         if (realEventDate === doc.createdAt && caseData.processo?.dadosCompletos) {
-          const dadosCompletos = caseData.processo.dadosCompletos as unknown;
-          if (dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
+          const dadosCompletos = caseData.processo.dadosCompletos as Record<string, unknown>;
+          if (isRecord(dadosCompletos) && dadosCompletos.steps && Array.isArray(dadosCompletos.steps)) {
             // Procurar step que corresponde ao documento
             const matchedStep = dadosCompletos.steps.find(
-              (s: unknown) =>
-                s.content?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
-                s.content?.toLowerCase().includes(doc.name?.toLowerCase())
+              (s: Record<string, unknown>) =>
+                (s as any).content?.toLowerCase().includes(doc.originalName?.toLowerCase()) ||
+                (s as any).content?.toLowerCase().includes(doc.name?.toLowerCase())
             );
 
-            if (matchedStep && matchedStep.step_date) {
+            if (matchedStep && (matchedStep as any).step_date) {
               try {
-                realEventDate = new Date(matchedStep.step_date);
+                realEventDate = new Date((matchedStep as any).step_date);
               } catch (e) {
                 // Manter date original se não conseguir parsear
               }

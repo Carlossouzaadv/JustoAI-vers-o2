@@ -6,19 +6,33 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import path from 'path';
-import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
-
-// Augment Express namespace for compatibility
-// eslint-disable-next-line @typescript-eslint/no-namespace
-declare global {
-  namespace Express {
-    interface Request extends ExpressRequest {}
-    interface Response extends ExpressResponse {}
-    interface NextFunction extends ExpressNextFunction {}
-  }
-}
+import type { Request, Response, NextFunction } from 'express';
+import { Socket } from 'net';
 
 // === TIPOS ===
+
+/**
+ * Extended Express Request with additional properties
+ */
+interface ExtendedRequest extends Request {
+  method: string;
+  url: string;
+  originalUrl?: string;
+  get(header: string): string | undefined;
+  ip?: string;
+  socket?: Socket;
+  requestId?: string;
+  user?: { id: string };
+  workspace?: { id: string };
+}
+
+/**
+ * Extended Express Response with additional properties
+ */
+interface ExtendedResponse extends Response {
+  statusCode: number;
+  end?: (...args: unknown[]) => ExtendedResponse;
+}
 
 export interface LogContext {
   userId?: string;
@@ -395,34 +409,35 @@ function logDatabaseOperation(
  * Middleware Express para logging de requests
  */
 function requestLoggingMiddleware() {
-  return (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
+  return (req: ExtendedRequest, res: ExtendedResponse, next: NextFunction) => {
     const startTime = Date.now();
 
     // Gerar ID único para request
-    const reqWithId = req as Express.Request & { requestId: string };
-    reqWithId.requestId = generateRequestId();
+    req.requestId = generateRequestId();
 
     // Override do res.end para capturar response
-    const originalEnd = res.end.bind(res);
-    res.end = function(this: Express.Response, ...args: Parameters<Express.Response['end']>) {
-      const duration = Date.now() - startTime;
+    if (res.end && typeof res.end === 'function') {
+      const originalEnd = res.end.bind(res);
+      res.end = function(...args: unknown[]) {
+        const duration = Date.now() - startTime;
 
-      logHttpRequest(
-        req.method,
-        req.originalUrl || req.url,
-        res.statusCode,
-        duration,
-        {
-          requestId: reqWithId.requestId,
-          userId: (req as Express.Request & { user?: { id: string } }).user?.id,
-          workspaceId: (req as Express.Request & { workspace?: { id: string } }).workspace?.id,
-          userAgent: req.get('User-Agent'),
-          ip: req.ip || req.socket?.remoteAddress,
-        }
-      );
+        logHttpRequest(
+          req.method,
+          req.originalUrl || req.url,
+          res.statusCode,
+          duration,
+          {
+            requestId: req.requestId,
+            userId: req.user?.id,
+            workspaceId: req.workspace?.id,
+            userAgent: req.get('User-Agent'),
+            ip: req.ip || req.socket?.remoteAddress,
+          }
+        );
 
-      return originalEnd.apply(this, args) as Express.Response;
-    };
+        return originalEnd.apply(this, args) as ExtendedResponse;
+      };
+    }
 
     next();
   };
@@ -432,20 +447,14 @@ function requestLoggingMiddleware() {
  * Middleware para capturar erros não tratados
  */
 function errorLoggingMiddleware() {
-  return (err: Error, req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
-    const reqWithContext = req as Express.Request & {
-      requestId?: string;
-      user?: { id: string };
-      workspace?: { id: string }
-    };
-
+  return (err: Error, req: ExtendedRequest, res: ExtendedResponse, next: NextFunction) => {
     logError(
       `Unhandled error in ${req.method} ${req.originalUrl || req.url}`,
       err,
       {
-        requestId: reqWithContext.requestId,
-        userId: reqWithContext.user?.id,
-        workspaceId: reqWithContext.workspace?.id,
+        requestId: req.requestId,
+        userId: req.user?.id,
+        workspaceId: req.workspace?.id,
         method: req.method,
         url: req.originalUrl || req.url,
         userAgent: req.get('User-Agent'),
