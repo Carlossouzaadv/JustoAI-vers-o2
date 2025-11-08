@@ -25,6 +25,14 @@ import {
 import { ICONS } from '@/lib/icons';
 import { DocumentViewerModal } from './document-viewer-modal';
 
+// ================================================================
+// TYPES
+// ================================================================
+
+type DocumentCategory = 'petition' | 'decision' | 'evidence' | 'correspondence' | 'other';
+type DocumentStatus = 'processing' | 'completed' | 'error';
+type AnalysisStatus = 'pending' | 'analyzing' | 'completed' | 'failed';
+
 interface DocumentFile {
   id: string;
   name: string;
@@ -32,9 +40,9 @@ interface DocumentFile {
   mimeType?: string;
   size: number;
   uploadedAt: string;
-  status: 'processing' | 'completed' | 'error';
-  category: 'petition' | 'decision' | 'evidence' | 'correspondence' | 'other';
-  analysisStatus?: 'pending' | 'analyzing' | 'completed' | 'failed';
+  status: DocumentStatus;
+  category: DocumentCategory;
+  analysisStatus?: AnalysisStatus;
   analysisProgress?: number;
   extractedText?: string;
   aiSummary?: string;
@@ -42,8 +50,53 @@ interface DocumentFile {
   thumbnailUrl?: string;
 }
 
+interface CaseDocument {
+  id: string;
+  name: string;
+  mimeType?: string;
+  size: number;
+  createdAt: string;
+}
+
 interface ProcessDocumentsProps {
   processId: string;
+}
+
+// ================================================================
+// TYPE GUARDS
+// ================================================================
+
+/**
+ * Type Guard para validar se um objeto é um CaseDocument válido.
+ * Valida a estrutura mínima esperada da API.
+ */
+function isCaseDocument(data: unknown): data is CaseDocument {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const doc = data as Record<string, unknown>;
+
+  return (
+    typeof doc.id === 'string' &&
+    typeof doc.name === 'string' &&
+    typeof doc.size === 'number' &&
+    typeof doc.createdAt === 'string' &&
+    (doc.mimeType === undefined || typeof doc.mimeType === 'string')
+  );
+}
+
+/**
+ * Type Guard para validar se um valor é uma DocumentCategory válida.
+ */
+function isValidCategory(value: unknown): value is DocumentCategory {
+  return (
+    value === 'petition' ||
+    value === 'decision' ||
+    value === 'evidence' ||
+    value === 'correspondence' ||
+    value === 'other'
+  );
 }
 
 export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
@@ -83,18 +136,21 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
         const data = await response.json();
         const caseDocuments = data.data?.documents || [];
 
-        // Map case documents to DocumentFile format
-        const mappedDocuments: DocumentFile[] = caseDocuments.map((doc: unknown) => ({
-          id: doc.id,
-          name: doc.name,
-          type: doc.mimeType || 'application/pdf',
-          mimeType: doc.mimeType || 'application/pdf',
-          size: doc.size || 0,
-          uploadedAt: doc.createdAt,
-          status: 'completed',
-          category: 'other' as const,
-          analysisStatus: 'completed' as const,
-        }));
+        // Filtrar e validar documentos usando Type Guard
+        // Apenas documentos válidos são mapeados
+        const mappedDocuments: DocumentFile[] = caseDocuments
+          .filter(isCaseDocument)
+          .map((doc: CaseDocument) => ({
+            id: doc.id,
+            name: doc.name,
+            type: doc.mimeType || 'application/pdf',
+            mimeType: doc.mimeType || 'application/pdf',
+            size: doc.size || 0,
+            uploadedAt: doc.createdAt,
+            status: 'completed' as const,
+            category: 'other' as const,
+            analysisStatus: 'completed' as const,
+          }));
 
         setDocuments(mappedDocuments);
       } else {
@@ -484,7 +540,15 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             {/* Categoria */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Categoria</label>
-              <Select value={editCategory} onValueChange={(value: unknown) => setEditCategory(value)}>
+              <Select
+                value={editCategory}
+                onValueChange={(value) => {
+                  // Type Guard: validar que o valor é uma categoria válida
+                  if (isValidCategory(value)) {
+                    setEditCategory(value);
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -519,7 +583,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
               disabled={isDeleting || isSaving}
               className="mr-auto"
             >
-              {isDeleting ? `${ICONS.LOADING} Deletando...` : `${ICONS.TRASH} Deletar`}
+              {isDeleting ? `${ICONS.LOADING} Deletando...` : `${ICONS.DELETE} Deletar`}
             </Button>
 
             <div className="flex gap-2">
