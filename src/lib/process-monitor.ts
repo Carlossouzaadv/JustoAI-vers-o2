@@ -38,6 +38,65 @@ export interface MonitoringStats {
 }
 
 // ================================
+// TYPE GUARDS E NARROWING
+// ================================
+
+export interface MonitoredProcessData {
+  id: string;
+  processNumber: string;
+  lastSync: Date | null;
+  alertsEnabled?: boolean;
+  alertRecipients?: unknown;
+}
+
+/**
+ * Type guard para validar dados do processo monitorado
+ * Garante que todas as propriedades necessárias estão presentes e são do tipo correto
+ */
+function isMonitoredProcessData(data: unknown): data is MonitoredProcessData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar propriedades obrigatórias
+  if (typeof obj.id !== 'string') {
+    return false;
+  }
+
+  if (typeof obj.processNumber !== 'string') {
+    return false;
+  }
+
+  // lastSync pode ser null ou Date
+  if (obj.lastSync !== null && !(obj.lastSync instanceof Date)) {
+    return false;
+  }
+
+  // alertsEnabled é opcional e boolean
+  if (obj.alertsEnabled !== undefined && typeof obj.alertsEnabled !== 'boolean') {
+    return false;
+  }
+
+  // alertRecipients é opcional (qualquer tipo)
+  // Será validado separadamente quando necessário
+
+  return true;
+}
+
+/**
+ * Helper para extrair valor de alertRecipients com segurança
+ * Retorna array se for válido, caso contrário retorna array vazio
+ */
+function getAlertRecipients(data: unknown): string[] {
+  if (Array.isArray(data)) {
+    return data.filter(item => typeof item === 'string');
+  }
+  return [];
+}
+
+// ================================
 // CLASSE PRINCIPAL DO MONITOR
 // ================================
 
@@ -210,12 +269,21 @@ export class ProcessMonitor {
 
   /**
    * Sincroniza um processo individual
+   * Aplica type guard no início para garantir narrowing seguro
    */
   private async syncProcess(process: Record<string, unknown>): Promise<{ newMovements: number; alertsGenerated: number }> {
+    // NARROWING SEGURO: Validar dados do processo
+    if (!isMonitoredProcessData(process)) {
+      throw new Error('Dados inválidos do processo monitorado');
+    }
+
+    // Agora 'process' é tipado como MonitoredProcessData - SEGURO para usar
+    const typedProcess = process; // TypeScript infere MonitoredProcessData
+
     // Criar log de sincronização
     const syncLog = await prisma.processSyncLog.create({
       data: {
-        monitoredProcessId: process.id,
+        monitoredProcessId: typedProcess.id,
         syncType: 'FULL',
         status: 'SUCCESS',
         startedAt: new Date(),
@@ -226,8 +294,8 @@ export class ProcessMonitor {
     try {
       // Buscar movimentações recentes
       const recentMovements = await this.processApi.getRecentMovements(
-        process.processNumber,
-        process.lastSync
+        typedProcess.processNumber,
+        typedProcess.lastSync ?? undefined
       );
 
       let newMovementsCount = 0;
@@ -237,7 +305,7 @@ export class ProcessMonitor {
         // Verificar movimentações existentes
         const existingMovements = await prisma.processMovement.findMany({
           where: {
-            monitoredProcessId: process.id,
+            monitoredProcessId: typedProcess.id,
             date: {
               in: recentMovements.map(m => new Date(m.date))
             }
@@ -258,7 +326,7 @@ export class ProcessMonitor {
           // Salvar novas movimentações
           await prisma.processMovement.createMany({
             data: newMovements.map(movement => ({
-              monitoredProcessId: process.id,
+              monitoredProcessId: typedProcess.id,
               date: new Date(movement.date),
               type: movement.type,
               description: movement.description,
@@ -273,22 +341,24 @@ export class ProcessMonitor {
           newMovementsCount = newMovements.length;
 
           // Gerar alertas para movimentações importantes
-          if (process.alertsEnabled) {
+          if (typedProcess.alertsEnabled) {
             const importantMovements = newMovements.filter(m =>
               m.importance === 'HIGH' || m.importance === 'URGENT' || m.requiresAction
             );
 
             if (importantMovements.length > 0) {
+              const alertRecipients = getAlertRecipients(typedProcess.alertRecipients);
+
               const alerts = await Promise.all(
                 importantMovements.map(movement =>
                   prisma.processAlert.create({
                     data: {
-                      monitoredProcessId: process.id,
+                      monitoredProcessId: typedProcess.id,
                       title: `Nova movimentação: ${movement.type}`,
                       message: movement.description,
                       type: 'MOVEMENT',
                       severity: movement.importance,
-                      recipients: process.alertRecipients || []
+                      recipients: alertRecipients
                     }
                   })
                 )
@@ -303,7 +373,7 @@ export class ProcessMonitor {
       // Atualizar processo e log
       await Promise.all([
         prisma.monitoredProcess.update({
-          where: { id: process.id },
+          where: { id: typedProcess.id },
           data: { lastSync: new Date() }
         }),
         prisma.processSyncLog.update({

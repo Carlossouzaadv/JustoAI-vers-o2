@@ -95,6 +95,76 @@ export type MovementCategory =
   | 'OTHER';
 
 // ================================
+// TYPE GUARDS E HELPERS
+// ================================
+
+/**
+ * Interface para dados de movimentação da API (antes de validação)
+ */
+interface MovementRawData {
+  data?: unknown;
+  tipo?: unknown;
+  descricao?: unknown;
+  prazo?: unknown;
+}
+
+/**
+ * Type guard para validar dados de movimentação
+ * Garante que propriedades críticas existem e são do tipo correto
+ */
+function isMovementData(data: unknown): data is MovementRawData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar que pelo menos 'data' e 'tipo' existem
+  // Outras propriedades podem ser undefined, será tratado pelos helpers
+  if (obj.data === undefined || obj.tipo === undefined) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Helper para extrair string com segurança
+ * Retorna string vazia se valor for unknown ou não-string
+ */
+function getMovementString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return '';
+}
+
+/**
+ * Helper para extrair Date com segurança
+ * Retorna undefined se valor não puder ser convertido
+ */
+function getMovementDate(value: unknown): Date | undefined {
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    // Validar que Date é válido
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Helper para extrair string segura da consulta ID
+ */
+function getConsultationId(value: unknown, fallback: string): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return fallback;
+}
+
+// ================================
 // CLASSE PRINCIPAL
 // ================================
 
@@ -218,6 +288,15 @@ export class ProcessApiClient {
 
   private parseJuditResponse(apiData: Record<string, unknown>): ProcessData {
     const apiRecord = apiData as Record<string, unknown>;
+
+    // NARROWING SEGURO: Validar array de movimentações com Array.isArray()
+    const movimentacoes = apiRecord.movimentacoes; // movimentacoes é unknown
+    let safeMovimentacoes: unknown[] = []; // Default seguro
+
+    if (Array.isArray(movimentacoes)) {
+      safeMovimentacoes = movimentacoes; // 100% SEGURO após validação
+    }
+
     return {
       processNumber: (apiRecord.numero_processo as string) || '',
       court: (apiRecord.tribunal as string) || '',
@@ -247,19 +326,30 @@ export class ProcessApiClient {
         }))
       },
 
-      movements: ((apiRecord.movimentacoes as Record<string, unknown>[]) || []).map((m) => ({
-        date: new Date(m.data),
-        type: m.tipo || '',
-        description: m.descricao || '',
-        category: this.categorizeMovement(m.tipo, m.descricao),
-        importance: this.assessMovementImportance(m.tipo, m.descricao),
-        requiresAction: this.requiresAction(m.tipo, m.descricao),
-        deadline: m.prazo ? new Date(m.prazo) : undefined
-      })),
+      // NARROWING SEGURO: safeMovimentacoes é validado como array antes
+      movements: safeMovimentacoes
+        .filter(isMovementData)
+        .map((m) => {
+          // TypeScript infere que m é MovementRawData após o filter
+          const tipo = getMovementString(m.tipo);
+          const descricao = getMovementString(m.descricao);
+          const data = getMovementDate(m.data);
+
+          return {
+            date: data || new Date(), // Fallback para agora se data inválida
+            type: tipo,
+            description: descricao,
+            category: this.categorizeMovement(tipo, descricao),
+            importance: this.assessMovementImportance(tipo, descricao),
+            requiresAction: this.requiresAction(tipo, descricao),
+            deadline: getMovementDate(m.prazo)
+          };
+        }),
 
       lastUpdate: new Date(),
       dataSource: 'JUDIT_API',
-      consultationId: apiData.consulta_id || `judit_${Date.now()}`
+      // Usar helper seguro para extrair consultationId
+      consultationId: getConsultationId(apiData.consulta_id, `judit_${Date.now()}`)
     };
   }
 
