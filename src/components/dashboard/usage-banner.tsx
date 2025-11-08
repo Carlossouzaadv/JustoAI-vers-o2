@@ -74,6 +74,36 @@ interface AlertBanner {
 }
 
 // ================================================================
+// TYPE GUARDS & HELPERS
+// ================================================================
+
+interface ApiAlertResponse {
+  type: string;
+  severity: string;
+  title: string;
+  message: string;
+}
+
+/**
+ * Type guard to safely validate if an object is a valid API alert
+ * Required because alert data comes from API response (unknown type)
+ */
+function isApiAlertResponse(data: unknown): data is ApiAlertResponse {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'type' in data &&
+    typeof (data as Record<string, unknown>).type === 'string' &&
+    'severity' in data &&
+    typeof (data as Record<string, unknown>).severity === 'string' &&
+    'title' in data &&
+    typeof (data as Record<string, unknown>).title === 'string' &&
+    'message' in data &&
+    typeof (data as Record<string, unknown>).message === 'string'
+  );
+}
+
+// ================================================================
 // COMPONENTE PRINCIPAL
 // ================================================================
 
@@ -115,7 +145,9 @@ export default function UsageBanner({
       }
 
       if (alertsData.success && alertsData.alerts) {
-        const bannerAlerts = alertsData.alerts.map(alert => convertToAlertBanner(alert));
+        const bannerAlerts = (alertsData.alerts as unknown[])
+          .filter(isApiAlertResponse)
+          .map(convertToAlertBanner);
         setAlerts(bannerAlerts);
       }
 
@@ -133,18 +165,35 @@ export default function UsageBanner({
     }
   };
 
-  // Converter alerta da API para banner
-  const convertToAlertBanner = (alert: unknown): AlertBanner => {
+  /**
+   * Convert API alert response to AlertBanner component model.
+   * Alert parameter is guaranteed to be validated by isApiAlertResponse type guard.
+   */
+  const convertToAlertBanner = (alert: ApiAlertResponse): AlertBanner => {
+    // Safely normalize alert type to known values
+    const isKnownType = (type: string): type is AlertBanner['type'] => {
+      return ['soft_threshold', 'hard_threshold', 'credit_low', 'api_high'].includes(type);
+    };
+
+    const alertType: AlertBanner['type'] = isKnownType(alert.type) ? alert.type : 'soft_threshold';
+
+    // Safely map severity to alert banner severity
+    const mapSeverity = (severity: string): AlertBanner['severity'] => {
+      if (severity === 'critical') return 'error';
+      if (severity === 'high') return 'warning';
+      return 'info';
+    };
+
     const baseAlert: AlertBanner = {
-      type: alert.type,
-      severity: alert.severity === 'critical' ? 'error' : alert.severity === 'high' ? 'warning' : 'info',
+      type: alertType,
+      severity: mapSeverity(alert.severity),
       title: alert.title,
       message: alert.message,
       dismissible: true
     };
 
     // Adicionar ações baseadas no tipo
-    switch (alert.type) {
+    switch (alertType) {
       case 'soft_threshold':
       case 'hard_threshold':
         baseAlert.actions = [
