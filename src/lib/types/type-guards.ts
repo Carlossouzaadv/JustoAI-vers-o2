@@ -1030,3 +1030,188 @@ export function isMonitoredProcessData(value: unknown): value is MonitoredProces
 
   return true;
 }
+
+// ================================================================
+// ERROR HANDLING UTILITIES
+// ================================================================
+
+/**
+ * Safe extraction of error message from unknown error objects
+ * Used in catch blocks to handle both Error instances and generic objects
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (typeof error === 'object' && error !== null) {
+    const obj = error as Record<string, unknown>;
+    if (typeof obj.message === 'string') {
+      return obj.message;
+    }
+    if (typeof obj.error === 'string') {
+      return obj.error;
+    }
+  }
+  return String(error);
+}
+
+/**
+ * Check if a value is a Gemini API error response structure
+ */
+export function isGeminiErrorResponse(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Gemini API returns errors in either { error: { message, details } } or { error: string } format
+  if (obj.error !== undefined) {
+    if (typeof obj.error === 'string') {
+      return true;
+    }
+    if (typeof obj.error === 'object' && obj.error !== null) {
+      const err = obj.error as Record<string, unknown>;
+      // error.message is optional but if present should be string
+      if (err.message !== undefined && typeof err.message !== 'string') {
+        return false;
+      }
+      // error.details is optional but if present should be string
+      if (err.details !== undefined && typeof err.details !== 'string') {
+        return false;
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ================================================================
+// PDF PROCESSOR TYPE GUARDS
+// ================================================================
+
+/**
+ * Check if a value is a valid PDFData structure
+ */
+export function isPDFData(value: unknown): value is { text: string; numpages: number; info: Record<string, unknown>; metadata: Record<string, unknown> } {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required fields
+  if (typeof obj.text !== 'string') {
+    return false;
+  }
+
+  if (typeof obj.numpages !== 'number') {
+    return false;
+  }
+
+  if (typeof obj.info !== 'object' || obj.info === null) {
+    return false;
+  }
+
+  if (typeof obj.metadata !== 'object' || obj.metadata === null) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if a value is a valid Railway PDF processor response
+ */
+export function isRailwayPdfResponse(value: unknown): value is {
+  originalText: string;
+  cleanedText: string;
+  processNumber?: string;
+  metrics: { extractionTimeMs: number };
+} {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // Required fields
+  if (typeof obj.originalText !== 'string') {
+    return false;
+  }
+
+  if (typeof obj.cleanedText !== 'string') {
+    return false;
+  }
+
+  // metrics is required
+  if (typeof obj.metrics !== 'object' || obj.metrics === null) {
+    return false;
+  }
+
+  const metrics = obj.metrics as Record<string, unknown>;
+  if (typeof metrics.extractionTimeMs !== 'number') {
+    return false;
+  }
+
+  // Optional fields
+  if (obj.processNumber !== undefined && typeof obj.processNumber !== 'string') {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if a value is a valid PDF extraction result
+ */
+export function isPDFExtractionData(value: unknown): value is {
+  cleanedText: string;
+  originalText?: string;
+  text?: string;
+  processNumber?: string;
+  metrics?: { extractionTimeMs: number };
+} {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  // At least cleanedText is required
+  if (typeof obj.cleanedText !== 'string') {
+    // Fallback: try to find text field
+    if (typeof obj.text !== 'string') {
+      return false;
+    }
+  }
+
+  // Optional fields validation
+  if (obj.originalText !== undefined && typeof obj.originalText !== 'string') {
+    return false;
+  }
+
+  if (obj.text !== undefined && typeof obj.text !== 'string') {
+    return false;
+  }
+
+  if (obj.processNumber !== undefined && typeof obj.processNumber !== 'string') {
+    return false;
+  }
+
+  if (obj.metrics !== undefined) {
+    if (typeof obj.metrics !== 'object' || obj.metrics === null) {
+      return false;
+    }
+    const metrics = obj.metrics as Record<string, unknown>;
+    if (metrics.extractionTimeMs !== undefined && typeof metrics.extractionTimeMs !== 'number') {
+      return false;
+    }
+  }
+
+  return true;
+}

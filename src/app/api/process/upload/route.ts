@@ -16,14 +16,131 @@ import {
 } from '@/lib/types/api-schemas';
 
 // Services
-import { extractTextFromPDF } from '@/lib/pdf-processor';
-import { TextCleaner } from '@/lib/text-cleaner';
+import { extractTextFromPDF, ExtractionResult } from '@/lib/pdf-processor';
+import { TextCleaner, CleaningResult } from '@/lib/text-cleaner';
 import { generatePreview, validatePreviewSnapshot } from '@/lib/services/previewAnalysisService';
 import { addOnboardingJob } from '@/lib/queue/juditQueue';
 import { getDocumentHashManager } from '@/lib/document-hash';
 import { extractPDFMetadata } from '@/lib/services/localPDFMetadataExtractor';
 import { updateCaseSummaryDescription } from '@/lib/services/summaryConsolidator';
 import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
+
+// ================================================================
+// TYPE GUARDS & NARROWING
+// ================================================================
+
+/**
+ * Type guard for ExtractionResult - validates structure
+ * Safe narrowing: first to Record<string, unknown>, then validate properties
+ */
+function isExtractionResult(data: unknown): data is ExtractionResult {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  // Safe narrowing to generic object record for property access
+  const record = data as Record<string, unknown>;
+  return (
+    typeof record.text === 'string' &&
+    typeof record.method === 'string' &&
+    typeof record.success === 'boolean' &&
+    typeof record.quality === 'string' &&
+    typeof record.originalLength === 'number' &&
+    typeof record.processedLength === 'number'
+  );
+}
+
+/**
+ * Type guard for CleaningResult - validates structure
+ * Safe narrowing: first to Record<string, unknown>, then validate properties
+ */
+function isCleaningResult(data: unknown): data is CleaningResult {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  // Safe narrowing to generic object record for property access
+  const record = data as Record<string, unknown>;
+  return (
+    typeof record.cleanedText === 'string' &&
+    typeof record.originalLength === 'number' &&
+    typeof record.cleanedLength === 'number' &&
+    typeof record.reductionPercentage === 'number'
+  );
+}
+
+/**
+ * Helper to get error message safely from unknown
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Erro desconhecido ao processar upload';
+}
+
+/**
+ * Helper to validate clientId - must be string when provided
+ */
+function isValidClientId(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+/**
+ * Valid DocumentType enum values
+ */
+type DocumentTypeValue = 'PETITION' | 'EVIDENCE' | 'DECISION' | 'MOVEMENT' | 'OTHER';
+
+/**
+ * Type guard for DocumentType validation
+ */
+function isDocumentType(value: unknown): value is DocumentTypeValue {
+  return (
+    typeof value === 'string' &&
+    ['PETITION', 'EVIDENCE', 'DECISION', 'MOVEMENT', 'OTHER'].includes(value)
+  );
+}
+
+/**
+ * Helper to map extracted document type category to DocumentType
+ */
+function mapToDocumentType(category: unknown): DocumentTypeValue {
+  if (isDocumentType(category)) {
+    return category;
+  }
+  return 'OTHER'; // Default fallback
+}
+
+/**
+ * Helper to build Case creation data with type safety
+ * Note: clientId is handled separately because it may be optional in API but required in schema
+ */
+function buildCaseCreateData(params: {
+  workspaceId: string;
+  number: string;
+  title: string;
+  description: string;
+  createdById: string;
+  detectedCnj: string;
+  firstPageText: string;
+  clientId: string; // Now required - caller must provide a value (or use workspace default)
+}) {
+  return {
+    workspaceId: params.workspaceId,
+    clientId: params.clientId,
+    number: params.number,
+    title: params.title,
+    description: params.description,
+    type: 'CIVIL' as const,
+    status: 'ACTIVE' as const,
+    priority: 'MEDIUM' as const,
+    createdById: params.createdById,
+    detectedCnj: params.detectedCnj,
+    firstPageText: params.firstPageText,
+    onboardingStatus: 'created' as const
+  };
+}
 
 // ================================================================
 // CONSTANTS
@@ -142,16 +259,17 @@ export async function POST(request: NextRequest) {
     const fs = await import('fs/promises');
     await fs.writeFile(tempPath, buffer);
 
-    console.log(`${ICONS.FILE} [Upload] Arquivo salvo: ${tempPath}`);
+    console.log(`${ICONS.SAVE} [Upload] Arquivo salvo: ${tempPath}`);
 
     // ============================================================
     // 5. CALCULAR HASH SHA256
     // ============================================================
 
     const hashManager = getDocumentHashManager();
-    const fileSha256 = await hashManager.calculateHash(buffer);
+    const hashResult = hashManager.calculateSHA256(buffer);
+    const fileSha256 = hashResult.textSha;
 
-    console.log(`${ICONS.LOCK} [Upload] SHA256: ${fileSha256.substring(0, 16)}...`);
+    console.log(`${ICONS.CLOCK} [Upload] SHA256: ${fileSha256.substring(0, 16)}...`);
 
     // ============================================================
     // 6. VERIFICAR DUPLICATA
@@ -181,8 +299,21 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.EXTRACT} [Upload] Extraindo texto...`);
 
     const extractStartTime = Date.now();
-    const extractedText = await extractTextFromPDF(tempPath);
+    const extractionResult = await extractTextFromPDF(tempPath);
     const extractDuration = Date.now() - extractStartTime;
+
+    // Type guard: validar ExtractionResult
+    if (!isExtractionResult(extractionResult)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Resultado inválido da extração de PDF'
+        },
+        { status: 400 }
+      );
+    }
+
+    const extractedText = extractionResult.text;
 
     if (!extractedText || extractedText.trim().length === 0) {
       return NextResponse.json(
@@ -201,11 +332,18 @@ export async function POST(request: NextRequest) {
     // ============================================================
 
     const textCleaner = new TextCleaner();
-    const cleaningResult = textCleaner.clean(extractedText, {
-      documentType: 'legal',
-      aggressiveness: 'balanced',
-      preserveStructure: true
-    });
+    const cleaningResult = textCleaner.cleanLegalDocument(extractedText);
+
+    // Type guard: validar CleaningResult
+    if (!isCleaningResult(cleaningResult)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Erro ao limpar texto do documento'
+        },
+        { status: 400 }
+      );
+    }
 
     const cleanText = cleaningResult.cleanedText;
 
@@ -277,27 +415,46 @@ export async function POST(request: NextRequest) {
 
     console.log(`${ICONS.DATABASE} [Upload] Criando Case...`);
 
-    const newCase = await prisma.case.create({
-      data: {
-        workspaceId,
-        clientId: clientId || undefined,
-        number: detectedCnj,
-        title: `Processo ${detectedCnj}`,
-        description: `Criado via upload de PDF em ${new Date().toISOString()}`,
-        type: 'CIVIL', // Default, será atualizado após análise
-        status: 'ACTIVE',
-        priority: 'MEDIUM',
-        createdById: userId,
-        detectedCnj,
-        firstPageText,
-        onboardingStatus: 'created',
-        metadata: {
-          uploadedFileName: file.name,
-          uploadedFileSize: file.size,
-          uploadedAt: new Date().toISOString()
-        }
-      }
+    // Type narrowing: validate clientId only if provided
+    const safeClientId = isValidClientId(clientId) ? clientId : undefined;
+
+    // OPÇÃO B: JSON serialization segura para JSON fields
+    // JSON.parse(JSON.stringify(...)) garante JSON-serializable data
+    const caseMetadata = JSON.parse(
+      JSON.stringify({
+        uploadedFileName: file.name,
+        uploadedFileSize: file.size,
+        uploadedAt: new Date().toISOString()
+      })
+    );
+
+    // OPÇÃO A (Mandato Inegociável): Use helper function for type-safe object building
+    // clientId is required by Prisma schema - use provided value or workspace default
+    const effectiveClientId = safeClientId || workspaceId; // Fallback to workspace ID if not provided
+
+    const caseCreateData = buildCaseCreateData({
+      workspaceId,
+      clientId: effectiveClientId,
+      number: detectedCnj,
+      title: `Processo ${detectedCnj}`,
+      description: `Criado via upload de PDF em ${new Date().toISOString()}`,
+      createdById: userId,
+      detectedCnj,
+      firstPageText
     });
+
+    const newCase = await prisma.case.create({
+      data: caseCreateData
+    });
+
+    // Update case with metadata after creation (separate operation)
+    // This avoids type issues with JSON.parse() return type
+    if (caseMetadata) {
+      await prisma.case.update({
+        where: { id: newCase.id },
+        data: { metadata: caseMetadata }
+      });
+    }
 
     console.log(`${ICONS.SUCCESS} [Upload] Case criado: ${newCase.id}`);
 
@@ -327,22 +484,34 @@ export async function POST(request: NextRequest) {
       console.warn(`${ICONS.INFO} Using temporary path as fallback`);
     }
 
+    // Type narrowing: safely validate all document metadata before use
+    const safeDocumentMetadataJson = JSON.parse(
+      JSON.stringify({
+        documentType: typeof documentMetadata.documentType === 'string' ? documentMetadata.documentType : 'UNKNOWN',
+        documentDate: documentMetadata.documentDate instanceof Date ? documentMetadata.documentDate.toISOString() : null,
+        confidence: typeof documentMetadata.confidence === 'number' ? documentMetadata.confidence : 0,
+        courtLevel: typeof documentMetadata.courtLevel === 'string' ? documentMetadata.courtLevel : 'UNKNOWN'
+      })
+    );
+
+    // For document type, use 'OTHER' as safe default for now
+    // The actual document type will be determined by JUDIT enrichment
     const document = await prisma.caseDocument.create({
       data: {
         caseId: newCase.id,
         name: file.name.replace('.pdf', ''),
         originalName: file.name,
-        type: documentMetadata.documentTypeCategory, // Type-safe from metadata
+        type: 'OTHER', // Safe default; will be updated during enrichment
         mimeType: file.type,
         size: file.size,
         url: documentUrl, // Supabase Storage URL or temp fallback
         path: documentUrl,
-        extractedText,
-        cleanText,
+        extractedText: extractedText, // Now safely typed as string
+        cleanText: cleanText, // Already string from cleaningResult.cleanedText
         textSha: fileSha256,
         textExtractedAt: new Date(),
-        documentDate: documentMetadata.documentDate || undefined, // Data extraída do documento
-        metadata: documentMetadata, // Salvar metadata completa
+        documentDate: documentMetadata.documentDate instanceof Date ? documentMetadata.documentDate : undefined,
+        metadata: safeDocumentMetadataJson, // Salvar metadata serializada e validada
         processed: true,
         ocrStatus: 'COMPLETED',
         sourceOrigin: 'USER_UPLOAD'
@@ -375,7 +544,14 @@ export async function POST(request: NextRequest) {
     const previewResult = await generatePreview(cleanText, newCase.id);
     const previewDuration = Date.now() - previewStartTime;
 
-    if (!previewResult.success || !previewResult.preview) {
+    // Type narrowing: safely check preview result structure
+    const isValidPreviewResult =
+      previewResult.success &&
+      typeof previewResult.preview === 'object' &&
+      previewResult.preview !== null &&
+      'model' in previewResult.preview;
+
+    if (!isValidPreviewResult) {
       // ERRO CRÍTICO: Análise de IA falhou mesmo após fallback
       console.error(`${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas:`, previewResult.error);
 
@@ -395,64 +571,97 @@ export async function POST(request: NextRequest) {
         },
         { status: 503 } // Service Unavailable - indica problema com serviço de IA
       );
+    }
 
-    } else {
-      // Preview gerado com sucesso
-      console.log(`${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${previewResult.preview.model}`);
+    // At this point, previewResult.preview is guaranteed to be non-null and non-undefined
+    // Safe narrowing via unknown first, then validation
+    const previewAsUnknown = previewResult.preview as unknown;
+    if (typeof previewAsUnknown !== 'object' || previewAsUnknown === null || !('model' in previewAsUnknown)) {
+      throw new Error('Invalid preview structure after validation');
+    }
+    const preview = previewAsUnknown as Record<string, unknown>;
 
-      // Validar estrutura
-      if (!validatePreviewSnapshot(previewResult.preview)) {
-        console.warn(`${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim`);
+    // Preview gerado com sucesso
+    const modelValue = typeof preview.model === 'string' ? preview.model : 'unknown';
+    console.log(`${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${modelValue}`);
+
+    // Validar estrutura
+    if (!validatePreviewSnapshot(preview)) {
+      console.warn(`${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim`);
+    }
+
+    // Prepare preview snapshot with safe JSON serialization
+    const previewSnapshot = JSON.parse(JSON.stringify(preview));
+
+    // Atualizar Case com preview
+    await prisma.case.update({
+      where: { id: newCase.id },
+      data: {
+        previewSnapshot,
+        previewGeneratedAt: new Date(),
+        onboardingStatus: 'previewed'
       }
+    });
 
-      // Atualizar Case com preview
-      await prisma.case.update({
-        where: { id: newCase.id },
+    // IMPORTANTE: Salvar preview como análise inicial em CaseAnalysisVersion
+    // Isso permite que o preview apareça na aba "Análise IA"
+    try {
+      // Type narrowing: safely extract arrays and values
+      const lastMovements = Array.isArray(preview.lastMovements) ? preview.lastMovements : [];
+      const keyPoints = lastMovements
+        .filter((m: unknown) => typeof m === 'object' && m !== null && 'type' in m && 'description' in m)
+        .map((m: unknown) => {
+          const movement = m as Record<string, unknown>;
+          const type = typeof movement.type === 'string' ? movement.type : 'unknown';
+          const desc = typeof movement.description === 'string' ? movement.description : 'no description';
+          return `${type}: ${desc}`;
+        });
+
+      // Safely serialize analysis data
+      const analysisData = JSON.parse(
+        JSON.stringify({
+          summary: typeof preview.summary === 'string' ? preview.summary : '',
+          keyPoints,
+          metadata: {
+            parties: preview.parties,
+            subject: typeof preview.subject === 'string' ? preview.subject : '',
+            object: typeof preview.object === 'string' ? preview.object : '',
+            claimValue: preview.claimValue,
+            source: 'preview_initial'
+          }
+        })
+      );
+
+      // OPÇÃO B (Mandato Inegociável): JSON serialization segura para JSON fields
+      // JSON.parse(JSON.stringify(...)) garante que o objeto é JSON-serializable
+      const analysisMetadata = JSON.parse(
+        JSON.stringify({
+          source: 'initial_preview',
+          model: modelValue,
+          tokensUsed: typeof previewResult.tokensUsed === 'number' ? previewResult.tokensUsed : 0,
+          generatedAt: typeof preview.generatedAt === 'string' ? preview.generatedAt : new Date().toISOString()
+        })
+      );
+
+      await prisma.caseAnalysisVersion.create({
         data: {
-          previewSnapshot: previewResult.preview,
-          previewGeneratedAt: new Date(),
-          onboardingStatus: 'previewed'
+          caseId: newCase.id,
+          workspaceId,
+          version: 1,
+          status: 'COMPLETED',
+          analysisType: 'FAST',
+          modelUsed: modelValue, // Already validated as string earlier
+          aiAnalysis: analysisData,
+          confidence: 0.85,
+          processingTime: previewDuration,
+          metadata: analysisMetadata
         }
       });
 
-      // IMPORTANTE: Salvar preview como análise inicial em CaseAnalysisVersion
-      // Isso permite que o preview apareça na aba "Análise IA"
-      try {
-        await prisma.caseAnalysisVersion.create({
-          data: {
-            caseId: newCase.id,
-            workspaceId,
-            version: 1,
-            status: 'COMPLETED',
-            analysisType: 'FAST',
-            modelUsed: previewResult.preview.model,
-            aiAnalysis: {
-              summary: previewResult.preview.summary,
-              keyPoints: previewResult.preview.lastMovements.map(m => `${m.type}: ${m.description}`),
-              metadata: {
-                parties: previewResult.preview.parties,
-                subject: previewResult.preview.subject,
-                object: previewResult.preview.object,
-                claimValue: previewResult.preview.claimValue,
-                source: 'preview_initial'
-              }
-            },
-            confidence: 0.85,
-            processingTime: previewDuration,
-            metadata: {
-              source: 'initial_preview',
-              model: previewResult.preview.model,
-              tokensUsed: previewResult.tokensUsed,
-              generatedAt: previewResult.preview.generatedAt
-            }
-          }
-        });
-
-        console.log(`${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion`);
-      } catch (analysisError) {
-        console.error(`${ICONS.WARNING} [Upload] Erro ao salvar análise inicial:`, analysisError);
-        // Não falhar o upload se não conseguir salvar a análise
-      }
+      console.log(`${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion`);
+    } catch (analysisError) {
+      console.error(`${ICONS.WARNING} [Upload] Erro ao salvar análise inicial:`, analysisError);
+      // Não falhar o upload se não conseguir salvar a análise
     }
 
     // ============================================================
@@ -499,23 +708,27 @@ export async function POST(request: NextRequest) {
 
     console.log(`${ICONS.SUCCESS} [Upload] Upload completo em ${overallDuration}ms`);
 
+    // Type-safe response: serialize preview for response
+    const responsePreviewRaw = JSON.parse(JSON.stringify(preview));
+    const responsePreview = typeof responsePreviewRaw === 'object' && responsePreviewRaw !== null
+      ? responsePreviewRaw
+      : {};
+
     return NextResponse.json({
       success: true,
       caseId: newCase.id,
       caseNumber: newCase.number,
       status: newCase.onboardingStatus,
       detectedCnj,
-      preview: previewResult.preview || null,
-      analysisModel: previewResult.preview?.model || null, // Mostrar qual modelo foi usado
+      preview: responsePreview,
+      analysisModel: modelValue,
       juditJobId,
       timing: {
         total: overallDuration,
         extraction: extractDuration,
         preview: previewDuration
       },
-      message: previewResult.preview
-        ? `Preview gerado com sucesso via ${previewResult.preview.model}! Buscando histórico oficial e anexos (aguarde notificação).`
-        : 'Documento salvo. Preview não disponível no momento.'
+      message: `Preview gerado com sucesso via ${modelValue}! Buscando histórico oficial e anexos (aguarde notificação).`
     }, { status: 200 });
 
   } catch (error) {

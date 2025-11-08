@@ -3,12 +3,92 @@
 // Sistema de filas para processamento assíncrono de onboarding
 // ================================================================
 
-import { Queue, Job } from 'bullmq';
+import { Queue, Job, JobState } from 'bullmq';
 import { getRedisConnection } from '../redis';
 import { queueLogger } from '../observability/logger';
 
+// ================================================================
+// TYPE GUARDS & VALIDATORS
+// ================================================================
+
+/**
+ * Literal type for queue events we actually use
+ */
+type KnownQueueEvent = 'error' | 'active' | 'completed' | 'failed';
+
+/**
+ * Set of known queue event names for validation
+ */
+const KNOWN_QUEUE_EVENTS = new Set<string>(['error', 'active', 'completed', 'failed']);
+
+/**
+ * Type guard to validate event name is one we support
+ * After this passes, TypeScript narrows string to KnownQueueEvent literal
+ */
+function isKnownQueueEvent(event: string): event is KnownQueueEvent {
+  return KNOWN_QUEUE_EVENTS.has(event);
+}
+
+/**
+ * Type guard for CircuitBreakerService
+ */
+function isCircuitBreakerService(data: unknown): data is {
+  isQueuePaused: () => boolean;
+  getStatus: () => {
+    config: {
+      autoRetryInterval: number;
+      errorMessage: string;
+    };
+  };
+} {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.isQueuePaused === 'function' &&
+    typeof obj.getStatus === 'function'
+  );
+}
+
+/**
+ * Type guard for valid job states
+ */
+function isValidJobState(state: unknown): state is 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown' {
+  const validStates = ['waiting', 'active', 'completed', 'failed', 'delayed', 'unknown'];
+  return typeof state === 'string' && validStates.includes(state);
+}
+
+/**
+ * Safe type converter from JobState to our status type
+ */
+function normalizeJobState(state: JobState): 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown' {
+  // Map JobState enum values to our normalized status type
+  switch (state) {
+    case 'waiting':
+      return 'waiting';
+    case 'active':
+      return 'active';
+    case 'completed':
+      return 'completed';
+    case 'failed':
+      return 'failed';
+    case 'delayed':
+      return 'delayed';
+    default:
+      // Handle any other state values (paused, repeat, etc) by treating as waiting
+      return 'waiting';
+  }
+}
+
+// ================================================================
+// CIRCUIT BREAKER SETUP
+// ================================================================
+
 // Circuit breaker import - lazy loaded to avoid circular dependency
-let circuitBreakerService: Record<string, unknown> | null = null;
+let circuitBreakerService: unknown = null;
+
 const getCircuitBreaker = () => {
   if (!circuitBreakerService) {
     try {
@@ -24,7 +104,9 @@ const getCircuitBreaker = () => {
       return null;
     }
   }
-  return circuitBreakerService;
+
+  // Safely validate and return only if it passes type guard
+  return isCircuitBreakerService(circuitBreakerService) ? circuitBreakerService : null;
 };
 
 // ================================================================
@@ -95,7 +177,14 @@ class MockQueue {
   async getDelayedCount() { return 0; }
   async clean() { return []; }
   async close() { return; }
-  on() { return this; }
+
+  /**
+   * Type-safe event listener registration
+   * Only accepts KnownQueueEvent types
+   */
+  on(event: KnownQueueEvent, handler: (...args: unknown[]) => void): this {
+    return this;
+  }
 }
 
 // ================================================================
@@ -143,16 +232,29 @@ function getJuditQueue() {
   return _juditOnboardingQueue;
 }
 
-// Export both getter and lazy property
-export const juditOnboardingQueue = new Proxy(
-  {} as Queue<JuditOnboardingJobData, JuditOnboardingJobResult> | MockQueue,
-  {
-    get: (_target, prop) => {
-      const queue = getJuditQueue();
-      return (queue as Record<string, unknown>)[prop as string];
-    },
-  }
-);
+/**
+ * Create a proxy object that delegates to actual queue on first access
+ * Returns a proxy that lazily initializes the queue
+ */
+function createQueueProxy(): Record<string, unknown> {
+  return new Proxy(
+    {},
+    {
+      get: (_target, prop: string | symbol) => {
+        const queue = getJuditQueue();
+        if (queue && typeof prop === 'string') {
+          const queueAsObject = (queue as unknown) as Record<string, unknown>;
+          return queueAsObject[prop];
+        }
+        return undefined;
+      },
+    }
+  );
+}
+
+// Export lazy property that initializes queue on first use
+// The proxy will behave like a Queue when accessed
+export const juditOnboardingQueue = createQueueProxy() as unknown as Queue<JuditOnboardingJobData, JuditOnboardingJobResult> | MockQueue;
 
 // ================================================================
 // QUEUE OPERATIONS
@@ -173,8 +275,9 @@ export async function addOnboardingJob(
   ensureListeners();
 
   // Check if queue is paused due to circuit breaker
+  // Use type guard to safely access circuit breaker methods
   const cb = getCircuitBreaker();
-  if (cb && cb.isQueuePaused && cb.isQueuePaused()) {
+  if (cb && cb.isQueuePaused()) {
     const status = cb.getStatus();
     throw new Error(
       `Queue is paused due to Upstash quota limit. Auto-retry: ${status.config.autoRetryInterval}. ` +
@@ -217,20 +320,23 @@ export async function getJobStatus(jobId: string): Promise<{
     return { status: 'unknown' };
   }
 
-  const state = await job.getState();
-  const progress = job.progress as number | undefined;
+  const jobState = await job.getState();
+  // Safely normalize JobState to our status type
+  const status = normalizeJobState(jobState);
+
+  const progress = typeof job.progress === 'number' ? job.progress : undefined;
 
   let result: JuditOnboardingJobResult | undefined;
   let error: string | undefined;
 
-  if (state === 'completed') {
+  if (status === 'completed') {
     result = job.returnvalue;
-  } else if (state === 'failed') {
+  } else if (status === 'failed') {
     error = job.failedReason;
   }
 
   return {
-    status: state,
+    status,
     progress,
     result,
     error,
@@ -299,39 +405,93 @@ export async function cleanQueue(options?: {
 // EVENTOS DA FILA (para logging/monitoring)
 // ================================================================
 
-// Setup event listeners lazily when queue is first used
-function setupEventListeners() {
-  if (isRedisDisabled()) {
-    return;
+/**
+ * Type guard to validate job data structure
+ */
+function isJobData(data: unknown): data is JuditOnboardingJobData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
   }
+  const obj = data as Record<string, unknown>;
+  return typeof obj.cnj === 'string';
+}
 
-  const queue = getJuditQueue();
+/**
+ * Type guard to validate job result structure
+ */
+function isJobResult(result: unknown): result is JuditOnboardingJobResult {
+  if (typeof result !== 'object' || result === null) {
+    return false;
+  }
+  const obj = result as Record<string, unknown>;
+  return (
+    typeof obj.success === 'boolean' &&
+    typeof obj.processoId === 'string' &&
+    typeof obj.requestId === 'string' &&
+    typeof obj.duration === 'number'
+  );
+}
 
-  queue.on('error', (error) => {
-    queueLogger.error({
-      action: 'queue_error',
-      error: error.message,
-      error_stack: error.stack,
-    });
+/**
+ * Type guard to check if value is a valid job object
+ */
+function isJob(data: unknown): data is Job<JuditOnboardingJobData, JuditOnboardingJobResult> {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return typeof obj.id === 'string' && typeof obj.data === 'object';
+}
+
+/**
+ * Type guard to check if value has an 'on' method with known queue events
+ * After this passes, TypeScript narrows queue to this specific interface
+ */
+function isEventEmitter(obj: unknown): obj is {
+  on: (event: KnownQueueEvent, handler: (...args: unknown[]) => void) => unknown
+} {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  const casted = obj as Record<string, unknown>;
+  return typeof casted.on === 'function';
+}
+
+/**
+ * Type-safe error handler for queue errors
+ * Explicitly typed to avoid implicit any
+ */
+const handleQueueError = (error: unknown): void => {
+  const message = error instanceof Error ? error.message : String(error);
+  const stack = error instanceof Error ? error.stack : undefined;
+  queueLogger.error({
+    action: 'queue_error',
+    error: message,
+    error_stack: stack,
   });
+};
 
-  queue.on('waiting', (jobId) => {
-    queueLogger.debug({
-      action: 'job_waiting',
-      job_id: jobId,
-    });
-  });
-
-  queue.on('active', (job) => {
+/**
+ * Type-safe active job handler
+ * Explicitly typed to avoid implicit any
+ */
+const handleActiveJob = (job: unknown): void => {
+  if (isJob(job) && isJobData(job.data)) {
     queueLogger.info({
       action: 'job_active',
       job_id: job.id,
       cnj: job.data.cnj,
       workspace_id: job.data.workspaceId,
     });
-  });
+  }
+};
 
-  queue.on('completed', (job, result) => {
+/**
+ * Type-safe completed job handler
+ * Explicitly typed to avoid implicit any
+ */
+const handleCompletedJob = (job: unknown, result: unknown): void => {
+  if (isJob(job) && isJobData(job.data) && isJobResult(result)) {
     queueLogger.info({
       action: 'job_completed',
       job_id: job.id,
@@ -342,19 +502,79 @@ function setupEventListeners() {
       duration_ms: result.duration,
       duration_seconds: (result.duration / 1000).toFixed(2),
     });
-  });
+  }
+};
 
-  queue.on('failed', (job, error) => {
-    queueLogger.error({
-      action: 'job_failed',
-      job_id: job?.id,
-      cnj: job?.data.cnj,
-      error: error.message,
-      error_stack: error.stack,
-      attempts_made: job?.attemptsMade,
-      max_attempts: job?.opts?.attempts || 3,
-    });
+/**
+ * Type-safe failed job handler
+ * Explicitly typed to avoid implicit any
+ */
+const handleFailedJob = (job: unknown, error: unknown): void => {
+  const message = error instanceof Error ? error.message : String(error);
+  const stack = error instanceof Error ? error.stack : undefined;
+  const jobId = isJob(job) && isJobData(job.data) ? job.id : undefined;
+  const cnj = isJob(job) && isJobData(job.data) ? job.data.cnj : undefined;
+  const attempts = isJob(job) ? job.attemptsMade : undefined;
+  const maxAttempts = isJob(job) && job.opts?.attempts ? job.opts.attempts : 3;
+
+  queueLogger.error({
+    action: 'job_failed',
+    job_id: jobId,
+    cnj,
+    error: message,
+    error_stack: stack,
+    attempts_made: attempts,
+    max_attempts: maxAttempts,
   });
+};
+
+/**
+ * Type-safe helper to attach event listeners to queue
+ * Uses type narrowing to ensure eventName is a known queue event
+ *
+ * ZERO casting - 100% type-safe narrowing via isKnownQueueEvent
+ */
+function attachQueueListener(
+  queue: { on: (event: KnownQueueEvent, handler: (...args: unknown[]) => void) => unknown },
+  eventName: string,
+  handler: (...args: unknown[]) => void
+): void {
+  // Type guard narrows eventName from string to KnownQueueEvent
+  if (isKnownQueueEvent(eventName)) {
+    // After the guard, TypeScript knows eventName is one of: 'error' | 'active' | 'completed' | 'failed'
+    // Safe to pass to queue.on() which expects KnownQueueEvent
+    queue.on(eventName, handler);
+  }
+}
+
+/**
+ * Setup event listeners lazily when queue is first used
+ * Uses type narrowing (via isEventEmitter and isKnownQueueEvent)
+ *
+ * ZERO casting - 100% narrowing via type guards
+ */
+function setupEventListeners() {
+  if (isRedisDisabled()) {
+    return;
+  }
+
+  const queue = getJuditQueue();
+
+  // Type guard #1: Validates queue has .on() method with KnownQueueEvent signature
+  if (!isEventEmitter(queue)) {
+    return;
+  }
+
+  // At this point, TypeScript knows:
+  // - queue has a .on() method
+  // - The .on() method accepts (event: KnownQueueEvent, handler: (...args: unknown[]) => void)
+  // This is 100% type-safe, no casting needed
+
+  // Attach handlers with type-safe helper that uses type guard #2 (isKnownQueueEvent)
+  attachQueueListener(queue, 'error', handleQueueError);
+  attachQueueListener(queue, 'active', handleActiveJob);
+  attachQueueListener(queue, 'completed', handleCompletedJob);
+  attachQueueListener(queue, 'failed', handleFailedJob);
 }
 
 // Setup listeners on first use

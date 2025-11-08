@@ -63,27 +63,74 @@ export interface SummaryData {
 // ================================
 
 /**
+ * Type guard to safely validate AI model response structure
+ * Returns true if data is an object with string properties
+ */
+function isAIResult(data: unknown): data is Record<string, unknown> {
+  return typeof data === 'object' && data !== null;
+}
+
+/**
  * Extracts analysis text from AI model response
  * Safely validates the object structure without casting
  */
 function extractAnalysisTextFromResult(result: unknown): string {
-  if (typeof result !== 'object' || result === null) {
+  if (!isAIResult(result)) {
     return '';
   }
 
-  const resultObj = result as Record<string, unknown>;
-
-  // Check for 'analysis' property first
-  if (typeof resultObj.analysis === 'string') {
-    return resultObj.analysis;
+  // Check for 'analysis' property first (after type guard)
+  if (typeof result.analysis === 'string') {
+    return result.analysis;
   }
 
   // Fall back to 'content' property
-  if (typeof resultObj.content === 'string') {
-    return resultObj.content;
+  if (typeof result.content === 'string') {
+    return result.content;
   }
 
   return '';
+}
+
+/**
+ * Type guard to validate SummaryData structure
+ */
+function isSummaryData(data: unknown): data is SummaryData {
+  if (!isAIResult(data)) {
+    return false;
+  }
+
+  return (
+    typeof data.total_processes === 'number' &&
+    typeof data.active_processes === 'number' &&
+    typeof data.new_movements === 'number' &&
+    typeof data.critical_alerts === 'number' &&
+    typeof data.pending_actions === 'number'
+  );
+}
+
+/**
+ * Helper to safely get string property value
+ */
+function getStringProperty(obj: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = obj[key];
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Helper to safely get number property value
+ */
+function getNumberProperty(obj: Record<string, unknown>, key: string): number | undefined {
+  const value = obj[key];
+  if (typeof value === 'number') {
+    return value;
+  }
+  return undefined;
 }
 
 // ================================
@@ -339,14 +386,16 @@ export class ReportDataCollector {
         priority = 'MEDIUM';
       }
 
-      // Extrair dados do processData JSON
-      const processDataObj = typeof process.processData === 'object' && process.processData !== null
-        ? (process.processData as Record<string, unknown>)
-        : {};
+      // Extrair dados do processData JSON - safely validate structure
+      const processDataObj: Record<string, unknown> =
+        isAIResult(process.processData)
+          ? process.processData
+          : {};
       const processData = this.parseProcessData(processDataObj);
       const nextDeadline = this.calculateNextDeadline(process.movements);
 
-      return {
+      // Safely construct ProcessReportData without casting
+      const reportData: ProcessReportData = {
         id: process.id,
         number: process.processNumber,
         client_name: process.clientName || 'Cliente não informado',
@@ -362,7 +411,9 @@ export class ReportDataCollector {
         next_deadline: nextDeadline,
         recent_movements: recentMovements.length > 0 ? recentMovements : undefined,
         financial_info: processData.financialInfo
-      } as ProcessReportData;
+      };
+
+      return reportData;
     });
   }
 
@@ -376,28 +427,40 @@ export class ReportDataCollector {
   private parseProcessData(processData: Record<string, unknown>): {
     subject?: string;
     financialInfo?: {
-      valor_principal?: number;
-      multas?: number;
-      total?: number;
-      currency?: string;
+      case_value?: number;
+      costs_incurred?: number;
+      estimated_duration?: string;
     };
   } {
     try {
-      if (!processData || typeof processData !== 'object') {
+      if (!isAIResult(processData)) {
         return {};
       }
 
-      // Tentar extrair assunto
-      const subject = processData.assunto ||
-                     processData.subject ||
-                     processData.titulo ||
-                     processData.descricao;
+      // Tentar extrair assunto usando type-safe helper
+      const subject = getStringProperty(
+        processData,
+        'assunto',
+        'subject',
+        'titulo',
+        'descricao'
+      );
 
       // Tentar extrair informações financeiras
-      const financialInfo = this.extractFinancialInfo(processData);
+      const rawFinancialInfo = this.extractFinancialInfo(processData);
+
+      // Map internal representation to ProcessReportData format
+      let financialInfo: { case_value?: number; costs_incurred?: number; estimated_duration?: string } | undefined;
+      if (rawFinancialInfo) {
+        financialInfo = {
+          case_value: rawFinancialInfo.valor_principal,
+          costs_incurred: rawFinancialInfo.multas,
+          estimated_duration: typeof rawFinancialInfo.currency === 'string' ? rawFinancialInfo.currency : undefined
+        };
+      }
 
       return {
-        subject: subject?.toString().trim(),
+        subject: subject?.trim(),
         financialInfo
       };
     } catch (error) {
@@ -407,11 +470,28 @@ export class ReportDataCollector {
   }
 
   /**
+   * Safely parse numeric value from string or number
+   */
+  private parseNumericValue(value: string | number): number | null {
+    if (typeof value === 'number') {
+      return value > 0 ? value : null;
+    }
+
+    if (typeof value === 'string') {
+      const cleaned = value.replace(/[^\d.,]/g, '').replace(',', '.');
+      const numericValue = parseFloat(cleaned);
+      return !isNaN(numericValue) && numericValue > 0 ? numericValue : null;
+    }
+
+    return null;
+  }
+
+  /**
    * Extrai informações financeiras do processData
    */
-  private extractFinancialInfo(data: Record<string, unknown>): Record<string, unknown> | undefined {
+  private extractFinancialInfo(data: Record<string, unknown>): { valor_principal?: number; multas?: number; total?: number; currency?: string } | undefined {
     try {
-      const financial: Record<string, unknown> = {};
+      const financial: { valor_principal?: number; multas?: number; total?: number; currency?: string } = {};
 
       // Buscar valores em diferentes formatos
       const possibleFields = [
@@ -422,9 +502,10 @@ export class ReportDataCollector {
 
       for (const field of possibleFields) {
         const value = data[field];
-        if (value && (typeof value === 'number' || typeof value === 'string')) {
-          const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.')) : value;
-          if (!isNaN(numericValue) && numericValue > 0) {
+        if (value !== undefined && value !== null && (typeof value === 'number' || typeof value === 'string')) {
+          const numericValue = this.parseNumericValue(value);
+
+          if (numericValue !== null) {
             if (field.includes('principal') || field === 'valor' || field === 'value') {
               financial.valor_principal = numericValue;
             } else if (field.includes('multa') || field.includes('fine') || field.includes('penalties')) {
@@ -437,15 +518,19 @@ export class ReportDataCollector {
       }
 
       // Calcular total se não fornecido
-      if (!financial.total && (financial.valor_principal || financial.multas)) {
-        const principal = typeof financial.valor_principal === 'number' ? financial.valor_principal : 0;
-        const multas = typeof financial.multas === 'number' ? financial.multas : 0;
+      if (
+        financial.total === undefined &&
+        (financial.valor_principal !== undefined || financial.multas !== undefined)
+      ) {
+        const principal = financial.valor_principal ?? 0;
+        const multas = financial.multas ?? 0;
         financial.total = principal + multas;
       }
 
-      // Adicionar moeda padrão
+      // Adicionar moeda padrão se houver dados financeiros
       if (Object.keys(financial).length > 0) {
-        financial.currency = data.currency || data.moeda || 'BRL';
+        const currency = data.currency ?? data.moeda;
+        financial.currency = typeof currency === 'string' ? currency : 'BRL';
       }
 
       return Object.keys(financial).length > 0 ? financial : undefined;
@@ -456,60 +541,89 @@ export class ReportDataCollector {
   }
 
   /**
-   * Calcula próximo prazo baseado nas movimentações
+   * Safely extracts deadline Date from regex match
    */
-  private calculateNextDeadline(movements: Array<Record<string, unknown>>): { date: Date; description: string; days_remaining: number } | undefined {
+  private extractDeadlineFromMatch(match: RegExpMatchArray | null, movementDate: Date): Date | null {
+    if (!match || !match[1]) {
+      return null;
+    }
+
+    try {
+      let deadlineDate: Date | null = null;
+
+      if (match[1].includes('/')) {
+        // Data específica (dd/mm/yyyy)
+        const dateParts = match[1].split('/');
+        if (dateParts.length === 3) {
+          deadlineDate = new Date(dateParts.reverse().join('-'));
+        }
+      } else {
+        // Número de dias
+        const days = parseInt(match[1], 10);
+        if (!isNaN(days) && days > 0) {
+          deadlineDate = new Date(movementDate);
+          deadlineDate.setDate(deadlineDate.getDate() + days);
+        }
+      }
+
+      if (deadlineDate && deadlineDate.getTime() > Date.now()) {
+        return deadlineDate;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Erro ao extrair prazo do padrão:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Calcula próximo prazo baseado nas movimentações
+   * Retorna apenas a Date do prazo mais próximo que é válido (futuro)
+   */
+  private calculateNextDeadline(movements: Array<Record<string, unknown>>): Date | undefined {
     try {
       if (!movements || movements.length === 0) {
         return undefined;
       }
 
-      const now = new Date();
-      const upcomingDeadlines: Array<{ date: Date; description: string; days_remaining: number }> = [];
+      const upcomingDeadlines: Date[] = [];
+      const deadlinePatterns = [
+        /prazo.*?(\d{1,2}).*?dias?/i,
+        /prazo.*?até.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
+        /vencimento.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
+        /manifestar.*?(\d{1,2}).*?dias?/i
+      ];
 
       for (const movement of movements) {
         // Buscar por padrões de prazo na descrição
         const descriptionRaw = movement.description;
         const description = typeof descriptionRaw === 'string' ? descriptionRaw : '';
-        const deadlinePatterns = [
-          /prazo.*?(\d{1,2}).*?dias?/i,
-          /prazo.*?até.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
-          /vencimento.*?(\d{1,2}\/\d{1,2}\/\d{4})/i,
-          /manifestar.*?(\d{1,2}).*?dias?/i
-        ];
+
+        // Validar que movement.date existe e é Date ou pode ser convertido
+        const movementDate = movement.date instanceof Date
+          ? movement.date
+          : typeof movement.date === 'string' || typeof movement.date === 'number'
+            ? new Date(movement.date)
+            : new Date();
 
         for (const pattern of deadlinePatterns) {
           const match = description.match(pattern);
-          if (match) {
-            let deadlineDate: Date | null = null;
+          const deadline = this.extractDeadlineFromMatch(match, movementDate);
 
-            if (match[1].includes('/')) {
-              // Data específica
-              deadlineDate = new Date(match[1].split('/').reverse().join('-'));
-            } else {
-              // Número de dias
-              const days = parseInt(match[1]);
-              const movementDate = movement.date instanceof Date ? movement.date : new Date(String(movement.date || ''));
-              deadlineDate = new Date(movementDate);
-              deadlineDate.setDate(deadlineDate.getDate() + days);
-            }
-
-            if (deadlineDate && deadlineDate > now) {
-              const daysRemaining = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-              upcomingDeadlines.push({
-                date: deadlineDate,
-                description: `Prazo para ${description.substring(0, 50)}...`,
-                days_remaining: daysRemaining
-              });
-            }
+          if (deadline) {
+            upcomingDeadlines.push(deadline);
           }
         }
       }
 
       // Retornar o prazo mais próximo
-      upcomingDeadlines.sort((a, b) => a.date.getTime() - b.date.getTime());
-      return upcomingDeadlines[0];
+      if (upcomingDeadlines.length > 0) {
+        upcomingDeadlines.sort((a, b) => a.getTime() - b.getTime());
+        return upcomingDeadlines[0];
+      }
 
+      return undefined;
     } catch (error) {
       console.error('Erro ao calcular próximo prazo:', error);
       return undefined;
@@ -536,7 +650,11 @@ export class ReportDataCollector {
         total_processes: processes.length
       };
 
-      const workspaceId = typeof summary.workspace_id === 'string' ? summary.workspace_id : '';
+      // Safely extract workspace ID
+      const workspaceId = typeof summary.workspace_id === 'string'
+        ? summary.workspace_id
+        : '';
+
       const result = await this.modelRouter.analyzeEssential(
         `Analise estes dados jurídicos e forneça insights executivos:\n\n${JSON.stringify(data, null, 2)}`,
         workspaceId
@@ -549,11 +667,30 @@ export class ReportDataCollector {
 
     } catch (error) {
       console.warn(`${ICONS.WARNING} Erro ao gerar insights de IA:`, error);
-      return [
-        `Identificados ${summary.critical_alerts} alertas que requerem atenção imediata`,
-        `Total de ${summary.new_movements} movimentações recentes registradas`,
-        `${summary.pending_actions} processos com ações pendentes identificados`
-      ];
+
+      // Safely build fallback insights from summary data
+      const fallbackInsights: string[] = [];
+
+      // Extract values safely with type checking
+      const criticalAlerts = getNumberProperty(summary, 'critical_alerts');
+      const newMovements = getNumberProperty(summary, 'new_movements');
+      const pendingActions = getNumberProperty(summary, 'pending_actions');
+
+      if (typeof criticalAlerts === 'number') {
+        fallbackInsights.push(`Identificados ${criticalAlerts} alertas que requerem atenção imediata`);
+      }
+
+      if (typeof newMovements === 'number') {
+        fallbackInsights.push(`Total de ${newMovements} movimentações recentes registradas`);
+      }
+
+      if (typeof pendingActions === 'number') {
+        fallbackInsights.push(`${pendingActions} processos com ações pendentes identificados`);
+      }
+
+      return fallbackInsights.length > 0
+        ? fallbackInsights
+        : ['Insights não disponíveis no momento'];
     }
   }
 
@@ -597,6 +734,23 @@ export class ReportDataCollector {
   // ================================
 
   /**
+   * Safely convert Map entries to chart data format
+   */
+  private mapCountsToChartData(counts: Map<string, number>): { data: Array<Record<string, unknown>>; labels: string[] } {
+    const data: Array<Record<string, unknown>> = [];
+    const labels: string[] = [];
+
+    // Iterate in order to ensure data and labels align
+    const entries = Array.from(counts.entries());
+    for (const [label, count] of entries) {
+      labels.push(label);
+      data.push({ value: count });
+    }
+
+    return { data, labels };
+  }
+
+  /**
    * Gera gráficos para o relatório
    */
   private async generateCharts(processes: ProcessReportData[], _filters: ReportFilters): Promise<ChartData[]> {
@@ -608,12 +762,15 @@ export class ReportDataCollector {
       statusCount.set(p.status, (statusCount.get(p.status) || 0) + 1);
     });
 
-    charts.push({
-      type: 'pie',
-      title: 'Processos por Status',
-      data: Array.from(statusCount.values()).map(v => ({ value: v })),
-      labels: Array.from(statusCount.keys())
-    });
+    if (statusCount.size > 0) {
+      const { data, labels } = this.mapCountsToChartData(statusCount);
+      charts.push({
+        type: 'pie',
+        title: 'Processos por Status',
+        data,
+        labels
+      });
+    }
 
     // Gráfico de processos por prioridade
     const priorityCount = new Map<string, number>();
@@ -621,12 +778,15 @@ export class ReportDataCollector {
       priorityCount.set(p.priority, (priorityCount.get(p.priority) || 0) + 1);
     });
 
-    charts.push({
-      type: 'bar',
-      title: 'Processos por Prioridade',
-      data: Array.from(priorityCount.values()).map(v => ({ value: v })),
-      labels: Array.from(priorityCount.keys())
-    });
+    if (priorityCount.size > 0) {
+      const { data, labels } = this.mapCountsToChartData(priorityCount);
+      charts.push({
+        type: 'bar',
+        title: 'Processos por Prioridade',
+        data,
+        labels
+      });
+    }
 
     // Gráfico de processos por tribunal
     const courtCount = new Map<string, number>();
@@ -634,39 +794,65 @@ export class ReportDataCollector {
       courtCount.set(p.court, (courtCount.get(p.court) || 0) + 1);
     });
 
-    charts.push({
-      type: 'bar',
-      title: 'Processos por Tribunal',
-      data: Array.from(courtCount.values()).map(v => ({ value: v })),
-      labels: Array.from(courtCount.keys())
-    });
+    if (courtCount.size > 0) {
+      const { data, labels } = this.mapCountsToChartData(courtCount);
+      charts.push({
+        type: 'bar',
+        title: 'Processos por Tribunal',
+        data,
+        labels
+      });
+    }
 
     return charts;
+  }
+
+  /**
+   * Safely extracts financial value from process financial info
+   */
+  private extractFinancialValue(financialInfo: unknown): number | null {
+    if (!isAIResult(financialInfo)) {
+      return null;
+    }
+
+    // Try to use case_value (mapped from valor_principal) or costs_incurred (mapped from multas)
+    const caseValue = getNumberProperty(financialInfo, 'case_value');
+    const costsIncurred = getNumberProperty(financialInfo, 'costs_incurred');
+
+    const value = caseValue ?? costsIncurred ?? null;
+    return typeof value === 'number' && value > 0 ? value : null;
   }
 
   private async generateFinancialCharts(processes: ProcessReportData[]): Promise<ChartData[]> {
     const charts: ChartData[] = [];
 
-    const processesWithFinancial = processes.filter(p => p.financial_info);
+    // Filter processes that have valid financial info
+    const processesWithFinancial = processes.filter(p => {
+      const value = this.extractFinancialValue(p.financial_info);
+      return value !== null;
+    });
 
     if (processesWithFinancial.length > 0) {
       // Valor total por cliente
       const valueByClient = new Map<string, number>();
-      processesWithFinancial.forEach(p => {
-        if (p.financial_info?.case_value) {
-          valueByClient.set(
-            p.client_name,
-            (valueByClient.get(p.client_name) || 0) + p.financial_info.case_value
-          );
-        }
-      });
 
-      charts.push({
-        type: 'bar',
-        title: 'Valor Total por Cliente (R$)',
-        data: Array.from(valueByClient.values()).map(v => ({ value: v })),
-        labels: Array.from(valueByClient.keys())
-      });
+      for (const p of processesWithFinancial) {
+        const value = this.extractFinancialValue(p.financial_info);
+        if (value !== null) {
+          const currentTotal = valueByClient.get(p.client_name) ?? 0;
+          valueByClient.set(p.client_name, currentTotal + value);
+        }
+      }
+
+      if (valueByClient.size > 0) {
+        const { data, labels } = this.mapCountsToChartData(valueByClient);
+        charts.push({
+          type: 'bar',
+          title: 'Valor Total por Cliente (R$)',
+          data,
+          labels
+        });
+      }
     }
 
     return charts;

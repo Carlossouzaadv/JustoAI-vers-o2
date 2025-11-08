@@ -5,6 +5,7 @@
 // Direct integration with Google Gemini API for production use
 
 import { ModelTier, GeminiConfig, GeminiResponse, GeminiError } from './ai-model-types';
+import { getErrorMessage, isGeminiErrorResponse } from './types/type-guards';
 
 /**
  * Real Gemini API Client for production use
@@ -177,7 +178,8 @@ IMPORTANT: Return your response in valid JSON format only. Do not include unknow
       const jsonContent = this.extractJsonFromResponse(response.content);
       return JSON.parse(jsonContent);
     } catch (error) {
-      console.error('Failed to parse JSON response from Gemini:', error);
+      const errorMsg = getErrorMessage(error);
+      console.error('Failed to parse JSON response from Gemini:', errorMsg);
       console.error('Raw response:', response.content);
       throw new Error('Failed to parse JSON response from Gemini API');
     }
@@ -235,15 +237,36 @@ IMPORTANT: Return your response in valid JSON format only. Do not include unknow
   }
 
   /**
-   * Create standardized Gemini error
+   * Create standardized Gemini error with safe type narrowing
    */
   private createGeminiError(statusCode: number, errorData: unknown): GeminiError {
     const retryableCodes = [429, 500, 502, 503, 504];
 
+    let errorMessage = 'Unknown Gemini API error';
+    let details: string | undefined;
+
+    // Use type guard to safely validate error structure
+    if (isGeminiErrorResponse(errorData)) {
+      const obj = errorData as Record<string, unknown>;
+
+      // Extract error message safely
+      if (typeof obj.error === 'string') {
+        errorMessage = obj.error;
+      } else if (typeof obj.error === 'object' && obj.error !== null) {
+        const err = obj.error as Record<string, unknown>;
+        if (typeof err.message === 'string') {
+          errorMessage = err.message;
+        }
+        if (typeof err.details === 'string') {
+          details = err.details;
+        }
+      }
+    }
+
     return {
-      error: errorData.error?.message || errorData.error || 'Unknown Gemini API error',
+      error: errorMessage,
       code: statusCode,
-      details: errorData.error?.details || errorData.details,
+      details,
       retryable: retryableCodes.includes(statusCode)
     };
   }
@@ -334,19 +357,27 @@ export function getGeminiClient(): GeminiClient {
 }
 
 /**
- * Helper function to format Gemini errors for API responses
+ * Helper function to format Gemini errors for API responses with safe type narrowing
  */
 export function formatGeminiError(error: unknown): { message: string; code: number; retryable: boolean } {
-  if (error.code && error.error) {
-    return {
-      message: error.error,
-      code: error.code,
-      retryable: error.retryable || false
-    };
+  // Check if error is a GeminiError instance
+  if (typeof error === 'object' && error !== null) {
+    const obj = error as Record<string, unknown>;
+
+    // Validate GeminiError structure: must have code and error fields
+    if (typeof obj.code === 'number' && typeof obj.error === 'string') {
+      return {
+        message: obj.error,
+        code: obj.code,
+        retryable: obj.retryable === true
+      };
+    }
   }
 
+  // Fallback: extract message safely from any error
+  const messageStr = getErrorMessage(error);
   return {
-    message: error.message || 'Unknown error occurred',
+    message: messageStr,
     code: 500,
     retryable: false
   };

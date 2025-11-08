@@ -6,6 +6,62 @@
 import { ICONS } from './icons';
 
 // ================================
+// TYPE GUARDS PARA PUPPETEER
+// ================================
+
+/**
+ * Valida se um objeto é uma Page do Puppeteer com os métodos necessários.
+ */
+function isPage(obj: unknown): obj is {
+  setRequestInterception: (flag: boolean) => Promise<void>;
+  on: (event: string, handler: (arg: unknown) => void) => void;
+  setJavaScriptEnabled: (enabled: boolean) => Promise<void>;
+  setViewport: (viewport: { width: number; height: number; deviceScaleFactor: number }) => Promise<void>;
+  setDefaultTimeout: (timeout: number) => Promise<void>;
+  setDefaultNavigationTimeout: (timeout: number) => Promise<void>;
+  addStyleTag: (options: { content: string }) => Promise<void>;
+} {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+
+  const page = obj as Record<string, unknown>;
+
+  return (
+    typeof page.setRequestInterception === 'function' &&
+    typeof page.on === 'function' &&
+    typeof page.setJavaScriptEnabled === 'function' &&
+    typeof page.setViewport === 'function' &&
+    typeof page.setDefaultTimeout === 'function' &&
+    typeof page.setDefaultNavigationTimeout === 'function' &&
+    typeof page.addStyleTag === 'function'
+  );
+}
+
+/**
+ * Valida se um objeto é um Request do Puppeteer com os métodos necessários.
+ */
+function isRequest(obj: unknown): obj is {
+  resourceType: () => string;
+  url: () => string;
+  continue: () => Promise<void>;
+  abort: () => Promise<void>;
+} {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+
+  const request = obj as Record<string, unknown>;
+
+  return (
+    typeof request.resourceType === 'function' &&
+    typeof request.url === 'function' &&
+    typeof request.continue === 'function' &&
+    typeof request.abort === 'function'
+  );
+}
+
+// ================================
 // CONFIGURAÇÕES DE OTIMIZAÇÃO
 // ================================
 
@@ -198,11 +254,23 @@ export class PerformanceOptimizer {
   getPageOptimizations() {
     return {
       // Request interception for maximum speed
-      
+
       interceptRequests: (page: unknown) => {
+        // Valida se page é uma Page do Puppeteer
+        if (!isPage(page)) {
+          console.warn('AVISO: page não é uma Page do Puppeteer válida');
+          return;
+        }
+
         page.setRequestInterception(true);
-        
+
         page.on('request', (request: unknown) => {
+          // Valida se request é um Request do Puppeteer
+          if (!isRequest(request)) {
+            console.warn('AVISO: request não é um Request do Puppeteer válido');
+            return;
+          }
+
           const resourceType = request.resourceType();
           const url = request.url();
 
@@ -229,7 +297,12 @@ export class PerformanceOptimizer {
       },
 
       // Page configuration for speed
-      configureForSpeed: async (page: Record<string, unknown>) => {
+      configureForSpeed: async (page: unknown) => {
+        // Valida se page é uma Page do Puppeteer
+        if (!isPage(page)) {
+          throw new Error('ERRO: page não é uma Page do Puppeteer válida');
+        }
+
         // Disable JavaScript (reports are static)
         await page.setJavaScriptEnabled(false);
 

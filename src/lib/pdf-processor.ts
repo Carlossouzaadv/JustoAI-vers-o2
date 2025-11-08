@@ -6,6 +6,7 @@
 
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
+import { getErrorMessage, isPDFData, isRailwayPdfResponse, isPDFExtractionData } from './types/type-guards';
 
 const ICONS = {
   SUCCESS: '✅',
@@ -51,7 +52,7 @@ function getPdfProcessorUrl(): string {
 // ================================================================
 // CLIENTE HTTP PARA RAILWAY
 // ================================================================
-async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
+async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promise<unknown> {
   const startTime = Date.now();
   const baseUrl = getPdfProcessorUrl();
   const url = `${baseUrl}/api/pdf/process`;
@@ -62,9 +63,10 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
       url: url,
     });
 
-    // Criar FormData
+    // Criar FormData - Convert Buffer to Uint8Array for BlobPart compatibility
     const formData = new FormData();
-    const blob = new Blob([buffer], { type: 'application/pdf' });
+    const uint8Array = new Uint8Array(buffer);
+    const blob = new Blob([uint8Array], { type: 'application/pdf' });
     formData.append('file', blob, fileName);
 
     // Fazer requisição com melhor tratamento de timeout
@@ -108,7 +110,9 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
 
       log(`${ICONS.SUCCESS}`, `PDF processado com sucesso`, {
         duration_ms: Date.now() - startTime,
-        text_length: result.data?.cleanedText?.length || 0,
+        text_length: typeof result.data === 'object' && result.data !== null && 'cleanedText' in result.data
+          ? (result.data as Record<string, unknown>).cleanedText?.toString().length || 0
+          : 0,
         file_name: fileName,
       });
 
@@ -119,7 +123,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string) {
     }
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+    const errorMsg = getErrorMessage(error);
 
     console.error(`${ICONS.ERROR} Railway error (${duration}ms): ${errorMsg}`);
 
@@ -269,7 +273,13 @@ export class PDFProcessor {
   private async extractWithPrimary(buffer: Buffer, fileName: string = 'document.pdf'): Promise<string> {
     try {
       const data = await callRailwayPdfProcessor(buffer, fileName);
-      const fullText = data.cleanedText;
+
+      // Use type guard to safely validate the response
+      if (!isPDFExtractionData(data)) {
+        throw new Error('Invalid PDF extraction response from Railway');
+      }
+
+      const fullText = data.cleanedText || data.text || '';
 
       if (!fullText || fullText.trim().length === 0) {
         throw new Error('No text extracted from PDF');
@@ -277,7 +287,7 @@ export class PDFProcessor {
 
       return fullText;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       console.error(`${ICONS.ERROR} Primary extraction failed: ${errorMsg}`);
       return '';
     }
@@ -312,9 +322,10 @@ export class PDFProcessor {
         method: 'tesseract.js',
       });
 
-      // Criar FormData com flag OCR
+      // Criar FormData com flag OCR - Convert Buffer to Uint8Array for BlobPart compatibility
       const formData = new FormData();
-      const blob = new Blob([buffer], { type: 'application/pdf' });
+      const uint8Array = new Uint8Array(buffer);
+      const blob = new Blob([uint8Array], { type: 'application/pdf' });
       formData.append('file', blob, fileName);
       formData.append('forceOCR', 'true'); // Flag para forçar OCR na Railway
 
@@ -340,15 +351,23 @@ export class PDFProcessor {
         }
 
         const result = await response.json();
-        const ocrText = result.data?.cleanedText || '';
 
-        log(`${ICONS.SUCCESS}`, `OCR extraction successful`, {
-          duration_ms: Date.now() - startTime,
-          text_length: ocrText.length,
-          file_name: fileName,
-        });
+        // Use type guard to safely extract text from response
+        if (typeof result.data === 'object' && result.data !== null && isPDFExtractionData(result.data)) {
+          const ocrText = result.data.cleanedText || result.data.text || '';
 
-        return ocrText;
+          log(`${ICONS.SUCCESS}`, `OCR extraction successful`, {
+            duration_ms: Date.now() - startTime,
+            text_length: ocrText.length,
+            file_name: fileName,
+          });
+
+          return ocrText;
+        }
+
+        // Fallback if data validation fails
+        log(`${ICONS.WARNING}`, `OCR response invalid structure`, { file_name: fileName });
+        return '';
       } catch (fetchError) {
         clearTimeout(timeoutId);
 
@@ -358,8 +377,9 @@ export class PDFProcessor {
         if (isTimeoutError) {
           log(`${ICONS.WARNING}`, `OCR timeout (120s exceeded)`, { file_name: fileName });
         } else {
+          const errorMsg = getErrorMessage(fetchError);
           log(`${ICONS.ERROR}`, `OCR fetch error`, {
-            error: fetchError instanceof Error ? fetchError.message : 'Unknown',
+            error: errorMsg,
             file_name: fileName,
           });
         }
@@ -367,7 +387,7 @@ export class PDFProcessor {
         return '';
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = getErrorMessage(error);
       log(`${ICONS.ERROR}`, `OCR extraction error: ${errorMsg}`);
       return '';
     }
@@ -376,7 +396,7 @@ export class PDFProcessor {
   /**
    * Validação robusta de PDF - Adaptado do pdf_validator.py
    */
-  async validatePDF(buffer: Buffer, filename: string, _userPlan: string = 'starter'): Promise<PDFValidationResult> {
+  async validatePDF(buffer: Buffer, filename: string, userPlan: string = 'starter'): Promise<PDFValidationResult> {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -407,9 +427,10 @@ export class PDFProcessor {
       };
 
     } catch (error) {
+      const errorMsg = getErrorMessage(error);
       return {
         isValid: false,
-        errors: [`Erro na validação: ${error instanceof Error ? error.message : 'Erro desconhecido'}`],
+        errors: [`Erro na validação: ${errorMsg}`],
         warnings: [],
         metadata: {
           pages: 0,
@@ -460,10 +481,14 @@ export class PDFProcessor {
   private async extractMetadata(buffer: Buffer): Promise<PDFValidationResult['metadata']> {
     try {
       const sizeMB = Math.round((buffer.length / (1024 * 1024)) * 100) / 100;
-      const hasImages = this.detectImagesInPDF(buffer, {
+      // Create validated PDFData object for image detection
+      const pdfDataObj: { text: string; numpages: number; info: Record<string, unknown>; metadata: Record<string, unknown> } = {
         text: '',
-        numpages: 0
-      });
+        numpages: 0,
+        info: {},
+        metadata: {}
+      };
+      const hasImages = this.detectImagesInPDF(buffer, pdfDataObj);
 
       return {
         pages: 0, // Simplified - exact page count requires Railway processing
@@ -472,7 +497,8 @@ export class PDFProcessor {
         hasImages
       };
     } catch (error) {
-      console.error('❌ Erro ao extrair metadados:', error);
+      const errorMsg = getErrorMessage(error);
+      console.error('❌ Erro ao extrair metadados:', errorMsg);
       return {
         pages: 0,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
@@ -538,7 +564,23 @@ export class PDFProcessor {
 
       // 3. Extrair texto via Railway
       log(`${ICONS.VERCEL} ${ICONS.RAILWAY}`, 'Iniciando extração de texto via Railway');
-      const railwayData = await callRailwayPdfProcessor(fileBuffer, file_name);
+      const railwayDataRaw = await callRailwayPdfProcessor(fileBuffer, file_name);
+
+      // Use type guard to safely validate Railway response
+      if (!isRailwayPdfResponse(railwayDataRaw)) {
+        log(`${ICONS.VERCEL} ${ICONS.ERROR}`, 'Invalid Railway response structure');
+        return {
+          success: false,
+          error: 'Invalid response from PDF processor',
+          extracted_fields: options.extract_fields,
+          custom_fields: options.custom_fields || [],
+          processed_at: new Date().toISOString(),
+          file_name,
+          file_size_mb
+        };
+      }
+
+      const railwayData = railwayDataRaw;
       const texto_original = railwayData.originalText;
 
       log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Texto extraído do Railway', {
@@ -575,12 +617,21 @@ export class PDFProcessor {
       log(`${ICONS.VERCEL} ${ICONS.PDF}`, 'Extraindo informações básicas');
       const info_basica = this.extractBasicInfo(texto_original, options.extract_fields);
 
+      // Ensure info_basica has required structure
+      const validatedInfoBasica = info_basica || {
+        numero_processo: undefined,
+        cpf_encontrado: undefined,
+        cnpj_encontrado: undefined,
+        valores_encontrados: [],
+        datas_encontradas: []
+      };
+
       log(`${ICONS.VERCEL} ${ICONS.SUCCESS}`, 'Informações básicas extraídas', {
-        process_number: info_basica.numero_processo,
-        cpf_found: !!info_basica.cpf_encontrado,
-        cnpj_found: !!info_basica.cnpj_encontrado,
-        values_count: (info_basica.valores_encontrados || []).length,
-        dates_count: (info_basica.datas_encontradas || []).length,
+        process_number: validatedInfoBasica.numero_processo,
+        cpf_found: !!validatedInfoBasica.cpf_encontrado,
+        cnpj_found: !!validatedInfoBasica.cnpj_encontrado,
+        values_count: (validatedInfoBasica.valores_encontrados || []).length,
+        dates_count: (validatedInfoBasica.datas_encontradas || []).length,
       });
 
       // 6. Retornar resultado completo
@@ -597,7 +648,7 @@ export class PDFProcessor {
         texto_original,
         texto_limpo,
         texto_ai_friendly,
-        info_basica,
+        info_basica: validatedInfoBasica,
         extracted_fields: options.extract_fields,
         custom_fields: options.custom_fields || [],
         processed_at: new Date().toISOString(),
@@ -608,7 +659,7 @@ export class PDFProcessor {
 
     } catch (error) {
       const totalTime = Date.now() - processStartTime;
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      const errorMessage = getErrorMessage(error);
       const errorStack = error instanceof Error ? error.stack?.substring(0, 200) : undefined;
 
       log(`${ICONS.VERCEL} ${ICONS.ERROR}`, '=== ERRO AO PROCESSAR PDF ===', {
@@ -675,21 +726,31 @@ export class PDFProcessor {
       if (datas) info.datas_encontradas = [...new Set(datas)].slice(0, 5); // Únicas, primeiras 5
 
     } catch (error) {
-      console.warn('⚠️ Erro ao extrair informações básicas:', error);
+      const errorMsg = getErrorMessage(error);
+      console.warn('⚠️ Erro ao extrair informações básicas:', errorMsg);
     }
 
     return info;
   }
 
   /**
-   * Detecta presença de imagens no PDF
+   * Detecta presença de imagens no PDF com type narrowing seguro
    */
-  private detectImagesInPDF(buffer: Buffer, pdfData: Record<string, unknown>): boolean {
+  private detectImagesInPDF(buffer: Buffer, pdfData: unknown): boolean {
     try {
+      // Validate pdfData structure using type guard
+      if (!isPDFData(pdfData)) {
+        console.warn('Invalid PDF data structure for image detection');
+        return false;
+      }
+
       // Estratégias para detectar imagens:
 
       // 1. Verificar se há muitas páginas com pouco texto
-      const avgTextPerPage = pdfData.text.length / pdfData.numpages;
+      const avgTextPerPage = pdfData.numpages > 0
+        ? pdfData.text.length / pdfData.numpages
+        : pdfData.text.length;
+
       if (avgTextPerPage < 100) { // Menos de 100 chars por página sugere imagens
         return true;
       }
@@ -700,14 +761,18 @@ export class PDFProcessor {
       const hasImageMarkers = imagePatterns.some(pattern => bufferStr.includes(pattern));
 
       // 3. Verificar tamanho do arquivo vs quantidade de texto
-      const textDensity = pdfData.text.length / buffer.length;
+      const textDensity = buffer.length > 0
+        ? pdfData.text.length / buffer.length
+        : 0;
+
       if (textDensity < 0.01) { // Muito pouco texto para o tamanho do arquivo
         return true;
       }
 
       return hasImageMarkers;
     } catch (error) {
-      console.error('Erro ao detectar imagens:', error);
+      const errorMsg = getErrorMessage(error);
+      console.error('Erro ao detectar imagens:', errorMsg);
       return false;
     }
   }
@@ -747,6 +812,33 @@ export class PDFProcessor {
       // Calcular custo baseado no modelo usado
       const costEstimate = this.calculateModelCost(modelUsed, analysisResult.extraction?.text.length || 0);
 
+      // Create extractedData as JSON-compatible object for Prisma
+      // Using JSON serialization to ensure type safety
+      const extractedDataRaw = {
+        text_original: analysisResult.texto_original || '',
+        text_cleaned: analysisResult.texto_limpo || '',
+        text_ai_friendly: analysisResult.texto_ai_friendly || '',
+        info_basica: analysisResult.info_basica || null,
+        extracted_fields: analysisResult.extracted_fields,
+        custom_fields: analysisResult.custom_fields || [],
+        file_name: analysisResult.file_name,
+        file_size_mb: analysisResult.file_size_mb || 0,
+        success: analysisResult.success,
+        processing_method: analysisResult.processingMethod || 'unknown',
+        extraction_quality: analysisResult.extraction?.quality || 'low'
+      };
+
+      // Parse/stringify to ensure JSON compatibility with Prisma
+      const extractedData = JSON.parse(JSON.stringify(extractedDataRaw));
+      const metadataRaw = {
+        file_size_mb: analysisResult.file_size_mb || 0,
+        extracted_fields_count: analysisResult.extracted_fields.length,
+        success: analysisResult.success
+      };
+      const metadata = JSON.parse(JSON.stringify(metadataRaw));
+      // Also ensure aiAnalysis is JSON-compatible
+      const aiAnalysisData = JSON.parse(JSON.stringify(aiAnalysis));
+
       const version = await this.prisma.caseAnalysisVersion.create({
         data: {
           case: {
@@ -757,17 +849,13 @@ export class PDFProcessor {
           },
           version: nextVersion,
           analysisType: 'PDF_UPLOAD',
-          extractedData: analysisResult as Record<string, unknown>,
-          aiAnalysis,
+          extractedData,
+          aiAnalysis: aiAnalysisData,
           modelUsed,
           confidence,
           processingTime,
           costEstimate,
-          metadata: {
-            file_size_mb: analysisResult.file_size_mb,
-            extracted_fields_count: analysisResult.extracted_fields.length,
-            success: analysisResult.success
-          }
+          metadata
         }
       });
 
@@ -904,7 +992,7 @@ export async function extractTextFromPDF(
 
     return result;
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+    const errorMsg = getErrorMessage(error);
     log(`${ICONS.ERROR}`, `Erro na extração de PDF: ${errorMsg}`);
     throw error;
   }

@@ -20,6 +20,30 @@ export interface BullBoardAccessValidation {
 }
 
 /**
+ * Type guard to safely extract userId from unknown request context
+ */
+function isRequestWithUserId(data: unknown): data is { userId: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'userId' in data &&
+    typeof (data as Record<string, unknown>).userId === 'string'
+  );
+}
+
+/**
+ * Type guard to safely extract workspaceId from unknown request context
+ */
+function isRequestWithWorkspaceId(data: unknown): data is { workspaceId: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'workspaceId' in data &&
+    typeof (data as Record<string, unknown>).workspaceId === 'string'
+  );
+}
+
+/**
  * Validate Bull Board access from Express request
  * Allows: Internal admins (@justoai.com.br) OR workspace admins
  *
@@ -35,14 +59,22 @@ export async function validateBullBoardAccess(
 ): Promise<BullBoardAccessValidation> {
   try {
     // Try to extract user ID from request context (set by middleware)
-    const userId = (req as unknown).userId;
-    const workspaceId = (req as unknown).workspaceId;
+    // Using type guards for safe narrowing
+    const reqContext = req as unknown;
 
-    if (!userId) {
+    if (!isRequestWithUserId(reqContext)) {
       return {
         authorized: false,
         reason: 'User ID not available in request'
       };
+    }
+
+    const userId = reqContext.userId;
+
+    // Extract workspaceId if present
+    let workspaceId: string | undefined;
+    if (isRequestWithWorkspaceId(reqContext)) {
+      workspaceId = reqContext.workspaceId;
     }
 
     // Get user from database to check email
@@ -129,16 +161,23 @@ export async function validateBullBoardAccessNextJS(
   req: unknown
 ): Promise<BullBoardAccessValidation> {
   try {
-    // For Next.js routes, extract user from request context
-    const userId = (req as unknown).userId;
-    const workspaceId = (req as unknown).workspaceId;
-
-    if (!userId || !workspaceId) {
+    // For Next.js routes, extract user from request context using type guards
+    if (!isRequestWithUserId(req)) {
       return {
         authorized: false,
         reason: 'User context not available in request'
       };
     }
+
+    if (!isRequestWithWorkspaceId(req)) {
+      return {
+        authorized: false,
+        reason: 'Workspace context not available in request'
+      };
+    }
+
+    const userId = req.userId;
+    const workspaceId = req.workspaceId;
 
     // Check if user is admin
     const isAdmin = await isWorkspaceAdmin(userId, workspaceId);

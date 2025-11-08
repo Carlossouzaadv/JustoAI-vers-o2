@@ -7,7 +7,7 @@ import Queue from 'bull';
 import { prisma } from '@/lib/prisma';
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { ICONS } from '@/lib/icons';
-import { getRedisClient } from '@/lib/redis';
+import { getRedisConnection } from '@/lib/redis';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -57,6 +57,27 @@ interface ProcessMonitoringResult {
   responseTime: number;
 }
 
+interface ExistingTracking {
+  processNumber: string;
+  trackingId: string;
+}
+
+// Type guards para dados desconhecidos
+function isExistingTrackingArray(value: unknown): value is ExistingTracking[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'processNumber' in item &&
+        typeof (item as ExistingTracking).processNumber === 'string' &&
+        'trackingId' in item &&
+        typeof (item as ExistingTracking).trackingId === 'string'
+    )
+  );
+}
+
 // ================================================================
 // CONFIGURAÇÕES
 // ================================================================
@@ -88,8 +109,8 @@ const MONITOR_CONFIG = {
 } as const;
 
 // Criar fila específica para monitoramento usando Redis centralizado
-export const processMonitorQueue = new Queue<MonitorJobData, ProcessMonitoringResult>('process-monitor', {
-  redis: getRedisClient(),
+// Bull will use REDIS_URL environment variable or localhost:6379 by default
+export const processMonitorQueue = new Queue<MonitorJobData>('process-monitor', {
   defaultJobOptions: {
     removeOnComplete: 50,
     removeOnFail: 20,
@@ -105,7 +126,7 @@ export const processMonitorQueue = new Queue<MonitorJobData, ProcessMonitoringRe
 // PROCESSADOR PRINCIPAL
 // ================================================================
 
-processMonitorQueue().process(
+processMonitorQueue.process(
   'daily-monitor',
   MONITOR_CONFIG.CONCURRENT_WORKSPACES,
   async (job: Job<MonitorJobData>) => {
@@ -306,6 +327,26 @@ async function processWorkspace(
 }
 
 // ================================================================
+// HELPER: Construir URL de callback com segurança de tipos
+// ================================================================
+
+function buildCallbackUrl(): string {
+  const baseUrl = process.env.NEXT_PUBLIC_URL;
+
+  // Type guard e narrowing
+  if (typeof baseUrl !== 'string' || baseUrl.length === 0) {
+    // Fallback: usar localhost em desenvolvimento, erro em produção
+    const fallback = process.env.NODE_ENV === 'production'
+      ? 'https://api.justoai.com'
+      : 'http://localhost:3000';
+    console.warn(`${ICONS.WARNING} NEXT_PUBLIC_URL not set, using fallback: ${fallback}`);
+    return `${fallback}/api/webhooks/judit/tracking`;
+  }
+
+  return `${baseUrl}/api/webhooks/judit/tracking`;
+}
+
+// ================================================================
 // PROCESSAMENTO POR TRACKING
 // ================================================================
 
@@ -336,19 +377,28 @@ async function processTrackingProcesses(
     };
 
     try {
-      let trackingId = trackingMap.get(process.processNumber);
+      const existingTrackingId = trackingMap.get(process.processNumber);
 
-      // Criar tracking se não existir
-      if (!trackingId) {
-        const callbackUrl = `${process.env.NEXT_PUBLIC_URL}/api/webhooks/judit/tracking`;
+      // Usar tracking existente ou criar novo
+      if (existingTrackingId) {
+        // Usar tracking já existente (tracking já foi criado anteriormente)
+        // apenas registrar que foi usado
+      } else {
+        // Criar novo tracking
+        const callbackUrl = buildCallbackUrl();
         const tracking = await juditClient.createTracking(process.processNumber, callbackUrl);
-        trackingId = tracking.tracking_id;
 
-        // Salvar tracking no banco
-        await saveProcessTracking(process.id, trackingId);
+        // Type guard: validar que tracking_id é uma string válida
+        if (typeof tracking.tracking_id === 'string' && tracking.tracking_id.length > 0) {
+          const newTrackingId: string = tracking.tracking_id;
 
-        result.cost += MONITOR_CONFIG.COST_PER_TRACKING_MONTH;
-        console.log(`${ICONS.SUCCESS} Created tracking for ${process.processNumber}: ${trackingId}`);
+          // Salvar tracking no banco (only when we have a valid trackingId)
+          await saveProcessTracking(process.id, newTrackingId);
+          result.cost += MONITOR_CONFIG.COST_PER_TRACKING_MONTH;
+          console.log(`${ICONS.SUCCESS} Created tracking for ${process.processNumber}: ${newTrackingId}`);
+        } else {
+          console.error(`${ICONS.ERROR} Invalid tracking ID returned for ${process.processNumber}`);
+        }
       }
 
       // Verificar se há webhooks pendentes para este processo
@@ -585,11 +635,11 @@ async function saveProcessTracking(processId: string, trackingId: string) {
 */
 
 // Placeholder implementations
-async function getExistingTrackings(_workspaceId: string) {
+async function getExistingTrackings(_workspaceId: string): Promise<ExistingTracking[]> {
   return [];
 }
 
-async function saveProcessTracking(_processId: string, _trackingId: string) {
+async function saveProcessTracking(_processId: string, _trackingId: string): Promise<void> {
   // Not implemented - tracking field not in schema
 }
 
@@ -714,10 +764,10 @@ export async function addMonitoringJob(
 
 export async function getMonitoringStats() {
   const [waiting, active, completed, failed] = await Promise.all([
-    processMonitorQueue().getWaiting(),
-    processMonitorQueue().getActive(),
-    processMonitorQueue().getCompleted(),
-    processMonitorQueue().getFailed(),
+    processMonitorQueue.getWaiting(),
+    processMonitorQueue.getActive(),
+    processMonitorQueue.getCompleted(),
+    processMonitorQueue.getFailed(),
   ]);
 
   const juditClient = getJuditApiClient();

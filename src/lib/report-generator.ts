@@ -26,6 +26,42 @@ import {
   isReportResult,
 } from '@/lib/types/type-guards';
 
+// Type definitions for Gemini API result
+interface GeminiResult {
+  content: string;
+  metadata?: {
+    tokensUsed?: number;
+  };
+}
+
+// Type definitions for process in payload
+interface PayloadProcess {
+  id: string;
+  number: unknown;
+  client: unknown;
+  status: unknown;
+  recentMovements?: unknown[];
+  movements?: unknown[];
+}
+
+// Type guard to validate Gemini API result
+function isGeminiResult(data: unknown): data is GeminiResult {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return 'content' in obj && typeof obj.content === 'string';
+}
+
+// Type guard to validate process object in payload
+function isPayloadProcess(process: unknown): process is PayloadProcess {
+  if (typeof process !== 'object' || process === null) {
+    return false;
+  }
+  const obj = process as Record<string, unknown>;
+  return 'id' in obj && 'number' in obj && 'client' in obj && 'status' in obj;
+}
+
 // Interfaces para o gerador
 export interface ReportGenerationRequest {
   workspaceId: string;
@@ -103,11 +139,24 @@ export class ReportGenerator {
       const cacheResult = await this.checkReportCache(request);
       if (cacheResult.hit) {
         console.log(`${ICONS.SUCCESS} Cache hit para relatório`);
+
+        // Build summary safely from cached data
+        let cacheSummary: ReportSummary = {
+          totalProcesses: 0
+        };
+        if (cacheResult.summary !== undefined && cacheResult.summary !== null && typeof cacheResult.summary === 'object') {
+          const summaryObj = cacheResult.summary as Record<string, unknown>;
+          cacheSummary = {
+            totalProcesses: typeof summaryObj.totalProcesses === 'number' ? summaryObj.totalProcesses : 0,
+            ...summaryObj
+          };
+        }
+
         return {
           success: true,
           reportId: cacheResult.reportId!,
           fileUrls: cacheResult.fileUrls!,
-          summary: cacheResult.summary!,
+          summary: cacheSummary,
           tokensUsed: 0,
           cacheHit: true,
           cacheKey: cacheResult.cacheKey,
@@ -173,7 +222,9 @@ export class ReportGenerator {
         success: false,
         reportId: '',
         fileUrls: {},
-        summary: {},
+        summary: {
+          totalProcesses: 0
+        },
         tokensUsed: 0,
         cacheHit: false,
         processingTime: Date.now() - startTime,
@@ -426,20 +477,50 @@ export class ReportGenerator {
 
       console.log(`${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}`);
 
+      // Validate result with type guard
+      if (!isGeminiResult(result)) {
+        console.warn(`${ICONS.WARNING} Gemini result validation failed, using mock content`);
+        const mockContent = this.generateMockContent(payload, audienceType);
+        const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
+
+        return {
+          content: mockContent,
+          summary: {
+            totalProcesses,
+            contentLength: mockContent.length,
+            audienceType,
+            generatedAt: new Date().toISOString(),
+            error: 'Gemini result validation failed'
+          },
+          tokensUsed: Math.floor(mockContent.length / 4)
+        };
+      }
+
+      // Safely extract data from validated GeminiResult
       const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
+      const contentLength = result.content.length;
+
+      // Extract metadata safely
+      let tokensUsed = Math.floor(contentLength / 4);
+      if (result.metadata !== undefined && result.metadata !== null) {
+        const metaObj = result.metadata;
+        if (typeof metaObj.tokensUsed === 'number') {
+          tokensUsed = metaObj.tokensUsed;
+        }
+      }
 
       const summary: ReportSummary = {
         totalProcesses,
-        contentLength: (result.content || '').length,
+        contentLength,
         audienceType,
         generatedAt: new Date().toISOString(),
         model: modelTier
       };
 
       return {
-        content: result.content || this.generateMockContent(payload, audienceType),
+        content: result.content,
         summary,
-        tokensUsed: result.metadata?.tokensUsed || Math.floor((result.content || '').length / 4)
+        tokensUsed
       };
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao chamar Gemini API:`, error);
@@ -470,8 +551,18 @@ export class ReportGenerator {
   private generateMockContent(payload: Record<string, unknown>, audienceType: AudienceType): string {
     const clientLanguage = audienceType === 'CLIENTE';
 
+    // Validate payload structure safely
+    const payloadType = typeof payload.type === 'string' ? payload.type : 'full';
+    const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
+
+    // Validate and filter processes
+    let processItems: PayloadProcess[] = [];
+    if (Array.isArray(payload.processes)) {
+      processItems = payload.processes.filter(isPayloadProcess);
+    }
+
     return `
-# RELATÓRIO ${payload.type === 'delta' ? 'DE NOVIDADES' : 'COMPLETO'} - ${new Date().toLocaleDateString()}
+# RELATÓRIO ${payloadType === 'delta' ? 'DE NOVIDADES' : 'COMPLETO'} - ${new Date().toLocaleDateString()}
 
 ## ${clientLanguage ? 'Resumo' : 'Sumário Executivo'}
 
@@ -480,25 +571,47 @@ ${clientLanguage
   : 'Análise consolidada dos processos monitorados no período.'
 }
 
-**Total de processos:** ${payload.totalProcesses}
+**Total de processos:** ${totalProcesses}
 
 ## Processos Analisados
 
-${payload.processes.map((process: unknown, index: number) => `
-### ${index + 1}. Processo ${process.number}
-**Cliente:** ${process.client.name || process.client}
-**Status:** ${process.status}
+${processItems.map((process, index) => {
+  // Safe property access within validated context (process is PayloadProcess)
+  const number = String(process.number ?? 'N/A');
+  const clientInfo = process.client;
+  const status = String(process.status ?? 'N/A');
+  const recentMovements = process.recentMovements;
+  const movements = process.movements;
 
-${process.recentMovements ?
-  `**Novidades:** ${process.recentMovements.length} movimentações recentes` :
-  `**Movimentações:** ${process.movements?.length || 0} registradas`
+  let clientDisplay = 'Cliente não informado';
+  if (clientInfo !== null && clientInfo !== undefined) {
+    if (typeof clientInfo === 'object') {
+      const clientObj = clientInfo as Record<string, unknown>;
+      clientDisplay = typeof clientObj.name === 'string' ? clientObj.name : String(clientInfo);
+    } else {
+      clientDisplay = String(clientInfo);
+    }
+  }
+
+  const recentCount = Array.isArray(recentMovements) ? recentMovements.length : 0;
+  const movementCount = Array.isArray(movements) ? movements.length : 0;
+
+  return `
+### ${index + 1}. Processo ${number}
+**Cliente:** ${clientDisplay}
+**Status:** ${status}
+
+${recentMovements !== undefined ?
+  `**Novidades:** ${recentCount} movimentações recentes` :
+  `**Movimentações:** ${movementCount} registradas`
 }
 
 ${clientLanguage ?
   'Situação atual favorável, sem pendências críticas.' :
   'Status processual dentro da normalidade esperada.'
 }
-`).join('\n')}
+`;
+}).join('\n')}
 
 ## ${clientLanguage ? 'Próximos Passos' : 'Recomendações'}
 

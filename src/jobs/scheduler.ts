@@ -3,7 +3,7 @@
 // Configuração de jobs agendados usando node-cron
 // ================================================================
 
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { executeDailyCheck } from './dailyJuditCheck';
 import { sendJobSuccess, sendJobFailure } from '@/lib/notification-service';
 
@@ -11,13 +11,49 @@ import { sendJobSuccess, sendJobFailure } from '@/lib/notification-service';
 // TIPOS
 // ================================================================
 
-interface JobConfig {
+/**
+ * Resultado esperado do Daily Check Job
+ */
+interface DailyCheckResult {
+  total: number;
+  successful: number;
+  failed: number;
+  withNewMovements: number;
+  withAttachmentsFetched?: number;
+  duration: number;
+  errors?: Array<{ cnj: string; error: string }>;
+}
+
+/**
+ * Type Guard para validar DailyCheckResult
+ */
+function isDailyCheckResult(data: unknown): data is DailyCheckResult {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  return (
+    typeof obj.total === 'number' &&
+    typeof obj.successful === 'number' &&
+    typeof obj.failed === 'number' &&
+    typeof obj.withNewMovements === 'number' &&
+    typeof obj.duration === 'number'
+  );
+}
+
+/**
+ * Configuração genérica de um job
+ * Aceita task com retorno de qualquer tipo, validação feita via callback
+ */
+interface JobConfig<T = unknown> {
   name: string;
   schedule: string;
   enabled: boolean;
-  task: () => Promise<unknown>;
-  onError?: (error: unknown) => void;
-  onSuccess?: (result: unknown) => void;
+  task: () => Promise<T>;
+  onError?: (error: Error) => void;
+  onSuccess?: (result: T) => void;
 }
 
 // ================================================================
@@ -43,13 +79,23 @@ const log = {
 // CONFIGURAÇÃO DOS JOBS
 // ================================================================
 
-const JOBS: JobConfig[] = [
+const JOBS: JobConfig<DailyCheckResult>[] = [
   {
     name: 'Daily JUDIT Check',
     schedule: '0 2 * * *', // 2:00 AM todos os dias
     enabled: true,
     task: executeDailyCheck,
     onSuccess: (result) => {
+      // ✅ Validação segura via type guard (narrowing)
+      if (!isDailyCheckResult(result)) {
+        log.error('Daily JUDIT Check retornou resultado inválido', {
+          type: typeof result,
+          keys: typeof result === 'object' && result !== null ? Object.keys(result) : 'N/A',
+        });
+        return;
+      }
+
+      // ✅ Agora é 100% seguro acessar todas as propriedades
       log.success('Daily JUDIT Check concluído', {
         total: result.total,
         successful: result.successful,
@@ -61,19 +107,20 @@ const JOBS: JobConfig[] = [
       sendJobSuccess('Daily JUDIT Check', {
         'Total': result.total,
         'Bem-sucedidos': result.successful,
-        'Falhados': result.failed || 0,
+        'Falhados': result.failed,
         'Com Novas Movimentações': result.withNewMovements,
-        'Duração (minutos)': (result.duration / 60000).toFixed(2)
+        'Duração (minutos)': (result.duration / 60000).toFixed(2),
       }).catch((err) => {
         log.error('Erro ao enviar notificação de sucesso', err);
       });
     },
     onError: (error) => {
+      // ✅ error agora é do tipo Error (não unknown)
       log.error('Daily JUDIT Check falhou', error);
 
       // ✅ Enviar alerta crítico via email/Slack
-      sendJobFailure('Daily JUDIT Check', error as Error, {
-        'Timestamp': new Date().toISOString()
+      sendJobFailure('Daily JUDIT Check', error, {
+        'Timestamp': new Date().toISOString(),
       }).catch((err) => {
         log.error('Erro ao enviar alerta de falha', err);
       });
@@ -95,6 +142,29 @@ const JOBS: JobConfig[] = [
 // ================================================================
 
 const scheduledJobs: Map<string, cron.ScheduledTask> = new Map();
+
+/**
+ * Extrai mensagem de erro de forma segura
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Erro desconhecido';
+}
+
+/**
+ * Converte erro unknown para Error com segurança
+ */
+function toError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error(getErrorMessage(error));
+}
 
 /**
  * Inicia todos os jobs agendados
@@ -126,12 +196,13 @@ export function startScheduler() {
           if (jobConfig.onSuccess) {
             jobConfig.onSuccess(result);
           }
-
         } catch (error) {
-          log.error(`Job falhou: ${jobConfig.name}`, error);
+          // ✅ Converter error unknown para Error com segurança
+          const errorObj = toError(error);
+          log.error(`Job falhou: ${jobConfig.name}`, errorObj);
 
           if (jobConfig.onError) {
-            jobConfig.onError(error);
+            jobConfig.onError(errorObj);
           }
         }
       });
@@ -142,9 +213,10 @@ export function startScheduler() {
         schedule: jobConfig.schedule,
         nextRun: getNextRunTime(jobConfig.schedule),
       });
-
     } catch (error) {
-      log.error(`Erro ao agendar job: ${jobConfig.name}`, error);
+      // ✅ Converter error unknown para Error com segurança
+      const errorObj = toError(error);
+      log.error(`Erro ao agendar job: ${jobConfig.name}`, errorObj);
     }
   }
 
@@ -200,8 +272,10 @@ export async function runJobManually(jobName: string) {
     log.success(`Job manual concluído: ${jobName}`);
     return result;
   } catch (error) {
-    log.error(`Job manual falhou: ${jobName}`, error);
-    throw error;
+    // ✅ Converter error unknown para Error com segurança
+    const errorObj = toError(error);
+    log.error(`Job manual falhou: ${jobName}`, errorObj);
+    throw errorObj;
   }
 }
 

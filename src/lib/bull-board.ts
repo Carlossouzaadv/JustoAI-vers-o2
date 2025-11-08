@@ -6,22 +6,69 @@
 import { createBullBoard } from '@bull-board/api';
 import { BullAdapter } from '@bull-board/api/bullAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { notificationQueue as getNotificationQueue } from './queues';
 import { validateBullBoardAccess } from './bull-board-auth';
+import getRedisClient from './redis';
 
 // Call the getter function to get the actual queue instance
 // Note: Other queues (sync, reports, cache cleanup, document processing) have been disabled for cost optimization
 const notificationQueue = getNotificationQueue();
 
-// Augment Express namespace for compatibility
-// eslint-disable-next-line @typescript-eslint/no-namespace
-declare global {
-  namespace Express {
-    interface Request extends ExpressRequest {}
-    interface Response extends ExpressResponse {}
-    interface NextFunction extends ExpressNextFunction {}
+/**
+ * Type guard to check if data is a valid Express Request
+ */
+function isExpressRequest(data: unknown): data is ExpressRequest {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'headers' in data &&
+    'url' in data &&
+    'method' in data
+  );
+}
+
+/**
+ * Type guard to check if data is a valid Express Response
+ */
+function isExpressResponse(data: unknown): data is ExpressResponse {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'status' in data &&
+    'json' in data &&
+    'send' in data &&
+    typeof (data as Record<string, unknown>).status === 'function' &&
+    typeof (data as Record<string, unknown>).json === 'function' &&
+    typeof (data as Record<string, unknown>).send === 'function'
+  );
+}
+
+/**
+ * Type definition for Bull Board user attached to request
+ */
+interface BullBoardUserContext {
+  userId: string;
+  email: string;
+  workspaceId?: string;
+  isInternal: boolean;
+  role: string;
+}
+
+/**
+ * Type guard to check if data is a valid Bull Board user context
+ */
+function isBullBoardUserContext(data: unknown): data is BullBoardUserContext {
+  if (typeof data !== 'object' || data === null) {
+    return false;
   }
+  const record = data as Record<string, unknown>;
+  return (
+    typeof record.userId === 'string' &&
+    typeof record.email === 'string' &&
+    typeof record.isInternal === 'boolean' &&
+    typeof record.role === 'string'
+  );
 }
 
 // === CONFIGURAÇÃO DO BULL BOARD ===
@@ -74,21 +121,40 @@ const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
  * Allows: Internal admins (@justoai.com.br) OR workspace admins
  */
 export async function bullBoardAuthMiddleware(
-  req: Express.Request,
-  res: Express.Response,
-  next: Express.NextFunction
-) {
+  req: unknown,
+  res: unknown,
+  next: unknown
+): Promise<void> {
   try {
+    // Type guard to ensure we have valid Express Request/Response
+    if (!isExpressRequest(req) || !isExpressResponse(res)) {
+      console.error('Invalid request or response object');
+      if (isExpressResponse(res)) {
+        void res.status(500).json({ error: 'Invalid request context' });
+      }
+      return;
+    }
+
+    // Type guard for next function
+    if (typeof next !== 'function') {
+      console.error('Invalid next function');
+      void res.status(500).json({ error: 'Invalid middleware chain' });
+      return;
+    }
+
     // Em desenvolvimento, permitir com token simples (para testes rápidos)
     if (process.env.NODE_ENV === 'development') {
-      const devToken = req.headers.authorization?.substring(7);
+      const authHeader = req.headers.authorization;
+      const devToken = typeof authHeader === 'string' ? authHeader.substring(7) : undefined;
       if (devToken === process.env.BULL_BOARD_ACCESS_TOKEN) {
-        return next();
+        next();
+        return;
       }
       // Se não houver token válido, permitir sem autenticação em dev (para debugging)
       // mas log de warning
       console.warn('⚠️ Bull Board accessed without proper token in development');
-      return next();
+      next();
+      return;
     }
 
     // Em produção, validação rigorosa com dois níveis de acesso
@@ -98,33 +164,44 @@ export async function bullBoardAuthMiddleware(
       console.warn(
         `🔒 Bull Board access denied: ${validation.reason} (User: ${validation.userId}, Email: ${validation.email})`
       );
-      return res.status(403).json({
+      void res.status(403).json({
         error: 'Admin access required',
         reason: validation.reason,
         email: validation.email
       });
+      return;
     }
 
-    // Attach user info to request for logging and filtering
-    (req as unknown).bullBoardUser = {
-      userId: validation.userId,
-      email: validation.email,
+    // Create typed user context and attach to request
+    const bullBoardUser: BullBoardUserContext = {
+      userId: validation.userId || '',
+      email: validation.email || '',
       workspaceId: validation.workspaceId,
-      isInternal: validation.isInternal,
-      role: validation.role
+      isInternal: validation.isInternal || false,
+      role: validation.role || 'UNKNOWN'
     };
+
+    // After type guard passed, req is an ExpressRequest which is also a Record
+    // Use intersection type for safe assignment
+    (req as ExpressRequest & Record<string, unknown>).bullBoardUser = bullBoardUser;
 
     console.log(
       `✅ Bull Board access granted for user ${validation.userId} (${validation.email}) - Role: ${validation.role}`
     );
 
     next();
+    return;
   } catch (error) {
     console.error('🔴 Error validating Bull Board access:', error);
-    return res.status(500).json({
-      error: 'Internal server error validating access',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
+
+    // Type guard for error response
+    if (isExpressResponse(res)) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      void res.status(500).json({
+        error: 'Internal server error validating access',
+        message: errorMessage
+      });
+    }
   }
 }
 
@@ -377,11 +454,36 @@ export async function systemHealthCheck() {
   }
 }
 
+/**
+ * Type guard to verify if object is a valid Redis instance
+ */
+function isRedisClient(data: unknown): data is { ping(): Promise<string>; info(section?: string): Promise<string> } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'ping' in data &&
+    'info' in data &&
+    typeof (data as Record<string, unknown>).ping === 'function' &&
+    typeof (data as Record<string, unknown>).info === 'function'
+  );
+}
+
 async function checkRedisHealth() {
   try {
-    const { redis } = await import('./redis');
-    const pong = await redis.ping();
-    const info = await redis.info('memory');
+    // Get Redis client instance
+    const redisClient = getRedisClient();
+
+    // Type guard to ensure we have a valid Redis client
+    if (!isRedisClient(redisClient)) {
+      return {
+        connected: false,
+        status: 'unhealthy',
+        error: 'Redis client is not properly initialized'
+      };
+    }
+
+    const pong = await redisClient.ping();
+    const info = await redisClient.info('memory');
     const memoryMatch = info.match(/used_memory_human:([^\r\n]+)/);
 
     return {

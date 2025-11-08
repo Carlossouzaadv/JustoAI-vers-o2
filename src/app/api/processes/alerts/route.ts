@@ -10,6 +10,7 @@ import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { getGlobalAlertManager } from '@/lib/process-alerts';
 import { ICONS } from '@/lib/icons';
+import type { Prisma } from '@prisma/client';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -40,12 +41,66 @@ const CreateCustomAlertSchema = z.object({
 });
 
 // ================================
+// TYPE GUARDS E HELPERS
+// ================================
+
+type QueryType = z.infer<typeof QuerySchema>;
+
+/**
+ * Constrói filtro WHERE de forma type-safe
+ */
+function buildWhereFilter(query: QueryType, workspaceId: string): Prisma.ProcessAlertWhereInput {
+  const where: Prisma.ProcessAlertWhereInput = {
+    monitoredProcess: {
+      workspaceId
+    }
+  };
+
+  if (query.read === 'true') {
+    where.read = true;
+  } else if (query.read === 'false') {
+    where.read = false;
+  }
+
+  if (query.severity) {
+    where.severity = query.severity;
+  }
+
+  if (query.type) {
+    where.type = query.type;
+  }
+
+  if (query.processId) {
+    where.monitoredProcessId = query.processId;
+  }
+
+  return where;
+}
+
+/**
+ * Constrói ordenação de forma type-safe
+ */
+function buildOrderBy(query: QueryType): Prisma.ProcessAlertOrderByWithRelationInput | Prisma.ProcessAlertOrderByWithRelationInput[] {
+  if (query.sortBy === 'severity') {
+    // Ordenação especial para severidade (URGENT > HIGH > MEDIUM > LOW)
+    return [
+      {
+        severity: query.sortOrder === 'desc' ? 'desc' : 'asc'
+      },
+      { createdAt: 'desc' }
+    ];
+  }
+
+  return { [query.sortBy]: query.sortOrder } as Prisma.ProcessAlertOrderByWithRelationInput;
+}
+
+// ================================
 // GET - LISTAR ALERTAS
 // ================================
 
 export async function GET(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
 
     // Validar query parameters
@@ -70,45 +125,9 @@ export async function GET(request: NextRequest) {
 
     const offset = (query.page - 1) * query.limit;
 
-    // Construir filtros
-    const where: unknown = {
-      monitoredProcess: {
-        workspaceId: workspace.id
-      }
-    };
-
-    if (query.read === 'true') {
-      where.read = true;
-    } else if (query.read === 'false') {
-      where.read = false;
-    }
-
-    if (query.severity) {
-      where.severity = query.severity;
-    }
-
-    if (query.type) {
-      where.type = query.type;
-    }
-
-    if (query.processId) {
-      where.monitoredProcessId = query.processId;
-    }
-
-    // Configurar ordenação
-    let orderBy: unknown = {};
-
-    if (query.sortBy === 'severity') {
-      // Ordenação especial para severidade (URGENT > HIGH > MEDIUM > LOW)
-      orderBy = [
-        {
-          severity: query.sortOrder === 'desc' ? 'desc' : 'asc'
-        },
-        { createdAt: 'desc' }
-      ];
-    } else {
-      orderBy = { [query.sortBy]: query.sortOrder };
-    }
+    // Construir filtros de forma type-safe
+    const where = buildWhereFilter(query, workspace.id);
+    const orderBy = buildOrderBy(query);
 
     // Buscar alertas com contagem total
     const [alerts, total] = await Promise.all([
@@ -187,7 +206,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { data: body, error: validationError } = await validateJson(request, CreateCustomAlertSchema);
     if (validationError) return validationError;
 
@@ -258,7 +277,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { data: body, error: validationError } = await validateJson(request, MarkReadSchema);
     if (validationError) return validationError;
 
@@ -299,7 +318,7 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
 
     const alertIds = searchParams.get('ids')?.split(',').filter(Boolean);

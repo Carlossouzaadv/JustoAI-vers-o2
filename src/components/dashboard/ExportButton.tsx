@@ -15,6 +15,61 @@ interface ExportButtonProps {
   formats?: ('csv' | 'json' | 'pdf')[];
 }
 
+// Type definitions for export data structure
+interface BreakdownItem {
+  operationType: unknown;
+  count: unknown;
+  totalCost: unknown;
+  avgCost: unknown;
+}
+
+interface DailyCostItem {
+  date: unknown;
+  cost: unknown;
+  operations: unknown;
+}
+
+interface ExportData {
+  summary?: Record<string, unknown>;
+  breakdown?: unknown[];
+  dailyCosts?: unknown[];
+}
+
+// Type guard to validate data structure
+function isExportData(data: unknown): data is ExportData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  return true;
+}
+
+// Type guard to validate breakdown items
+function isBreakdownItem(item: unknown): item is BreakdownItem {
+  if (typeof item !== 'object' || item === null) {
+    return false;
+  }
+  const obj = item as Record<string, unknown>;
+  return (
+    'operationType' in obj &&
+    'count' in obj &&
+    'totalCost' in obj &&
+    'avgCost' in obj
+  );
+}
+
+// Type guard to validate daily cost items
+function isDailyCostItem(item: unknown): item is DailyCostItem {
+  if (typeof item !== 'object' || item === null) {
+    return false;
+  }
+  const obj = item as Record<string, unknown>;
+  return (
+    'date' in obj &&
+    'cost' in obj &&
+    'operations' in obj
+  );
+}
+
 export function ExportButton({
   data,
   filename = 'judit-report',
@@ -26,31 +81,51 @@ export function ExportButton({
     // Convert data to CSV format
     let csvContent = '';
 
-    if (data.summary) {
-      csvContent += 'RESUMO\n';
-      csvContent += Object.entries(data.summary)
-        .map(([key, value]) => `${key},${value}`)
-        .join('\n');
-      csvContent += '\n\n';
+    // Validate data structure
+    if (!isExportData(data)) {
+      console.error('Invalid export data structure');
+      return;
     }
 
-    if (data.breakdown) {
-      csvContent += 'BREAKDOWN POR TIPO\n';
-      csvContent += 'Tipo,Quantidade,Custo Total,Custo Médio\n';
-      csvContent += data.breakdown
-        .map((item: unknown) =>
-          [item.operationType, item.count, item.totalCost, item.avgCost].join(',')
-        )
-        .join('\n');
-      csvContent += '\n\n';
+    const exportData = data as Record<string, unknown>;
+
+    // Process summary section
+    if (exportData.summary !== undefined && exportData.summary !== null) {
+      const summary = exportData.summary;
+      if (typeof summary === 'object') {
+        csvContent += 'RESUMO\n';
+        csvContent += Object.entries(summary)
+          .map(([key, value]) => `${key},${value}`)
+          .join('\n');
+        csvContent += '\n\n';
+      }
     }
 
-    if (data.dailyCosts) {
-      csvContent += 'CUSTOS DIÁRIOS\n';
-      csvContent += 'Data,Custo,Operações\n';
-      csvContent += data.dailyCosts
-        .map((item: unknown) => [item.date, item.cost, item.operations].join(','))
-        .join('\n');
+    // Process breakdown section
+    if (exportData.breakdown !== undefined && exportData.breakdown !== null) {
+      if (Array.isArray(exportData.breakdown)) {
+        csvContent += 'BREAKDOWN POR TIPO\n';
+        csvContent += 'Tipo,Quantidade,Custo Total,Custo Médio\n';
+        csvContent += exportData.breakdown
+          .filter(isBreakdownItem)
+          .map((item) =>
+            [item.operationType, item.count, item.totalCost, item.avgCost].join(',')
+          )
+          .join('\n');
+        csvContent += '\n\n';
+      }
+    }
+
+    // Process daily costs section
+    if (exportData.dailyCosts !== undefined && exportData.dailyCosts !== null) {
+      if (Array.isArray(exportData.dailyCosts)) {
+        csvContent += 'CUSTOS DIÁRIOS\n';
+        csvContent += 'Data,Custo,Operações\n';
+        csvContent += exportData.dailyCosts
+          .filter(isDailyCostItem)
+          .map((item) => [item.date, item.cost, item.operations].join(','))
+          .join('\n');
+      }
     }
 
     // Create download link

@@ -23,6 +23,22 @@ interface ProcessNote {
   tags?: string[];
 }
 
+// Type guard to validate NoteData from autosave callback
+function isNoteData(data: unknown): data is ProcessNote {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.title === 'string' &&
+    typeof obj.content === 'string' &&
+    typeof obj.category === 'string' &&
+    typeof obj.priority === 'string' &&
+    typeof obj.isPrivate === 'boolean'
+  );
+}
+
 interface ProcessNotesProps {
   processId: string;
 }
@@ -39,8 +55,13 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
   const { isSaving, hasUnsavedChanges } = useAutosave(editingNote, {
     delay: 2000,
     onSave: async (noteData) => {
-      if (!noteData.id || !noteData.title || !noteData.content) return;
+      // Validate noteData with type guard
+      if (!isNoteData(noteData)) {
+        console.error('Invalid note data received in autosave');
+        return;
+      }
 
+      // After type guard, noteData is safely ProcessNote
       const response = await fetch(`/api/processes/${processId}/notes/${noteData.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -58,7 +79,7 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
         throw new Error('Erro ao salvar nota');
       }
 
-      // Atualizar a lista local
+      // Atualizar a lista local - safe spread after type guard
       setNotes(prev => prev.map(note =>
         note.id === noteData.id
           ? { ...note, ...noteData, updatedAt: new Date().toISOString() }

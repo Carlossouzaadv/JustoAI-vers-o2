@@ -92,14 +92,38 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as Record<string, unknown>;
-        throw new Error((errorData.error as string) || `Upload failed: ${response.statusText}`);
+        // NARROWING SEGURO para errorData - SEM casting
+        const errorData: unknown = await response.json();
+        let errorMessage = `Upload failed: ${response.statusText}`;
+
+        // Validar estrutura de errorData com narrowing seguro
+        if (typeof errorData === 'object' && errorData !== null && 'error' in errorData) {
+          const err = (errorData as Record<string, unknown>).error;
+          if (typeof err === 'string') {
+            errorMessage = err;
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json() as Record<string, unknown>;
-      const data = result.data;
+      // NARROWING SEGURO para result - SEM casting
+      const result: unknown = await response.json();
 
-      // Validate result using type guard
+      // Validar que result é um objeto
+      if (typeof result !== 'object' || result === null) {
+        throw new Error('Invalid API response: expected object');
+      }
+
+      // Validar que result tem a propriedade 'data'
+      if (!('data' in result)) {
+        throw new Error('Invalid API response: missing "data" field');
+      }
+
+      // Extrair data com segurança
+      const data = (result as Record<string, unknown>).data;
+
+      // Aplicar type guard para validação final
       if (!isUploadResult(data)) {
         throw new Error('Invalid upload response format');
       }

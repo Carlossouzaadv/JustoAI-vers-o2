@@ -4,8 +4,6 @@
 // Endpoint para upload em lote de processos via arquivo Excel
 
 import { NextRequest, NextResponse } from 'next/server';
-import multer from 'multer';
-import { promisify } from 'util';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError } from '@/lib/api-utils';
@@ -22,31 +20,217 @@ import {
 import { ICONS } from '@/lib/icons';
 
 // ================================
-// CONFIGURAÇÃO MULTER
+// TYPE GUARDS & TYPE DEFINITIONS
 // ================================
 
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB
-    files: 1
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel'
-    ];
+/**
+ * Type guard for FormData file value
+ * Validates that an unknown value is a valid File object
+ */
+function isFile(value: unknown): value is File {
+  return value instanceof File;
+}
 
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) são permitidos'));
-    }
+/**
+ * Type guard to validate string values from FormData
+ * FormData.get() returns string | File | null
+ */
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+/**
+ * Valid SyncFrequency values from Prisma schema
+ */
+type SyncFrequencyValue = 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MANUAL';
+
+/**
+ * Type guard for SyncFrequency validation
+ * Validates that a string is a valid SyncFrequency enum value
+ */
+function isSyncFrequency(value: unknown): value is SyncFrequencyValue {
+  return (
+    typeof value === 'string' &&
+    ['HOURLY', 'DAILY', 'WEEKLY', 'MANUAL'].includes(value)
+  );
+}
+
+/**
+ * Helper to get a valid SyncFrequency value
+ * Uses default if invalid or missing
+ */
+function getSyncFrequency(value: unknown): SyncFrequencyValue {
+  if (isSyncFrequency(value)) {
+    return value;
   }
-});
+  return 'DAILY'; // Default as per schema
+}
 
-const uploadSingle = promisify(upload.single('file'));
+/**
+ * Type guard for ProcessApiData validation
+ * Ensures the API response data has the expected structure
+ */
+function isProcessApiData(data: unknown): data is ProcessApiData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const d = data as ProcessApiData;
+
+  // Check for optional movements array
+  if ('movements' in d && d.movements !== undefined) {
+    if (!Array.isArray(d.movements)) {
+      return false;
+    }
+    // Validate each movement has the required structure
+    return d.movements.every(isProcessMovement);
+  }
+
+  return true;
+}
+
+/**
+ * Type guard for ProcessMovement validation
+ */
+function isProcessMovement(movement: unknown): movement is ProcessMovement {
+  if (typeof movement !== 'object' || movement === null) {
+    return false;
+  }
+
+  const m = movement as ProcessMovement;
+  return (
+    typeof m.date === 'string' &&
+    typeof m.type === 'string' &&
+    typeof m.description === 'string' &&
+    (m.category === undefined || typeof m.category === 'string') &&
+    (m.importance === undefined || typeof m.importance === 'string') &&
+    (m.requiresAction === undefined || typeof m.requiresAction === 'boolean') &&
+    (m.deadline === undefined || typeof m.deadline === 'string')
+  );
+}
+
+/**
+ * Helper to safely extract error message from unknown error
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Erro desconhecido';
+}
+
+/**
+ * Valid MovementCategory enum values from Prisma schema
+ */
+type MovementCategoryValue =
+  | 'HEARING'
+  | 'DECISION'
+  | 'PETITION'
+  | 'DOCUMENT_REQUEST'
+  | 'DEADLINE'
+  | 'NOTIFICATION'
+  | 'APPEAL'
+  | 'SETTLEMENT'
+  | 'OTHER';
+
+/**
+ * Type guard for MovementCategory validation
+ */
+function isMovementCategory(value: unknown): value is MovementCategoryValue {
+  return (
+    typeof value === 'string' &&
+    [
+      'HEARING',
+      'DECISION',
+      'PETITION',
+      'DOCUMENT_REQUEST',
+      'DEADLINE',
+      'NOTIFICATION',
+      'APPEAL',
+      'SETTLEMENT',
+      'OTHER'
+    ].includes(value)
+  );
+}
+
+/**
+ * Helper to get a valid MovementCategory value
+ */
+function getMovementCategory(value: unknown): MovementCategoryValue {
+  if (isMovementCategory(value)) {
+    return value;
+  }
+  return 'OTHER'; // Default
+}
+
+/**
+ * Valid Priority enum values from Prisma schema
+ */
+type PriorityValue = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+/**
+ * Type guard for Priority validation
+ */
+function isPriority(value: unknown): value is PriorityValue {
+  return (
+    typeof value === 'string' &&
+    ['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(value)
+  );
+}
+
+/**
+ * Helper to get a valid Priority value
+ */
+function getPriority(value: unknown): PriorityValue {
+  if (isPriority(value)) {
+    return value;
+  }
+  return 'MEDIUM'; // Default
+}
+
+/**
+ * Helper to get string value with fallback
+ */
+function getStringValue(value: unknown, fallback: string): string {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  return fallback;
+}
+
+// ================================
+// CONFIGURAÇÃO DE UPLOAD
+// ================================
+
+/**
+ * Allowed MIME types for Excel files
+ */
+const ALLOWED_EXCEL_MIMES = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel'
+]);
+
+/**
+ * Maximum file size: 10MB
+ */
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/**
+ * Type guard to validate Excel file MIME type
+ */
+function isExcelFile(file: File): boolean {
+  return ALLOWED_EXCEL_MIMES.has(file.type);
+}
+
+/**
+ * Type guard to validate file size
+ */
+function isValidFileSize(file: File): boolean {
+  return file.size > 0 && file.size <= MAX_FILE_SIZE;
+}
 
 // ================================
 // POST - UPLOAD DE ARQUIVO EXCEL
@@ -55,35 +239,79 @@ const uploadSingle = promisify(upload.single('file'));
 export async function POST(request: NextRequest) {
   try {
     // Autenticação
-    const { user, workspace } = await validateAuth(request);
+    const { user, workspace } = await validateAuth();
 
-    // Processar upload
-    const req = request as unknown;
-    const res = {} as unknown;
-
-    await uploadSingle(req, res);
-
-    if (!req.file) {
-      throw new ApiError('Arquivo não encontrado', 400);
+    // PASSO 1: Obter formData do request (nativo Next.js - 100% type-safe)
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (formError) {
+      console.error(`${ICONS.ERROR} Erro ao obter form data:`, getErrorMessage(formError));
+      throw new ApiError('Erro ao processar upload: formato inválido', 400);
     }
 
-    const file = req.file;
+    // PASSO 2: Extrair arquivo do formData
+    const fileValue = formData.get('file');
+
+    // Type guard: validar que obtemos um File
+    if (!isFile(fileValue)) {
+      throw new ApiError('Nenhum arquivo encontrado no upload', 400);
+    }
+
+    // Após type guard, fileValue é seguramente do tipo File
+    const file = fileValue;
+
+    // PASSO 3: Validar tipo MIME (Excel)
+    if (!isExcelFile(file)) {
+      throw new ApiError(
+        `Tipo de arquivo inválido. Esperado: Excel (.xlsx, .xls). Recebido: ${file.type || 'desconhecido'}`,
+        400
+      );
+    }
+
+    // PASSO 4: Validar tamanho do arquivo
+    if (!isValidFileSize(file)) {
+      throw new ApiError(
+        `Tamanho de arquivo inválido. Máximo: 10MB. Recebido: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+        400
+      );
+    }
+
     console.log(`${ICONS.UPLOAD} Upload iniciado:`, {
-      filename: file.originalname,
+      filename: file.name,
       size: file.size,
       workspace: workspace.name
     });
 
-    // Parse do Excel
-    const parser = createProductionParser();
-    const parseResult = await parser.parseExcelBuffer(file.buffer, file.originalname);
+    // PASSO 5: Converter File para Buffer (necessário para parser)
+    let buffer: Buffer;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    } catch (bufferError) {
+      console.error(`${ICONS.ERROR} Erro ao ler arquivo:`, getErrorMessage(bufferError));
+      throw new ApiError('Erro ao ler arquivo. Tente novamente.', 400);
+    }
 
-    // Criar registro de batch upload
+    // PASSO 6: Parse do Excel
+    const parser = createProductionParser();
+    let parseResult;
+    try {
+      parseResult = await parser.parseExcelBuffer(buffer, file.name);
+    } catch (parseError) {
+      console.error(`${ICONS.ERROR} Erro ao fazer parse Excel:`, getErrorMessage(parseError));
+      throw new ApiError(
+        'Erro ao processar arquivo Excel. Verifique o formato.',
+        400
+      );
+    }
+
+    // PASSO 7: Criar registro de batch upload
     const batchUpload = await prisma.processBatchUpload.create({
       data: {
         workspaceId: workspace.id,
-        fileName: file.originalname,
-        filePath: `uploads/${workspace.id}/${Date.now()}-${file.originalname}`,
+        fileName: file.name,
+        filePath: `uploads/${workspace.id}/${Date.now()}-${file.name}`,
         fileSize: file.size,
         status: parseResult.success ? 'PROCESSING' : 'FAILED',
         totalRows: parseResult.totalRows,
@@ -98,7 +326,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Se há erros críticos no parse, retornar imediatamente
+    // PASSO 8: Se há erros críticos no parse, retornar imediatamente
     if (!parseResult.success) {
       await prisma.processBatchUpload.update({
         where: { id: batchUpload.id },
@@ -115,7 +343,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Processar linhas válidas em background
+    // PASSO 9: Processar linhas válidas em background
     processValidRowsInBackground(batchUpload.id, parseResult.validRows, workspace.id);
 
     return apiResponse({
@@ -128,7 +356,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro no upload:`, error);
+    console.error(`${ICONS.ERROR} Erro no upload:`, getErrorMessage(error));
 
     if (error instanceof ApiError) {
       return errorResponse(error.message, error.status);
@@ -151,7 +379,13 @@ export async function GET(request: NextRequest) {
       const generator = new ExcelTemplateGenerator();
       const templateBuffer = await generator.generateTemplate();
 
-      return new NextResponse(templateBuffer as unknown as BodyInit, {
+      // Convert Buffer to Uint8Array for Blob compatibility
+      const uint8Array = new Uint8Array(templateBuffer);
+      const blob = new Blob([uint8Array], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      return new NextResponse(blob, {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'Content-Disposition': 'attachment; filename="template_processos.xlsx"'
@@ -170,7 +404,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Autenticação para outras ações
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
 
     // Listar uploads recentes
     const recentUploads = await prisma.processBatchUpload.findMany({
@@ -198,7 +432,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao processar GET:`, error);
+    console.error(`${ICONS.ERROR} Erro ao processar GET:`, getErrorMessage(error));
 
     if (error instanceof ApiError) {
       return errorResponse(error.message, error.status);
@@ -285,7 +519,7 @@ async function processValidRowsInBackground(
           continue;
         }
 
-        // Buscar dados do processo via API
+        // Buscar dados do processo via API com type guard
         let processData: ProcessApiData | null = null;
         try {
           const apiResult = await processApi.searchProcess({
@@ -296,24 +530,32 @@ async function processValidRowsInBackground(
             includeParties: true
           });
 
-          if (apiResult.success) {
-            processData = apiResult.data as ProcessApiData;
+          // Type guard: validar que apiResult.data é ProcessApiData
+          if (apiResult.success && isProcessApiData(apiResult.data)) {
+            processData = apiResult.data;
           }
         } catch (apiError) {
-          console.log(`${ICONS.WARNING} API falhou para processo ${normalizedNumber}:`, apiError);
+          console.log(`${ICONS.WARNING} API falhou para processo ${normalizedNumber}:`, getErrorMessage(apiError));
           // Continua sem os dados da API
         }
+
+        // Validar e usar SyncFrequency com narrowing seguro
+        const syncFrequencyValue = getSyncFrequency(row.frequenciaSync);
+
+        // Validar campos obrigatórios com fallbacks seguros
+        const courtValue = getStringValue(row.tribunal, 'Não especificado');
+        const clientNameValue = getStringValue(row.nomeCliente, 'Importação em Lote');
 
         // Criar processo monitorado
         const monitoredProcess = await prisma.monitoredProcess.create({
           data: {
             workspaceId,
             processNumber: normalizedNumber,
-            court: row.tribunal,
-            clientName: row.nomeCliente,
+            court: courtValue,
+            clientName: clientNameValue,
             processData: processData ? JSON.parse(JSON.stringify(processData)) : null,
             monitoringStatus: 'ACTIVE',
-            syncFrequency: row.frequenciaSync || 'DAILY',
+            syncFrequency: syncFrequencyValue,
             alertsEnabled: row.alertasAtivos ?? true,
             alertRecipients: row.emailsAlerta || [],
             source: processData ? 'JUDIT_API' : 'EXCEL_UPLOAD',
@@ -321,24 +563,31 @@ async function processValidRowsInBackground(
           }
         });
 
-        // Se temos movimentações da API, criar registros
-        if (processData?.movements && processData.movements.length > 0) {
+        // Se temos movimentações da API, criar registros com type narrowing
+        if (processData?.movements && Array.isArray(processData.movements) && processData.movements.length > 0) {
           await Promise.all(
-            processData.movements.slice(0, 20).map(async (movement: ProcessMovement) => {
-              return prisma.processMovement.create({
-                data: {
-                  monitoredProcessId: monitoredProcess.id,
-                  date: new Date(movement.date),
-                  type: movement.type,
-                  description: movement.description,
-                  category: movement.category,
-                  importance: movement.importance,
-                  requiresAction: movement.requiresAction,
-                  deadline: movement.deadline ? new Date(movement.deadline) : null,
-                  rawData: JSON.parse(JSON.stringify(movement))
-                }
-              });
-            })
+            processData.movements
+              .slice(0, 20)
+              .filter(isProcessMovement) // Filter for valid movements only
+              .map(async (movement: ProcessMovement) => {
+                // Convert strings to valid enum values using type guards
+                const categoryValue = getMovementCategory(movement.category);
+                const importanceValue = getPriority(movement.importance);
+
+                return prisma.processMovement.create({
+                  data: {
+                    monitoredProcessId: monitoredProcess.id,
+                    date: new Date(movement.date),
+                    type: movement.type,
+                    description: movement.description,
+                    category: categoryValue,
+                    importance: importanceValue,
+                    requiresAction: movement.requiresAction ?? false,
+                    deadline: movement.deadline ? new Date(movement.deadline) : null,
+                    rawData: JSON.parse(JSON.stringify(movement))
+                  }
+                });
+              })
           );
         }
 
@@ -346,11 +595,11 @@ async function processValidRowsInBackground(
         successful++;
 
       } catch (rowError) {
-        console.error(`${ICONS.ERROR} Erro ao processar linha ${row.linha}:`, rowError);
+        console.error(`${ICONS.ERROR} Erro ao processar linha ${row.linha}:`, getErrorMessage(rowError));
         errors.push({
           linha: row.linha,
           processo: row.numeroProcesso,
-          erro: rowError instanceof Error ? rowError.message : 'Erro desconhecido'
+          erro: getErrorMessage(rowError)
         });
         failed++;
       }
@@ -368,7 +617,13 @@ async function processValidRowsInBackground(
       }
     }
 
-    // Atualização final
+    // Atualização final - ensure JSON fields are serializable
+    const summaryData = {
+      parseResult: { valid: successful, invalid: failed },
+      processingErrors: errors,
+      timestamp: new Date().toISOString()
+    };
+
     await prisma.processBatchUpload.update({
       where: { id: batchId },
       data: {
@@ -376,39 +631,33 @@ async function processValidRowsInBackground(
         processed: validRows.length,
         successful,
         failed,
-        errors: errors,
-        summary: {
-          parseResult: { valid: successful, invalid: failed },
-          processingErrors: errors,
-          timestamp: new Date().toISOString()
-        }
+        errors: errors.length > 0 ? JSON.parse(JSON.stringify(errors)) : null,
+        summary: JSON.parse(JSON.stringify(summaryData))
       }
     });
 
     console.log(`${ICONS.SUCCESS} Batch processado: ${successful} sucessos, ${failed} falhas`);
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro crítico no processamento:`, error);
+    console.error(`${ICONS.ERROR} Erro crítico no processamento:`, getErrorMessage(error));
+
+    const errorData = JSON.parse(JSON.stringify([{
+      erro: getErrorMessage(error)
+    }]));
 
     await prisma.processBatchUpload.update({
       where: { id: batchId },
       data: {
         status: 'FAILED',
-        errors: [{
-          erro: error instanceof Error ? error.message : 'Erro crítico no processamento'
-        }]
+        errors: errorData
       }
     });
   }
 }
 
 // ================================
-// CONFIGURAÇÃO EXPERIMENTAL NEXT.JS
+// CONFIGURAÇÃO NEXT.JS
 // ================================
 
-// Para suportar upload de arquivos no Next.js 13+
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Next.js 14 app router nativamente suporta formData parsing
+// Nenhuma configuração adicional necessária
