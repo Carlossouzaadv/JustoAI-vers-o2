@@ -11,8 +11,39 @@ import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handle
 import { ICONS } from '@/lib/icons';
 
 // ================================================================
-// VALIDATION SCHEMAS
+// TYPE DEFINITIONS & VALIDATION SCHEMAS
 // ================================================================
+
+/**
+ * Type guard to validate Note metadata structure
+ * Ensures metadata has the expected shape: { title?, tags?, priority?, isPinned? }
+ */
+type NoteMetadata = {
+  title?: string;
+  tags?: string[];
+  priority?: string;
+  isPinned?: boolean;
+};
+
+/**
+ * Type guard predicate for validating note metadata
+ */
+function isValidNoteMetadata(metadata: unknown): metadata is NoteMetadata {
+  if (metadata === null || metadata === undefined) {
+    return true; // null/undefined is valid (empty metadata)
+  }
+  if (typeof metadata !== 'object') {
+    return false;
+  }
+  // Check optional fields have correct types
+  const meta = metadata as Record<string, unknown>;
+  return (
+    (meta.title === undefined || typeof meta.title === 'string') &&
+    (meta.tags === undefined || Array.isArray(meta.tags)) &&
+    (meta.priority === undefined || typeof meta.priority === 'string') &&
+    (meta.isPinned === undefined || typeof meta.isPinned === 'boolean')
+  );
+}
 
 const updateNoteSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -33,6 +64,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
   const { id: caseId, noteId } = await params;
+  let userId: string | undefined;
 
   try {
     // ============================================================
@@ -44,7 +76,8 @@ export async function PATCH(
       return unauthorizedResponse('Não autenticado');
     }
 
-    setSentryUserContext(user.id);
+    userId = user.id;
+    setSentryUserContext(userId);
 
     console.log(`${ICONS.INFO} [Case Notes PATCH] Atualizando nota ${noteId} do case ${caseId}`);
 
@@ -80,9 +113,7 @@ export async function PATCH(
           include: {
             workspace: {
               include: {
-                userWorkspaces: {
-                  where: { userId: user.id },
-                },
+                users: true,
               },
             },
           },
@@ -121,9 +152,13 @@ export async function PATCH(
     // 4. VERIFY WORKSPACE ACCESS
     // ============================================================
 
-    if (!note.case?.workspace?.userWorkspaces || note.case.workspace.userWorkspaces.length === 0) {
+    const hasWorkspaceAccess = note.case?.workspace?.users?.some(
+      (userWorkspace) => userWorkspace.userId === userId
+    );
+
+    if (!hasWorkspaceAccess) {
       console.warn(
-        `${ICONS.WARNING} [Case Notes PATCH] Acesso negado para usuário ${user.id} ao case ${caseId}`
+        `${ICONS.WARNING} [Case Notes PATCH] Acesso negado para usuário ${userId} ao case ${caseId}`
       );
       return NextResponse.json(
         { success: false, error: 'Acesso negado' },
@@ -135,11 +170,11 @@ export async function PATCH(
     // 5. VERIFY OWNERSHIP (author or admin can edit)
     // ============================================================
 
-    const isAuthor = note.userId === user.id;
+    const isAuthor = note.userId === userId;
 
     if (!isAuthor) {
       console.warn(
-        `${ICONS.WARNING} [Case Notes PATCH] Usuário ${user.id} não é autor da nota ${noteId}`
+        `${ICONS.WARNING} [Case Notes PATCH] Usuário ${userId} não é autor da nota ${noteId}`
       );
       return NextResponse.json(
         { success: false, error: 'Apenas o autor da nota pode editá-la' },
@@ -151,7 +186,18 @@ export async function PATCH(
     // 6. UPDATE NOTE
     // ============================================================
 
-    const updateData: { title?: string; description?: string; metadata?: any } = {};
+    // Validate existing metadata safely using type guard
+    if (!isValidNoteMetadata(note.metadata)) {
+      console.warn(
+        `${ICONS.WARNING} [Case Notes PATCH] Metadados inválidos na nota ${noteId}`
+      );
+      return NextResponse.json(
+        { success: false, error: 'Erro ao processar metadados da nota' },
+        { status: 500 }
+      );
+    }
+
+    const updateData: { title?: string; description?: string; metadata?: NoteMetadata } = {};
 
     if (body.title !== undefined) {
       updateData.title = body.title;
@@ -167,14 +213,13 @@ export async function PATCH(
       body.isPinned !== undefined
     ) {
       // Preserve existing metadata and update only specified fields
-      const existingMetadata = (note.metadata as Record<string, unknown>) || {};
+      const existingMetadata = note.metadata;
 
       updateData.metadata = {
-        ...existingMetadata,
-        title: body.title !== undefined ? body.title : existingMetadata.title,
-        tags: body.tags !== undefined ? body.tags : existingMetadata.tags,
-        priority: body.priority !== undefined ? body.priority : existingMetadata.priority,
-        isPinned: body.isPinned !== undefined ? body.isPinned : existingMetadata.isPinned,
+        title: body.title !== undefined ? body.title : existingMetadata?.title,
+        tags: body.tags !== undefined ? body.tags : existingMetadata?.tags,
+        priority: body.priority !== undefined ? body.priority : existingMetadata?.priority,
+        isPinned: body.isPinned !== undefined ? body.isPinned : existingMetadata?.isPinned,
       };
     }
 
@@ -189,17 +234,29 @@ export async function PATCH(
     // 7. RETURN UPDATED NOTE
     // ============================================================
 
+    // Validate response metadata safely
+    if (!isValidNoteMetadata(updatedNote.metadata)) {
+      console.warn(
+        `${ICONS.WARNING} [Case Notes PATCH] Metadados inválidos após atualização: ${noteId}`
+      );
+      return NextResponse.json(
+        { success: false, error: 'Erro ao processar resposta' },
+        { status: 500 }
+      );
+    }
+
+    const responseMetadata = updatedNote.metadata;
+
     return NextResponse.json({
       success: true,
       note: {
         id: updatedNote.id,
-        title: (updatedNote.metadata as Record<string, unknown>)?.title || 'Sem título',
+        title: responseMetadata?.title || 'Sem título',
         description: updatedNote.description,
-        tags: (updatedNote.metadata as Record<string, unknown>)?.tags || [],
-        priority: (updatedNote.metadata as Record<string, unknown>)?.priority || 'normal',
-        isPinned: (updatedNote.metadata as Record<string, unknown>)?.isPinned || false,
+        tags: responseMetadata?.tags || [],
+        priority: responseMetadata?.priority || 'normal',
+        isPinned: responseMetadata?.isPinned || false,
         createdAt: updatedNote.createdAt,
-        updatedAt: updatedNote.updatedAt,
       },
     });
 
@@ -211,7 +268,7 @@ export async function PATCH(
       method: 'PATCH',
       caseId,
       noteId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(
@@ -233,6 +290,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
   const { id: caseId, noteId } = await params;
+  let userId: string | undefined;
 
   try {
     // ============================================================
@@ -244,7 +302,8 @@ export async function DELETE(
       return unauthorizedResponse('Não autenticado');
     }
 
-    setSentryUserContext(user.id);
+    userId = user.id;
+    setSentryUserContext(userId);
 
     console.log(`${ICONS.INFO} [Case Notes DELETE] Deletando nota ${noteId} do case ${caseId}`);
 
@@ -259,9 +318,7 @@ export async function DELETE(
           include: {
             workspace: {
               include: {
-                userWorkspaces: {
-                  where: { userId: user.id },
-                },
+                users: true,
               },
             },
           },
@@ -300,9 +357,13 @@ export async function DELETE(
     // 3. VERIFY WORKSPACE ACCESS
     // ============================================================
 
-    if (!note.case?.workspace?.userWorkspaces || note.case.workspace.userWorkspaces.length === 0) {
+    const hasWorkspaceAccess = note.case?.workspace?.users?.some(
+      (userWorkspace) => userWorkspace.userId === userId
+    );
+
+    if (!hasWorkspaceAccess) {
       console.warn(
-        `${ICONS.WARNING} [Case Notes DELETE] Acesso negado para usuário ${user.id} ao case ${caseId}`
+        `${ICONS.WARNING} [Case Notes DELETE] Acesso negado para usuário ${userId} ao case ${caseId}`
       );
       return NextResponse.json(
         { success: false, error: 'Acesso negado' },
@@ -314,11 +375,11 @@ export async function DELETE(
     // 4. VERIFY OWNERSHIP (author or admin can delete)
     // ============================================================
 
-    const isAuthor = note.userId === user.id;
+    const isAuthor = note.userId === userId;
 
     if (!isAuthor) {
       console.warn(
-        `${ICONS.WARNING} [Case Notes DELETE] Usuário ${user.id} não é autor da nota ${noteId}`
+        `${ICONS.WARNING} [Case Notes DELETE] Usuário ${userId} não é autor da nota ${noteId}`
       );
       return NextResponse.json(
         { success: false, error: 'Apenas o autor da nota pode deletá-la' },
@@ -355,7 +416,7 @@ export async function DELETE(
       method: 'DELETE',
       caseId,
       noteId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(
