@@ -94,7 +94,7 @@ const MONITORING_CONFIG = {
 // ================================================================
 
 interface LogData {
-  [key: string]: string | number | boolean | object | undefined;
+  [key: string]: string | number | boolean | object | null | undefined;
 }
 
 const log = {
@@ -113,6 +113,60 @@ const log = {
 // const sleep = (ms: number): Promise<void> => {
 //   return new Promise((resolve) => setTimeout(resolve, ms));
 // };
+
+// ================================================================
+// TYPE GUARDS
+// ================================================================
+
+/**
+ * Type guard para validar ProcessoData
+ */
+function isProcessoData(data: unknown): data is ProcessoData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  // ProcessoData allows any key-value pairs, but we check the shape
+  return 'movimentos' in data || 'ultimaVerificacao' in data || Object.keys(data).length === 0;
+}
+
+/**
+ * Extrai um valor seguro de ProcessoData como unknown[]
+ */
+function getMovementsArray(data: unknown): unknown[] {
+  if (typeof data === 'object' && data !== null && 'movimentos' in data) {
+    const movements = (data as Record<string, unknown>).movimentos;
+    return Array.isArray(movements) ? movements : [];
+  }
+  return [];
+}
+
+/**
+ * Convert ProcessoData to JSON-serializable format for Prisma
+ * This creates a plain object safe for Prisma JSON fields
+ */
+function serializeProcessoData(data: ProcessoData): Record<string, string | unknown[] | object | null | undefined> {
+  return {
+    ...data,
+    movimentos: Array.isArray(data.movimentos) ? data.movimentos : [],
+    ultimaVerificacao: typeof data.ultimaVerificacao === 'string' ? data.ultimaVerificacao : new Date().toISOString(),
+  };
+}
+
+/**
+ * Safe error extraction from unknown error type
+ */
+function getErrorLogValue(error: unknown): string | number | boolean | object | null {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (typeof error === 'object' && error !== null) {
+    return error;
+  }
+  return 'Unknown error';
+}
 
 // ================================================================
 // FUNÇÃO PRINCIPAL: SETUP DE MONITORAMENTO
@@ -223,7 +277,8 @@ export async function setupProcessMonitoring(
     };
 
   } catch (error) {
-    log.error(`Falha ao setup de monitoramento`, { cnj, error });
+    const errorLogValue = getErrorLogValue(error);
+    log.error(`Falha ao setup de monitoramento`, { cnj, error: errorLogValue });
 
     return {
       success: false,
@@ -277,7 +332,8 @@ export async function checkTrackingUpdates(
     };
 
   } catch (error) {
-    log.error(`Erro ao verificar updates`, { trackingId, error });
+    const errorLogValue = getErrorLogValue(error);
+    log.error(`Erro ao verificar updates`, { trackingId, error: errorLogValue });
 
     return {
       trackingId,
@@ -327,7 +383,8 @@ export async function stopProcessMonitoring(cnj: string): Promise<boolean> {
     return true;
 
   } catch (error) {
-    log.error(`Erro ao desativar monitoramento`, { cnj, error });
+    const errorLogValue = getErrorLogValue(error);
+    log.error(`Erro ao desativar monitoramento`, { cnj, error: errorLogValue });
     return false;
   }
 }
@@ -446,21 +503,27 @@ export async function updateProcessWithMovements(
       select: { dadosCompletos: true },
     });
 
-    const dadosAtuais = (processo?.dadosCompletos as ProcessoData) || {};
+    // Type-safe extraction of dadosCompletos
+    const dadosAtuais: ProcessoData = isProcessoData(processo?.dadosCompletos)
+      ? processo.dadosCompletos
+      : {};
 
     // Adicionar novos movimentos
-    const movimentosExistentes = dadosAtuais.movimentos || [];
+    const movimentosExistentes = getMovementsArray(dadosAtuais.movimentos);
     const todosMovimentos = [...movimentosExistentes, ...movements];
 
     // Atualizar no banco
+    // Build the JSON object directly - Prisma will handle JSON serialization
+    const jsonData = JSON.parse(JSON.stringify({
+      ...dadosAtuais,
+      movimentos: todosMovimentos,
+      ultimaVerificacao: new Date().toISOString(),
+    }));
+
     await prisma.processo.update({
       where: { id: processoId },
       data: {
-        dadosCompletos: {
-          ...dadosAtuais,
-          movimentos: todosMovimentos,
-          ultimaVerificacao: new Date().toISOString(),
-        },
+        dadosCompletos: jsonData,
         ultimaAtualizacao: new Date(),
       },
     });
@@ -472,7 +535,8 @@ export async function updateProcessWithMovements(
     });
 
   } catch (error) {
-    log.error(`Erro ao atualizar processo com movimentos`, { processoId, error });
+    const errorLogValue = getErrorLogValue(error);
+    log.error(`Erro ao atualizar processo com movimentos`, { processoId, error: errorLogValue });
     throw error;
   }
 }
@@ -656,7 +720,7 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
     );
 
     if (searchResult.success) {
-      log.success(`Anexos buscados com sucesso`, {
+      log.info(`Anexos buscados com sucesso`, {
         cnj: processo.numeroCnj,
         requestId: searchResult.requestId,
         keywords: matchedKeywords,
@@ -684,9 +748,10 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
     }
 
   } catch (error) {
+    const errorLogValue = getErrorLogValue(error);
     log.error(`Erro na análise de anexos`, {
       cnj: processo.numeroCnj,
-      error,
+      error: errorLogValue,
     });
 
     return {
