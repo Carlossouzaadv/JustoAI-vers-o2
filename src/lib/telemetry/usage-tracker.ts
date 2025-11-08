@@ -17,6 +17,42 @@ interface UsageEvent {
   timestamp?: Date;
 }
 
+/**
+ * Type Guard para validar transação de crédito
+ * Garante que o objeto tem as propriedades esperadas da query aggregation
+ */
+function isCreditTransaction(data: unknown): data is {
+  type: 'CREDIT' | 'DEBIT';
+  _sum: { amount: number | null };
+} {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    'type' in obj &&
+    ('_sum' in obj && typeof obj._sum === 'object' && obj._sum !== null)
+  );
+}
+
+/**
+ * Type Guard para validar eventos de uso
+ * Verifica se o objeto tem as propriedades necessárias
+ */
+function isUsageEventRecord(data: unknown): data is {
+  eventType: string;
+  metadata: Record<string, unknown>;
+} {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'eventType' in data &&
+    typeof (data as Record<string, unknown>).eventType === 'string' &&
+    'metadata' in data &&
+    typeof (data as Record<string, unknown>).metadata === 'object'
+  );
+}
+
 interface TelemetryConfig {
   JUDIT_UNIT_COST: number;
   JUDIT_DOC_RETRIEVE_COST: number;
@@ -427,8 +463,24 @@ export class UsageTracker {
       }
     });
 
-    const credits = transactions.reduce((sum: number, t: unknown) => sum + (t.type === 'CREDIT' ? Number(t._sum.amount) || 0 : 0), 0);
-    const debits = transactions.reduce((sum: number, t: unknown) => sum + (t.type === 'DEBIT' ? Number(t._sum.amount) || 0 : 0), 0);
+    // Usar type guard para validar e processar transações de forma segura
+    const credits = transactions
+      .filter(isCreditTransaction)
+      .reduce((sum: number, t) => {
+        const amount = t.type === 'CREDIT' ? (t._sum.amount || 0) : 0;
+        // Converter Decimal do Prisma para número
+        const numAmount = typeof amount === 'number' ? amount : Number(amount);
+        return sum + numAmount;
+      }, 0);
+
+    const debits = transactions
+      .filter(isCreditTransaction)
+      .reduce((sum: number, t) => {
+        const amount = t.type === 'DEBIT' ? (t._sum.amount || 0) : 0;
+        // Converter Decimal do Prisma para número
+        const numAmount = typeof amount === 'number' ? amount : Number(amount);
+        return sum + numAmount;
+      }, 0);
 
     const purchasedCredits = credits;
     const consumedCredits = debits;
@@ -447,12 +499,16 @@ export class UsageTracker {
   // ================================================================
 
   private async recordUsageEvent(event: UsageEvent): Promise<void> {
+    // Converter payload para JsonValue de forma segura usando JSON.stringify + parse
+    // Isso garante que o payload é serializable e será armazenado corretamente
+    const metadata = JSON.parse(JSON.stringify(event.payload));
+
     await prisma.usageEvent.create({
       data: {
         workspaceId: event.workspaceId,
         eventType: event.eventType,
         resourceType: 'SYSTEM',
-        metadata: event.payload,
+        metadata,
         createdAt: event.timestamp || new Date()
       }
     });
@@ -501,39 +557,51 @@ export class UsageTracker {
       fullCreditsConsumedMonth: 0
     };
 
-    events.forEach((event: unknown) => {
-      const payload = event.metadata || {};
+    // Usar type guard para filtrar apenas eventos válidos
+    events
+      .filter(isUsageEventRecord)
+      .forEach((event) => {
+        const payload = event.metadata || {};
 
-      switch (event.eventType) {
-        case 'judit_call':
-          metrics.juditCallsTotal++;
-          metrics.juditDocsRetrieved += payload.docsRetrieved || 0;
-          break;
-        case 'ia_call':
-          switch (payload.model) {
-            case 'fast':
-              metrics.iaCallsFast++;
-              break;
-            case 'mid':
-              metrics.iaCallsMid++;
-              break;
-            case 'full':
-              metrics.iaCallsFull++;
-              break;
-          }
-          break;
-        case 'report_generation':
-          if (payload.type === 'scheduled') {
-            metrics.reportsScheduledGenerated++;
-          } else {
-            metrics.reportsOnDemandGenerated++;
-          }
-          break;
-        case 'credit_consumption':
-          metrics.fullCreditsConsumedMonth += payload.amount || 0;
-          break;
-      }
-    });
+        switch (event.eventType) {
+          case 'judit_call':
+            metrics.juditCallsTotal++;
+            // Usar narrowing para acessar docsRetrieved com segurança
+            if (payload && typeof payload === 'object' && 'docsRetrieved' in payload) {
+              metrics.juditDocsRetrieved += Number(payload.docsRetrieved) || 0;
+            }
+            break;
+          case 'ia_call':
+            // Usar narrowing para acessar model com segurança
+            if (payload && typeof payload === 'object' && 'model' in payload) {
+              const model = payload.model;
+              if (model === 'fast') {
+                metrics.iaCallsFast++;
+              } else if (model === 'mid') {
+                metrics.iaCallsMid++;
+              } else if (model === 'full') {
+                metrics.iaCallsFull++;
+              }
+            }
+            break;
+          case 'report_generation':
+            // Usar narrowing para acessar type com segurança
+            if (payload && typeof payload === 'object' && 'type' in payload) {
+              if (payload.type === 'scheduled') {
+                metrics.reportsScheduledGenerated++;
+              } else {
+                metrics.reportsOnDemandGenerated++;
+              }
+            }
+            break;
+          case 'credit_consumption':
+            // Usar narrowing para acessar amount com segurança
+            if (payload && typeof payload === 'object' && 'amount' in payload) {
+              metrics.fullCreditsConsumedMonth += Number(payload.amount) || 0;
+            }
+            break;
+        }
+      });
 
     return metrics;
   }

@@ -9,6 +9,7 @@ import { ReportGenerator } from '@/lib/report-generator';
 import { ICONS } from '@/lib/icons';
 import { sendReportReady } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
+import { ReportType, AudienceType, OutputFormat } from '@prisma/client';
 
 export interface ScheduleConfig {
   windowStart: string;    // "23:00"
@@ -23,19 +24,28 @@ export interface DistributionResult {
   distributionHash: number;
 }
 
-interface ReportScheduleData {
-  id: string;
-  workspaceId: string;
-  type: string;
-  processIds: string[];
-  filters?: Record<string, unknown>;
-  recipients: string[];
-  audienceType: string;
-  outputFormats: string[];
-  frequency: string;
-  enabled: boolean;
-  nextRun: Date;
-  lastRun?: Date;
+/**
+ * Type guard: Valida se um valor é um ReportType válido
+ */
+function isValidReportType(value: unknown): value is ReportType {
+  return typeof value === 'string' && Object.values(ReportType).includes(value as ReportType);
+}
+
+/**
+ * Type guard: Valida se um valor é um AudienceType válido
+ */
+function isValidAudienceType(value: unknown): value is AudienceType {
+  return typeof value === 'string' && Object.values(AudienceType).includes(value as AudienceType);
+}
+
+/**
+ * Type guard: Valida se um valor é um array de OutputFormat válido
+ */
+function isValidOutputFormats(value: unknown): value is OutputFormat[] {
+  return (
+    Array.isArray(value) &&
+    value.every(v => typeof v === 'string' && Object.values(OutputFormat).includes(v as OutputFormat))
+  );
 }
 
 export class ReportScheduler {
@@ -74,11 +84,10 @@ export class ReportScheduler {
 
     for (const schedule of schedules) {
       try {
-        // Validar quota
+        // Validar quota (apenas 2 argumentos)
         const quotaValidation = await this.quotaSystem.validateReportCreation(
           schedule.workspaceId,
-          schedule.processIds.length,
-          schedule.type
+          schedule.processIds.length
         );
 
         if (!quotaValidation.allowed) {
@@ -90,17 +99,30 @@ export class ReportScheduler {
           continue;
         }
 
+        // Validar tipos de enum antes de usar
+        if (!isValidReportType(schedule.type)) {
+          throw new Error(`Tipo de relatório inválido: ${schedule.type}`);
+        }
+        if (!isValidAudienceType(schedule.audienceType)) {
+          throw new Error(`Tipo de audiência inválido: ${schedule.audienceType}`);
+        }
+        if (!isValidOutputFormats(schedule.outputFormats)) {
+          throw new Error(`Formatos de saída inválidos: ${JSON.stringify(schedule.outputFormats)}`);
+        }
+
         // Calcular horário distribuído
         const distributionHash = this.calculateDistributionHash(schedule.workspaceId);
         const assignedTime = this.calculateExecutionTime(distributionHash);
 
-        // Criar execução agendada
+        // Criar execução agendada (com tipos validados)
+        // Converter parameters para JSON-compatível
+        const parametersData = schedule.filters ? JSON.parse(JSON.stringify(schedule.filters)) : {};
         const execution = await prisma.reportExecution.create({
           data: {
             workspaceId: schedule.workspaceId,
             scheduleId: schedule.id,
             reportType: schedule.type,
-            parameters: schedule.filters || {},
+            parameters: parametersData,
             recipients: schedule.recipients,
             status: 'AGENDADO',
             audienceType: schedule.audienceType,
@@ -250,14 +272,15 @@ export class ReportScheduler {
         deltaDataOnly: execution.reportType === 'NOVIDADES'
       });
 
-      // Marcar como concluído
+      // Marcar como concluído (converter summary para JSON-compatível)
+      const summaryData = result.summary ? JSON.parse(JSON.stringify(result.summary)) : null;
       await prisma.reportExecution.update({
         where: { id: executionId },
         data: {
           status: 'COMPLETED',
           completedAt: new Date(),
           duration: Date.now() - execution.startedAt.getTime(),
-          result: result.summary,
+          result: summaryData,
           fileUrls: result.fileUrls,
           tokensUsed: result.tokensUsed,
           cacheHit: result.cacheHit,
@@ -265,8 +288,19 @@ export class ReportScheduler {
         }
       });
 
-      // Enviar notificação (implementar)
-      await this.sendReportNotification(execution, result);
+      // Enviar notificação com dados extraídos do result
+      const fileUrl = typeof result.fileUrls === 'object' && result.fileUrls !== null
+        ? Object.values(result.fileUrls)[0]
+        : undefined;
+
+      const fileUrlString = typeof fileUrl === 'string' ? fileUrl : undefined;
+
+      await this.sendReportNotification(execution, {
+        fileName: fileUrlString,
+        fileSize: 0,
+        publicUrl: fileUrlString,
+        expiresAt: undefined
+      });
 
       console.log(`${ICONS.SUCCESS} Relatório ${executionId} concluído com sucesso`);
 
@@ -324,8 +358,9 @@ export class ReportScheduler {
 
   /**
    * Encontra schedules que devem rodar hoje
+   * Retorna o tipo real do Prisma (inferido automaticamente)
    */
-  private async findSchedulesToRun(date: Date): Promise<ReportScheduleData[]> {
+  private async findSchedulesToRun(date: Date) {
     const today = new Date(date);
     today.setHours(0, 0, 0, 0);
 
@@ -359,13 +394,16 @@ export class ReportScheduler {
       }
     });
 
-    return schedules as ReportScheduleData[];
+    return schedules;
   }
 
   /**
    * Calcula próxima execução baseada na frequência
+   * Tipo de schedule inferido do tipo retornado por findSchedulesToRun
    */
-  private calculateNextRun(schedule: ReportScheduleData): Date {
+  private calculateNextRun(schedule: {
+    frequency: string;
+  }): Date {
     const next = new Date();
 
     switch (schedule.frequency) {
@@ -408,7 +446,10 @@ export class ReportScheduler {
   /**
    * Envia notificação do relatório (placeholder)
    */
-  private async sendReportNotification(execution: Record<string, unknown>, result: Record<string, unknown>): Promise<void> {
+  private async sendReportNotification(
+    execution: Record<string, unknown>,
+    resultData: { fileName?: string; fileSize?: number; publicUrl?: string; expiresAt?: string | Date }
+  ): Promise<void> {
     try {
       const recipients = execution.recipients as string[];
       const schedule = await prisma.reportSchedule.findUnique({
@@ -420,11 +461,11 @@ export class ReportScheduler {
         return;
       }
 
-      // Extrair informações do resultado
-      const fileName = (result.fileName as string) || `report-${Date.now()}`;
-      const fileSize = (result.fileSize as number) || 0;
-      const downloadUrl = (result.publicUrl as string) || '#';
-      const expiresAt = result.expiresAt ? new Date(result.expiresAt as string) : undefined;
+      // Extrair informações do resultado com narrowing
+      const fileName = resultData.fileName || `report-${Date.now()}`;
+      const fileSize = resultData.fileSize || 0;
+      const downloadUrl = resultData.publicUrl || '#';
+      const expiresAt = resultData.expiresAt ? new Date(resultData.expiresAt) : undefined;
 
       // Enviar notificação por Email + Slack
       await sendReportReady(
@@ -435,7 +476,7 @@ export class ReportScheduler {
         expiresAt
       );
 
-      // Broadcaster em tempo real via SSE
+      // Broadcaster em tempo real via SSE (timestamp é adicionado automaticamente)
       const wsManager = getWebSocketManager();
       wsManager.broadcastToWorkspace(schedule.workspaceId, {
         type: 'report:ready',
@@ -447,8 +488,7 @@ export class ReportScheduler {
           downloadUrl,
           expiresAt: expiresAt?.toISOString(),
           generatedAt: new Date().toISOString()
-        },
-        timestamp: Date.now()
+        }
       });
 
       console.log(`${ICONS.SUCCESS} [Report] Notificação enviada para: ${recipients.join(', ')}`);

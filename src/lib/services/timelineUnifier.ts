@@ -11,6 +11,35 @@ import { getTimelineEnricherService, TimelineMovement } from './timelineEnricher
 import { TimelineSource } from '@prisma/client';
 
 // ================================================================
+// TYPE DEFINITIONS FOR TYPE GUARDS
+// ================================================================
+
+interface PreviewSnapshot {
+  summary: string;
+  parties: string[];
+  subject: string;
+  object: string;
+  claimValue: number | null;
+  lastMovements: Array<{
+    date: string;
+    type: string;
+    description: string;
+  }>;
+  generatedAt: string;
+  model: string;
+}
+
+interface JuditResponseData {
+  data?: {
+    movements?: Array<Record<string, unknown>>;
+    pages?: Array<{
+      page?: number;
+      movements?: Array<Record<string, unknown>>;
+    }>;
+  } | Record<string, unknown>;
+}
+
+// ================================================================
 // TYPES
 // ================================================================
 
@@ -22,6 +51,94 @@ export interface TimelineUnificationResult {
   enriched: number;
   related: number;
   conflicts: number;
+}
+
+// ================================================================
+// TYPE GUARDS
+// ================================================================
+
+/**
+ * Type Guard: Validates if data is a valid PreviewSnapshot structure
+ * Used to safely extract data from preview snapshot (unknown type)
+ */
+function isPreviewSnapshot(data: unknown): data is PreviewSnapshot {
+  // Step 1: Check if data is an object
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // Step 2: Safe property access using Record cast after type check
+  const obj = data as Record<string, unknown>;
+
+  // Step 3: Validate required fields
+  if (typeof obj.summary !== 'string' || obj.summary.trim().length === 0) {
+    return false;
+  }
+
+  if (typeof obj.subject !== 'string' || obj.subject.trim().length === 0) {
+    return false;
+  }
+
+  if (typeof obj.object !== 'string' || obj.object.trim().length === 0) {
+    return false;
+  }
+
+  // Step 4: Validate parties array
+  if (!Array.isArray(obj.parties) || obj.parties.length === 0) {
+    return false;
+  }
+
+  if (!obj.parties.every((p) => typeof p === 'string')) {
+    return false;
+  }
+
+  // Step 5: Validate claimValue (number or null)
+  if (obj.claimValue !== null && typeof obj.claimValue !== 'number') {
+    return false;
+  }
+
+  // Step 6: Validate lastMovements array structure
+  if (!Array.isArray(obj.lastMovements)) {
+    return false;
+  }
+
+  for (const mov of obj.lastMovements) {
+    if (typeof mov !== 'object' || mov === null) {
+      return false;
+    }
+
+    const m = mov as Record<string, unknown>;
+
+    if (typeof m.date !== 'string' || typeof m.type !== 'string' || typeof m.description !== 'string') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Type Guard: Validates if data is a valid JUDIT response structure
+ * Used to safely extract data from JUDIT API response (unknown type)
+ */
+function isJuditResponse(data: unknown): data is JuditResponseData {
+  // Step 1: Check if data is an object
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // Step 2: Safe property access after type check
+  const obj = data as Record<string, unknown>;
+
+  // Step 3: Either has data property or is the data itself
+  // If it has .data, it must be an object
+  if ('data' in obj) {
+    if (typeof obj.data !== 'object' || obj.data === null) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // ================================================================
@@ -83,8 +200,13 @@ export async function mergeTimelines(
     // 2. EXTRAIR MOVIMENTOS DO JUDIT (PRIORIDADE 1)
     // ============================================================
 
+    // Type Guard: Validate JUDIT response before extracting movements
+    if (!isJuditResponse(caseData.processo?.dadosCompletos)) {
+      console.warn(`${ICONS.WARNING} [Timeline Unifier v2] JUDIT data inválido ou ausente`);
+    }
+
     const juditMovements = extractMovementsFromJudit(
-      caseData.processo?.dadosCompletos as unknown
+      caseData.processo?.dadosCompletos
     );
 
     console.log(
@@ -114,6 +236,9 @@ export async function mergeTimelines(
           juditEventIds.set(contentHash, existing.id);
         } else {
           // Criar novo evento JUDIT
+          // Safe JSON serialization for Prisma Json field
+          const metadataForDb = movement.metadata ? JSON.parse(JSON.stringify(movement.metadata)) : {};
+
           const created = await prisma.processTimelineEntry.create({
             data: {
               caseId,
@@ -125,7 +250,7 @@ export async function mergeTimelines(
               source: 'API_JUDIT',
               sourceId: movement.sourceId,
               confidence: movement.confidence,
-              metadata: movement.metadata,
+              metadata: metadataForDb,
               contributingSources: ['API_JUDIT'] as TimelineSource[],
               originalTexts: {
                 API_JUDIT: movement.description,
@@ -148,7 +273,12 @@ export async function mergeTimelines(
     // 4. EXTRAIR MOVIMENTOS DO PDF (PRIORIDADE 2)
     // ============================================================
 
-    const pdfMovements = extractMovementsFromPreview(caseData.previewSnapshot as unknown);
+    // Type Guard: Validate preview snapshot before extracting movements
+    if (!isPreviewSnapshot(caseData.previewSnapshot)) {
+      console.warn(`${ICONS.WARNING} [Timeline Unifier v2] Preview snapshot inválido ou ausente`);
+    }
+
+    const pdfMovements = extractMovementsFromPreview(caseData.previewSnapshot);
 
     console.log(
       `${ICONS.INFO} [Timeline Unifier v2] Movimentos PDF encontrados: ${pdfMovements.length}`
@@ -161,10 +291,10 @@ export async function mergeTimelines(
     for (const movement of pdfMovements) {
       try {
         // Associar a evento JUDIT base
+        // Note: enricher.associateToBaseEvent expects 2 arguments, not 3
         const association = await enricher.associateToBaseEvent(
           movement,
-          caseData.timelineEntries,
-          caseId
+          caseData.timelineEntries
         );
 
         result.total++;
@@ -233,11 +363,30 @@ export async function mergeTimelines(
           const normalizedContent = normalizeMovementContent(movement.description);
           const contentHash = generateContentHash(movement.date, normalizedContent);
 
+          // Prepare data from enricher and add safe JSON serialization
+          const relatedEventData = enricher.prepareRelatedEventData(association.baseEventId, movement);
+
+          // Safe JSON serialization for metadata
+          const metadataForDb = relatedEventData.metadata
+            ? JSON.parse(JSON.stringify(relatedEventData.metadata))
+            : {};
+
+          // Type-safe data construction for Prisma
           const newEvent = await prisma.processTimelineEntry.create({
             data: {
-              ...enricher.prepareRelatedEventData(association.baseEventId, movement),
-              case: { connect: { id: caseId } },
+              caseId,
               contentHash,
+              eventDate: relatedEventData.eventDate || movement.date,
+              eventType: relatedEventData.eventType || movement.type,
+              description: relatedEventData.description || movement.description,
+              normalizedContent: relatedEventData.normalizedContent || normalizedContent,
+              source: (relatedEventData.source || movement.source) as TimelineSource,
+              sourceId: relatedEventData.sourceId,
+              confidence: relatedEventData.confidence || 0.5,
+              metadata: metadataForDb,
+              relationType: relatedEventData.relationType,
+              contributingSources: (relatedEventData.contributingSources || []) as TimelineSource[],
+              originalTexts: (relatedEventData.originalTexts || {}) as Record<string, string>,
             },
           });
 
@@ -275,6 +424,11 @@ export async function mergeTimelines(
           const normalizedContent = normalizeMovementContent(movement.description);
           const contentHash = generateContentHash(movement.date, normalizedContent);
 
+          // Safe JSON serialization for metadata
+          const metadataForDb = movement.metadata
+            ? JSON.parse(JSON.stringify(movement.metadata))
+            : {};
+
           await prisma.processTimelineEntry.create({
             data: {
               caseId,
@@ -286,7 +440,7 @@ export async function mergeTimelines(
               source: movement.source as TimelineSource,
               sourceId: movement.sourceId,
               confidence: movement.confidence,
-              metadata: movement.metadata,
+              metadata: metadataForDb,
               contributingSources: [movement.source as TimelineSource],
               originalTexts: {
                 [movement.source]: movement.description,
@@ -360,14 +514,17 @@ export async function mergeTimelines(
 
 /**
  * Extrai movimentos do preview snapshot (Gemini Flash)
+ * Usa Type Guard para validar estrutura de dados
  */
 function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement[] {
   const movements: TimelineMovement[] = [];
 
-  if (!previewSnapshot || !previewSnapshot.lastMovements) {
+  // Type Guard: Validate preview snapshot structure
+  if (!isPreviewSnapshot(previewSnapshot)) {
     return movements;
   }
 
+  // Now previewSnapshot is safely typed as PreviewSnapshot
   for (const mov of previewSnapshot.lastMovements) {
     try {
       movements.push({
@@ -375,7 +532,7 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
         type: mov.type || 'Movimento',
         description: mov.description || '',
         source: 'DOCUMENT_UPLOAD',
-        confidence: previewSnapshot.confidence || 0.75,
+        confidence: 0.75, // Default confidence for document uploads
         metadata: {
           extractedBy: 'preview',
           model: previewSnapshot.model,
@@ -394,52 +551,84 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
 
 /**
  * Extrai movimentos do JUDIT response
+ * Usa Type Guard para validar estrutura de dados
  */
 function extractMovementsFromJudit(dadosCompletos: unknown): TimelineMovement[] {
   const movements: TimelineMovement[] = [];
 
-  if (!dadosCompletos) {
+  // Type Guard: Validate JUDIT response structure
+  if (!isJuditResponse(dadosCompletos)) {
     return movements;
   }
 
+  // Now dadosCompletos is safely typed as JuditResponseData
   try {
-    const data = dadosCompletos.data || dadosCompletos;
+    // Extract either from .data property or use the object itself
+    const obj = dadosCompletos as Record<string, unknown>;
+    const data = (typeof obj.data === 'object' && obj.data !== null ? obj.data : obj) as Record<string, unknown>;
 
-    if (data.movements && Array.isArray(data.movements)) {
+    // Extract movements array
+    if (Array.isArray(data.movements)) {
       for (const mov of data.movements) {
-        movements.push({
-          date: new Date(mov.date || mov.movement_date),
-          type: mov.type || mov.movement_type || 'Movimento',
-          description: mov.description || mov.movement_description || '',
-          source: 'API_JUDIT',
-          sourceId: mov.id || mov.movement_id,
-          confidence: 1.0,
-          metadata: {
-            juditId: mov.id,
-            rawData: mov,
-          },
-        });
+        if (typeof mov !== 'object' || mov === null) continue;
+
+        const m = mov as Record<string, unknown>;
+        const dateValue = m.date || m.movement_date;
+        const typeValue = m.type || m.movement_type;
+        const descValue = m.description || m.movement_description;
+        const idValue = m.id || m.movement_id;
+
+        // Only push if we have at least date and type
+        if (dateValue && typeValue) {
+          movements.push({
+            date: new Date(String(dateValue)),
+            type: String(typeValue),
+            description: String(descValue || ''),
+            source: 'API_JUDIT',
+            sourceId: String(idValue || ''),
+            confidence: 1.0,
+            metadata: {
+              juditId: idValue,
+              rawData: m,
+            },
+          });
+        }
       }
     }
 
-    // Se houver paginação
-    if (data.pages && Array.isArray(data.pages)) {
+    // Extract from pages if available
+    if (Array.isArray(data.pages)) {
       for (const page of data.pages) {
-        if (page.movements && Array.isArray(page.movements)) {
-          for (const mov of page.movements) {
-            movements.push({
-              date: new Date(mov.date || mov.movement_date),
-              type: mov.type || mov.movement_type || 'Movimento',
-              description: mov.description || mov.movement_description || '',
-              source: 'API_JUDIT',
-              sourceId: mov.id || mov.movement_id,
-              confidence: 1.0,
-              metadata: {
-                juditId: mov.id,
-                page: page.page,
-                rawData: mov,
-              },
-            });
+        if (typeof page !== 'object' || page === null) continue;
+
+        const p = page as Record<string, unknown>;
+
+        if (Array.isArray(p.movements)) {
+          for (const mov of p.movements) {
+            if (typeof mov !== 'object' || mov === null) continue;
+
+            const m = mov as Record<string, unknown>;
+            const dateValue = m.date || m.movement_date;
+            const typeValue = m.type || m.movement_type;
+            const descValue = m.description || m.movement_description;
+            const idValue = m.id || m.movement_id;
+
+            // Only push if we have at least date and type
+            if (dateValue && typeValue) {
+              movements.push({
+                date: new Date(String(dateValue)),
+                type: String(typeValue),
+                description: String(descValue || ''),
+                source: 'API_JUDIT',
+                sourceId: String(idValue || ''),
+                confidence: 1.0,
+                metadata: {
+                  juditId: idValue,
+                  page: p.page,
+                  rawData: m,
+                },
+              });
+            }
           }
         }
       }

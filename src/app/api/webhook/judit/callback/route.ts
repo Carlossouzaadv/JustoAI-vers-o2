@@ -17,10 +17,6 @@ import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
 import {
   extractCaseTypeFromJuditResponse,
   extractCaseTypeFromSubject,
@@ -31,6 +27,66 @@ import {
 // Vercel Pro allows up to 900s (15min), but we use 300s (5min) for processing 30+ attachments
 // With 5 parallel downloads, ~10-15 seconds per batch of 5 files
 export const maxDuration = 300; // 300 seconds (5 minutes) - enough for 30+ attachments with 5 concurrent
+
+// ================================================================
+// TYPE GUARDS FOR SAFE NARROWING
+// ================================================================
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+interface JuditLawsuitResponse {
+  code?: string | number;
+  instance?: string | number;
+  attachments?: Array<unknown>;
+  [key: string]: unknown;
+}
+
+interface JuditApplicationErrorResponse {
+  code?: string | number;
+  message?: string;
+  [key: string]: unknown;
+}
+
+function isJuditLawsuitResponse(data: unknown): data is JuditLawsuitResponse {
+  return isRecord(data);
+}
+
+function isJuditApplicationErrorResponse(data: unknown): data is JuditApplicationErrorResponse {
+  return isRecord(data);
+}
+
+function hasAttachments(data: JuditLawsuitResponse): data is JuditLawsuitResponse & { attachments: Array<unknown> } {
+  return Array.isArray(data.attachments) && data.attachments.length > 0;
+}
+
+function hasCode(data: JuditLawsuitResponse | JuditApplicationErrorResponse): boolean {
+  return typeof data.code === 'string' || typeof data.code === 'number';
+}
+
+function getCodeAsString(data: JuditLawsuitResponse | JuditApplicationErrorResponse): string {
+  const code = data.code;
+  if (typeof code === 'string') {
+    return code;
+  }
+  if (typeof code === 'number') {
+    return code.toString();
+  }
+  return '';
+}
+
+function getInstanceAsNumber(data: JuditLawsuitResponse): number | undefined {
+  const instance = data.instance;
+  if (typeof instance === 'number') {
+    return instance;
+  }
+  if (typeof instance === 'string') {
+    const parsed = parseInt(instance, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+}
 
 // Type definitions for JUDIT webhook payload
 interface JuditWebhookPayload {
@@ -104,10 +160,19 @@ export async function POST(request: NextRequest) {
       const responseData = webhook.payload.response_data;
       const isCachedResponse = webhook.payload.tags?.cached_response === true;
 
+      // Validar que responseData é um record (type guard)
+      if (!isJuditLawsuitResponse(responseData)) {
+        console.warn(`${ICONS.WARNING} [JUDIT Webhook] Dados de resposta inválidos`, { responseType });
+        return NextResponse.json(
+          { error: 'Dados de resposta inválidos' },
+          { status: 400 }
+        );
+      }
+
       console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Resposta recebida:`, {
         responseType,
         cached: isCachedResponse,
-        cnj: isRecord(responseData) && responseData.code,
+        cnj: hasCode(responseData) ? getCodeAsString(responseData) : undefined,
       });
 
       // Encontrar o processo que iniciou essa requisição COM CASE ID EXPLÍCITO
@@ -169,14 +234,16 @@ export async function POST(request: NextRequest) {
             message: 'Webhook duplicado ignorado (já processado)',
             isDuplicate: true,
             cached: isCachedResponse,
-            cnj: isRecord(responseData) ? responseData.code as string : ''
+            cnj: getCodeAsString(responseData)
           });
+        }
 
+        // Atualizar status do request no banco (REMOVIDO: campo dadosCompletos não existe)
         await prisma.juditRequest.update({
           where: { requestId },
           data: {
-            dadosCompletos: responseData,
-            ultimaAtualizacao: new Date()
+            status: 'processing',
+            updatedAt: new Date()
           }
         });
 
@@ -210,14 +277,14 @@ export async function POST(request: NextRequest) {
 
         // Processar anexos (com retry silencioso se falhar)
         try {
-          if (isRecord(responseData) && responseData.attachments && Array.isArray(responseData.attachments) && responseData.attachments.length > 0) {
+          if (hasAttachments(responseData)) {
             console.log(`${ICONS.PROCESS} [JUDIT Webhook] Iniciando processamento de ${responseData.attachments.length} anexos`);
 
             const attachmentResult = await processJuditAttachments(
               targetCase.id,
               responseData,
-              isRecord(responseData) ? responseData.code as string : '', // cnj_code
-              isRecord(responseData) ? responseData.instance as string : '' // instance
+              getCodeAsString(responseData), // cnj_code (safe extraction)
+              getInstanceAsNumber(responseData) // instance (safe extraction - number or undefined)
             );
 
             console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Anexos processados:`, {
@@ -242,13 +309,14 @@ export async function POST(request: NextRequest) {
           let mappedCaseType = targetCase.type; // Manter tipo atual por padrão
 
           // Tentar extrair do classifications (preferencial)
-          const classificationType = extractCaseTypeFromJuditResponse(isRecord(responseData) ? responseData : {});
+          // responseData é garantidamente JuditLawsuitResponse aqui (type guard aplicado anteriormente)
+          const classificationType = extractCaseTypeFromJuditResponse(responseData);
           if (classificationType) {
             mappedCaseType = classificationType;
             console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo mapeado automaticamente: ${mappedCaseType}`);
           } else {
             // Fallback: tentar extrair do subject
-            const subjectType = extractCaseTypeFromSubject(isRecord(responseData) ? responseData : {});
+            const subjectType = extractCaseTypeFromSubject(responseData);
             if (subjectType) {
               mappedCaseType = subjectType;
               console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Tipo extraído de subject: ${mappedCaseType}`);
@@ -259,6 +327,17 @@ export async function POST(request: NextRequest) {
 
           // Atualizar status do caso para 'enriched' (FASE 2 completa) e mudar status de UNASSIGNED → ACTIVE
           // IMPORTANTE: Marcar este requestId como processado para evitar duplicação
+
+          // PADRÃO-OURO: Construir metadata de forma segura e serializar corretamente
+          const newMetadata = {
+            ...(isRecord(currentMetadata) ? currentMetadata : {}),
+            judit_data_retrieved: true,
+            judit_callback_received_at: new Date().toISOString(),
+            auto_mapped_case_type: mappedCaseType, // Log da mudança para auditoria
+            // NOVO: Registrar requestId como processado para idempotência
+            processed_webhook_request_ids: [...processedRequestIds, requestId],
+          };
+
           await prisma.case.update({
             where: { id: targetCase.id },
             data: {
@@ -266,21 +345,13 @@ export async function POST(request: NextRequest) {
               status: 'ACTIVE', // Muda de UNASSIGNED para ACTIVE quando JUDIT retorna dados
               onboardingStatus: 'enriched',
               enrichmentCompletedAt: new Date(),
-              metadata: {
-                ...(isRecord(currentMetadata) ? currentMetadata : {}),
-                judit_data_retrieved: true,
-                judit_callback_received_at: new Date().toISOString(),
-                auto_mapped_case_type: mappedCaseType, // Log da mudança para auditoria
-                // NOVO: Registrar requestId como processado para idempotência
-                processed_webhook_request_ids: [...processedRequestIds, requestId],
-              } as any
+              metadata: JSON.parse(JSON.stringify(newMetadata)), // Padrão-Ouro: Serialização segura para JSON
             }
           });
 
           console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Caso ${targetCase.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`);
         }
       } // Fechamento do if(targetCase)
-    }
 
       // Atualizar status do request no banco
       await prisma.juditRequest.update({
@@ -292,15 +363,18 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Resposta processada com sucesso',
         cached: isCachedResponse,
-        cnj: responseData?.code
+        cnj: getCodeAsString(responseData)
       });
-    }
+    } // Fechamento do if(eventType === 'response_created')
 
     // ================================================================
     // CASE 2: request_completed - JUDIT finalizou tudo
     // ================================================================
-    if (eventType === 'request_completed' ||
-        (webhook.payload.response_type === 'application_info' && isRecord(webhook.payload.response_data) && webhook.payload.response_data?.code === 600)) {
+    const isApplicationInfoWith600 = webhook.payload.response_type === 'application_info' &&
+                                     isJuditApplicationErrorResponse(webhook.payload.response_data) &&
+                                     webhook.payload.response_data.code === 600;
+
+    if (eventType === 'request_completed' || isApplicationInfoWith600) {
 
       console.log(`${ICONS.SUCCESS} [JUDIT Webhook] REQUEST COMPLETED - Processamento finalizado:`, requestId);
 
@@ -326,8 +400,15 @@ export async function POST(request: NextRequest) {
     // CASE 3: application_error - JUDIT reportou erro
     // ================================================================
     if (eventType === 'application_error') {
-      const errorCode = isRecord(webhook.payload.response_data) ? webhook.payload.response_data.code : undefined;
-      const errorMessage = isRecord(webhook.payload.response_data) ? webhook.payload.response_data.message : undefined;
+      let errorCode: string | number | undefined;
+      let errorMessage: string | undefined;
+
+      if (isJuditApplicationErrorResponse(webhook.payload.response_data)) {
+        errorCode = webhook.payload.response_data.code;
+        errorMessage = typeof webhook.payload.response_data.message === 'string'
+          ? webhook.payload.response_data.message
+          : undefined;
+      }
 
       console.error(`${ICONS.ERROR} [JUDIT Webhook] Erro reportado pela JUDIT:`, {
         errorCode,

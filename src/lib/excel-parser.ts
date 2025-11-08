@@ -8,6 +8,22 @@ import { ICONS } from './icons';
 import { validateProcessNumber, normalizeProcessNumber } from './process-apis';
 
 // ================================
+// TYPE GUARDS E VALIDATORS (Mandato Inegociável)
+// ================================
+
+function isFrequencyType(value: unknown): value is 'HOURLY' | 'DAILY' | 'WEEKLY' | 'MANUAL' {
+  return value === 'HOURLY' || value === 'DAILY' || value === 'WEEKLY' || value === 'MANUAL';
+}
+
+function isBooleanValue(value: string): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function isValidColumnMapping(key: string): key is keyof typeof EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING {
+  return key in EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING;
+}
+
+// ================================
 // TIPOS E INTERFACES
 // ================================
 
@@ -428,7 +444,12 @@ export class ExcelProcessParser {
     }
 
     const normalized = value.toUpperCase();
-    if (!EXCEL_TEMPLATE_CONFIG.VALID_FREQUENCIES.includes(normalized as unknown)) {
+
+    // Type guard com narrowing seguro (Mandato Inegociável)
+    if (isFrequencyType(normalized)) {
+      row.frequenciaSync = normalized;
+    } else {
+      // Valor inválido - registrar aviso e usar padrão
       errors.push({
         linha: line,
         campo: 'frequenciaSync',
@@ -437,25 +458,31 @@ export class ExcelProcessParser {
         tipo: 'WARNING'
       });
       row.frequenciaSync = 'DAILY';
-    } else {
-      row.frequenciaSync = normalized as unknown;
     }
   }
 
   private parseBoolean(value: string, field: string, line: number, errors: ExcelRowError[], row: Partial<ExcelProcessRow>): void {
+    // Type-safe narrowing (Mandato Inegociável)
+    // Campo só pode ser 'alertasAtivos'
+    if (field !== 'alertasAtivos') {
+      return;
+    }
+
     if (!value) {
-      (row as unknown)[field] = true; // Padrão
+      row.alertasAtivos = true; // Padrão
       return;
     }
 
     const normalized = value.toLowerCase();
     const validValues = EXCEL_TEMPLATE_CONFIG.VALID_BOOLEAN_VALUES;
 
+    // Narrowing seguro para boolean
     if (validValues.true.includes(normalized)) {
-      (row as unknown)[field] = true;
+      row.alertasAtivos = true;
     } else if (validValues.false.includes(normalized)) {
-      (row as unknown)[field] = false;
+      row.alertasAtivos = false;
     } else {
+      // Valor inválido - registrar aviso e usar padrão
       errors.push({
         linha: line,
         campo: field,
@@ -463,7 +490,7 @@ export class ExcelProcessParser {
         erro: `Valor deve ser: ${[...validValues.true, ...validValues.false].join(', ')}`,
         tipo: 'WARNING'
       });
-      (row as unknown)[field] = true;
+      row.alertasAtivos = true;
     }
   }
 
@@ -506,7 +533,15 @@ export class ExcelProcessParser {
 
   private normalizeColumnName(columnName: string): string {
     const normalized = columnName.toLowerCase().trim();
-    return (EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING as unknown)[normalized] || normalized;
+
+    // Type-safe narrowing para COLUMN_MAPPING (Mandato Inegociável)
+    // Verificar se a chave existe no mapeamento
+    if (isValidColumnMapping(normalized)) {
+      return EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING[normalized];
+    }
+
+    // Se não estiver no mapeamento, retornar a versão normalizada
+    return normalized;
   }
 
   private buildResult(totalRows: number, validRows: ExcelProcessRow[], errors: ExcelRowError[]): ExcelParseResult {

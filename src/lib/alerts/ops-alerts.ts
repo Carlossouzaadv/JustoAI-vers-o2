@@ -53,6 +53,50 @@ interface AlertEvent {
   metadata?: Record<string, unknown>;
 }
 
+interface AlertMetadata {
+  plan?: string;
+  dailyAverage?: number;
+  currentDaily?: number;
+  billingBreakdown?: Record<string, number>;
+}
+
+// ================================================================
+// TYPE GUARDS (Mandato Inegociável)
+// ================================================================
+
+function isAlertMetadata(data: unknown): data is AlertMetadata {
+  return typeof data === 'object' && data !== null;
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number';
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function isRecord<T = unknown>(
+  data: unknown
+): data is Record<string, T> {
+  return typeof data === 'object' && data !== null && !(data instanceof Date) && !Array.isArray(data);
+}
+
+function isBillingBreakdown(data: unknown): data is Record<string, number> {
+  if (!isRecord<unknown>(data)) {
+    return false;
+  }
+  return Object.values(data).every(v => typeof v === 'number');
+}
+
+function isMetadataWithPlan(data: unknown): data is AlertMetadata {
+  return isAlertMetadata(data);
+}
+
+function isMetadataWithDailyStats(data: unknown): data is AlertMetadata {
+  return isAlertMetadata(data);
+}
+
 // ================================================================
 // CONFIGURAÇÕES
 // ================================================================
@@ -135,8 +179,12 @@ const ALERT_RULES: AlertRule[] = [
     name: 'Spike de Billing Detectado',
     description: 'Custo diário > 5x a média dos últimos 7 dias',
     condition: (ctx) => {
-      const dailyAvg = ctx.metadata?.dailyAverage || 0;
-      const currentDaily = ctx.metadata?.currentDaily || 0;
+      // Validate metadata structure safely
+      if (!isMetadataWithDailyStats(ctx.metadata)) {
+        return false;
+      }
+      const dailyAvg = isNumber(ctx.metadata.dailyAverage) ? ctx.metadata.dailyAverage : 0;
+      const currentDaily = isNumber(ctx.metadata.currentDaily) ? ctx.metadata.currentDaily : 0;
       return currentDaily > (dailyAvg * 5);
     },
     severity: 'high',
@@ -516,8 +564,22 @@ export class OpsAlerts {
 
   private formatAlertMessage(rule: AlertRule, context: AlertContext): string {
     switch (rule.id) {
-      case 'high_billing_cost':
-        return `🔸 Workspace "${context.workspaceName}" tem custo estimado de R$ ${context.billingEstimate.toFixed(2)} (${((context.billingEstimate / context.planPrice) * 100).toFixed(1)}% do plano ${context.metadata?.plan?.toUpperCase()}).\n\nTop consumidores:\n${this.formatTopConsumers(context.metadata?.billingBreakdown)}`;
+      case 'high_billing_cost': {
+        // Safely extract plan and billingBreakdown from metadata
+        let planLabel = 'UNKNOWN';
+        let breakdown: Record<string, number> | undefined;
+
+        if (isMetadataWithPlan(context.metadata)) {
+          if (isString(context.metadata.plan)) {
+            planLabel = context.metadata.plan.toUpperCase();
+          }
+          if (isBillingBreakdown(context.metadata.billingBreakdown)) {
+            breakdown = context.metadata.billingBreakdown;
+          }
+        }
+
+        return `🔸 Workspace "${context.workspaceName}" tem custo estimado de R$ ${context.billingEstimate.toFixed(2)} (${((context.billingEstimate / context.planPrice) * 100).toFixed(1)}% do plano ${planLabel}).\n\nTop consumidores:\n${this.formatTopConsumers(breakdown)}`;
+      }
 
       case 'critical_billing_cost':
         return `🚨 CRÍTICO: Workspace "${context.workspaceName}" excedeu o valor do plano!\n\nCusto estimado: R$ ${context.billingEstimate.toFixed(2)}\nValor do plano: R$ ${context.planPrice.toFixed(2)}\nExcesso: R$ ${(context.billingEstimate - context.planPrice).toFixed(2)}\n\nAção necessária: Revisar uso ou upgrade de plano.`;
@@ -525,11 +587,27 @@ export class OpsAlerts {
       case 'quota_hard_blocked_repeated':
         return `⚠️ Workspace "${context.workspaceName}" teve ${context.hardBlockedEvents} bloqueios de quota nos últimos 7 dias.\n\nQuota atual: ${context.quotaUsage}/${context.quotaLimit} relatórios\nRecomendação: Upgrade de plano ou compra de créditos extras.`;
 
-      case 'workspace_quota_exhausted':
-        return `📊 Workspace "${context.workspaceName}" esgotou sua quota mensal de relatórios.\n\nUso: ${context.quotaUsage}/${context.quotaLimit} relatórios (100%)\nPlano: ${context.metadata?.plan?.toUpperCase()}\n\nUsuário pode precisar comprar créditos extras.`;
+      case 'workspace_quota_exhausted': {
+        // Safely extract plan from metadata
+        let planLabel = 'UNKNOWN';
 
-      case 'billing_spike_detected':
-        return `📈 Spike de uso detectado no workspace "${context.workspaceName}"!\n\nCusto hoje: R$ ${context.metadata?.currentDaily?.toFixed(2)}\nMédia 7 dias: R$ ${context.metadata?.dailyAverage?.toFixed(2)}\nMultiplicador: ${(context.metadata?.currentDaily / context.metadata?.dailyAverage).toFixed(1)}x\n\nInvestigar uso anômalo.`;
+        if (isMetadataWithPlan(context.metadata) && isString(context.metadata.plan)) {
+          planLabel = context.metadata.plan.toUpperCase();
+        }
+
+        return `📊 Workspace "${context.workspaceName}" esgotou sua quota mensal de relatórios.\n\nUso: ${context.quotaUsage}/${context.quotaLimit} relatórios (100%)\nPlano: ${planLabel}\n\nUsuário pode precisar comprar créditos extras.`;
+      }
+
+      case 'billing_spike_detected': {
+        // Safely extract daily stats from metadata
+        const metadata = isMetadataWithDailyStats(context.metadata) ? context.metadata : null;
+        const currentDaily = metadata && isNumber(metadata.currentDaily) ? metadata.currentDaily : 0;
+        const dailyAverage = metadata && isNumber(metadata.dailyAverage) ? metadata.dailyAverage : 1;
+
+        const multiplier = dailyAverage > 0 ? (currentDaily / dailyAverage).toFixed(1) : '0';
+
+        return `📈 Spike de uso detectado no workspace "${context.workspaceName}"!\n\nCusto hoje: R$ ${currentDaily.toFixed(2)}\nMédia 7 dias: R$ ${dailyAverage.toFixed(2)}\nMultiplicador: ${multiplier}x\n\nInvestigar uso anômalo.`;
+      }
 
       default:
         return `${rule.description}\n\nWorkspace: ${context.workspaceName}\nDetalhes: ${JSON.stringify(context.metadata, null, 2)}`;

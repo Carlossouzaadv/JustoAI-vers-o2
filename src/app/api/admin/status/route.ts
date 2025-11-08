@@ -25,6 +25,21 @@ interface SystemHealth {
 }
 
 /**
+ * Type guard to check if systemHealthCheck response has components (success case)
+ */
+function hasComponents(
+  response: unknown
+): response is { status: string; timestamp: string; components: Record<string, unknown> } {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'components' in response &&
+    typeof (response as Record<string, unknown>).components === 'object' &&
+    (response as Record<string, unknown>).components !== null
+  );
+}
+
+/**
  * Get system health status
  */
 export async function GET(req: NextRequest) {
@@ -90,13 +105,26 @@ export async function GET(req: NextRequest) {
     try {
       const redisStart = Date.now();
       const bullHealth = await systemHealthCheck();
-      checks.redis = {
-        name: 'Redis Cache',
-        status: bullHealth?.redis?.status === 'healthy' ? 'healthy' : 'degraded',
-        lastCheck: new Date().toISOString(),
-        responseTime: Date.now() - redisStart,
-        message: bullHealth?.redis?.message || 'Cache server operational',
-      };
+
+      // Type guard to safely access redis component
+      if (hasComponents(bullHealth) && 'redis' in bullHealth.components) {
+        const redis = bullHealth.components.redis as Record<string, unknown>;
+        checks.redis = {
+          name: 'Redis Cache',
+          status: redis.status === 'healthy' ? 'healthy' : 'degraded',
+          lastCheck: new Date().toISOString(),
+          responseTime: Date.now() - redisStart,
+          message: typeof redis.message === 'string' ? redis.message : 'Cache server operational',
+        };
+      } else {
+        checks.redis = {
+          name: 'Redis Cache',
+          status: 'degraded',
+          lastCheck: new Date().toISOString(),
+          responseTime: Date.now() - redisStart,
+          message: 'Cache server operational',
+        };
+      }
     } catch (err) {
       checks.redis = {
         name: 'Redis Cache',
@@ -124,17 +152,30 @@ export async function GET(req: NextRequest) {
     try {
       const bullStart = Date.now();
       const bullHealth = await systemHealthCheck();
-      const queueStatus =
-        bullHealth?.summary?.healthyQueues === bullHealth?.summary?.totalQueues
-          ? 'healthy'
-          : 'degraded';
-      checks.queues = {
-        name: 'Bull Queues',
-        status: queueStatus,
-        lastCheck: new Date().toISOString(),
-        responseTime: Date.now() - bullStart,
-        message: `${bullHealth?.summary?.healthyQueues}/${bullHealth?.summary?.totalQueues} queues healthy`,
-      };
+
+      // Type guard to safely access queues summary
+      if (hasComponents(bullHealth) && 'queues' in bullHealth.components) {
+        const queues = bullHealth.components.queues as Record<string, unknown>;
+        const healthyQueues = typeof queues.healthy === 'number' ? queues.healthy : 0;
+        const totalQueues = typeof queues.total === 'number' ? queues.total : 0;
+
+        const queueStatus = healthyQueues === totalQueues ? 'healthy' : 'degraded';
+        checks.queues = {
+          name: 'Bull Queues',
+          status: queueStatus,
+          lastCheck: new Date().toISOString(),
+          responseTime: Date.now() - bullStart,
+          message: `${healthyQueues}/${totalQueues} queues healthy`,
+        };
+      } else {
+        checks.queues = {
+          name: 'Bull Queues',
+          status: 'degraded',
+          lastCheck: new Date().toISOString(),
+          responseTime: Date.now() - bullStart,
+          message: 'Queue status unknown',
+        };
+      }
     } catch (err) {
       checks.queues = {
         name: 'Bull Queues',

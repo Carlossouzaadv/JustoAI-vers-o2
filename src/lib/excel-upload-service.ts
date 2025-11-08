@@ -36,6 +36,68 @@ interface JuditApiResponseData {
   data_distribuicao?: string;
 }
 
+// ================================================================
+// TYPE GUARDS (Mandato Inegociável - Safe Narrowing)
+// ================================================================
+
+function isJuditPartyType(value: unknown): value is 'AUTOR' | 'REU' | 'TERCEIRO' {
+  return value === 'AUTOR' || value === 'REU' || value === 'TERCEIRO';
+}
+
+function isJuditParty(data: unknown): data is JuditParty {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'nome' in data &&
+    typeof (data as JuditParty).nome === 'string' &&
+    'tipo' in data &&
+    isJuditPartyType((data as JuditParty).tipo)
+  );
+}
+
+function isJuditMovement(data: unknown): data is JuditMovement {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'data' in data &&
+    typeof (data as JuditMovement).data === 'string' &&
+    'tipo' in data &&
+    typeof (data as JuditMovement).tipo === 'string' &&
+    'descricao' in data &&
+    typeof (data as JuditMovement).descricao === 'string'
+  );
+}
+
+function isJuditApiResponseData(data: unknown): data is JuditApiResponseData {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'numero_processo' in data &&
+    typeof (data as JuditApiResponseData).numero_processo === 'string' &&
+    'tribunal' in data &&
+    typeof (data as JuditApiResponseData).tribunal === 'string' &&
+    'partes' in data &&
+    Array.isArray((data as JuditApiResponseData).partes) &&
+    'movimentacoes' in data &&
+    Array.isArray((data as JuditApiResponseData).movimentacoes) &&
+    'situacao' in data &&
+    typeof (data as JuditApiResponseData).situacao === 'string'
+  );
+}
+
+// ================================================================
+// ENUM MAPPERS (Safe Type Transformation)
+// ================================================================
+
+function mapToPartyType(rawType: string): 'AUTOR' | 'REU' | 'TERCEIRO' {
+  const normalizedType = rawType.toUpperCase().trim();
+  if (normalizedType === 'AUTOR' || normalizedType === 'REU' || normalizedType === 'TERCEIRO') {
+    return normalizedType;
+  }
+  // Fallback seguro para tipo desconhecido
+  return 'TERCEIRO';
+}
+
 interface JuditTelemetryData {
   workspaceId: string;
   batchId: string;
@@ -390,7 +452,7 @@ export class ExcelUploadService {
       // Verificar se processo já existe no workspace
       const existingProcess = await prisma.monitoredProcess.findFirst({
         where: {
-          number: row.numeroProcesso,
+          processNumber: row.numeroProcesso,
           workspaceId
         }
       });
@@ -504,13 +566,17 @@ export class ExcelUploadService {
 
       // Sucesso - registrar telemetria
       const responseTime = Date.now() - startTime;
+
+      // Validar dados com type guard (Mandato Inegociável)
+      const validatedData = isJuditApiResponseData(result.data) ? result.data : null;
+
       telemetryData = {
         ...telemetryData,
         success: true,
         responseTimeMs: responseTime,
         docsRetrieved: 1,
-        movementsCount: result.data?.movimentacoes?.length || 0,
-        partiesCount: result.data?.partes?.length || 0,
+        movementsCount: validatedData?.movimentacoes?.length || 0,
+        partiesCount: validatedData?.partes?.length || 0,
         rateLimitHit: false
       };
 
@@ -518,7 +584,7 @@ export class ExcelUploadService {
 
       return {
         success: result.success,
-        data: result.data,
+        data: validatedData || undefined,
         error: result.error
       };
 
@@ -552,9 +618,30 @@ export class ExcelUploadService {
     workspaceId: string,
     prisma: PrismaClient
   ): Promise<void> {
-    const processData = {
+    // Construir dados base (type-safe, sem Object.assign)
+    interface ProcessDataBase {
+      workspaceId: string;
+      processNumber: string;
+      court: string;
+      clientName: string;
+      notes: string;
+      syncFrequency: 'MANUAL' | 'HOURLY' | 'DAILY' | 'WEEKLY';
+      alertsEnabled: boolean;
+      alertEmails: string[];
+      enriched: boolean;
+      status: string;
+      subject?: string;
+      processClass?: string;
+      situation?: string;
+      causeValue?: number;
+      distributionDate?: Date | null;
+      parties?: unknown[];
+      lastSyncAt?: Date;
+    }
+
+    const processData: ProcessDataBase = {
       workspaceId,
-      number: row.numeroProcesso,
+      processNumber: row.numeroProcesso,
       court: row.tribunal,
       clientName: row.nomeCliente,
       notes: row.observacoes,
@@ -565,36 +652,56 @@ export class ExcelUploadService {
       status: 'ACTIVE'
     };
 
+    // Adicionar dados da Judit com narrowing seguro (Mandato Inegociável)
     if (juditData) {
-      // Adicionar dados da Judit
-      Object.assign(processData, {
-        subject: juditData.assunto,
-        processClass: juditData.classe,
-        situation: juditData.situacao,
-        causeValue: juditData.valor_causa,
-        distributionDate: juditData.data_distribuicao ? new Date(juditData.data_distribuicao) : null,
-        parties: juditData.partes || [],
-        lastSyncAt: new Date()
-      });
+      processData.subject = juditData.assunto;
+      processData.processClass = juditData.classe;
+      processData.situation = juditData.situacao;
+      processData.causeValue = juditData.valor_causa;
+
+      // Narrowing seguro para data
+      if (juditData.data_distribuicao) {
+        processData.distributionDate = new Date(juditData.data_distribuicao);
+      } else {
+        processData.distributionDate = null;
+      }
+
+      // Validar e filtrar partes com type guard
+      processData.parties = juditData.partes
+        .filter(isJuditParty)
+        .map(party => ({
+          nome: party.nome,
+          tipo: party.tipo,
+          cpf_cnpj: party.cpf_cnpj
+        }));
+
+      processData.lastSyncAt = new Date();
     }
 
     const createdProcess = await prisma.monitoredProcess.create({
-      data: processData
+      data: processData as never // Necessário: Prisma precisa de tipos exatos
     });
 
-    // Criar movimentações se houver dados da Judit
-    if (juditData?.movimentacoes?.length > 0) {
-      const movements = juditData.movimentacoes.slice(0, 100).map((mov: JuditMovement) => ({
-        processId: createdProcess.id,
-        date: new Date(mov.data),
-        type: mov.tipo,
-        description: mov.descricao,
-        source: 'JUDIT_API'
-      }));
+    // Criar movimentações com narrowing seguro e validação (Mandato Inegociável)
+    if (juditData && juditData.movimentacoes && juditData.movimentacoes.length > 0) {
+      // Filtrar apenas movimentos válidos
+      const validMovements = juditData.movimentacoes
+        .filter(isJuditMovement)
+        .slice(0, 100);
 
-      await prisma.processMovement.createMany({
-        data: movements
-      });
+      if (validMovements.length > 0) {
+        const movements = validMovements.map(mov => ({
+          monitoredProcessId: createdProcess.id,
+          date: new Date(mov.data),
+          type: mov.tipo,
+          description: mov.descricao,
+          source: 'JUDIT_API'
+        }));
+
+        await prisma.processMovement.createMany({
+          data: movements
+        });
+      }
     }
   }
 
@@ -832,8 +939,8 @@ export class ExcelUploadService {
           numero_processo: numeroProcesso,
           tribunal: tribunal,
           partes: [
-            { nome: 'Parte Autora Simulada', tipo: 'AUTOR' },
-            { nome: 'Parte Ré Simulada', tipo: 'REU' }
+            { nome: 'Parte Autora Simulada', tipo: 'AUTOR' as const },
+            { nome: 'Parte Ré Simulada', tipo: 'REU' as const }
           ],
           movimentacoes: [
             {
@@ -843,8 +950,10 @@ export class ExcelUploadService {
             }
           ],
           valor_causa: Math.floor(Math.random() * 1000000) + 10000,
-          status: 'ATIVO',
-          ultima_atualizacao: new Date().toISOString()
+          situacao: 'ATIVO',
+          classe: 'Ação Civil',
+          assunto: 'Processo Simulado',
+          data_distribuicao: new Date().toISOString()
         }
       };
     } else {
@@ -857,32 +966,87 @@ export class ExcelUploadService {
 
   /**
    * Transforma resposta da API Judit para formato padrão
+   * Com narrowing seguro (Mandato Inegociável)
    */
   private transformJuditResponse(juditData: Record<string, unknown>): JuditApiResponseData {
     try {
-      // Transformar dados da Judit para formato padrão do sistema
+      // Helper para extrair string com fallback seguro
+      const toString = (value: unknown, fallback: string = ''): string => {
+        return typeof value === 'string' ? value : fallback;
+      };
+
+      // Helper para extrair número com fallback seguro
+      const toNumber = (value: unknown): number | undefined => {
+        return typeof value === 'number' ? value : undefined;
+      };
+
+      // Transformar partes com type guard e mapper
+      let parties: JuditParty[] = [];
+      if (Array.isArray(juditData.parties)) {
+        const transformedParties: (JuditParty | null)[] = juditData.parties.map(party => {
+          if (typeof party !== 'object' || party === null) {
+            return null;
+          }
+          const partyObj = party as Record<string, unknown>;
+          const nome = toString(partyObj.name || partyObj.nome);
+          const cpf_cnpj_value = toString(partyObj.document || partyObj.documento);
+
+          // Retornar null se nome está vazio, senão retornar JuditParty válido
+          if (!nome) {
+            return null;
+          }
+
+          return {
+            nome,
+            tipo: mapToPartyType(toString(partyObj.type || partyObj.tipo)),
+            cpf_cnpj: cpf_cnpj_value || undefined
+          };
+        });
+
+        // Filtrar nulls com narrowing seguro
+        parties = transformedParties.filter((p): p is JuditParty => p !== null);
+      }
+
+      // Transformar movimentações com type guard
+      let movements: JuditMovement[] = [];
+      if (Array.isArray(juditData.movements)) {
+        movements = juditData.movements
+          .map(mov => {
+            if (typeof mov !== 'object' || mov === null) {
+              return null;
+            }
+            const movObj = mov as Record<string, unknown>;
+            return {
+              data: toString(movObj.date || movObj.data),
+              tipo: toString(movObj.type || movObj.tipo),
+              descricao: toString(movObj.description || movObj.descricao)
+            };
+          })
+          .filter((m): m is JuditMovement => m !== null && m.data !== '' && m.tipo !== '');
+      }
+
+      // Construir resposta com narrowing seguro
+      const numeroProcesso = toString(juditData.lawsuit_cnj || juditData.numero_processo || juditData.number);
+      const tribunal = toString(juditData.court || juditData.tribunal);
+      const situacao = toString(juditData.status || juditData.situacao, 'ATIVO');
+      const classe = toString(juditData.classe);
+      const assunto = toString(juditData.assunto);
+      const valorCausa = toNumber(juditData.lawsuit_value || juditData.valor_causa);
+      const dataDistribuicao = toString(
+        juditData.last_update || juditData.data_distribuicao,
+        new Date().toISOString()
+      );
+
       return {
-        numero_processo: String(juditData.lawsuit_cnj || juditData.number || ''),
-        tribunal: String(juditData.court || juditData.tribunal || ''),
-        partes: Array.isArray(juditData.parties)
-          ? juditData.parties.map((party: Record<string, unknown>) => ({
-              nome: String(party.name || party.nome || ''),
-              tipo: (String(party.type || party.tipo) as 'AUTOR' | 'REU' | 'TERCEIRO') || 'TERCEIRO',
-              cpf_cnpj: party.document ? String(party.document) : party.documento ? String(party.documento) : undefined
-            }))
-          : [],
-        movimentacoes: Array.isArray(juditData.movements)
-          ? juditData.movements.map((mov: Record<string, unknown>) => ({
-              data: String(mov.date || mov.data || ''),
-              tipo: String(mov.type || mov.tipo || ''),
-              descricao: String(mov.description || mov.descricao || '')
-            }))
-          : [],
-        valor_causa: typeof juditData.lawsuit_value === 'number' ? juditData.lawsuit_value : (typeof juditData.valor_causa === 'number' ? juditData.valor_causa : undefined),
-        situacao: String(juditData.status || 'ATIVO'),
-        classe: String(juditData.classe || ''),
-        assunto: String(juditData.assunto || ''),
-        data_distribuicao: juditData.last_update ? String(juditData.last_update) : new Date().toISOString()
+        numero_processo: numeroProcesso,
+        tribunal: tribunal,
+        partes: parties,
+        movimentacoes: movements,
+        valor_causa: valorCausa,
+        situacao: situacao,
+        classe: classe,
+        assunto: assunto,
+        data_distribuicao: dataDistribuicao
       };
     } catch (error) {
       console.error('Erro ao transformar resposta da Judit:', error);

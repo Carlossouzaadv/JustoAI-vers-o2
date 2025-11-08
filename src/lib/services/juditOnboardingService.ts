@@ -8,16 +8,38 @@ import { prisma } from '@/lib/prisma';
 import { recordOnboardingError } from '@/lib/utils/case-onboarding-helper';
 import { parseJuditResponse, JuditRequestResponse } from '@/lib/types/external-api';
 
-// Type definitions for logging
-interface LogMessage {
-  [key: string]: string | number | boolean | object | undefined;
+// ================================================================
+// TYPE GUARDS AND LOGGING UTILITIES
+// ================================================================
+
+type LogMessage = Record<string, string | number | boolean | object | undefined>;
+
+function isLogMessage(value: unknown): value is LogMessage {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+// Helper to safely format log messages (Padrão-Ouro)
+function formatLogMessage(data: LogMessage | string): string {
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (isLogMessage(data)) {
+    try {
+      return JSON.stringify(data);
+    } catch {
+      return String(data);
+    }
+  }
+
+  return String(data);
 }
 
 interface Logger {
-  info: (_msg: string, _data?: LogMessage) => void;
-  error: (_msg: string, _data?: LogMessage) => void;
-  warn: (_msg: string, _data?: LogMessage) => void;
-  debug: (_msg: string, _data?: LogMessage) => void;
+  info: (_data: LogMessage | string) => void;
+  error: (_data: LogMessage | string) => void;
+  warn: (_data: LogMessage | string) => void;
+  debug: (_data: LogMessage | string) => void;
 }
 
 interface OperationTracker {
@@ -26,19 +48,29 @@ interface OperationTracker {
 
 // Observability stubs - inline to avoid external dependencies that may not be in container
 const juditLogger: Logger = {
-  info: (msg: string, data?: LogMessage) => console.log(`[JUDIT]`, msg, data || ''),
-  error: (msg: string, data?: LogMessage) => console.error(`[JUDIT-ERROR]`, msg, data || ''),
-  warn: (msg: string, data?: LogMessage) => console.warn(`[JUDIT-WARN]`, msg, data || ''),
-  debug: (msg: string, data?: LogMessage) => console.debug(`[JUDIT-DEBUG]`, msg, data || ''),
+  info: (data: LogMessage | string) => console.log(`[JUDIT]`, formatLogMessage(data)),
+  error: (data: LogMessage | string) => console.error(`[JUDIT-ERROR]`, formatLogMessage(data)),
+  warn: (data: LogMessage | string) => console.warn(`[JUDIT-WARN]`, formatLogMessage(data)),
+  debug: (data: LogMessage | string) => console.debug(`[JUDIT-DEBUG]`, formatLogMessage(data)),
 };
 const logOperationStart = (logger: Logger, name: string, data?: LogMessage): OperationTracker => {
   const startTime = Date.now();
-  logger.debug?.(`[OPERATION] Starting ${name}`, data || {});
+  logger.debug({
+    operation_event: 'start',
+    operation_name: name,
+    ...data,
+  });
 
   return {
     finish: (_status: string, _details?: LogMessage) => {
       const duration = Date.now() - startTime;
-      logger.info?.(`[OPERATION] ${name} finished: ${_status}`, { duration_ms: duration, ..._details });
+      logger.info({
+        operation_event: 'finish',
+        operation_name: name,
+        status: _status,
+        duration_ms: duration,
+        ...(_details || {}),
+      });
       return duration;
     }
   };
@@ -48,8 +80,8 @@ const juditMetrics = {
     console.log(`[JUDIT-METRICS] Onboarding ${status}:`, { durationMs });
   },
 };
-const trackJuditCost = (data: LogMessage) => console.log(`[COST]`, data);
-const alertApiError = (error: unknown, context?: LogMessage) => console.error(`[ALERT-API-ERROR]`, error, context || '');
+const trackJuditCost = (data: LogMessage) => console.log(`[COST]`, formatLogMessage(data));
+const alertApiError = (error: unknown, context?: LogMessage) => console.error(`[ALERT-API-ERROR]`, error, context ? formatLogMessage(context) : '');
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -308,14 +340,17 @@ async function initiateRequest(
     }
   }
 
-  if (targetCaseId && !processo.case) {
-    // Vincular o Case ao Processo (se ainda não estiver vinculado)
-    const caseToUpdate = await prisma.case.findUnique({
+  // Vincular case ao processo se necessário (com type guard)
+  if (targetCaseId) {
+    // Verificar se o case já está vinculado ao processo através de uma query separada
+    const caseToCheck = await prisma.case.findUnique({
       where: { id: targetCaseId },
       select: { processoId: true }
     });
 
-    if (caseToUpdate && !caseToUpdate.processoId) {
+    // Type guard: caseToCheck é definido se o case existe
+    if (caseToCheck && !caseToCheck.processoId) {
+      // Vincular o Case ao Processo (se ainda não estiver vinculado)
       await prisma.case.update({
         where: { id: targetCaseId },
         data: {

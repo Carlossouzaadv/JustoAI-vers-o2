@@ -26,6 +26,78 @@ import type {
 } from './types/json-fields';
 
 // ================================
+// TYPE GUARDS PARA VALIDAÇÃO RUNTIME
+// ================================
+
+/**
+ * Valida se um valor é um SourceSystem válido
+ */
+function isValidSourceSystem(value: unknown): value is SourceSystem {
+  const validSystems: readonly SourceSystem[] = [
+    'PROJURIS', 'LEGAL_ONE', 'ASTREA', 'CP_PRO',
+    'SAJ', 'ESAJ', 'PJE', 'THEMIS', 'ADVBOX', 'UNKNOWN'
+  ];
+  return typeof value === 'string' && (validSystems as readonly string[]).includes(value);
+}
+
+/**
+ * Converte um valor string para SourceSystem ou retorna UNKNOWN
+ */
+function toSourceSystem(value: unknown): SourceSystem {
+  if (isValidSourceSystem(value)) {
+    return value;
+  }
+  return 'UNKNOWN';
+}
+
+/**
+ * Valida se um valor é um ImportedDataType válido
+ */
+function isValidImportedDataType(value: unknown): value is 'CASE' | 'CLIENT' | 'EVENT' | 'DOCUMENT' | 'LAWYER' | 'CONTACT' | 'FINANCIAL' | 'DEADLINE' | 'OTHER' {
+  const validTypes: readonly string[] = ['CASE', 'CLIENT', 'EVENT', 'DOCUMENT', 'LAWYER', 'CONTACT', 'FINANCIAL', 'DEADLINE', 'OTHER'];
+  return typeof value === 'string' && validTypes.includes(value);
+}
+
+/**
+ * Converte um valor string para ImportedDataType
+ * @throws Error se o valor não for um tipo válido
+ */
+function toImportedDataType(value: unknown): 'CASE' | 'CLIENT' | 'EVENT' | 'DOCUMENT' | 'LAWYER' | 'CONTACT' | 'FINANCIAL' | 'DEADLINE' | 'OTHER' {
+  if (!isValidImportedDataType(value)) {
+    throw new Error(`Tipo de dados inválido: ${String(value)}. Tipos válidos: CASE, CLIENT, EVENT, DOCUMENT, LAWYER, CONTACT, FINANCIAL, DEADLINE, OTHER`);
+  }
+  return value;
+}
+
+/**
+ * Type guard para validar se um objeto é compatível com ColumnMapping
+ */
+function isCompatibleColumnMapping(obj: unknown): obj is ColumnMapping {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const mapping = obj as Record<string, unknown>;
+  return (
+    'targetField' in mapping &&
+    'category' in mapping &&
+    typeof mapping.targetField === 'string' &&
+    typeof mapping.category === 'string'
+  );
+}
+
+/**
+ * Converte SystemColumnMapping[] para ColumnMapping[]
+ * Filtra apenas os mappings que são compatíveis
+ */
+function toColumnMappings(mappings: unknown[]): ColumnMapping[] {
+  const compatible: ColumnMapping[] = [];
+  for (const mapping of mappings) {
+    if (isCompatibleColumnMapping(mapping)) {
+      compatible.push(mapping);
+    }
+  }
+  return compatible;
+}
+
+// ================================
 // TIPOS E INTERFACES
 // ================================
 
@@ -103,15 +175,28 @@ export type ImportStatus =
   | 'FAILED'
   | 'CANCELLED';
 
+/**
+ * Type guard compatível com SystemColumnMapping
+ * SystemColumnMapping pode ter sourceColumn como string | string[]
+ */
 interface ColumnMapping {
-  sourceField: string;
+  sourceField?: string | string[];
+  sourceColumn?: string | string[];
   targetField: string;
   category: string;
+  [key: string]: unknown;
 }
 
+/**
+ * Type que representa um mapeamento de sistema
+ * Compatível com SystemMapping do sistema-mappings.ts
+ */
 interface SystemMappingData {
   system: string;
   columnMappings: ColumnMapping[];
+  transformRules?: unknown[];
+  validationRules?: unknown[];
+  importStrategies?: unknown[];
 }
 
 // ================================
@@ -172,6 +257,13 @@ export class SystemImporter {
     }
     const importSettings: SystemImportSettings = rawSettings;
 
+    // ================================================================
+    // JSON SERIALIZATION (ERRO #227): importSettings é tipado como SystemImportSettings
+    // ================================================================
+    // Converter objeto tipo-seguro para JSON válido para Prisma
+    // (JSON.stringify + parse garante que é um JSON válido)
+    const importSettingsJson = JSON.parse(JSON.stringify(importSettings));
+
     const systemImport = await prisma.systemImport.create({
       data: {
         workspaceId,
@@ -180,7 +272,7 @@ export class SystemImporter {
         fileSize: buffer.length,
         originalHash: fileHash,
         status: 'ANALYZING',
-        importSettings
+        importSettings: importSettingsJson
       }
     });
 
@@ -352,23 +444,61 @@ export class SystemImporter {
       throw new Error(`Estratégia de importação não encontrada para ${parseResult.detectedSystem}`);
     }
 
+    // ================================================================
+    // TYPE-SAFE DATA PREVIEW NARROWING (ERRO #369)
+    // ================================================================
+    // Validar que dataPreview é um array de arrays com tipos primitivos válidos
+    const rawDataPreview: unknown = parseResult.dataPreview;
+    if (!Array.isArray(rawDataPreview)) {
+      throw new Error('dataPreview inválido: não é um array');
+    }
+
+    // Verificar que cada linha é um array de primitivos válidos
+    const isValidDataRows = rawDataPreview.every((row: unknown) => {
+      if (!Array.isArray(row)) return false;
+      return row.every((item: unknown) =>
+        item === null || typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+      );
+    });
+
+    if (!isValidDataRows) {
+      throw new Error('dataPreview inválido: linhas contêm tipos não permitidos');
+    }
+
+    // Agora dataPreview é type-safe e pode ser usado com slice()
+    const validDataPreview: Array<Array<string | number | boolean | null>> = rawDataPreview;
+
     // Processar dados por categoria seguindo a estratégia
     for (const category of strategy.order) {
       if (this.cancelled) break;
 
       console.log(`${ICONS.PROCESS} Importando categoria: ${category}`);
 
-      const categoryMappings = systemMapping.columnMappings.filter(
+      // ================================================================
+      // TYPE-SAFE NARROWING: SystemColumnMapping[] -> ColumnMapping[]
+      // ================================================================
+      // Usar type guard para converter e filtrar apenas os mapeamentos válidos
+      const allCategoryMappings = systemMapping.columnMappings.filter(
         mapping => mapping.category === category
       );
+      const categoryMappings = toColumnMappings(allCategoryMappings);
 
       if (categoryMappings.length === 0) continue;
 
+      // ================================================================
+      // TYPE-SAFE NARROWING: SystemMapping -> SystemMappingData
+      // ================================================================
+      // Extrair os campos necessários de SystemMapping para SystemMappingData
+      const mappingData: SystemMappingData = {
+        system: parseResult.detectedSystem,
+        columnMappings: categoryMappings
+      };
+
       await this.importCategory(
         category,
-        parseResult.dataPreview.slice(1), // Remover header
+        validDataPreview.slice(1), // Remover header - agora é type-safe
         categoryMappings,
-        systemMapping,
+        mappingData,
         options
       );
 
@@ -460,21 +590,50 @@ export class SystemImporter {
       const value = row[colIndex];
 
       if (value !== undefined && value !== null && value !== '') {
+        // ================================================================
+        // TYPE-SAFE NARROWING: systemMapping.system é string,
+        // mas precisa ser SourceSystem para o método
+        // ================================================================
+        const validSystem: SourceSystem = toSourceSystem(systemMapping.system);
+
         // Aplicar transformações
         const transformRules = SystemMappings.getTransformRules(
-          systemMapping.system,
+          validSystem,
           mapping.targetField
         );
 
-        let transformedValue = value;
+        let transformedValue: string | number | boolean = value;
+
+        // ================================================================
+        // TYPE-SAFE NARROWING (ERRO #552): transformedValue pode ser unknown
+        // ================================================================
+        // Garantir que value é de um tipo válido antes de transformar
+        if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') {
+          this.session!.errors.push({
+            type: 'VALIDATION_ERROR',
+            message: `Tipo de valor inválido para transformação: ${typeof value}`,
+            line: lineNumber,
+            field: mapping.targetField,
+            value: String(value)
+          });
+          return;
+        }
+
         transformRules.forEach(rule => {
-          transformedValue = DataTransformer.transformValue(transformedValue, rule.rule);
-          this.session!.summary.transformationsApplied++;
+          const transformed = DataTransformer.transformValue(transformedValue, rule.rule);
+
+          // Validar que o resultado da transformação mantém o tipo
+          if (typeof transformed === 'string' || typeof transformed === 'number' || typeof transformed === 'boolean') {
+            transformedValue = transformed;
+            this.session!.summary.transformationsApplied++;
+          } else {
+            console.warn(`Transformação resultou em tipo inválido: ${typeof transformed}`);
+          }
         });
 
         // Aplicar validações
         const validationRules = SystemMappings.getValidationRules(
-          systemMapping.system,
+          validSystem,
           mapping.targetField
         );
 
@@ -511,16 +670,26 @@ export class SystemImporter {
         break;
     }
 
+    // ================================================================
+    // TYPE-SAFE NARROWING: category é string, mas precisa ser ImportedDataType
+    // ================================================================
+    // Converter categoria para tipo válido de dados importados
+    const validDataType = toImportedDataType(category);
+
+    // ================================================================
+    // JSON SERIALIZATION (ERRO #608): mappedData é Record<string, unknown>
+    // ================================================================
+    // Converter para JSON válido para Prisma (remove funções, Dates não serializáveis, etc)
+    const mappedDataJson = JSON.parse(JSON.stringify(mappedData));
+
     // Registrar item importado
-    // Category é garantido como string (vem do switch statement acima)
-    // Não usar type casting - category é estruturalmente válido
     await prisma.importedDataItem.create({
       data: {
         systemImportId: this.session.id,
-        dataType: category,
+        dataType: validDataType,
         status: 'IMPORTED',
         originalData: row,
-        mappedData,
+        mappedData: mappedDataJson,
         lineNumber,
         importOrder: this.session.processedRows
       }

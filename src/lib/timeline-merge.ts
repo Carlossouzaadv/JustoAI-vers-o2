@@ -8,12 +8,13 @@
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import type { PrismaClient, ProcessTimelineEntry } from '@prisma/client';
-import type { TimelineConflictDetails, TimelineOriginalTexts, TimelineSourceMetadata } from './types/json-fields';
+import type { TimelineConflictDetails, TimelineOriginalTexts } from './types/json-fields';
 import {
   isTimelineConflictDetails,
   isTimelineOriginalTexts,
   isTimelineMergedMetadata,
   isTimelineSourceMetadata,
+  type TimelineSourceMetadata,
 } from './types/type-guards';
 
 export interface TimelineEntry {
@@ -54,6 +55,24 @@ export interface TimelineMergeResult {
     source: string;
     confidence: number;
   }>;
+}
+
+/**
+ * Type Guard: Validates that a string is a valid TimelineEntry source
+ * Uses narrowing to ensure runtime safety without casting
+ */
+function isValidTimelineEntrySource(value: unknown): value is TimelineEntry['source'] {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const validSources: readonly TimelineEntry['source'][] = [
+    'DOCUMENT_UPLOAD',
+    'API_JUDIT',
+    'MANUAL_ENTRY',
+    'SYSTEM_IMPORT',
+    'AI_EXTRACTION',
+  ];
+  return validSources.includes(value as TimelineEntry['source']);
 }
 
 export class TimelineMergeService {
@@ -261,7 +280,27 @@ export class TimelineMergeService {
 
         if (existingEntry) {
           // Tentar mesclar inteligentemente
-          const { merged, changed } = this.mergeIntelligently(existingEntry, entry);
+          // Convert Prisma result to TimelineEntry with safe type narrowing
+          // Validate source using type guard before constructing object
+          if (!isValidTimelineEntrySource(existingEntry.source)) {
+            console.warn(
+              `${ICONS.WARNING} Entrada com source inválido: ${existingEntry.source}. Pulando merge.`
+            );
+            continue;
+          }
+
+          const existingAsTimelineEntry: TimelineEntry = {
+            eventDate: existingEntry.eventDate,
+            eventType: existingEntry.eventType,
+            description: existingEntry.description,
+            source: existingEntry.source, // Now guaranteed to be valid by type guard
+            sourceId: existingEntry.sourceId ?? undefined,
+            metadata: typeof existingEntry.metadata === 'object' && existingEntry.metadata !== null
+              ? (existingEntry.metadata as Record<string, unknown>)
+              : undefined,
+            confidence: existingEntry.confidence,
+          };
+          const { merged, changed } = this.mergeIntelligently(existingAsTimelineEntry, entry);
 
           if (changed) {
             // Atualizar entrada existente com dados mesclados
@@ -272,7 +311,7 @@ export class TimelineMergeService {
                 eventType: merged.eventType,
                 description: merged.description,
                 source: merged.source,
-                metadata: merged.metadata,
+                metadata: merged.metadata ? JSON.parse(JSON.stringify(merged.metadata)) : undefined,
                 confidence: merged.confidence,
                 normalizedContent: this.hashManager.normalizeForTimeline(
                   `${merged.eventType}_${merged.description}_${merged.eventDate.toISOString().split('T')[0]}`
@@ -315,7 +354,7 @@ export class TimelineMergeService {
               normalizedContent,
               source: entry.source,
               sourceId: entry.sourceId,
-              metadata: entry.metadata || {},
+              metadata: entry.metadata ? JSON.parse(JSON.stringify(entry.metadata)) : {},
               confidence: entry.confidence || 1.0
             }
           });
@@ -353,7 +392,26 @@ export class TimelineMergeService {
 
             if (existingEntry) {
               // Tentar merge com a entrada recuperada
-              const { merged, changed } = this.mergeIntelligently(existingEntry, entry);
+              // Validate source using type guard before constructing object
+              if (!isValidTimelineEntrySource(existingEntry.source)) {
+                console.warn(
+                  `${ICONS.WARNING} Entrada recuperada com source inválido: ${existingEntry.source}. Pulando merge.`
+                );
+                duplicatesSkipped++;
+              } else {
+                // Convert Prisma result to TimelineEntry with safe type narrowing
+                const recoveredAsTimelineEntry: TimelineEntry = {
+                  eventDate: existingEntry.eventDate,
+                  eventType: existingEntry.eventType,
+                  description: existingEntry.description,
+                  source: existingEntry.source, // Now guaranteed to be valid by type guard
+                  sourceId: existingEntry.sourceId ?? undefined,
+                  metadata: typeof existingEntry.metadata === 'object' && existingEntry.metadata !== null
+                    ? (existingEntry.metadata as Record<string, unknown>)
+                    : undefined,
+                  confidence: existingEntry.confidence,
+                };
+                const { merged, changed } = this.mergeIntelligently(recoveredAsTimelineEntry, entry);
 
               if (changed) {
                 const updatedEntry = await prisma.processTimelineEntry.update({
@@ -363,7 +421,7 @@ export class TimelineMergeService {
                     eventType: merged.eventType,
                     description: merged.description,
                     source: merged.source,
-                    metadata: merged.metadata,
+                    metadata: merged.metadata ? JSON.parse(JSON.stringify(merged.metadata)) : undefined,
                     confidence: merged.confidence,
                     normalizedContent: this.hashManager.normalizeForTimeline(
                       `${merged.eventType}_${merged.description}_${merged.eventDate.toISOString().split('T')[0]}`
@@ -389,6 +447,7 @@ export class TimelineMergeService {
                 console.log(
                   `${ICONS.INFO} Entrada recuperada mas sem mudanças: ${entry.eventType}`
                 );
+              }
               }
             } else {
               // PROBLEMA: Não conseguiu recuperar a entrada mesmo com retries!
@@ -606,7 +665,7 @@ export class TimelineMergeService {
           level: 'INFO',
           category: 'UPLOAD',
           message: `Timeline event: ${type}`,
-          data: details // Use 'data' field - GlobalLog schema only has 'data: Json?'
+          data: JSON.parse(JSON.stringify(details)) // Safe JSON serialization for Prisma
         }
       });
     } catch (error) {

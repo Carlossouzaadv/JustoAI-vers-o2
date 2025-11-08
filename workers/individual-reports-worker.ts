@@ -48,24 +48,52 @@ const INDIVIDUAL_REPORTS_CONFIG = {
 // Criar fila específica para relatórios individuais
 import Queue from 'bull';
 
-export const individualReportsQueue = new Queue<IndividualReportJobData, ReportJobResult>('individual-reports', {
-  redis: getRedisClient(),
-  defaultJobOptions: {
-    removeOnComplete: 50,
-    removeOnFail: 20,
-    attempts: INDIVIDUAL_REPORTS_CONFIG.RETRY_ATTEMPTS,
-    backoff: {
-      type: 'exponential',
-      delay: INDIVIDUAL_REPORTS_CONFIG.RETRY_DELAY,
+// Initialization function that returns a properly typed Queue instance
+// This avoids type mismatch issues between Redis client versions
+function createIndividualReportsQueue(): Queue.Queue<IndividualReportJobData> {
+  const redisClient = getRedisClient();
+
+  // Validate Redis client initialization with type guard
+  if (
+    typeof redisClient !== 'object' ||
+    redisClient === null ||
+    !('ping' in redisClient)
+  ) {
+    throw new Error('Redis client is not properly initialized');
+  }
+
+  // Use string-based initialization to avoid type mismatch
+  // Bull will connect using Redis URL from environment or default
+  const queueOptions = {
+    defaultJobOptions: {
+      removeOnComplete: 50,
+      removeOnFail: 20,
+      attempts: INDIVIDUAL_REPORTS_CONFIG.RETRY_ATTEMPTS,
+      backoff: {
+        type: 'exponential',
+        delay: INDIVIDUAL_REPORTS_CONFIG.RETRY_DELAY,
+      },
     },
-  },
-});
+  };
+
+  // Create queue with string-based connection to avoid Redis client type incompatibility
+  return new Queue<IndividualReportJobData>(
+    'individual-reports',
+    process.env.REDIS_URL || 'redis://localhost:6379',
+    queueOptions
+  );
+}
+
+// Export the queue instance
+export const individualReportsQueue = createIndividualReportsQueue();
 
 // ================================================================
 // PROCESSADOR PRINCIPAL
 // ================================================================
 
-individualReportsQueue().process(
+// Note: individualReportsQueue is already instantiated above, not a factory function
+// We call .process() on the Queue instance directly
+individualReportsQueue.process(
   'scheduled-individual-report',
   INDIVIDUAL_REPORTS_CONFIG.MAX_CONCURRENT,
   async (job: Job<IndividualReportJobData>) => {
@@ -207,6 +235,11 @@ individualReportsQueue().process(
       await job.progress(80);
 
       // 8. Atualizar execução como concluída
+      // Type-safe: serialize reportResult.summary to JSON since Prisma JSON field requires serializable data
+      const serializedSummary = reportResult.summary
+        ? JSON.parse(JSON.stringify(reportResult.summary))
+        : null;
+
       await prisma.reportExecution.update({
         where: { id: reportExecutionId },
         data: {
@@ -214,7 +247,7 @@ individualReportsQueue().process(
           completedAt: new Date(),
           duration: Date.now() - startTime,
           fileUrls: reportResult.fileUrls,
-          result: reportResult.summary,
+          result: serializedSummary,
           tokensUsed: reportResult.tokensUsed,
           cacheHit: reportResult.cacheHit
         }
@@ -407,10 +440,10 @@ export async function addIndividualReportJob(
 export async function individualReportsWorkerHealthCheck() {
   try {
     const [waiting, active, completed, failed] = await Promise.all([
-      individualReportsQueue().getWaiting(),
-      individualReportsQueue().getActive(),
-      individualReportsQueue().getCompleted(),
-      individualReportsQueue().getFailed(),
+      individualReportsQueue.getWaiting(),
+      individualReportsQueue.getActive(),
+      individualReportsQueue.getCompleted(),
+      individualReportsQueue.getFailed(),
     ]);
 
     const pendingExecutions = await prisma.reportExecution.count({

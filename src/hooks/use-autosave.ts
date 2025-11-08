@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-interface UseAutosaveOptions {
+interface UseAutosaveOptions<T> {
   delay?: number; // ms entre mudanças e salvamento (default: 1000ms)
-  onSave: (data: unknown) => Promise<void>;
+  onSave: (data: T) => Promise<void>;
   onError?: (error: Error) => void;
 }
 
 export function useAutosave<T>(
-  data: T,
-  options: UseAutosaveOptions
+  data: T | null,
+  options: UseAutosaveOptions<T>
 ) {
   const { delay = 1000, onSave, onError } = options;
   const [isSaving, setIsSaving] = useState(false);
@@ -16,7 +16,7 @@ export function useAutosave<T>(
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastDataRef = useRef<T>(data);
+  const lastDataRef = useRef<T | null>(data);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -53,6 +53,11 @@ export function useAutosave<T>(
   }, [onSave, onError]);
 
   useEffect(() => {
+    // Skip autosave if data is null (narrowing seguro)
+    if (data === null) {
+      return;
+    }
+
     // Comparar dados atuais com último salvamento
     if (JSON.stringify(data) !== JSON.stringify(lastDataRef.current)) {
       setHasUnsavedChanges(true);

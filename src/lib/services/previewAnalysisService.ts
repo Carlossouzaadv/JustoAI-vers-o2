@@ -45,9 +45,6 @@ export interface PreviewAnalysisResult {
 // Limitar texto para velocidade (Flash processa rápido até 20KB)
 const MAX_TEXT_LENGTH = 20000;
 
-// Timeout para Gemini Flash (30 segundos é suficiente)
-const GEMINI_TIMEOUT_MS = 30000;
-
 // ================================================================
 // MAIN FUNCTION
 // ================================================================
@@ -101,28 +98,36 @@ export async function generatePreview(
       try {
         console.log(`${ICONS.SEARCH} [Preview] Tentativa com Gemini ${name}...`);
 
-        const response = await gemini.generateJsonContent(prompt, {
+        // Call Gemini API - returns unknown (JSON parsed)
+        const responseData = await gemini.generateJsonContent(prompt, {
           model: tier,
           maxTokens: 1500,
-          temperature: 0.1,
-          timeout: GEMINI_TIMEOUT_MS
+          temperature: 0.1
+          // Note: timeout is not a valid GeminiConfig property, removed
         });
 
         // ============================================================
-        // 4. VALIDAR RESPOSTA
+        // 4. VALIDAR RESPOSTA (Type Guard + Narrowing)
         // ============================================================
 
-        if (!response) {
+        if (!responseData) {
           throw new Error('Gemini retornou resposta vazia');
         }
 
+        // Use Type Guard to safely validate and narrow the response type
+        if (!isGeminiApiResponse(responseData)) {
+          throw new Error('Gemini retornou formato de resposta inválido ou incompleto');
+        }
+
+        // Now 'responseData' is narrowed to PreviewSnapshot type
+        // All properties are safely accessible and type-checked
         const preview: PreviewSnapshot = {
-          summary: response.summary || '',
-          parties: Array.isArray(response.parties) ? response.parties : [],
-          subject: response.subject || '',
-          object: response.object || '', // Objeto jurídico específico extraído pelo Gemini
-          claimValue: response.claimValue || null,
-          lastMovements: Array.isArray(response.lastMovements) ? response.lastMovements : [],
+          summary: responseData.summary,
+          parties: responseData.parties,
+          subject: responseData.subject,
+          object: responseData.object,
+          claimValue: responseData.claimValue,
+          lastMovements: responseData.lastMovements,
           generatedAt: new Date().toISOString(),
           model: `gemini-2.5-${name.toLowerCase() === 'flash 8b' ? 'flash-8b' : name.toLowerCase().split(' ')[0] === 'flash' ? 'flash' : 'pro'}`
         };
@@ -135,7 +140,7 @@ export async function generatePreview(
         return {
           success: true,
           preview,
-          tokensUsed: response.usage?.totalTokens || 0,
+          tokensUsed: 0, // Note: Gemini API response doesn't include token usage
           duration
         };
 
@@ -228,45 +233,88 @@ ${text}
 // VALIDATION HELPERS
 // ================================================================
 
-function isPreviewSnapshot(preview: unknown): preview is PreviewSnapshot {
-  if (!preview || typeof preview !== 'object') {
+/**
+ * Type Guard: Validates if data is a valid GeminiApiResponse structure
+ * Used to safely extract data from Gemini's JSON response (unknown type)
+ */
+function isGeminiApiResponse(data: unknown): data is PreviewSnapshot {
+  // Step 1: Check if data is an object
+  if (typeof data !== 'object' || data === null) {
     return false;
   }
 
-  const p = preview as Partial<PreviewSnapshot>;
+  // Step 2: Safe property access using 'in' operator after type check
+  const obj = data as Record<string, unknown>;
 
-  // Campos obrigatórios
-  if (typeof p.summary !== 'string' || p.summary.trim().length === 0) {
+  // Step 3: Validate required string properties
+  if (typeof obj.summary !== 'string' || obj.summary.trim().length === 0) {
     return false;
   }
 
-  if (!Array.isArray(p.parties) || p.parties.length === 0) {
+  if (typeof obj.subject !== 'string' || obj.subject.trim().length === 0) {
     return false;
   }
 
-  if (typeof p.subject !== 'string' || p.subject.trim().length === 0) {
+  if (typeof obj.object !== 'string' || obj.object.trim().length === 0) {
     return false;
   }
 
-  if (typeof p.object !== 'string' || p.object.trim().length === 0) {
+  // Step 4: Validate parties array
+  if (!Array.isArray(obj.parties)) {
     return false;
   }
 
-  if (!Array.isArray(p.lastMovements)) {
+  if (obj.parties.length === 0) {
     return false;
   }
 
-  // Validar estrutura de movimentos (se houver)
-  if (p.lastMovements.length > 0) {
-    for (const movement of p.lastMovements) {
-      const m = movement as Partial<PreviewMovement>;
-      if (!m.date || !m.type || !m.description) {
+  // Validate each party is a string
+  if (!obj.parties.every((party) => typeof party === 'string')) {
+    return false;
+  }
+
+  // Step 5: Validate claimValue (must be number or null)
+  if (obj.claimValue !== null && typeof obj.claimValue !== 'number') {
+    return false;
+  }
+
+  // Step 6: Validate lastMovements array
+  if (!Array.isArray(obj.lastMovements)) {
+    return false;
+  }
+
+  // Step 7: Validate each movement structure (if present)
+  if (obj.lastMovements.length > 0) {
+    for (const movement of obj.lastMovements) {
+      if (typeof movement !== 'object' || movement === null) {
+        return false;
+      }
+
+      const mov = movement as Record<string, unknown>;
+
+      if (typeof mov.date !== 'string') {
+        return false;
+      }
+
+      if (typeof mov.type !== 'string') {
+        return false;
+      }
+
+      if (typeof mov.description !== 'string') {
         return false;
       }
     }
   }
 
   return true;
+}
+
+/**
+ * Legacy function: validates PreviewSnapshot with stricter type checking
+ * Kept for backward compatibility with existing validation code
+ */
+function isPreviewSnapshot(preview: unknown): preview is PreviewSnapshot {
+  return isGeminiApiResponse(preview);
 }
 
 /**

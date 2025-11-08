@@ -10,6 +10,53 @@ import {
 } from '@/lib/api-utils'
 import { z } from 'zod'
 
+// ================================================================
+// TIPOS PARA ANALYTICS
+// ================================================================
+
+interface ProcessingTimeData {
+  date: string;
+  processingTime: number;
+  caseTitle: string;
+}
+
+interface SuccessRateMetric {
+  rate: number;
+  successful: number;
+  total: number;
+  unit: 'percentage';
+}
+
+interface VolumeDataPoint {
+  date: string;
+  count: number;
+}
+
+interface VolumeMetric {
+  data: VolumeDataPoint[];
+  total: number;
+}
+
+interface PerformanceMetric {
+  activeCases: number;
+  closedCases: number;
+  totalDocuments: number;
+  productivity: number;
+}
+
+interface ProcessingTimeMetric {
+  data: ProcessingTimeData[];
+  average: number;
+  unit: 'hours';
+}
+
+interface AnalyticsData {
+  processing_time?: ProcessingTimeMetric;
+  success_rate?: SuccessRateMetric;
+  volume?: VolumeMetric;
+  performance?: PerformanceMetric;
+}
+
 // Validation schema
 const analyticsQuerySchema = z.object({
   metric: z.enum(['processing_time', 'success_rate', 'volume', 'performance']).optional(),
@@ -79,7 +126,8 @@ async function GET(request: NextRequest) {
     const days = daysMap[period]
     const startDate = new Date(now.getTime() - (days * 24 * 60 * 60 * 1000))
 
-    const analyticsData: unknown = {}
+    // Declarar com tipo específico AnalyticsData para máxima type safety
+    const analyticsData: AnalyticsData = {}
 
     if (!metric || metric === 'processing_time') {
       // Get average processing time data

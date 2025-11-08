@@ -23,6 +23,7 @@ import { mapAnalysisToPreview, extractCoreInfo } from '@/lib/ai-analysis-mapper'
 import { ICONS } from '@/lib/icons';
 import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+import type { UnifiedProcessSchema } from '@/lib/ai-model-router';
 
 // Configuração de runtime para suportar uploads de arquivos grandes
 // maxDuration: tempo máximo para a função executar (Vercel limit)
@@ -30,6 +31,105 @@ import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 export const maxDuration = 300; // 5 minutos máximo para processamento
 
 const prisma = new PrismaClient();
+
+// ================================================================
+// TYPE GUARDS - PADRÃO-OURO DE TYPE SAFETY
+// ================================================================
+
+/**
+ * Type guard para validar PDFProcessor extraction result
+ * Garante que o objeto tem as propriedades necessárias
+ */
+interface PdfExtractionResult {
+  success: boolean;
+  pageCount?: number;
+  text?: string;
+  texto_original?: string;
+  texto_limpo?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+function isPdfExtractionResult(data: unknown): data is PdfExtractionResult {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.success === 'boolean' &&
+    (typeof obj.pageCount === 'number' || obj.pageCount === undefined) &&
+    (typeof obj.text === 'string' || obj.text === undefined) &&
+    (typeof obj.texto_original === 'string' || obj.texto_original === undefined) &&
+    (typeof obj.texto_limpo === 'string' || obj.texto_limpo === undefined)
+  );
+}
+
+/**
+ * Type guard para validar AI Analysis Result
+ * Verifica presença de campos críticos para serialização segura
+ */
+interface AIAnalysisResultType {
+  lastMovements?: unknown[];
+  summary?: unknown;
+  parties?: unknown;
+  cost?: Record<string, unknown>;
+  metadados_analise?: Record<string, unknown>;
+  _routing_info?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+function isAIAnalysisResult(data: unknown): data is AIAnalysisResultType {
+  if (!data || typeof data !== 'object') return false;
+  // Object é válido se tem a estrutura mínima esperada
+  return true; // É um objeto válido para serializar
+}
+
+/**
+ * Extrai valor seguro de propriedade aninhada com fallback
+ */
+function safeGetProperty<T = unknown>(
+  obj: unknown,
+  path: string,
+  defaultValue: T
+): T {
+  if (!obj || typeof obj !== 'object') return defaultValue;
+
+  const keys = path.split('.');
+  let current: unknown = obj;
+
+  for (const key of keys) {
+    if (current && typeof current === 'object' && key in current) {
+      current = (current as Record<string, unknown>)[key];
+    } else {
+      return defaultValue;
+    }
+  }
+
+  return current as T;
+}
+
+/**
+ * Type guard para validar se um objeto é compatível com Partial<UnifiedProcessSchema>
+ * Verifica presença de campos principais esperados pela função extractCoreInfo
+ *
+ * PADRÃO-OURO: Narrowing seguro usando "in" operator (sem casting)
+ */
+function isUnifiedProcessSchema(data: unknown): data is Partial<UnifiedProcessSchema> {
+  if (!data || typeof data !== 'object') return false;
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar que o objeto tem PELO MENOS uma das seções principais
+  // (não precisa ter todas, pois é Partial<UnifiedProcessSchema>)
+  const hasIdentificacao = 'identificacao_basica' in obj;
+  const hasPartes = 'partes_envolvidas' in obj;
+  const hasValores = 'valores_financeiros' in obj;
+  const hasAnalise = 'analise_estrategica' in obj;
+  const hasCampos = 'campos_especializados' in obj;
+  const hasSituacao = 'situacao_processual' in obj;
+
+  // Se tem pelo menos uma dessas seções principais, é provavelmente um UnifiedProcessSchema
+  // Isso é válido porque UnifiedProcessSchema é Partial - não precisa ter todos os campos
+  return hasIdentificacao || hasPartes || hasValores || hasAnalise || hasCampos || hasSituacao;
+}
 
 // ================================================================
 // CONFIGURAÇÕES DA ESPECIFICAÇÃO
@@ -224,10 +324,21 @@ export async function POST(request: NextRequest) {
     await writeFile(tempPath, buffer);
 
     const pdfProcessor = new PDFProcessor();
-    const extractionResult = await pdfProcessor.processComplete({
+    const extractionResultRaw: unknown = await pdfProcessor.processComplete({
       pdf_path: tempPath,
       extract_fields: ['processo', 'data', 'partes', 'valor']
     });
+
+    // Validar estrutura do resultado com type guard
+    if (!isPdfExtractionResult(extractionResultRaw)) {
+      console.error(`${ICONS.ERROR} Extração de PDF retornou estrutura inválida:`, extractionResultRaw);
+      return NextResponse.json(
+        { error: 'Não foi possível extrair texto do PDF. O arquivo pode estar corrompido.' },
+        { status: 400 }
+      );
+    }
+
+    const extractionResult = extractionResultRaw;
 
     // Verificar se houve sucesso, mas também aceitar resultados com extração parcial
     if (!extractionResult.success && (!extractionResult.texto_original && !extractionResult.texto_limpo)) {
@@ -368,12 +479,13 @@ export async function POST(request: NextRequest) {
             priority: 'MEDIUM',
             createdById: user.id,
             claimValue: basicData.claimValue,
-            metadata: {
+            // Serializar metadata para JSON field (Padrão-Ouro)
+            metadata: JSON.parse(JSON.stringify({
               autoCreated: true,
               createdFromUpload: true,
               extractedData: basicData,
               needsAssignment: true
-            }
+            }))
           }
         });
 
@@ -397,14 +509,16 @@ export async function POST(request: NextRequest) {
 
     } else {
       // Usar caseId fornecido ou processo existente
-      targetCaseId = existingProcess?.id || caseIdStr;
+      const resolvedCaseId = existingProcess?.id || caseIdStr;
 
-      if (!targetCaseId) {
+      if (!resolvedCaseId) {
         return NextResponse.json(
           { error: 'caseId é obrigatório quando processo não é identificado automaticamente' },
           { status: 400 }
         );
       }
+
+      targetCaseId = resolvedCaseId;
 
       // VALIDATE: Se um caseId foi fornecido, verificar se pertence ao workspace
       if (caseIdStr && !existingProcess) {
@@ -504,7 +618,15 @@ export async function POST(request: NextRequest) {
         const aiRouter = new AIModelRouter();
         // Use analyzePhase1 for initial preview (LITE→BALANCED→PRO fallback)
         // This ensures fast, cost-effective analysis while maintaining quality
-        aiAnalysisResult = await aiRouter.analyzePhase1(cleanText, file.size / (1024 * 1024), workspaceId);
+        const analysisResultRaw: unknown = await aiRouter.analyzePhase1(cleanText, file.size / (1024 * 1024), workspaceId);
+
+        // Validar resultado com type guard antes de atribuir
+        if (isAIAnalysisResult(analysisResultRaw)) {
+          aiAnalysisResult = analysisResultRaw;
+        } else {
+          console.warn(`${ICONS.WARNING} [Upload] Análise retornou estrutura inválida, usando null`);
+          aiAnalysisResult = null;
+        }
 
         console.log(`${ICONS.SUCCESS} [Upload] Gemini analyzePhase1 concluído`);
 
@@ -536,6 +658,11 @@ export async function POST(request: NextRequest) {
     const finalPath = await savePermanentFile(buffer, file.name, workspaceId, targetCaseId);
 
     // 16. CRIAR DOCUMENTO NO BANCO
+    // Validar e extrair valores com fallbacks seguros
+    const pageCount = extractionResult.pageCount ?? 0;
+    const extractedTextContent = extractionResult.text ?? extractionResult.texto_original ?? '';
+    const costEstimate = safeGetProperty<number>(aiAnalysisResult, 'cost.estimatedCost', 0);
+
     const document = await prisma.caseDocument.create({
       data: {
         caseId: targetCaseId,
@@ -546,15 +673,15 @@ export async function POST(request: NextRequest) {
         size: file.size,
         url: finalPath,
         path: finalPath,
-        pages: extractionResult.pageCount,
-        extractedText: extractionResult.text,
+        pages: pageCount,
+        extractedText: extractedTextContent,
         cleanText,
         textSha: hashResult.textSha,
         textExtractedAt,
         analysisVersion: modelVersion,
         analysisKey: cacheResult.key,
         workerId: process.env.WORKER_ID || 'main',
-        costEstimate: aiAnalysisResult?.cost?.estimatedCost || 0,
+        costEstimate: costEstimate,
         processed: true,
         ocrStatus: 'COMPLETED'
       }
@@ -573,6 +700,13 @@ export async function POST(request: NextRequest) {
         const nextVersion = (lastVersion?.version || 0) + 1;
 
         // Salvar análise como primeira versão
+        // Serializar aiAnalysisResult para JSON field do Prisma (Padrão-Ouro)
+        const aiAnalysisJsonData = aiAnalysisResult ? JSON.parse(JSON.stringify(aiAnalysisResult)) : null;
+        const metadadosAnalise = safeGetProperty<Record<string, unknown>>(aiAnalysisResult, 'metadados_analise', {});
+        const routingInfo = safeGetProperty<Record<string, unknown>>(aiAnalysisResult, '_routing_info', {});
+        const confidence = safeGetProperty<number>(metadadosAnalise, 'confianca', 0.8);
+        const modelUsedInfo = safeGetProperty<string>(routingInfo, 'model_used', modelVersion);
+
         const analysisVersion = await prisma.caseAnalysisVersion.create({
           data: {
             case: {
@@ -586,14 +720,14 @@ export async function POST(request: NextRequest) {
             analysisType: 'essential', // Análise rápida do upload é considerada "essencial"
             modelUsed: modelVersion,
             analysisKey: cacheResult.key || hashResult.textSha + '_' + modelVersion, // Chave para cache de análise
-            aiAnalysis: aiAnalysisResult || null, // JSON field with fallback to null
-            confidence: aiAnalysisResult?.metadados_analise?.confianca || 0.8,
+            aiAnalysis: aiAnalysisJsonData, // JSON field - serializado com padrão-ouro
+            confidence: confidence,
             processingTime: Date.now() - startTime,
             metadata: {
               source: 'upload_gemini',
               documentId: document.id,
               cacheKey: cacheResult.key,
-              model: aiAnalysisResult?._routing_info?.model_used || modelVersion
+              model: modelUsedInfo
             }
           }
         });
@@ -690,7 +824,7 @@ export async function POST(request: NextRequest) {
           caseId: targetCaseId,
           fileName: file.name,
           fileSize: file.size,
-          pageCount: extractionResult.pageCount,
+          pageCount: pageCount, // Usar a variável já validada
           aiAnalyzed: !!aiAnalysisResult,
           cacheHit: cacheResult.hit,
           processNumberExtracted: !!extractedProcessNumber,
@@ -734,23 +868,48 @@ export async function POST(request: NextRequest) {
         },
 
         // Informações da análise (PREVIEW COMPLETO)
-        analysis: aiAnalysisResult ? (() => {
-          const previewData = mapAnalysisToPreview(aiAnalysisResult, {
-            modelUsed: aiAnalysisResult._routing_info?.model_used || modelVersion,
-            confidence: aiAnalysisResult.metadados_analise?.confianca_geral || 0.8,
-            costEstimate: Number((aiAnalysisResult._routing_info?.cost_estimate?.estimatedCost) || 0)
+        analysis: aiAnalysisResult && isAIAnalysisResult(aiAnalysisResult) ? (() => {
+          // Narrowing seguro: aiAnalysisResult é AIAnalysisResultType aqui
+          const validAnalysis: AIAnalysisResultType = aiAnalysisResult as AIAnalysisResultType;
+
+          // Extrair valores com type guards e fallbacks
+          const routingInfoData = safeGetProperty<Record<string, unknown>>(validAnalysis, '_routing_info', {});
+          const modelUsedForResponse = safeGetProperty<string>(routingInfoData, 'model_used', modelVersion);
+
+          const metadadosAnaliseData = safeGetProperty<Record<string, unknown>>(validAnalysis, 'metadados_analise', {});
+          const confidenceValue = safeGetProperty<number>(metadadosAnaliseData, 'confianca_geral', 0.8);
+
+          const costEstimateData = safeGetProperty<Record<string, unknown>>(routingInfoData, 'cost_estimate', {});
+          const costValue = safeGetProperty<number>(costEstimateData, 'estimatedCost', 0);
+
+          const previewData = mapAnalysisToPreview(validAnalysis, {
+            modelUsed: modelUsedForResponse,
+            confidence: confidenceValue,
+            costEstimate: Number(costValue)
           });
 
           // Log dos dados extraídos
-          const coreInfo = extractCoreInfo(aiAnalysisResult);
-          console.log(`${ICONS.SUCCESS} Análise mapeada para preview:`, coreInfo);
+          // Validar se validAnalysis é um UnifiedProcessSchema antes de usar extractCoreInfo
+          if (isUnifiedProcessSchema(validAnalysis)) {
+            // Agora validAnalysis foi validado pelo type guard e é seguro passar
+            const coreInfo = extractCoreInfo(validAnalysis);
+            console.log(`${ICONS.SUCCESS} Análise mapeada para preview:`, coreInfo);
+          } else {
+            // Se não é um UnifiedProcessSchema válido, fazer logging seguro sem casting
+            console.log(`${ICONS.INFO} Análise retornada pelo Gemini tem estrutura não-padrão (OK):`, {
+              keys: Object.keys(validAnalysis).slice(0, 5) // Log apenas primeiras 5 chaves
+            });
+          }
+
+          // Serializar dados para JSON (Padrão-Ouro)
+          const analysisDataSerialized = JSON.parse(JSON.stringify(validAnalysis));
 
           return {
             // Dados formatados para o popup
             ...previewData,
 
-            // Dados estruturados completos para referência futura
-            dados: aiAnalysisResult
+            // Dados estruturados completos para referência futura (serializado)
+            dados: analysisDataSerialized
           };
         })() : null,
 

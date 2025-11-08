@@ -45,7 +45,7 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
   const [error, setError] = useState<string | null>(null);
   const [regeneratingDescription, setRegeneratingDescription] = useState(false);
 
-  const { isSaving, lastSaved, hasUnsavedChanges } = useAutosave(data, {
+  const { isSaving, lastSaved, hasUnsavedChanges } = useAutosave<ProcessSummaryData>(data, {
     delay: 2000, // 2 segundos
     onSave: async (processData) => {
       if (!processData) return;
