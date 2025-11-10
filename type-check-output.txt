@@ -12,19 +12,6 @@ src/app/api/ai/analyze/route.ts(277,18): error TS2551: Property 'LOCK' does not 
 src/app/api/ai/multi-front-analysis/route.ts(47,11): error TS2554: Expected 1 arguments, but got 2.
 src/app/api/ai/test-gemini/route.ts(126,28): error TS18046: 'geminiClient' is of type 'unknown'.
 src/app/api/ai/test-gemini/route.ts(169,32): error TS18046: 'geminiClient' is of type 'unknown'.
-src/app/api/auth/callback/route.ts(34,31): error TS2345: Argument of type '[string, string, unknown]' is not assignable to parameter of type '[key: string, value: string, cookie?: Partial<ResponseCookie> | undefined] | [options: ResponseCookie]'.
-  Type '[string, string, unknown]' is not assignable to type '[key: string, value: string, cookie?: Partial<ResponseCookie> | undefined]'.
-    Type at position 2 in source is not compatible with type at position 2 in target.
-      Type 'unknown' is not assignable to type 'Partial<ResponseCookie> | undefined'.
-src/app/api/auth/callback/route.ts(51,59): error TS2345: Argument of type '{ type: "email" | "sms" | "recovery" | "invite" | "signup" | "magiclink"; token_hash: any; email: string; }' is not assignable to parameter of type 'VerifyOtpParams'.
-  Type '{ type: "email" | "sms" | "recovery" | "invite" | "signup" | "magiclink"; token_hash: any; email: string; }' is not assignable to type 'VerifyTokenHashParams'.
-    Types of property 'type' are incompatible.
-      Type '"email" | "sms" | "signup" | "invite" | "magiclink" | "recovery"' is not assignable to type 'EmailOtpType'.
-        Type '"sms"' is not assignable to type 'EmailOtpType'.
-src/app/api/auth/callback/route.ts(111,31): error TS2345: Argument of type '[string, string, unknown]' is not assignable to parameter of type '[key: string, value: string, cookie?: Partial<ResponseCookie> | undefined] | [options: ResponseCookie]'.
-  Type '[string, string, unknown]' is not assignable to type '[key: string, value: string, cookie?: Partial<ResponseCookie> | undefined]'.
-    Type at position 2 in source is not compatible with type at position 2 in target.
-      Type 'unknown' is not assignable to type 'Partial<ResponseCookie> | undefined'.
 src/app/api/auth/forgot-password/route.ts(48,18): error TS2339: Property 'passwordReset' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
 src/app/api/auth/login/route.ts(36,31): error TS2345: Argument of type '[string, string, unknown]' is not assignable to parameter of type '[key: string, value: string, cookie?: Partial<ResponseCookie> | undefined] | [options: ResponseCookie]'.
   Type '[string, string, unknown]' is not assignable to type '[key: string, value: string, cookie?: Partial<ResponseCookie> | undefined]'.
@@ -45,14 +32,6 @@ src/app/api/cases/[id]/onboarding-retry/route.ts(82,9): error TS18046: 'metadata
 src/app/api/cases/[id]/onboarding-retry/route.ts(123,9): error TS2552: Cannot find name 'userId'. Did you mean 'user'?
 src/app/api/cases/[id]/onboarding-status/route.ts(17,51): error TS2554: Expected 0 arguments, but got 1.
 src/app/api/cases/[id]/onboarding-status/route.ts(52,9): error TS2353: Object literal may only specify known properties, and 'members' does not exist in type 'WorkspaceWhereInput'.
-src/app/api/cases/[id]/timeline/conflicts/resolve/route.ts(114,13): error TS2698: Spread types may only be created from object types.
-src/app/api/cases/[id]/timeline/conflicts/resolve/route.ts(143,17): error TS18046: 'updateData' is of type 'unknown'.
-src/app/api/cases/[id]/timeline/conflicts/resolve/route.ts(154,15): error TS18046: 'updateData' is of type 'unknown'.
-src/app/api/cases/[id]/timeline/conflicts/resolve/route.ts(174,17): error TS2322: Type 'JsonValue' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Type 'null' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-src/app/api/cases/[id]/timeline/conflicts/resolve/route.ts(178,17): error TS2322: Type 'JsonValue' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Type 'null' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-src/app/api/cases/[id]/timeline/conflicts/resolve/route.ts(191,11): error TS2322: Type 'unknown' is not assignable to type '(Without<ProcessTimelineEntryUpdateInput, ProcessTimelineEntryUncheckedUpdateInput> & ProcessTimelineEntryUncheckedUpdateInput) | (Without<...> & ProcessTimelineEntryUpdateInput)'.
 src/app/api/cases/[id]/unified-timeline/route.ts(139,5): error TS2322: Type 'EventRelationType | null' is not assignable to type '"DUPLICATE" | "ENRICHMENT" | "RELATED" | "CONFLICT" | undefined'.
   Type 'null' is not assignable to type '"DUPLICATE" | "ENRICHMENT" | "RELATED" | "CONFLICT" | undefined'.
 src/app/api/cases/[id]/unified-timeline/route.ts(140,5): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
@@ -60,64 +39,6 @@ src/app/api/cases/[id]/unified-timeline/route.ts(140,5): error TS2322: Type 'str
 src/app/api/cases/[id]/unified-timeline/route.ts(293,11): error TS2322: Type '{ id: string; caseId: string; contentHash: string; eventDate: Date; eventType: DocumentType; description: string; normalizedContent: string; source: TimelineSource; ... 10 more ...; linkedDocumentIds: never[]; }[]' is not assignable to type 'TimelineEntryInput[]'.
   Type '{ id: string; caseId: string; contentHash: string; eventDate: Date; eventType: $Enums.DocumentType; description: string; normalizedContent: string; source: TimelineSource; ... 10 more ...; linkedDocumentIds: never[]; }' is not assignable to type 'TimelineEntryInput'.
     Type '{ id: string; caseId: string; contentHash: string; eventDate: Date; eventType: DocumentType; description: string; normalizedContent: string; source: TimelineSource; ... 10 more ...; linkedDocumentIds: never[]; }' is missing the following properties from type '{ id: string; description: string; createdAt: Date; updatedAt: Date; metadata: JsonValue; confidence: number; caseId: string; source: TimelineSource; ... 17 more ...; reviewedAt: Date | null; }': isEnriched, enrichedAt, enrichmentModel, hasConflict, and 3 more.
-src/app/api/cases/bulk/route.ts(32,51): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/cases/bulk/route.ts(85,9): error TS2353: Object literal may only specify known properties, and 'members' does not exist in type 'WorkspaceWhereInput'.
-src/app/api/cases/bulk/route.ts(150,7): error TS2322: Type '{ caseId: string; userId: string; type: "BULK_UPDATE"; title: string; description: string; metadata: { bulkOperationId: string; updatedFields: string[]; updates: { clientId?: string | undefined; status?: "ACTIVE" | ... 4 more ... | undefined; priority?: "LOW" | ... 3 more ... | undefined; title?: string | undefined;...' is not assignable to type 'CaseEventCreateManyInput | CaseEventCreateManyInput[]'.
-  Type '{ caseId: string; userId: string; type: "BULK_UPDATE"; title: string; description: string; metadata: { bulkOperationId: string; updatedFields: string[]; updates: { clientId?: string | undefined; status?: "ACTIVE" | ... 4 more ... | undefined; priority?: "LOW" | ... 3 more ... | undefined; title?: string | undefined;...' is not assignable to type 'CaseEventCreateManyInput[]'.
-    Type '{ caseId: string; userId: string; type: "BULK_UPDATE"; title: string; description: string; metadata: { bulkOperationId: string; updatedFields: string[]; updates: { clientId?: string | undefined; status?: "ACTIVE" | ... 4 more ... | undefined; priority?: "LOW" | ... 3 more ... | undefined; title?: string | undefined;...' is not assignable to type 'CaseEventCreateManyInput'.
-      Types of property 'type' are incompatible.
-        Type '"BULK_UPDATE"' is not assignable to type 'EventType | undefined'.
-src/app/api/cases/bulk/route.ts(209,51): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/cases/bulk/route.ts(261,9): error TS2353: Object literal may only specify known properties, and 'members' does not exist in type 'WorkspaceWhereInput'.
-src/app/api/cases/bulk/route.ts(292,7): error TS2322: Type '{ caseId: string; userId: string; type: "BULK_DELETE"; title: string; description: string; metadata: { bulkOperationId: string; deletedAt: string; }; }[]' is not assignable to type 'CaseEventCreateManyInput | CaseEventCreateManyInput[]'.
-  Type '{ caseId: string; userId: string; type: "BULK_DELETE"; title: string; description: string; metadata: { bulkOperationId: string; deletedAt: string; }; }[]' is not assignable to type 'CaseEventCreateManyInput[]'.
-    Type '{ caseId: string; userId: string; type: "BULK_DELETE"; title: string; description: string; metadata: { bulkOperationId: string; deletedAt: string; }; }' is not assignable to type 'CaseEventCreateManyInput'.
-      Types of property 'type' are incompatible.
-        Type '"BULK_DELETE"' is not assignable to type 'EventType | undefined'.
-src/app/api/cases/route.ts(158,5): error TS18046: 'where' is of type 'unknown'.
-src/app/api/cases/route.ts(166,15): error TS18046: 'where' is of type 'unknown'.
-src/app/api/cases/route.ts(167,13): error TS18046: 'where' is of type 'unknown'.
-src/app/api/cases/route.ts(168,17): error TS18046: 'where' is of type 'unknown'.
-src/app/api/cases/route.ts(169,17): error TS18046: 'where' is of type 'unknown'.
-src/app/api/cases/route.ts(172,43): error TS2322: Type 'unknown' is not assignable to type 'CaseWhereInput | undefined'.
-src/app/api/cases/route.ts(176,5): error TS2322: Type 'unknown' is not assignable to type 'CaseWhereInput | undefined'.
-src/app/api/clients/[id]/route.ts(140,5): error TS2322: Type '{ name?: string | undefined; email?: string | undefined; phone?: string | undefined; document?: string | undefined; type?: "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NGO" | undefined; ... 7 more ...; metadata?: Record<...> | undefined; }' is not assignable to type '(Without<ClientUpdateInput, ClientUncheckedUpdateInput> & ClientUncheckedUpdateInput) | (Without<...> & ClientUpdateInput)'.
-  Type '{ name?: string | undefined; email?: string | undefined; phone?: string | undefined; document?: string | undefined; type?: "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NGO" | undefined; ... 7 more ...; metadata?: Record<...> | undefined; }' is not assignable to type 'Without<ClientUncheckedUpdateInput, ClientUpdateInput> & ClientUpdateInput'.
-    Type '{ name?: string | undefined; email?: string | undefined; phone?: string | undefined; document?: string | undefined; type?: "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NGO" | undefined; ... 7 more ...; metadata?: Record<...> | undefined; }' is not assignable to type 'ClientUpdateInput'.
-      Types of property 'metadata' are incompatible.
-        Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-          Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-            Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/app/api/clients/route.ts(129,5): error TS18046: 'where' is of type 'unknown'.
-src/app/api/clients/route.ts(137,5): error TS18046: 'where' is of type 'unknown'.
-src/app/api/clients/route.ts(141,5): error TS18046: 'where' is of type 'unknown'.
-src/app/api/clients/route.ts(145,45): error TS2322: Type 'unknown' is not assignable to type 'ClientWhereInput | undefined'.
-src/app/api/clients/route.ts(149,5): error TS2322: Type 'unknown' is not assignable to type 'ClientWhereInput | undefined'.
-src/app/api/clients/route.ts(311,7): error TS2322: Type '{ workspaceId: string; name: string; type: "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NGO"; country: string; email?: string | undefined; phone?: string | undefined; document?: string | undefined; ... 5 more ...; metadata?: Record<...> | undefined; }' is not assignable to type '(Without<ClientCreateInput, ClientUncheckedCreateInput> & ClientUncheckedCreateInput) | (Without<...> & ClientCreateInput)'.
-  Type '{ workspaceId: string; name: string; type: "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NGO"; country: string; email?: string | undefined; phone?: string | undefined; document?: string | undefined; ... 5 more ...; metadata?: Record<...> | undefined; }' is not assignable to type 'Without<ClientCreateInput, ClientUncheckedCreateInput> & ClientUncheckedCreateInput'.
-    Type '{ workspaceId: string; name: string; type: "INDIVIDUAL" | "COMPANY" | "GOVERNMENT" | "NGO"; country: string; email?: string | undefined; phone?: string | undefined; document?: string | undefined; ... 5 more ...; metadata?: Record<...> | undefined; }' is not assignable to type 'ClientUncheckedCreateInput'.
-      Types of property 'metadata' are incompatible.
-        Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-          Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-            Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/app/api/credits/balance/route.ts(31,46): error TS2339: Property 'getWorkspaceCredits' does not exist on type 'CreditManager'.
-src/app/api/credits/balance/route.ts(45,27): error TS2339: Property 'success' does not exist on type 'CreditAllocationBreakdown[]'.
-src/app/api/credits/balance/route.ts(46,9): error TS18046: 'response' is of type 'unknown'.
-src/app/api/credits/balance/route.ts(46,46): error TS2339: Property 'breakdown' does not exist on type 'CreditAllocationBreakdown[]'.
-src/app/api/credits/balance/route.ts(52,48): error TS2339: Property 'getTransactionHistory' does not exist on type 'CreditManager'.
-src/app/api/credits/balance/route.ts(54,9): error TS18046: 'response' is of type 'unknown'.
-src/app/api/credits/consume/route.ts(15,15): error TS2554: Expected 2-3 arguments, but got 1.
-src/app/api/credits/consume/route.ts(40,40): error TS2339: Property 'getWorkspaceCredits' does not exist on type 'CreditManager'.
-src/app/api/credits/consume/route.ts(80,24): error TS2339: Property 'logUsageEvent' does not exist on type 'CreditManager'.
-src/app/api/credits/consume/route.ts(91,38): error TS2339: Property 'allocationsUsed' does not exist on type 'CreditDebitResult'.
-src/app/api/credits/consume/route.ts(97,47): error TS2339: Property 'getWorkspaceCredits' does not exist on type 'CreditManager'.
-src/app/api/credits/consume/route.ts(110,36): error TS2339: Property 'allocationsUsed' does not exist on type 'CreditDebitResult'.
-src/app/api/credits/history/route.ts(46,7): error TS18046: 'filters' is of type 'unknown'.
-src/app/api/credits/history/route.ts(50,7): error TS18046: 'filters' is of type 'unknown'.
-src/app/api/credits/history/route.ts(54,7): error TS18046: 'filters' is of type 'unknown'.
-src/app/api/credits/history/route.ts(58,7): error TS18046: 'filters' is of type 'unknown'.
-src/app/api/credits/history/route.ts(62,46): error TS2339: Property 'getTransactionHistory' does not exist on type 'CreditManager'.
-src/app/api/credits/history/route.ts(74,44): error TS2339: Property 'getTransactionCount' does not exist on type 'CreditManager'.
 src/app/api/credits/purchase/route.ts(10,15): error TS2769: No overload matches this call.
   Overload 1 of 2, '(values: readonly ["REPORT_5", "REPORT_20", "REPORT_50", "FULL_5", "FULL_15", "FULL_35"], params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; } | undefined): ZodEnum<...>', gave the following error.
     Object literal may only specify known properties, and 'errorMap' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidValue<unknown>> | undefined; message?: string | undefined; }'.
@@ -136,13 +57,6 @@ src/app/api/documents/[id]/analyze/route.ts(223,9): error TS2322: Type 'AIAnalys
 src/app/api/documents/[id]/analyze/route.ts(252,69): error TS18048: 'debitResult.newBalance' is possibly 'undefined'.
 src/app/api/documents/[id]/download/route.ts(124,29): error TS2345: Argument of type 'Buffer<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'.
   Type 'Buffer<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.
-src/app/api/documents/[id]/route.ts(120,7): error TS18046: 'updateData' is of type 'unknown'.
-src/app/api/documents/[id]/route.ts(124,7): error TS18046: 'updateData' is of type 'unknown'.
-src/app/api/documents/[id]/route.ts(129,7): error TS18046: 'updateData' is of type 'unknown'.
-src/app/api/documents/[id]/route.ts(137,7): error TS2322: Type 'unknown' is not assignable to type '(Without<CaseDocumentUpdateInput, CaseDocumentUncheckedUpdateInput> & CaseDocumentUncheckedUpdateInput) | (Without<...> & CaseDocumentUpdateInput)'.
-src/app/api/documents/[id]/route.ts(183,15): error TS2304: Cannot find name 'user'.
-src/app/api/documents/[id]/route.ts(276,20): error TS2339: Property 'timelineEntry' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
-src/app/api/documents/[id]/route.ts(333,15): error TS2304: Cannot find name 'user'.
 src/app/api/health/route.ts(69,7): error TS18046: 'response' is of type 'unknown'.
 src/app/api/health/route.ts(80,7): error TS18046: 'response' is of type 'unknown'.
 src/app/api/health/system/route.ts(78,7): error TS2769: No overload matches this call.
@@ -167,7 +81,7 @@ src/app/api/judit/queue/stats/route.ts(69,19): error TS2339: Property 'waiting' 
 src/app/api/judit/queue/stats/route.ts(69,28): error TS2339: Property 'failed' does not exist on type 'unknown'.
 src/app/api/pdf/process/route.ts(57,28): error TS2339: Property 'code' does not exist on type 'Error'.
 src/app/api/pdf/process/route.ts(79,34): error TS2339: Property 'message' does not exist on type '{}'.
-src/app/api/process/[id]/analysis/[version]/route.ts(14,37): error TS2345: Argument of type '(request: NextRequest, { params }: { params: Promise<{ id: string; version: string; }>; }) => Promise<NextResponse<{ success: boolean; error: string; }> | NextResponse<ApiResponse<unknown>>>' is not assignable to parameter of type '(request: NextRequest, context?: { params: Promise<Record<string, string>>; } | undefined) => Promise<NextResponse<unknown>>'.
+src/app/api/process/[id]/analysis/[version]/route.ts(14,37): error TS2345: Argument of type '(request: NextRequest, { params }: { params: Promise<{ id: string; version: string; }>; }) => Promise<NextResponse<ApiResponse<unknown>> | NextResponse<{ success: boolean; error: string; }>>' is not assignable to parameter of type '(request: NextRequest, context?: { params: Promise<Record<string, string>>; } | undefined) => Promise<NextResponse<unknown>>'.
   Types of parameters '__1' and 'context' are incompatible.
     Type '{ params: Promise<Record<string, string>>; } | undefined' is not assignable to type '{ params: Promise<{ id: string; version: string; }>; }'.
       Type 'undefined' is not assignable to type '{ params: Promise<{ id: string; version: string; }>; }'.
@@ -176,53 +90,9 @@ src/app/api/process/[id]/analysis/auto-download/route.ts(182,9): error TS2322: T
     Type '{ monitoredProcessId: string; date: Date; type: string; description: string; category: string; importance: string; requiresAction: boolean; rawData: { syncId: string; autoDownload: boolean; timestamp: string; }; }' is not assignable to type 'ProcessMovementCreateManyInput'.
       Types of property 'category' are incompatible.
         Type 'string' is not assignable to type 'MovementCategory | undefined'.
-src/app/api/process/[id]/analysis/fast/route.ts(22,38): error TS2345: Argument of type '(request: NextRequest, context?: { params?: Promise<{ id: string; }>; }) => Promise<NextResponse<unknown>>' is not assignable to parameter of type '(request: NextRequest, context?: { params: Promise<Record<string, string>>; } | undefined) => Promise<NextResponse<unknown>>'.
-  Types of parameters 'context' and 'context' are incompatible.
-    Type '{ params: Promise<Record<string, string>>; } | undefined' is not assignable to type '{ params?: Promise<{ id: string; }> | undefined; } | undefined'.
-      Type '{ params: Promise<Record<string, string>>; }' is not assignable to type '{ params?: Promise<{ id: string; }> | undefined; }'.
-        Types of property 'params' are incompatible.
-          Type 'Promise<Record<string, string>>' is not assignable to type 'Promise<{ id: string; }>'.
-            Property 'id' is missing in type 'Record<string, string>' but required in type '{ id: string; }'.
-src/app/api/process/[id]/analysis/fast/route.ts(63,67): error TS2345: Argument of type '{ processId: string; documentHashes: string[]; analysisType: "GENERAL"; }' is not assignable to parameter of type 'AnalysisKeyParams'.
-  Property 'modelVersion' is missing in type '{ processId: string; documentHashes: string[]; analysisType: "GENERAL"; }' but required in type 'AnalysisKeyParams'.
-src/app/api/process/[id]/analysis/fast/route.ts(134,9): error TS2554: Expected 1-2 arguments, but got 3.
-src/app/api/process/[id]/analysis/fast/route.ts(143,75): error TS2345: Argument of type '{ processId: string; workspaceId: string; version: number; analysisType: "GENERAL"; analysisKey: string; sourceFilesMetadata: { id: string; name: string; textSha: string; size: number; }[]; }' is not assignable to parameter of type 'AnalysisVersionParams'.
-  Property 'modelUsed' is missing in type '{ processId: string; workspaceId: string; version: number; analysisType: "GENERAL"; analysisKey: string; sourceFilesMetadata: { id: string; name: string; textSha: string; size: number; }[]; }' but required in type 'AnalysisVersionParams'.
-src/app/api/process/[id]/analysis/fast/route.ts(165,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
-  Type 'undefined' is not assignable to type 'string'.
-src/app/api/process/[id]/analysis/fast/route.ts(193,49): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
-  Type 'undefined' is not assignable to type 'string'.
-src/app/api/process/[id]/analysis/fast/route.ts(207,37): error TS2345: Argument of type '(request: NextRequest, context?: { params?: Promise<{ id: string; }>; }) => Promise<NextResponse<{ success: boolean; error: string; }> | NextResponse<ApiResponse<unknown>>>' is not assignable to parameter of type '(request: NextRequest, context?: { params: Promise<Record<string, string>>; } | undefined) => Promise<NextResponse<unknown>>'.
-  Types of parameters 'context' and 'context' are incompatible.
-    Type '{ params: Promise<Record<string, string>>; } | undefined' is not assignable to type '{ params?: Promise<{ id: string; }> | undefined; } | undefined'.
-      Type '{ params: Promise<Record<string, string>>; }' is not assignable to type '{ params?: Promise<{ id: string; }> | undefined; }'.
-        Types of property 'params' are incompatible.
-          Type 'Promise<Record<string, string>>' is not assignable to type 'Promise<{ id: string; }>'.
-            Property 'id' is missing in type 'Record<string, string>' but required in type '{ id: string; }'.
-src/app/api/process/[id]/analysis/history/route.ts(91,37): error TS2345: Argument of type '(request: NextRequest, { params }: { params: Promise<{ id: string; }>; }) => Promise<NextResponse<{ success: boolean; error: string; }> | NextResponse<ApiResponse<unknown>>>' is not assignable to parameter of type '(request: NextRequest, context?: { params: Promise<Record<string, string>>; } | undefined) => Promise<NextResponse<unknown>>'.
-  Types of parameters '__1' and 'context' are incompatible.
-    Type '{ params: Promise<Record<string, string>>; } | undefined' is not assignable to type '{ params: Promise<{ id: string; }>; }'.
-      Type 'undefined' is not assignable to type '{ params: Promise<{ id: string; }>; }'.
 src/app/api/process/[id]/analysis/route.ts(380,44): error TS2339: Property 'analyzeStrategic' does not exist on type 'typeof AIModelRouter'.
 src/app/api/process/[id]/analysis/route.ts(387,28): error TS2339: Property 'ZOOMBIN' does not exist on type '{ readonly SUCCESS: "✓"; readonly ERROR: "✗"; readonly WARNING: "!"; readonly INFO: "i"; readonly LOADING: "..."; readonly ARROW_LEFT: "<"; readonly ARROW_RIGHT: ">"; readonly ARROW_UP: "^"; ... 72 more ...; readonly HEALTH: "💚"; }'.
 src/app/api/process/[id]/analysis/route.ts(388,44): error TS2339: Property 'analyzePhase1' does not exist on type 'typeof AIModelRouter'.
-src/app/api/reports/download/[id]/route.ts(13,37): error TS2345: Argument of type '(request: NextRequest, { params }: { params: Promise<{ id: string; }>; }) => Promise<NextResponse<unknown>>' is not assignable to parameter of type '(request: NextRequest, context?: { params: Promise<Record<string, string>>; } | undefined) => Promise<NextResponse<unknown>>'.
-  Types of parameters '__1' and 'context' are incompatible.
-    Type '{ params: Promise<Record<string, string>>; } | undefined' is not assignable to type '{ params: Promise<{ id: string; }>; }'.
-      Type 'undefined' is not assignable to type '{ params: Promise<{ id: string; }>; }'.
-src/app/api/reports/download/[id]/route.ts(51,9): error TS2322: Type '"CONCLUIDO"' is not assignable to type 'ExecutionStatus | EnumExecutionStatusFilter<"ReportExecution"> | undefined'.
-src/app/api/reports/download/[id]/route.ts(68,43): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'OutputFormat'.
-src/app/api/reports/download/[id]/route.ts(74,21): error TS18046: 'fileUrls' is of type 'unknown'.
-src/app/api/reports/download/[id]/route.ts(91,37): error TS2551: Property 'schedule' does not exist on type '{ error: string | null; id: string; status: ExecutionStatus; createdAt: Date; updatedAt: Date; result: JsonValue; workspaceId: string; filters: JsonValue; ... 21 more ...; deltaDataOnly: boolean; }'. Did you mean 'scheduleId'?
-src/app/api/reports/generate/route.ts(191,7): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'ReportCustomization'.
-  Type 'Record<string, unknown>' is missing the following properties from type 'ReportCustomization': company_name, primary_color, secondary_color, accent_color, show_page_numbers
-src/app/api/reports/generate/route.ts(220,29): error TS2345: Argument of type 'Buffer<ArrayBufferLike>' is not assignable to parameter of type 'BodyInit | null | undefined'.
-  Type 'Buffer<ArrayBufferLike>' is missing the following properties from type 'URLSearchParams': size, append, delete, get, and 2 more.
-src/app/api/reports/generate/route.ts(257,62): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/reports/generate/route.ts(325,9): error TS2739: Type 'Record<string, unknown>' is missing the following properties from type 'ReportCustomization': company_name, primary_color, secondary_color, accent_color, show_page_numbers
-src/app/api/reports/generate/route.ts(409,69): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'CustomizationProfile'.
-src/app/api/reports/generate/route.ts(448,7): error TS2739: Type 'Record<string, unknown>' is missing the following properties from type 'ReportCustomization': company_name, primary_color, secondary_color, accent_color, show_page_numbers
-src/app/api/reports/generate/route.ts(479,62): error TS2554: Expected 0 arguments, but got 1.
 src/app/api/reports/individual/route.ts(280,13): error TS2322: Type '"CONCLUIDO"' is not assignable to type 'ExecutionStatus | undefined'.
 src/app/api/reports/individual/route.ts(281,13): error TS2322: Type 'ReportSummary' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
   Type 'ReportSummary' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
@@ -237,29 +107,6 @@ src/app/api/sse/subscribe/route.ts(25,62): error TS2554: Expected 0 arguments, b
 src/app/api/sse/subscribe/route.ts(63,47): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Response'.
 src/app/api/sse/subscribe/route.ts(79,33): error TS2571: Object is of type 'unknown'.
 src/app/api/sse/subscribe/route.ts(80,9): error TS2571: Object is of type 'unknown'.
-src/app/api/systems/import/[id]/route.ts(32,46): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/[id]/route.ts(177,46): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/[id]/route.ts(226,46): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/[id]/route.ts(255,9): error TS2322: Type '{ customMappings: Record<string, string> | undefined; transformRules: Record<string, unknown> | undefined; }' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Types of property 'transformRules' are incompatible.
-    Type 'Record<string, unknown> | undefined' is not assignable to type 'InputJsonValue | null | undefined'.
-      Type 'Record<string, unknown>' is not assignable to type 'InputJsonValue | null | undefined'.
-        Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/app/api/systems/import/[id]/route.ts(301,46): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/[id]/route.ts(483,9): error TS2322: Type 'ImportError' is not assignable to type 'InputJsonValue | null | undefined'.
-  Type 'ImportError' is not assignable to type 'InputJsonObject'.
-    Index signature for type 'string' is missing in type 'ImportError'.
-src/app/api/systems/import/[id]/route.ts(484,9): error TS2322: Type 'ImportError | { type: string; message: string; timestamp: string; }' is not assignable to type 'InputJsonValue | null | undefined'.
-  Type 'ImportError' is not assignable to type 'InputJsonValue | null | undefined'.
-    Type 'ImportError' is not assignable to type 'InputJsonObject'.
-      Index signature for type 'string' is missing in type 'ImportError'.
-src/app/api/systems/import/route.ts(71,52): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/route.ts(79,24): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
-src/app/api/systems/import/route.ts(81,10): error TS18046: 'req' is of type 'unknown'.
-src/app/api/systems/import/route.ts(85,18): error TS18046: 'req' is of type 'unknown'.
-src/app/api/systems/import/route.ts(119,46): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/route.ts(259,46): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/systems/import/route.ts(478,86): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Partial<ImportOptions> | undefined'.
 src/app/api/telemetry/active-alerts/route.ts(91,15): error TS2304: Cannot find name 'user'.
 src/app/api/telemetry/monthly-usage/route.ts(78,46): error TS2339: Property 'metadata' does not exist on type '{ id: string; status: string; createdAt: Date; workspaceId: string | null; requestId: string | null; movementsCount: number; errorMessage: string | null; jobId: string | null; trackingId: string | null; ... 7 more ...; durationMs: number | null; }'.
 src/app/api/telemetry/monthly-usage/route.ts(79,43): error TS2339: Property 'metadata' does not exist on type '{ id: string; status: string; createdAt: Date; workspaceId: string | null; requestId: string | null; movementsCount: number; errorMessage: string | null; jobId: string | null; trackingId: string | null; ... 7 more ...; durationMs: number | null; }'.
@@ -286,16 +133,16 @@ src/app/api/upload/excel/estimate/route.ts(135,9): error TS2353: Object literal 
 src/app/api/upload/excel/estimate/route.ts(139,32): error TS2339: Property 'number' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; workspaceId: string; processNumber: string; caseId: string | null; court: string; clientName: string; processData: JsonValue; ... 6 more ...; extractionMethod: ExtractionMethod; }'.
 src/app/api/upload/excel/validate/route.ts(160,7): error TS2345: Argument of type 'import("C:/Users/carlo/Documents/PROJETO JUSTOAI/NOVA FASE/justoai-v2/src/lib/excel-upload-service").BatchEstimate' is not assignable to parameter of type 'BatchEstimate'.
   Property 'totalProcesses' is missing in type 'import("C:/Users/carlo/Documents/PROJETO JUSTOAI/NOVA FASE/justoai-v2/src/lib/excel-upload-service").BatchEstimate' but required in type 'BatchEstimate'.
-src/app/api/workspaces/[id]/route.ts(124,5): error TS2322: Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "PRO" | "BASIC" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type '(Without<WorkspaceUpdateInput, WorkspaceUncheckedUpdateInput> & WorkspaceUncheckedUpdateInput) | (Without<...> & WorkspaceUpdateInput)'.
-  Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "PRO" | "BASIC" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type 'Without<WorkspaceUncheckedUpdateInput, WorkspaceUpdateInput> & WorkspaceUpdateInput'.
-    Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "PRO" | "BASIC" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type 'WorkspaceUpdateInput'.
+src/app/api/workspaces/[id]/route.ts(124,5): error TS2322: Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "BASIC" | "PRO" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type '(Without<WorkspaceUpdateInput, WorkspaceUncheckedUpdateInput> & WorkspaceUncheckedUpdateInput) | (Without<...> & WorkspaceUpdateInput)'.
+  Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "BASIC" | "PRO" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type 'Without<WorkspaceUncheckedUpdateInput, WorkspaceUpdateInput> & WorkspaceUpdateInput'.
+    Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "BASIC" | "PRO" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type 'WorkspaceUpdateInput'.
       Types of property 'settings' are incompatible.
         Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
           Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
             Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/app/api/workspaces/[id]/route.ts(146,25): error TS2339: Property 'users' does not exist on type '{ id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
-src/app/api/workspaces/[id]/route.ts(147,27): error TS2339: Property 'users' does not exist on type '{ id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
-src/app/api/workspaces/[id]/route.ts(148,29): error TS2339: Property 'users' does not exist on type '{ id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
+src/app/api/workspaces/[id]/route.ts(146,25): error TS2339: Property 'users' does not exist on type '{ name: string; id: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; status: Status; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
+src/app/api/workspaces/[id]/route.ts(147,27): error TS2339: Property 'users' does not exist on type '{ name: string; id: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; status: Status; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
+src/app/api/workspaces/[id]/route.ts(148,29): error TS2339: Property 'users' does not exist on type '{ name: string; id: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; status: Status; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
 src/app/dashboard/documents-upload/page.tsx(23,42): error TS2698: Spread types may only be created from object types.
 src/app/dashboard/judit/page.tsx(107,7): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
 src/app/dashboard/judit/page.tsx(183,25): error TS2739: Type '{}' is missing the following properties from type '{ p50?: number | undefined; p95?: number | undefined; p99?: number | undefined; avg: number; min: number; max: number; }': avg, min, max
@@ -318,19 +165,7 @@ src/app/pricing/page.tsx(265,11): error TS2322: Type 'unknown' is not assignable
 src/app/signup/page.tsx(304,17): error TS2322: Type 'boolean | undefined' is not assignable to type 'boolean'.
   Type 'undefined' is not assignable to type 'boolean'.
 src/components/dashboard/api-usage-card.tsx(49,44): error TS2339: Property 'ACTIVITY' does not exist on type '{ readonly SUCCESS: "✓"; readonly ERROR: "✗"; readonly WARNING: "!"; readonly INFO: "i"; readonly LOADING: "..."; readonly ARROW_LEFT: "<"; readonly ARROW_RIGHT: ">"; readonly ARROW_UP: "^"; ... 72 more ...; readonly HEALTH: "💚"; }'.
-src/components/dashboard/client-actions-button.tsx(46,15): error TS18046: 'process' is of type 'unknown'.
-src/components/dashboard/client-actions-button.tsx(47,19): error TS18046: 'process' is of type 'unknown'.
-src/components/dashboard/client-actions-button.tsx(48,18): error TS18046: 'process' is of type 'unknown'.
-src/components/dashboard/client-actions-button.tsx(49,23): error TS18046: 'process' is of type 'unknown'.
-src/components/dashboard/client-actions-button.tsx(50,38): error TS18046: 'process' is of type 'unknown'.
-src/components/dashboard/client-actions-button.tsx(51,23): error TS18046: 'process' is of type 'unknown'.
 src/components/dashboard/cost-metrics-card.tsx(68,44): error TS2339: Property 'COINS' does not exist on type '{ readonly SUCCESS: "✓"; readonly ERROR: "✗"; readonly WARNING: "!"; readonly INFO: "i"; readonly LOADING: "..."; readonly ARROW_LEFT: "<"; readonly ARROW_RIGHT: ">"; readonly ARROW_UP: "^"; ... 72 more ...; readonly HEALTH: "💚"; }'.
-src/components/dashboard/CostBreakdownChart.tsx(46,53): error TS18046: 'percent' is of type 'unknown'.
-src/components/dashboard/CostBreakdownChart.tsx(61,11): error TS2322: Type '(value: unknown, name: string, props: unknown) => unknown' is not assignable to type 'Formatter<ValueType, string>'.
-  Type 'unknown' is not assignable to type 'ReactNode | [ReactNode, string]'.
-src/components/dashboard/CostBreakdownChart.tsx(65,35): error TS18046: 'value' is of type 'unknown'.
-src/components/dashboard/CostBreakdownChart.tsx(66,36): error TS18046: 'props' is of type 'unknown'.
-src/components/dashboard/CostBreakdownChart.tsx(67,35): error TS18046: 'props' is of type 'unknown'.
 src/components/dashboard/CostsChart.tsx(66,11): error TS2322: Type '(value: unknown, name: string) => [string, "Custo"] | [unknown, "Operações"]' is not assignable to type 'Formatter<ValueType, string>'.
   Type '[string, "Custo"] | [unknown, "Operações"]' is not assignable to type 'ReactNode | [ReactNode, string]'.
     Type '[unknown, "Operações"]' is not assignable to type 'ReactNode | [ReactNode, string]'.
@@ -339,13 +174,6 @@ src/components/dashboard/CostsChart.tsx(66,11): error TS2322: Type '(value: unkn
           Type at position 0 in source is not compatible with type at position 0 in target.
             Type 'unknown' is not assignable to type 'ReactNode'.
 src/components/dashboard/CostsChart.tsx(68,29): error TS18046: 'value' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(61,15): error TS18046: 'apiClient' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(62,17): error TS18046: 'apiClient' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(63,18): error TS18046: 'apiClient' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(64,18): error TS18046: 'apiClient' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(65,25): error TS18046: 'apiClient' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(66,19): error TS18046: 'apiClient' is of type 'unknown'.
-src/components/dashboard/dashboard-sidebar.tsx(67,23): error TS18046: 'apiClient' is of type 'unknown'.
 src/components/dashboard/LatencyChart.tsx(57,46): error TS18046: 'value' is of type 'unknown'.
 src/components/dashboard/process-list.tsx(158,42): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<"all" | "complete" | "partial" | "attention">'.
 src/components/landing/pricing.tsx(68,9): error TS18046: 'plan' is of type 'unknown'.
@@ -361,13 +189,6 @@ src/components/pricing/plan-modal.tsx(120,9): error TS18046: 'feature' is of typ
 src/components/pricing/plan-modal.tsx(121,45): error TS18046: 'feature' is of type 'unknown'.
 src/components/process/bulk-actions-bar.tsx(57,24): error TS2339: Property 'id' does not exist on type '{}'.
 src/components/process/bulk-actions-bar.tsx(146,40): error TS2339: Property 'name' does not exist on type '{}'.
-src/components/process/process-ai-analysis.tsx(346,51): error TS18047: 'selectedVersion' is possibly 'null'.
-src/components/process/process-ai-analysis.tsx(349,43): error TS18047: 'selectedVersion' is possibly 'null'.
-src/components/process/process-ai-analysis.tsx(352,29): error TS18047: 'selectedVersion' is possibly 'null'.
-src/components/process/process-ai-analysis.tsx(352,66): error TS18047: 'selectedVersion' is possibly 'null'.
-src/components/process/process-ai-analysis.tsx(371,29): error TS18047: 'selectedVersion' is possibly 'null'.
-src/components/process/process-ai-analysis.tsx(384,32): error TS18047: 'selectedVersion' is possibly 'null'.
-src/components/process/process-ai-analysis.tsx(658,66): error TS2345: Argument of type '"strategic"' is not assignable to parameter of type '"FULL" | "FAST"'.
 src/components/process/process-onboarding-status.tsx(46,7): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
 src/components/process/process-onboarding-status.tsx(96,32): error TS2339: Property 'confidence' does not exist on type '{}'.
 src/components/process/process-onboarding-status.tsx(258,9): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
@@ -400,12 +221,6 @@ src/components/reports/report-scheduler-modal.tsx(502,60): error TS2345: Argumen
     Call signature return types '{ priority: unknown; type: "updates" | "complete"; tone: "client" | "board" | "internal"; formats: string[]; scheduledFor?: Date | undefined; useCache: boolean; }' and 'ReportOptions' are incompatible.
       The types of 'priority' are incompatible between these types.
         Type 'unknown' is not assignable to type '"normal" | "night"'.
-src/components/reports/schedule-report-modal.tsx(224,7): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-src/components/reports/schedule-report-modal.tsx(330,28): error TS2339: Property 'used' does not exist on type '{}'.
-src/components/reports/schedule-report-modal.tsx(330,45): error TS2339: Property 'limit' does not exist on type '{}'.
-src/components/reports/schedule-report-modal.tsx(334,25): error TS2339: Property 'sufficient' does not exist on type '{}'.
-src/components/reports/schedule-report-modal.tsx(336,26): error TS2339: Property 'sufficient' does not exist on type '{}'.
-src/components/reports/schedule-report-modal.tsx(336,52): error TS2339: Property 'remaining' does not exist on type '{}'.
 src/components/timeline/EnrichedTimelineEvent.tsx(189,17): error TS2322: Type 'unknown' is not assignable to type '"default" | "secondary" | "outline" | "destructive" | null | undefined'.
 src/components/ui/consent-checkbox.tsx(237,7): error TS2322: Type '((value: boolean) => true | "Você deve aceitar os termos para continuar") | undefined' is not assignable to type 'Validate<unknown, Record<string, unknown>> | Record<string, Validate<unknown, Record<string, unknown>>> | undefined'.
   Type '(value: boolean) => true | "Você deve aceitar os termos para continuar"' is not assignable to type 'Validate<unknown, Record<string, unknown>> | Record<string, Validate<unknown, Record<string, unknown>>> | undefined'.
@@ -416,30 +231,9 @@ src/hooks/use-autosave.ts(87,10): error TS2345: Argument of type 'T | null' is n
   'T' could be instantiated with an arbitrary type which could be unrelated to 'T | null'.
 src/hooks/use-onboarding-integration.ts(91,42): error TS2571: Object is of type 'unknown'.
 src/hooks/use-onboarding-integration.ts(92,7): error TS2571: Object is of type 'unknown'.
-src/jobs/dailyJuditCheck.ts(295,23): error TS18046: 'monitoring' is of type 'unknown'.
-src/jobs/dailyJuditCheck.ts(296,23): error TS18046: 'monitoring' is of type 'unknown'.
-src/jobs/dailyJuditCheck.ts(297,22): error TS18046: 'monitoring' is of type 'unknown'.
-src/jobs/dailyJuditCheck.ts(319,11): error TS2339: Property 'trackingId' does not exist on type 'unknown'.
-src/jobs/dailyJuditCheck.ts(319,23): error TS2339: Property 'processoId' does not exist on type 'unknown'.
-src/jobs/dailyJuditCheck.ts(319,35): error TS2339: Property 'processo' does not exist on type 'unknown'.
-src/lib/__tests__/api-utils.test.ts(7,3): error TS2305: Module '"../api-utils"' has no exported member 'unauthorizedResponse'.
-src/lib/__tests__/api-utils.test.ts(8,3): error TS2305: Module '"../api-utils"' has no exported member 'notFoundResponse'.
-src/lib/__tests__/api-utils.test.ts(9,3): error TS2305: Module '"../api-utils"' has no exported member 'methodNotAllowedResponse'.
-src/lib/__tests__/api-utils.test.ts(10,3): error TS2305: Module '"../api-utils"' has no exported member 'validationErrorResponse'.
-src/lib/__tests__/api-utils.test.ts(11,3): error TS2724: '"../api-utils"' has no exported member named 'serverErrorResponse'. Did you mean 'errorResponse'?
-src/lib/__tests__/api-utils.test.ts(27,46): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-src/lib/__tests__/api-utils.test.ts(55,52): error TS2554: Expected 1-2 arguments, but got 3.
 src/lib/__tests__/messages.test.ts(108,34): error TS2345: Argument of type '"quota"' is not assignable to parameter of type '"failed" | "completed" | "scheduled" | "schedule_night" | "quota_hard_blocked" | "quota_ok" | "quota_soft_warning" | "quota_usage" | "quota_remaining" | "soft_warning_title" | ... 23 more ... | "generating"'.
 src/lib/__tests__/messages.test.ts(113,34): error TS2345: Argument of type '"quota"' is not assignable to parameter of type '"failed" | "completed" | "scheduled" | "schedule_night" | "quota_hard_blocked" | "quota_ok" | "quota_soft_warning" | "quota_usage" | "quota_remaining" | "soft_warning_title" | ... 23 more ... | "generating"'.
 src/lib/__tests__/messages.test.ts(118,34): error TS2345: Argument of type '"quota"' is not assignable to parameter of type '"failed" | "completed" | "scheduled" | "schedule_night" | "quota_hard_blocked" | "quota_ok" | "quota_soft_warning" | "quota_usage" | "quota_remaining" | "soft_warning_title" | ... 23 more ... | "generating"'.
-src/lib/aggregation-service.ts(82,18): error TS2353: Object literal may only specify known properties, and 'active' does not exist in type 'WorkspaceWhereInput'.
-src/lib/aggregation-service.ts(179,51): error TS2339: Property 'metadata' does not exist on type '{ id: string; status: string; createdAt: Date; workspaceId: string | null; requestId: string | null; movementsCount: number; errorMessage: string | null; jobId: string | null; trackingId: string | null; ... 7 more ...; durationMs: number | null; }'.
-src/lib/aggregation-service.ts(180,48): error TS2339: Property 'metadata' does not exist on type '{ id: string; status: string; createdAt: Date; workspaceId: string | null; requestId: string | null; movementsCount: number; errorMessage: string | null; jobId: string | null; trackingId: string | null; ... 7 more ...; durationMs: number | null; }'.
-src/lib/aggregation-service.ts(333,11): error TS2322: Type 'string' is not assignable to type 'JuditAlertType | EnumJuditAlertTypeFilter<"JuditAlert"> | undefined'.
-src/lib/aggregation-service.ts(343,13): error TS2322: Type 'string' is not assignable to type 'JuditAlertType'.
-src/lib/aggregation-service.ts(346,13): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
 src/lib/ai-cache-manager.ts(312,11): error TS2322: Type 'unknown' is not assignable to type 'JsonNull | InputJsonValue'.
 src/lib/ai-model-router.ts(1178,7): error TS2353: Object literal may only specify known properties, and 'analysis_phase' does not exist in type '{ model?: string | undefined; complexity_score?: number | undefined; tokens_saved?: number | undefined; workspaceId?: string | undefined; }'.
 src/lib/ai-model-router.ts(1233,7): error TS2353: Object literal may only specify known properties, and 'analysis_phase' does not exist in type '{ model?: string | undefined; tokens_saved?: number | undefined; workspaceId?: string | undefined; }'.
@@ -447,55 +241,11 @@ src/lib/ai-model-router.ts(1333,9): error TS2698: Spread types may only be creat
 src/lib/analysis-cache.ts(48,5): error TS2322: Type 'Redis | MockRedis' is not assignable to type 'Redis'.
   Type 'MockRedis' is missing the following properties from type 'Redis': options, status, stream, isCluster, and 356 more.
 src/lib/auth-helper.ts(70,44): error TS2698: Spread types may only be created from object types.
-src/lib/auth.ts(75,13): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type '(Without<WorkspaceCreateInput, WorkspaceUncheckedCreateInput> & WorkspaceUncheckedCreateInput) | (Without<...> & WorkspaceCreateInput)'.
-src/lib/auth.ts(87,13): error TS2353: Object literal may only specify known properties, and 'members' does not exist in type 'WorkspaceInclude<DefaultArgs>'.
-src/lib/auth.ts(98,9): error TS2322: Type '({ workspaces: ({ workspace: { id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }; } & { ...; })[]; } & { ...; }) | null' is not assignable to type '{ workspaces: ({ workspace: { id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }; } & { ...; })[]; } & { ...; }'.
-  Type 'null' is not assignable to type '{ workspaces: ({ workspace: { id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }; } & { ...; })[]; } & { ...; }'.
-    Type 'null' is not assignable to type '{ workspaces: ({ workspace: { id: string; status: Status; name: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; settings: JsonValue; createdAt: Date; updatedAt: Date; }; } & { ...; })[]; }'.
-src/lib/auth.ts(221,11): error TS2322: Type '({ token, user }: JWTCallback) => Promise<JWT>' is not assignable to type '(params: { token: JWT; user: User | AdapterUser; account: Account | null; profile?: Profile | undefined; trigger?: "update" | "signIn" | "signUp" | undefined; isNewUser?: boolean | undefined; session?: any; }) => Awaitable<...>'.
-  Types of parameters '__0' and 'params' are incompatible.
-    Type '{ token: JWT; user: User | AdapterUser; account: Account | null; profile?: Profile | undefined; trigger?: "update" | "signIn" | "signUp" | undefined; isNewUser?: boolean | undefined; session?: any; }' is not assignable to type 'JWTCallback'.
-      Types of property 'user' are incompatible.
-        Type 'User | AdapterUser' is not assignable to type '{ id?: string | undefined; email?: string | undefined; } | undefined'.
-          Type 'User' is not assignable to type '{ id?: string | undefined; email?: string | undefined; }'.
-            Types of property 'email' are incompatible.
-              Type 'string | null | undefined' is not assignable to type 'string | undefined'.
-                Type 'null' is not assignable to type 'string | undefined'.
-src/lib/auth.ts(229,22): error TS2339: Property 'id' does not exist on type '{ name?: string | null | undefined; email?: string | null | undefined; image?: string | null | undefined; }'.
-src/lib/compression.ts(351,33): error TS2345: Argument of type 'string | File[]' is not assignable to parameter of type 'string'.
-  Type 'File[]' is not assignable to type 'string'.
-src/lib/compression.ts(354,48): error TS2345: Argument of type 'string | File[]' is not assignable to parameter of type 'string'.
-  Type 'File[]' is not assignable to type 'string'.
-src/lib/compression.ts(358,20): error TS2339: Property 'compressedPath' does not exist on type 'File | { [fieldname: string]: File[]; }'.
-  Property 'compressedPath' does not exist on type 'File'.
-src/lib/compression.ts(359,20): error TS2339: Property 'originalSize' does not exist on type 'File | { [fieldname: string]: File[]; }'.
-  Property 'originalSize' does not exist on type 'File'.
-src/lib/compression.ts(360,20): error TS2339: Property 'compressedSize' does not exist on type 'File | { [fieldname: string]: File[]; }'.
-  Property 'compressedSize' does not exist on type 'File'.
-src/lib/compression.ts(361,20): error TS2339: Property 'compressionRatio' does not exist on type 'File | { [fieldname: string]: File[]; }'.
-  Property 'compressionRatio' does not exist on type 'File'.
 src/lib/credit-system.ts(131,9): error TS2322: Type 'unknown' is not assignable to type '{ id: string; createdAt: Date; updatedAt: Date; workspaceId: string; reportCreditsBalance: Decimal; fullCreditsBalance: Decimal; reportCreditsRolloverCap: Decimal; fullCreditsRolloverCap: Decimal; } | null'.
 src/lib/credit-system.ts(296,11): error TS2322: Type 'CreditTransactionMetadata | undefined' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
   Type 'CreditTransactionMetadata' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
     Type 'CreditTransactionMetadata' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/lib/deep-analysis-service.ts(20,3): error TS2305: Module '"./types/json-fields"' has no exported member 'ProcessDocument'.
-src/lib/deep-analysis-service.ts(97,7): error TS2322: Type 'Redis | MockRedis' is not assignable to type 'Redis | null'.
-  Type 'MockRedis' is missing the following properties from type 'Redis': options, status, stream, isCluster, and 356 more.
-src/lib/deep-analysis-service.ts(476,28): error TS18047: 'redis' is possibly 'null'.
-src/lib/deep-analysis-service.ts(483,27): error TS18047: 'redis' is possibly 'null'.
-src/lib/deep-analysis-service.ts(508,13): error TS18047: 'redis' is possibly 'null'.
-src/lib/deep-analysis-service.ts(598,11): error TS2322: Type 'AnalysisMetadata' is not assignable to type 'JsonNull | InputJsonValue | undefined'.
-  Type 'AnalysisMetadata' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/lib/deep-analysis-service.ts(725,11): error TS2322: Type 'AIAnalysisData' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Type 'AIAnalysisData' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
 src/lib/document-hash.ts(61,38): error TS18046: 'prisma' is of type 'unknown'.
-src/lib/email-service.ts(244,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'ProcessAlertData'.
-src/lib/email-service.ts(246,44): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'ReportReadyData'.
-src/lib/email-service.ts(248,47): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'PaymentSuccessData'.
-src/lib/email-service.ts(250,51): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SystemNotificationData'.
-src/lib/email-service.ts(253,20): error TS18046: 'data' is of type 'unknown'.
-src/lib/email-service.ts(254,17): error TS18046: 'data' is of type 'unknown'.
-src/lib/email-service.ts(255,17): error TS18046: 'data' is of type 'unknown'.
 src/lib/excel-upload-service.ts(647,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
   Type 'undefined' is not assignable to type 'string'.
 src/lib/excel-upload-service.ts(828,11): error TS2322: Type 'boolean | undefined' is not assignable to type 'boolean'.
@@ -530,22 +280,9 @@ src/lib/middleware/quota-enforcement.ts(423,9): error TS2322: Type 'Record<strin
   Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
 src/lib/middleware/quota-enforcement.ts(515,9): error TS2322: Type 'unknown' is not assignable to type 'EnumPlanFieldUpdateOperationsInput | Plan | undefined'.
 src/lib/observability/alerting.ts(95,5): error TS2322: Type 'JuditAlertType' is not assignable to type 'AlertType'.
-  Type '"TIMEOUT"' is not assignable to type 'AlertType'.
+  Type '"CIRCUIT_BREAKER"' is not assignable to type 'AlertType'.
 src/lib/observability/alerting.ts(486,15): error TS2484: Export declaration conflicts with exported declaration of 'AlertOptions'.
 src/lib/observability/alerting.ts(486,29): error TS2484: Export declaration conflicts with exported declaration of 'NotificationChannel'.
-src/lib/observability/costTracking.ts(320,9): error TS2322: Type 'AlertType' is not assignable to type 'JuditAlertType'.
-  Type '"SYNC_FAILED"' is not assignable to type 'JuditAlertType'.
-src/lib/observability/costTracking.ts(329,9): error TS2322: Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-    Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/lib/observability/costTracking.ts(389,15): error TS2484: Export declaration conflicts with exported declaration of 'CostTrackingInput'.
-src/lib/observability/costTracking.ts(389,34): error TS2484: Export declaration conflicts with exported declaration of 'CostSummary'.
-src/lib/observability/costTracking.ts(389,47): error TS2484: Export declaration conflicts with exported declaration of 'CostBreakdown'.
-src/lib/payment-webhook-handler.ts(325,33): error TS18047: 'originalTransaction' is possibly 'null'.
-src/lib/payment-webhook-handler.ts(328,42): error TS18047: 'originalTransaction' is possibly 'null'.
-src/lib/payment-webhook-handler.ts(337,26): error TS18047: 'originalTransaction' is possibly 'null'.
-src/lib/payment-webhook-handler.ts(340,37): error TS18047: 'originalTransaction' is possibly 'null'.
-src/lib/payment-webhook-handler.ts(343,38): error TS18047: 'originalTransaction' is possibly 'null'.
 src/lib/pdf-generator.ts(117,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'LaunchOptions | undefined'.
 src/lib/permission-validator.ts(71,12): error TS2571: Object is of type 'unknown'.
 src/lib/permission-validator.ts(106,22): error TS2571: Object is of type 'unknown'.
@@ -556,35 +293,6 @@ src/lib/process-alerts.ts(199,160): error TS2769: No overload matches this call.
     Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
   Overload 2 of 4, '(value: string | number): Date', gave the following error.
     Argument of type '{}' is not assignable to parameter of type 'string | number'.
-src/lib/process-apis.ts(250,7): error TS2322: Type '{ date: Date; type: {}; description: {}; category: MovementCategory; importance: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; requiresAction: boolean; deadline: Date | undefined; }[]' is not assignable to type 'ProcessMovement[]'.
-  Type '{ date: Date; type: {}; description: {}; category: MovementCategory; importance: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; requiresAction: boolean; deadline: Date | undefined; }' is not assignable to type 'ProcessMovement'.
-    Types of property 'type' are incompatible.
-      Type '{}' is not assignable to type 'string'.
-src/lib/process-apis.ts(251,24): error TS2769: No overload matches this call.
-  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
-    Argument of type 'unknown' is not assignable to parameter of type 'string | number | Date'.
-  Overload 2 of 4, '(value: string | number): Date', gave the following error.
-    Argument of type 'unknown' is not assignable to parameter of type 'string | number'.
-src/lib/process-apis.ts(254,43): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-src/lib/process-apis.ts(255,51): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-src/lib/process-apis.ts(256,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-src/lib/process-apis.ts(257,38): error TS2769: No overload matches this call.
-  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
-    Argument of type '{}' is not assignable to parameter of type 'string | number | Date'.
-  Overload 2 of 4, '(value: string | number): Date', gave the following error.
-    Argument of type '{}' is not assignable to parameter of type 'string | number'.
-src/lib/process-apis.ts(262,7): error TS2322: Type '{}' is not assignable to type 'string'.
-src/lib/process-monitor.ts(218,9): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
-src/lib/process-monitor.ts(229,9): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
-src/lib/process-monitor.ts(240,13): error TS2322: Type 'unknown' is not assignable to type 'string | StringFilter<"ProcessMovement"> | undefined'.
-src/lib/process-monitor.ts(260,13): error TS2322: Type '{ monitoredProcessId: unknown; date: Date; type: string; description: string; category: MovementCategory; importance: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; requiresAction: boolean; deadline: Date | null; rawData: any; }[]' is not assignable to type 'ProcessMovementCreateManyInput | ProcessMovementCreateManyInput[]'.
-  Type '{ monitoredProcessId: unknown; date: Date; type: string; description: string; category: MovementCategory; importance: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; requiresAction: boolean; deadline: Date | null; rawData: any; }[]' is not assignable to type 'ProcessMovementCreateManyInput[]'.
-    Type '{ monitoredProcessId: unknown; date: Date; type: string; description: string; category: MovementCategory; importance: "LOW" | "MEDIUM" | "HIGH" | "URGENT"; requiresAction: boolean; deadline: Date | null; rawData: any; }' is not assignable to type 'ProcessMovementCreateManyInput'.
-      Types of property 'monitoredProcessId' are incompatible.
-        Type 'unknown' is not assignable to type 'string'.
-src/lib/process-monitor.ts(286,23): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
-src/lib/process-monitor.ts(291,23): error TS2322: Type '{}' is not assignable to type 'string[] | ProcessAlertCreaterecipientsInput | undefined'.
-src/lib/process-monitor.ts(306,20): error TS2322: Type 'unknown' is not assignable to type 'string | undefined'.
 src/lib/queue/juditQueue.ts(325,36): error TS2345: Argument of type '"unknown" | JobState' is not assignable to parameter of type 'JobState'.
   Type '"unknown"' is not assignable to type 'JobState'.
 src/lib/queues.ts(49,53): error TS2769: No overload matches this call.
@@ -599,12 +307,6 @@ src/lib/quota-system.ts(93,5): error TS2322: Type '{ id: string; plan: Plan; cre
   Types of property 'overrideLimits' are incompatible.
     Type 'JsonValue' is not assignable to type 'Record<string, unknown> | undefined'.
       Type 'null' is not assignable to type 'Record<string, unknown> | undefined'.
-src/lib/real-analysis-service.ts(270,7): error TS2740: Type 'Record<string, unknown>' is missing the following properties from type '{ numero_processo: string | null; tipo_processual: string | null; esfera: "Federal" | "Estadual" | "Municipal" | "Trabalhista" | null; orgao_instancia: string | null; comarca: string | null; vara: string | null; juiz_responsavel: string | null; }': numero_processo, tipo_processual, esfera, orgao_instancia, and 3 more.
-src/lib/real-analysis-service.ts(271,7): error TS2739: Type 'Record<string, unknown>' is missing the following properties from type '{ parte_principal: { nome: string | null; cpf_cnpj: string | null; tipo: "Física" | "Jurídica" | null; qualificacao: string | null; }; parte_contraria: { nome: string | null; cpf_cnpj: string | null; tipo: "Física" | ... 1 more ... | null; qualificacao: string | null; }; outras_partes: { ...; }[] | null; }': parte_principal, parte_contraria, outras_partes
-src/lib/real-analysis-service.ts(272,7): error TS2740: Type 'Record<string, unknown>' is missing the following properties from type '{ valor_principal: number | null; multas: number | null; juros: number | null; encargos_legais: number | null; valor_total: number | null; valor_atualizado_em: string | null; observacoes_valores: string | null; }': valor_principal, multas, juros, encargos_legais, and 3 more.
-src/lib/real-analysis-service.ts(274,7): error TS2739: Type 'Record<string, unknown>' is missing the following properties from type '{ situacao_atual: string | null; fase_processual: string | null; ultimo_andamento: { data: string | null; tipo: string | null; resumo: string | null; } | null; principais_andamentos: { ...; }[] | null; prazos_pendentes: { ...; }[] | null; }': situacao_atual, fase_processual, ultimo_andamento, principais_andamentos, prazos_pendentes
-src/lib/real-analysis-service.ts(275,7): error TS2740: Type 'Record<string, unknown>' is missing the following properties from type '{ tese_juridica_central: string | null; risco_classificacao: "Provável" | "Possível" | "Remoto" | null; risco_justificativa: string | null; oportunidades_processuais: string[] | null; recomendacoes_estrategicas: string[] | null; pontos_atencao: string[] | null; precedentes_relevantes: string[] | null; }': tese_juridica_central, risco_classificacao, risco_justificativa, oportunidades_processuais, and 3 more.
-src/lib/real-analysis-service.ts(276,7): error TS2739: Type 'Record<string, unknown>' is missing the following properties from type '{ documentos_anexos: { nome: string; tipo: string; data_juntada: string; }[] | null; certidoes_pendentes: string[] | null; documentos_solicitados: string[] | null; }': documentos_anexos, certidoes_pendentes, documentos_solicitados
 src/lib/redis.ts(168,9): error TS1117: An object literal cannot have multiple properties with the same name.
 src/lib/redis.ts(394,9): error TS2322: Type 'unknown' is not assignable to type 'string | number | boolean | undefined'.
 src/lib/redis.ts(419,30): error TS7006: Parameter 'timeToReconnect' implicitly has an 'any' type.
@@ -620,17 +322,6 @@ src/lib/services/circuitBreakerService.ts(87,39): error TS18046: 'error' is of t
 src/lib/services/juditAttachmentProcessor.ts(138,33): error TS2339: Property 'data' does not exist on type '{}'.
 src/lib/services/juditAttachmentProcessor.ts(291,9): error TS2322: Type 'ExtractionResult' is not assignable to type 'string'.
 src/lib/services/juditAttachmentProcessor.ts(313,9): error TS2322: Type 'unknown' is not assignable to type 'DocumentType | undefined'.
-src/lib/services/juditMonitoringService.ts(226,57): error TS2322: Type 'unknown' is not assignable to type 'string | number | boolean | object | undefined'.
-src/lib/services/juditMonitoringService.ts(280,58): error TS2322: Type 'unknown' is not assignable to type 'string | number | boolean | object | undefined'.
-src/lib/services/juditMonitoringService.ts(330,57): error TS2322: Type 'unknown' is not assignable to type 'string | number | boolean | object | undefined'.
-src/lib/services/juditMonitoringService.ts(459,9): error TS2322: Type '{ movimentos: unknown[]; ultimaVerificacao: string; }' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-  Types of property 'movimentos' are incompatible.
-    Type 'unknown[]' is not assignable to type 'InputJsonValue | null | undefined'.
-      Type 'unknown[]' is not assignable to type 'InputJsonObject'.
-        Index signature for type 'string' is missing in type 'unknown[]'.
-src/lib/services/juditMonitoringService.ts(475,74): error TS2322: Type 'unknown' is not assignable to type 'string | number | boolean | object | undefined'.
-src/lib/services/juditMonitoringService.ts(659,11): error TS2339: Property 'success' does not exist on type '{ info: (message: string, data?: LogData | undefined) => void; error: (message: string, error?: LogData | undefined) => void; warn: (message: string, data?: LogData | undefined) => void; }'.
-src/lib/services/juditMonitoringService.ts(689,7): error TS2322: Type 'unknown' is not assignable to type 'string | number | boolean | object | undefined'.
 src/lib/services/localPDFMetadataExtractor.ts(354,36): error TS2344: Type 'string | undefined' does not satisfy the constraint 'string | number | symbol'.
   Type 'undefined' is not assignable to type 'string | number | symbol'.
 src/lib/services/summaryConsolidator.ts(74,26): error TS2339: Property 'processNumber' does not exist on type '{}'.
@@ -649,24 +340,6 @@ src/lib/services/timelineEnricher.ts(362,7): error TS2322: Type 'Record<string, 
 src/lib/services/timelineEnricher.ts(396,9): error TS2698: Spread types may only be created from object types.
 src/lib/system-sync.ts(53,11): error TS2322: Type 'unknown' is not assignable to type 'SourceSystem | EnumSourceSystemFilter<"SystemImport"> | undefined'.
 src/lib/system-sync.ts(64,38): error TS2339: Property 'importedItems' does not exist on type '{ id: string; status: ImportStatus; createdAt: Date; updatedAt: Date; workspaceId: string; summary: JsonValue; fileName: string; filePath: string; fileSize: number; ... 22 more ...; finishedAt: Date | null; }'.
-src/lib/types/api-schemas.ts(118,14): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/api-schemas.ts(204,102): error TS2769: No overload matches this call.
-  Overload 1 of 2, '(def: number): ZodDefault<ZodPipe<ZodString, ZodTransform<number, string>>>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type 'number'.
-  Overload 2 of 2, '(def: () => number): ZodDefault<ZodPipe<ZodString, ZodTransform<number, string>>>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '() => number'.
-src/lib/types/api-schemas.ts(205,117): error TS2769: No overload matches this call.
-  Overload 1 of 2, '(def: number): ZodDefault<ZodPipe<ZodString, ZodTransform<number, string>>>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type 'number'.
-  Overload 2 of 2, '(def: () => number): ZodDefault<ZodPipe<ZodString, ZodTransform<number, string>>>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '() => number'.
-src/lib/types/api-schemas.ts(464,22): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/external-api.ts(59,11): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/external-api.ts(87,17): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/external-api.ts(160,17): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/external-api.ts(184,15): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/external-api.ts(201,15): error TS2554: Expected 2-3 arguments, but got 1.
-src/lib/types/external-api.ts(218,11): error TS2554: Expected 2-3 arguments, but got 1.
 src/lib/types/json-fields.ts(199,3): error TS2411: Property 'pdf' of type 'string | undefined' is not assignable to 'string' index type 'string'.
 src/lib/types/json-fields.ts(200,3): error TS2411: Property 'docx' of type 'string | undefined' is not assignable to 'string' index type 'string'.
 src/lib/types/json-fields.ts(201,3): error TS2411: Property 'xlsx' of type 'string | undefined' is not assignable to 'string' index type 'string'.
