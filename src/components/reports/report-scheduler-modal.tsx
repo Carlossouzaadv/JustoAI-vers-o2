@@ -64,6 +64,49 @@ interface ReportOptions {
 }
 
 // ================================================================
+// TYPE GUARDS (Padrão-Ouro pattern)
+// ================================================================
+
+/**
+ * Type guard: validate tone value is one of the valid literals
+ * Narrows unknown to specific tone type safely
+ */
+function isValidTone(value: unknown): value is 'client' | 'board' | 'internal' {
+  return typeof value === 'string' && ['client', 'board', 'internal'].includes(value);
+}
+
+/**
+ * Type guard: validate report type value is one of the valid literals
+ * Narrows unknown to specific report type safely
+ */
+function isValidReportType(value: unknown): value is 'complete' | 'updates' {
+  return typeof value === 'string' && ['complete', 'updates'].includes(value);
+}
+
+/**
+ * Type guard: validate priority value is one of the valid literals
+ */
+function isValidPriority(value: unknown): value is 'normal' | 'night' {
+  return typeof value === 'string' && ['normal', 'night'].includes(value);
+}
+
+/**
+ * Safe state updaters: preserve narrowed types for ReportOptions (Padrão-Ouro)
+ * These functions ensure TypeScript knows the exact return type
+ */
+function updateReportTone(tone: 'client' | 'board' | 'internal') {
+  return (prev: ReportOptions): ReportOptions => ({ ...prev, tone });
+}
+
+function updateReportType(type: 'complete' | 'updates') {
+  return (prev: ReportOptions): ReportOptions => ({ ...prev, type });
+}
+
+function updateReportPriority(priority: 'normal' | 'night') {
+  return (prev: ReportOptions): ReportOptions => ({ ...prev, priority });
+}
+
+// ================================================================
 // CONFIGURAÇÕES
 // ================================================================
 
@@ -320,7 +363,12 @@ export default function ReportSchedulerModal({
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => setReportOptions(prev => ({ ...prev, tone: tone.value as "client" | "board" | "internal" }))}
+              onClick={() => {
+                // ✅ Padrão-Ouro: Type guard + safe state updater (no casting)
+                if (isValidTone(tone.value)) {
+                  setReportOptions(updateReportTone(tone.value));
+                }
+              }}
             >
               <div className="flex items-start gap-3">
                 <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100'}`}>
@@ -358,7 +406,12 @@ export default function ReportSchedulerModal({
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => setReportOptions(prev => ({ ...prev, type: type.value as "updates" | "complete" }))}
+              onClick={() => {
+                // ✅ Padrão-Ouro: Type guard + safe state updater (no casting)
+                if (isValidReportType(type.value)) {
+                  setReportOptions(updateReportType(type.value));
+                }
+              }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -499,7 +552,12 @@ export default function ReportSchedulerModal({
               <Label className="text-base font-medium">Prioridade</Label>
               <Select
                 value={reportOptions.priority}
-                onValueChange={(value) => setReportOptions(prev => ({ ...prev, priority: value as "normal" | "night" }))}
+                onValueChange={(value) => {
+                  // ✅ Padrão-Ouro: Type guard + safe state updater (no casting)
+                  if (isValidPriority(value)) {
+                    setReportOptions(updateReportPriority(value));
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />

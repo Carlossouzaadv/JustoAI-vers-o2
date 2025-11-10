@@ -61,6 +61,60 @@ const JUDIT_COSTS = {
 } as Record<JuditOperationType, number>;
 
 // ================================================================
+// TYPE GUARDS AND SAFE CONVERTERS (Padrão-Ouro)
+// ================================================================
+
+/**
+ * Type guard with predicate: narrow unknown to a valid JuditAlertType
+ * Values MUST match Prisma schema enum JuditAlertType
+ */
+function isValidJuditAlertType(value: unknown): value is 'API_ERROR' | 'RATE_LIMIT' | 'CIRCUIT_BREAKER' | 'HIGH_COST' | 'TIMEOUT' | 'ATTACHMENT_TRIGGER' | 'MONITORING_FAILED' {
+  const validTypes = ['API_ERROR', 'RATE_LIMIT', 'CIRCUIT_BREAKER', 'HIGH_COST', 'TIMEOUT', 'ATTACHMENT_TRIGGER', 'MONITORING_FAILED'];
+  return typeof value === 'string' && validTypes.includes(value);
+}
+
+/**
+ * Type guard with predicate: narrow unknown to a valid AlertSeverity
+ */
+function isValidAlertSeverity(value: unknown): value is 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
+  const validSeverities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+  return typeof value === 'string' && validSeverities.includes(value);
+}
+
+/**
+ * Safe mapping function: Convert local JuditOperationType to Prisma enum values
+ * Padrão-Ouro pattern: validates and transforms at boundary crossing
+ *
+ * Returns specific Prisma enum literal types to enable safe type narrowing
+ * This documents the semantic mapping between internal API and persistence layer
+ */
+function mapLocalOperationTypeToPrisma(
+  operationType: JuditOperationType
+): 'ONBOARDING' | 'MONITORING_CHECK' | 'ATTACHMENT_FETCH' | 'MANUAL_SEARCH' {
+  // Map our internal operation types to Prisma's enum values
+  const prismaMapping: Record<
+    JuditOperationType,
+    'ONBOARDING' | 'MONITORING_CHECK' | 'ATTACHMENT_FETCH' | 'MANUAL_SEARCH'
+  > = {
+    [JuditOperationType.SEARCH]: 'MANUAL_SEARCH',      // User-initiated search
+    [JuditOperationType.MONITORING]: 'MONITORING_CHECK', // Monitoring verification
+    [JuditOperationType.FETCH]: 'ATTACHMENT_FETCH',    // Fetching attachments
+    [JuditOperationType.ANALYSIS]: 'ONBOARDING',       // Analysis as part of onboarding
+    [JuditOperationType.REPORT]: 'ONBOARDING',         // Report generation as part of onboarding
+  };
+
+  // Get the mapped value - guaranteed to be valid Prisma enum literal
+  const prismaValue = prismaMapping[operationType];
+
+  if (!prismaValue) {
+    console.error(`Cannot map operation type: ${operationType}`);
+    throw new Error(`Cannot map operation type: ${operationType}`);
+  }
+
+  return prismaValue;
+}
+
+// ================================================================
 // JUDIT API WRAPPER CLASS
 // ================================================================
 
@@ -78,20 +132,22 @@ export class JuditApiWrapper {
       const attachmentsCost = metrics.attachmentsCost || 0;
       const totalCost = baseCost + attachmentsCost;
 
-      // Save to database
+      // Save to database with safe enum mapping (Padrão-Ouro pattern)
+      // mapLocalOperationTypeToPrisma() returns specific Prisma enum literal types
       const tracking = await prisma.juditCostTracking.create({
         data: {
-          workspaceId: metrics.workspaceId,
-          operationType: metrics.operationType as any,
-          numeroCnj: metrics.numeroCnj,
+          workspaceId: metrics.workspaceId ?? null,
+          numeroCnj: metrics.numeroCnj ?? null,
           searchCost: metrics.operationType === 'SEARCH' ? baseCost : 0,
           attachmentsCost: attachmentsCost,
           totalCost: totalCost,
           documentsRetrieved: metrics.documentsRetrieved || 0,
           movementsCount: metrics.movementsCount || 0,
           apiCallsCount: metrics.apiCallsCount || 1,
-          durationMs: metrics.durationMs,
-          requestId: metrics.requestId,
+          durationMs: metrics.durationMs || 0,
+          requestId: metrics.requestId ?? null,
+          // ✅ Safe mapping: transforms local enum to Prisma enum literal (no casting)
+          operationType: mapLocalOperationTypeToPrisma(metrics.operationType),
         },
       });
 
@@ -137,11 +193,24 @@ export class JuditApiWrapper {
         // Type guard: ensure metadata is JSON-safe
         const safeMetadata = metrics.metadata ? JSON.parse(JSON.stringify(metrics.metadata)) : undefined;
 
+        // Type guard + narrowing: safely map to alertType and validate
+        const alertTypeStr = this.mapErrorToAlertType(metrics.errorCode);
+        if (!isValidJuditAlertType(alertTypeStr)) {
+          console.warn(`${ICONS.WARNING} [JUDIT Alert] Invalid alert type: ${alertTypeStr}, skipping alert creation`);
+          return;
+        }
+
+        // Type guard + narrowing: validate severity before use
+        if (!isValidAlertSeverity(severity)) {
+          console.warn(`${ICONS.WARNING} [JUDIT Alert] Invalid severity: ${severity}, skipping alert creation`);
+          return;
+        }
+
         await prisma.juditAlert.create({
           data: {
             workspaceId: metrics.workspaceId,
-            alertType: this.mapErrorToAlertType(metrics.errorCode) as any,
-            severity: severity as any,
+            alertType: alertTypeStr,
+            severity: severity,
             title: `JUDIT ${metrics.operationType} Error`,
             message: metrics.error,
             errorCode: metrics.errorCode,
@@ -161,20 +230,24 @@ export class JuditApiWrapper {
   }
 
   /**
-   * Map error codes to alert types (using narrowing seguro)
+   * Map error codes to alert types (Padrão-Ouro: safe mapping function)
+   * Maps error codes to values that match Prisma's JuditAlertType enum exactly
    */
   private static mapErrorToAlertType(errorCode?: string): string {
     if (!errorCode) return 'API_ERROR';
 
+    // Mapping must use exact Prisma enum values (from schema.prisma)
     const mapping: Record<string, string> = {
-      RATE_LIMIT: 'RATE_LIMIT_EXCEEDED',
-      AUTH_FAILED: 'AUTHENTICATION_ERROR',
-      TIMEOUT: 'TIMEOUT_ERROR',
-      CNJ_NOT_FOUND: 'PROCESS_NOT_FOUND',
-      INVALID_CNJ: 'INVALID_PROCESS_NUMBER',
+      RATE_LIMIT: 'RATE_LIMIT',
+      TIMEOUT: 'TIMEOUT',
+      CIRCUIT_BREAKER: 'CIRCUIT_BREAKER',
+      AUTH_FAILED: 'API_ERROR', // Map auth failures to generic API error
+      ATTACHMENT_TRIGGER: 'ATTACHMENT_TRIGGER',
+      MONITORING_FAILED: 'MONITORING_FAILED',
+      HIGH_COST: 'HIGH_COST',
     };
 
-    // Return string value - Prisma will validate it's a valid JuditAlertType
+    // Return mapped value - guaranteed to be a valid Prisma JuditAlertType
     const result = mapping[errorCode] || 'API_ERROR';
     return String(result);
   }
