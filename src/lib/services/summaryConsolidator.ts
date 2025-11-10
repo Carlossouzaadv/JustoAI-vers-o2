@@ -40,6 +40,29 @@ export interface ConsolidatedCaseSummary {
 // ================================================================
 
 /**
+ * Type guard: check if data is an object with processNumber property (string)
+ */
+function isKeyNumbersWithProcess(data: unknown): data is { processNumber: string } {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+  return 'processNumber' in obj && typeof obj.processNumber === 'string';
+}
+
+/**
+ * Safely extract processNumber from keyNumbers metadata using type guard
+ */
+function getProcessNumber(keyNumbers: unknown): string | null {
+  if (isKeyNumbersWithProcess(keyNumbers)) {
+    // After type guard narrows the type, we can safely access processNumber
+    return keyNumbers.processNumber;
+  }
+  return null;
+}
+
+/**
  * Formata metadados de documento para texto legível
  */
 function formatDocumentInfo(doc: DocumentSummaryData): string {
@@ -59,7 +82,7 @@ function formatDocumentInfo(doc: DocumentSummaryData): string {
   if (doc.metadata) {
     const meta = doc.metadata;
 
-    if (meta.description) {
+    if (meta.description && typeof meta.description === 'string') {
       parts.push(`  Descrição: ${meta.description}`);
     }
 
@@ -67,12 +90,14 @@ function formatDocumentInfo(doc: DocumentSummaryData): string {
       parts.push(`  Partes: ${meta.parties.slice(0, 2).join(', ')}`);
     }
 
-    if (meta.judge) {
+    if (meta.judge && typeof meta.judge === 'string') {
       parts.push(`  Juiz: ${meta.judge}`);
     }
 
-    if (meta.keyNumbers?.processNumber) {
-      parts.push(`  Processo: ${meta.keyNumbers.processNumber}`);
+    // Use type guard helper to safely extract processNumber
+    const processNumber = getProcessNumber(meta.keyNumbers);
+    if (processNumber) {
+      parts.push(`  Processo: ${processNumber}`);
     }
   }
 
@@ -114,12 +139,38 @@ function formatDocumentType(type: string): string {
 }
 
 /**
+ * Safely extract date from metadata using type guard
+ */
+function getMetadataDate(metadata: Record<string, unknown> | undefined): Date | null {
+  if (!metadata) return null;
+
+  const createdAt = metadata.createdAt;
+
+  // Type guard: check if createdAt is a Date object
+  if (createdAt instanceof Date) {
+    return createdAt;
+  }
+
+  // Type guard: check if createdAt is a date string and parse it
+  if (typeof createdAt === 'string') {
+    const parsed = new Date(createdAt);
+    // Verify the date is valid
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Ordena documentos cronologicamente
  */
 function sortDocumentsByDate(documents: DocumentSummaryData[]): DocumentSummaryData[] {
   return [...documents].sort((a, b) => {
-    const dateA = a.documentDate?.getTime() || a.metadata?.createdAt?.getTime() || 0;
-    const dateB = b.documentDate?.getTime() || b.metadata?.createdAt?.getTime() || 0;
+    // First try documentDate, then fall back to metadata createdAt using narrowing
+    const dateA = a.documentDate?.getTime() ?? (getMetadataDate(a.metadata)?.getTime() ?? 0);
+    const dateB = b.documentDate?.getTime() ?? (getMetadataDate(b.metadata)?.getTime() ?? 0);
 
     return dateA - dateB;
   });

@@ -267,6 +267,15 @@ export class QuotaEnforcement {
   ): Promise<QuotaCheckResult> {
     const percentage = (current / limit) * 100;
 
+    // Type guard: safely narrow options to check for reportType and reportFormat
+    function isOptionsWithReportType(data: unknown): data is { reportType?: string } {
+      return typeof data === 'object' && data !== null;
+    }
+
+    function isOptionsWithReportFormat(data: unknown): data is { reportFormat?: string } {
+      return typeof data === 'object' && data !== null;
+    }
+
     // Ações disponíveis baseadas no contexto
     const actions: QuotaAction[] = [
       {
@@ -283,8 +292,8 @@ export class QuotaEnforcement {
       }
     ];
 
-    // Opção de agendamento para mês seguinte
-    if (options.reportType === 'scheduled') {
+    // Opção de agendamento para mês seguinte (narrowing seguro)
+    if (isOptionsWithReportType(options) && options.reportType === 'scheduled') {
       actions.push({
         type: 'schedule_night',
         label: 'Agendar para Próximo Mês',
@@ -292,8 +301,8 @@ export class QuotaEnforcement {
       });
     }
 
-    // Fallback para relatório executivo
-    if (this.config.ALLOW_EXECUTIVE_FALLBACK_ON_BLOCK && options.reportFormat !== 'executive') {
+    // Fallback para relatório executivo (narrowing seguro)
+    if (isOptionsWithReportFormat(options) && this.config.ALLOW_EXECUTIVE_FALLBACK_ON_BLOCK && options.reportFormat !== 'executive') {
       actions.push({
         type: 'executive_fallback',
         label: 'Gerar Versão Executiva',
@@ -420,7 +429,8 @@ export class QuotaEnforcement {
         workspaceId,
         eventType,
         resourceType: 'quota_check',
-        metadata: payload
+        // JSON.parse(JSON.stringify()) ensures JSON-safety for InputJsonValue
+        metadata: JSON.parse(JSON.stringify(payload))
       }
     });
   }
@@ -509,13 +519,22 @@ export class QuotaEnforcement {
     workspaceId: string,
     updates: Partial<QuotaPolicy>
   ): Promise<QuotaPolicy> {
+    // Build data object with only defined fields (narrowing seguro)
+    const updateData: Record<string, unknown> = {};
+
+    if (updates.planId && typeof updates.planId === 'string') {
+      updateData.plan = updates.planId;
+    }
+    if (updates.reportsMonthlyLimit !== undefined) {
+      updateData.reportsMonthlyLimit = updates.reportsMonthlyLimit;
+    }
+    if (updates.processesLimit !== undefined) {
+      updateData.reportProcessesLimit = updates.processesLimit;
+    }
+
     const updated = await prisma.workspaceQuota.update({
       where: { workspaceId },
-      data: {
-        plan: updates.planId as unknown,
-        reportsMonthlyLimit: updates.reportsMonthlyLimit,
-        reportProcessesLimit: updates.processesLimit
-      }
+      data: updateData as any
     });
 
     return {

@@ -82,7 +82,7 @@ export class JuditApiWrapper {
       const tracking = await prisma.juditCostTracking.create({
         data: {
           workspaceId: metrics.workspaceId,
-          operationType: metrics.operationType,
+          operationType: metrics.operationType as any,
           numeroCnj: metrics.numeroCnj,
           searchCost: metrics.operationType === 'SEARCH' ? baseCost : 0,
           attachmentsCost: attachmentsCost,
@@ -92,13 +92,6 @@ export class JuditApiWrapper {
           apiCallsCount: metrics.apiCallsCount || 1,
           durationMs: metrics.durationMs,
           requestId: metrics.requestId,
-          metadata: {
-            ...metrics.metadata,
-            success: metrics.success,
-            error: metrics.error,
-            errorCode: metrics.errorCode,
-            timestamp: new Date().toISOString(),
-          },
         },
       });
 
@@ -141,17 +134,20 @@ export class JuditApiWrapper {
 
       // Only create new alert if no unresolved one exists
       if (!existingAlert) {
+        // Type guard: ensure metadata is JSON-safe
+        const safeMetadata = metrics.metadata ? JSON.parse(JSON.stringify(metrics.metadata)) : undefined;
+
         await prisma.juditAlert.create({
           data: {
             workspaceId: metrics.workspaceId,
-            alertType: this.mapErrorToAlertType(metrics.errorCode),
-            severity: severity as unknown,
+            alertType: this.mapErrorToAlertType(metrics.errorCode) as any,
+            severity: severity as any,
             title: `JUDIT ${metrics.operationType} Error`,
             message: metrics.error,
             errorCode: metrics.errorCode,
             numeroCnj: metrics.numeroCnj,
             requestId: metrics.requestId,
-            metadata: metrics.metadata,
+            metadata: safeMetadata,
           },
         });
 
@@ -165,7 +161,7 @@ export class JuditApiWrapper {
   }
 
   /**
-   * Map error codes to alert types
+   * Map error codes to alert types (using narrowing seguro)
    */
   private static mapErrorToAlertType(errorCode?: string): string {
     if (!errorCode) return 'API_ERROR';
@@ -178,7 +174,9 @@ export class JuditApiWrapper {
       INVALID_CNJ: 'INVALID_PROCESS_NUMBER',
     };
 
-    return mapping[errorCode] || 'API_ERROR';
+    // Return string value - Prisma will validate it's a valid JuditAlertType
+    const result = mapping[errorCode] || 'API_ERROR';
+    return String(result);
   }
 
   /**
