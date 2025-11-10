@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     console.log(`${ICONS.PROCESS} Nova requisição de análise IA (Gemini Real)`);
 
     // 1. Autenticação
-    const { user, workspace } = await validateAuthAndGetUser(req);
+    const { user, workspace } = await validateAuthAndGetUser();
 
     // 2. Validação do input
     const body = await req.json();
@@ -111,11 +111,12 @@ export async function POST(req: NextRequest) {
         'FULL',
         `AI ${validatedData.analysis_type} analysis`
       );
-      if (!debitResult.success) {
+      // Use narrowing seguro to safely access newBalance
+      if (debitResult.success && debitResult.newBalance) {
+        console.log(`${ICONS.SUCCESS} Credits debited: ${creditCost} credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
+      } else {
         console.warn(`${ICONS.WARNING} Failed to debit credits: ${debitResult.reason}`);
         // Log but don't fail the request - the analysis was already completed
-      } else {
-        console.log(`${ICONS.SUCCESS} Credits debited: ${creditCost} credit(s) (new balance: ${debitResult.newBalance.fullCredits})`);
       }
     }
 
@@ -188,7 +189,7 @@ export async function GET(req: NextRequest) {
     console.log(`${ICONS.INFO} Requisição de estatísticas da análise Gemini`);
 
     // 1. Autenticação
-    await validateAuthAndGetUser(req);
+    await validateAuthAndGetUser();
 
     // 2. Obter estatísticas do serviço real
     const analysisService = getRealAnalysisService();
@@ -268,13 +269,13 @@ export async function DELETE(req: NextRequest) {
     console.log(`${ICONS.WARNING} Requisição de limpeza de cache`);
 
     // 1. Autenticação (apenas admins)
-    const { user, workspace } = await validateAuthAndGetUser(req);
+    const { user, workspace } = await validateAuthAndGetUser();
 
     // 2. Verificar se user é admin do workspace
     const adminCheck = await requireWorkspaceAdmin(user.id, workspace.id);
     if (!adminCheck.authorized) {
       console.warn(
-        `${ICONS.LOCK} Acesso negado: ${adminCheck.error}`
+        `${ICONS.SHIELD} Acesso negado: ${adminCheck.error}`
       );
       return NextResponse.json(
         {

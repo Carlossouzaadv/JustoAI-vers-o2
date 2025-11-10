@@ -11,6 +11,21 @@ import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import type { CaseAnalysisVersion, AnalysisJob, ProcessStatus, JobStatus } from '@prisma/client';
 
+// ================================================================
+// TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
+// ================================================================
+
+/**
+ * Type guard: Validates that params contains the required 'id' field
+ */
+function isRouteParams(params: unknown): params is { id: string } {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return 'id' in p && typeof p.id === 'string';
+}
+
 // Types
 type VersionWithJobs = CaseAnalysisVersion & {
   jobs: AnalysisJob[];
@@ -90,9 +105,18 @@ interface ProcessedVersion {
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context?: { params: Promise<Record<string, string>> }
 ) => {
-  const { id: processId } = await params;
+  if (!context?.params) {
+    return errorResponse('Process ID is required', 400);
+  }
+
+  // Type narrowing: Extract and validate params
+  const resolvedParams = await context.params;
+  if (!isRouteParams(resolvedParams)) {
+    return errorResponse('Invalid route parameters', 400);
+  }
+  const { id: processId } = resolvedParams;
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');
   const includeContent = searchParams.get('includeContent') === 'true';

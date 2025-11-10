@@ -88,7 +88,7 @@ export async function POST(
     }
 
     // 4. Inicializar processadores
-    const pdfProcessor = new PDFProcessor(prisma);
+    const pdfProcessor = new PDFProcessor();
     const modelRouter = new AIModelRouter();
 
     // 5. Reprocessar PDF se necessário
@@ -114,9 +114,18 @@ export async function POST(
         custom_fields: customFields
       });
 
-      // Validate result structure
-      if (typeof rawResult === 'object' && rawResult !== null && 'success' in rawResult) {
-        pdfResult = rawResult as PDFProcessResult;
+      // Validate result structure using type guard (narrowing seguro)
+      function isPDFProcessResult(data: unknown): data is PDFProcessResult {
+        return (
+          typeof data === 'object' &&
+          data !== null &&
+          'success' in data &&
+          typeof (data as PDFProcessResult).success === 'boolean'
+        );
+      }
+
+      if (isPDFProcessResult(rawResult)) {
+        pdfResult = rawResult;
       } else {
         return NextResponse.json(
           { error: 'Invalid PDF processor response' },
@@ -183,9 +192,17 @@ export async function POST(
           pdfResult.file_size_mb || 0
         );
 
-        // Validate analysis result
-        if (typeof analysisResult === 'object' && analysisResult !== null) {
-          aiAnalysis = analysisResult as AIAnalysisResult;
+        // Validate analysis result using type guard (narrowing seguro)
+        function isAIAnalysisResult(data: unknown): data is AIAnalysisResult {
+          return (
+            typeof data === 'object' &&
+            data !== null &&
+            '_routing_info' in data
+          );
+        }
+
+        if (isAIAnalysisResult(analysisResult)) {
+          aiAnalysis = analysisResult;
           routingInfo = aiAnalysis._routing_info || null;
         }
 
@@ -219,8 +236,9 @@ export async function POST(
         },
         version: nextVersion,
         analysisType: 'PDF_UPLOAD',
-        extractedData: pdfResult,
-        aiAnalysis,
+        // JSON.parse(JSON.stringify()) ensures JSON-safety by removing non-serializable properties
+        extractedData: pdfResult ? JSON.parse(JSON.stringify(pdfResult)) : undefined,
+        aiAnalysis: aiAnalysis ? JSON.parse(JSON.stringify(aiAnalysis)) : undefined,
         modelUsed: routingInfo?.final_tier || 'gemini-2.5-flash',
         confidence: aiAnalysis ? 0.85 : 0.5, // Confiança menor se não houve análise IA
         processingTime: Date.now(), // TODO: medir tempo real
@@ -245,11 +263,13 @@ export async function POST(
         'FULL',
         `Strategic analysis for document ${documentId} - Case ${document.caseId}`
       );
-      if (!debitResult.success) {
+
+      // Use narrowing seguro to safely access newBalance
+      if (debitResult.success && debitResult.newBalance) {
+        console.log(`Credits debited: 1 FULL credit (new balance: ${debitResult.newBalance.fullCredits})`);
+      } else {
         console.warn(`Failed to debit credits: ${debitResult.reason}`);
         // Log but don't fail the request - the analysis was already completed
-      } else {
-        console.log(`Credits debited: 1 FULL credit (new balance: ${debitResult.newBalance.fullCredits})`);
       }
     }
 

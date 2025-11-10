@@ -34,6 +34,30 @@ interface DashboardSidebarProps {
   onClientSelect?: (clientId: string) => void;
 }
 
+interface ApiClient {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  updatedAt?: string;
+  _count?: {
+    cases?: number;
+  };
+}
+
+// Type Guard para validar estrutura do ApiClient
+function isApiClient(data: unknown): data is ApiClient {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    typeof (data as ApiClient).id === 'string' &&
+    'name' in data &&
+    typeof (data as ApiClient).name === 'string'
+  );
+}
+
 export function DashboardSidebar({ selectedClientId, onClientSelect }: DashboardSidebarProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,16 +81,18 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
         const data = await response.json();
 
         // Transform API response to match Client interface
-        const apiClients = (data.data || []).map((apiClient: unknown) => ({
-          id: apiClient.id,
-          name: apiClient.name,
-          email: apiClient.email,
-          phone: apiClient.phone,
-          processCount: apiClient._count?.cases || 0,
-          status: apiClient.status?.toLowerCase() === 'active' ? 'active' : 'inactive',
-          lastUpdate: apiClient.updatedAt || new Date().toISOString(),
-          attentionRequired: 0, // TODO: Calculate from case alerts
-        }));
+        const apiClients = (data.data || [])
+          .filter(isApiClient)
+          .map((apiClient: ApiClient) => ({
+            id: apiClient.id,
+            name: apiClient.name,
+            email: apiClient.email,
+            phone: apiClient.phone,
+            processCount: apiClient._count?.cases || 0,
+            status: apiClient.status?.toLowerCase() === 'active' ? 'active' : 'inactive',
+            lastUpdate: apiClient.updatedAt || new Date().toISOString(),
+            attentionRequired: 0, // TODO: Calculate from case alerts
+          }));
 
         setClients(apiClients);
       } else {

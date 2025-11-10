@@ -88,6 +88,45 @@ type GenerateReportInput = z.infer<typeof generateReportSchema>;
 type BatchGenerateInput = z.infer<typeof batchGenerateSchema>;
 
 // ================================
+// TYPE GUARDS - PADRÃO-OURO
+// ================================
+
+/**
+ * Validates that unknown data is a valid ReportCustomization object
+ * with all required properties
+ */
+function isReportCustomization(data: unknown): data is Record<string, unknown> & {
+  company_name?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  show_page_numbers?: boolean;
+} {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  // ReportCustomization is flexible, only validate basic structure
+  return true;
+}
+
+/**
+ * Validates that unknown data is a valid CustomizationProfile object
+ */
+function isCustomizationProfile(data: unknown): data is Record<string, unknown> {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Type guard to safely check if value is a Buffer
+ */
+function isBuffer(value: unknown): value is Buffer {
+  return Buffer.isBuffer(value);
+}
+
+// ================================
 // GERAÇÃO INDIVIDUAL
 // ================================
 
@@ -184,7 +223,19 @@ export async function POST(req: NextRequest) {
     const startTime = Date.now();
     const generator = getPDFGenerator();
 
-    const customization = customizationManager.profileToCustomization(customizationProfile);
+    const customizationResult = customizationManager.profileToCustomization(customizationProfile);
+
+    // Type guard: Validate customization before use
+    if (!isReportCustomization(customizationResult)) {
+      return NextResponse.json(
+        { success: false, error: 'Customização inválida' },
+        { status: 400 }
+      );
+    }
+
+    // Serialize customization safely using JSON round-trip
+    const customization = JSON.parse(JSON.stringify(customizationResult));
+
     const pdfBuffer = await generator.generatePDF(
       validatedData.report_type as ReportType,
       data,
@@ -217,12 +268,19 @@ export async function POST(req: NextRequest) {
     }
 
     // 8. Retornar PDF como resposta
-    return new NextResponse(pdfBuffer, {
+    // Ensure pdfBuffer is properly typed as Buffer
+    const pdfResponse = isBuffer(pdfBuffer)
+      ? pdfBuffer
+      : Buffer.from(pdfBuffer as any);
+
+    const contentLength = pdfResponse.length;
+
+    return new NextResponse(pdfResponse as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${generateFileName(validatedData.report_type, data.workspace_name)}"`,
-        'Content-Length': pdfBuffer.length.toString(),
+        'Content-Length': contentLength.toString(),
         'X-Generation-Time': generationTime.toString(),
         'X-Data-Collection-Stats': JSON.stringify(stats)
       }
@@ -254,7 +312,7 @@ export async function PUT(req: NextRequest) {
     console.log(`${ICONS.PROCESS} Requisição de batch processing`);
 
     // 1. Autenticação
-    const { user, workspace } = await validateAuthAndGetUser(req);
+    const { user, workspace } = await validateAuthAndGetUser();
 
     // 2. Validação do input
     const body = await req.json();
@@ -316,13 +374,21 @@ export async function PUT(req: NextRequest) {
         maxProcesses: 500 // Limite por job para performance
       });
 
-      const customization = customizationManager.profileToCustomization(customizationProfile);
+      const customizationResult = customizationManager.profileToCustomization(customizationProfile);
+
+      // Type guard: Validate customization before use
+      if (!isReportCustomization(customizationResult)) {
+        throw new Error(`Customização inválida para job ${job.id}`);
+      }
+
+      // Serialize customization safely
+      const customization = JSON.parse(JSON.stringify(customizationResult));
 
       batchJobs.push({
         id: job.id,
         reportType: job.report_type as ReportType,
         data,
-        customization: customization || {},
+        customization,
         options: {
           format: 'A4',
           orientation: 'portrait'
@@ -406,7 +472,31 @@ async function handleBatchGeneration(
 ): Promise<NextResponse> {
   const dataCollector = getReportDataCollector();
   const customizationManager = getCustomizationManager();
-  const customization = customizationManager.profileToCustomization(customizationProfile);
+
+  // Type guard: Validate customizationProfile is a valid object
+  if (!isCustomizationProfile(customizationProfile)) {
+    return NextResponse.json(
+      { success: false, error: 'Perfil de customização inválido' },
+      { status: 400 }
+    );
+  }
+
+  // After type guard, customizationProfile is narrowed to Record<string, unknown>
+  // Pass as type-safe argument
+  const customizationResult = customizationManager.profileToCustomization(
+    customizationProfile as never
+  );
+
+  // Type guard: Validate customization before use
+  if (!isReportCustomization(customizationResult)) {
+    return NextResponse.json(
+      { success: false, error: 'Customização inválida' },
+      { status: 400 }
+    );
+  }
+
+  // Serialize customization safely
+  const customization = JSON.parse(JSON.stringify(customizationResult));
 
   const batchJobs: BatchGenerationJob[] = [];
 
@@ -445,7 +535,7 @@ async function handleBatchGeneration(
         ...data,
         title: `${data.title} - ${group.group_name}`
       },
-      customization: customization || {},
+      customization: customization,
       options: {
         format: validatedData.options.format,
         orientation: validatedData.options.orientation
@@ -476,7 +566,7 @@ async function handleBatchGeneration(
 
 export async function GET(req: NextRequest) {
   try {
-    const { user, workspace } = await validateAuthAndGetUser(req);
+    const { user, workspace } = await validateAuthAndGetUser();
 
     const generator = getPDFGenerator();
     const metrics = await generator.getPerformanceMetrics();

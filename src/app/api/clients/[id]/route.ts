@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import {
   successResponse,
   errorResponse,
@@ -134,10 +135,26 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
     }
   }
 
-  // Update client
+  // Update client - serialize metadata to JSON (Padrão-Ouro)
+  const updateData: Prisma.ClientUpdateInput = {
+    ...(input.name !== undefined && { name: input.name }),
+    ...(input.email !== undefined && { email: input.email }),
+    ...(input.phone !== undefined && { phone: input.phone }),
+    ...(input.document !== undefined && { document: input.document }),
+    ...(input.type !== undefined && { type: input.type }),
+    ...(input.status !== undefined && { status: input.status }),
+    ...(input.address !== undefined && { address: input.address }),
+    ...(input.city !== undefined && { city: input.city }),
+    ...(input.state !== undefined && { state: input.state }),
+    ...(input.zipCode !== undefined && { zipCode: input.zipCode }),
+    ...(input.country !== undefined && { country: input.country }),
+    ...(input.notes !== undefined && { notes: input.notes }),
+    ...(input.metadata && { metadata: JSON.parse(JSON.stringify(input.metadata)) as Prisma.InputJsonValue }),
+  };
+
   const client = await prisma.client.update({
     where: { id: clientId },
-    data: input,
+    data: updateData,
     include: {
       workspace: {
         select: {

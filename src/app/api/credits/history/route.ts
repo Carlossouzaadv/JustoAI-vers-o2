@@ -1,8 +1,56 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
+import { Prisma } from '@prisma/client'
 import { successResponse, errorResponse, validateQuery, requireAuth, withErrorHandler, paginatedResponse } from '@/lib/api-utils'
-import { getCreditManager } from '@/lib/credit-system'
+import { prisma } from '@/lib/prisma'
 import { ICONS } from '@/lib/icons'
+
+// ================================================================
+// TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
+// ================================================================
+
+/**
+ * Type for transaction history filters
+ */
+type TransactionFilters = {
+  workspaceId: string;
+  type?: 'debit' | 'credit';
+  creditCategory?: 'report' | 'full';
+  startDate?: Date;
+  endDate?: Date;
+};
+
+/**
+ * Type guard: Validates transaction type enum
+ */
+function isValidTransactionType(type: unknown): type is 'debit' | 'credit' {
+  return type === 'debit' || type === 'credit';
+}
+
+/**
+ * Type guard: Validates credit category enum
+ */
+function isValidTransactionCategory(category: unknown): category is 'report' | 'full' {
+  return category === 'report' || category === 'full';
+}
+
+/**
+ * Type guard: Validates filters object structure
+ */
+function isValidTransactionFilters(data: unknown): data is TransactionFilters {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const f = data as Record<string, unknown>;
+  return (
+    'workspaceId' in f &&
+    typeof f.workspaceId === 'string' &&
+    (f.type === undefined || isValidTransactionType(f.type)) &&
+    (f.creditCategory === undefined || isValidTransactionCategory(f.creditCategory)) &&
+    (f.startDate === undefined || f.startDate instanceof Date) &&
+    (f.endDate === undefined || f.endDate instanceof Date)
+  );
+}
 
 // Query params validation schema
 const historyQuerySchema = z.object({
@@ -37,51 +85,88 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
   console.log(`${ICONS.PROCESS} Fetching credit history for workspace ${workspaceId} (page ${pageNum}, limit ${limitNum})`)
 
   try {
-    const creditSystem = getCreditManager()
+    // Build filters with type safety using type guards (NO casting)
+    const filterInput: TransactionFilters = { workspaceId }
 
-    // Build filters
-    const filters: unknown = { workspaceId }
-
-    if (type !== 'all') {
-      filters.type = type
+    if (type !== 'all' && isValidTransactionType(type)) {
+      filterInput.type = type;
     }
 
-    if (creditCategory !== 'all') {
-      filters.creditCategory = creditCategory
+    if (creditCategory !== 'all' && isValidTransactionCategory(creditCategory)) {
+      filterInput.creditCategory = creditCategory;
     }
 
     if (startDate) {
-      filters.startDate = new Date(startDate)
+      filterInput.startDate = new Date(startDate)
     }
 
     if (endDate) {
-      filters.endDate = new Date(endDate)
+      filterInput.endDate = new Date(endDate)
+    }
+
+    // Validate filters object
+    if (!isValidTransactionFilters(filterInput)) {
+      return errorResponse('Invalid transaction filters', 400)
+    }
+
+    // Build Prisma where clause with type safety
+    type WhereClause = Prisma.CreditTransactionFindManyArgs['where'];
+    const where: WhereClause = {
+      workspaceId: filterInput.workspaceId,
+    }
+
+    if (filterInput.type) {
+      where.type = filterInput.type === 'debit' ? 'DEBIT' : 'CREDIT'
+    }
+
+    if (filterInput.creditCategory) {
+      where.creditCategory = filterInput.creditCategory === 'report' ? 'REPORT' : 'FULL'
+    }
+
+    // Handle date filtering safely
+    if (filterInput.startDate || filterInput.endDate) {
+      type DateFilter = { gte?: Date; lte?: Date };
+      const dateFilter: DateFilter = {}
+
+      if (filterInput.startDate) {
+        dateFilter.gte = filterInput.startDate
+      }
+      if (filterInput.endDate) {
+        dateFilter.lte = filterInput.endDate
+      }
+
+      where.createdAt = dateFilter
     }
 
     // Get paginated transaction history
-    const historyResult = await creditSystem.getTransactionHistory(
-      workspaceId,
-      limitNum,
-      (pageNum - 1) * limitNum,
-      filters
-    )
-
-    if (!historyResult.success) {
-      return errorResponse(historyResult.error || 'Failed to get transaction history', 500)
-    }
+    const transactions = await prisma.creditTransaction.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (pageNum - 1) * limitNum,
+      take: limitNum,
+      select: {
+        id: true,
+        workspaceId: true,
+        type: true,
+        creditCategory: true,
+        amount: true,
+        reason: true,
+        metadata: true,
+        createdAt: true,
+      },
+    })
 
     // Get total count for pagination
-    const countResult = await creditSystem.getTransactionCount(workspaceId, filters)
-    const totalCount = countResult.success ? countResult.count! : 0
+    const totalCount = await prisma.creditTransaction.count({ where })
 
-    console.log(`${ICONS.SUCCESS} Credit history fetched: ${historyResult.transactions!.length} transactions`)
+    console.log(`${ICONS.SUCCESS} Credit history fetched: ${transactions.length} transactions`)
 
     return paginatedResponse(
-      historyResult.transactions!,
+      transactions,
       pageNum,
       limitNum,
       totalCount,
-      `Retrieved ${historyResult.transactions!.length} credit transactions`
+      `Retrieved ${transactions.length} credit transactions`
     )
 
   } catch (error) {

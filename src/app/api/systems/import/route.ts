@@ -4,45 +4,98 @@
 // Upload CSV/Excel com detecção inteligente de sistemas jurídicos
 
 import { NextRequest, NextResponse } from 'next/server';
-import multer from 'multer';
-import { promisify } from 'util';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
-import { createSystemImporter } from '@/lib/system-importer';
+import { createSystemImporter, type ImportOptions } from '@/lib/system-importer';
 import { createIntelligentParser } from '@/lib/intelligent-parser';
 import { SystemMappings } from '@/lib/system-mappings';
 import { ICONS } from '@/lib/icons';
 
 // ================================
-// CONFIGURAÇÃO MULTER
+// TYPE GUARDS E VALIDAÇÃO
 // ================================
 
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB
-    files: 1
-  },
-  fileFilter: (req, file, cb) => {
-    const allowedMimes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'text/csv',
-      'application/csv'
-    ];
-
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Apenas arquivos Excel (.xlsx, .xls) e CSV são permitidos'));
-    }
+/** Type Guard para validar Partial<ImportOptions> */
+function isPartialImportOptions(data: unknown): data is Partial<ImportOptions> {
+  // Objeto vazio ou nulo é válido para Partial<>
+  if (typeof data !== 'object' || data === null) {
+    return true;
   }
-});
 
-const uploadSingle = promisify(upload.single('file'));
+  const obj = data as Record<string, unknown>;
+
+  // Validar cada propriedade opcional
+  if (
+    obj.overwriteExisting !== undefined &&
+    typeof obj.overwriteExisting !== 'boolean'
+  ) {
+    return false;
+  }
+
+  if (
+    obj.skipDuplicates !== undefined &&
+    typeof obj.skipDuplicates !== 'boolean'
+  ) {
+    return false;
+  }
+
+  if (obj.validateOnly !== undefined && typeof obj.validateOnly !== 'boolean') {
+    return false;
+  }
+
+  if (obj.batchSize !== undefined && typeof obj.batchSize !== 'number') {
+    return false;
+  }
+
+  if (
+    obj.customMappings !== undefined &&
+    (typeof obj.customMappings !== 'object' || obj.customMappings === null)
+  ) {
+    return false;
+  }
+
+  if (
+    obj.transformRules !== undefined &&
+    (typeof obj.transformRules !== 'object' || obj.transformRules === null)
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/** Helper para validar e extrair arquivo do FormData */
+async function extractFileFromRequest(
+  request: NextRequest
+): Promise<{ file: File; filename: string }> {
+  const formData = await request.formData();
+  const fileInput = formData.get('file');
+
+  if (!fileInput || !(fileInput instanceof File)) {
+    throw new ApiError('Arquivo não encontrado ou inválido', 400);
+  }
+
+  const allowedMimes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'text/csv',
+    'application/csv'
+  ];
+
+  if (!allowedMimes.includes(fileInput.type)) {
+    throw new ApiError(
+      'Apenas arquivos Excel (.xlsx, .xls) e CSV são permitidos',
+      400
+    );
+  }
+
+  return {
+    file: fileInput,
+    filename: fileInput.name
+  };
+}
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -68,33 +121,28 @@ const ImportRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, workspace } = await validateAuth(request);
+    const { user, workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'analyze';
 
-    // Processar upload
-    const req = request as unknown;
-    const res = {} as unknown;
+    // Extrair arquivo do FormData
+    const { file, filename } = await extractFileFromRequest(request);
 
-    await uploadSingle(req, res);
+    // Converter File para Buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    if (!req.file) {
-      throw new ApiError('Arquivo não encontrado', 400);
-    }
-
-    const file = req.file;
     console.log(`${ICONS.UPLOAD} Upload de sistema externo:`, {
-      filename: file.originalname,
+      filename,
       size: file.size,
-      type: file.mimetype,
+      type: file.type,
       workspace: workspace.name,
       action
     });
 
     if (action === 'analyze') {
-      return await handleAnalyzeFile(file, workspace.id);
+      return await handleAnalyzeFile(buffer, filename, workspace.id);
     } else if (action === 'import') {
-      return await handleImportFile(file, workspace.id, request);
+      return await handleImportFile(buffer, filename, workspace.id, request);
     } else {
       throw new ApiError('Ação não suportada. Use action=analyze ou action=import', 400);
     }
@@ -116,7 +164,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'list';
 
@@ -256,7 +304,7 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
 
     const importIds = searchParams.get('ids')?.split(',').filter(Boolean);
@@ -330,11 +378,15 @@ export async function DELETE(request: NextRequest) {
 // HANDLERS ESPECÍFICOS
 // ================================
 
-async function handleAnalyzeFile(file: Express.Multer.File, workspaceId: string) {
-  console.log(`${ICONS.SEARCH} Analisando arquivo: ${file.originalname}`);
+async function handleAnalyzeFile(
+  buffer: Buffer,
+  filename: string,
+  workspaceId: string
+) {
+  console.log(`${ICONS.SEARCH} Analisando arquivo: ${filename}`);
 
   const parser = createIntelligentParser();
-  const analysisResult = await parser.parseFile(file.buffer, file.originalname);
+  const analysisResult = await parser.parseFile(buffer, filename);
 
   if (!analysisResult.success) {
     throw new ApiError(
@@ -407,12 +459,17 @@ async function handleAnalyzeFile(file: Express.Multer.File, workspaceId: string)
   return apiResponse(result);
 }
 
-async function handleImportFile(file: Express.Multer.File, workspaceId: string, request: NextRequest) {
+async function handleImportFile(
+  buffer: Buffer,
+  filename: string,
+  workspaceId: string,
+  request: NextRequest
+) {
   // Extrair configurações do corpo da requisição
   const formData = await request.formData();
   const configJson = formData.get('config')?.toString();
 
-  let importConfig = {};
+  let importConfig: unknown = {};
   if (configJson) {
     try {
       importConfig = JSON.parse(configJson);
@@ -421,9 +478,14 @@ async function handleImportFile(file: Express.Multer.File, workspaceId: string, 
     }
   }
 
+  // Validar config usando Type Guard antes de usar
+  if (!isPartialImportOptions(importConfig)) {
+    throw new ApiError('Configuração de importação possui campos inválidos', 400);
+  }
+
   const validatedConfig = ImportRequestSchema.parse(importConfig);
 
-  console.log(`${ICONS.PROCESS} Iniciando importação: ${file.originalname}`);
+  console.log(`${ICONS.PROCESS} Iniciando importação: ${filename}`);
 
   const importer = createSystemImporter();
 
@@ -431,8 +493,8 @@ async function handleImportFile(file: Express.Multer.File, workspaceId: string, 
   if (validatedConfig.validateOnly) {
     const session = await importer.startImportSession(
       workspaceId,
-      file.buffer,
-      file.originalname,
+      buffer,
+      filename,
       validatedConfig
     );
 
@@ -451,12 +513,12 @@ async function handleImportFile(file: Express.Multer.File, workspaceId: string, 
     });
   } else {
     // Importação real - executar em background
-    importInBackground(workspaceId, file.buffer, file.originalname, validatedConfig);
+    importInBackground(workspaceId, buffer, filename, validatedConfig);
 
     return apiResponse({
       success: true,
       message: 'Importação iniciada em background. Use o endpoint de status para acompanhar o progresso.',
-      estimatedTime: `${Math.ceil(file.size / (1024 * 1024))} minutos` // Estimativa baseada no tamanho
+      estimatedTime: `${Math.ceil(buffer.length / (1024 * 1024))} minutos` // Estimativa baseada no tamanho
     });
   }
 }
@@ -469,7 +531,7 @@ async function importInBackground(
   workspaceId: string,
   buffer: Buffer,
   fileName: string,
-  config: unknown
+  config: Partial<ImportOptions>
 ) {
   try {
     console.log(`${ICONS.PROCESS} Processamento em background iniciado: ${fileName}`);

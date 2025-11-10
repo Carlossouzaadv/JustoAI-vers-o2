@@ -9,6 +9,7 @@ import {
   extractMovementsText,
   updateProcessWithMovements,
   analyzeMovementsAndFetchAttachmentsIfNeeded,
+  type Processo,
 } from '@/lib/services/juditMonitoringService';
 import { sendDailyCheckSummary } from '@/lib/notification-service';
 
@@ -35,6 +36,69 @@ interface BatchResult {
   withAttachmentsFetched: number; // Processos que tiveram anexos buscados
   duration: number;
   errors: Array<{ cnj: string; error: string }>;
+}
+
+// ================================================================
+// TYPE GUARDS - PADRÃO-OURO
+// ================================================================
+
+/**
+ * Valida se um objeto desconhecido é uma estrutura de monitoramento válida
+ * Requisitos: trackingId (string), processoId (string), processo (object)
+ * Use isMonitoringComplete() para validação completa com Processo
+ */
+function isMonitoringBasic(data: unknown): data is {
+  trackingId: string;
+  processoId: string;
+  processo: unknown;
+} {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'trackingId' in data &&
+    typeof (data as { trackingId: unknown }).trackingId === 'string' &&
+    'processoId' in data &&
+    typeof (data as { processoId: unknown }).processoId === 'string' &&
+    'processo' in data
+  );
+}
+
+/**
+ * Valida estrutura de monitoramento completa com Processo válido
+ * Padrão-Ouro: Composição de type guards
+ */
+function isMonitoringComplete(data: unknown): data is {
+  trackingId: string;
+  processoId: string;
+  processo: Processo;
+} {
+  return isMonitoringBasic(data) && isProcesso(data.processo);
+}
+
+/**
+ * Valida apenas que o objeto tem numeroCnj (para extração de texto)
+ */
+function hasNumeroCnj(data: unknown): data is { numeroCnj: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'numeroCnj' in data &&
+    typeof (data as { numeroCnj: unknown }).numeroCnj === 'string'
+  );
+}
+
+/**
+ * Valida se o objeto é um Processo válido (com id e numeroCnj mínimos)
+ */
+function isProcesso(data: unknown): data is Processo {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    typeof (data as { id: unknown }).id === 'string' &&
+    'numeroCnj' in data &&
+    typeof (data as { numeroCnj: unknown }).numeroCnj === 'string'
+  );
 }
 
 // ================================================================
@@ -290,16 +354,29 @@ async function processBatchWithConcurrency(
       if (result.status === 'fulfilled') {
         results.push(result.value);
       } else {
-        // Tratamento de erro
-        results.push({
-          trackingId: monitoring.trackingId,
-          processoId: monitoring.processoId,
-          numeroCnj: monitoring.processo.numeroCnj,
-          success: false,
-          hasNewMovements: false,
-          movementsCount: 0,
-          error: result.reason instanceof Error ? result.reason.message : 'Erro no processamento',
-        });
+        // Tratamento de erro - validar estrutura do monitoring com type guard
+        if (isMonitoringComplete(monitoring)) {
+          results.push({
+            trackingId: monitoring.trackingId,
+            processoId: monitoring.processoId,
+            numeroCnj: monitoring.processo.numeroCnj,
+            success: false,
+            hasNewMovements: false,
+            movementsCount: 0,
+            error: result.reason instanceof Error ? result.reason.message : 'Erro no processamento',
+          });
+        } else {
+          // Fallback se estrutura inválida
+          results.push({
+            trackingId: 'unknown',
+            processoId: 'unknown',
+            numeroCnj: 'unknown',
+            success: false,
+            hasNewMovements: false,
+            movementsCount: 0,
+            error: `Estrutura de monitoramento inválida. ${result.reason instanceof Error ? result.reason.message : 'Erro no processamento'}`,
+          });
+        }
       }
     }
   }
@@ -316,6 +393,19 @@ async function checkSingleProcess(
   lookbackTimestamp: string,
   retryCount = 0
 ): Promise<CheckResult> {
+  // Validar estrutura de monitoramento completa com type guard (Padrão-Ouro)
+  if (!isMonitoringComplete(monitoring)) {
+    return {
+      trackingId: 'unknown',
+      processoId: 'unknown',
+      numeroCnj: 'unknown',
+      success: false,
+      hasNewMovements: false,
+      movementsCount: 0,
+      error: 'Estrutura de monitoramento inválida ou mal formada',
+    };
+  }
+
   const { trackingId, processoId, processo } = monitoring;
   const { numeroCnj } = processo;
 

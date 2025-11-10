@@ -12,12 +12,12 @@ import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
 import { getRedisClient } from './redis';
+import type { Redis as RedisClient } from 'ioredis';
 import type {
   AnalysisMetadata,
   AIAnalysisData,
   CaseMetadata,
   ExtractedAnalysisData,
-  ProcessDocument as ProcessDocumentType,
 } from './types/json-fields';
 import {
   isAIAnalysisData,
@@ -30,7 +30,26 @@ import {
 const prisma = new PrismaClient();
 
 // Redis connection - lazy initialization (only connect when actually used)
-let redis: Redis | null = null;
+// Type: unknown because getRedisClient() returns Redis | MockRedis
+// We use type guards before accessing methods
+let redis: unknown = null;
+
+/**
+ * Type guard to verify redis is initialized and has required methods
+ */
+function isRedisClient(client: unknown): client is Redis {
+  if (!client || typeof client !== 'object') {
+    return false;
+  }
+
+  const obj = client as Record<string, unknown>;
+  return (
+    typeof obj.set === 'function' &&
+    typeof obj.get === 'function' &&
+    typeof obj.ttl === 'function' &&
+    typeof obj.eval === 'function'
+  );
+}
 
 export interface AnalysisKeyParams {
   processId: string;
@@ -93,6 +112,7 @@ export class DeepAnalysisService {
 
   constructor() {
     // Lazy initialization of Redis connection on first use
+    // getRedisClient() returns Redis | MockRedis (never null)
     if (!redis) {
       redis = getRedisClient();
     }
@@ -472,6 +492,12 @@ export class DeepAnalysisService {
     const token = `${Date.now()}_${Math.random().toString(36)}`;
 
     try {
+      // Validate redis client before using
+      if (!isRedisClient(redis)) {
+        console.error(`${ICONS.ERROR} Redis client não disponível`);
+        return { acquired: false };
+      }
+
       // Tentar adquirir lock com SETNX
       const result = await redis.set(lockKey, token, 'EX', ttlSeconds, 'NX');
 
@@ -504,6 +530,12 @@ export class DeepAnalysisService {
     `;
 
     try {
+      // Validate redis client before using
+      if (!isRedisClient(redis)) {
+        console.error(`${ICONS.ERROR} Redis client não disponível`);
+        return;
+      }
+
       const lockKey = `analysis_lock:${token.split('_')[0]}`; // Simplificado
       await redis.eval(script, 1, lockKey, token);
       console.log(`${ICONS.SUCCESS} Lock liberado: ${token}`);
@@ -585,6 +617,9 @@ export class DeepAnalysisService {
         throw new Error('filesMetadata must be an array');
       }
 
+      // Convert metadata to JSON-serializable format for Prisma
+      const metadataAsJson: Prisma.InputJsonValue = JSON.parse(JSON.stringify(validatedMetadata));
+
       const job = await prisma.analysisJob.create({
         data: {
           processId: params.processId,
@@ -595,7 +630,7 @@ export class DeepAnalysisService {
           filesMetadata: JSON.stringify(params.filesMetadata),
           resultVersionId: params.resultVersionId,
           lockToken: params.lockToken,
-          metadata: validatedMetadata,
+          metadata: metadataAsJson,
           status: JobStatus.QUEUED
         }
       });
@@ -718,11 +753,14 @@ export class DeepAnalysisService {
         }
       }
 
+      // Convert analysisResult to JSON-serializable format for Prisma
+      const analysisResultAsJson: Prisma.InputJsonValue = JSON.parse(JSON.stringify(analysisResult));
+
       // Salvar resultado da análise
       await prisma.caseAnalysisVersion.update({
         where: { id: job.resultVersionId || '' },
         data: {
-          aiAnalysis: analysisResult,
+          aiAnalysis: analysisResultAsJson,
           status: JobStatus.COMPLETED,
           modelUsed: 'gemini-2.5-pro',
           processingTime: Date.now() - (job.startedAt?.getTime() || Date.now()),

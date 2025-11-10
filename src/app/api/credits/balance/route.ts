@@ -28,36 +28,38 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const creditSystem = getCreditManager()
 
     // Get basic balance
-    const balanceResult = await creditSystem.getWorkspaceCredits(workspaceId)
-    if (!balanceResult.success) {
-      return errorResponse(balanceResult.error || 'Failed to get workspace credits', 500)
-    }
+    const balance = await creditSystem.getCreditBalance(workspaceId)
 
-    const response: unknown = {
+    // Build response object with type safety
+    const response = {
       workspaceId,
-      balance: balanceResult.credits,
+      balance: {
+        reportCreditsBalance: balance.reportCreditsBalance,
+        fullCreditsBalance: balance.fullCreditsBalance,
+        reportCreditsAvailable: balance.reportCreditsAvailable,
+        fullCreditsAvailable: balance.fullCreditsAvailable
+      },
       lastUpdated: new Date().toISOString()
-    }
+    } as const
 
     // Include breakdown by allocation type if requested
+    const responseData: Record<string, unknown> = { ...response }
+
     if (includeBreakdown === 'true') {
-      const breakdownResult = await creditSystem.getCreditBreakdown(workspaceId)
-      if (breakdownResult.success) {
-        response.breakdown = breakdownResult.breakdown
-      }
+      const breakdown = await creditSystem.getCreditBreakdown(workspaceId)
+      responseData.breakdown = breakdown
     }
 
-    // Include recent transaction history if requested
-    if (includeHistory === 'true') {
-      const historyResult = await creditSystem.getTransactionHistory(workspaceId, 20)
-      if (historyResult.success) {
-        response.recentTransactions = historyResult.transactions
-      }
-    }
+    // Note: getTransactionHistory not implemented in CreditManager
+    // Kept for future extensibility, currently commented
+    // if (includeHistory === 'true') {
+    //   const history = await creditSystem.getTransactionHistory(workspaceId, 20)
+    //   responseData.recentTransactions = history
+    // }
 
-    console.log(`${ICONS.SUCCESS} Credit balance fetched: ${balanceResult.credits?.reportCreditsBalance}R + ${balanceResult.credits?.fullCreditsBalance}F`)
+    console.log(`${ICONS.SUCCESS} Credit balance fetched: ${balance.reportCreditsBalance}R + ${balance.fullCreditsBalance}F`)
 
-    return successResponse(response)
+    return successResponse(responseData)
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Failed to fetch credit balance:`, error)

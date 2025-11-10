@@ -310,9 +310,19 @@ export class PaymentWebhookHandler {
         }
       });
 
+      // Type guard: originalTransaction must exist and have valid metadata
+      if (originalTransaction === null) {
+        console.log(`⚠️ Original transaction not found for refund: ${payload.transactionId}`);
+        return {
+          success: false,
+          transactionId: payload.transactionId,
+          error: 'Original transaction not found'
+        };
+      }
+
       // Check if metadata exists and has a status property that is 'COMPLETED'
       const isCompletedTransaction = (): boolean => {
-        if (!originalTransaction?.metadata || typeof originalTransaction.metadata !== 'object') {
+        if (!originalTransaction.metadata || typeof originalTransaction.metadata !== 'object') {
           return false;
         }
         const meta = originalTransaction.metadata as Record<string, unknown>;

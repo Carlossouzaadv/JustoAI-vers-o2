@@ -12,6 +12,28 @@ import { getCreditManager } from '@/lib/credit-system';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 
+// ================================================================
+// TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
+// ================================================================
+
+/**
+ * Type guard: Validates that params contains the required 'id' field
+ */
+function isRouteParams(params: unknown): params is { id: string } {
+  if (typeof params !== 'object' || params === null) {
+    return false;
+  }
+  const p = params as Record<string, unknown>;
+  return 'id' in p && typeof p.id === 'string';
+}
+
+/**
+ * Type guard: Validates that lockResult has a valid token
+ */
+function isValidLockResult(result: { acquired: boolean; token?: string; ttl?: number }): result is { acquired: true; token: string; ttl?: number } {
+  return result.acquired === true && typeof result.token === 'string';
+}
+
 // Schema de validação
 const fastAnalysisSchema = z.object({
   workspaceId: z.string().min(1, 'Workspace ID é obrigatório'),
@@ -21,12 +43,18 @@ const fastAnalysisSchema = z.object({
 
 export const POST = withErrorHandler(async (
   request: NextRequest,
-  context?: { params?: Promise<{ id: string }> }
+  context?: { params: Promise<Record<string, string>> }
 ) => {
   if (!context?.params) {
     return errorResponse('Process ID is required', 400);
   }
-  const { id: processId } = await context.params;
+
+  // Type narrowing: Extract and validate params
+  const resolvedParams = await context.params;
+  if (!isRouteParams(resolvedParams)) {
+    return errorResponse('Invalid route parameters', 400);
+  }
+  const { id: processId } = resolvedParams;
 
   // Auth check
   const { user, error: authError } = await requireAuth(request);
@@ -63,7 +91,8 @@ export const POST = withErrorHandler(async (
     const analysisKey = await analysisService.generateAnalysisKey({
       processId,
       documentHashes: attachedDocs.map(doc => doc.textSha),
-      analysisType: 'GENERAL'
+      analysisType: 'GENERAL',
+      modelVersion: 'gemini-1.5-flash' // Model used for FAST analysis
     });
 
     console.log(`${ICONS.INFO} Analysis key gerada: ${analysisKey}`);
@@ -127,11 +156,10 @@ export const POST = withErrorHandler(async (
 
     // Adquirir lock Redis para evitar processamento duplo
     const lockResult = await analysisService.acquireAnalysisLock(analysisKey, 300); // 5 minutos
-    if (!lockResult.acquired) {
+    if (!isValidLockResult(lockResult)) {
       return errorResponse(
         'Análise já está sendo processada por outro worker',
-        429,
-        { retryAfter: lockResult.ttl }
+        429
       );
     }
 
@@ -146,6 +174,7 @@ export const POST = withErrorHandler(async (
         version: nextVersion,
         analysisType: 'GENERAL',
         analysisKey,
+        modelUsed: 'gemini-1.5-flash', // Model used for FAST analysis
         sourceFilesMetadata: attachedDocs.map(doc => ({
           id: doc.id,
           name: doc.name,
@@ -160,6 +189,7 @@ export const POST = withErrorHandler(async (
         workspaceId,
         analysisKey,
         analysisType: 'GENERAL',
+        modelHint: 'gemini-1.5-flash', // Model hint for FAST analysis
         filesMetadata: attachedDocs,
         resultVersionId: analysisVersion.id,
         lockToken: lockResult.token
@@ -190,6 +220,7 @@ export const POST = withErrorHandler(async (
 
     } catch (error) {
       // Liberar lock em caso de erro
+      // lockResult is guaranteed to have a valid token due to type guard above
       await analysisService.releaseAnalysisLock(lockResult.token);
       throw error;
     }
@@ -206,12 +237,18 @@ export const POST = withErrorHandler(async (
 // GET endpoint para verificar status da análise
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  context?: { params?: Promise<{ id: string }> }
+  context?: { params: Promise<Record<string, string>> }
 ) => {
   if (!context?.params) {
     return errorResponse('Process ID is required', 400);
   }
-  const { id: processId } = await context.params;
+
+  // Type narrowing: Extract and validate params
+  const resolvedParams = await context.params;
+  if (!isRouteParams(resolvedParams)) {
+    return errorResponse('Invalid route parameters', 400);
+  }
+  const { id: processId } = resolvedParams;
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');
 

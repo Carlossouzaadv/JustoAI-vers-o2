@@ -14,6 +14,29 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { ICONS } from '@/lib/icons';
 
+// Type Guard for quota information
+interface QuotaInfo {
+  used: number;
+  limit: number;
+  remaining: number;
+  isNearLimit: boolean;
+  sufficient: boolean;
+}
+
+function isQuotaInfo(data: unknown): data is QuotaInfo {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.used === 'number' &&
+    typeof obj.limit === 'number' &&
+    typeof obj.remaining === 'number' &&
+    typeof obj.isNearLimit === 'boolean' &&
+    typeof obj.sufficient === 'boolean'
+  );
+}
+
 export interface ScheduleReportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -49,7 +72,7 @@ export function ScheduleReportModal({
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [quotaInfo, setQuotaInfo] = useState<unknown>(null);
+  const [quotaInfo, setQuotaInfo] = useState<QuotaInfo | null>(null);
 
   const [form, setForm] = useState<ScheduleForm>({
     name: '',
@@ -321,7 +344,7 @@ export function ScheduleReportModal({
       </div>
 
       {/* Quota info */}
-      {quotaInfo && form.processIds.length > 0 && (
+      {isQuotaInfo(quotaInfo) && form.processIds.length > 0 && (
         <Card className="p-4 bg-blue-50 border-blue-200">
           <div className="flex items-center justify-between">
             <div>

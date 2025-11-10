@@ -115,7 +115,7 @@ export const ProcessUploadResponseSchema = z.object({
   caseNumber: z.string().optional(),
   status: z.enum(['created', 'previewed', 'enriching']).optional(),
   detectedCnj: z.string().optional(),
-  preview: z.record(z.unknown()).optional(),
+  preview: z.record(z.string(), z.unknown()).optional(),
   analysisModel: z.string().optional(),
   juditJobId: z.string().optional(),
   timing: z.object({
@@ -201,8 +201,8 @@ export type GetAnalysisQuery = z.infer<typeof GetAnalysisQuerySchema>;
  * Pagination and filtering for case listing
  */
 export const CasesListQuerySchema = z.object({
-  page: z.string().regex(/^\d+$/).transform(Number).refine(n => n >= 1, 'Page must be >= 1').default('1'),
-  limit: z.string().regex(/^\d+$/).transform(Number).refine(n => n >= 1 && n <= 100, 'Limit must be 1-100').default('20'),
+  page: z.string().regex(/^\d+$/).transform(Number).refine(n => n >= 1, 'Page must be >= 1').default(1),
+  limit: z.string().regex(/^\d+$/).transform(Number).refine(n => n >= 1 && n <= 100, 'Limit must be 1-100').default(20),
   search: z.string().max(200).optional(),
   status: CaseStatusSchema.optional(),
   type: CaseTypeSchema.optional(),
@@ -461,7 +461,7 @@ export type ExcelUploadPayload = z.infer<typeof ExcelUploadPayloadSchema>;
 export const ExcelUploadResponseSchema = z.object({
   success: z.boolean(),
   batchId: UuidSchema.optional(),
-  preview: z.array(z.record(z.unknown())).optional(),
+  preview: z.array(z.record(z.string(), z.unknown())).optional(),
   summary: z.object({
     valid: z.number().int().min(0),
     invalid: z.number().int().min(0),
@@ -521,8 +521,18 @@ function formatZodError(error: z.ZodError<unknown>): string {
   if ('issues' in error && Array.isArray(error.issues)) {
     return error.issues
       .map(issue => {
-        const path = 'path' in issue ? (issue.path as (string | number)[]).join('.') : 'root';
-        const message = 'message' in issue ? (issue.message as string) : 'Validation error';
+        // Extract path safely (ZERO casting)
+        const path =
+          'path' in issue && Array.isArray(issue.path)
+            ? issue.path.map(p => String(p)).join('.')
+            : 'root';
+
+        // Extract message safely (ZERO casting)
+        const message =
+          'message' in issue && typeof issue.message === 'string'
+            ? issue.message
+            : 'Validation error';
+
         return `${path || 'root'}: ${message}`;
       })
       .join('; ');

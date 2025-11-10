@@ -241,14 +241,29 @@ export class EmailService {
   private getTemplate(templateType: EmailNotification['template'], data: unknown): EmailTemplate {
     switch (templateType) {
       case 'process-alert':
+        if (!this.isProcessAlertData(data)) {
+          throw new Error('Invalid data for process-alert template');
+        }
         return this.getProcessAlertTemplate(data);
       case 'report-ready':
+        if (!this.isReportReadyData(data)) {
+          throw new Error('Invalid data for report-ready template');
+        }
         return this.getReportReadyTemplate(data);
       case 'payment-success':
+        if (!this.isPaymentSuccessData(data)) {
+          throw new Error('Invalid data for payment-success template');
+        }
         return this.getPaymentSuccessTemplate(data);
       case 'system-notification':
+        if (!this.isSystemNotificationData(data)) {
+          throw new Error('Invalid data for system-notification template');
+        }
         return this.getSystemNotificationTemplate(data);
       case 'custom':
+        if (!this.isCustomEmailData(data)) {
+          throw new Error('Invalid data for custom template');
+        }
         return {
           subject: data.subject || 'Notificação JustoAI',
           html: data.html,
@@ -257,6 +272,74 @@ export class EmailService {
       default:
         throw new Error(`Template não encontrado: ${templateType}`);
     }
+  }
+
+  /**
+   * Type guards for email data validation (Padrão-Ouro - 100% Type Safe)
+   */
+  private isProcessAlertData(data: unknown): data is ProcessAlertData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      typeof obj.processNumber === 'string' &&
+      typeof obj.alertType === 'string' &&
+      typeof obj.description === 'string' &&
+      (obj.urgency === 'high' || obj.urgency === 'medium' || obj.urgency === 'low') &&
+      typeof obj.timestamp === 'string'
+    );
+  }
+
+  private isReportReadyData(data: unknown): data is ReportReadyData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      typeof obj.reportName === 'string' &&
+      typeof obj.downloadUrl === 'string' &&
+      (obj.expiresAt === undefined || typeof obj.expiresAt === 'string') &&
+      typeof obj.timestamp === 'string'
+    );
+  }
+
+  private isPaymentSuccessData(data: unknown): data is PaymentSuccessData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      typeof obj.amount === 'string' &&
+      typeof obj.credits === 'number' &&
+      typeof obj.transactionId === 'string' &&
+      typeof obj.timestamp === 'string'
+    );
+  }
+
+  private isSystemNotificationData(data: unknown): data is SystemNotificationData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      (obj.subject === undefined || typeof obj.subject === 'string') &&
+      (obj.html === undefined || typeof obj.html === 'string') &&
+      (obj.text === undefined || typeof obj.text === 'string') &&
+      (obj.message === undefined || typeof obj.message === 'string')
+    );
+  }
+
+  private isCustomEmailData(data: unknown): data is CustomEmailData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      typeof obj.html === 'string' &&
+      (obj.subject === undefined || typeof obj.subject === 'string') &&
+      (obj.text === undefined || typeof obj.text === 'string')
+    );
   }
 
   private getProcessAlertTemplate(data: ProcessAlertData): EmailTemplate {

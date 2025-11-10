@@ -3,7 +3,7 @@
 // Rastreamento de custos em tempo real da integração JUDIT
 // ================================================================
 
-import { PrismaClient, JuditOperationType } from '@prisma/client';
+import { PrismaClient, JuditOperationType, JuditAlertType } from '@prisma/client';
 import { costLogger } from './logger';
 
 const prisma = new PrismaClient();
@@ -22,7 +22,7 @@ export const JUDIT_PRICING = {
 // TYPES
 // ================================================================
 
-export interface CostTrackingInput {
+interface CostTrackingInput {
   workspaceId?: string;
   operationType: JuditOperationType;
   numeroCnj?: string;
@@ -37,7 +37,7 @@ export interface CostTrackingInput {
   errorMessage?: string;
 }
 
-export interface CostSummary {
+interface CostSummary {
   totalCost: number;
   searchCost: number;
   attachmentsCost: number;
@@ -46,7 +46,7 @@ export interface CostSummary {
   avgCostPerOperation: number;
 }
 
-export interface CostBreakdown {
+interface CostBreakdown {
   operationType: JuditOperationType;
   count: number;
   totalCost: number;
@@ -295,6 +295,12 @@ export function estimateCost(
 type AlertType = 'HIGH_COST' | 'RATE_LIMIT' | 'API_ERROR' | 'SYNC_FAILED';
 type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+// Type guard to validate AlertType against JuditAlertType
+function isValidAlertType(value: unknown): value is JuditAlertType {
+  const validTypes = ['HIGH_COST', 'RATE_LIMIT', 'API_ERROR', 'SYNC_FAILED'];
+  return typeof value === 'string' && validTypes.includes(value);
+}
+
 interface AlertInput {
   workspaceId?: string;
   alertType: AlertType;
@@ -314,10 +320,20 @@ interface AlertInput {
  */
 export async function createAlert(input: AlertInput): Promise<void> {
   try {
+    // Type-safe conversion of metadata: unknown -> InputJsonValue
+    const metadata = input.metadata ? JSON.parse(JSON.stringify(input.metadata)) : undefined;
+
+    // Validate AlertType is compatible with JuditAlertType using type guard
+    const alertTypeValue: unknown = input.alertType;
+    if (!isValidAlertType(alertTypeValue)) {
+      throw new Error(`Invalid alert type: ${alertTypeValue}`);
+    }
+
+    // After validation, alertTypeValue is narrowed to JuditAlertType
     await prisma.juditAlert.create({
       data: {
         workspaceId: input.workspaceId,
-        alertType: input.alertType,
+        alertType: alertTypeValue,
         severity: input.severity,
         title: input.title,
         message: input.message,
@@ -326,7 +342,7 @@ export async function createAlert(input: AlertInput): Promise<void> {
         requestId: input.requestId,
         trackingId: input.trackingId,
         jobId: input.jobId,
-        metadata: input.metadata,
+        metadata,
       },
     });
 

@@ -56,7 +56,7 @@ export const JuditRequestResponseSchema = z.object({
   status: JuditRequestStatusSchema,
   all_pages_count: z.number().int().optional(),
   page: z.number().int().optional(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export type JuditRequestResponse = z.infer<typeof JuditRequestResponseSchema>;
@@ -84,7 +84,7 @@ export const JuditAlertMetadataSchema = z.object({
   requestId: z.string().optional(),
   trackingId: z.string().optional(),
   jobId: z.string().optional(),
-  customData: z.record(z.unknown()).optional(),
+  customData: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export type JuditAlertMetadata = z.infer<typeof JuditAlertMetadataSchema>;
@@ -157,7 +157,7 @@ export const StripeEventDataSchema = z.object({
     id: z.string(),
     amount: z.number().int(),
     currency: z.string(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   }).passthrough(),
 }).passthrough();
 
@@ -181,7 +181,7 @@ export const MercadoPagoWebhookSchema = z.object({
   status: z.enum(['approved', 'rejected', 'pending', 'refunded']).optional(),
   transaction_amount: z.number().optional(),
   currency_id: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   data: z.object({
     id: z.string().optional(),
     status: z.string().optional(),
@@ -198,7 +198,7 @@ export type MercadoPagoWebhook = z.infer<typeof MercadoPagoWebhookSchema>;
 export const PagSeguroWebhookSchema = z.object({
   id: z.string().optional(),
   amount: z.number().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export type PagSeguroWebhook = z.infer<typeof PagSeguroWebhookSchema>;
@@ -215,7 +215,7 @@ export const WebhookDeliveryPayloadSchema = z.object({
   eventType: z.string().optional(),
   processNumber: z.string().optional(),
   timestamp: z.string().datetime().optional(),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export type WebhookDeliveryPayload = z.infer<typeof WebhookDeliveryPayloadSchema>;

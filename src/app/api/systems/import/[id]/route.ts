@@ -29,7 +29,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
     const includeDetails = searchParams.get('details') === 'true';
     const includeItems = searchParams.get('items') === 'true';
@@ -174,7 +174,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { data: body, error: validationError } = await validateJson(request, ActionSchema);
     if (validationError) return validationError;
 
@@ -223,7 +223,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
 
     const UpdateConfigSchema = z.object({
       customMappings: z.record(z.string(), z.string()).optional(),
@@ -249,15 +249,45 @@ export async function PUT(
       throw new ApiError('Configurações só podem ser alteradas durante análise ou mapeamento', 400);
     }
 
+    // Validar body antes de usar
+    if (!isValidUpdateConfig(body)) {
+      throw new ApiError('Configuração de atualização inválida', 400);
+    }
+
+    // Construir importSettings de forma type-safe
+    const newImportSettings: Record<string, unknown> = {};
+
+    // Preservar importSettings existentes se for um objeto válido
+    if (
+      typeof systemImport.importSettings === 'object' &&
+      systemImport.importSettings !== null &&
+      !Array.isArray(systemImport.importSettings)
+    ) {
+      const existing = systemImport.importSettings as Record<string, unknown>;
+      Object.assign(newImportSettings, existing);
+    }
+
+    // Atualizar com novos valores
+    if (body.importSettings) {
+      Object.assign(newImportSettings, body.importSettings);
+    }
+    if (body.customMappings) {
+      newImportSettings.customMappings = body.customMappings;
+    }
+    if (body.transformRules) {
+      newImportSettings.transformRules = body.transformRules;
+    }
+
+    // Serializar e desserializar importSettings para garantir JSON-safety
+    // Isso remove qualquer referência circular ou tipo não-serializável
+    const importSettingsForDb = JSON.parse(
+      JSON.stringify(newImportSettings)
+    );
+
     const updatedImport = await prisma.systemImport.update({
       where: { id: (await params).id },
       data: {
-        importSettings: {
-          ...(systemImport.importSettings as unknown || {}),
-          ...body.importSettings,
-          customMappings: body.customMappings,
-          transformRules: body.transformRules
-        },
+        importSettings: importSettingsForDb,
         updatedAt: new Date()
       }
     });
@@ -298,7 +328,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { workspace } = await validateAuth(request);
+    const { workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
     const force = searchParams.get('force') === 'true';
     const keepData = searchParams.get('keepData') === 'true';
@@ -441,18 +471,79 @@ function getAvailableActions(status: string): string[] {
   return actions;
 }
 
+// ================================
+// TYPE GUARDS E VALIDAÇÃO
+// ================================
+
 interface ImportError {
   type: string;
   message: string;
   timestamp: string;
 }
 
+function isImportError(value: unknown): value is ImportError {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    'message' in value &&
+    'timestamp' in value &&
+    typeof (value as ImportError).type === 'string' &&
+    typeof (value as ImportError).message === 'string' &&
+    typeof (value as ImportError).timestamp === 'string'
+  );
+}
+
 function isImportErrorArray(value: unknown): value is ImportError[] {
   if (!Array.isArray(value)) return false;
-  return value.every(
-    item => typeof item === 'object' && item !== null &&
-    'type' in item && 'message' in item
-  );
+  return value.every(isImportError);
+}
+
+/** Type Guard para validar UpdateConfig */
+function isValidUpdateConfig(
+  data: unknown
+): data is {
+  customMappings?: Record<string, string>;
+  transformRules?: Record<string, unknown>;
+  importSettings?: Record<string, unknown>;
+} {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar customMappings se presente
+  if (obj.customMappings !== undefined) {
+    if (
+      typeof obj.customMappings !== 'object' ||
+      obj.customMappings === null
+    ) {
+      return false;
+    }
+  }
+
+  // Validar transformRules se presente
+  if (obj.transformRules !== undefined) {
+    if (
+      typeof obj.transformRules !== 'object' ||
+      obj.transformRules === null
+    ) {
+      return false;
+    }
+  }
+
+  // Validar importSettings se presente
+  if (obj.importSettings !== undefined) {
+    if (
+      typeof obj.importSettings !== 'object' ||
+      obj.importSettings === null
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 async function handleCancelImport(systemImport: SystemImport, force: boolean) {
@@ -470,23 +561,34 @@ async function handleCancelImport(systemImport: SystemImport, force: boolean) {
     );
   }
 
+  // Validar errors existentes usando Type Guard
   const existingErrors: ImportError[] = isImportErrorArray(systemImport.errors)
     ? systemImport.errors
     : [];
+
+  // Construir novo erro com tipo seguro
+  const newError: ImportError = {
+    type: 'USER_CANCELLED',
+    message: 'Importação cancelada pelo usuário',
+    timestamp: new Date().toISOString()
+  };
+
+  // Construir array atualizado
+  const updatedErrorsArray: ImportError[] = [...existingErrors, newError];
+
+  // Converter para formato serializable (JSON é seguro para ImportError)
+  const errorsForDb = updatedErrorsArray.map(err => ({
+    type: err.type,
+    message: err.message,
+    timestamp: err.timestamp
+  }));
 
   await prisma.systemImport.update({
     where: { id: systemImport.id },
     data: {
       status: 'CANCELLED',
       finishedAt: new Date(),
-      errors: [
-        ...existingErrors,
-        {
-          type: 'USER_CANCELLED',
-          message: 'Importação cancelada pelo usuário',
-          timestamp: new Date().toISOString()
-        }
-      ]
+      errors: errorsForDb
     }
   });
 

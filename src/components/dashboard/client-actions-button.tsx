@@ -25,6 +25,29 @@ interface ProcessOption {
   lastUpdate: string;
 }
 
+// Type Guard for API process data
+interface ApiProcessData {
+  id: string;
+  number: string;
+  title: string;
+  clientName?: string;
+  updatedAt?: string;
+}
+
+function isApiProcessData(data: unknown): data is ApiProcessData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.number === 'string' &&
+    typeof obj.title === 'string' &&
+    (obj.clientName === undefined || typeof obj.clientName === 'string') &&
+    (obj.updatedAt === undefined || typeof obj.updatedAt === 'string')
+  );
+}
+
 export function ClientActionsButton({ clientId, clientName }: ClientActionsButtonProps) {
   const [processes, setProcesses] = useState<ProcessOption[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,14 +65,16 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
       const response = await fetch(getApiUrl(`/api/processes?clientId=${clientId}`));
       if (response.ok) {
         const data = await response.json();
-        const processOptions: ProcessOption[] = (data.processes || []).map((process: unknown) => ({
-          id: process.id,
-          number: process.number,
-          title: process.title,
-          clientName: process.clientName || clientName,
-          estimatedPages: Math.ceil((process.title?.length || 100) / 50) + 1, // Estimativa baseada no tamanho
-          lastUpdate: process.updatedAt || new Date().toISOString()
-        }));
+        const processOptions: ProcessOption[] = (data.processes || [])
+          .filter(isApiProcessData)
+          .map((process: ApiProcessData) => ({
+            id: process.id,
+            number: process.number,
+            title: process.title,
+            clientName: process.clientName || clientName,
+            estimatedPages: Math.ceil((process.title.length || 100) / 50) + 1,
+            lastUpdate: process.updatedAt || new Date().toISOString()
+          }));
         setProcesses(processOptions);
       }
     } catch (error) {

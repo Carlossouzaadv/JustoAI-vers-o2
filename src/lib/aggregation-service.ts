@@ -19,6 +19,28 @@ export interface AggregationResult {
   errors?: string[];
 }
 
+// Type guard for checking JUDIT operation success (status field)
+function isSuccessfulJuditCall(status: unknown): status is string {
+  return typeof status === 'string' && status === 'success';
+}
+
+// Type guard for valid JuditAlertType from schema
+const VALID_JUDIT_ALERT_TYPES = [
+  'API_ERROR',
+  'RATE_LIMIT',
+  'CIRCUIT_BREAKER',
+  'HIGH_COST',
+  'TIMEOUT',
+  'ATTACHMENT_TRIGGER',
+  'MONITORING_FAILED',
+] as const;
+
+type ValidJuditAlertType = typeof VALID_JUDIT_ALERT_TYPES[number];
+
+function isValidJuditAlertType(value: unknown): value is ValidJuditAlertType {
+  return typeof value === 'string' && VALID_JUDIT_ALERT_TYPES.includes(value as ValidJuditAlertType);
+}
+
 export interface WorkspaceMetrics {
   workspaceId: string;
   period: {
@@ -79,7 +101,7 @@ export class AggregationService {
       // Get all active workspaces
       const workspaces = await prisma.workspace.findMany({
         select: { id: true },
-        where: { active: true },
+        where: { status: 'ACTIVE' },
       });
 
       console.log(`${ICONS.INFO} [Daily Aggregation] Found ${workspaces.length} active workspaces`);
@@ -176,8 +198,8 @@ export class AggregationService {
     // Aggregate JUDIT metrics
     const juditMetrics = {
       totalCalls: juditCalls.length,
-      successfulCalls: juditCalls.filter((c) => c.metadata?.success).length,
-      failedCalls: juditCalls.filter((c) => !c.metadata?.success).length,
+      successfulCalls: juditCalls.filter((c) => isSuccessfulJuditCall(c.status)).length,
+      failedCalls: juditCalls.filter((c) => !isSuccessfulJuditCall(c.status)).length,
       totalCost: juditCalls.reduce((sum, c) => sum + Number(c.totalCost), 0),
       avgDuration:
         juditCalls.length > 0
@@ -247,7 +269,7 @@ export class AggregationService {
       if (dailyCost >= ALERT_THRESHOLDS.DAILY_COST_CRITICAL) {
         await this.createAlertIfNotExists(workspaceId, {
           severity: 'CRITICAL',
-          alertType: 'COST_WARNING',
+          alertType: 'HIGH_COST',
           title: 'CRITICAL: Daily JUDIT costs exceed threshold',
           message: `Daily costs reached R$ ${dailyCost.toFixed(2)} (threshold: R$ ${ALERT_THRESHOLDS.DAILY_COST_CRITICAL})`,
           metadata: { dailyCost, threshold: ALERT_THRESHOLDS.DAILY_COST_CRITICAL },
@@ -256,7 +278,7 @@ export class AggregationService {
       } else if (dailyCost >= ALERT_THRESHOLDS.DAILY_COST_WARNING) {
         await this.createAlertIfNotExists(workspaceId, {
           severity: 'HIGH',
-          alertType: 'COST_WARNING',
+          alertType: 'HIGH_COST',
           title: 'Daily JUDIT costs are high',
           message: `Daily costs reached R$ ${dailyCost.toFixed(2)} (threshold: R$ ${ALERT_THRESHOLDS.DAILY_COST_WARNING})`,
           metadata: { dailyCost, threshold: ALERT_THRESHOLDS.DAILY_COST_WARNING },
@@ -271,7 +293,7 @@ export class AggregationService {
         if (failureRate >= ALERT_THRESHOLDS.FAILURE_RATE_CRITICAL) {
           await this.createAlertIfNotExists(workspaceId, {
             severity: 'CRITICAL',
-            alertType: 'API_FAILURE',
+            alertType: 'API_ERROR',
             title: 'CRITICAL: High JUDIT API failure rate',
             message: `Failure rate: ${(failureRate * 100).toFixed(1)}% (threshold: ${ALERT_THRESHOLDS.FAILURE_RATE_CRITICAL * 100}%)`,
             metadata: { failureRate, failedCalls: metrics.judit.failedCalls, totalCalls: metrics.judit.totalCalls },
@@ -280,7 +302,7 @@ export class AggregationService {
         } else if (failureRate >= ALERT_THRESHOLDS.FAILURE_RATE_WARNING) {
           await this.createAlertIfNotExists(workspaceId, {
             severity: 'HIGH',
-            alertType: 'API_FAILURE',
+            alertType: 'API_ERROR',
             title: 'High JUDIT API failure rate detected',
             message: `Failure rate: ${(failureRate * 100).toFixed(1)}% (threshold: ${ALERT_THRESHOLDS.FAILURE_RATE_WARNING * 100}%)`,
             metadata: { failureRate, failedCalls: metrics.judit.failedCalls, totalCalls: metrics.judit.totalCalls },
@@ -295,7 +317,7 @@ export class AggregationService {
         const totalCriticalHigh = metrics.alerts.critical + metrics.alerts.high;
         await this.createAlertIfNotExists(workspaceId, {
           severity: metrics.alerts.critical > 0 ? 'CRITICAL' : 'HIGH',
-          alertType: 'ALERT_SUMMARY',
+          alertType: 'MONITORING_FAILED',
           title: `${totalCriticalHigh} unresolved high-priority alerts`,
           message: `Your workspace has ${metrics.alerts.critical} critical and ${metrics.alerts.high} high-priority alerts that need attention`,
           metadata: {
@@ -319,13 +341,16 @@ export class AggregationService {
     workspaceId: string,
     alertData: {
       severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-      alertType: string;
+      alertType: ValidJuditAlertType;
       title: string;
       message: string;
       metadata?: Record<string, unknown>;
     }
   ): Promise<boolean> {
     try {
+      // Safely serialize metadata to JSON for Prisma
+      const serializedMetadata = alertData.metadata ? JSON.parse(JSON.stringify(alertData.metadata)) : null;
+
       // Check if similar unresolved alert exists
       const existingAlert = await prisma.juditAlert.findFirst({
         where: {
@@ -343,7 +368,7 @@ export class AggregationService {
             alertType: alertData.alertType,
             title: alertData.title,
             message: alertData.message,
-            metadata: alertData.metadata,
+            metadata: serializedMetadata,
           },
         });
 

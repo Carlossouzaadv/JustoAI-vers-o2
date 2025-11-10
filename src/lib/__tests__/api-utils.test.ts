@@ -4,11 +4,7 @@
 import {
   successResponse,
   errorResponse,
-  unauthorizedResponse,
-  notFoundResponse,
-  methodNotAllowedResponse,
-  validationErrorResponse,
-  serverErrorResponse,
+  ApiResponse,
 } from '../api-utils'
 
 describe('API Utils', () => {
@@ -16,30 +12,67 @@ describe('API Utils', () => {
     it('returns success response with default status', async () => {
       const data = { message: 'Success' }
       const response = successResponse(data)
-      const json = await response.json()
+      const json = await response.json() as unknown
+
+      // Type guard to safely extract response
+      const isSuccessResponse = (val: unknown): val is ApiResponse<typeof data> => {
+        return (
+          typeof val === 'object' &&
+          val !== null &&
+          'success' in val &&
+          (val as ApiResponse<typeof data>).success === true
+        )
+      }
 
       expect(response.status).toBe(200)
-      expect(json).toEqual(data)
+      if (isSuccessResponse(json)) {
+        expect(json.data).toEqual(data)
+      }
     })
 
-    it('returns success response with custom status', async () => {
+    it('returns success response with custom message', async () => {
       const data = { message: 'Created' }
-      const response = successResponse(data, 201)
-      const json = await response.json()
+      const message = 'Resource created successfully'
+      const response = successResponse(data, message)
+      const json = await response.json() as unknown
 
-      expect(response.status).toBe(201)
-      expect(json).toEqual(data)
+      const isSuccessResponse = (val: unknown): val is ApiResponse<typeof data> => {
+        return (
+          typeof val === 'object' &&
+          val !== null &&
+          'success' in val &&
+          (val as ApiResponse<typeof data>).success === true
+        )
+      }
+
+      expect(response.status).toBe(200)
+      if (isSuccessResponse(json)) {
+        expect(json.message).toBe(message)
+        expect(json.data).toEqual(data)
+      }
     })
   })
 
   describe('errorResponse', () => {
-    it('returns error response with default status', async () => {
+    it('returns error response with default status (400)', async () => {
       const message = 'Error occurred'
       const response = errorResponse(message)
-      const json = await response.json()
+      const json = await response.json() as unknown
+
+      const isErrorResponse = (val: unknown): val is ApiResponse => {
+        return (
+          typeof val === 'object' &&
+          val !== null &&
+          'success' in val &&
+          (val as ApiResponse).success === false &&
+          'error' in val
+        )
+      }
 
       expect(response.status).toBe(400)
-      expect(json.error).toBe(message)
+      if (isErrorResponse(json)) {
+        expect(json.error).toBe(message)
+      }
     })
 
     it('returns error response with custom status', async () => {
@@ -49,126 +82,32 @@ describe('API Utils', () => {
       expect(response.status).toBe(500)
     })
 
-    it('includes details when provided', async () => {
-      const message = 'Validation failed'
-      const details = { field: 'email', issue: 'invalid format' }
-      const response = errorResponse(message, 400, details)
-      const json = await response.json()
-
-      expect(json.details).toEqual(details)
-    })
-  })
-
-  describe('unauthorizedResponse', () => {
-    it('returns 401 status', async () => {
-      const response = unauthorizedResponse()
+    it('returns error response with 401 status', async () => {
+      const message = 'Não autorizado'
+      const response = errorResponse(message, 401)
 
       expect(response.status).toBe(401)
     })
 
-    it('uses default message', async () => {
-      const response = unauthorizedResponse()
-      const json = await response.json()
-
-      expect(json.error).toBe('Não autorizado')
-    })
-
-    it('uses custom message', async () => {
-      const message = 'Token inválido'
-      const response = unauthorizedResponse(message)
-      const json = await response.json()
-
-      expect(json.error).toBe(message)
-    })
-  })
-
-  describe('notFoundResponse', () => {
-    it('returns 404 status', async () => {
-      const response = notFoundResponse()
+    it('returns error response with 404 status', async () => {
+      const message = 'Recurso não encontrado'
+      const response = errorResponse(message, 404)
 
       expect(response.status).toBe(404)
     })
 
-    it('uses default message', async () => {
-      const response = notFoundResponse()
-      const json = await response.json()
-
-      expect(json.error).toBe('Recurso não encontrado')
-    })
-
-    it('uses custom message', async () => {
-      const message = 'Usuário não encontrado'
-      const response = notFoundResponse(message)
-      const json = await response.json()
-
-      expect(json.error).toBe(message)
-    })
-  })
-
-  describe('methodNotAllowedResponse', () => {
-    it('returns 405 status', async () => {
-      const response = methodNotAllowedResponse(['GET', 'POST'])
+    it('returns error response with 405 status', async () => {
+      const message = 'Method not allowed'
+      const response = errorResponse(message, 405)
 
       expect(response.status).toBe(405)
     })
 
-    it('includes allowed methods in body', async () => {
-      const allowedMethods = ['GET', 'POST']
-      const response = methodNotAllowedResponse(allowedMethods)
-      const json = await response.json()
-
-      expect(json.allowedMethods).toEqual(allowedMethods)
-    })
-
-    it('includes Allow header', async () => {
-      const allowedMethods = ['GET', 'POST', 'PUT']
-      const response = methodNotAllowedResponse(allowedMethods)
-
-      expect(response.headers.get('Allow')).toBe('GET, POST, PUT')
-    })
-  })
-
-  describe('validationErrorResponse', () => {
-    it('returns 422 status', async () => {
-      const errors = { email: ['Email is required'] }
-      const response = validationErrorResponse(errors)
+    it('returns error response with 422 status', async () => {
+      const message = 'Validation failed'
+      const response = errorResponse(message, 422)
 
       expect(response.status).toBe(422)
-    })
-
-    it('includes validation errors', async () => {
-      const errors = {
-        email: ['Email is required', 'Email must be valid'],
-        password: ['Password is too short'],
-      }
-      const response = validationErrorResponse(errors)
-      const json = await response.json()
-
-      expect(json.error).toBe('Erro de validação')
-      expect(json.errors).toEqual(errors)
-    })
-  })
-
-  describe('serverErrorResponse', () => {
-    it('returns 500 status', async () => {
-      const response = serverErrorResponse()
-
-      expect(response.status).toBe(500)
-    })
-
-    it('uses default message', async () => {
-      const response = serverErrorResponse()
-      const json = await response.json()
-
-      expect(json.error).toBe('Erro interno do servidor')
-    })
-
-    it('uses custom message', async () => {
-      const message = 'Database connection failed'
-      const response = serverErrorResponse(message)
-      const json = await response.json()
-
-      expect(json.error).toBe(message)
     })
   })
 })

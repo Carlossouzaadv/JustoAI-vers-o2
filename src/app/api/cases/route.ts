@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
   successResponse,
@@ -99,6 +100,70 @@ import {
  * - Optional filters: status, type, priority, clientId, workspaceId
  * - Search term applies to title, description, processNumber, client.name
  */
+/**
+ * Type Guard Functions for Prisma Enums (Padrão-Ouro)
+ * Validates string values against allowed enum values before narrowing
+ */
+
+function isValidCaseStatus(value: unknown): value is 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED' | 'UNASSIGNED' {
+  const validStatuses = ['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED', 'UNASSIGNED'] as const;
+  return typeof value === 'string' && validStatuses.includes(value as any);
+}
+
+function isValidCasePriority(value: unknown): value is 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' {
+  const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
+  return typeof value === 'string' && validPriorities.includes(value as any);
+}
+
+function isValidCaseType(value: unknown): value is 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' {
+  const validTypes = ['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'COMMERCIAL', 'ADMINISTRATIVE', 'CONSTITUTIONAL', 'TAX', 'OTHER'] as const;
+  return typeof value === 'string' && validTypes.includes(value as any);
+}
+
+/**
+ * Build safe Prisma Case WHERE conditions (Padrão-Ouro - 100% Type Safe)
+ * Constructs Prisma.CaseWhereInput with full type safety through enum validation
+ */
+function buildCaseFilters(params: {
+  workspaceIds: string[]
+  search?: string
+  status?: string
+  type?: string
+  priority?: string
+  clientId?: string
+}): Prisma.CaseWhereInput {
+  const conditions: Prisma.CaseWhereInput = {
+    workspaceId: { in: params.workspaceIds }
+  };
+
+  if (params.search && typeof params.search === 'string' && params.search.length > 0) {
+    conditions.OR = [
+      { title: { contains: params.search, mode: 'insensitive' } },
+      { description: { contains: params.search, mode: 'insensitive' } },
+      { number: { contains: params.search, mode: 'insensitive' } },
+      { client: { name: { contains: params.search, mode: 'insensitive' } } }
+    ];
+  }
+
+  if (params.status && isValidCaseStatus(params.status)) {
+    conditions.status = params.status;
+  }
+
+  if (params.priority && isValidCasePriority(params.priority)) {
+    conditions.priority = params.priority;
+  }
+
+  if (params.type && isValidCaseType(params.type)) {
+    conditions.type = params.type;
+  }
+
+  if (params.clientId && typeof params.clientId === 'string' && params.clientId.length > 0) {
+    conditions.clientId = params.clientId;
+  }
+
+  return conditions;
+}
+
 async function GET(request: NextRequest) {
   // Rate limiting
   const clientIP = getClientIP(request)
@@ -149,31 +214,22 @@ async function GET(request: NextRequest) {
     return paginatedResponse([], page, limit, 0, 'No cases found')
   }
 
-  // Build filters
-  const where: unknown = {
-    workspaceId: { in: workspaceIds }
-  }
-
-  if (search) {
-    where.OR = [
-      { title: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } },
-      { processNumber: { contains: search, mode: 'insensitive' } },
-      { client: { name: { contains: search, mode: 'insensitive' } } }
-    ]
-  }
-
-  if (status) where.status = status
-  if (type) where.type = type
-  if (priority) where.priority = priority
-  if (clientId) where.clientId = clientId
+  // Build filters - Type-safe Prisma.CaseWhereInput with enum validation (Padrão-Ouro 100%)
+  const whereConfig = buildCaseFilters({
+    workspaceIds,
+    search: search || undefined,
+    status: status || undefined,
+    type: type || undefined,
+    priority: priority || undefined,
+    clientId: clientId || undefined
+  })
 
   // Get total count
-  const total = await prisma.case.count({ where })
+  const total = await prisma.case.count({ where: whereConfig })
 
   // Get cases with pagination
   const cases = await prisma.case.findMany({
-    where,
+    where: whereConfig,
     include: {
       workspace: {
         select: {

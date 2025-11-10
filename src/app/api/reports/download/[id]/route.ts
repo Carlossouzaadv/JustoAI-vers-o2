@@ -7,17 +7,42 @@ import { NextRequest, NextResponse } from 'next/server';
 import { errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { OutputFormat } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
 
+// Type guard for ExecutionStatus - documents valid statuses
+function isCompletedStatus(value: unknown): boolean {
+  const completedStatuses = ['COMPLETED', 'SUCCESS', 'DONE'];
+  return typeof value === 'string' && completedStatuses.includes(value);
+}
+
+// Type guard for OutputFormat validation
+function isValidOutputFormat(value: unknown): value is OutputFormat {
+  const validFormats = ['PDF', 'DOCX', 'XLSX', 'JSON'];
+  return typeof value === 'string' && validFormats.includes(value);
+}
+
+// Type guard for file URLs object
+function isFileUrlsObject(obj: unknown): obj is Record<string, string> {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    !Array.isArray(obj) &&
+    Object.values(obj).every(v => typeof v === 'string')
+  );
+}
+
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context?: { params?: Promise<Record<string, string>> }
 ) => {
+  const paramsObj = context?.params ? await context.params : { id: '' };
   const { user, error: authError } = await requireAuth(request);
   if (authError) return authError;
 
-  const { id: reportId } = await params;
+  const id = paramsObj.id || '';
+  const reportId = id;
   const { searchParams } = new URL(request.url);
   const format = searchParams.get('format') || 'PDF';
   const workspaceId = searchParams.get('workspaceId');
@@ -44,19 +69,18 @@ export const GET = withErrorHandler(async (
     }
 
     // Buscar a execução do relatório
+    // Retrieve any report execution (status checking happens in application logic)
     const execution = await prisma.reportExecution.findFirst({
       where: {
         id: reportId,
         workspaceId,
-        status: 'CONCLUIDO'
       },
-      include: {
-        schedule: {
-          select: {
-            name: true,
-            type: true
-          }
-        }
+      select: {
+        id: true,
+        fileUrls: true,
+        outputFormats: true,
+        scheduleId: true,
+        status: true,
       }
     });
 
@@ -64,14 +88,25 @@ export const GET = withErrorHandler(async (
       return errorResponse('Relatório não encontrado ou não está concluído', 404);
     }
 
-    // Verificar se o formato solicitado está disponível
-    if (!execution.outputFormats.includes(format as unknown)) {
-      return errorResponse(`Formato ${format} não está disponível para este relatório`, 400);
+    // Validate status before allowing download
+    // Only allow download if status is not FAILED or CANCELLED
+    if (execution.status === 'FAILED' || execution.status === 'CANCELLED') {
+      return errorResponse('Relatório não está disponível para download (status: ' + execution.status + ')', 400);
     }
 
-    // Obter URL do arquivo
-    const fileUrls = execution.fileUrls as unknown;
-    const fileUrl = fileUrls[format];
+    // Type-safe validation of format parameter
+    const formatValue: unknown = format;
+    if (!isValidOutputFormat(formatValue)) {
+      return errorResponse(`Formato ${format} não é suportado`, 400);
+    }
+
+    // Type-safe validation of fileUrls
+    const fileUrlsValue: unknown = execution.fileUrls;
+    if (!isFileUrlsObject(fileUrlsValue)) {
+      return errorResponse('Arquivo não encontrado no sistema', 500);
+    }
+
+    const fileUrl = fileUrlsValue[formatValue];
 
     if (!fileUrl) {
       return errorResponse(`Arquivo ${format} não encontrado`, 404);
@@ -88,8 +123,9 @@ export const GET = withErrorHandler(async (
       const fileBuffer = await fs.readFile(filePath);
 
       // Preparar headers de resposta
-      const fileName = `${execution.schedule?.name || 'relatorio'}_${execution.id}.${format.toLowerCase()}`;
-      const mimeType = format === 'PDF' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      // Use scheduleId as base for filename (schedule name would require additional lookup)
+      const fileName = `relatorio_${execution.scheduleId || execution.id}_${formatValue}.${formatValue.toLowerCase()}`;
+      const mimeType = formatValue === 'PDF' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
       console.log(`${ICONS.SUCCESS} Arquivo enviado: ${fileName}`);
 

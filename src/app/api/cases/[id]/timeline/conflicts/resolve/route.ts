@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
+import { Prisma } from '@prisma/client';
 
 // ================================================================
 // TYPES
@@ -20,6 +21,49 @@ interface ConflictResolution {
 
 interface ResolveConflictsRequest {
   resolutions: ConflictResolution[];
+}
+
+// Type Guard: Check if object is ResolveConflictsRequest
+function isResolveConflictsRequest(obj: unknown): obj is ResolveConflictsRequest {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'resolutions' in obj &&
+    Array.isArray(obj.resolutions)
+  );
+}
+
+interface UpdateData {
+  description?: string;
+  hasConflict?: boolean;
+  conflictDetails?: Prisma.InputJsonValue | null;
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  metadata?: Prisma.InputJsonValue;
+}
+
+// Helper to build Prisma update input safely
+function buildProcessTimelineUpdateInput(
+  hasConflict: boolean,
+  conflictDetails: Prisma.InputJsonValue | null | undefined,
+  reviewedBy: string,
+  reviewedAt: Date,
+  metadata: Prisma.InputJsonValue | undefined,
+  description?: string
+): Prisma.ProcessTimelineEntryUpdateInput {
+  const input: Prisma.ProcessTimelineEntryUpdateInput = {
+    hasConflict,
+    conflictDetails: conflictDetails === null ? Prisma.DbNull : conflictDetails,
+    reviewedBy,
+    reviewedAt,
+    metadata,
+  };
+
+  if (description !== undefined) {
+    input.description = description;
+  }
+
+  return input;
 }
 
 // ================================================================
@@ -42,15 +86,17 @@ export async function POST(
     }
 
     const caseId = id;
-    const body = (await request.json()) as ResolveConflictsRequest;
-    const { resolutions } = body;
+    const body = await request.json();
 
-    if (!Array.isArray(resolutions) || resolutions.length === 0) {
+    // Validate body structure (ZERO casting)
+    if (!isResolveConflictsRequest(body)) {
       return NextResponse.json(
-        { error: 'Nenhuma resolução fornecida' },
+        { error: 'Payload inválido ou resoluções não fornecidas' },
         { status: 400 }
       );
     }
+
+    const { resolutions } = body; // body is now typed as ResolveConflictsRequest
 
     console.log(
       `${ICONS.PROCESS} [Timeline Conflicts] Resolvendo ${resolutions.length} conflito(s) para caso ${caseId}`
@@ -105,19 +151,33 @@ export async function POST(
           continue;
         }
 
-        const updateData: unknown = {
+        // Parse existing metadata safely (JsonValue can be null) - ZERO casting
+        const existingMetadata: Record<string, unknown> = {};
+        if (
+          event.metadata &&
+          typeof event.metadata === 'object' &&
+          !Array.isArray(event.metadata)
+        ) {
+          // After narrowing, safely copy properties
+          Object.assign(existingMetadata, event.metadata);
+        }
+
+        // Build update object - ZERO casting, using Padrão-Ouro JSON serialization
+        const serializedMetadata = JSON.parse(JSON.stringify({
+          ...existingMetadata,
+          conflictResolution: {
+            timestamp: now.toISOString(),
+            resolution: resolution.resolution,
+            resolvedBy: userId,
+          },
+        }));
+
+        const updateData: UpdateData = {
           hasConflict: false,
           conflictDetails: null,
           reviewedBy: userId,
           reviewedAt: now,
-          metadata: {
-            ...(event.metadata || {}),
-            conflictResolution: {
-              timestamp: now.toISOString(),
-              resolution: resolution.resolution,
-              resolvedBy: userId,
-            },
-          },
+          metadata: serializedMetadata,
         };
 
         // ========== RESOLUTION ACTIONS ==========
@@ -132,11 +192,11 @@ export async function POST(
 
           // USE_DOCUMENT: Substitui descrição pela do documento
           case 'use_document':
-            if (event.originalTexts) {
-              // Encontrar descrição do documento (não-JUDIT)
+            if (event.originalTexts && typeof event.originalTexts === 'object' && !Array.isArray(event.originalTexts)) {
+              // After narrowing, safely iterate entries (ZERO casting)
               const docText = Object.entries(event.originalTexts)
                 .filter(([source]) => source !== 'API_JUDIT')
-                .map(([, text]) => text)
+                .map(([, text]) => String(text))
                 .join('\n---\n');
 
               if (docText) {
@@ -160,23 +220,32 @@ export async function POST(
 
           // KEEP_BOTH: Cria evento relacionado separado
           case 'keep_both':
-            // Criar novo evento relacionado
+            // Criar novo evento relacionado com dados seguros
+            // Serialize metadata and originalTexts using Padrão-Ouro (ZERO casting)
+            const serializedEventMetadata = event.metadata
+              ? JSON.parse(JSON.stringify(event.metadata))
+              : undefined;
+            const serializedOriginalTexts = event.originalTexts
+              ? JSON.parse(JSON.stringify(event.originalTexts))
+              : undefined;
+
+            const relatedEventCreate: Prisma.ProcessTimelineEntryCreateInput = {
+              case: { connect: { id: caseId } },
+              contentHash: `related-${event.id}`,
+              eventDate: event.eventDate,
+              eventType: event.eventType,
+              description: event.description || '',
+              normalizedContent: event.normalizedContent || '',
+              source: event.source,
+              confidence: event.confidence,
+              metadata: serializedEventMetadata,
+              baseEvent: { connect: { id: event.id } },
+              relationType: 'RELATED',
+              originalTexts: serializedOriginalTexts,
+            };
+
             const relatedEvent = await prisma.processTimelineEntry.create({
-              data: {
-                caseId,
-                contentHash: `related-${event.id}`,
-                eventDate: event.eventDate,
-                eventType: event.eventType,
-                description: event.description,
-                normalizedContent: event.normalizedContent,
-                source: event.source,
-                confidence: event.confidence,
-                metadata: event.metadata,
-                baseEventId: event.id,
-                relationType: 'RELATED',
-                contributingSources: event.contributingSources,
-                originalTexts: event.originalTexts,
-              },
+              data: relatedEventCreate,
             });
 
             console.log(
@@ -185,10 +254,19 @@ export async function POST(
             break;
         }
 
-        // Atualizar evento
+        // Atualizar evento com narrowing seguro
+        const updateInput = buildProcessTimelineUpdateInput(
+          false,
+          null,
+          userId,
+          now,
+          updateData.metadata,
+          updateData.description
+        );
+
         await prisma.processTimelineEntry.update({
           where: { id: resolution.eventId },
-          data: updateData,
+          data: updateInput,
         });
 
         results.push({

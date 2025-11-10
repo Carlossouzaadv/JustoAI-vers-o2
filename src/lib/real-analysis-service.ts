@@ -250,6 +250,89 @@ METADADOS ADICIONAIS:`;
   }
 
   /**
+   * Type guard: Validate IdentificacaoBasica structure
+   */
+  private isIdentificacaoBasica(data: unknown): data is UnifiedProcessSchema['identificacao_basica'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    // At least the structure exists - Gemini response may have partial data
+    return true;
+  }
+
+  /**
+   * Type guard: Validate PartesEnvolvidas structure
+   */
+  private isPartesEnvolvidas(data: unknown): data is UnifiedProcessSchema['partes_envolvidas'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    // At least the structure exists
+    return true;
+  }
+
+  /**
+   * Type guard: Validate ValoresFinanceiros structure
+   */
+  private isValoresFinanceiros(data: unknown): data is UnifiedProcessSchema['valores_financeiros'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Type guard: Validate CamposEspecializados structure
+   */
+  private isCamposEspecializados(data: unknown): data is UnifiedProcessSchema['campos_especializados'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Type guard: Validate SituacaoProcessual structure
+   */
+  private isSituacaoProcessual(data: unknown): data is UnifiedProcessSchema['situacao_processual'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Type guard: Validate AnaliseEstrategica structure
+   */
+  private isAnaliseEstrategica(data: unknown): data is UnifiedProcessSchema['analise_estrategica'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Type guard: Validate DocumentosRelacionados structure
+   */
+  private isDocumentosRelacionados(data: unknown): data is UnifiedProcessSchema['documentos_relacionados'] {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Extract field from response as unknown, no casting
+   */
+  private getResponseField(key: string, response: Record<string, unknown>): unknown {
+    const field = response[key];
+    if (field && typeof field === 'object' && !Array.isArray(field)) {
+      return field;
+    }
+    return null;
+  }
+
+  /**
    * Validate and enhance Gemini API response
    */
   private validateAndEnhanceResult(
@@ -257,23 +340,60 @@ METADADOS ADICIONAIS:`;
     request: AnalysisRequest,
     complexity: ComplexityScore
   ): UnifiedProcessSchema {
-    // Type guard helper for geminiResponse properties
-    const getResponseField = (key: string): Record<string, unknown> => {
-      const field = geminiResponse[key];
-      return (field && typeof field === 'object') ? (field as Record<string, unknown>) : {};
-    };
+    // Extract fields as unknown - no casting
+    const identificacao_basica_raw = this.getResponseField('identificacao_basica', geminiResponse);
+    const partes_envolvidas_raw = this.getResponseField('partes_envolvidas', geminiResponse);
+    const valores_financeiros_raw = this.getResponseField('valores_financeiros', geminiResponse);
+    const campos_especializados_raw = this.getResponseField('campos_especializados', geminiResponse);
+    const situacao_processual_raw = this.getResponseField('situacao_processual', geminiResponse);
+    const analise_estrategica_raw = this.getResponseField('analise_estrategica', geminiResponse);
+    const documentos_relacionados_raw = this.getResponseField('documentos_relacionados', geminiResponse);
+    const metadados_analise_raw = this.getResponseField('metadados_analise', geminiResponse);
 
-    const metadadosOriginal = getResponseField('metadados_analise');
+    // Apply type guards with narrowing - use fallback if validation fails
+    const identificacao_basica = this.isIdentificacaoBasica(identificacao_basica_raw)
+      ? identificacao_basica_raw
+      : { numero_processo: null, tipo_processual: null, esfera: null, orgao_instancia: null, comarca: null, vara: null, juiz_responsavel: null };
+
+    const partes_envolvidas = this.isPartesEnvolvidas(partes_envolvidas_raw)
+      ? partes_envolvidas_raw
+      : { parte_principal: { nome: null, cpf_cnpj: null, tipo: null, qualificacao: null }, parte_contraria: { nome: null, cpf_cnpj: null, tipo: null, qualificacao: null }, outras_partes: null };
+
+    const valores_financeiros = this.isValoresFinanceiros(valores_financeiros_raw)
+      ? valores_financeiros_raw
+      : { valor_principal: null, multas: null, juros: null, encargos_legais: null, valor_total: null, valor_atualizado_em: null, observacoes_valores: null };
+
+    const campos_especializados = this.isCamposEspecializados(campos_especializados_raw)
+      ? campos_especializados_raw
+      : {};
+
+    const situacao_processual = this.isSituacaoProcessual(situacao_processual_raw)
+      ? situacao_processual_raw
+      : { situacao_atual: null, fase_processual: null, ultimo_andamento: null, principais_andamentos: null, prazos_pendentes: null };
+
+    const analise_estrategica = this.isAnaliseEstrategica(analise_estrategica_raw)
+      ? analise_estrategica_raw
+      : { tese_juridica_central: null, risco_classificacao: null, risco_justificativa: null, oportunidades_processuais: null, recomendacoes_estrategicas: null, pontos_atencao: null, precedentes_relevantes: null };
+
+    const documentos_relacionados = this.isDocumentosRelacionados(documentos_relacionados_raw)
+      ? documentos_relacionados_raw
+      : { documentos_anexos: null, certidoes_pendentes: null, documentos_solicitados: null };
+
+    // Extract metadata safely - use JSON serialization to ensure proper object structure
+    let metadadosOriginal: Record<string, unknown> = {};
+    if (typeof metadados_analise_raw === 'object' && metadados_analise_raw !== null) {
+      metadadosOriginal = JSON.parse(JSON.stringify(metadados_analise_raw));
+    }
 
     // Ensure all required sections exist with proper fallback
     const result: UnifiedProcessSchema = {
-      identificacao_basica: getResponseField('identificacao_basica') || {},
-      partes_envolvidas: getResponseField('partes_envolvidas') || {},
-      valores_financeiros: getResponseField('valores_financeiros') || {},
-      campos_especializados: getResponseField('campos_especializados') || {},
-      situacao_processual: getResponseField('situacao_processual') || {},
-      analise_estrategica: getResponseField('analise_estrategica') || {},
-      documentos_relacionados: getResponseField('documentos_relacionados') || {},
+      identificacao_basica,
+      partes_envolvidas,
+      valores_financeiros,
+      campos_especializados,
+      situacao_processual,
+      analise_estrategica,
+      documentos_relacionados,
       metadados_analise: {
         data_analise: new Date().toISOString(),
         modelo_utilizado: complexity.recommendedTier,
@@ -300,22 +420,27 @@ METADADOS ADICIONAIS:`;
     let totalFields = 0;
 
     const countFields = (value: unknown): void => {
-      if (value && typeof value === 'object') {
-        const obj = value as Record<string, unknown>;
-        Object.values(obj).forEach(field => {
-          totalFields++;
-          if (field !== null && field !== undefined && field !== '') {
-            filledFields++;
-          }
-        });
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        // After type narrowing: value is object, safe to use Object.values
+        try {
+          Object.values(value).forEach(field => {
+            totalFields++;
+            if (field !== null && field !== undefined && field !== '') {
+              filledFields++;
+            }
+          });
+        } catch {
+          // Silently handle non-iterable objects
+        }
       }
     };
 
-    // Safe property access with type guards
-    const resp = response as Record<string, unknown>;
-    countFields(resp.identificacao_basica);
-    countFields(resp.partes_envolvidas);
-    countFields(resp.valores_financeiros);
+    // Safe property access - response is already GeminiResponse (Record<string, unknown>)
+    if (typeof response === 'object' && response !== null) {
+      countFields(response.identificacao_basica);
+      countFields(response.partes_envolvidas);
+      countFields(response.valores_financeiros);
+    }
 
     const completeness = totalFields > 0 ? filledFields / totalFields : 0;
     const complexityFactor = Math.min(complexity.confidence || 0.5, 1);

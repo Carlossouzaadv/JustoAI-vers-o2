@@ -26,6 +26,28 @@ const OPERATION_LABELS: Record<string, string> = {
   MANUAL_SEARCH: 'Busca Manual',
 };
 
+// Type guard for label props
+function isValidPieLabel(obj: unknown): obj is { name: string; percent: number } {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'name' in obj &&
+    'percent' in obj &&
+    typeof (obj as Record<string, unknown>).name === 'string' &&
+    typeof (obj as Record<string, unknown>).percent === 'number'
+  );
+}
+
+// Type guard for tooltip props
+function isValidTooltipProps(obj: unknown): obj is { payload: Record<string, unknown> } {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'payload' in obj &&
+    typeof (obj as Record<string, unknown>).payload === 'object'
+  );
+}
+
 export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
   // Format data for chart
   const chartData = data.map((item) => ({
@@ -43,7 +65,10 @@ export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
           cx="50%"
           cy="50%"
           labelLine={false}
-          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+          label={(obj) => {
+            if (!isValidPieLabel(obj)) return '';
+            return `${obj.name} ${(obj.percent * 100).toFixed(0)}%`;
+          }}
           outerRadius={80}
           fill="#8884d8"
           dataKey="value"
@@ -58,17 +83,25 @@ export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '6px',
           }}
-          formatter={(value: unknown, name: string, props: unknown) => {
-            if (name === 'value') {
-              return [
-                <div key="tooltip" className="text-sm">
+          formatter={(value: unknown, name: string, props: unknown): React.ReactNode => {
+            if (name === 'value' && typeof value === 'number' && isValidTooltipProps(props)) {
+              const count = props.payload.count;
+              const avgCost = props.payload.avgCost;
+
+              // Type-safe extraction
+              const countValue = typeof count === 'number' ? count : 0;
+              const avgCostValue = typeof avgCost === 'number' ? avgCost : 0;
+
+              return (
+                <div className="text-sm">
                   <div>Custo: R$ {value.toFixed(2)}</div>
-                  <div>Operações: {props.payload.count}</div>
-                  <div>Média: R$ {props.payload.avgCost.toFixed(2)}</div>
-                </div>,
-              ];
+                  <div>Operações: {countValue}</div>
+                  <div>Média: R$ {avgCostValue.toFixed(2)}</div>
+                </div>
+              );
             }
-            return value;
+            // Type-safe fallback: convert unknown to string
+            return typeof value === 'string' || typeof value === 'number' ? String(value) : null;
           }}
         />
         <Legend />

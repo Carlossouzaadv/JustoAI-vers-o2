@@ -9,6 +9,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { createGunzip, createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
+import type { Request, Response, NextFunction } from 'express';
 
 // === TIPOS E INTERFACES ===
 
@@ -339,31 +340,84 @@ export async function decompressFileGzip(inputPath: string, outputPath: string):
 // === MIDDLEWARE DE COMPRESSÃO ===
 
 /**
+ * Type guard to check if object is a valid Express File
+ */
+function isExpressFile(obj: unknown): obj is Express.Multer.File {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+
+  const file = obj as Record<string, unknown>;
+  return (
+    typeof file.originalname === 'string' &&
+    typeof file.path === 'string' &&
+    typeof file.size === 'number' &&
+    typeof file.mimetype === 'string'
+  );
+}
+
+/**
+ * Extract files from request safely with type guards
+ */
+function extractFiles(req: Request): Express.Multer.File[] {
+  const files: Express.Multer.File[] = [];
+
+  // Check req.file first
+  if (req.file && isExpressFile(req.file)) {
+    files.push(req.file);
+  }
+
+  // Check req.files
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      // req.files is an array of File
+      req.files.forEach(file => {
+        if (isExpressFile(file)) {
+          files.push(file);
+        }
+      });
+    } else if (typeof req.files === 'object') {
+      // req.files is an object with fieldname -> File[] mapping
+      Object.values(req.files).forEach(fileArray => {
+        if (Array.isArray(fileArray)) {
+          fileArray.forEach(file => {
+            if (isExpressFile(file)) {
+              files.push(file);
+            }
+          });
+        }
+      });
+    }
+  }
+
+  return files;
+}
+
+/**
  * Middleware para compressão automática de uploads
  */
 export function createCompressionMiddleware(options: CompressionOptions = {}) {
-  return async (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
-    // Se há arquivos no upload
-    if (req.files || req.file) {
-      const files = req.files || [req.file];
+  return async (req: Request, res: Response, next: NextFunction) => {
+    // Extrair arquivos com type guards
+    const files = extractFiles(req);
 
-      for (const file of Array.isArray(files) ? files : [files]) {
-        if (file && isImageFile(file.originalname)) {
-          try {
-            // Comprimir imagem automaticamente
-            const result = await compressImage(file.path, undefined, options);
+    for (const file of files) {
+      if (isImageFile(file.originalname)) {
+        try {
+          // Comprimir imagem automaticamente
+          const result = await compressImage(file.path, undefined, options);
 
-            if (result.success) {
-              // Atualizar informações do arquivo
-              file.compressedPath = result.outputPath;
-              file.originalSize = result.originalSize;
-              file.compressedSize = result.compressedSize;
-              file.compressionRatio = result.compressionRatio;
-            }
-          } catch (error) {
-            console.error('Compression middleware error:', error);
-            // Continuar sem falhar se compressão falhar
+          if (result.success) {
+            // Atualizar informações do arquivo com type assertion
+            const fileWithMetadata = file as any;
+            fileWithMetadata.compressedPath = result.outputPath;
+            fileWithMetadata.originalSize = result.originalSize;
+            fileWithMetadata.compressedSize = result.compressedSize;
+            fileWithMetadata.compressionRatio = result.compressionRatio;
           }
+        } catch (error) {
+          console.error('Compression middleware error:', error);
+          // Continuar sem falhar se compressão falhar
         }
       }
     }

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import type { Prisma } from '@prisma/client'
 import {
   successResponse,
   errorResponse,
@@ -17,6 +18,27 @@ import {
   CreateClientInput,
   ClientQuery
 } from '@/lib/validations'
+
+/**
+ * Type guard: Validate ClientStatus enum value
+ */
+function isValidClientStatus(val: unknown): val is 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED' {
+  return typeof val === 'string' && ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED'].includes(val)
+}
+
+/**
+ * Type guard: Validate ClientType enum value
+ */
+function isValidClientType(val: unknown): val is 'INDIVIDUAL' | 'COMPANY' | 'GOVERNMENT' | 'NGO' {
+  return typeof val === 'string' && ['INDIVIDUAL', 'COMPANY', 'GOVERNMENT', 'NGO'].includes(val)
+}
+
+/**
+ * Type guard: Validate non-empty string
+ */
+function isNonEmptyString(val: unknown): val is string {
+  return typeof val === 'string' && val.length > 0
+}
 
 /**
  * @swagger
@@ -120,33 +142,52 @@ async function GET(request: NextRequest) {
     return paginatedResponse([], page, limit, 0, 'No clients found')
   }
 
-  // Build filters
-  const where: unknown = {
+  // Validate search parameter
+  if (search !== undefined && !isNonEmptyString(search)) {
+    return errorResponse('Invalid search parameter', 400)
+  }
+
+  // Type guard and validate status parameter
+  if (status !== undefined && !isValidClientStatus(status)) {
+    return errorResponse('Invalid client status', 400)
+  }
+
+  // Type guard and validate type parameter
+  if (type !== undefined && !isValidClientType(type)) {
+    return errorResponse('Invalid client type', 400)
+  }
+
+  // After validation, build where filter type-safely
+  // Start with base filter (always required)
+  const whereBase: Prisma.ClientWhereInput = {
     workspaceId: { in: workspaceIds }
   }
 
+  // Add search filter if valid and present
   if (search) {
-    where.OR = [
+    whereBase.OR = [
       { name: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
       { document: { contains: search, mode: 'insensitive' } }
     ]
   }
 
+  // Add status filter if valid and present (type guard ensures correctness)
   if (status) {
-    where.status = status
+    whereBase.status = status
   }
 
+  // Add type filter if valid and present (type guard ensures correctness)
   if (type) {
-    where.type = type
+    whereBase.type = type
   }
 
-  // Get total count
-  const total = await prisma.client.count({ where })
+  // Get total count with type-safe where clause
+  const total = await prisma.client.count({ where: whereBase })
 
   // Get clients with pagination
   const clients = await prisma.client.findMany({
-    where,
+    where: whereBase,
     include: {
       workspace: {
         select: {
@@ -304,11 +345,67 @@ async function POST(request: NextRequest) {
     }
   }
 
-  // Create client
+  // Create client - input has been validated by Zod schema
   try {
     console.log('[POST /api/clients] Criando cliente no banco de dados...')
+
+    // Type guard: Validate required fields from validated input (double-check)
+    if (!isNonEmptyString(input.workspaceId)) {
+      return errorResponse('Missing or empty workspaceId', 400)
+    }
+
+    if (!isNonEmptyString(input.name)) {
+      return errorResponse('Missing or empty name', 400)
+    }
+
+    if (!isValidClientType(input.type)) {
+      return errorResponse('Invalid client type', 400)
+    }
+
+    if (!isNonEmptyString(input.country)) {
+      return errorResponse('Missing or empty country', 400)
+    }
+
+    // Type guard: Validate metadata if present
+    const isValidMetadata = (metadata: unknown): metadata is Record<string, unknown> | undefined => {
+      if (metadata === undefined) return true
+      return typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata)
+    }
+
+    if (!isValidMetadata(input.metadata)) {
+      return errorResponse('Invalid metadata format', 400)
+    }
+
+    // Build client create data type-safely
+    // Construct the base data - all fields are already validated
+    // All fields are narrowed to valid types by previous type guards
+    const createDataBase = {
+      workspaceId: input.workspaceId,
+      name: input.name,
+      type: input.type,
+      country: input.country,
+      email: input.email,
+      phone: input.phone,
+      document: input.document,
+      address: input.address,
+      city: input.city,
+      state: input.state,
+      zipCode: input.zipCode,
+      notes: input.notes
+    }
+
+    // Construct data with optional metadata - only include if present and valid
+    // Use JSON.parse(JSON.stringify(...)) to convert Record<string, unknown> to InputJsonValue
+    const dataForCreate = input.metadata && isValidMetadata(input.metadata)
+      ? {
+          ...createDataBase,
+          metadata: JSON.parse(JSON.stringify(input.metadata))
+        }
+      : createDataBase
+
+    // Create client - TypeScript infers correct type from dataForCreate structure
     const client = await prisma.client.create({
-      data: input,
+      data: dataForCreate,
       include: {
         workspace: {
           select: {

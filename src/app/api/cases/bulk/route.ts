@@ -16,6 +16,11 @@ import {
   BulkDeleteCasesPayload,
 } from '@/lib/types/api-schemas';
 
+// Type Guard: Check if a key is a property of an object
+function isKeyOf<T extends Record<string, unknown>>(key: PropertyKey, obj: T): key is keyof T {
+  return key in obj;
+}
+
 /**
  * PATCH /api/cases/bulk
  *
@@ -29,7 +34,7 @@ export async function PATCH(request: NextRequest) {
     // ============================================================
     // AUTENTICAÇÃO
     // ============================================================
-    const authData = await validateAuthAndGetUser(request);
+    const authData = await validateAuthAndGetUser();
     const user = authData.user;
 
     if (!user) {
@@ -57,7 +62,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { caseIds, updates }: BulkUpdateCasesPayload = bodyParseResult.data;
-    const updateKeys = Object.keys(updates).filter(key => updates[key as keyof typeof updates] !== undefined);
+    // Get keys with non-undefined values using type guard (ZERO casting)
+    const updateKeys = Object.keys(updates).filter((key): key is keyof typeof updates => {
+      return isKeyOf(key, updates) && updates[key] !== undefined;
+    });
 
     // ============================================================
     // VERIFICAR ACESSO AO WORKSPACE
@@ -82,7 +90,7 @@ export async function PATCH(request: NextRequest) {
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: casesWorkspace.workspaceId,
-        members: {
+        users: {
           some: {
             userId: user.id
           }
@@ -150,14 +158,14 @@ export async function PATCH(request: NextRequest) {
       data: caseIds.map(caseId => ({
         caseId,
         userId: user.id,
-        type: 'BULK_UPDATE',
+        type: 'OTHER',
         title: 'Atualização em massa',
         description: `Atualização em massa: ${updateSummary}`,
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           bulkOperationId: crypto.getRandomValues(new Uint8Array(16)).join(''),
           updatedFields: updateKeys,
           updates: safeUpdates
-        }
+        }))
       }))
     });
 
@@ -206,7 +214,7 @@ export async function DELETE(request: NextRequest) {
     // ============================================================
     // AUTENTICAÇÃO
     // ============================================================
-    const authData = await validateAuthAndGetUser(request);
+    const authData = await validateAuthAndGetUser();
     const user = authData.user;
 
     if (!user) {
@@ -258,7 +266,7 @@ export async function DELETE(request: NextRequest) {
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: casesWorkspace.workspaceId,
-        members: {
+        users: {
           some: {
             userId: user.id
           }
@@ -292,13 +300,13 @@ export async function DELETE(request: NextRequest) {
       data: caseIds.map(caseId => ({
         caseId,
         userId: user.id,
-        type: 'BULK_DELETE',
+        type: 'OTHER',
         title: 'Deleção em massa',
         description: 'Caso deletado em operação em massa',
-        metadata: {
+        metadata: JSON.parse(JSON.stringify({
           bulkOperationId: crypto.getRandomValues(new Uint8Array(16)).join(''),
           deletedAt: new Date().toISOString()
-        }
+        }))
       }))
     });
 

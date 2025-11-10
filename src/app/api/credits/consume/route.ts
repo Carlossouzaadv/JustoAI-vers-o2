@@ -12,7 +12,7 @@ const consumeSchema = z.object({
   reason: z.string().min(1, 'Reason is required'),
   resourceType: z.enum(['report', 'analysis', 'full_analysis']),
   resourceId: z.string().optional(),
-  metadata: z.record(z.unknown()).optional().default({})
+  metadata: z.record(z.string(), z.unknown()).optional().default({})
 })
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
@@ -37,22 +37,19 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     const creditSystem = getCreditManager()
 
     // Check available credits first
-    const balance = await creditSystem.getWorkspaceCredits(workspaceId)
-    if (!balance.success) {
-      return errorResponse(balance.error || 'Failed to get workspace credits', 500)
-    }
+    const balance = await creditSystem.getCreditBalance(workspaceId)
 
     // Check if sufficient credits are available
-    if (balance.credits!.reportCreditsBalance < reportCredits) {
+    if (balance.reportCreditsAvailable < reportCredits) {
       return errorResponse(
-        `Insufficient report credits. Required: ${reportCredits}, Available: ${balance.credits!.reportCreditsBalance}`,
+        `Insufficient report credits. Required: ${reportCredits}, Available: ${balance.reportCreditsAvailable}`,
         402 // Payment Required
       )
     }
 
-    if (balance.credits!.fullCreditsBalance < fullCredits) {
+    if (balance.fullCreditsAvailable < fullCredits) {
       return errorResponse(
-        `Insufficient FULL credits. Required: ${fullCredits}, Available: ${balance.credits!.fullCreditsBalance}`,
+        `Insufficient FULL credits. Required: ${fullCredits}, Available: ${balance.fullCreditsAvailable}`,
         402 // Payment Required
       )
     }
@@ -76,25 +73,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       return errorResponse(debitResult.error || 'Failed to debit credits', 500)
     }
 
-    // Log the usage event
-    await creditSystem.logUsageEvent({
-      workspaceId,
-      eventType: 'credit_consumption',
-      resourceType,
-      resourceId,
-      reportCreditsCost: reportCredits,
-      fullCreditsCost: fullCredits,
-      status: 'completed',
-      metadata: {
-        reason,
-        userId: user.id,
-        allocationsUsed: debitResult.allocationsUsed,
-        ...metadata
-      }
-    })
-
     // Get updated balance
-    const updatedBalance = await creditSystem.getWorkspaceCredits(workspaceId)
+    const updatedBalance = await creditSystem.getCreditBalance(workspaceId)
 
     console.log(`${ICONS.SUCCESS} Credit consumption completed: ${reportCredits}R + ${fullCredits}F credits`)
 
@@ -107,12 +87,12 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         resourceType,
         resourceId
       },
-      allocationsUsed: debitResult.allocationsUsed,
-      updatedBalance: updatedBalance.success ? {
-        reportCreditsBalance: updatedBalance.credits!.reportCreditsBalance,
-        fullCreditsBalance: updatedBalance.credits!.fullCreditsBalance,
-        totalBalance: updatedBalance.credits!.reportCreditsBalance + updatedBalance.credits!.fullCreditsBalance
-      } : null,
+      transactionIds: debitResult.transactionIds,
+      updatedBalance: {
+        reportCreditsBalance: updatedBalance.reportCreditsBalance,
+        fullCreditsBalance: updatedBalance.fullCreditsBalance,
+        totalBalance: updatedBalance.reportCreditsBalance + updatedBalance.fullCreditsBalance
+      },
       timestamp: new Date().toISOString()
     })
 

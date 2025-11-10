@@ -5,9 +5,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUnresolvedAlerts, resolveAlert } from '@/lib/observability/costTracking';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, AlertSeverity } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Type guard for AlertSeverity enum - validates exact enum values without casting
+function isAlertSeverity(value: unknown): value is AlertSeverity {
+  if (typeof value !== 'string') return false;
+  return (
+    value === 'LOW' ||
+    value === 'MEDIUM' ||
+    value === 'HIGH' ||
+    value === 'CRITICAL'
+  );
+}
 
 // ================================================================
 // GET - List Alerts
@@ -22,8 +33,14 @@ export async function GET(request: NextRequest) {
     const severityParam = searchParams.get('severity');
     const limit = parseInt(searchParams.get('limit') || '50');
 
-    // Build query
-    const where: unknown = {};
+    // Build Prisma where clause with proper type safety
+    interface PrismaAlertWhere {
+      workspaceId?: string;
+      resolved?: boolean;
+      severity?: AlertSeverity;
+    }
+
+    const where: PrismaAlertWhere = {};
 
     if (workspaceId) {
       where.workspaceId = workspaceId;
@@ -33,8 +50,14 @@ export async function GET(request: NextRequest) {
       where.resolved = resolvedParam === 'true';
     }
 
+    // Safely convert and validate severity using type guard (ZERO 'as')
     if (severityParam) {
-      where.severity = severityParam;
+      const upperSeverity = typeof severityParam === 'string' ? severityParam.toUpperCase() : '';
+
+      // Apply type guard - after this, upperSeverity is guaranteed to be AlertSeverity
+      if (isAlertSeverity(upperSeverity)) {
+        where.severity = upperSeverity; // 100% type-safe, no casting needed
+      }
     }
 
     // Fetch alerts
@@ -44,10 +67,13 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    // Get counts by severity
+    // Get counts by severity (with proper type narrowing for _count)
     const counts = await prisma.juditAlert.groupBy({
       by: ['severity'],
-      where: { ...where, resolved: false },
+      where: {
+        ...where,
+        resolved: false,
+      },
       _count: {
         id: true,
       },
@@ -55,7 +81,8 @@ export async function GET(request: NextRequest) {
 
     const countsBySeverity = counts.reduce(
       (acc, item) => {
-        acc[item.severity.toLowerCase()] = item._count.id;
+        const countValue = item._count.id;
+        acc[item.severity.toLowerCase()] = countValue;
         return acc;
       },
       { critical: 0, high: 0, medium: 0, low: 0 } as Record<string, number>

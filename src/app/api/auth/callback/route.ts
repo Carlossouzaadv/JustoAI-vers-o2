@@ -1,6 +1,40 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+
+// Helper: Narrow unknown to object (ZERO casting)
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+// Type Guard for CookieOptions (ZERO casting)
+function isCookieOptions(value: unknown): value is CookieOptions {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    (value.maxAge === undefined || typeof value.maxAge === 'number') &&
+    (value.expires === undefined || value.expires instanceof Date) &&
+    (value.httpOnly === undefined || typeof value.httpOnly === 'boolean') &&
+    (value.secure === undefined || typeof value.secure === 'boolean') &&
+    (value.sameSite === undefined || typeof value.sameSite === 'string') &&
+    (value.path === undefined || typeof value.path === 'string')
+  );
+}
+
+// Type Guard for Email OTP type (for token_hash verification)
+function isValidEmailOtpType(
+  value: unknown
+): value is 'signup' | 'invite' | 'magiclink' | 'recovery' | 'email_change' | 'email' {
+  return (
+    value === 'email' ||
+    value === 'signup' ||
+    value === 'invite' ||
+    value === 'magiclink' ||
+    value === 'recovery' ||
+    value === 'email_change'
+  );
+}
 
 /**
  * POST /api/auth/callback
@@ -31,7 +65,8 @@ export async function POST(request: NextRequest) {
           },
           set(name: string, value: string, options: unknown) {
             try {
-              cookieStore.set(name, value, options)
+              const cookieOpts = isCookieOptions(options) ? options : undefined;
+              cookieStore.set(name, value, cookieOpts)
             } catch (error) {
               // Cookie setting might fail
             }
@@ -47,9 +82,16 @@ export async function POST(request: NextRequest) {
       }
     )
 
-    // Verify the token
+    // Verify the token - validate type first
+    if (!isValidEmailOtpType(type)) {
+      return NextResponse.json(
+        { error: 'Invalid OTP type parameter' },
+        { status: 400 }
+      )
+    }
+
     const { data, error } = await supabase.auth.verifyOtp({
-      type: type as 'email' | 'sms' | 'recovery' | 'invite' | 'signup' | 'magiclink',
+      type,
       token_hash,
       email: request.headers.get('x-user-email') || ''
     })
@@ -108,7 +150,8 @@ export async function GET(request: NextRequest) {
           },
           set(name: string, value: string, options: unknown) {
             try {
-              cookieStore.set(name, value, options)
+              const cookieOpts = isCookieOptions(options) ? options : undefined;
+              cookieStore.set(name, value, cookieOpts)
             } catch (error) {
               // Cookie setting might fail
             }

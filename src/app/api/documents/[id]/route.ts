@@ -23,6 +23,32 @@ const updateDocumentSchema = z.object({
 type UpdateDocumentPayload = z.infer<typeof updateDocumentSchema>;
 
 // ================================================================
+// TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
+// ================================================================
+
+/**
+ * Helper: Safely extracts error message from unknown error
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+/**
+ * Type guard: Validates authenticated user exists and is not null
+ */
+function isAuthenticatedUser(user: unknown): user is { id: string } {
+  return (
+    typeof user === 'object' &&
+    user !== null &&
+    'id' in user &&
+    typeof (user as { id: unknown }).id === 'string'
+  );
+}
+
+// ================================================================
 // PATCH HANDLER: Update document metadata
 // ================================================================
 
@@ -31,17 +57,20 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: documentId } = await params;
+  let authenticatedUser: unknown; // Declare outside try for catch block access
 
   try {
     // ============================================================
     // 1. AUTHENTICATION
     // ============================================================
 
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
+    authenticatedUser = await getAuthenticatedUser(request);
+    if (!isAuthenticatedUser(authenticatedUser)) {
       return unauthorizedResponse('Não autenticado');
     }
 
+    // Now authenticatedUser is narrowed to { id: string }
+    const user = authenticatedUser;
     setSentryUserContext(user.id);
 
     console.log(`${ICONS.INFO} [Document PATCH] Atualizando documento ${documentId}`);
@@ -114,19 +143,20 @@ export async function PATCH(
     // 5. UPDATE DOCUMENT
     // ============================================================
 
-    const updateData: unknown = {};
+    // Build update data safely, only including fields that changed
+    const updateInput: Parameters<typeof prisma.caseDocument.update>[0]['data'] = {};
 
     if (body.name !== undefined) {
-      updateData.name = body.name;
+      updateInput.name = body.name;
     }
 
     if (body.tags !== undefined) {
-      updateData.tags = body.tags;
+      updateInput.tags = body.tags;
     }
 
     if (body.summary !== undefined) {
       // Preserve existing metadata and update summary
-      updateData.metadata = {
+      updateInput.metadata = {
         ...(document.metadata as Record<string, unknown> || {}),
         summary: body.summary,
       };
@@ -134,7 +164,7 @@ export async function PATCH(
 
     const updatedDocument = await prisma.caseDocument.update({
       where: { id: documentId },
-      data: updateData,
+      data: updateInput,
     });
 
     // ============================================================
@@ -176,17 +206,23 @@ export async function PATCH(
   } catch (error) {
     console.error(`${ICONS.ERROR} [Document PATCH] Erro:`, error);
 
+    // Type-safe error handling: narrow user type before using
+    let userId: string | undefined;
+    if (isAuthenticatedUser(authenticatedUser)) {
+      userId = authenticatedUser.id;
+    }
+
     captureApiError(error, {
       endpoint: '/api/documents/[id]',
       method: 'PATCH',
       documentId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro ao atualizar documento',
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );
@@ -202,17 +238,20 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: documentId } = await params;
+  let authenticatedUser: unknown; // Declare outside try for catch block access
 
   try {
     // ============================================================
     // 1. AUTHENTICATION
     // ============================================================
 
-    const user = await getAuthenticatedUser(request);
-    if (!user) {
+    authenticatedUser = await getAuthenticatedUser(request);
+    if (!isAuthenticatedUser(authenticatedUser)) {
       return unauthorizedResponse('Não autenticado');
     }
 
+    // Now authenticatedUser is narrowed to { id: string }
+    const user = authenticatedUser;
     setSentryUserContext(user.id);
 
     console.log(`${ICONS.INFO} [Document DELETE] Deletando documento ${documentId}`);
@@ -271,15 +310,9 @@ export async function DELETE(
     // to avoid blocking the API response. The file cleanup will happen
     // asynchronously after the database record is deleted.
 
-    // Update TimelineEntry references if they exist
-    try {
-      await prisma.timelineEntry.updateMany({
-        where: { documentId },
-        data: { documentId: null },
-      });
-    } catch (err) {
-      console.warn(`${ICONS.WARNING} [Document DELETE] Error nullifying TimelineEntry references:`, err);
-    }
+    // Note: Document cleanup will cascade via the database relationship
+    // ProcessTimelineEntry's linkedDocuments relation will be automatically handled
+    // by the database constraints defined in the schema
 
     // ============================================================
     // 6. DELETE DOCUMENT RECORD
@@ -326,17 +359,23 @@ export async function DELETE(
   } catch (error) {
     console.error(`${ICONS.ERROR} [Document DELETE] Erro:`, error);
 
+    // Type-safe error handling: narrow user type before using
+    let userId: string | undefined;
+    if (isAuthenticatedUser(authenticatedUser)) {
+      userId = authenticatedUser.id;
+    }
+
     captureApiError(error, {
       endpoint: '/api/documents/[id]',
       method: 'DELETE',
       documentId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro ao deletar documento',
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );

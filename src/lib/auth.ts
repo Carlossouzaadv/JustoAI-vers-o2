@@ -72,10 +72,9 @@ export async function getCurrentUser() {
           data: {
             name: `${user.user_metadata?.full_name || user.email}'s Workspace`,
             slug: `workspace-${user.id.substring(0, 8)}`,
-            type: 'ORGANIZATION',
             description: 'Default workspace created on signup',
             status: 'ACTIVE',
-            members: {
+            users: {
               create: {
                 userId: dbUser.id,
                 role: 'OWNER',
@@ -84,7 +83,7 @@ export async function getCurrentUser() {
             }
           },
           include: {
-            members: {
+            users: {
               include: {
                 user: true
               }
@@ -95,7 +94,7 @@ export async function getCurrentUser() {
         console.log('✅ Default workspace created:', defaultWorkspace.id)
 
         // Recarregar usuário com workspace
-        dbUser = await prisma.user.findUnique({
+        const reloadedUser = await prisma.user.findUnique({
           where: { id: dbUser.id },
           include: {
             workspaces: {
@@ -104,7 +103,11 @@ export async function getCurrentUser() {
               }
             }
           }
-        })!
+        })
+
+        if (reloadedUser !== null) {
+          dbUser = reloadedUser
+        }
       } catch (workspaceError) {
         console.error('Error creating default workspace:', workspaceError)
         // Continue mesmo se falhar - não quebra o login
@@ -196,17 +199,24 @@ export async function validateAuthAndGetUser() {
 // ================================================================
 // NextAuth Configuration - Supabase Integration
 // ================================================================
-interface JWTCallback {
-  token: JWT
-  user?: {
-    id?: string
-    email?: string
+
+// Type guard for user object in JWT callback
+function isUserWithId(user: unknown): user is { id: string; email?: string } {
+  if (typeof user !== 'object' || user === null) {
+    return false
   }
+  const obj = user as Record<string, unknown>
+  return 'id' in obj && typeof obj.id === 'string'
 }
 
-interface SessionCallback {
-  session: Session
-  token: JWT
+// Type guard for JWT token
+function isTokenWithId(token: unknown): token is JWT & { id?: string } {
+  return typeof token === 'object' && token !== null
+}
+
+// Type guard for session user
+function isSessionUserWithId(user: unknown): user is { email?: string | null; name?: string | null; image?: string | null; id?: string } {
+  return typeof user === 'object' && user !== null
 }
 
 export const authOptions: NextAuthOptions = {
@@ -218,15 +228,17 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
   callbacks: {
-    async jwt({ token, user }: JWTCallback) {
-      if (user) {
-        token.id = user.id
+    async jwt({ token, user }) {
+      if (isUserWithId(user)) {
+        const typedToken = token as JWT & Record<string, unknown>
+        typedToken.id = user.id
       }
       return token
     },
-    async session({ session, token }: SessionCallback) {
-      if (session?.user) {
-        session.user.id = token.id as string
+    async session({ session, token }) {
+      if (isSessionUserWithId(session?.user) && isTokenWithId(token) && token.id) {
+        const typedUser = session.user as Record<string, unknown>
+        typedUser.id = token.id
       }
       return session
     },
