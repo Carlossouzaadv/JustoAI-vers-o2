@@ -175,4 +175,5 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
   );
 }
 
+export type { FeatureMatrixProps };
 export default FeatureMatrix;

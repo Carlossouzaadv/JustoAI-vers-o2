@@ -52,6 +52,31 @@ export interface ConflictDetails {
 }
 
 /**
+ * Type guard para validar se metadata é um objeto plano
+ */
+function isObjectLike(metadata: unknown): metadata is Record<string, unknown> {
+  return typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata);
+}
+
+/**
+ * Filtra valores JSON-válidos de um objeto
+ * Remove undefined, funções e outros valores não-serializáveis
+ */
+function filterJsonValue(obj: Record<string, unknown> | undefined): Record<string, string | number | boolean | null> {
+  if (!isObjectLike(obj)) {
+    return {};
+  }
+
+  const result: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+/**
  * Serviço de enriquecimento de timeline
  */
 export class TimelineEnricherService {
@@ -328,9 +353,11 @@ export class TimelineEnricherService {
         [newEvent.source]: newEvent.description,
       },
       metadata: {
-        ...(baseEvent.metadata || {}),
+        ...(isObjectLike(baseEvent.metadata) ? baseEvent.metadata : {}),
         enrichmentHistory: [
-          ...((baseEvent.metadata as Record<string, unknown>)?.enrichmentHistory as Array<unknown> || []),
+          ...(isObjectLike(baseEvent.metadata) && Array.isArray(baseEvent.metadata.enrichmentHistory)
+            ? baseEvent.metadata.enrichmentHistory
+            : []),
           {
             timestamp: new Date(),
             source: newEvent.source,
@@ -345,11 +372,12 @@ export class TimelineEnricherService {
    * Prepara um evento para ser salvo como RELATED
    *
    * Cria novo evento vinculado via baseEventId
+   * NOTE: baseEventId será setado pelo chamador após a criação
    */
   prepareRelatedEventData(
     baseEventId: string,
     newEvent: TimelineMovement
-  ): Partial<Prisma.ProcessTimelineEntryCreateInput> {
+  ): Partial<Prisma.ProcessTimelineEntryCreateInput> & { baseEventId: string } {
     return {
       // caseId and contentHash will be set by caller
       eventDate: newEvent.date,
@@ -359,7 +387,7 @@ export class TimelineEnricherService {
       source: newEvent.source,
       sourceId: newEvent.sourceId,
       confidence: newEvent.confidence,
-      metadata: newEvent.metadata || {},
+      metadata: filterJsonValue(newEvent.metadata),
       relationType: 'RELATED',
       baseEventId,
       contributingSources: [newEvent.source] as TimelineSource[],
@@ -393,9 +421,11 @@ export class TimelineEnricherService {
         },
       },
       metadata: {
-        ...(baseEvent.metadata || {}),
+        ...(isObjectLike(baseEvent.metadata) ? baseEvent.metadata : {}),
         conflictTracking: [
-          ...((baseEvent.metadata as Record<string, unknown>)?.conflictTracking as Array<unknown> || []),
+          ...(isObjectLike(baseEvent.metadata) && Array.isArray(baseEvent.metadata.conflictTracking)
+            ? baseEvent.metadata.conflictTracking
+            : []),
           {
             timestamp: new Date(),
             source: newEvent.source,

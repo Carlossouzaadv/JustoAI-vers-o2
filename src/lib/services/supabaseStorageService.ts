@@ -160,7 +160,11 @@ export async function uploadCaseDocument(
     mimeType
   );
 
-  return result.success ? result.url : null;
+  // Narrowing: Only return url if it exists and is a non-empty string
+  if (result.success && typeof result.url === 'string' && result.url.length > 0) {
+    return result.url;
+  }
+  return null;
 }
 
 /**
@@ -190,7 +194,11 @@ export async function uploadReport(
     mimeTypes[reportType]
   );
 
-  return result.success ? result.url : null;
+  // Narrowing: Only return url if it exists and is a non-empty string
+  if (result.success && typeof result.url === 'string' && result.url.length > 0) {
+    return result.url;
+  }
+  return null;
 }
 
 /**
@@ -214,7 +222,11 @@ export async function uploadAttachment(
     mimeType
   );
 
-  return result.success ? result.url : null;
+  // Narrowing: Only return url if it exists and is a non-empty string
+  if (result.success && typeof result.url === 'string' && result.url.length > 0) {
+    return result.url;
+  }
+  return null;
 }
 
 /**

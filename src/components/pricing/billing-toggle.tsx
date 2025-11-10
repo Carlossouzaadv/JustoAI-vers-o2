@@ -70,4 +70,5 @@ export function BillingToggle({
   );
 }
 
+export type { BillingToggleProps };
 export default BillingToggle;

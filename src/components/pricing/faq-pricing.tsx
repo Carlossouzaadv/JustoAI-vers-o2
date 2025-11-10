@@ -94,4 +94,5 @@ export function FaqPricing({ faqItems, className = '' }: FaqPricingProps) {
   );
 }
 
+export type { FaqPricingProps, FaqItem };
 export default FaqPricing;

@@ -12,6 +12,30 @@ import { extractTextFromPDF } from '@/lib/pdf-processor';
 // TYPES
 // ================================================================
 
+/**
+ * Type Guard: Validar se data é um objeto com estrutura de resposta JUDIT
+ */
+function isJuditResponseObject(data: unknown): data is Record<string, unknown> {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    (('attachments' in data && Array.isArray((data as Record<string, unknown>).attachments)) ||
+     ('pages' in data && Array.isArray((data as Record<string, unknown>).pages)) ||
+     ('data' in data && typeof (data as Record<string, unknown>).data === 'object'))
+  );
+}
+
+// Valores válidos para DocumentType conforme Prisma schema
+const VALID_DOCUMENT_TYPES = ['PETITION', 'MOTION', 'COURT_ORDER', 'JUDGMENT', 'APPEAL', 'AGREEMENT', 'EVIDENCE', 'OTHER'] as const;
+
+/**
+ * Type Guard: Validar se valor é um DocumentType válido
+ * Retorna uma assertion que o valor é um membro do tipo literal union
+ */
+function isValidDocumentType(value: unknown): value is typeof VALID_DOCUMENT_TYPES[number] {
+  return typeof value === 'string' && VALID_DOCUMENT_TYPES.includes(value as typeof VALID_DOCUMENT_TYPES[number]);
+}
+
 export interface JuditAttachment {
   id: string;
   attachment_id: string; // ID fornecido pela API JUDIT
@@ -135,44 +159,58 @@ function extractAttachmentsFromJuditResponse(juditResponse: unknown): JuditAttac
     // Estrutura esperada (ajustar conforme API JUDIT real):
     // juditResponse.data.attachments[] ou similar
 
-    const data = juditResponse?.data || juditResponse;
+    // Narrowing: Primeiro tenta juditResponse.data, depois juditResponse
+    let data: unknown = null;
+    if (typeof juditResponse === 'object' && juditResponse !== null && 'data' in juditResponse) {
+      data = (juditResponse as Record<string, unknown>).data;
+    } else {
+      data = juditResponse;
+    }
 
-    // Guard: validar se data é objeto antes de acessar propriedades
-    if (!data || typeof data !== 'object') {
+    // Type Guard: Validar que data tem estrutura correta
+    if (!isJuditResponseObject(data)) {
       return attachments;
     }
 
-    if (data.attachments && Array.isArray(data.attachments)) {
+    // Agora data é Record<string, unknown> e podemos acessar propriedades com segurança
+    if ('attachments' in data && Array.isArray(data.attachments)) {
       for (const att of data.attachments) {
         // A API JUDIT retorna: attachment_id, attachment_name, extension, status, attachment_date, step_id
-        attachments.push({
-          id: att.attachment_id || att.id,
-          attachment_id: att.attachment_id,
-          name: att.attachment_name || att.name || att.filename || 'anexo-sem-nome',
-          type: classifyDocumentByName(att.attachment_name || att.name || ''),
-          extension: att.extension || 'pdf',
-          size: att.size,
-          date: att.attachment_date || att.date || att.created_at,
-          step_id: att.step_id
-        });
+        if (typeof att === 'object' && att !== null) {
+          const attachment = att as Record<string, unknown>;
+          attachments.push({
+            id: (attachment.attachment_id || attachment.id) as string || 'unknown',
+            attachment_id: String(attachment.attachment_id || 'unknown'),
+            name: String(attachment.attachment_name || attachment.name || attachment.filename || 'anexo-sem-nome'),
+            type: classifyDocumentByName(String(attachment.attachment_name || attachment.name || '')),
+            extension: String(attachment.extension || 'pdf'),
+            size: typeof attachment.size === 'number' ? attachment.size : undefined,
+            date: typeof attachment.attachment_date === 'string' ? attachment.attachment_date : typeof attachment.date === 'string' ? attachment.date : typeof attachment.created_at === 'string' ? attachment.created_at : undefined,
+            step_id: typeof attachment.step_id === 'string' ? attachment.step_id : undefined
+          });
+        }
       }
     }
 
     // Verificar se há attachments em páginas (paginação)
-    if (data.pages && Array.isArray(data.pages)) {
+    if ('pages' in data && Array.isArray(data.pages)) {
       for (const page of data.pages) {
-        if (page.attachments && Array.isArray(page.attachments)) {
-          for (const att of page.attachments) {
-            attachments.push({
-              id: att.attachment_id || att.id,
-              attachment_id: att.attachment_id,
-              name: att.attachment_name || att.name || att.filename || 'anexo-sem-nome',
-              type: classifyDocumentByName(att.attachment_name || att.name || ''),
-              extension: att.extension || 'pdf',
-              size: att.size,
-              date: att.attachment_date || att.date || att.created_at,
-              step_id: att.step_id
-            });
+        if (typeof page === 'object' && page !== null && 'attachments' in page && Array.isArray((page as Record<string, unknown>).attachments)) {
+          const pageAttachments = (page as Record<string, unknown>).attachments as unknown[];
+          for (const att of pageAttachments) {
+            if (typeof att === 'object' && att !== null) {
+              const attachment = att as Record<string, unknown>;
+              attachments.push({
+                id: (attachment.attachment_id || attachment.id) as string || 'unknown',
+                attachment_id: String(attachment.attachment_id || 'unknown'),
+                name: String(attachment.attachment_name || attachment.name || attachment.filename || 'anexo-sem-nome'),
+                type: classifyDocumentByName(String(attachment.attachment_name || attachment.name || '')),
+                extension: String(attachment.extension || 'pdf'),
+                size: typeof attachment.size === 'number' ? attachment.size : undefined,
+                date: typeof attachment.attachment_date === 'string' ? attachment.attachment_date : typeof attachment.date === 'string' ? attachment.date : typeof attachment.created_at === 'string' ? attachment.created_at : undefined,
+                step_id: typeof attachment.step_id === 'string' ? attachment.step_id : undefined
+              });
+            }
           }
         }
       }
@@ -288,8 +326,17 @@ async function downloadAndProcessAttachment(
 
     if (attachment.name.toLowerCase().endsWith('.pdf')) {
       try {
-        extractedText = await extractTextFromPDF(tempPath);
-        console.log(`${ICONS.EXTRACT} [JUDIT Attachments] Texto extraído: ${extractedText.length} chars`);
+        const extractionResult = await extractTextFromPDF(tempPath);
+
+        // Narrowing: ExtractionResult é um objeto com propriedade 'text: string'
+        if (typeof extractionResult === 'object' &&
+            extractionResult !== null &&
+            'text' in extractionResult &&
+            typeof extractionResult.text === 'string' &&
+            extractionResult.text.length > 0) {
+          extractedText = extractionResult.text;
+          console.log(`${ICONS.EXTRACT} [JUDIT Attachments] Texto extraído: ${extractedText.length} chars`);
+        }
       } catch (error) {
         console.warn(`${ICONS.WARNING} [JUDIT Attachments] Falha ao extrair texto:`, error);
       }
@@ -299,7 +346,16 @@ async function downloadAndProcessAttachment(
     // 5. CLASSIFICAR TIPO DE DOCUMENTO
     // ============================================================
 
-    const documentType = classifyDocumentByName(attachment.name);
+    const classifiedType = classifyDocumentByName(attachment.name);
+
+    // Narrowing: Validar que o tipo classificado é um DocumentType válido
+    if (!isValidDocumentType(classifiedType)) {
+      // Se não for válido, usar 'OTHER' como fallback
+      throw new Error(`Tipo de documento inválido: ${classifiedType}`);
+    }
+
+    // Agora classifiedType é garantido ser um dos valores válidos
+    const documentType = classifiedType;
 
     // ============================================================
     // 6. SALVAR NO BANCO
@@ -310,7 +366,7 @@ async function downloadAndProcessAttachment(
         caseId,
         name: sanitizedName.replace(/\.(pdf|PDF)$/, ''),
         originalName: attachment.name,
-        type: documentType as unknown,
+        type: documentType,
         mimeType: attachment.extension === 'pdf' ? 'application/pdf' : 'application/octet-stream',
         size: buffer.length,
         url: `/api/documents/${undefined}/download`, // Será atualizado abaixo com o ID correto

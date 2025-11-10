@@ -199,7 +199,7 @@ export interface ReportFileUrls {
   pdf?: string;
   docx?: string;
   xlsx?: string;
-  [key: string]: string;
+  [key: string]: string | undefined;
 }
 
 export interface CachedReportData {

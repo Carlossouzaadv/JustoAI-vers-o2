@@ -203,4 +203,5 @@ export function CreditsPacks({
   );
 }
 
+export type { CreditsPacksProps, CreditsPack };
 export default CreditsPacks;

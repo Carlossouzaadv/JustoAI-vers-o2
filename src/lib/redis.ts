@@ -163,9 +163,6 @@ const getRedisConfig = (): RedisOptions => {
         // This prevents failures during Upstash reconnection (happens every ~30-35s)
         enableOfflineQueue: true, // Queue commands if connection drops (was: isStrictMode ? false : true)
         enableReadyCheck: true, // Both modes: wait for READY state
-
-        // Connection pool (BullMQ compatibility)
-        maxRetriesPerRequest: null, // Required for BullMQ (overrides above for queue operations)
       };
     } catch (error) {
       console.error('[REDIS] Failed to parse REDIS_URL:', error);
@@ -384,7 +381,9 @@ export const getRedisClient = (): Redis | MockRedis => {
     }
 
     const level = isQuotaExceededError ? 'error' : isMaxRetriesError ? 'warn' : 'error';
-    const errorCode = 'code' in error ? (error as { code?: unknown }).code : undefined;
+    const rawErrorCode = 'code' in error ? (error as { code?: unknown }).code : undefined;
+    // Type narrowing: convert unknown to safe type
+    const errorCode = typeof rawErrorCode === 'string' || typeof rawErrorCode === 'number' ? rawErrorCode : undefined;
 
     logger[level](
       {
@@ -416,7 +415,7 @@ export const getRedisClient = (): Redis | MockRedis => {
     logger.info({ component: 'redis', event: 'close', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis connection closed');
   });
 
-  client.on('reconnecting', (timeToReconnect) => {
+  client.on('reconnecting', (timeToReconnect: number) => {
     logger.info(
       {
         component: 'redis',

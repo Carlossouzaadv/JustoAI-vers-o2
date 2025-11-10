@@ -1174,8 +1174,7 @@ PROFUNDIDADE: Completa e estratégica`;
     await cache.setEssential(textHash, result.result, {
       model: result.modelUsed,
       tokens_saved: this.estimateTokens(text),
-      workspaceId,
-      analysis_phase: 'phase_1'
+      workspaceId
     });
 
     console.log(`${ICONS.SUCCESS} Análise Phase 1 concluída (${result.modelUsed}) e cacheada`);
@@ -1229,8 +1228,7 @@ PROFUNDIDADE: Completa e estratégica`;
     await cache.setStrategic(textHash, result.result, complexityScore.totalScore, {
       model: complexityScore.recommendedTier,
       tokens_saved: this.estimateTokens(text),
-      workspaceId,
-      analysis_phase: 'phase_3'
+      workspaceId
     });
 
     console.log(`${ICONS.SUCCESS} Análise estratégica concluída (${complexityScore.recommendedTier}) e cacheada`);
@@ -1327,8 +1325,16 @@ PROFUNDIDADE: Completa e estratégica`;
       });
 
       // Add routing information to the response
-      const geminiRecord = geminiResponse as Record<string, unknown>;
-      const metadadosAnalise = geminiRecord.metadados_analise as Record<string, unknown> | undefined;
+      // Narrowing: geminiResponse is object-like from Gemini API
+      const isObjectLike = (val: unknown): val is Record<string, unknown> => {
+        return typeof val === 'object' && val !== null;
+      };
+
+      if (!isObjectLike(geminiResponse)) {
+        throw new Error('Unexpected Gemini response: not an object');
+      }
+
+      const metadadosAnalise = geminiResponse.metadados_analise as Record<string, unknown> | undefined;
       const result = {
         ...geminiResponse,
         _routing_info: {

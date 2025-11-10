@@ -25,6 +25,25 @@ import {
   UsageStats,
 } from '@/lib/subscription-limits';
 
+// Type Guard: Validate activity objects from API response
+interface Activity {
+  id: string;
+  description?: string;
+  createdAt?: string;
+}
+
+function isActivity(data: unknown): data is Activity {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  return 'id' in data && typeof (data as Activity).id === 'string';
+}
+
+// Narrowing predicate: Type guard to ensure workspaceId is a string
+function isValidWorkspaceId(id: string | null): id is string {
+  return typeof id === 'string' && id.length > 0;
+}
+
 interface DashboardData {
   summary: {
     totalProcesses: number;
@@ -187,12 +206,14 @@ export default function DashboardPage() {
             documentsProcessed: summary.documents || 0,
             monthlyGrowth: 0,
           },
-          recentActivity: (data.recentActivity || []).map((activity: unknown) => ({
-            id: activity.id,
-            type: 'upload',
-            message: activity.description || '',
-            timestamp: activity.createdAt || new Date().toISOString()
-          })),
+          recentActivity: (data.recentActivity || [])
+            .filter(isActivity)
+            .map((activity: Activity) => ({
+              id: activity.id,
+              type: 'upload' as const,
+              message: activity.description || '',
+              timestamp: activity.createdAt || new Date().toISOString()
+            })),
           ongoingProcesses: []
         });
       } else {
@@ -365,14 +386,19 @@ export default function DashboardPage() {
 
   const sortedProcesses = dashboardData ? smartSort(dashboardData.ongoingProcesses) : [];
 
+  // Type narrowing: Ensure workspaceId is validated before rendering components that require it
+  const validWorkspaceId = isValidWorkspaceId(workspaceId) ? workspaceId : null;
+
   return (
     <div className="space-y-6">
       {/* Usage Banner - Telemetria e Alertas */}
-      <UsageBanner
-        workspaceId={workspaceId}
-        onUpgrade={() => window.open('/pricing', '_blank')}
-        onBuyCredits={() => window.open('/pricing?tab=credits', '_blank')}
-      />
+      {validWorkspaceId && (
+        <UsageBanner
+          workspaceId={validWorkspaceId}
+          onUpgrade={() => window.open('/pricing', '_blank')}
+          onBuyCredits={() => window.open('/pricing?tab=credits', '_blank')}
+        />
+      )}
 
       {/* Usage Alert - Limites de Plano */}
       <UsageAlert
