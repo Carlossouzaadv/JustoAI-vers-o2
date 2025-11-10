@@ -11,6 +11,54 @@ import { TimelineSource } from '@prisma/client';
 
 interface TimelineEvent extends EnrichedTimelineEventProps {
   // Extensão com campos adicionais se necessário
+  metadata?: unknown;
+}
+
+// Type Guard: Valida se um objeto é TimelineStats
+function isTimelineStats(data: unknown): data is { totalEntries: number; avgConfidence: number } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'totalEntries' in data &&
+    typeof (data as { totalEntries: unknown }).totalEntries === 'number' &&
+    'avgConfidence' in data &&
+    typeof (data as { avgConfidence: unknown }).avgConfidence === 'number'
+  );
+}
+
+// Type Guard: Valida se um array é do tipo linkedDocuments
+function isLinkedDocumentsArray(
+  data: unknown
+): data is { id: string; name: string; url?: string }[] {
+  return (
+    Array.isArray(data) &&
+    data.every(
+      (item) =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        typeof (item as { id: unknown }).id === 'string' &&
+        'name' in item &&
+        typeof (item as { name: unknown }).name === 'string'
+    )
+  );
+}
+
+// Helper: Extrai linkedDocuments de metadata de forma segura
+function getLinkedDocuments(
+  metadata: unknown
+): { id: string; name: string; url?: string }[] | undefined {
+  if (
+    typeof metadata === 'object' &&
+    metadata !== null &&
+    'linkedDocuments' in metadata
+  ) {
+    const linkedDocuments = (metadata as { linkedDocuments: unknown }).linkedDocuments;
+    if (isLinkedDocumentsArray(linkedDocuments)) {
+      return linkedDocuments;
+    }
+  }
+  return undefined;
 }
 
 interface ProcessTimelineProps {
@@ -166,13 +214,13 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
                 {...event}
                 eventDate={event.eventDate}
                 description={event.description}
-                linkedDocuments={event.metadata?.linkedDocuments}
+                linkedDocuments={getLinkedDocuments(event.metadata)}
               />
             ))}
           </div>
         )}
 
-        {stats && (
+        {isTimelineStats(stats) && (
           <div className="mt-6 pt-4 border-t">
             <div className="text-xs text-muted-foreground space-y-1">
               <p>

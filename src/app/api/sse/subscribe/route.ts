@@ -8,6 +8,33 @@ import { getWebSocketManager, generateConnectionId } from '@/lib/websocket-manag
 import { ICONS } from '@/lib/icons';
 
 /**
+ * Type Guard: Validates if an object has the write method needed for SSE
+ */
+function isSSEResponseLike(obj: unknown): obj is { write: (data: string) => void; end: () => void } {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  const candidate = obj as Record<string, unknown>;
+  return (
+    'write' in candidate &&
+    typeof candidate.write === 'function' &&
+    'end' in candidate &&
+    typeof candidate.end === 'function'
+  );
+}
+
+/**
+ * Type Guard: Validates if an object has the close method
+ */
+function hasCloseMethod(obj: unknown): obj is { close: () => void } {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  const candidate = obj as Record<string, unknown>;
+  return 'close' in candidate && typeof candidate.close === 'function';
+}
+
+/**
  * GET /api/sse/subscribe
  *
  * Endpoint SSE que estabelece conexão com o cliente para atualizações em tempo real
@@ -22,7 +49,7 @@ import { ICONS } from '@/lib/icons';
 export async function GET(request: NextRequest) {
   try {
     // Validar autenticação
-    const { user, workspace } = await validateAuthAndGetUser(request);
+    const { user, workspace } = await validateAuthAndGetUser();
 
     if (!user || !workspace) {
       return NextResponse.json(
@@ -59,8 +86,14 @@ export async function GET(request: NextRequest) {
           }
         };
 
-        // Registrar conexão
-        wsManager.addConnection(connectionId, mockResponse as unknown, workspace.id);
+        // Validar e registrar conexão (type-safe via type guard)
+        if (isSSEResponseLike(mockResponse)) {
+          // Cast é seguro aqui pois passamos pela validação
+          wsManager.addConnection(connectionId, mockResponse as unknown as Response, workspace.id);
+        } else {
+          console.error(`${ICONS.ERROR} Mock response não atende aos requisitos SSE`);
+          return;
+        }
 
         // Enviar mensagem de boas-vindas/confirmação de conexão
         const welcomeMessage = {
@@ -76,12 +109,15 @@ export async function GET(request: NextRequest) {
         controller.enqueue(encoder.encode(sseData));
 
         // Cleanup ao desconectar
-        const originalOnClose = (controller as unknown).close;
-        (controller as unknown).close = () => {
-          console.log(`${ICONS.INFO} SSE: Cliente desconectado - ${connectionId}`);
-          wsManager.removeConnection(connectionId);
-          if (originalOnClose) originalOnClose.call(controller);
-        };
+        // Type-safe access to close method using type guard
+        if (hasCloseMethod(controller)) {
+          const originalOnClose = controller.close.bind(controller);
+          controller.close = () => {
+            console.log(`${ICONS.INFO} SSE: Cliente desconectado - ${connectionId}`);
+            wsManager.removeConnection(connectionId);
+            originalOnClose();
+          };
+        }
       },
       cancel() {
         console.log(`${ICONS.INFO} SSE: Stream cancelado - ${connectionId}`);

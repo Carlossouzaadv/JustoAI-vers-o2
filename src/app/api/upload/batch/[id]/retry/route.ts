@@ -22,6 +22,50 @@ const retryRequestSchema = z.object({
 type RetryRequest = z.infer<typeof retryRequestSchema>;
 
 // ================================================================
+// TYPE GUARDS & HELPERS (Padrão-Ouro)
+// ================================================================
+
+/** Validates that unknown data is a valid RetryRequest */
+function isValidRetryRequest(data: unknown): data is RetryRequest {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+
+  // maxRetries: must be number if present, defaults to 3
+  const maxRetries = obj.maxRetries;
+  if (maxRetries !== undefined && typeof maxRetries !== 'number') {
+    return false;
+  }
+
+  // rowNumbers: must be array of positive numbers if present
+  if (obj.rowNumbers !== undefined) {
+    if (!Array.isArray(obj.rowNumbers)) {
+      return false;
+    }
+    if (!obj.rowNumbers.every((n) => typeof n === 'number' && n > 0)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/** Ensures RetryRequest has default values */
+function getRetryRequestWithDefaults(data: unknown): RetryRequest {
+  if (isValidRetryRequest(data)) {
+    return {
+      ...data,
+      maxRetries: data.maxRetries ?? 3,
+    };
+  }
+  // Fallback to defaults
+  return {
+    maxRetries: 3,
+  };
+}
+
+// ================================================================
 // POST HANDLER: Retry failed rows
 // ================================================================
 
@@ -30,6 +74,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: batchId } = await params;
+
+  let userId: string | undefined;
 
   try {
     // ============================================================
@@ -41,6 +87,7 @@ export async function POST(
       return unauthorizedResponse('Não autenticado');
     }
 
+    userId = user.id; // Capture for use in catch block
     setSentryUserContext(user.id);
 
     console.log(`${ICONS.PROCESS} [Batch Retry] Iniciando retry para batch ${batchId}`);
@@ -49,10 +96,19 @@ export async function POST(
     // 2. PARSE AND VALIDATE REQUEST BODY
     // ============================================================
 
-    let body: RetryRequest = {};
+    let rawBodyData: unknown;
     try {
-      const rawBody = await request.json();
-      body = retryRequestSchema.parse(rawBody);
+      rawBodyData = await request.json();
+    } catch (parseJsonError) {
+      rawBodyData = {}; // Default to empty if JSON parse fails
+    }
+
+    // Use type guard + helper to ensure RetryRequest with defaults
+    const body = getRetryRequestWithDefaults(rawBodyData);
+
+    // Validate with schema for stricter validation if needed
+    try {
+      retryRequestSchema.parse(body);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
@@ -60,7 +116,6 @@ export async function POST(
           { status: 400 }
         );
       }
-      body = {}; // Use defaults
     }
 
     // ============================================================
@@ -240,7 +295,7 @@ export async function POST(
       endpoint: '/api/upload/batch/[id]/retry',
       method: 'POST',
       batchId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(
@@ -263,6 +318,8 @@ export async function GET(
 ) {
   const { id: batchId } = await params;
 
+  let userId: string | undefined;
+
   try {
     // ============================================================
     // 1. AUTHENTICATION
@@ -273,6 +330,7 @@ export async function GET(
       return unauthorizedResponse('Não autenticado');
     }
 
+    userId = user.id; // Capture for use in catch block
     setSentryUserContext(user.id);
 
     console.log(`${ICONS.INFO} [Batch Retry Status] Consultando status de retry para batch ${batchId}`);
@@ -363,7 +421,7 @@ export async function GET(
       endpoint: '/api/upload/batch/[id]/retry',
       method: 'GET',
       batchId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(

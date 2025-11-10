@@ -17,6 +17,37 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Check, Star, ArrowRight, Users, BarChart3, FileText, Zap } from 'lucide-react';
 
+// Type Guard: Validar Feature
+interface Feature {
+  limit?: number;
+  unlimited?: boolean;
+  custom?: boolean;
+  included?: boolean;
+  channels?: string[];
+  description: string;
+}
+
+function isFeature(data: unknown): data is Feature {
+  // PASSO 1: Validar objeto
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // PASSO 2: Cast SEGURO para indexação
+  const feature = data as Record<string, unknown>;
+
+  // PASSO 3: Validar CADA propriedade com 'in' e 'typeof'
+  return (
+    'description' in feature &&
+    typeof feature.description === 'string' &&
+    ('limit' in feature ? typeof feature.limit === 'number' : true) &&
+    ('unlimited' in feature ? typeof feature.unlimited === 'boolean' : true) &&
+    ('custom' in feature ? typeof feature.custom === 'boolean' : true) &&
+    ('included' in feature ? typeof feature.included === 'boolean' : true) &&
+    ('channels' in feature ? Array.isArray(feature.channels) : true)
+  );
+}
+
 export interface PlanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -102,7 +133,7 @@ export function PlanModal({
     }
   };
 
-  const renderFeatureValue = (feature: unknown) => {
+  const renderFeatureValue = (feature: Feature) => {
     if (feature.unlimited) {
       return (
         <Badge variant="secondary" className="bg-green-100 text-green-700">
@@ -199,24 +230,27 @@ export function PlanModal({
           <div>
             <h4 className="font-semibold text-lg mb-4">O que está incluído:</h4>
             <div className="space-y-4">
-              {Object.entries(plan.features).map(([key, feature]) => (
-                <div key={key} className="flex items-start gap-3">
-                  {getFeatureIcon(key)}
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900">
-                        {feature.description.split(':')[0]}
-                      </span>
-                      {renderFeatureValue(feature)}
+              {Object.entries(plan.features).flatMap(([key, feature]) => {
+                if (!isFeature(feature)) return [];
+                return [
+                  <div key={key} className="flex items-start gap-3">
+                    {getFeatureIcon(key)}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-gray-900">
+                          {feature.description.split(':')[0]}
+                        </span>
+                        {renderFeatureValue(feature)}
+                      </div>
+                      {feature.description.includes(':') && (
+                        <p className="text-sm text-gray-600">
+                          {feature.description.split(':')[1]?.trim()}
+                        </p>
+                      )}
                     </div>
-                    {feature.description.includes(':') && (
-                      <p className="text-sm text-gray-600">
-                        {feature.description.split(':')[1]?.trim()}
-                      </p>
-                    )}
                   </div>
-                </div>
-              ))}
+                ];
+              })}
             </div>
           </div>
 

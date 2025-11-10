@@ -6,6 +6,17 @@ import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
 
 /**
+ * Type Guard: Validates metadata object structure for can_retry property
+ */
+function hasCanRetryProperty(obj: unknown): obj is { can_retry?: boolean } {
+  if (typeof obj !== 'object' || obj === null) {
+    return false;
+  }
+  const candidate = obj as Record<string, unknown>;
+  return 'can_retry' in candidate && typeof candidate.can_retry === 'boolean';
+}
+
+/**
  * POST /api/cases/[id]/onboarding-retry
  *
  * Faz retry do onboarding para um caso UNASSIGNED
@@ -16,7 +27,7 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
-    const authData = await validateAuthAndGetUser(request);
+    const authData = await validateAuthAndGetUser();
     const user = authData.user;
 
     if (!user) {
@@ -52,7 +63,7 @@ export async function POST(
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: caseData.workspaceId,
-        members: {
+        users: {
           some: {
             userId: user.id,
           },
@@ -79,7 +90,9 @@ export async function POST(
     }
 
     const metadata = (caseData.metadata || {}) as unknown;
-    if (metadata.can_retry !== true) {
+    
+    // Type-safe validation of metadata using type guard
+    if (!hasCanRetryProperty(metadata) || metadata.can_retry !== true) {
       return NextResponse.json(
         {
           error: 'Retry not allowed',
@@ -120,7 +133,7 @@ export async function POST(
     try {
       const { jobId } = await addOnboardingJob(caseData.detectedCnj, {
         workspaceId: caseData.workspaceId,
-        userId,
+        userId: user.id,
         caseId,
         priority: 5,
       });

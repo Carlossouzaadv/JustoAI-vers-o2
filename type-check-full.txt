@@ -21,10 +21,6 @@ src/app/api/cases/[id]/events/route.ts(99,11): error TS2698: Spread types may on
 src/app/api/cases/[id]/events/route.ts(210,19): error TS2345: Argument of type '{ id: string; date: string; title: string; description: string; type: "document"; source: string; attachments: { id: string; name: string; type: string; size: number; }[]; metadata: { documentType: $Enums.DocumentType; pages: number | null; hasExtractedText: boolean; sourceOrigin: string; }; }' is not assignable to parameter of type 'TimelineEvent'.
   Types of property 'source' are incompatible.
     Type 'string' is not assignable to type '"api_monitoring" | "pdf_analysis" | "csv_import" | "manual" | "lawyer_note"'.
-src/app/api/cases/[id]/onboarding-retry/route.ts(19,51): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/cases/[id]/onboarding-retry/route.ts(55,9): error TS2353: Object literal may only specify known properties, and 'members' does not exist in type 'WorkspaceWhereInput'.
-src/app/api/cases/[id]/onboarding-retry/route.ts(82,9): error TS18046: 'metadata' is of type 'unknown'.
-src/app/api/cases/[id]/onboarding-retry/route.ts(123,9): error TS2552: Cannot find name 'userId'. Did you mean 'user'?
 src/app/api/cases/[id]/onboarding-status/route.ts(17,51): error TS2554: Expected 0 arguments, but got 1.
 src/app/api/cases/[id]/onboarding-status/route.ts(52,9): error TS2353: Object literal may only specify known properties, and 'members' does not exist in type 'WorkspaceWhereInput'.
 src/app/api/cases/[id]/unified-timeline/route.ts(139,5): error TS2322: Type 'EventRelationType | null' is not assignable to type '"DUPLICATE" | "ENRICHMENT" | "RELATED" | "CONFLICT" | undefined'.
@@ -78,17 +74,9 @@ src/app/api/process/[id]/analysis/route.ts(388,44): error TS2339: Property 'anal
 src/app/api/reports/individual/route.ts(280,13): error TS2322: Type '"CONCLUIDO"' is not assignable to type 'ExecutionStatus | undefined'.
 src/app/api/reports/individual/route.ts(281,13): error TS2322: Type 'ReportSummary' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
   Type 'ReportSummary' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/app/api/reports/schedule/[id]/route.ts(34,62): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/reports/schedule/[id]/route.ts(89,62): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/reports/schedule/[id]/route.ts(196,62): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/reports/schedule/[id]/route.ts(248,62): error TS2554: Expected 0 arguments, but got 1.
 src/app/api/reports/schedule/route-enhanced.ts(71,7): error TS2554: Expected 2 arguments, but got 3.
 src/app/api/reports/schedule/route-enhanced.ts(75,57): error TS2554: Expected 1-2 arguments, but got 3.
 src/app/api/reports/schedule/route-enhanced.ts(147,42): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-src/app/api/sse/subscribe/route.ts(25,62): error TS2554: Expected 0 arguments, but got 1.
-src/app/api/sse/subscribe/route.ts(63,47): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Response'.
-src/app/api/sse/subscribe/route.ts(79,33): error TS2571: Object is of type 'unknown'.
-src/app/api/sse/subscribe/route.ts(80,9): error TS2571: Object is of type 'unknown'.
 src/app/api/telemetry/active-alerts/route.ts(91,15): error TS2304: Cannot find name 'user'.
 src/app/api/telemetry/monthly-usage/route.ts(78,46): error TS2339: Property 'metadata' does not exist on type '{ id: string; status: string; createdAt: Date; workspaceId: string | null; requestId: string | null; movementsCount: number; errorMessage: string | null; jobId: string | null; trackingId: string | null; ... 7 more ...; durationMs: number | null; }'.
 src/app/api/telemetry/monthly-usage/route.ts(79,43): error TS2339: Property 'metadata' does not exist on type '{ id: string; status: string; createdAt: Date; workspaceId: string | null; requestId: string | null; movementsCount: number; errorMessage: string | null; jobId: string | null; trackingId: string | null; ... 7 more ...; durationMs: number | null; }'.
@@ -103,10 +91,6 @@ src/app/api/upload/batch/[id]/control/route.ts(97,41): error TS2345: Argument of
   Type 'undefined' is not assignable to type 'string'.
 src/app/api/upload/batch/[id]/control/route.ts(162,9): error TS2322: Type 'string' is not assignable to type 'BatchStatus | EnumBatchStatusFieldUpdateOperationsInput | undefined'.
 src/app/api/upload/batch/[id]/errors/download/route.ts(152,15): error TS2304: Cannot find name 'user'.
-src/app/api/upload/batch/[id]/retry/route.ts(52,9): error TS2741: Property 'maxRetries' is missing in type '{}' but required in type '{ maxRetries: number; rowNumbers?: number[] | undefined; }'.
-src/app/api/upload/batch/[id]/retry/route.ts(63,7): error TS2741: Property 'maxRetries' is missing in type '{}' but required in type '{ maxRetries: number; rowNumbers?: number[] | undefined; }'.
-src/app/api/upload/batch/[id]/retry/route.ts(243,15): error TS2304: Cannot find name 'user'.
-src/app/api/upload/batch/[id]/retry/route.ts(366,15): error TS2304: Cannot find name 'user'.
 src/app/api/upload/batch/[id]/status/route.ts(79,26): error TS18046: 'err' is of type 'unknown'.
 src/app/api/upload/batch/[id]/status/route.ts(79,40): error TS18046: 'err' is of type 'unknown'.
 src/app/api/upload/batch/[id]/status/route.ts(106,26): error TS18046: 'err' is of type 'unknown'.
@@ -115,16 +99,6 @@ src/app/api/upload/excel/estimate/route.ts(135,9): error TS2353: Object literal 
 src/app/api/upload/excel/estimate/route.ts(139,32): error TS2339: Property 'number' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; workspaceId: string; processNumber: string; caseId: string | null; court: string; clientName: string; processData: JsonValue; ... 6 more ...; extractionMethod: ExtractionMethod; }'.
 src/app/api/upload/excel/validate/route.ts(160,7): error TS2345: Argument of type 'import("C:/Users/carlo/Documents/PROJETO JUSTOAI/NOVA FASE/justoai-v2/src/lib/excel-upload-service").BatchEstimate' is not assignable to parameter of type 'BatchEstimate'.
   Property 'totalProcesses' is missing in type 'import("C:/Users/carlo/Documents/PROJETO JUSTOAI/NOVA FASE/justoai-v2/src/lib/excel-upload-service").BatchEstimate' but required in type 'BatchEstimate'.
-src/app/api/workspaces/[id]/route.ts(124,5): error TS2322: Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "BASIC" | "PRO" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type '(Without<WorkspaceUpdateInput, WorkspaceUncheckedUpdateInput> & WorkspaceUncheckedUpdateInput) | (Without<...> & WorkspaceUpdateInput)'.
-  Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "BASIC" | "PRO" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type 'Without<WorkspaceUncheckedUpdateInput, WorkspaceUpdateInput> & WorkspaceUpdateInput'.
-    Type '{ name?: string | undefined; description?: string | undefined; logoUrl?: string | undefined; plan?: "FREE" | "BASIC" | "PRO" | "ENTERPRISE" | undefined; status?: "ACTIVE" | "INACTIVE" | "SUSPENDED" | "DELETED" | undefined; settings?: Record<...> | undefined; }' is not assignable to type 'WorkspaceUpdateInput'.
-      Types of property 'settings' are incompatible.
-        Type 'Record<string, unknown> | undefined' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-          Type 'Record<string, unknown>' is not assignable to type 'NullableJsonNullValueInput | InputJsonValue | undefined'.
-            Type 'Record<string, unknown>' is missing the following properties from type 'readonly (InputJsonValue | null)[]': length, concat, join, slice, and 26 more.
-src/app/api/workspaces/[id]/route.ts(146,25): error TS2339: Property 'users' does not exist on type '{ name: string; id: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; status: Status; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
-src/app/api/workspaces/[id]/route.ts(147,27): error TS2339: Property 'users' does not exist on type '{ name: string; id: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; status: Status; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
-src/app/api/workspaces/[id]/route.ts(148,29): error TS2339: Property 'users' does not exist on type '{ name: string; id: string; slug: string; description: string | null; logoUrl: string | null; plan: Plan; status: Status; settings: JsonValue; createdAt: Date; updatedAt: Date; }'.
 src/app/dashboard/documents-upload/page.tsx(23,42): error TS2698: Spread types may only be created from object types.
 src/app/dashboard/judit/page.tsx(107,7): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
 src/app/dashboard/judit/page.tsx(183,25): error TS2739: Type '{}' is missing the following properties from type '{ p50?: number | undefined; p95?: number | undefined; p99?: number | undefined; avg: number; min: number; max: number; }': avg, min, max
@@ -174,10 +148,6 @@ src/components/process/bulk-actions-bar.tsx(146,40): error TS2339: Property 'nam
 src/components/process/process-onboarding-status.tsx(46,7): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
 src/components/process/process-onboarding-status.tsx(96,32): error TS2339: Property 'confidence' does not exist on type '{}'.
 src/components/process/process-onboarding-status.tsx(258,9): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-src/components/process/process-timeline.tsx(169,40): error TS2339: Property 'metadata' does not exist on type 'TimelineEvent'.
-src/components/process/process-timeline.tsx(175,9): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-src/components/process/process-timeline.tsx(180,33): error TS2339: Property 'totalEntries' does not exist on type '{}'.
-src/components/process/process-timeline.tsx(185,50): error TS2339: Property 'avgConfidence' does not exist on type '{}'.
 src/components/reports/individual-report-modal.tsx(256,23): error TS2322: Type 'Dispatch<SetStateAction<boolean>>' is not assignable to type '(checked: CheckedState) => void'.
   Types of parameters 'value' and 'checked' are incompatible.
     Type 'CheckedState' is not assignable to type 'SetStateAction<boolean>'.
