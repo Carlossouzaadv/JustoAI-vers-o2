@@ -19,6 +19,66 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
+// Type guard: validate schema output matches Prisma's WorkspaceUpdateInput expectations
+function isValidWorkspaceUpdateInput(
+  data: unknown
+): data is {
+  name?: string
+  description?: string
+  logoUrl?: string
+  plan?: 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE'
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED'
+  settings?: Record<string, unknown>
+} {
+  if (typeof data !== 'object' || data === null) {
+    return false
+  }
+
+  const obj = data as Record<string, unknown>
+
+  // Valid enum values
+  const validPlans = ['FREE', 'BASIC', 'PRO', 'ENTERPRISE']
+  const validStatuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED']
+
+  // Validate each field matches Zod schema output
+  return (
+    (typeof obj.name === 'string' || obj.name === undefined) &&
+    (typeof obj.description === 'string' || obj.description === undefined) &&
+    (typeof obj.logoUrl === 'string' || obj.logoUrl === undefined) &&
+    (validPlans.includes(obj.plan as string) || obj.plan === undefined) &&
+    (validStatuses.includes(obj.status as string) || obj.status === undefined) &&
+    (typeof obj.settings === 'object' || obj.settings === undefined)
+  )
+}
+
+// Type guard: ensure workspace has users array
+function hasUsersArray(
+  workspace: unknown
+): workspace is { users: unknown[]; [key: string]: unknown } {
+  return (
+    typeof workspace === 'object' &&
+    workspace !== null &&
+    'users' in workspace &&
+    Array.isArray((workspace as Record<string, unknown>).users)
+  )
+}
+
+// Type guard: ensure user object has the required role, status, createdAt properties
+function isValidWorkspaceUser(
+  user: unknown
+): user is { role: string; status: string; createdAt: Date } {
+  return (
+    typeof user === 'object' &&
+    user !== null &&
+    'role' in user &&
+    'status' in user &&
+    'createdAt' in user &&
+    typeof (user as Record<string, unknown>).role === 'string' &&
+    typeof (user as Record<string, unknown>).status === 'string' &&
+    (user as Record<string, unknown>).createdAt instanceof Date
+  )
+}
+
 // GET /api/workspaces/[id] - Get workspace details
 async function GET(request: NextRequest, { params }: RouteContext) {
   // Rate limiting
@@ -118,10 +178,24 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
   const { data: input, error: validationError } = await validateBody(request, updateWorkspaceSchema)
   if (!input) return validationError!
 
+  // Validate and narrow input to ensure it matches Prisma's WorkspaceUpdateInput
+  if (!isValidWorkspaceUpdateInput(input)) {
+    return errorResponse('Invalid workspace update data', 400)
+  }
+
+  // Extract only non-undefined fields for Prisma
+  const updateData: Record<string, string | Record<string, unknown>> = {}
+  if (input.name !== undefined) updateData.name = input.name
+  if (input.description !== undefined) updateData.description = input.description
+  if (input.logoUrl !== undefined) updateData.logoUrl = input.logoUrl
+  if (input.plan !== undefined) updateData.plan = input.plan
+  if (input.status !== undefined) updateData.status = input.status
+  if (input.settings !== undefined) updateData.settings = input.settings
+
   // Update workspace
   const workspace = await prisma.workspace.update({
     where: { id: workspaceId },
-    data: input,
+    data: updateData,
     include: {
       users: {
         where: { userId: user.id },
@@ -141,11 +215,29 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
     }
   })
 
+  // Safely narrow workspace to ensure users array exists
+  if (!hasUsersArray(workspace)) {
+    return errorResponse('Failed to retrieve workspace users', 500)
+  }
+
+  const firstUser = workspace.users[0]
+
+  // Safely narrow first user if it exists
+  let userWorkspaceRole: string | undefined
+  let userWorkspaceStatus: string | undefined
+  let userWorkspaceJoinedAt: Date | undefined
+
+  if (firstUser && isValidWorkspaceUser(firstUser)) {
+    userWorkspaceRole = firstUser.role
+    userWorkspaceStatus = firstUser.status
+    userWorkspaceJoinedAt = firstUser.createdAt
+  }
+
   const transformedWorkspace = {
     ...workspace,
-    userRole: workspace.users[0]?.role,
-    userStatus: workspace.users[0]?.status,
-    userJoinedAt: workspace.users[0]?.createdAt,
+    userRole: userWorkspaceRole,
+    userStatus: userWorkspaceStatus,
+    userJoinedAt: userWorkspaceJoinedAt,
     users: undefined,
   }
 
