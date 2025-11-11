@@ -27,6 +27,50 @@ interface ErrorItem {
   };
 }
 
+// === TYPE GUARDS (Mandato Inegociável - Safe Narrowing) ===
+
+interface RawSentryError {
+  id?: string;
+  shortId?: string;
+  title?: unknown;
+  culprit?: unknown;
+  level?: unknown;
+  count?: unknown;
+  userCount?: unknown;
+  lastSeen?: unknown;
+  firstSeen?: unknown;
+  status?: unknown;
+  stackTrace?: unknown;
+  tags?: unknown;
+}
+
+function isRawSentryError(data: unknown): data is RawSentryError {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    ('id' in data || 'shortId' in data)
+  );
+}
+
+function rawErrorToErrorItem(err: RawSentryError): ErrorItem {
+  return {
+    id: String(err.id || err.shortId || ''),
+    title: String(err.title || 'Unknown Error'),
+    culprit: String(err.culprit || 'Unknown'),
+    level: String(err.level || 'error'),
+    count: typeof err.count === 'number' ? err.count : 0,
+    userCount: typeof err.userCount === 'number' ? err.userCount : 0,
+    lastSeen: String(err.lastSeen || new Date().toISOString()),
+    firstSeen: String(err.firstSeen || new Date().toISOString()),
+    status: String(err.status || 'unresolved'),
+    shortId: String(err.shortId || err.id || ''),
+    errorDetails: {
+      stackTrace: typeof err.stackTrace === 'string' ? err.stackTrace : undefined,
+      tags: typeof err.tags === 'object' && err.tags !== null ? (err.tags as Record<string, string>) : undefined,
+    },
+  };
+}
+
 /**
  * Get system errors with filtering options
  * Query params:
@@ -68,22 +112,11 @@ export async function GET(req: NextRequest) {
     let errors: ErrorItem[] = [];
     try {
       const sentryStats = await getSentryProjectStats();
-      errors = sentryStats.recentErrors.map((err: any) => ({
-        id: err.id || err.shortId,
-        title: err.title,
-        culprit: err.culprit,
-        level: err.level,
-        count: err.count,
-        userCount: err.userCount || 0,
-        lastSeen: err.lastSeen,
-        firstSeen: err.firstSeen,
-        status: err.status,
-        shortId: err.shortId,
-        errorDetails: {
-          stackTrace: err.stackTrace,
-          tags: err.tags,
-        },
-      }));
+      // Safe narrowing: filter and transform with type guard
+      const recentErrors = sentryStats.recentErrors as unknown[];
+      errors = recentErrors
+        .filter(isRawSentryError)
+        .map(rawErrorToErrorItem);
     } catch (err) {
       console.warn('Failed to fetch Sentry errors:', getErrorMessage(err));
       // Continue with empty list if Sentry fails

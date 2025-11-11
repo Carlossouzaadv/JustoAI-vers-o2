@@ -408,8 +408,8 @@ export function createCompressionMiddleware(options: CompressionOptions = {}) {
           const result = await compressImage(file.path, undefined, options);
 
           if (result.success) {
-            // Atualizar informações do arquivo com type assertion
-            const fileWithMetadata = file as any;
+            // Atualizar informações do arquivo com type safe narrowing
+            const fileWithMetadata = file as Record<string, unknown>;
             fileWithMetadata.compressedPath = result.outputPath;
             fileWithMetadata.originalSize = result.originalSize;
             fileWithMetadata.compressedSize = result.compressedSize;

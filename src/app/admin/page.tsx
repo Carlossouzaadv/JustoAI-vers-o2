@@ -60,6 +60,30 @@ const NAV_CARDS: NavCard[] = [
   { label: 'Status', href: '/admin/status', icon: '💚', description: 'Health checks', color: 'pink' },
 ];
 
+// === TYPE GUARDS (Mandato Inegociável - Safe Narrowing) ===
+
+interface SentryError {
+  title: string;
+  culprit: string;
+  count: number;
+  level?: 'error' | 'warning' | 'info';
+  userCount?: number;
+  lastSeen?: string;
+}
+
+function isSentryError(data: unknown): data is SentryError {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'title' in data &&
+    typeof (data as SentryError).title === 'string' &&
+    'culprit' in data &&
+    typeof (data as SentryError).culprit === 'string' &&
+    'count' in data &&
+    typeof (data as SentryError).count === 'number'
+  );
+}
+
 export default function AdminHomePage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -93,16 +117,22 @@ export default function AdminHomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const copyToClipboard = (errorId: string, errorData: any) => {
+  const copyToClipboard = (errorId: string, errorData: unknown) => {
+    // Type guard with safe narrowing
+    if (!isSentryError(errorData)) {
+      console.error('Invalid error data structure');
+      return;
+    }
+
     const errorText = `
 ERROR REPORT
 ============
 Title: ${errorData.title}
 Culprit: ${errorData.culprit}
-Level: ${errorData.level}
+Level: ${errorData.level ?? 'unknown'}
 Count: ${errorData.count}
-Users Affected: ${errorData.userCount}
-Last Seen: ${new Date(errorData.lastSeen).toLocaleString('pt-BR')}
+Users Affected: ${errorData.userCount ?? 'N/A'}
+Last Seen: ${errorData.lastSeen ? new Date(errorData.lastSeen).toLocaleString('pt-BR') : 'N/A'}
 
 Navigate to: /admin/errors for full details
     `.trim();
@@ -306,7 +336,7 @@ Navigate to: /admin/errors for full details
           </div>
 
           <div className="space-y-2">
-            {errors.recent.slice(0, 5).map((error: any, idx: number) => (
+            {errors.recent.filter(isSentryError).slice(0, 5).map((error, idx: number) => (
               <div
                 key={idx}
                 className="flex items-start justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition border border-gray-100"

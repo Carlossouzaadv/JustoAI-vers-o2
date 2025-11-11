@@ -419,8 +419,8 @@ export class ImportReportGenerator {
     imports.forEach(imp => {
       if (Array.isArray(imp.errors) && imp.errors.length > 0) {
         imp.errors.forEach((error: unknown) => {
-          const message = typeof error === 'string' ? error : (error && typeof error === 'object' && 'message' in error ? (error as Record<string, any>).message : 'Unknown error');
-          const type = (error && typeof error === 'object' && 'type' in error) ? (error as Record<string, any>).type : 'UNKNOWN';
+          const message = typeof error === 'string' ? error : (error && typeof error === 'object' && 'message' in error ? (error as Record<string, unknown>).message : 'Unknown error');
+          const type = (error && typeof error === 'object' && 'type' in error) ? (error as Record<string, unknown>).type : 'UNKNOWN';
 
           if (!errorMap.has(message)) {
             errorMap.set(message, {

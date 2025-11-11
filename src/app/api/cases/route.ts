@@ -106,18 +106,18 @@ import {
  */
 
 function isValidCaseStatus(value: unknown): value is 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED' | 'UNASSIGNED' {
-  const validStatuses = ['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED', 'UNASSIGNED'] as const;
-  return typeof value === 'string' && validStatuses.includes(value as any);
+  const validStatuses: ReadonlySet<string> = new Set(['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED', 'UNASSIGNED']);
+  return typeof value === 'string' && validStatuses.has(value);
 }
 
 function isValidCasePriority(value: unknown): value is 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' {
-  const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const;
-  return typeof value === 'string' && validPriorities.includes(value as any);
+  const validPriorities: ReadonlySet<string> = new Set(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
+  return typeof value === 'string' && validPriorities.has(value);
 }
 
 function isValidCaseType(value: unknown): value is 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' {
-  const validTypes = ['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'COMMERCIAL', 'ADMINISTRATIVE', 'CONSTITUTIONAL', 'TAX', 'OTHER'] as const;
-  return typeof value === 'string' && validTypes.includes(value as any);
+  const validTypes: ReadonlySet<string> = new Set(['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'COMMERCIAL', 'ADMINISTRATIVE', 'CONSTITUTIONAL', 'TAX', 'OTHER']);
+  return typeof value === 'string' && validTypes.has(value);
 }
 
 /**

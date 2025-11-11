@@ -38,6 +38,30 @@ interface ObservabilityData {
   };
 }
 
+// === TYPE GUARDS (Mandato Inegociável - Safe Narrowing) ===
+
+interface SentryError {
+  title: string;
+  culprit: string;
+  count: number;
+  level?: 'error' | 'warning' | 'info';
+  userCount?: number;
+  lastSeen?: string;
+}
+
+function isSentryError(data: unknown): data is SentryError {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'title' in data &&
+    typeof (data as SentryError).title === 'string' &&
+    'culprit' in data &&
+    typeof (data as SentryError).culprit === 'string' &&
+    'count' in data &&
+    typeof (data as SentryError).count === 'number'
+  );
+}
+
 export default function ObservabilityPage() {
   const [data, setData] = useState<ObservabilityData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -242,7 +266,7 @@ export default function ObservabilityPage() {
                 </tr>
               </thead>
               <tbody>
-                {errors.recent.map((error: any, idx: number) => (
+                {errors.recent.filter(isSentryError).map((error, idx: number) => (
                   <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2 px-2">
                       <span className="text-gray-900 font-medium truncate block">{error.title}</span>
@@ -260,7 +284,7 @@ export default function ObservabilityPage() {
                     </td>
                     <td className="py-2 px-2 text-gray-900">{error.userCount}</td>
                     <td className="py-2 px-2 text-gray-600 text-xs">
-                      {new Date(error.lastSeen).toLocaleString('pt-BR')}
+                      {error.lastSeen ? new Date(error.lastSeen).toLocaleString('pt-BR') : '-'}
                     </td>
                   </tr>
                 ))}
@@ -275,7 +299,7 @@ export default function ObservabilityPage() {
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Top Erros (por ocorrências)</h2>
           <div className="space-y-2">
-            {errors.top.slice(0, 5).map((error: any, idx: number) => (
+            {errors.top.filter(isSentryError).slice(0, 5).map((error, idx: number) => (
               <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded">
                 <div>
                   <p className="font-medium text-gray-900">{error.title}</p>

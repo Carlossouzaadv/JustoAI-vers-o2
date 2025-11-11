@@ -534,7 +534,7 @@ export class QuotaEnforcement {
 
     const updated = await prisma.workspaceQuota.update({
       where: { workspaceId },
-      data: updateData as any
+      data: updateData
     });
 
     return {

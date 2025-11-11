@@ -38,12 +38,14 @@ function isReportParameters(value: unknown): value is ReportParameters {
 
 // Type guard para aggregate count result
 function isAggregateCountObject(value: unknown): value is { id: number } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    typeof (value as any).id === 'number'
-  );
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  if (!('id' in value)) {
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  return typeof obj.id === 'number';
 }
 
 // Type guard para aggregate sum result
@@ -224,21 +226,6 @@ function extractAggregateSum(result: unknown, field: 'quotaConsumed' | 'duration
 }
 
 /**
- * Mapper seguro para status do Prisma (workaround para type issues)
- */
-function mapStatusToPrismaWhere(status: ExecutionStatus | undefined): string | undefined {
-  if (!status) return undefined;
-
-  // Verificar se é válido
-  if (!VALID_STATUSES.has(status)) {
-    console.warn(`Invalid status: ${status}`);
-    return undefined;
-  }
-
-  return status;
-}
-
-/**
  * Mapper seguro para status do Prisma update
  */
 function mapStatusToPrismaUpdate(status: ExecutionStatus): ExecutionStatus {
@@ -293,28 +280,37 @@ export async function GET(request: NextRequest) {
     };
 
     // Query 1 & 2: Construir objects onde separadamente
-    // Estratégia: apenas passar status como literal quando definitivamente existe
-    type FindManyWhere = Partial<{
+    // Estratégia: construir where clause com type safety usando union types
+    type DateRangeFilter = {
+      gte?: Date;
+      lte?: Date;
+    };
+
+    type FindManyWhere = {
       workspaceId: string;
       scheduleId: null;
-      status: ExecutionStatus;
-      createdAt: any;
-    }>;
+      status?: ExecutionStatus;
+      createdAt?: DateRangeFilter;
+    };
 
     // Construir where para findMany
     const findManyWhere: FindManyWhere = {
       workspaceId,
-      scheduleId: null,
-      ...(dateFilter && { createdAt: dateFilter })
+      scheduleId: null
     };
+
+    // Adicionar dateFilter se presente
+    if (dateFilter) {
+      findManyWhere.createdAt = dateFilter;
+    }
 
     // Adicionar status apenas se passou a validação
     if (filters.status && VALID_STATUSES.has(filters.status)) {
-      (findManyWhere as any).status = filters.status;
+      findManyWhere.status = filters.status;
     }
 
     const findManyQuery = prisma.reportExecution.findMany({
-      where: findManyWhere as any,
+      where: findManyWhere,
       orderBy: { createdAt: 'desc' as const },
       take: filters.limit,
       skip: filters.offset,
@@ -334,25 +330,30 @@ export async function GET(request: NextRequest) {
     });
 
     // Construir where para count
-    type CountWhere = Partial<{
+    type CountWhere = {
       workspaceId: string;
       scheduleId: null;
-      status: ExecutionStatus;
-      createdAt: any;
-    }>;
+      status?: ExecutionStatus;
+      createdAt?: DateRangeFilter;
+    };
 
     const countWhere: CountWhere = {
       workspaceId,
-      scheduleId: null,
-      ...(dateFilter && { createdAt: dateFilter })
+      scheduleId: null
     };
 
+    // Adicionar dateFilter se presente
+    if (dateFilter) {
+      countWhere.createdAt = dateFilter;
+    }
+
+    // Adicionar status se validado
     if (filters.status && VALID_STATUSES.has(filters.status)) {
-      (countWhere as any).status = filters.status;
+      countWhere.status = filters.status;
     }
 
     const countQuery = prisma.reportExecution.count({
-      where: countWhere as any
+      where: countWhere
     });
 
     // Query 3: monthly stats
@@ -370,24 +371,20 @@ export async function GET(request: NextRequest) {
     });
 
     // Query 4: overall stats
-    type OverallWhere = Partial<{
+    type OverallWhere = {
       workspaceId: string;
       scheduleId: null;
-      status: ExecutionStatus;
-    }>;
+      status?: ExecutionStatus;
+    };
 
     const overallWhere: OverallWhere = {
       workspaceId,
-      scheduleId: null
+      scheduleId: null,
+      status: 'CONCLUIDO' // Directly assign validated literal
     };
 
-    // Workaround: adicionar status como literal validado
-    if (VALID_STATUSES.has('CONCLUIDO')) {
-      (overallWhere as any).status = 'CONCLUIDO';
-    }
-
     const overallQuery = prisma.reportExecution.aggregate({
-      where: overallWhere as any,
+      where: overallWhere,
       _count: { id: true },
       _sum: { quotaConsumed: true, duration: true }
     });
@@ -487,11 +484,12 @@ export async function DELETE(request: NextRequest) {
     console.log(`${ICONS.PROCESS} Cancelando relatório ${reportId}`);
 
     // Buscar relatório com narrowing seguro
+    const agendadoStatus: ExecutionStatus = 'AGENDADO';
     const report = await prisma.reportExecution.findFirst({
       where: {
         id: reportId,
         workspaceId,
-        status: 'AGENDADO' as any
+        status: agendadoStatus
       }
     });
 
@@ -502,7 +500,7 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Mapear status com type safety (workaround)
+    // Mapear status com type safety
     const cancelledStatus: ExecutionStatus = 'CANCELADO';
     const mappedStatus = mapStatusToPrismaUpdate(cancelledStatus);
 
@@ -510,7 +508,7 @@ export async function DELETE(request: NextRequest) {
     await prisma.reportExecution.update({
       where: { id: reportId },
       data: {
-        status: mappedStatus as any,
+        status: mappedStatus,
         completedAt: new Date()
       }
     });

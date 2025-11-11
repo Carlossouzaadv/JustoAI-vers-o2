@@ -428,7 +428,7 @@ export async function POST(request: NextRequest) {
 
     // Buscar dados iniciais do processo (se solicitado)
     let processData = null;
-    let initialMovements: any[] = [];
+    let initialMovements: unknown[] = [];
 
     if (body.fetchInitialData) {
       try {
