@@ -27,7 +27,7 @@ export default function PrivacyPage() {
           <div className="prose prose-lg max-w-none">
             <div className="mb-8">
               <p className="text-neutral-700 mb-6">
-                A sua privacidade e a segurança dos seus dados são prioridades para a JustoAI ("nós"). Esta Política de Privacidade ("Política") descreve como coletamos, usamos, armazenamos, compartilhamos e protegemos seus Dados Pessoais, em conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/18) e o Marco Civil da Internet (Lei nº 12.965/14).
+                A sua privacidade e a segurança dos seus dados são prioridades para a JustoAI (&quot;nós&quot;). Esta Política de Privacidade (&quot;Política&quot;) descreve como coletamos, usamos, armazenamos, compartilhamos e protegemos seus Dados Pessoais, em conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/18) e o Marco Civil da Internet (Lei nº 12.965/14).
               </p>
               <p className="text-neutral-700 mb-6">
                 Esta Política é um complemento aos nossos Termos de Uso. Ao aceitar os Termos, você também concorda com esta Política.
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
 
               <div className="mb-4">
                 <p className="text-neutral-700 mb-2">
-                  <strong>Dados Inseridos na Plataforma ("Dados do Cliente"):</strong> Informações de processos, documentos, dados de clientes do Usuário e outras informações inseridas para utilização das funcionalidades.
+                  <strong>Dados Inseridos na Plataforma (&quot;Dados do Cliente&quot;):</strong> Informações de processos, documentos, dados de clientes do Usuário e outras informações inseridas para utilização das funcionalidades.
                 </p>
                 <p className="text-neutral-700 mb-4">
                   <strong>Finalidade:</strong> Prestar o serviço contratado. Nestes casos, a JustoAI atua como Operadora, tratando os dados em nome e sob as instruções do Usuário, que é o Controlador.

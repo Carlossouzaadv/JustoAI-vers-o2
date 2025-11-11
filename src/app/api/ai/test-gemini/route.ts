@@ -9,8 +9,27 @@ import { getRealAnalysisService } from '@/lib/real-analysis-service';
 import { ModelTier } from '@/lib/ai-model-router';
 import { ICONS } from '@/lib/icons';
 
+// === TYPE DEFINITIONS (Safe Function Types) ===
+
+interface GeminiGenerateOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+}
+
+interface GeminiContentResponse {
+  content: string;
+  usage?: Record<string, unknown>;
+}
+
+interface GeminiClient {
+  generateContent: (prompt: string, options: GeminiGenerateOptions) => Promise<GeminiContentResponse>;
+  generateJsonContent: (prompt: string, options: GeminiGenerateOptions) => Promise<unknown>;
+  getRateLimitStatus: () => unknown;
+}
+
 // Type guard para gemini client
-function isGeminiClient(data: unknown): data is Record<string, unknown> {
+function isGeminiClient(data: unknown): data is GeminiClient {
   return (
     typeof data === 'object' &&
     data !== null &&
@@ -139,7 +158,7 @@ async function testModel(geminiClient: unknown, model: ModelTier) {
       throw new Error('Gemini client is invalid');
     }
 
-    const response = await (geminiClient.generateContent as Function)(
+    const response = await geminiClient.generateContent(
       'Responda apenas com "OK" para confirmar que você está funcionando.',
       {
         model,
@@ -186,7 +205,7 @@ async function testJsonGeneration(geminiClient: unknown) {
 
 Retorne APENAS o JSON, sem nenhum texto adicional.`;
 
-    const jsonResponse = await (geminiClient.generateJsonContent as Function)(testPrompt, {
+    const jsonResponse = await geminiClient.generateJsonContent(testPrompt, {
       model: ModelTier.LITE,
       maxTokens: 100,
       temperature: 0

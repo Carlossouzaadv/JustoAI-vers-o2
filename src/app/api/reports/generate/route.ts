@@ -268,14 +268,18 @@ export async function POST(req: NextRequest) {
     }
 
     // 8. Retornar PDF como resposta
-    // Ensure pdfBuffer is properly typed as Buffer
-    const pdfResponse = isBuffer(pdfBuffer)
-      ? pdfBuffer
-      : Buffer.from(pdfBuffer as any);
+    // Type guard: Validate pdfBuffer is a Buffer
+    if (!isBuffer(pdfBuffer)) {
+      console.error('PDF generation did not return a valid Buffer');
+      return NextResponse.json(
+        { success: false, error: 'Falha na geração do PDF' },
+        { status: 500 }
+      );
+    }
 
-    const contentLength = pdfResponse.length;
+    const contentLength = pdfBuffer.length;
 
-    return new NextResponse(pdfResponse as any, {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

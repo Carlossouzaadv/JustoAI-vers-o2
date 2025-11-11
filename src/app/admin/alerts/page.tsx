@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Activity, AlertCircle, AlertTriangle, Bell, CheckCircle, Trash2, X } from 'lucide-react';
 
 interface Alert {
@@ -33,7 +33,7 @@ export default function AlertsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Mock alerts - will be replaced by real API from OPÇÃO C
-  const mockAlerts: Alert[] = [
+  const mockAlerts: Alert[] = useMemo(() => [
     {
       id: '1',
       severity: 'CRITICAL',
@@ -87,7 +87,7 @@ export default function AlertsPage() {
       resolvedAt: new Date(Date.now() - 3600000).toISOString(),
       metadata: { current: 18, max: 20 }
     }
-  ];
+  ], []);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -112,7 +112,7 @@ export default function AlertsPage() {
     // Refresh every 30 seconds
     const interval = setInterval(fetchAlerts, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [mockAlerts]);
 
   const handleResolveAlert = (alertId: string) => {
     setAlerts((prev) =>

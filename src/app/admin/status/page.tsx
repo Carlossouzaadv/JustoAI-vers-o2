@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Activity, AlertCircle, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface HealthCheck {
@@ -25,7 +25,7 @@ export default function StatusPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mock health checks - will be replaced by real API from OPÇÃO C
-  const mockHealth: SystemHealth = {
+  const mockHealth: SystemHealth = useMemo(() => ({
     overall: 'healthy',
     timestamp: new Date().toISOString(),
     checks: {
@@ -86,7 +86,7 @@ export default function StatusPage() {
         message: 'File storage service operational',
       },
     },
-  };
+  }), []);
 
   useEffect(() => {
     const fetchHealth = async () => {
@@ -107,7 +107,7 @@ export default function StatusPage() {
     };
 
     fetchHealth();
-  }, []);
+  }, [mockHealth]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

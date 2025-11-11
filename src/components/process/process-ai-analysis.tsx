@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -126,7 +126,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
 
   useEffect(() => {
     loadAnalyses();
-  }, [processId]);
+  }, [processId, loadAnalyses]);
 
   const loadCredits = async () => {
     try {
@@ -148,7 +148,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
     setShowUpgradeModal(true);
   };
 
-  const loadAnalyses = async () => {
+  const loadAnalyses = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -196,7 +196,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [processId]);
 
   const generateNewAnalysis = async (level: 'FAST' | 'FULL') => {
     try {

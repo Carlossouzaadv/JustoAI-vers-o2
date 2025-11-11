@@ -49,6 +49,9 @@ interface QuotaAction {
   description: string;
 }
 
+// eslint-disable-next-line no-unused-vars
+type _UnusedAction = QuotaAction;
+
 // ================================================================
 // CONFIGURAÇÕES DE DISPLAY
 // ================================================================
@@ -112,7 +115,6 @@ const ACTION_CONFIG = {
 // ================================================================
 
 export default function QuotaModal({ isOpen, onClose, quotaData, onActionSelect }: QuotaModalProps) {
-  const [selectedAction, setSelectedAction] = useState<QuotaAction | null>(null);
   const [loading, setLoading] = useState(false);
 
   const config = QUOTA_CONFIG[quotaData.quotaStatus];
@@ -134,7 +136,6 @@ export default function QuotaModal({ isOpen, onClose, quotaData, onActionSelect 
     if (action.url) {
       window.open(action.url, '_blank');
     } else {
-      setSelectedAction(action);
       if (onActionSelect) {
         setLoading(true);
         try {

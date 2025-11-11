@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -101,7 +101,7 @@ export function DocumentViewerModal({
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <span className="text-4xl">{ICONS.DOCUMENT}</span>
               <p className="text-center text-sm text-muted-foreground">
-                Documento PDF carregado. Clique em "Abrir" para visualizar no navegador ou "Baixar" para salvar.
+                Documento PDF carregado. Clique em &quot;Abrir&quot; para visualizar no navegador ou &quot;Baixar&quot; para salvar.
               </p>
             </div>
           ) : isImage ? (
@@ -126,7 +126,7 @@ export function DocumentViewerModal({
             <div className="flex flex-col items-center justify-center h-full gap-4">
               <span className="text-4xl">{ICONS.DOCUMENT}</span>
               <p className="text-center text-sm text-muted-foreground">
-                Tipo de arquivo não suportado para visualização. Clique em "Baixar" para salvar o arquivo.
+                Tipo de arquivo não suportado para visualização. Clique em &quot;Baixar&quot; para salvar o arquivo.
               </p>
               <p className="text-xs text-muted-foreground mt-2">
                 Formatos suportados: PDF, Imagens (PNG, JPG, GIF), Texto

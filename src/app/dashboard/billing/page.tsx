@@ -145,7 +145,7 @@ export default function BillingPage() {
 
         {creditStatus === 'warning' && (
           <div className="bg-yellow-100 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-            📌 Você tem poucos créditos disponíveis. Considere comprar mais em breve.breve.quot;
+            📌 Você tem poucos créditos disponíveis. Considere comprar mais em breve.
           </div>
         )}
 
@@ -314,7 +314,7 @@ export default function BillingPage() {
             📖 <strong>Como funcionam os créditos?</strong> Cada operação (análise, relatório, consulta) consome um número específico de créditos.
           </p>
           <p className="text-sm text-neutral-700">
-            💳 <strong>Como comprar mais créditos?</strong> Clique no botão "Comprar Créditos" acima ou acesse nossa página de planos.
+            💳 <strong>Como comprar mais créditos?</strong> Clique no botão &quot;Comprar Créditos&quot; acima ou acesse nossa página de planos.
           </p>
           <p className="text-sm text-neutral-700">
             📊 <strong>Como são calculados os preços?</strong> Os preços variam conforme a complexidade da análise e o volume de dados processados.

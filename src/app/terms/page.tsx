@@ -27,17 +27,17 @@ export default function TermsPage() {
           <div className="prose prose-lg max-w-none">
             <div className="mb-8">
               <p className="text-neutral-700 mb-6">
-                Bem-vindo à JustoAI. Estes Termos de Uso ("Termos") regem o seu acesso e uso da plataforma de automação jurídica JustoAI ("Plataforma" ou "Serviço"), disponibilizada por [NOME DA EMPRESA], pessoa jurídica de direito privado, inscrita no CNPJ sob o nº [CNPJ], com sede em [Endereço Completo] ("JustoAI").
+                Bem-vindo à JustoAI. Estes Termos de Uso (&quot;Termos&quot;) regem o seu acesso e uso da plataforma de automação jurídica JustoAI (&quot;Plataforma&quot; ou &quot;Serviço&quot;), disponibilizada por [NOME DA EMPRESA], pessoa jurídica de direito privado, inscrita no CNPJ sob o nº [CNPJ], com sede em [Endereço Completo] (&quot;JustoAI&quot;).
               </p>
               <p className="text-neutral-700 mb-6">
-                Ao criar uma conta, acessar ou utilizar a Plataforma, você ("Usuário") declara ter lido, entendido e concordado integralmente com as condições aqui estabelecidas.
+                Ao criar uma conta, acessar ou utilizar a Plataforma, você (&quot;Usuário&quot;) declara ter lido, entendido e concordado integralmente com as condições aqui estabelecidas.
               </p>
             </div>
 
             <section className="mb-8">
               <h2 className="font-display font-semibold text-2xl text-primary-800 mb-4">1. Aceitação dos Termos</h2>
               <p className="text-neutral-700 mb-4">
-                A aceitação destes Termos é indispensável para a utilização da Plataforma. O consentimento se dará de forma eletrônica, no momento do seu cadastro, ao clicar no botão "Eu li e aceito os Termos de Uso". Ao fazê-lo, você reconhece e concorda que esta ação constitui sua assinatura eletrônica, sendo esta válida e vinculante. Se você não concordar com qualquer das disposições, não deverá utilizar o Serviço.
+                A aceitação destes Termos é indispensável para a utilização da Plataforma. O consentimento se dará de forma eletrônica, no momento do seu cadastro, ao clicar no botão &quot;Eu li e aceito os Termos de Uso&quot;. Ao fazê-lo, você reconhece e concorda que esta ação constitui sua assinatura eletrônica, sendo esta válida e vinculante. Se você não concordar com qualquer das disposições, não deverá utilizar o Serviço.
               </p>
             </section>
 
@@ -95,7 +95,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="font-display font-semibold text-2xl text-primary-800 mb-4">7. Propriedade Intelectual</h2>
               <p className="text-neutral-700 mb-4">
-                Todos os direitos de propriedade intelectual relativos à Plataforma, incluindo, mas não se limitando a, software, códigos-fonte, marcas, logotipos e layouts, são de propriedade exclusiva da JustoAI. Estes Termos não concedem ao Usuário quaisquer direitos sobre a propriedade intelectual da JustoAI, exceto pela licença de uso limitada descrita na Cláusula 3. Por outro lado, todos os dados, informações e documentos inseridos pelo Usuário na Plataforma ("Dados do Cliente") permanecem de propriedade exclusiva do Usuário.
+                Todos os direitos de propriedade intelectual relativos à Plataforma, incluindo, mas não se limitando a, software, códigos-fonte, marcas, logotipos e layouts, são de propriedade exclusiva da JustoAI. Estes Termos não concedem ao Usuário quaisquer direitos sobre a propriedade intelectual da JustoAI, exceto pela licença de uso limitada descrita na Cláusula 3. Por outro lado, todos os dados, informações e documentos inseridos pelo Usuário na Plataforma (&quot;Dados do Cliente&quot;) permanecem de propriedade exclusiva do Usuário.
               </p>
             </section>
 

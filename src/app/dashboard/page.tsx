@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -137,16 +137,7 @@ export default function DashboardPage() {
     resetDate: new Date().toISOString()
   });
 
-  useEffect(() => {
-    // Only load when auth is complete and we have a workspaceId
-    if (!authLoading && workspaceId) {
-      loadDashboardData();
-    }
-  }, [workspaceId, authLoading]);
-  // NOTE: Removed selectedClientId from dependencies to prevent extra renders
-  // selectedClientId is already handled inside loadDashboardData()
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -262,7 +253,14 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId, selectedClientId, selectedClientName, setSelectedClient]);
+
+  useEffect(() => {
+    // Only load when auth is complete and we have a workspaceId
+    if (!authLoading && workspaceId) {
+      loadDashboardData();
+    }
+  }, [workspaceId, authLoading, loadDashboardData]);
 
   // Smart Sorting: Ordenação inteligente por urgência
   const smartSort = (processes: DashboardData['ongoingProcesses']) => {

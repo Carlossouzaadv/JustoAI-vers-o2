@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Activity, AlertCircle, Download, Filter, X, ChevronDown } from 'lucide-react';
 
 interface LogEntry {
@@ -31,7 +31,7 @@ export default function LogsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // Mock logs - will be replaced by real API data from OPÇÃO C
-  const mockLogs: LogEntry[] = [
+  const mockLogs: LogEntry[] = useMemo(() => [
     {
       id: '1',
       timestamp: new Date(Date.now() - 5000).toISOString(),
@@ -73,7 +73,7 @@ export default function LogsPage() {
       message: 'User authenticated',
       metadata: { userId: 'user-789', provider: 'supabase' }
     }
-  ];
+  ], []);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -101,7 +101,7 @@ export default function LogsPage() {
       const interval = setInterval(fetchLogs, 5000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh]);
+  }, [autoRefresh, mockLogs]);
 
   const downloadLogs = () => {
     const logsJson = JSON.stringify(filteredLogs, null, 2);
