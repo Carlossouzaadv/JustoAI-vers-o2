@@ -18,6 +18,24 @@ const ICONS = {
   TIMER: '⏱️',
 };
 
+/**
+ * Type guards: Safe error handling
+ * Padrão-Ouro: Mandato Inegociável (ZERO 'as')
+ */
+function isNodeJSError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return String(error);
+}
+
 // ================================================================
 // MINIMALIST LOGGER - Only errors and critical status
 // ================================================================
@@ -52,10 +70,17 @@ function executeWithTimeout(
     const duration = Date.now() - startTime;
 
     if (result.error) {
-      console.error(`${ICONS.ERROR} [executeWithTimeout] Spawn error após ${duration}ms:`, {
+      // Padrão-Ouro: Safe narrowing com type guard (ZERO 'as')
+      const errorData: Record<string, unknown> = {
         error: result.error.message,
-        code: result.error.code,
-      });
+      };
+
+      // Apenas adicionar 'code' se for NodeJS.ErrnoException
+      if (isNodeJSError(result.error)) {
+        errorData.code = result.error.code;
+      }
+
+      console.error(`${ICONS.ERROR} [executeWithTimeout] Spawn error após ${duration}ms:`, errorData);
       throw result.error;
     }
 
@@ -75,8 +100,10 @@ function executeWithTimeout(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
+    // Padrão-Ouro: Safe error extraction (ZERO 'as')
+    const errorMsg = getErrorMessage(error);
     console.error(`${ICONS.ERROR} [executeWithTimeout] Falha após ${duration}ms:`, {
-      error: (error as unknown)?.message,
+      error: errorMsg,
       command,
     });
     throw error;
