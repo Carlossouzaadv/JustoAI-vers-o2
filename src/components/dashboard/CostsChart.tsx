@@ -26,6 +26,14 @@ interface CostsChartProps {
   }>;
 }
 
+/**
+ * Type guard: Valida que um valor desconhecido é número
+ * Padrão-Ouro: Safe narrowing para dados de API/recharts
+ */
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !isNaN(value);
+}
+
 export function CostsChart({ data }: CostsChartProps) {
   // Format data for chart
   const chartData = data.map((item) => ({
@@ -63,11 +71,18 @@ export function CostsChart({ data }: CostsChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '6px',
           }}
-          formatter={(value: unknown, name: string) => {
+          formatter={(value: unknown, name: string): React.ReactNode => {
+            // Padrão-Ouro: Type guard para validar número
+            if (!isNumber(value)) {
+              // Se não for número, retornar valor como string (fallback seguro)
+              return [String(value), name === 'cost' ? 'Custo' : 'Operações'];
+            }
+
+            // Narrowing seguro: value agora é number
             if (name === 'cost') {
               return [`R$ ${value.toFixed(2)}`, 'Custo'];
             }
-            return [value, 'Operações'];
+            return [String(value), 'Operações'];
           }}
           labelFormatter={(label, payload) => {
             if (payload && payload[0]) {
