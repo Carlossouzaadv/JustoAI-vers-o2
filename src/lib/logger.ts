@@ -6,15 +6,18 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import path from 'path';
-import type { Request, Response, NextFunction } from 'express';
+import type { NextFunction } from 'express';
 import { Socket } from 'net';
 
 // === TIPOS ===
 
 /**
  * Extended Express Request with additional properties
+ *
+ * NOTE: Not extending Express Request to avoid signature incompatibility.
+ * This interface describes the shape of req as used in middleware.
  */
-interface ExtendedRequest extends Request {
+interface ExtendedRequest {
   method: string;
   url: string;
   originalUrl?: string;
@@ -28,10 +31,13 @@ interface ExtendedRequest extends Request {
 
 /**
  * Extended Express Response with additional properties
+ *
+ * NOTE: Not extending Express Response to avoid signature incompatibility.
+ * This interface describes the shape of res as used in middleware.
  */
-interface ExtendedResponse extends Response {
+interface ExtendedResponse {
   statusCode: number;
-  end?: (...args: unknown[]) => ExtendedResponse;
+  end(...args: unknown[]): ExtendedResponse;
 }
 
 export interface LogContext {
