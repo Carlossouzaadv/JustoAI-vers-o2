@@ -45,6 +45,18 @@ interface ReportSchedule {
   createdAt: string;
 }
 
+/**
+ * Type guards: Valida valores desconhecidos como tipos literais específicos
+ * Padrão-Ouro: Safe narrowing para dados de Select/Input components
+ */
+function isValidReportType(value: unknown): value is ReportSchedule['type'] {
+  return typeof value === 'string' && ['CASE_SUMMARY', 'WEEKLY_UPDATE', 'MONTHLY_SUMMARY', 'CUSTOM'].includes(value);
+}
+
+function isValidReportFrequency(value: unknown): value is ReportSchedule['frequency'] {
+  return typeof value === 'string' && ['DAILY', 'WEEKLY', 'MONTHLY'].includes(value);
+}
+
 interface ReportExecution {
   id: string;
   scheduleId?: string;
@@ -508,10 +520,16 @@ export default function ReportsPage() {
 
 // Component for creating new report schedules
 function CreateScheduleForm({ onClose }: { onClose: () => void }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    type: ReportSchedule['type'];
+    frequency: ReportSchedule['frequency'];
+    recipients: string[];
+    enabled: boolean;
+  }>({
     name: '',
-    type: 'WEEKLY_UPDATE' as const,
-    frequency: 'WEEKLY' as const,
+    type: 'WEEKLY_UPDATE',
+    frequency: 'WEEKLY',
     recipients: [''],
     enabled: true
   });
@@ -542,7 +560,16 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Tipo de Relatório *
           </label>
-          <Select value={formData.type} onValueChange={(value: unknown) => setFormData({ ...formData, type: value })}>
+          <Select
+            value={formData.type}
+            onValueChange={(value: unknown) => {
+              // Padrão-Ouro: Type guard para validar tipo de relatório
+              if (isValidReportType(value)) {
+                // Safe cast: garantido pelo type guard acima
+                setFormData({ ...formData, type: value as ReportSchedule['type'] });
+              }
+            }}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -559,7 +586,16 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
           <label className="block text-sm font-medium text-neutral-700 mb-1">
             Frequência *
           </label>
-          <Select value={formData.frequency} onValueChange={(value: unknown) => setFormData({ ...formData, frequency: value })}>
+          <Select
+            value={formData.frequency}
+            onValueChange={(value: unknown) => {
+              // Padrão-Ouro: Type guard para validar frequência de relatório
+              if (isValidReportFrequency(value)) {
+                // Safe cast: garantido pelo type guard acima
+                setFormData({ ...formData, frequency: value as ReportSchedule['frequency'] });
+              }
+            }}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
