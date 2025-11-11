@@ -14,7 +14,7 @@ export async function GET(
 ) {
   const { id } = await params;
   try {
-    const authData = await validateAuthAndGetUser(request);
+    const authData = await validateAuthAndGetUser();
     const user = authData.user;
 
     if (!user) {
@@ -49,7 +49,7 @@ export async function GET(
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: caseData.workspaceId,
-        members: {
+        users: {
           some: {
             userId: user.id,
           },
