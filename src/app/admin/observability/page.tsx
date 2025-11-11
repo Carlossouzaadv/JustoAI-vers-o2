@@ -50,15 +50,19 @@ interface SentryError {
 }
 
 function isSentryError(data: unknown): data is SentryError {
+  // === PASSO 1: Validação básica de tipo ===
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // === PASSO 2: Cast seguro para Record (após validação) ===
+  const obj = data as Record<string, unknown>;
+
+  // === PASSO 3: Validação rigorosa de cada propriedade ===
   return (
-    typeof data === 'object' &&
-    data !== null &&
-    'title' in data &&
-    typeof (data as SentryError).title === 'string' &&
-    'culprit' in data &&
-    typeof (data as SentryError).culprit === 'string' &&
-    'count' in data &&
-    typeof (data as SentryError).count === 'number'
+    'title' in obj && typeof obj.title === 'string' &&
+    'culprit' in obj && typeof obj.culprit === 'string' &&
+    'count' in obj && typeof obj.count === 'number'
   );
 }
 
