@@ -5,6 +5,57 @@
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ICONS } from '@/lib/icons';
+import { ReportType, AudienceType } from '@prisma/client';
+
+// ================================================================
+// Type Guard para Validação Segura de Configuração de Cache
+// ================================================================
+
+/**
+ * Valida se um valor é um ReportType válido
+ */
+function isValidReportType(value: unknown): value is ReportType {
+  return (
+    typeof value === 'string' &&
+    Object.values(ReportType).includes(value as ReportType)
+  );
+}
+
+/**
+ * Valida se um valor é um AudienceType válido
+ */
+function isValidAudienceType(value: unknown): value is AudienceType {
+  return (
+    typeof value === 'string' &&
+    Object.values(AudienceType).includes(value as AudienceType)
+  );
+}
+
+/**
+ * Type Guard para Config de Cache
+ * Valida que o objeto contém as propriedades necessárias com tipos corretos
+ */
+function isCacheConfig(data: unknown): data is {
+  reportType: ReportType;
+  processIds: string[];
+  audienceType: AudienceType;
+} {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  return (
+    'reportType' in obj &&
+    'processIds' in obj &&
+    'audienceType' in obj &&
+    isValidReportType(obj.reportType) &&
+    Array.isArray(obj.processIds) &&
+    obj.processIds.every((item) => typeof item === 'string') &&
+    isValidAudienceType(obj.audienceType)
+  );
+}
 
 export interface CacheInvalidationResult {
   invalidated: number;
@@ -407,6 +458,16 @@ export class ReportCacheManager {
    * Gera entrada de cache (placeholder)
    */
   private async generateCacheEntry(workspaceId: string, config: Record<string, unknown>): Promise<void> {
+    // Type Guard: Validar e narrowizar config
+    if (!isCacheConfig(config)) {
+      throw new Error(
+        `Invalid cache config: missing or invalid properties. Expected reportType (ReportType), processIds (string[]), audienceType (AudienceType)`
+      );
+    }
+
+    // Agora 'config' é 100% seguro: { reportType: ReportType; processIds: string[]; audienceType: AudienceType }
+    // Nenhum 'as' necessário - o type guard garantiu a segurança de tipos
+
     // Placeholder - integraria com ReportGenerator real
     const cacheKey = this.generateCacheKey(
       workspaceId,
@@ -422,9 +483,9 @@ export class ReportCacheManager {
       data: {
         cacheKey,
         workspaceId,
-        reportType: config.reportType as string,
-        processIds: config.processIds as string[],
-        audienceType: config.audienceType as string,
+        reportType: config.reportType,
+        processIds: config.processIds,
+        audienceType: config.audienceType,
         lastMovementTimestamp: new Date(),
         cachedData: { generated: true, timestamp: new Date() },
         expiresAt

@@ -65,7 +65,25 @@ export async function GET(request: NextRequest) {
 // UTILITÁRIOS
 // ================================================================
 
+interface QueueStats {
+  active: number;
+  waiting: number;
+  failed: number;
+}
+
+function isQueueStats(data: unknown): data is QueueStats {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.active === 'number' &&
+    typeof obj.waiting === 'number' &&
+    typeof obj.failed === 'number'
+  );
+}
+
 function calculateHealth(stats: unknown): 'healthy' | 'warning' | 'critical' {
+  if (!isQueueStats(stats)) return 'critical';
+
   const { active, waiting, failed } = stats;
   const totalActive = active + waiting;
 

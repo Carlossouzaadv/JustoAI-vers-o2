@@ -10,6 +10,14 @@ import { ICONS } from './icons';
 // TIPOS E INTERFACES
 // ================================
 
+export interface Movement {
+  type: string;
+  description: string;
+  importance?: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+  requiresAction?: boolean;
+  deadline?: string | Date;
+}
+
 export interface AlertTemplate {
   id: string;
   name: string;
@@ -42,6 +50,45 @@ export type AlertType = 'MOVEMENT' | 'DEADLINE' | 'ERROR' | 'SYNC_FAILURE' | 'IM
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 // ================================
+// TYPE GUARDS E VALIDAÇÃO
+// ================================
+
+/**
+ * Valida se um objeto desconhecido é uma Movement válida
+ */
+function isValidMovement(data: unknown): data is Movement {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar campos obrigatórios
+  if (typeof obj.type !== 'string') {
+    return false;
+  }
+
+  if (typeof obj.description !== 'string') {
+    return false;
+  }
+
+  // Validar campos opcionais
+  if (obj.importance !== undefined && !['URGENT', 'HIGH', 'MEDIUM', 'LOW'].includes(obj.importance as string)) {
+    return false;
+  }
+
+  if (obj.requiresAction !== undefined && typeof obj.requiresAction !== 'boolean') {
+    return false;
+  }
+
+  if (obj.deadline !== undefined && typeof obj.deadline !== 'string' && !(obj.deadline instanceof Date)) {
+    return false;
+  }
+
+  return true;
+}
+
+// ================================
 // CLASSE PRINCIPAL DE ALERTAS
 // ================================
 
@@ -52,7 +99,7 @@ export class ProcessAlertManager {
    */
   async generateMovementAlerts(
     monitoredProcessId: string,
-    movements: Record<string, unknown>[]
+    movements: unknown[]
   ): Promise<string[]> {
     const alertIds: string[] = [];
 
@@ -74,6 +121,12 @@ export class ProcessAlertManager {
 
     // Processar cada movimentação
     for (const movement of movements) {
+      // Validar movimento com type guard
+      if (!isValidMovement(movement)) {
+        console.warn(`${ICONS.WARNING} Movimentação inválida recebida, pulando`);
+        continue;
+      }
+
       const alerts = await this.evaluateMovementForAlerts(process, movement);
 
       for (const alertData of alerts) {
@@ -108,7 +161,7 @@ export class ProcessAlertManager {
    */
   private async evaluateMovementForAlerts(
     process: Record<string, unknown>,
-    movement: Record<string, unknown>
+    movement: Movement
   ): Promise<Array<{
     title: string;
     message: string;
@@ -194,9 +247,22 @@ export class ProcessAlertManager {
     ) {
       const severity: Priority = movement.deadline ? 'URGENT' : 'HIGH';
 
+      // Formatar deadline de forma segura
+      let deadlineText = 'Verificar prazo urgentemente!';
+      if (movement.deadline) {
+        try {
+          const deadline = new Date(movement.deadline);
+          if (!isNaN(deadline.getTime())) {
+            deadlineText = `Prazo: ${deadline.toLocaleDateString('pt-BR')}`;
+          }
+        } catch {
+          deadlineText = 'Verificar prazo urgentemente!';
+        }
+      }
+
       alerts.push({
         title: `${ICONS.CLOCK} Prazo/Ação Necessária - ${process.processNumber}`,
-        message: `Ação necessária no processo!\n\nCliente: ${process.clientName}\nDescrição: ${movement.description}\n${movement.deadline ? `Prazo: ${new Date(movement.deadline).toLocaleDateString('pt-BR')}` : 'Verificar prazo urgentemente!'}`,
+        message: `Ação necessária no processo!\n\nCliente: ${process.clientName}\nDescrição: ${movement.description}\n${deadlineText}`,
         type: 'DEADLINE',
         severity
       });

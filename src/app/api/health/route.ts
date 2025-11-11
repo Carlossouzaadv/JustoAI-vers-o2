@@ -2,6 +2,21 @@ import { NextRequest } from 'next/server'
 import { successResponse } from '@/lib/api-utils'
 import { prisma } from '@/lib/prisma'
 
+interface HealthResponse {
+  status: string;
+  timestamp: string;
+  version: string;
+  environment: string | undefined;
+  uptime: number;
+  database?: { connected: boolean; stats?: Record<string, unknown>; error?: string };
+}
+
+function isHealthResponse(data: unknown): data is HealthResponse {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return typeof obj.status === 'string' && typeof obj.timestamp === 'string';
+}
+
 /**
  * @swagger
  * /api/health:
@@ -48,7 +63,7 @@ import { prisma } from '@/lib/prisma'
  */
 export async function GET(request: NextRequest) {
   try {
-    const response: unknown = {
+    const response: HealthResponse = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       version: '2.0.0',
@@ -66,20 +81,24 @@ export async function GET(request: NextRequest) {
         prisma.case.count(),
       ])
 
-      response.database = {
-        connected: !!dbStatus,
-        stats: {
-          workspaces: stats[0],
-          users: stats[1],
-          clients: stats[2],
-          cases: stats[3],
+      if (isHealthResponse(response)) {
+        response.database = {
+          connected: !!dbStatus,
+          stats: {
+            workspaces: stats[0],
+            users: stats[1],
+            clients: stats[2],
+            cases: stats[3],
+          }
         }
       }
     } catch (dbError) {
       // Log database error but don't fail the health check
-      response.database = {
-        connected: false,
-        error: dbError instanceof Error ? dbError.message : 'Database unavailable'
+      if (isHealthResponse(response)) {
+        response.database = {
+          connected: false,
+          error: dbError instanceof Error ? dbError.message : 'Database unavailable'
+        }
       }
     }
 

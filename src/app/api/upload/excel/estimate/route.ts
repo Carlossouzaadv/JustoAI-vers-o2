@@ -127,16 +127,16 @@ async function checkExistingProcesses(
     const existing = await prisma.monitoredProcess.findMany({
       where: {
         workspaceId,
-        number: {
+        processNumber: {
           in: processNumbers
         }
       },
       select: {
-        number: true
+        processNumber: true
       }
     });
 
-    return existing.map(p => p.number);
+    return existing.map(p => p.processNumber);
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao verificar processos existentes:`, error);

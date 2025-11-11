@@ -1,5 +1,6 @@
 import { EventEmitter } from 'eventemitter3'
 import { logger, queueLogger } from '../observability/logger'
+import { getErrorMessage } from '../types/type-guards'
 
 export enum CircuitBreakerState {
   CLOSED = 'CLOSED', // All systems operational
@@ -62,11 +63,13 @@ class CircuitBreakerService extends EventEmitter {
 
   /**
    * Detect if error is Upstash quota exceeded
+   * Uses safe error extraction with type narrowing
    */
   isQuotaExceededError(error: unknown): boolean {
     if (!error) return false
 
-    const errorStr = String(error.message || error)
+    // Use safe error message extraction helper (Padrão-Ouro)
+    const errorStr = getErrorMessage(error)
     return (
       errorStr.includes('ERR max requests limit exceeded') ||
       errorStr.includes('max_requests_limit') ||
@@ -76,6 +79,7 @@ class CircuitBreakerService extends EventEmitter {
 
   /**
    * Trigger circuit breaker when quota is detected
+   * Uses safe error extraction with type narrowing
    */
   triggerQuotaExceeded(error: unknown) {
     if (this.state === CircuitBreakerState.OPEN) {
@@ -84,7 +88,8 @@ class CircuitBreakerService extends EventEmitter {
     }
 
     this.lastQuotaErrorTime = new Date()
-    this.config.errorMessage = String(error.message || error)
+    // Use safe error message extraction helper (Padrão-Ouro)
+    this.config.errorMessage = getErrorMessage(error)
     this.config.lastErrorTime = new Date()
 
     queueLogger.error({

@@ -292,12 +292,32 @@ export function estimateCost(
 // ================================================================
 
 // Type for alert types as stored in database (Prisma enum)
-type AlertType = 'HIGH_COST' | 'RATE_LIMIT' | 'API_ERROR' | 'SYNC_FAILED';
-type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+// Matches JuditAlertType from schema.prisma
+export type AlertType =
+  | 'API_ERROR'
+  | 'RATE_LIMIT'
+  | 'CIRCUIT_BREAKER'
+  | 'HIGH_COST'
+  | 'TIMEOUT'
+  | 'ATTACHMENT_TRIGGER'
+  | 'MONITORING_FAILED';
 
-// Type guard to validate AlertType against JuditAlertType
+export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/**
+ * Type guard to validate AlertType against JuditAlertType
+ * Ensures only valid enum values from Prisma schema are used
+ */
 function isValidAlertType(value: unknown): value is JuditAlertType {
-  const validTypes = ['HIGH_COST', 'RATE_LIMIT', 'API_ERROR', 'SYNC_FAILED'];
+  const validTypes: readonly string[] = [
+    'API_ERROR',
+    'RATE_LIMIT',
+    'CIRCUIT_BREAKER',
+    'HIGH_COST',
+    'TIMEOUT',
+    'ATTACHMENT_TRIGGER',
+    'MONITORING_FAILED',
+  ] as const;
   return typeof value === 'string' && validTypes.includes(value);
 }
 

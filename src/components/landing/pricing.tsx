@@ -12,6 +12,36 @@ import BillingToggle from '@/components/pricing/billing-toggle';
 // Import pricing data
 import pricingData from '@/config/pricing.json';
 
+// Type definition for pricing plan
+interface PricingPlan {
+  id: string;
+  name: string;
+  subtitle: string;
+  price_monthly: number | null;
+  price_annual: number | null;
+  trial_days: number;
+  popular?: boolean;
+  custom_pricing?: boolean;
+  highlighted_features: string[];
+}
+
+// Type guard to validate plan data
+function isPricingPlan(plan: unknown): plan is PricingPlan {
+  return (
+    typeof plan === 'object' &&
+    plan !== null &&
+    typeof (plan as Record<string, unknown>).id === 'string' &&
+    typeof (plan as Record<string, unknown>).name === 'string' &&
+    typeof (plan as Record<string, unknown>).subtitle === 'string' &&
+    (typeof (plan as Record<string, unknown>).price_monthly === 'number' ||
+     (plan as Record<string, unknown>).price_monthly === null) &&
+    (typeof (plan as Record<string, unknown>).price_annual === 'number' ||
+     (plan as Record<string, unknown>).price_annual === null) &&
+    typeof (plan as Record<string, unknown>).trial_days === 'number' &&
+    Array.isArray((plan as Record<string, unknown>).highlighted_features)
+  );
+}
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -64,12 +94,13 @@ export function Pricing() {
     }).format(price);
   };
 
-  const getCurrentPrice = (plan: unknown) => {
+  const getCurrentPrice = (plan: unknown): number | null => {
+    if (!isPricingPlan(plan)) return null;
     if (plan.custom_pricing) return null;
     return billingCycle === 'monthly' ? plan.price_monthly : plan.price_annual;
   };
 
-  const getPriceDisplay = (plan: unknown) => {
+  const getPriceDisplay = (plan: unknown): string | null => {
     const currentPrice = getCurrentPrice(plan);
     if (!currentPrice) return null;
 
@@ -125,6 +156,10 @@ export function Pricing() {
           className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto"
         >
           {pricingData.plans.map((plan, index) => {
+            if (!isPricingPlan(plan)) {
+              return null;
+            }
+
             const priceDisplay = getPriceDisplay(plan);
 
             return (

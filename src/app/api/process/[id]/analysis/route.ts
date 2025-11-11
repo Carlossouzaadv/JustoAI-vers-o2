@@ -26,6 +26,40 @@ import { isAIAnalysisData } from '@/lib/types/type-guards';
 import type { AIAnalysisData } from '@/lib/types/json-fields';
 
 /**
+ * Type Guard: Valida se valor é um JSON válido (exclui null e undefined)
+ * PADRÃO-OURO: Type predicate sem casting
+ */
+function isValidJson(data: unknown): data is Record<string, unknown> | string | number | boolean {
+  // Excluir null e undefined para compatibilidade com Prisma InputJsonValue
+  if (data === undefined || data === null) return false;
+  if (typeof data === 'boolean' || typeof data === 'number' || typeof data === 'string') {
+    return true;
+  }
+  if (typeof data === 'object') {
+    return true; // object ou array
+  }
+  return false;
+}
+
+/**
+ * Type Guard: Valida estrutura da resposta de análise
+ * PADRÃO-OURO: Safe narrowing sem casting (operador 'in' após verificação de objeto)
+ */
+function isAnalysisResult(data: unknown): data is { result: unknown; modelUsed?: string } {
+  // Verificar se é um objeto válido
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // Agora é seguro verificar a propriedade 'result'
+  if (!('result' in data)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * GET - Recuperar análises salvas do processo
  * Dupla validação: params (route ID) + query (filtros opcionais)
  */
@@ -374,18 +408,21 @@ async function processAnalysisInBackground(
     // Chamar Gemini para análise real
     let analysisResult;
 
+    // PADRÃO-OURO: Instanciar AIModelRouter corretamente
+    const router = new AIModelRouter();
+
     if (level === 'FULL') {
       // FULL: Análise estratégica completa com Gemini Pro
       console.log(`${ICONS.STAR} Executando análise FULL com Gemini Pro...`);
-      analysisResult = await AIModelRouter.analyzeStrategic(
+      analysisResult = await router.analyzeStrategic(
         fullText,
         Math.ceil(fullText.length / 1024 / 1024), // Estimar MB
         workspaceId
       );
     } else {
       // FAST: Análise rápida com Gemini Flash
-      console.log(`${ICONS.ZOOMBIN} Executando análise FAST com Gemini Flash...`);
-      analysisResult = await AIModelRouter.analyzePhase1(
+      console.log(`${ICONS.ROCKET} Executando análise FAST com Gemini Flash...`);
+      analysisResult = await router.analyzePhase1(
         fullText,
         Math.ceil(fullText.length / 1024 / 1024), // Estimar MB
         workspaceId
@@ -394,23 +431,41 @@ async function processAnalysisInBackground(
 
     const processingTime = Date.now() - startTime;
 
-    // Salvar resultado
-    await prisma.caseAnalysisVersion.update({
-      where: { id: analysisVersionId },
-      data: {
-        status: 'COMPLETED',
-        aiAnalysis: analysisResult.result,
-        modelUsed: analysisResult.modelUsed || modelUsed,
-        confidence: level === 'FULL' ? 0.95 : 0.85,
-        processingTime,
-        metadata: {
-          level,
-          documentCount,
-          completedAt: new Date().toISOString(),
-          processingTimeMs: processingTime,
-          creditsConsumed: level === 'FULL' ? 1 : 0
-        }
+    // PADRÃO-OURO: Type-safe narrowing do resultado de análise
+    if (!isAnalysisResult(analysisResult)) {
+      throw new Error('Resultado de análise em formato inválido');
+    }
+
+    // A partir daqui, 'analysisResult' é 100% type-safe com .result
+    const analysisDataRaw = analysisResult.result;
+    const modelUsedFinal = analysisResult.modelUsed || modelUsed;
+
+    // PADRÃO-OURO: Validar em runtime (throw if invalid)
+    if (!isValidJson(analysisDataRaw)) {
+      throw new Error('Dados de análise em formato inválido - não é um JSON válido');
+    }
+
+    // Devido a tipos restritivos do Prisma, fazer bypass tipo-seguro
+    // Dados foram validados em runtime acima com isValidJson()
+    const updateData: Record<string, unknown> = {
+      status: 'COMPLETED',
+      aiAnalysis: analysisDataRaw,
+      modelUsed: modelUsedFinal,
+      confidence: level === 'FULL' ? 0.95 : 0.85,
+      processingTime,
+      metadata: {
+        level,
+        documentCount,
+        completedAt: new Date().toISOString(),
+        processingTimeMs: processingTime,
+        creditsConsumed: level === 'FULL' ? 1 : 0
       }
+    };
+
+    // Salvar resultado (dados validados em runtime acima)
+    const resultUpdate = await prisma.caseAnalysisVersion.update({
+      where: { id: analysisVersionId },
+      data: updateData,
     });
 
     // Debitar crédito

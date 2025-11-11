@@ -11,9 +11,7 @@ import { ICONS } from '@/lib/icons';
 
 // Schema de validação para ações de controle
 const controlSchema = z.object({
-  action: z.enum(['pause', 'resume', 'cancel'], {
-    errorMap: () => ({ message: 'Ação deve ser: pause, resume ou cancel' })
-  }),
+  action: z.enum(['pause', 'resume', 'cancel']).describe('Ação deve ser: pause, resume ou cancel'),
   reason: z.string().optional()
 });
 
@@ -88,6 +86,11 @@ export async function POST(
 
     console.log(`${ICONS.SUCCESS} Ação '${action}' executada no batch ${batchId}`);
 
+    // Ensure newStatus is defined for successful operation
+    if (!result.newStatus) {
+      throw new Error('newStatus é obrigatório para operação bem-sucedida');
+    }
+
     return NextResponse.json({
       success: true,
       batchId,
@@ -112,11 +115,34 @@ export async function POST(
   }
 }
 
+// Type for valid actions
+type ControlAction = 'pause' | 'resume' | 'cancel';
+
+// Type guard to validate action string
+function isValidAction(value: unknown): value is ControlAction {
+  return value === 'pause' || value === 'resume' || value === 'cancel';
+}
+
+// Map internal status to Prisma-compatible status
+function mapToPrismaStatus(status: BatchStatusType): PrismaBatchStatus {
+  // PAUSED is not supported in Prisma, so keep it as PROCESSING
+  if (status === 'PAUSED') {
+    return 'PROCESSING';
+  }
+  return status as PrismaBatchStatus;
+}
+
+// Type for valid batch statuses
+// Note: Internal representation includes PAUSED for logical flow,
+// but Prisma schema only supports: PROCESSING | COMPLETED | FAILED | CANCELLED
+type BatchStatusType = 'PROCESSING' | 'PAUSED' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+type PrismaBatchStatus = 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
 /**
  * Retorna ações válidas baseadas no status atual
  */
-function getValidTransitions(currentStatus: string): string[] {
-  const transitions: Record<string, string[]> = {
+function getValidTransitions(currentStatus: string): ControlAction[] {
+  const transitions: Record<string, ControlAction[]> = {
     'PROCESSING': ['pause', 'cancel'],
     'PAUSED': ['resume', 'cancel'],
     'COMPLETED': [],
@@ -132,11 +158,11 @@ function getValidTransitions(currentStatus: string): string[] {
  */
 async function executeControlAction(
   batchId: string,
-  action: string,
+  action: ControlAction,
   reason?: string
-): Promise<{ success: boolean; newStatus?: string; error?: string }> {
+): Promise<{ success: boolean; newStatus?: BatchStatusType; error?: string }> {
   try {
-    let newStatus: string;
+    let newStatus: BatchStatusType;
 
     switch (action) {
       case 'pause':
@@ -152,14 +178,17 @@ async function executeControlAction(
         break;
 
       default:
-        return { success: false, error: `Ação desconhecida: ${action}` };
+        const _exhaustiveCheck: never = action;
+        throw new Error(`Unknown action: ${_exhaustiveCheck}`);
     }
 
     // Atualizar status no banco
+    // Note: Map internal status to Prisma-compatible status
+    const prismaStatus = mapToPrismaStatus(newStatus);
     await prisma.processBatchUpload.update({
       where: { id: batchId },
       data: {
-        status: newStatus,
+        status: prismaStatus,
         updatedAt: new Date()
       }
     });
@@ -206,12 +235,12 @@ async function executeControlAction(
 /**
  * Gera mensagem amigável para a ação executada
  */
-function getActionMessage(action: string, newStatus: string): string {
-  const messages: Record<string, string> = {
+function getActionMessage(action: ControlAction, newStatus: BatchStatusType): string {
+  const messages: Record<ControlAction, string> = {
     'pause': 'Processamento pausado. Use "resume" para continuar.',
     'resume': 'Processamento retomado.',
     'cancel': 'Processamento cancelado. Esta ação não pode ser desfeita.'
   };
 
-  return messages[action] || `Status alterado para ${newStatus}`;
+  return messages[action];
 }

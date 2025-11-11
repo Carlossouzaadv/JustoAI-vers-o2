@@ -59,6 +59,16 @@ export interface FieldMap {
   transformRule?: TransformRule;
 }
 
+/**
+ * Type guard: Validates that a key is a valid FieldMapping category
+ * and safely narrows the type for array operations
+ */
+function isValidFieldMappingKey(
+  key: string
+): key is keyof FieldMapping {
+  return ['cases', 'clients', 'events', 'documents', 'other'].includes(key);
+}
+
 export interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
@@ -380,6 +390,12 @@ export class IntelligentParser {
     const fieldGroups = this.systemPatterns.getFieldGroups(sourceSystem);
 
     Object.entries(fieldGroups).forEach(([category, fields]) => {
+      // Safely narrow category to valid FieldMapping key using type guard
+      if (!isValidFieldMappingKey(category)) {
+        console.warn(`${ICONS.WARNING} Invalid field mapping category: ${category}`);
+        return;
+      }
+
       fields.forEach(field => {
         const mappedColumns = columnMapping.filter(
           col => col.targetField === field.name && col.confidence > 0.5
@@ -394,7 +410,8 @@ export class IntelligentParser {
             transformRule: mappedColumns[0]?.transformRule
           };
 
-          (result as unknown)[category].push(fieldMap);
+          // Now category is safely narrowed to keyof FieldMapping
+          result[category].push(fieldMap);
         }
       });
     });

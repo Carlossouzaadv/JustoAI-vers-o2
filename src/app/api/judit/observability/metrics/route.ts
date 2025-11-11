@@ -88,10 +88,22 @@ export async function GET(request: NextRequest) {
 // HELPERS
 // ================================================================
 
+function isMetricValue(data: unknown): data is { count?: number; avg?: number } {
+  if (typeof data !== 'object' || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  return (
+    (obj.count === undefined || typeof obj.count === 'number') &&
+    (obj.avg === undefined || typeof obj.avg === 'number')
+  );
+}
+
 function sumMetric(metrics: Record<string, unknown>, pattern: string): number {
   return Object.entries(metrics)
     .filter(([key]) => key.includes(pattern))
-    .reduce((sum, [, value]) => sum + (value.count || 0), 0);
+    .reduce((sum, [, value]) => {
+      if (!isMetricValue(value)) return sum;
+      return sum + (value.count || 0);
+    }, 0);
 }
 
 function avgMetric(metrics: Record<string, unknown>, pattern: string): number {
@@ -99,6 +111,9 @@ function avgMetric(metrics: Record<string, unknown>, pattern: string): number {
 
   if (matching.length === 0) return 0;
 
-  const total = matching.reduce((sum, [, value]) => sum + (value.avg || 0), 0);
+  const total = matching.reduce((sum, [, value]) => {
+    if (!isMetricValue(value)) return sum;
+    return sum + (value.avg || 0);
+  }, 0);
   return total / matching.length;
 }

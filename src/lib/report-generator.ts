@@ -62,6 +62,37 @@ function isPayloadProcess(process: unknown): process is PayloadProcess {
   return 'id' in obj && 'number' in obj && 'client' in obj && 'status' in obj;
 }
 
+/**
+ * Converte ReportSummary para objeto JSON-safe para armazenar em Prisma
+ * Padrão-Ouro: Serialização segura JSON.parse(JSON.stringify) + validação de estrutura
+ *
+ * O Prisma Json type aceita o resultado de JSON.parse(JSON.stringify(...))
+ * que é garantidamente um objeto JSON válido sem funções, símbolos, etc
+ */
+function convertReportSummaryToJsonSafe(summary: ReportSummary): object {
+  try {
+    // JSON.parse(JSON.stringify(...)) faz duas coisas importantes:
+    // 1. Serializa: Remove funções, símbolos, undefined, etc
+    // 2. Deserializa: Retorna um objeto JavaScript puro que é 100% JSON-safe
+    // 3. ZERO casting perigoso necessário
+    const jsonSafe = JSON.parse(JSON.stringify(summary));
+
+    // Verificação de sanidade: garantir que é um objeto
+    if (typeof jsonSafe !== 'object' || jsonSafe === null) {
+      throw new Error('Summary serializad não é um objeto válido');
+    }
+
+    return jsonSafe;
+  } catch (error) {
+    console.error(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, error);
+    // Fallback: retornar objeto minimalista garantidamente JSON-safe
+    return {
+      totalProcesses: summary.totalProcesses,
+      error: 'Falha ao serializar summary completo'
+    };
+  }
+}
+
 // Interfaces para o gerador
 export interface ReportGenerationRequest {
   workspaceId: string;
@@ -280,11 +311,16 @@ export class ReportGenerator {
       const fileUrls: ReportFileUrls = cached.fileUrls;
       const cachedData: CachedReportData | null = cached.cachedData ? (cached.cachedData as CachedReportData) : null;
 
+      // Converter fileUrls para Record<string, string>, filtrando undefined
+      const cleanFileUrls = Object.fromEntries(
+        Object.entries(fileUrls).filter(([, v]) => v !== undefined)
+      ) as Record<string, string>;
+
       return {
         hit: true,
         cacheKey,
         reportId: cached.id,
-        fileUrls,
+        fileUrls: cleanFileUrls,
         summary: cachedData
       };
 
@@ -862,6 +898,9 @@ ${clientLanguage ?
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // Cache por 7 dias
 
+      // Converter summary para formato JSON-safe - Padrão-Ouro (ZERO casting perigoso)
+      const jsonSafeSummary = convertReportSummaryToJsonSafe(summary);
+
       await prisma.reportCache.create({
         data: {
           cacheKey,
@@ -870,7 +909,7 @@ ${clientLanguage ?
           processIds: request.processIds,
           audienceType: request.audienceType,
           lastMovementTimestamp: new Date(),
-          cachedData: summary,
+          cachedData: jsonSafeSummary,
           fileUrls,
           expiresAt
         }

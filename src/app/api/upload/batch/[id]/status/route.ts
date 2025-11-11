@@ -7,6 +7,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 
+// Type guard for error object with field and error properties
+// Padrão-Ouro: Narrow first, THEN cast, THEN check properties
+function isErrorObject(error: unknown): error is { field: string; error: string; retryCount?: number } {
+  // Step 1: Narrow to object type (BEFORE any casting)
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  // Step 2: Safe cast only AFTER narrowing
+  const obj = error as Record<string, unknown>;
+
+  // Step 3: Check properties with safe access
+  return (
+    'field' in obj &&
+    typeof obj.field === 'string' &&
+    'error' in obj &&
+    typeof obj.error === 'string' &&
+    (!('retryCount' in obj) || typeof obj.retryCount === 'number')
+  );
+}
+
 /**
  * GET /api/upload/batch/{id}/status
  * Retorna status atual do processamento do batch
@@ -76,8 +97,10 @@ export async function GET(
 
         // Gerar resumo de erros por campo
         for (const err of errors) {
-          const key = `${err.field}: ${err.error}`;
-          errorSummary[key] = (errorSummary[key] || 0) + 1;
+          if (isErrorObject(err)) {
+            const key = `${err.field}: ${err.error}`;
+            errorSummary[key] = (errorSummary[key] || 0) + 1;
+          }
         }
       }
     } catch {
@@ -103,13 +126,15 @@ export async function GET(
     };
 
     for (const err of errors) {
-      const retryCount = err.retryCount || 0;
-      if (retryCount < 3) {
-        retryStats.retryable++;
-      } else {
-        retryStats.maxedOut++;
+      if (isErrorObject(err)) {
+        const retryCount = err.retryCount || 0;
+        if (retryCount < 3) {
+          retryStats.retryable++;
+        } else {
+          retryStats.maxedOut++;
+        }
+        retryStats.retryBreakdown[retryCount] = (retryStats.retryBreakdown[retryCount] || 0) + 1;
       }
-      retryStats.retryBreakdown[retryCount] = (retryStats.retryBreakdown[retryCount] || 0) + 1;
     }
 
     const response = {

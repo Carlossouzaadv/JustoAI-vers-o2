@@ -32,8 +32,8 @@ interface UnifiedTimelineEntry {
   linkedDocumentIds?: string[];
   hasConflict?: boolean;
   conflictDetails?: unknown;
-  relationType?: 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT';
-  baseEventId?: string;
+  relationType: 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT' | undefined;
+  baseEventId: string | undefined;
 }
 
 // ================================================================
@@ -93,6 +93,39 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * Type guard: Valida se um valor é um EventRelationType válido
+ * Padrão-Ouro: Narrowing seguro ZERO `as any`
+ * Usa readonly string[] para verificação compatível com .includes()
+ */
+function isValidEventRelationType(
+  value: unknown
+): value is 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT' {
+  // Primeiro narrowing: verificar se é string
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  // Usar readonly string[] para a verificação
+  // Isso torna 'value' (string) 100% compatível com .includes()
+  const validTypes: readonly string[] = [
+    'DUPLICATE',
+    'ENRICHMENT',
+    'RELATED',
+    'CONFLICT'
+  ];
+
+  return validTypes.includes(value);
+}
+
+/**
+ * Normaliza valores nulos para undefined
+ * Segue narrowing seguro sem casting
+ */
+function normalizeNullToUndefined<T>(value: T | null): T | undefined {
+  return value === null ? undefined : value;
+}
+
+/**
  * Enriquece entrada de timeline com ícone, metadados de fonte e dados de enriquecimento
  */
 function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
@@ -111,6 +144,19 @@ function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
   })) || [];
 
   const metadata = isRecord(entry.metadata) ? entry.metadata : {};
+
+  // Validar e normalizar relationType usando type guard
+  let normalizedRelationType: 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT' | undefined;
+  if (entry.relationType !== null && entry.relationType !== undefined) {
+    normalizedRelationType = isValidEventRelationType(entry.relationType)
+      ? entry.relationType
+      : undefined;
+  } else {
+    normalizedRelationType = undefined;
+  }
+
+  // Normalizar baseEventId: null -> undefined
+  const normalizedBaseEventId = normalizeNullToUndefined(entry.baseEventId);
 
   return {
     id: entry.id,
@@ -136,8 +182,8 @@ function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
     linkedDocumentIds: entry.linkedDocumentIds,
     hasConflict: undefined,
     conflictDetails: undefined,
-    relationType: entry.relationType,
-    baseEventId: entry.baseEventId,
+    relationType: normalizedRelationType,
+    baseEventId: normalizedBaseEventId,
   };
 }
 
@@ -290,8 +336,13 @@ export async function GET(
     });
 
     // Converter documentos em entradas de timeline
-    const documentTimelineEntries: TimelineEntryInput[] = documents.map((doc) => {
+    // Type-safe mapping: documentos são convertidos para TimelineEntryInput
+    const documentTimelineEntries = documents.map((doc): TimelineEntryInput => {
       const metadata = isRecord(doc.metadata) ? doc.metadata : {};
+      const linkedDocIds: string[] = [];
+      const contributingSourcesList: TimelineSource[] = ['DOCUMENT_UPLOAD'];
+      const enrichByIds: string[] = [];
+
       return {
         id: `doc-${doc.id}`,
         caseId,
@@ -310,12 +361,21 @@ export async function GET(
         confidence: 0.8,
         createdAt: doc.createdAt,
         updatedAt: doc.createdAt,
+        // Enriquecimento (inicial: nenhum para documentos)
+        isEnriched: false,
+        enrichedAt: null,
+        enrichmentModel: null,
+        hasConflict: false,
+        conflictDetails: null,
+        reviewedAt: null,
+        reviewedBy: null,
+        // Relacionamento entre eventos
         baseEventId: null,
-        enrichedByIds: [],
+        enrichedByIds: enrichByIds,
         relationType: null,
         originalTexts: null,
-        contributingSources: [],
-        linkedDocumentIds: []
+        contributingSources: contributingSourcesList,
+        linkedDocumentIds: linkedDocIds
       };
     });
 

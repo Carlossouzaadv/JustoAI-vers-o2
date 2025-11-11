@@ -67,16 +67,22 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     const quotaSystem = new QuotaSystem();
     const quotaValidation = await quotaSystem.validateReportCreation(
       body.workspaceId,
-      body.processIds.length,
-      body.type
+      body.processIds.length
     );
 
     if (!quotaValidation.allowed) {
-      return errorResponse(quotaValidation.error!, 402, {
-        quotaStatus: quotaValidation.quotaStatus,
-        recommendation: quotaValidation.recommendation,
-        upgradeOptions: quotaValidation.upgradeOptions
-      });
+      // Narrowing seguro: validar que error existe antes de usar
+      const errorMessage = quotaValidation.error || 'Validação de quota falhou';
+      return NextResponse.json(
+        {
+          success: false,
+          error: errorMessage,
+          quotaStatus: quotaValidation.quotaStatus,
+          recommendation: quotaValidation.recommendation,
+          upgradeOptions: quotaValidation.upgradeOptions
+        },
+        { status: 402 }
+      );
     }
 
     // Verificar se processos existem e pertencem ao workspace
@@ -144,7 +150,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       }
     };
 
-    return successResponse(responseData, 201);
+    return NextResponse.json({
+      success: true,
+      data: responseData,
+      message: 'Agendamento criado com sucesso'
+    }, { status: 201 });
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao criar agendamento:`, error);

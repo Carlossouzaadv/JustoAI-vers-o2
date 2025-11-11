@@ -9,6 +9,18 @@ import { getRealAnalysisService } from '@/lib/real-analysis-service';
 import { ModelTier } from '@/lib/ai-model-router';
 import { ICONS } from '@/lib/icons';
 
+// Type guard para gemini client
+function isGeminiClient(data: unknown): data is Record<string, unknown> {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'generateContent' in data &&
+    typeof (data as Record<string, unknown>).generateContent === 'function' &&
+    'generateJsonContent' in data &&
+    typeof (data as Record<string, unknown>).generateJsonContent === 'function'
+  );
+}
+
 export async function GET(req: NextRequest) {
   try {
     console.log(`${ICONS.PROCESS} Testando conectividade Gemini`);
@@ -123,7 +135,11 @@ async function testModel(geminiClient: unknown, model: ModelTier) {
   const startTime = Date.now();
 
   try {
-    const response = await geminiClient.generateContent(
+    if (!isGeminiClient(geminiClient)) {
+      throw new Error('Gemini client is invalid');
+    }
+
+    const response = await (geminiClient.generateContent as Function)(
       'Responda apenas com "OK" para confirmar que você está funcionando.',
       {
         model,
@@ -157,6 +173,10 @@ async function testJsonGeneration(geminiClient: unknown) {
   const startTime = Date.now();
 
   try {
+    if (!isGeminiClient(geminiClient)) {
+      throw new Error('Gemini client is invalid');
+    }
+
     const testPrompt = `Retorne um JSON simples com as seguintes informações:
 {
   "status": "funcionando",
@@ -166,7 +186,7 @@ async function testJsonGeneration(geminiClient: unknown) {
 
 Retorne APENAS o JSON, sem nenhum texto adicional.`;
 
-    const jsonResponse = await geminiClient.generateJsonContent(testPrompt, {
+    const jsonResponse = await (geminiClient.generateJsonContent as Function)(testPrompt, {
       model: ModelTier.LITE,
       maxTokens: 100,
       temperature: 0

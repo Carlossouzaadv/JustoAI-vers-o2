@@ -8,17 +8,29 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
 import { ICONS } from '@/lib/icons';
+import { getErrorMessage } from '@/lib/error-handling';
+
+// Type guard for status field validation
+function isSuccessStatus(status: unknown): status is 'success' {
+  return status === 'success';
+}
 
 // ================================================================
 // GET HANDLER: Get monthly usage and costs
 // ================================================================
 
 export async function GET(request: NextRequest) {
+  // Declare userId outside try-catch to ensure it's available in catch block
+  let userId: string | undefined;
+
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return unauthorizedResponse('Não autenticado');
     }
+
+    // Set userId after validating user exists (Padrão-Ouro)
+    userId = user.id;
 
     setSentryUserContext(user.id);
 
@@ -75,8 +87,8 @@ export async function GET(request: NextRequest) {
     // Aggregate JUDIT metrics
     const juditMetrics = {
       calls: juditCalls.length,
-      successful: juditCalls.filter((c) => c.metadata?.success).length,
-      failed: juditCalls.filter((c) => !c.metadata?.success).length,
+      successful: juditCalls.filter((c) => isSuccessStatus(c.status)).length,
+      failed: juditCalls.filter((c) => !isSuccessStatus(c.status)).length,
       totalCost: juditCalls.reduce((sum, c) => sum + Number(c.totalCost), 0),
       avgDuration: juditCalls.length > 0
         ? juditCalls.reduce((sum, c) => sum + (c.durationMs || 0), 0) / juditCalls.length
@@ -143,16 +155,17 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error(`${ICONS.ERROR} [Telemetry Usage] Error:`, error);
 
+    // userId is safely available here (either set in try or undefined)
     captureApiError(error, {
       endpoint: '/api/telemetry/monthly-usage',
       method: 'GET',
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro ao obter dados de uso',
+        error: getErrorMessage(error),
       },
       { status: 500 }
     );

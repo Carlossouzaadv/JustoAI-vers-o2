@@ -10,6 +10,25 @@ import { Badge } from '@/components/ui/badge';
 import { ICONS } from '@/lib/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Type guard para verificar propriedades obrigatórias do usuário (Padrão-Ouro Genuíno)
+function hasExtendedUserProperties(user: unknown): user is { id: string; email: string } {
+  // PASSO 1: Validar objeto
+  if (typeof user !== 'object' || user === null) {
+    return false;
+  }
+
+  // PASSO 2: Cast SEGURO para indexação
+  const obj = user as Record<string, unknown>;
+
+  // PASSO 3: Validar propriedades obrigatórias
+  return (
+    'id' in obj &&
+    typeof obj.id === 'string' &&
+    'email' in obj &&
+    typeof obj.email === 'string'
+  );
+}
+
 interface UserProfile {
   id: string;
   email: string;
@@ -53,18 +72,25 @@ export default function SettingsPage() {
       setLoading(true);
 
       // Load user profile
-      if (user) {
+      if (user && hasExtendedUserProperties(user)) {
+        // Padrão-Ouro: Narrowing SEGURO de propriedades opcionais (PASSO 4)
+        // PASSO 4: Narrowing SEGURO para phone/avatar
+        const phone = ('phone' in user && typeof user.phone === 'string') ? user.phone : null;
+        const avatar = ('avatar' in user && typeof user.avatar === 'string') ? user.avatar : null;
+        const createdAt = ('createdAt' in user && typeof user.createdAt === 'string') ? user.createdAt : '';
+
+        // PASSO 5: Usar os valores seguros
         setProfile({
           id: user.id,
           email: user.email,
-          name: user.name,
-          phone: user.phone || null,
-          avatar: user.avatar || null,
-          createdAt: user.createdAt,
+          name: user.name || null,
+          phone,
+          avatar,
+          createdAt,
         });
         setProfileForm({
           name: user.name || '',
-          phone: user.phone || '',
+          phone: phone || '',
         });
       }
 

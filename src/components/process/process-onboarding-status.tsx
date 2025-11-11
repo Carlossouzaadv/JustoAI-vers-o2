@@ -10,6 +10,25 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { ICONS } from '@/lib/icons';
 
+// Type guard para validar estrutura de previewData (Padrão-Ouro Genuíno)
+function isValidPreviewData(data: unknown): data is { confidence?: number } {
+  // PASSO 1: Narrowing seguro - verificar se é object
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // PASSO 2: Narrowing seguro - cast APÓS verificação
+  const obj = data as Record<string, unknown>;
+
+  // PASSO 3: Verificar propriedades usando o objeto já convertido
+  // Se 'confidence' existe, deve ser number
+  if ('confidence' in obj && typeof obj.confidence !== 'number') {
+    return false;
+  }
+
+  return true;
+}
+
 interface ProcessOnboardingStatusProps {
   caseId: string;
   processNumber?: string;
@@ -29,6 +48,9 @@ export function ProcessOnboardingStatus({
     'progress',
     'preview'
   ]);
+
+  // Padrão-Ouro: Narrowing seguro de previewData no escopo superior
+  const validPreviewData = previewData && isValidPreviewData(previewData) ? previewData : null;
 
   const toggleSection = (section: string) => {
     setExpandedSections(prev =>
@@ -70,7 +92,7 @@ export function ProcessOnboardingStatus({
               caseId={caseId}
               juditJobId={juditJobId}
               extractedProcessNumber={processNumber}
-              previewData={previewData}
+              previewData={validPreviewData || undefined}
               onAnalyzeClick={onAnalyzeClick}
             />
           </div>
@@ -78,7 +100,7 @@ export function ProcessOnboardingStatus({
       </div>
 
       {/* Preview Results - Expansível */}
-      {previewData && (
+      {validPreviewData && (
         <div>
           <div
             onClick={() => toggleSection('preview')}
@@ -93,7 +115,7 @@ export function ProcessOnboardingStatus({
                 <p className="text-sm text-gray-600">Informações da análise de preview</p>
               </div>
               <Badge variant="secondary" className="ml-2">
-                {((previewData.confidence || 0) * 100).toFixed(0)}% confiança
+                {((validPreviewData.confidence || 0) * 100).toFixed(0)}% confiança
               </Badge>
             </div>
             {isExpanded('preview') ? (
@@ -105,7 +127,7 @@ export function ProcessOnboardingStatus({
 
           {isExpanded('preview') && (
             <div className="mt-4 pl-4">
-              <PreviewResults data={previewData} />
+              <PreviewResults data={validPreviewData} />
             </div>
           )}
         </div>
@@ -242,6 +264,9 @@ export function ProcessOnboardingStatusCompact({
   juditJobId,
   previewData
 }: Omit<ProcessOnboardingStatusProps, 'caseId' | 'onAnalyzeClick'>) {
+  // Padrão-Ouro: Narrowing seguro de previewData
+  const validPreviewData = previewData && isValidPreviewData(previewData) ? previewData : null;
+
   return (
     <Card>
       <CardHeader>
@@ -275,9 +300,9 @@ export function ProcessOnboardingStatusCompact({
         </div>
 
         {/* Preview Data Compact */}
-        {previewData && (
+        {validPreviewData && (
           <div className="mt-4 pt-4 border-t">
-            <PreviewResultsCompact data={previewData} />
+            <PreviewResultsCompact data={validPreviewData} />
           </div>
         )}
       </CardContent>

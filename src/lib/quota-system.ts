@@ -90,7 +90,9 @@ export class QuotaSystem {
       console.log(`${ICONS.SUCCESS} Quota criada para workspace ${workspaceId}: ${limits.reportsMonthlyLimit} relatórios/mês`);
     }
 
-    return quota;
+    // Filtrar campos para corresponder ao tipo esperado
+    const { createdAt, updatedAt, ...quotaData } = quota;
+    return quotaData as unknown as Awaited<ReturnType<typeof prisma.quotaManagement.findUnique>>;
   }
 
   /**

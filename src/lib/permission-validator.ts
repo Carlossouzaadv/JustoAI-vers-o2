@@ -8,6 +8,35 @@ import { ICONS } from './icons';
 
 export type WorkspaceRole = 'ADMIN' | 'MEMBER' | 'VIEWER';
 
+/**
+ * Type Guard Enum: Validates that a string is a valid WorkspaceRole value
+ * Padrão-Ouro: Safe narrowing for enum-like unions (no casting allowed)
+ */
+function isValidWorkspaceRole(value: unknown): value is WorkspaceRole {
+  return (
+    typeof value === 'string' &&
+    ['ADMIN', 'MEMBER', 'VIEWER'].includes(value)
+  );
+}
+
+/**
+ * Type guard: Validates that an object is a valid UserWorkspace with role property
+ * After this guard passes, we know:
+ * 1. data is an object
+ * 2. data has a 'role' property
+ * 3. role is a string (may or may not be a valid WorkspaceRole yet)
+ */
+function isUserWorkspaceWithRole(
+  data: unknown
+): data is { role: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'role' in data &&
+    typeof (data as Record<string, unknown>).role === 'string'
+  );
+}
+
 export interface PermissionCheck {
   isAuthorized: boolean;
   role?: WorkspaceRole;
@@ -50,6 +79,7 @@ export async function isWorkspaceAdmin(
 
 /**
  * Get user role in workspace
+ * Uses safe enum narrowing (Padrão-Ouro: Type Guards + isValidWorkspaceRole)
  */
 export async function getUserWorkspaceRole(
   userId: string,
@@ -67,8 +97,21 @@ export async function getUserWorkspaceRole(
       return null;
     }
 
-    // Assuming 'role' field exists - adjust based on actual schema
-    return (userWorkspace as unknown).role || 'member';
+    // Step 1: Validate object structure - ensure role property exists as string
+    if (!isUserWorkspaceWithRole(userWorkspace)) {
+      console.warn(`${ICONS.WARNING} UserWorkspace missing role property`);
+      return null;
+    }
+
+    // Step 2: At this point, userWorkspace.role is guaranteed to be string
+    // Validate that it's a valid WorkspaceRole value (ADMIN | MEMBER | VIEWER)
+    if (!isValidWorkspaceRole(userWorkspace.role)) {
+      console.warn(`${ICONS.WARNING} Invalid WorkspaceRole value: ${userWorkspace.role}`);
+      return 'MEMBER'; // Safe default
+    }
+
+    // Step 3: Now userWorkspace.role is type WorkspaceRole - no casting needed!
+    return userWorkspace.role;
   } catch (error) {
     console.error(`${ICONS.ERROR} Error getting user role:`, error);
     return null;
@@ -77,6 +120,8 @@ export async function getUserWorkspaceRole(
 
 /**
  * Validate user has required role
+ * Uses safe enum narrowing (Padrão-Ouro: Type Guards + isValidWorkspaceRole)
+ * NO casting with 'as' - full type safety
  */
 export async function validateUserRole(
   userId: string,
@@ -103,13 +148,34 @@ export async function validateUserRole(
       };
     }
 
-    const userRole = (userWorkspace as unknown).role || 'member';
-
-    // Check if user has required role
-    if (!requiredRoles.includes(userRole as WorkspaceRole)) {
+    // Step 1: Validate object structure - ensure role property exists as string
+    if (!isUserWorkspaceWithRole(userWorkspace)) {
       return {
         isAuthorized: false,
-        role: userRole as WorkspaceRole,
+        workspaceId,
+        userId,
+        denialReason: 'Invalid user workspace data'
+      };
+    }
+
+    // Step 2: Validate that role is a valid WorkspaceRole value (ADMIN | MEMBER | VIEWER)
+    if (!isValidWorkspaceRole(userWorkspace.role)) {
+      return {
+        isAuthorized: false,
+        workspaceId,
+        userId,
+        denialReason: `Invalid role value: ${userWorkspace.role}`
+      };
+    }
+
+    // Step 3: Now userWorkspace.role is guaranteed to be WorkspaceRole (no casting!)
+    const userRole = userWorkspace.role; // userRole is WorkspaceRole, not string
+
+    // Check if user has required role
+    if (!requiredRoles.includes(userRole)) {
+      return {
+        isAuthorized: false,
+        role: userRole,
         workspaceId,
         userId,
         denialReason: `User role '${userRole}' does not have permission. Required: ${requiredRoles.join(' or ')}`
@@ -118,7 +184,7 @@ export async function validateUserRole(
 
     return {
       isAuthorized: true,
-      role: userRole as WorkspaceRole,
+      role: userRole,
       workspaceId,
       userId
     };

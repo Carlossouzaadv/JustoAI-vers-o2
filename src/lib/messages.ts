@@ -274,9 +274,19 @@ export function formatMessage(template: string, ...args: unknown[]): string {
   });
 }
 
+// Type guard para validar categoria de mensagem
+function isValidMessageCategory(
+  category: unknown
+): category is 'quota' | 'credit' | 'report' | 'upload' | 'process' | 'telemetry' | 'error' | 'success' | 'help' {
+  return (
+    typeof category === 'string' &&
+    ['quota', 'credit', 'report', 'upload', 'process', 'telemetry', 'error', 'success', 'help'].includes(category)
+  );
+}
+
 // Função para obter mensagem com fallback
 export function getMessage(
-  category: keyof typeof QUOTA_MESSAGES | keyof typeof CREDIT_MESSAGES | keyof typeof REPORT_MESSAGES,
+  category: 'quota' | 'credit' | 'report' | 'upload' | 'process' | 'telemetry' | 'error' | 'success' | 'help',
   key: string,
   fallback = 'Mensagem não encontrada'
 ): string {
@@ -292,8 +302,14 @@ export function getMessage(
     help: HELP_MESSAGES,
   };
 
-  // @ts-expect-error - Type checking is complex here but it's safe
-  return messages[category]?.[key] || fallback;
+  // Narrowing Seguro: verificar categoria válida antes de acessar
+  if (isValidMessageCategory(category)) {
+    const categoryMessages = messages[category];
+    const message = (categoryMessages as Record<string, unknown>)[key];
+    return typeof message === 'string' ? message : fallback;
+  }
+
+  return fallback;
 }
 
 // Validação de tom de relatório

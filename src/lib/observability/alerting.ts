@@ -3,9 +3,9 @@
 // Sistema de alertas para falhas na API e eventos críticos
 // ================================================================
 
-import { JuditAlertType, AlertSeverity } from '@prisma/client';
+import { AlertSeverity } from '@prisma/client';
 import { alertLogger } from './logger';
-import { createAlert } from './costTracking';
+import { createAlert, type AlertType, type SeverityLevel } from './costTracking';
 
 // ================================================================
 // CONFIGURATION
@@ -37,7 +37,7 @@ const ALERT_CONFIG = {
 
 export interface AlertOptions {
   workspaceId?: string;
-  type: JuditAlertType;
+  type: AlertType;
   severity?: AlertSeverity;
   title: string;
   message: string;
@@ -479,8 +479,5 @@ function formatEmailBody(alert: AlertOptions): string {
   `;
 }
 
-// ================================================================
-// EXPORT
-// ================================================================
-
-export type { AlertOptions, NotificationChannel };
+// Note: AlertOptions and NotificationChannel are exported via
+// export interface statements above (lines 38, 53)

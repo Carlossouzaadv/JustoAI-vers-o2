@@ -6,6 +6,32 @@
 
 import prisma from './prisma';
 import { ICONS } from './icons';
+import { SourceSystem } from '@prisma/client';
+
+// ================================
+// TYPE GUARDS E VALIDAÇÃO DE ENUM
+// ================================
+
+/**
+ * Valida se uma string é um valor válido do enum SourceSystem
+ * Padrão-Ouro: Type Guard de Enum sem casting
+ */
+function isValidSourceSystem(value: string): value is SourceSystem {
+  const validSystems: readonly string[] = [
+    'PROJURIS',
+    'LEGAL_ONE',
+    'ASTREA',
+    'CP_PRO',
+    'SAJ',
+    'ESAJ',
+    'PJE',
+    'THEMIS',
+    'ADVBOX',
+    'JUSBRASIL',
+    'UNKNOWN'
+  ];
+  return validSystems.includes(value);
+}
 
 // ================================
 // TIPOS E INTERFACES
@@ -46,22 +72,27 @@ export class SystemSynchronizer {
     };
 
     try {
+      // Validar sourceSystem com Type Guard - Padrão-Ouro (ZERO casting)
+      if (!isValidSourceSystem(sourceSystem)) {
+        throw new Error(
+          `${ICONS.ERROR} sourceSystem inválido: "${sourceSystem}". Deve ser um dos valores: PROJURIS, LEGAL_ONE, ASTREA, etc.`
+        );
+      }
+
+      // Agora sourceSystem é narrowed a SourceSystem (sem casting)
       // Buscar importações do sistema para sincronizar
       const systemImports = await prisma.systemImport.findMany({
         where: {
           workspaceId,
-          sourceSystem: sourceSystem as unknown,
+          sourceSystem, // ✅ Type-safe, sem casting
           status: 'COMPLETED'
-        },
-        include: {
-          importedItems: {
-            take: 100 // Limitar para exemplo
-          }
         }
       });
 
+      // Contar itens processados baseado nos campos de contagem da SystemImport
+      // (não há relação importedItems, usamos os campos de contagem disponíveis)
       session.itemsChecked = systemImports.reduce(
-        (total, imp) => total + (imp.importedItems?.length || 0),
+        (total, imp) => total + (imp.processedRows || 0),
         0
       );
 

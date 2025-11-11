@@ -5,6 +5,149 @@
 
 import { ICONS } from './icons';
 import prisma from './prisma';
+import type { ReportData, ReportCustomization } from './report-templates';
+
+// ================================
+// TYPE GUARDS E VALIDAÇÃO
+// ================================
+
+/**
+ * Valida a estrutura de summary dentro de ReportData
+ */
+function isReportSummary(data: unknown): data is ReportData['summary'] {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.total_processes === 'number' &&
+    typeof obj.active_processes === 'number' &&
+    typeof obj.new_movements === 'number' &&
+    typeof obj.critical_alerts === 'number' &&
+    typeof obj.pending_actions === 'number'
+  );
+}
+
+/**
+ * Valida a estrutura de um processo individual
+ * Padrão-Ouro: Prova cada tipo ANTES de usá-lo, sem casting
+ */
+function isProcessReportData(data: unknown): data is ReportData['processes'][0] {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar cada campo obrigatório com if statements (permite narrowing)
+  if (typeof obj.id !== 'string') {
+    return false;
+  }
+  if (typeof obj.number !== 'string') {
+    return false;
+  }
+  if (typeof obj.client_name !== 'string') {
+    return false;
+  }
+  if (typeof obj.subject !== 'string') {
+    return false;
+  }
+  if (typeof obj.court !== 'string') {
+    return false;
+  }
+  if (typeof obj.status !== 'string') {
+    return false;
+  }
+  if (typeof obj.priority !== 'string') {
+    return false;
+  }
+
+  // AGORA obj.priority é narrowed a string (sem casting)
+  // Prova que é um dos valores válidos
+  const validPriorities: readonly string[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+  if (!validPriorities.includes(obj.priority)) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Valida a estrutura completa de ReportData
+ * Garante que todos os campos obrigatórios existem e têm tipos corretos
+ */
+function isReportData(data: unknown): data is ReportData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar campos obrigatórios
+  if (typeof obj.title !== 'string') {
+    return false;
+  }
+  if (!(obj.generated_at instanceof Date)) {
+    return false;
+  }
+  if (typeof obj.generated_by !== 'string') {
+    return false;
+  }
+  if (typeof obj.workspace_name !== 'string') {
+    return false;
+  }
+
+  // Validar summary
+  if (!isReportSummary(obj.summary)) {
+    return false;
+  }
+
+  // Validar processes
+  if (!Array.isArray(obj.processes)) {
+    return false;
+  }
+  if (!obj.processes.every(isProcessReportData)) {
+    return false;
+  }
+
+  // Campos opcionais: subtitle, period, charts, insights são validados minimalmente
+  // (apenas verificar se existem, eles devem estar corretos em sua estrutura)
+
+  return true;
+}
+
+/**
+ * Valida a estrutura de ReportCustomization
+ */
+function isReportCustomization(data: unknown): data is ReportCustomization {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  // Validar campos obrigatórios
+  if (typeof obj.company_name !== 'string') {
+    return false;
+  }
+  if (typeof obj.primary_color !== 'string') {
+    return false;
+  }
+  if (typeof obj.secondary_color !== 'string') {
+    return false;
+  }
+  if (typeof obj.accent_color !== 'string') {
+    return false;
+  }
+  if (typeof obj.show_page_numbers !== 'boolean') {
+    return false;
+  }
+
+  // Campos opcionais são validados minimalmente
+  // (client_logo, company_address, header_text, footer_text, watermark)
+
+  return true;
+}
 
 // ================================
 // TIPOS E INTERFACES
@@ -486,8 +629,24 @@ export class ReportCustomizationManager {
 
     // Dados de exemplo para prévia
     const sampleData = this.generateSampleData();
+
+    // Validar dados com Type Guard - Padrão-Ouro
+    if (!isReportData(sampleData)) {
+      throw new Error(
+        `${ICONS.ERROR} Dados de amostra de relatório inválidos. Verifique a estrutura em generateSampleData()`
+      );
+    }
+
     const customization = this.profileToCustomization(profile);
 
+    // Validar customization com Type Guard
+    if (!isReportCustomization(customization)) {
+      throw new Error(
+        `${ICONS.ERROR} Dados de customização inválidos. Verifique a estrutura em profileToCustomization()`
+      );
+    }
+
+    // Agora ambas as variáveis são narrowed com 100% de segurança de tipo
     return generateReportTemplate(reportType, sampleData, customization);
   }
 

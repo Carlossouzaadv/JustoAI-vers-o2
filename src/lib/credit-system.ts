@@ -4,6 +4,7 @@
 // Implementa Report Credits + FULL Credits com FIFO, rollover e expiration
 
 import { PrismaClient, Prisma } from '@prisma/client';
+import type { WorkspaceCredits } from '@prisma/client';
 import { ICONS } from './icons';
 import { isCreditTransactionMetadata } from './types/type-guards';
 import type { CreditTransactionMetadata } from './types/json-fields';
@@ -250,10 +251,19 @@ export class CreditManager {
     reason: string,
     metadata: unknown
   ): Promise<string[]> {
-    // Validate metadata if provided
-    const validatedMetadata: CreditTransactionMetadata | undefined = (metadata && typeof metadata === 'object')
-      ? (isCreditTransactionMetadata(metadata) ? metadata : {})
-      : undefined;
+    // Validate metadata if provided using type guard
+    // Padrão-Ouro: JSON round-trip ensures Prisma compatibility without casting
+    let validatedMetadata: Prisma.InputJsonValue | undefined = undefined;
+    if (metadata && typeof metadata === 'object' && isCreditTransactionMetadata(metadata)) {
+      // After isCreditTransactionMetadata guard, metadata is guaranteed to be valid
+      // Use JSON serialization (safe, no casting) to ensure Prisma compatibility
+      try {
+        validatedMetadata = JSON.parse(JSON.stringify(metadata));
+      } catch (error) {
+        console.warn(`${ICONS.WARNING} Failed to serialize transaction metadata:`, error);
+        // metadata is undefined - transaction will have no metadata
+      }
+    }
 
     const transactionIds: string[] = [];
     let remainingToDebit = amount;
@@ -517,7 +527,7 @@ export class CreditManager {
   async initializeWorkspaceCredits(
     workspaceId: string,
     planName: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE' = 'STARTER'
-  ): Promise<unknown> {
+  ): Promise<WorkspaceCredits> {
     try {
       const planConfig = CREDIT_CONFIG.PLANS[planName];
 
