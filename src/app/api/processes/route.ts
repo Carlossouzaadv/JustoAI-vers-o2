@@ -15,6 +15,7 @@ import {
 } from '@/lib/process-apis';
 import { ICONS } from '@/lib/icons';
 import type { Prisma } from '@prisma/client';
+import type { MovementCategory, Priority } from '@prisma/client';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -51,6 +52,71 @@ const QuerySchema = z.object({
   sortBy: z.enum(['createdAt', 'processNumber', 'clientName', 'lastSync']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc')
 });
+
+// ================================
+// TYPE GUARDS & VALIDATION
+// ================================
+
+interface ProcessMovementData {
+  date: string | Date;
+  type: string;
+  description: string;
+  category?: string;
+  importance?: string;
+  requiresAction?: boolean;
+  deadline?: string | Date | null;
+  [key: string]: unknown;
+}
+
+function isValidMovementCategory(value: unknown): value is MovementCategory {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const validCategories: readonly string[] = [
+    'HEARING',
+    'DECISION',
+    'PETITION',
+    'DOCUMENT_REQUEST',
+    'DEADLINE',
+    'NOTIFICATION',
+    'APPEAL',
+    'SETTLEMENT',
+    'OTHER'
+  ];
+
+  return validCategories.includes(value);
+}
+
+function isValidPriority(value: unknown): value is Priority {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const validPriorities: readonly string[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
+  return validPriorities.includes(value);
+}
+
+function isProcessMovement(data: unknown): data is ProcessMovementData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  // Check required properties with 'in' operator (100% safe narrowing)
+  if (!('date' in data && 'type' in data && 'description' in data)) {
+    return false;
+  }
+  // Now safely access properties through the narrowed type
+  const dateValue = data.date;
+  const typeValue = data.type;
+  const descValue = data.description;
+
+  return (
+    (typeof dateValue === 'string' || dateValue instanceof Date) &&
+    typeof typeValue === 'string' &&
+    typeof descValue === 'string'
+  );
+}
 
 // ================================
 // GET - LISTAR PROCESSOS MONITORADOS
@@ -481,19 +547,39 @@ export async function POST(request: NextRequest) {
 
     // Criar movimentações iniciais (se existem)
     if (initialMovements.length > 0) {
-      await prisma.processMovement.createMany({
-        data: initialMovements.map(movement => ({
+      // Filter and validate movements using type guard
+      const validMovements: Prisma.ProcessMovementCreateManyInput[] = [];
+
+      for (const item of initialMovements) {
+        if (!isProcessMovement(item)) {
+          console.warn(`${ICONS.WARNING} Movimento inválido ignorado:`, item);
+          continue;
+        }
+
+        // Now 'item' is safely typed as ProcessMovementData
+        const category = isValidMovementCategory(item.category) ? item.category : 'OTHER';
+        const importance = isValidPriority(item.importance) ? item.importance : 'MEDIUM';
+
+        const validatedMovement: Prisma.ProcessMovementCreateManyInput = {
           monitoredProcessId: monitoredProcess.id,
-          date: new Date(movement.date),
-          type: movement.type,
-          description: movement.description,
-          category: movement.category,
-          importance: movement.importance,
-          requiresAction: movement.requiresAction,
-          deadline: movement.deadline ? new Date(movement.deadline) : null,
-          rawData: JSON.parse(JSON.stringify(movement))
-        })) as Prisma.ProcessMovementCreateManyInput[]
-      });
+          date: new Date(item.date),
+          type: item.type,
+          description: item.description,
+          category,
+          importance,
+          requiresAction: item.requiresAction ?? false,
+          deadline: item.deadline ? new Date(item.deadline) : null,
+          rawData: JSON.parse(JSON.stringify(item))
+        };
+
+        validMovements.push(validatedMovement);
+      }
+
+      if (validMovements.length > 0) {
+        await prisma.processMovement.createMany({
+          data: validMovements
+        });
+      }
     }
 
     // Log de criação
