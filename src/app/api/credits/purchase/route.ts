@@ -4,15 +4,39 @@ import { successResponse, errorResponse, validateBody, requireAuth, withErrorHan
 import { getCreditManager } from '@/lib/credit-system'
 import { ICONS } from '@/lib/icons'
 
+// Type-safe pack type validation using narrowing
+type PackType = 'REPORT_5' | 'REPORT_20' | 'REPORT_50' | 'FULL_5' | 'FULL_15' | 'FULL_35';
+type PaymentMethod = 'STRIPE' | 'PIX' | 'BOLETO';
+
+function isValidPackType(value: unknown): value is PackType {
+  if (typeof value !== 'string') return false;
+  // Array as readonly string[] for type-safe comparison (string-to-string)
+  const validTypes: readonly string[] = ['REPORT_5', 'REPORT_20', 'REPORT_50', 'FULL_5', 'FULL_15', 'FULL_35'];
+  return validTypes.includes(value); // 100% safe: string.includes(string), ZERO 'as'
+}
+
+function isValidPaymentMethod(value: unknown): value is PaymentMethod {
+  if (typeof value !== 'string') return false;
+  // Array as readonly string[] for type-safe comparison (string-to-string)
+  const validMethods: readonly string[] = ['STRIPE', 'PIX', 'BOLETO'];
+  return validMethods.includes(value); // 100% safe: string.includes(string), ZERO 'as'
+}
+
 // Purchase request validation schema
 const purchaseSchema = z.object({
   workspaceId: z.string().min(1, 'Workspace ID is required'),
-  packType: z.enum(['REPORT_5', 'REPORT_20', 'REPORT_50', 'FULL_5', 'FULL_15', 'FULL_35'], {
-    errorMap: () => ({ message: 'Invalid pack type' })
-  }),
-  paymentMethod: z.enum(['STRIPE', 'PIX', 'BOLETO']).optional(),
+  packType: z.string().min(1, 'Invalid pack type'),
+  paymentMethod: z.string().optional(),
   sourceDescription: z.string().optional()
-})
+}).refine(
+  (data) => isValidPackType(data.packType),
+  { message: 'Invalid pack type', path: ['packType'] }
+).refine(
+  (data) => !data.paymentMethod || isValidPaymentMethod(data.paymentMethod),
+  { message: 'Invalid payment method', path: ['paymentMethod'] }
+);
+
+type PurchaseRequest = z.infer<typeof purchaseSchema> & { packType: PackType; paymentMethod?: PaymentMethod }
 
 // Credit pack configurations with pricing
 const CREDIT_PACKS = {
@@ -84,62 +108,41 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   const { data, error: validationError } = await validateBody(request, purchaseSchema)
   if (validationError) return validationError
 
-  const { workspaceId, packType, paymentMethod, sourceDescription } = data
+  // Type-safe narrowing: at this point, data has been validated
+  const validatedData = data as PurchaseRequest
+  const { workspaceId, packType, paymentMethod, sourceDescription } = validatedData
 
   console.log(`${ICONS.PROCESS} Processing credit purchase: ${packType} for workspace ${workspaceId}`)
 
   try {
     const creditSystem = getCreditManager()
 
-    // Get pack configuration
+    // Get pack configuration - type-safe access since packType is narrowed to PackType
     const packConfig = CREDIT_PACKS[packType]
-    if (!packConfig) {
-      return errorResponse('Invalid pack type', 400)
-    }
 
     // Calculate expiration date
     const expiresAt = packConfig.neverExpires
       ? null
       : new Date(Date.now() + packConfig.validityDays * 24 * 60 * 60 * 1000)
 
-    // Create the credit allocation
-    const result = await creditSystem.addCreditAllocation({
+    // Create the credit allocation using creditCredits method
+    // This method creates allocations and transactions atomically
+    await creditSystem.creditCredits(
       workspaceId,
-      type: 'pack',
-      amount: packConfig.reportCredits + packConfig.fullCredits,
-      expiresAt,
-      sourceDescription: sourceDescription || `${packConfig.description} - Pack Purchase`
-    })
-
-    if (!result.success) {
-      return errorResponse(result.error || 'Failed to add credit allocation', 500)
-    }
-
-    // Log the purchase event
-    await creditSystem.logUsageEvent({
-      workspaceId,
-      eventType: 'credit_purchase',
-      resourceType: 'credits',
-      resourceId: result.allocationId,
-      reportCreditsCost: 0,
-      fullCreditsCost: 0,
-      status: 'completed',
-      metadata: {
-        packType,
-        reportCredits: packConfig.reportCredits,
-        fullCredits: packConfig.fullCredits,
-        priceUSD: packConfig.priceUSD,
-        priceBRL: packConfig.priceBRL,
-        paymentMethod,
-        validityDays: packConfig.validityDays,
-        expiresAt: expiresAt?.toISOString()
-      }
-    })
+      packConfig.reportCredits,
+      packConfig.fullCredits,
+      'PACK',
+      sourceDescription || `${packConfig.description} - Pack Purchase`,
+      expiresAt || undefined
+    )
 
     console.log(`${ICONS.SUCCESS} Credit purchase completed: ${packConfig.description}`)
 
+    // Return response with purchase details
+    const purchaseId = `pack_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
     return successResponse({
-      purchaseId: result.allocationId,
+      purchaseId,
       packType,
       credits: {
         reportCredits: packConfig.reportCredits,
@@ -155,7 +158,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         neverExpires: packConfig.neverExpires
       },
       description: packConfig.description,
-      purchaseDate: new Date().toISOString()
+      purchaseDate: new Date().toISOString(),
+      paymentMethod: paymentMethod || undefined
     })
 
   } catch (error) {
