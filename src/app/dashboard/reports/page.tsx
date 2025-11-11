@@ -565,8 +565,8 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
             onValueChange={(value: unknown) => {
               // Padrão-Ouro: Type guard para validar tipo de relatório
               if (isValidReportType(value)) {
-                // Safe cast: garantido pelo type guard acima
-                setFormData({ ...formData, type: value as ReportSchedule['type'] });
+                // Narrowing seguro: value é agora ReportSchedule['type'] (ZERO 'as')
+                setFormData({ ...formData, type: value });
               }
             }}
           >
@@ -591,8 +591,8 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
             onValueChange={(value: unknown) => {
               // Padrão-Ouro: Type guard para validar frequência de relatório
               if (isValidReportFrequency(value)) {
-                // Safe cast: garantido pelo type guard acima
-                setFormData({ ...formData, frequency: value as ReportSchedule['frequency'] });
+                // Narrowing seguro: value é agora ReportSchedule['frequency'] (ZERO 'as')
+                setFormData({ ...formData, frequency: value });
               }
             }}
           >
