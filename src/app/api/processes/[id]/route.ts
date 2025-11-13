@@ -444,6 +444,27 @@ interface MonitoredProcessForSync {
 }
 
 /**
+ * Tipo do movimento retornado pela API externa
+ */
+interface ApiMovementResponse {
+  date: string;
+  type: string;
+  description: string;
+  category: string;
+  importance: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  requiresAction: boolean;
+  deadline: string | null;
+}
+
+/**
+ * Tipo do movimento existente retornado pelo Prisma (apenas date + description)
+ */
+interface ExistingMovementSelect {
+  date: Date;
+  description: string;
+}
+
+/**
  * Type guard for MonitoredProcess - Narrowing Seguro
  * Sem 'as any': usa 'in' operator para validação segura
  */
@@ -512,28 +533,28 @@ async function handleSyncProcess(process: MonitoredProcessForSync, force: boolea
     // Salvar novas movimentações
     if (recentMovements.length > 0) {
       // Buscar movimentações existentes para evitar duplicatas
-      const existingMovements = await prisma.processMovement.findMany({
+      const existingMovements: ExistingMovementSelect[] = await prisma.processMovement.findMany({
         where: {
           monitoredProcessId: process.id,
           date: {
-            in: recentMovements.map(m => new Date(m.date))
+            in: recentMovements.map((m: ApiMovementResponse) => new Date(m.date))
           }
         },
         select: { date: true, description: true }
       });
 
       const existingKeys = new Set(
-        existingMovements.map(m => `${m.date.toISOString()}_${m.description}`)
+        existingMovements.map((m: ExistingMovementSelect) => `${m.date.toISOString()}_${m.description}`)
       );
 
-      const newMovements = recentMovements.filter(movement => {
+      const newMovements = recentMovements.filter((movement: ApiMovementResponse) => {
         const key = `${new Date(movement.date).toISOString()}_${movement.description}`;
         return !existingKeys.has(key);
       });
 
       if (newMovements.length > 0) {
         await prisma.processMovement.createMany({
-          data: newMovements.map(movement => ({
+          data: newMovements.map((movement: ApiMovementResponse) => ({
             monitoredProcessId: process.id,
             date: new Date(movement.date),
             type: movement.type,
@@ -549,13 +570,13 @@ async function handleSyncProcess(process: MonitoredProcessForSync, force: boolea
         newMovementsCount = newMovements.length;
 
         // Criar alertas para movimentações importantes
-        const importantMovements = newMovements.filter(m =>
+        const importantMovements = newMovements.filter((m: ApiMovementResponse) =>
           m.importance === 'HIGH' || m.importance === 'URGENT' || m.requiresAction
         );
 
         if (importantMovements.length > 0 && process.alertsEnabled) {
           await Promise.all(
-            importantMovements.map(movement =>
+            importantMovements.map((movement: ApiMovementResponse) =>
               prisma.processAlert.create({
                 data: {
                   monitoredProcessId: process.id,
