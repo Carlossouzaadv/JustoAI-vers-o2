@@ -24,7 +24,7 @@ export interface PlanCardProps {
     contact_sales?: boolean;
   };
   billingCycle: 'monthly' | 'annual';
-  onSelectPlan: (planId: string) => void;
+  onSelectPlan: (_planId: string) => void;
   onContactSales?: () => void;
   className?: string;
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ICONS } from '@/lib/icons';
 
@@ -11,7 +12,7 @@ export default function LGPDPage() {
           <div className="text-center mb-12">
             <Link href="/" className="inline-flex items-center space-x-3 mb-8">
               <div className="w-10 h-10">
-                <img src="/logo+nome.png" alt="JustoAI" className="w-full h-full object-contain" />
+                <Image src="/logo+nome.png" alt="JustoAI" width={120} height={40} className="w-full h-full object-contain" />
               </div>
               <span className="font-display font-bold text-2xl text-primary-800">JustoAI</span>
             </Link>

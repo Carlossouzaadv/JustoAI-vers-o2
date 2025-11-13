@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
               console.error('Error setting cookie:', name, error)
             }
           },
-          remove(name: string, options: Record<string, unknown> | undefined) {
+          remove(name: string, _options: Record<string, unknown> | undefined) {
             try {
               cookieStore.delete(name)
             } catch (error) {

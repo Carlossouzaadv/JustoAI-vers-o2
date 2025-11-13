@@ -171,7 +171,7 @@ export class MonitoringTelemetry {
     };
   }
 
-  async getDailyCostSummary(workspaceId?: string, days = 30): Promise<unknown[]> {
+  async getDailyCostSummary(workspaceId?: string, _days = 30): Promise<unknown[]> {
     console.log(`${ICONS.COST} Cost summary disabled - would query for workspace:`, workspaceId);
     return [];
   }

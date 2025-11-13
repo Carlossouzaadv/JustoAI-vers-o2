@@ -326,7 +326,7 @@ export class QuotaEnforcement {
     current: number,
     limit: number,
     percentage: number,
-    options: unknown
+    _options: unknown
   ): Promise<QuotaCheckResult> {
     const remaining = limit - current - 1; // -1 para o relatório atual
 
@@ -377,11 +377,11 @@ export class QuotaEnforcement {
     };
   }
 
-  private async getCurrentMonthlyUsage(workspaceId: string, scheduledFor?: Date): Promise<{
+  private async getCurrentMonthlyUsage(workspaceId: string, _scheduledFor?: Date): Promise<{
     reportsTotal: number;
     creditsConsumed: number;
   }> {
-    try {
+    try{
       // Get quota info which has current usage
       const quota = await prisma.workspaceQuota.findUnique({
         where: { workspaceId }
@@ -500,6 +500,7 @@ export class QuotaEnforcement {
     policy: QuotaPolicy | null;
   }> {
     const policy = await this.getWorkspaceQuotaPolicy(workspaceId);
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     const usage = await this.getCurrentMonthlyUsage(workspaceId);
     const credits = await usageTracker.getCreditBalance(workspaceId);
 

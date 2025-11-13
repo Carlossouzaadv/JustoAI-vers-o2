@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 
 interface BillingToggleProps {
   billingCycle: 'monthly' | 'annual';
-  onToggle: (cycle: 'monthly' | 'annual') => void;
+  onToggle: (_cycle: 'monthly' | 'annual') => void;
   annualDiscountPct: number;
   className?: string;
 }

@@ -31,14 +31,14 @@ export async function POST(request: NextRequest) {
               } else {
                 cookieStore.set(name, value)
               }
-            } catch (error) {
+            } catch (_error) {
               // Cookie setting might fail in middleware
             }
           },
-          remove(name: string, options: Record<string, unknown> | undefined) {
+          remove(name: string, _options: Record<string, unknown> | undefined) {
             try {
               cookieStore.delete(name)
-            } catch (error) {
+            } catch (_error) {
               // Cookie deletion might fail
             }
           },

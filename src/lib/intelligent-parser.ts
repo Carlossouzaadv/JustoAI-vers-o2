@@ -569,7 +569,7 @@ export class IntelligentParser {
     return firstRowHasText && secondRowHasNumbers;
   }
 
-  private findHeaderRow(data: string[][]): number {
+  private findHeaderRow(_data: string[][]): number {
     // Por enquanto, assumir que header é sempre linha 0
     // Pode ser melhorado para detectar headers em outras posições
     return 0;
@@ -657,7 +657,6 @@ class SystemPatterns {
 
     Object.entries(this.patterns).forEach(([system, config]) => {
       let score = 0;
-      let matches = 0;
 
       config.columnPatterns.forEach(pattern => {
         const found = headerRow.some(col => pattern.test(col));
@@ -680,7 +679,7 @@ class SystemPatterns {
     return scores;
   }
 
-  getFieldGroups(system: SourceSystem) {
+  getFieldGroups(_system: SourceSystem) {
     // Retorna grupos de campos por categoria para cada sistema
     const baseFields = {
       cases: [
@@ -757,7 +756,7 @@ class ColumnPatterns {
     }
   ];
 
-  findBestMatch(columnName: string, sampleValues: string[], sourceSystem: SourceSystem) {
+  findBestMatch(columnName: string, sampleValues: string[], _sourceSystem: SourceSystem) {
     let bestMatch = {
       field: 'other',
       confidence: 0,

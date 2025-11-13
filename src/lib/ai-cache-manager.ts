@@ -6,7 +6,6 @@
 
 import { ICONS } from './icons';
 import prisma from './prisma';
-import { CacheKeys, CachedValueResult } from './types/redis';
 
 // ================================
 // TIPOS E INTERFACES
@@ -55,8 +54,8 @@ export interface CacheConfig {
  * Redis Client interface for type-safe operations
  */
 interface RedisClient {
-  get: (key: string) => Promise<string | null>;
-  setex: (key: string, ttl: number, value: string) => Promise<void>;
+  get: (_key: string) => Promise<string | null>;
+  setex: (_key: string, _ttl: number, _value: string) => Promise<void>;
   flushdb: () => Promise<void>;
 }
 

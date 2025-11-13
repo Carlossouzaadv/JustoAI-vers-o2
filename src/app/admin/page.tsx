@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Activity, AlertCircle, CheckCircle, AlertTriangle, Zap, TrendingUp, Timer, Copy, ExternalLink } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { getErrorMessage } from '@/lib/error-handling';
 
 interface DashboardData {
@@ -89,7 +88,6 @@ function isSentryError(data: unknown): data is SentryError {
 }
 
 export default function AdminHomePage() {
-  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -4,7 +4,7 @@
 // GET /process/{id}/analysis/history
 // Lista versões de análise com diff entre versões
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
@@ -159,7 +159,7 @@ export const GET = withErrorHandler(async (
   }
 
   // Auth check
-  const { user, error: authError } = await requireAuth(request);
+  const { error: authError } = await requireAuth(request);
   if (authError) return authError;
 
   console.log(`${ICONS.PROCESS} Buscando histórico de análises para processo: ${processId}`);

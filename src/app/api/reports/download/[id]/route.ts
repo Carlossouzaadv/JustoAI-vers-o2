@@ -11,12 +11,6 @@ import { OutputFormat } from '@/lib/types/database';
 import fs from 'fs/promises';
 import path from 'path';
 
-// Type guard for ExecutionStatus - documents valid statuses
-function isCompletedStatus(value: unknown): boolean {
-  const completedStatuses = ['COMPLETED', 'SUCCESS', 'DONE'];
-  return typeof value === 'string' && completedStatuses.includes(value);
-}
-
 // Type guard for OutputFormat validation
 function isValidOutputFormat(value: unknown): value is OutputFormat {
   const validFormats = ['PDF', 'DOCX', 'XLSX', 'JSON'];
@@ -139,7 +133,7 @@ export const GET = withErrorHandler(async (
         }
       });
 
-    } catch (fileError) {
+    } catch (_fileError) {
       console.error(`${ICONS.ERROR} Arquivo não encontrado:`, filePath);
       return errorResponse('Arquivo não encontrado no sistema', 404);
     }

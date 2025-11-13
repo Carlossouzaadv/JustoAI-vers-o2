@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     console.log(`${ICONS.INFO} [Webhook Status] Verificando status das requisições JUDIT`);
 
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Health check - simples ping para verificar acessibilidade
-export async function HEAD(request: NextRequest) {
+export async function HEAD(_request: NextRequest) {
   console.log(`${ICONS.SUCCESS} [Webhook Health] PING recebido`);
   return NextResponse.json({ status: 'ok' });
 }

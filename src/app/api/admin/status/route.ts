@@ -4,7 +4,7 @@
  * Accessible to: Internal admins (@justoai.com.br)
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { systemHealthCheck } from '@/lib/bull-board';
@@ -42,7 +42,7 @@ function hasComponents(
 /**
  * Get system health status
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // 1. Authenticate and check admin permissions
     const { user } = await validateAuthAndGetUser();
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
         responseTime: Date.now() - postgresStart,
         message: 'Database connection OK',
       };
-    } catch (err) {
+    } catch (_err) {
       checks.postgres = {
         name: 'PostgreSQL Database',
         status: 'critical',
@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
           message: 'Cache server operational',
         };
       }
-    } catch (err) {
+    } catch (_err) {
       checks.redis = {
         name: 'Redis Cache',
         status: 'critical',
@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
           message: 'Queue status unknown',
         };
       }
-    } catch (err) {
+    } catch (_err) {
       checks.queues = {
         name: 'Bull Queues',
         status: 'critical',

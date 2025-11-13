@@ -11,7 +11,6 @@ import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { getGlobalAlertManager } from '@/lib/process-alerts';
 import { ICONS } from '@/lib/icons';
-import type { Prisma } from '@prisma/client';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO

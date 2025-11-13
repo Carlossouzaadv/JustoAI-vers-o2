@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -47,7 +47,7 @@ export interface EnrichedTimelineEventProps {
   confidence?: number;
   relationType?: 'DUPLICATE' | 'ENRICHMENT' | 'RELATED' | 'CONFLICT';
   baseEventId?: string;
-  onConflictReview?: (eventId: string) => void;
+  onConflictReview?: (_eventId: string) => void;
 }
 
 /**
@@ -69,7 +69,7 @@ export function EnrichedTimelineEvent({
   enrichmentModel,
   contributingSources = [],
   originalTexts = {},
-  linkedDocumentIds = [],
+  linkedDocumentIds: _linkedDocumentIds = [],
   linkedDocuments = [],
   hasConflict = false,
   conflictDetails,
@@ -78,7 +78,6 @@ export function EnrichedTimelineEvent({
   baseEventId,
   onConflictReview,
 }: EnrichedTimelineEventProps) {
-  const [showDetails, setShowDetails] = useState(false);
 
   // Ordenar fontes por prioridade
   const sortedSources = [...(contributingSources || [])].sort(

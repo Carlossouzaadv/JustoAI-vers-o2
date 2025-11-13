@@ -53,8 +53,9 @@ function isCircuitBreakerService(data: unknown): data is {
 }
 
 /**
- * Type guard for valid job states
+ * Type guard for valid job states (kept for future validation needs)
  */
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function isValidJobState(state: unknown): state is 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown' {
   const validStates = ['waiting', 'active', 'completed', 'failed', 'delayed', 'unknown'];
   return typeof state === 'string' && validStates.includes(state);
@@ -185,7 +186,7 @@ class MockQueue {
    * Type-safe event listener registration
    * Only accepts KnownQueueEvent types
    */
-  on(event: KnownQueueEvent, handler: (...args: unknown[]) => void): this {
+  on(_event: KnownQueueEvent, _handler: (..._args: unknown[]) => void): this {
     return this;
   }
 }
@@ -451,7 +452,7 @@ function isJob(data: unknown): data is Job<JuditOnboardingJobData, JuditOnboardi
  * After this passes, TypeScript narrows queue to this specific interface
  */
 function isEventEmitter(obj: unknown): obj is {
-  on: (event: KnownQueueEvent, handler: (...args: unknown[]) => void) => unknown
+  on: (_event: KnownQueueEvent, _handler: (..._args: unknown[]) => void) => unknown
 } {
   if (typeof obj !== 'object' || obj === null) {
     return false;
@@ -538,9 +539,9 @@ const handleFailedJob = (job: unknown, error: unknown): void => {
  * ZERO casting - 100% type-safe narrowing via isKnownQueueEvent
  */
 function attachQueueListener(
-  queue: { on: (event: KnownQueueEvent, handler: (...args: unknown[]) => void) => unknown },
+  queue: { on: (_event: KnownQueueEvent, _handler: (..._args: unknown[]) => void) => unknown },
   eventName: string,
-  handler: (...args: unknown[]) => void
+  handler: (..._args: unknown[]) => void
 ): void {
   // Type guard narrows eventName from string to KnownQueueEvent
   if (isKnownQueueEvent(eventName)) {

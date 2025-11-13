@@ -53,7 +53,6 @@ export class SlackService {
 
     try {
       const severity = this.getSeverityEmoji(options.severity);
-      const color = this.getSeverityColor(options.severity);
 
       const blocks = this.buildSlackBlocks(severity, options);
 
@@ -208,7 +207,6 @@ export class SlackService {
    * Build Slack block format
    */
   private buildSlackBlocks(severity: string, options: SlackAlertOptions): unknown[] {
-    const color = this.getSeverityColor(options.severity);
     const blocks: unknown[] = [
       {
         type: 'header',

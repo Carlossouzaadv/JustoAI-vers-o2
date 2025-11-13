@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 interface CookieConsentContextType {
   consent: 'accepted' | 'rejected' | null;
@@ -25,32 +25,27 @@ export const CookieConsentProvider: React.FC<CookieConsentProviderProps> = ({ ch
   const [isLoading, setIsLoading] = useState(true);
   const [consentDate, setConsentDate] = useState<string | null>(null);
 
-  // Carregar dados do localStorage ao inicializar
-  useEffect(() => {
-    const loadConsentData = () => {
-      try {
-        const savedConsent = localStorage.getItem('cookieConsent') as 'accepted' | 'rejected' | null;
-        const savedDate = localStorage.getItem('cookieConsentDate');
+  // Limpar cookies não essenciais
+  const clearNonEssentialCookies = useCallback(() => {
+    if (typeof window === 'undefined') return;
 
-        setConsent(savedConsent);
-        setConsentDate(savedDate);
-        setIsLoading(false);
+    const cookiesToClear = [
+      '_ga', '_gid', '_gat', '_gat_gtag_UA_', '_gcl_au', '_fbp', '_fbc',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'
+    ];
 
-        // Aplicar configurações baseadas no consentimento
-        if (savedConsent) {
-          applyCookieSettings(savedConsent);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar configurações de cookies:', error);
-        setIsLoading(false);
-      }
-    };
+    cookiesToClear.forEach(cookieName => {
+      // Limpar para o domínio atual
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
 
-    loadConsentData();
+      // Limpar para o domínio principal
+      const domain = window.location.hostname.split('.').slice(-2).join('.');
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain};`;
+    });
   }, []);
 
   // Aplicar configurações de cookies baseadas no consentimento
-  const applyCookieSettings = (consentType: 'accepted' | 'rejected') => {
+  const applyCookieSettings = useCallback((consentType: 'accepted' | 'rejected') => {
     if (typeof window === 'undefined') return;
 
     if (consentType === 'accepted') {
@@ -83,26 +78,53 @@ export const CookieConsentProvider: React.FC<CookieConsentProviderProps> = ({ ch
       // Disparar evento
       window.dispatchEvent(new CustomEvent('cookiesRejected'));
     }
-  };
+  }, [clearNonEssentialCookies]);
 
-  // Limpar cookies não essenciais
-  const clearNonEssentialCookies = () => {
-    if (typeof window === 'undefined') return;
+  // Resetar consentimento
+  const resetConsent = useCallback(() => {
+    localStorage.removeItem('cookieConsent');
+    localStorage.removeItem('cookieConsentDate');
 
-    const cookiesToClear = [
-      '_ga', '_gid', '_gat', '_gat_gtag_UA_', '_gcl_au', '_fbp', '_fbc',
-      'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'
-    ];
+    setConsent(null);
+    setConsentDate(null);
 
-    cookiesToClear.forEach(cookieName => {
-      // Limpar para o domínio atual
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    clearNonEssentialCookies();
 
-      // Limpar para o domínio principal
-      const domain = window.location.hostname.split('.').slice(-2).join('.');
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${domain};`;
-    });
-  };
+    // Resetar configurações do Google Analytics
+    if (window.gtag) {
+      window.gtag('consent', 'default', {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        wait_for_update: 500
+      });
+    }
+  }, [clearNonEssentialCookies]);
+
+  // Carregar dados do localStorage ao inicializar
+  useEffect(() => {
+    const loadConsentData = () => {
+      try {
+        const savedConsent = localStorage.getItem('cookieConsent') as 'accepted' | 'rejected' | null;
+        const savedDate = localStorage.getItem('cookieConsentDate');
+
+        setConsent(savedConsent);
+        setConsentDate(savedDate);
+        setIsLoading(false);
+
+        // Aplicar configurações baseadas no consentimento
+        if (savedConsent) {
+          applyCookieSettings(savedConsent);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações de cookies:', error);
+        setIsLoading(false);
+      }
+    };
+
+    loadConsentData();
+  }, [applyCookieSettings]);
 
   const acceptCookies = () => {
     const timestamp = new Date().toISOString();
@@ -144,27 +166,6 @@ export const CookieConsentProvider: React.FC<CookieConsentProviderProps> = ({ ch
     }
   };
 
-  const resetConsent = () => {
-    localStorage.removeItem('cookieConsent');
-    localStorage.removeItem('cookieConsentDate');
-
-    setConsent(null);
-    setConsentDate(null);
-
-    clearNonEssentialCookies();
-
-    // Resetar configurações do Google Analytics
-    if (window.gtag) {
-      window.gtag('consent', 'default', {
-        analytics_storage: 'denied',
-        ad_storage: 'denied',
-        functionality_storage: 'denied',
-        personalization_storage: 'denied',
-        wait_for_update: 500
-      });
-    }
-  };
-
   // Verificar se o consentimento expirou (6 meses)
   useEffect(() => {
     if (consentDate) {
@@ -178,7 +179,7 @@ export const CookieConsentProvider: React.FC<CookieConsentProviderProps> = ({ ch
         resetConsent();
       }
     }
-  }, [consentDate]);
+  }, [consentDate, resetConsent]);
 
   const value: CookieConsentContextType = {
     consent,
@@ -224,6 +225,6 @@ export const useAnalytics = () => {
 // Usando tipo genérico para compatibilidade com diferentes versões do gtag
 declare global {
   interface Window {
-    gtag?: (...args: unknown[]) => void;
+    gtag?: (..._args: unknown[]) => void;
   }
 }

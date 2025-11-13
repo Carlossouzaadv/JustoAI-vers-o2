@@ -83,6 +83,8 @@ const CreateProcessSchema = z.object({
   fetchInitialData: z.boolean().default(true)
 });
 
+// Schema for future update endpoint implementation
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 const UpdateProcessSchema = z.object({
   court: z.string().min(1).optional(),
   clientName: z.string().min(1).optional(),
@@ -509,7 +511,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const { user, workspace } = await validateAuth();
+    const { workspace } = await validateAuth();
     const { data: body, error: validationError } = await validateJson(request, CreateProcessSchema);
     if (validationError) return validationError;
 

@@ -27,27 +27,6 @@ interface Feature {
   description: string;
 }
 
-function isFeature(data: unknown): data is Feature {
-  // PASSO 1: Validar objeto
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-
-  // PASSO 2: Cast SEGURO para indexação
-  const feature = data as Record<string, unknown>;
-
-  // PASSO 3: Validar CADA propriedade com 'in' e 'typeof'
-  return (
-    'description' in feature &&
-    typeof feature.description === 'string' &&
-    ('limit' in feature ? typeof feature.limit === 'number' : true) &&
-    ('unlimited' in feature ? typeof feature.unlimited === 'boolean' : true) &&
-    ('custom' in feature ? typeof feature.custom === 'boolean' : true) &&
-    ('included' in feature ? typeof feature.included === 'boolean' : true) &&
-    ('channels' in feature ? Array.isArray(feature.channels) : true)
-  );
-}
-
 // Type guard for detailed features (with description)
 function isDetailedFeature(data: unknown): data is DetailedFeature {
   if (typeof data !== 'object' || data === null) {
@@ -93,7 +72,7 @@ export interface PlanModalProps {
   onClose: () => void;
   plan: PlanType | null;
   billingCycle: 'monthly' | 'annual';
-  onStartTrial: (planId: string) => void;
+  onStartTrial: (_planId: string) => void;
   onContactSales?: () => void;
 }
 

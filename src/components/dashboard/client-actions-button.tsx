@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -50,18 +50,9 @@ function isApiProcessData(data: unknown): data is ApiProcessData {
 
 export function ClientActionsButton({ clientId, clientName }: ClientActionsButtonProps) {
   const [processes, setProcesses] = useState<ProcessOption[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (clientId) {
-      loadClientProcesses();
-    }
-  }, [clientId]);
-
-  const loadClientProcesses = async () => {
+  const loadClientProcesses = useCallback(async () => {
     try {
-      setLoading(true);
       const response = await fetch(getApiUrl(`/api/processes?clientId=${clientId}`));
       if (response.ok) {
         const data = await response.json();
@@ -79,10 +70,14 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
       }
     } catch (error) {
       console.error('Erro ao carregar processos:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [clientId, clientName]);
+
+  useEffect(() => {
+    if (clientId) {
+      loadClientProcesses();
+    }
+  }, [clientId, loadClientProcesses]);
 
   const handleGenerateInstantReport = async () => {
     try {

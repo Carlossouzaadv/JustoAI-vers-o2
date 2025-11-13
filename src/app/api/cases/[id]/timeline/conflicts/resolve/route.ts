@@ -8,7 +8,6 @@ import type { InputJsonValue, ProcessTimelineEntryUpdateInput, ProcessTimelineEn
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
-import { Prisma } from '@prisma/client';
 
 // ================================================================
 // TYPES

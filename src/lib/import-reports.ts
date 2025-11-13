@@ -6,7 +6,6 @@
 import prisma from './prisma';
 import { ICONS } from './icons';
 import type { SystemImport, SystemImportWhereInput } from '@/lib/types/database';
-import { Prisma } from '@prisma/client';
 
 // ================================
 // TIPOS E INTERFACES
@@ -728,12 +727,12 @@ export class ImportReportGenerator {
     };
   }
 
-  private async findErrorPatterns(imports: SystemImport[]): Promise<unknown[]> {
+  private async findErrorPatterns(_imports: SystemImport[]): Promise<unknown[]> {
     // Implementação simplificada de detecção de padrões
     return [];
   }
 
-  private async generateErrorRecommendations(errors: ErrorSummary[], patterns: unknown[]): Promise<string[]> {
+  private async generateErrorRecommendations(errors: ErrorSummary[], _patterns: unknown[]): Promise<string[]> {
     const recommendations: string[] = [];
 
     const criticalErrors = errors.filter(e => e.severity === 'HIGH');

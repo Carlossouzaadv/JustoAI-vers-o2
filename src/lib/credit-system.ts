@@ -6,7 +6,6 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ICONS } from './icons';
 import { isCreditTransactionMetadata } from './types/type-guards';
-import type { CreditTransactionMetadata } from './types/json-fields';
 
 // Tipos locais para dados do Prisma (Padrão-Ouro: interfaces explícitas)
 interface WorkspaceCreditsRecord {
@@ -111,7 +110,7 @@ export const CREDIT_CONFIG = {
 } as const;
 
 export class CreditManager {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private _prisma: PrismaClient) {}
 
   /**
    * Calcula custo de report credit baseado no número de processos

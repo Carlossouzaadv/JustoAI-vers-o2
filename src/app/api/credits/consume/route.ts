@@ -107,7 +107,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
 // GET endpoint to estimate credit cost for different operations
 export const GET = withErrorHandler(async (request: NextRequest) => {
-  const { user, error: authError } = await requireAuth(request)
+  const { error: authError } = await requireAuth(request)
   if (authError) return authError
 
   const { searchParams } = new URL(request.url)

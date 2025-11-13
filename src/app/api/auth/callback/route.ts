@@ -67,14 +67,14 @@ export async function POST(request: NextRequest) {
             try {
               const cookieOpts = isCookieOptions(options) ? options : undefined;
               cookieStore.set(name, value, cookieOpts)
-            } catch (error) {
+            } catch (_error) {
               // Cookie setting might fail
             }
           },
-          remove(name: string, options: unknown) {
+          remove(name: string, _options: unknown) {
             try {
               cookieStore.delete(name)
-            } catch (error) {
+            } catch (_error) {
               // Cookie deletion might fail
             }
           },
@@ -152,14 +152,14 @@ export async function GET(request: NextRequest) {
             try {
               const cookieOpts = isCookieOptions(options) ? options : undefined;
               cookieStore.set(name, value, cookieOpts)
-            } catch (error) {
+            } catch (_error) {
               // Cookie setting might fail
             }
           },
-          remove(name: string, options: unknown) {
+          remove(name: string, _options: unknown) {
             try {
               cookieStore.delete(name)
-            } catch (error) {
+            } catch (_error) {
               // Cookie deletion might fail
             }
           },

@@ -57,7 +57,9 @@ interface BullBoardUserContext {
 
 /**
  * Type guard to check if data is a valid Bull Board user context
+ * Currently unused but kept for future type validation needs
  */
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function isBullBoardUserContext(data: unknown): data is BullBoardUserContext {
   if (typeof data !== 'object' || data === null) {
     return false;
@@ -457,7 +459,7 @@ export async function systemHealthCheck() {
 /**
  * Type guard to verify if object is a valid Redis instance
  */
-function isRedisClient(data: unknown): data is { ping(): Promise<string>; info(section?: string): Promise<string> } {
+function isRedisClient(data: unknown): data is { ping(): Promise<string>; info(_section?: string): Promise<string> } {
   return (
     typeof data === 'object' &&
     data !== null &&

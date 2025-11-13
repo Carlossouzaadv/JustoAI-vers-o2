@@ -4,12 +4,12 @@
 // GET /process/{id}/analysis/{version}
 // Retorna análise específica por número de versão
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-import { CaseAnalysisVersion, AnalysisJob } from '@/lib/types/database';
+import { CaseAnalysisVersion } from '@/lib/types/database';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
@@ -33,7 +33,7 @@ export const GET = withErrorHandler(async (
   }
 
   // Auth check
-  const { user, error: authError } = await requireAuth(request);
+  const { error: authError } = await requireAuth(request);
   if (authError) return authError;
 
   console.log(`${ICONS.PROCESS} Buscando análise v${versionNumber} para processo: ${processId}`);
@@ -155,7 +155,7 @@ async function isLatestVersion(processId: string, versionNumber: number): Promis
     });
 
     return latest?.version === versionNumber;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -173,7 +173,7 @@ async function hasNextVersion(processId: string, versionNumber: number): Promise
     });
 
     return !!next;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }

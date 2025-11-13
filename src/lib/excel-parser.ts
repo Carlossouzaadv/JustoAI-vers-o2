@@ -15,10 +15,6 @@ function isFrequencyType(value: unknown): value is 'HOURLY' | 'DAILY' | 'WEEKLY'
   return value === 'HOURLY' || value === 'DAILY' || value === 'WEEKLY' || value === 'MANUAL';
 }
 
-function isBooleanValue(value: string): value is string {
-  return typeof value === 'string' && value.length > 0;
-}
-
 function isValidColumnMapping(key: string): key is keyof typeof EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING {
   return key in EXCEL_TEMPLATE_CONFIG.COLUMN_MAPPING;
 }

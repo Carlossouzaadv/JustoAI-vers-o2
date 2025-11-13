@@ -273,7 +273,7 @@ export const SIGNATURE_VERIFIERS = {
  */
 export function getSignatureVerifier(
   provider: string
-): ((headers: Record<string, string>, body: string) => boolean) | null {
+): ((_headers: Record<string, string>, _body: string) => boolean) | null {
   const verifier = SIGNATURE_VERIFIERS[provider.toLowerCase() as keyof typeof SIGNATURE_VERIFIERS];
   return verifier || null;
 }

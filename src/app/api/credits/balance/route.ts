@@ -13,14 +13,14 @@ const balanceQuerySchema = z.object({
 
 export const GET = withErrorHandler(async (request: NextRequest) => {
   // Auth check
-  const { user, error: authError } = await requireAuth(request)
+  const { error: authError } = await requireAuth(request)
   if (authError) return authError
 
   // Validate query parameters
   const { data, error: validationError } = validateQuery(request, balanceQuerySchema)
   if (validationError) return validationError
 
-  const { workspaceId, includeBreakdown, includeHistory } = data
+  const { workspaceId, includeBreakdown } = data
 
   console.log(`${ICONS.PROCESS} Fetching credit balance for workspace ${workspaceId}`)
 

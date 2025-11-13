@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ExcelUploadService, type BatchEstimate } from '@/lib/excel-upload-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-import type { ExcelParseResult, ExcelRowError } from '@/lib/excel-parser';
+import type { ExcelRowError } from '@/lib/excel-parser';
 
 // Types
 

@@ -3,21 +3,10 @@
 // ================================================================
 // GET /api/reports/history - Listar execuções e histórico
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-
-/**
- * Local type definitions (Prisma client stub fallback)
- */
-enum ExecutionStatus {
-  AGENDADO = 'AGENDADO',
-  RUNNING = 'RUNNING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED'
-}
 
 /**
  * Type definitions for Prisma query results
@@ -70,7 +59,7 @@ interface WhereClauseInput {
 /**
  * Type guard para validar ExecutionStatus
  */
-function isValidExecutionStatus(value: unknown): value is ExecutionStatus {
+function isValidExecutionStatus(value: unknown): value is string {
   if (typeof value !== 'string') return false;
   const validStatuses: string[] = ['AGENDADO', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'];
   return validStatuses.includes(value);
@@ -229,17 +218,17 @@ async function calculateExecutionStatistics(whereClause: WhereClauseInput) {
 
     // Execuções bem-sucedidas
     prisma.reportExecution.count({
-      where: { ...whereClause, status: ExecutionStatus.COMPLETED }
+      where: { ...whereClause, status: 'COMPLETED' }
     }),
 
     // Execuções falhadas
     prisma.reportExecution.count({
-      where: { ...whereClause, status: ExecutionStatus.FAILED }
+      where: { ...whereClause, status: 'FAILED' }
     }),
 
     // Duração média
     prisma.reportExecution.aggregate({
-      where: { ...whereClause, status: ExecutionStatus.COMPLETED },
+      where: { ...whereClause, status: 'COMPLETED' },
       _avg: { duration: true }
     }),
 
@@ -350,10 +339,10 @@ async function getMonthlyTrend(whereClause: WhereClauseInput) {
 
     // Type narrowing: validar se status é um dos valores esperados
     if (isValidExecutionStatus(execution.status)) {
-      if (execution.status === ExecutionStatus.COMPLETED) {
+      if (execution.status === 'COMPLETED') {
         monthlyData[monthKey].successful++;
         monthlyData[monthKey].avgDuration += execution.duration || 0;
-      } else if (execution.status === ExecutionStatus.FAILED) {
+      } else if (execution.status === 'FAILED') {
         monthlyData[monthKey].failed++;
       }
     }

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUser, validateAuth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import {
   successResponse,
   errorResponse,

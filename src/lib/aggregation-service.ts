@@ -24,7 +24,8 @@ function isSuccessfulJuditCall(status: unknown): status is string {
   return typeof status === 'string' && status === 'success';
 }
 
-// Type guard for valid JuditAlertType from schema
+// Valid JuditAlertType from schema (used as type constraint)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const VALID_JUDIT_ALERT_TYPES = [
   'API_ERROR',
   'RATE_LIMIT',
@@ -36,10 +37,6 @@ const VALID_JUDIT_ALERT_TYPES = [
 ] as const;
 
 type ValidJuditAlertType = typeof VALID_JUDIT_ALERT_TYPES[number];
-
-function isValidJuditAlertType(value: unknown): value is ValidJuditAlertType {
-  return typeof value === 'string' && VALID_JUDIT_ALERT_TYPES.includes(value as ValidJuditAlertType);
-}
 
 export interface WorkspaceMetrics {
   workspaceId: string;

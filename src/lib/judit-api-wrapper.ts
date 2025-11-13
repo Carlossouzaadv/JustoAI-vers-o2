@@ -10,6 +10,7 @@ import { ICONS } from '@/lib/icons';
 // TYPES
 // ================================================================
 
+/* eslint-disable no-unused-vars */
 export enum JuditOperationType {
   SEARCH = 'SEARCH',
   MONITORING = 'MONITORING',
@@ -17,6 +18,7 @@ export enum JuditOperationType {
   ANALYSIS = 'ANALYSIS',
   REPORT = 'REPORT',
 }
+/* eslint-enable no-unused-vars */
 
 export interface JuditCallMetrics {
   workspaceId?: string;
@@ -134,6 +136,7 @@ export class JuditApiWrapper {
 
       // Save to database with safe enum mapping (Padrão-Ouro pattern)
       // mapLocalOperationTypeToPrisma() returns specific Prisma enum literal types
+      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
       const tracking = await prisma.juditCostTracking.create({
         data: {
           workspaceId: metrics.workspaceId ?? null,

@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { OnboardingProgress } from '@/components/onboarding/onboarding-progress';
 import { PreviewResults, PreviewResultsCompact } from '@/components/onboarding/preview-results';
@@ -260,7 +259,7 @@ export function ProcessOnboardingStatus({
  * Versão compacta para sidebars ou cards menores
  */
 export function ProcessOnboardingStatusCompact({
-  processNumber,
+  processNumber: _processNumber,
   juditJobId,
   previewData
 }: Omit<ProcessOnboardingStatusProps, 'caseId' | 'onAnalyzeClick'>) {

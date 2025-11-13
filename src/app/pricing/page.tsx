@@ -12,7 +12,6 @@ import FeatureMatrix from '@/components/pricing/feature-matrix';
 import CreditsPacks from '@/components/pricing/credits-packs';
 import FaqPricing from '@/components/pricing/faq-pricing';
 import PlanModal from '@/components/pricing/plan-modal';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Star, Shield } from 'lucide-react';
 

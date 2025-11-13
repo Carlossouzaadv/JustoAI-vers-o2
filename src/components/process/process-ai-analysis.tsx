@@ -20,13 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { UsageAlert } from '@/components/ui/usage-alert';
 import {
   SubscriptionPlan,
   UsageStats,
-  canPerformAction,
   formatLimitMessage,
-  getAnalysisRemaining,
   getPlanLimits
 } from '@/lib/subscription-limits';
 import { ICONS } from '@/lib/icons';
@@ -74,7 +71,9 @@ type SanitizedData = string | number | boolean | SanitizedData[] | { [key: strin
 
 /**
  * Sanitiza dados de análise removendo valores null
+ * Função auxiliar para processamento interno (não exportada)
  */
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function sanitizeAnalysisData(data: unknown): SanitizedData {
   if (!data) return null;
   if (data === null) return null;
@@ -364,7 +363,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
                         <div className="px-2 py-1.5 text-sm font-medium text-muted-foreground">
                           Histórico de Análises
                         </div>
-                        {analyses.map((analysis, index) => (
+                        {analyses.map((analysis, _index) => (
                           <DropdownMenuItem
                             key={analysis.id}
                             onClick={() => setSelectedVersion(analysis)}

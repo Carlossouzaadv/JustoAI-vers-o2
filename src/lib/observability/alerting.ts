@@ -5,7 +5,7 @@
 
 import { AlertSeverity } from '@/lib/types/database';
 import { alertLogger } from './logger';
-import { createAlert, type AlertType, type SeverityLevel } from './costTracking';
+import { createAlert, type AlertType } from './costTracking';
 
 // ================================================================
 // CONFIGURATION
@@ -53,7 +53,7 @@ export interface AlertOptions {
 export interface NotificationChannel {
   name: string;
   enabled: boolean;
-  send: (alert: AlertOptions) => Promise<void>;
+  send: (_alert: AlertOptions) => Promise<void>;
 }
 
 // ================================================================
@@ -438,6 +438,7 @@ function getSeverityColor(severity: AlertSeverity | string): string {
 /**
  * Formata corpo do email
  */
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function formatEmailBody(alert: AlertOptions): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

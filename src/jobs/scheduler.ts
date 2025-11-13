@@ -52,8 +52,8 @@ interface JobConfig<T = unknown> {
   schedule: string;
   enabled: boolean;
   task: () => Promise<T>;
-  onError?: (error: Error) => void;
-  onSuccess?: (result: T) => void;
+  onError?: (_error: Error) => void;
+  onSuccess?: (_result: T) => void;
 }
 
 // ================================================================
@@ -307,7 +307,7 @@ function getNextRunTime(cronExpression: string): string {
       timeStyle: 'short',
     });
 
-  } catch (error) {
+  } catch (_error) {
     return 'Erro ao calcular';
   }
 }

@@ -3,14 +3,14 @@
 // Retorna estatísticas da fila de onboarding
 // ================================================================
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getQueueStats, getActiveJobs, getWaitingJobs } from '@/lib/queue/juditQueue';
 
 // ================================================================
 // HANDLER
 // ================================================================
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Buscar estatísticas gerais
     const stats = await getQueueStats();
@@ -85,7 +85,6 @@ function calculateHealth(stats: unknown): 'healthy' | 'warning' | 'critical' {
   if (!isQueueStats(stats)) return 'critical';
 
   const { active, waiting, failed } = stats;
-  const totalActive = active + waiting;
 
   // Crítico se muitos jobs falhando
   if (failed > 50) return 'critical';

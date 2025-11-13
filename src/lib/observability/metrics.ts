@@ -27,8 +27,6 @@ interface MetricEntry {
   tags?: Record<string, string>;
 }
 
-type MetricType = 'counter' | 'gauge' | 'histogram' | 'timer';
-
 // ================================================================
 // IN-MEMORY METRICS STORE
 // ================================================================

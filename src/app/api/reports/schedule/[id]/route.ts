@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
 import { prisma } from '@/lib/prisma';
-import { ReportScheduler } from '@/lib/report-scheduler';
 import { getNotificationService } from '@/lib/notification-service';
 
 const updateScheduleSchema = z.object({
@@ -31,7 +30,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, workspace } = await validateAuthAndGetUser();
+    const { workspace } = await validateAuthAndGetUser();
     const { id: scheduleId } = await params;
 
     // Buscar agendamento do banco
@@ -86,7 +85,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, workspace } = await validateAuthAndGetUser();
+    const { workspace } = await validateAuthAndGetUser();
     const { id: scheduleId } = await params;
 
     const body = await req.json();
@@ -193,7 +192,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, workspace } = await validateAuthAndGetUser();
+    const { workspace } = await validateAuthAndGetUser();
     const { id: scheduleId } = await params;
 
     // Buscar agendamento para validar workspace
@@ -245,7 +244,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user, workspace } = await validateAuthAndGetUser();
+    const { workspace } = await validateAuthAndGetUser();
     const { id: scheduleId } = await params;
 
     const body = await req.json();

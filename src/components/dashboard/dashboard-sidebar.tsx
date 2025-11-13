@@ -31,7 +31,7 @@ interface Client {
 
 interface DashboardSidebarProps {
   selectedClientId?: string;
-  onClientSelect?: (clientId: string) => void;
+  onClientSelect?: (_clientId: string) => void;
 }
 
 interface ApiClient {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   Dialog,
@@ -26,7 +26,7 @@ export interface DeepAnalysisModalProps {
     size: number;
     uploadedAt: string;
   }>;
-  onAnalysisComplete?: (result: unknown) => void;
+  onAnalysisComplete?: () => void;
 }
 
 type AnalysisType = 'FAST' | 'FULL';
@@ -123,7 +123,7 @@ export function DeepAnalysisModal({
     );
   };
 
-  const estimateCredits = async () => {
+  const estimateCredits = useCallback(async () => {
     if (analysisType === 'FAST') {
       setCredits({ available: 999, needed: 0, sufficient: true });
       return;
@@ -142,9 +142,9 @@ export function DeepAnalysisModal({
     } catch (error) {
       console.error('Error estimating credits:', error);
     }
-  };
+  }, [analysisType, useExistingFiles, selectedExistingFiles.length, uploadedFiles.length]);
 
-  const checkCacheStatus = async () => {
+  const checkCacheStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/process/${processId}/analysis/cache-status?workspaceId=${workspaceId}`);
       const data = await response.json();
@@ -155,7 +155,7 @@ export function DeepAnalysisModal({
     } catch (error) {
       console.error('Error checking cache status:', error);
     }
-  };
+  }, [processId, workspaceId]);
 
   const startAnalysis = async () => {
     setIsProcessing(true);
@@ -210,7 +210,7 @@ export function DeepAnalysisModal({
     setProcessingStep(result.fromCache ? 'Análise carregada do cache!' : 'Análise concluída!');
 
     setTimeout(() => {
-      onAnalysisComplete?.(result.data);
+      onAnalysisComplete?.();
       onClose();
     }, 1000);
   };
@@ -258,7 +258,7 @@ export function DeepAnalysisModal({
     setProcessingStep('Análise FULL concluída!');
 
     setTimeout(() => {
-      onAnalysisComplete?.(result.data);
+      onAnalysisComplete?.();
       onClose();
     }, 1000);
   };
@@ -284,14 +284,14 @@ export function DeepAnalysisModal({
   };
 
   // Update credits and cache status when analysis type or files change
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       estimateCredits();
       if (analysisType === 'FAST') {
         checkCacheStatus();
       }
     }
-  }, [analysisType, uploadedFiles.length, selectedExistingFiles.length, useExistingFiles, isOpen, processId]);
+  }, [analysisType, uploadedFiles.length, selectedExistingFiles.length, useExistingFiles, isOpen, processId, estimateCredits, checkCacheStatus]);
 
   const canStartAnalysis = () => {
     if (isProcessing) return false;

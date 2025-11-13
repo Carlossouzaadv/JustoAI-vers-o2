@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ICONS } from '@/lib/icons';
@@ -25,7 +26,6 @@ export default function VerifyEmailPage() {
         // Parse hash to extract access_token
         const params = new URLSearchParams(hash.substring(1));
         const accessToken = params.get('access_token');
-        const tokenType = params.get('type');
 
         if (!accessToken) {
           setStatus('error');
@@ -61,7 +61,7 @@ export default function VerifyEmailPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-3 mb-8">
             <div className="w-12 h-12">
-              <img src="/logo+nome.png" alt="JustoAI" className="w-full h-full object-contain" />
+              <Image src="/logo+nome.png" alt="JustoAI" width={144} height={48} className="w-full h-full object-contain" />
             </div>
             <span className="font-display font-bold text-2xl text-primary-800">JustoAI</span>
           </Link>

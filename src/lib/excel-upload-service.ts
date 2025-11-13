@@ -192,7 +192,7 @@ export class ExcelUploadService {
   private config: UploadConfig;
   private rateLimiter: RateLimitedApiClient;
   private parser: ExcelProcessParser;
-  private progressCallbacks: Map<string, (progress: BatchProgress) => void> = new Map();
+  private progressCallbacks: Map<string, (_progress: BatchProgress) => void> = new Map();
 
   constructor(config: Partial<UploadConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -210,7 +210,7 @@ export class ExcelUploadService {
   async parseAndValidate(
     buffer: Buffer,
     fileName: string,
-    workspaceId: string
+    _workspaceId: string
   ): Promise<{
     success: boolean;
     parseResult?: ExcelParseResult;
@@ -515,6 +515,7 @@ export class ExcelUploadService {
     batchId: string,
     prisma: PrismaClient
   ): Promise<JuditApiResponse> {
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     const payload: JuditApiPayload = {
       numero_processo: row.numeroProcesso,
       tribunal: row.tribunal,
@@ -848,7 +849,7 @@ export class ExcelUploadService {
   /**
    * Registra callback para receber atualizações de progresso
    */
-  onProgress(batchId: string, callback: (progress: BatchProgress) => void): void {
+  onProgress(batchId: string, callback: (_progress: BatchProgress) => void): void {
     this.progressCallbacks.set(batchId, callback);
   }
 

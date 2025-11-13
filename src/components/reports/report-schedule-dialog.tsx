@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -51,7 +50,7 @@ interface ReportScheduleDialogProps {
   clientId: string;
   clientName: string;
   availableProcesses: ProcessOption[];
-  onSchedule: (schedule: ReportSchedule) => Promise<void>;
+  onSchedule: (_schedule: ReportSchedule) => Promise<void>;
   trigger?: React.ReactNode;
 }
 
@@ -109,16 +108,7 @@ export function ReportScheduleDialog({
 
   const watchedValues = form.watch();
 
-  // Calcular custo estimado quando os valores mudam
-  useEffect(() => {
-    calculateCostEstimate();
-  }, [
-    watchedValues.processIds,
-    watchedValues.frequency,
-    watchedValues.reportType
-  ]);
-
-  const calculateCostEstimate = () => {
+  const calculateCostEstimate = useCallback(() => {
     const selectedProcesses = availableProcesses.filter(p =>
       watchedValues.processIds?.includes(p.id)
     );
@@ -152,7 +142,17 @@ export function ReportScheduleDialog({
       perReport: costPerReport,
       tokensEstimate: totalTokensPerReport,
     });
-  };
+  }, [availableProcesses, watchedValues.processIds, watchedValues.frequency, watchedValues.reportType]);
+
+  // Calcular custo estimado quando os valores mudam
+  useEffect(() => {
+    calculateCostEstimate();
+  }, [
+    watchedValues.processIds,
+    watchedValues.frequency,
+    watchedValues.reportType,
+    calculateCostEstimate
+  ]);
 
   const handleSubmit = async (data: ReportScheduleForm) => {
     setLoading(true);

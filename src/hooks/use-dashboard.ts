@@ -1,7 +1,6 @@
 'use client';
 
 import { useContext } from 'react';
-import type { DashboardContextType } from '../app/dashboard/layout';
 import { DashboardContext } from '../app/dashboard/layout';
 
 /**

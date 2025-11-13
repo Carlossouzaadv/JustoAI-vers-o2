@@ -1,8 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { CheckCircle2, AlertCircle, FileText, User, DollarSign, Calendar } from 'lucide-react';
 
 interface PreviewData {

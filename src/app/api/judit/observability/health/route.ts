@@ -3,7 +3,7 @@
 // Health check e status geral da integração JUDIT
 // ================================================================
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { metrics } from '@/lib/observability/metrics';
 import { getCostSummary } from '@/lib/observability/costTracking';
 import { getQueueStats } from '@/lib/queue/juditQueue';
@@ -46,7 +46,7 @@ function isQueueStats(data: unknown): data is QueueStats {
 // HANDLER
 // ================================================================
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Fetch data in parallel
     const [queueStats, unresolvedAlerts, recentCosts] = await Promise.all([
@@ -75,7 +75,6 @@ export async function GET(request: NextRequest) {
       queueStats,
       errorRate,
       unresolvedAlerts,
-      recentCosts: recentCosts.totalCost,
     });
 
     return NextResponse.json({
@@ -139,9 +138,8 @@ function determineHealth(params: {
   queueStats: unknown;
   errorRate: number;
   unresolvedAlerts: number;
-  recentCosts: number;
 }): { status: 'healthy' | 'degraded' | 'unhealthy'; message: string } {
-  const { queueStats, errorRate, unresolvedAlerts, recentCosts } = params;
+  const { queueStats, errorRate, unresolvedAlerts } = params;
 
   // Critical conditions
   if (errorRate > 20) {

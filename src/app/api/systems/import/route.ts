@@ -3,11 +3,11 @@
 // ================================
 // Upload CSV/Excel com detecção inteligente de sistemas jurídicos
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
-import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
+import { apiResponse, errorResponse, ApiError } from '@/lib/api-utils';
 import { createSystemImporter, type ImportOptions } from '@/lib/system-importer';
 import { createIntelligentParser } from '@/lib/intelligent-parser';
 import { SystemMappings } from '@/lib/system-mappings';
@@ -101,11 +101,6 @@ async function extractFileFromRequest(
 // SCHEMAS DE VALIDAÇÃO
 // ================================
 
-const AnalyzeRequestSchema = z.object({
-  fileName: z.string().optional(),
-  previewOnly: z.boolean().default(true)
-});
-
 const ImportRequestSchema = z.object({
   overwriteExisting: z.boolean().default(false),
   skipDuplicates: z.boolean().default(true),
@@ -121,7 +116,8 @@ const ImportRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, workspace } = await validateAuth();
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+    const { user: _user, workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'analyze';
 

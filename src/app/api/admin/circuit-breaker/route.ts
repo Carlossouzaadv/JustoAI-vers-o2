@@ -8,7 +8,7 @@ import { requireAdminAccess } from '@/lib/permission-validator';
  * Get circuit breaker status
  * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 1. Authenticate user
     const { user, workspace } = await validateAuthAndGetUser();

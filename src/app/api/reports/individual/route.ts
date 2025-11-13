@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCreditManager } from '@/lib/credit-system';
 import { ReportGenerator } from '@/lib/report-generator';
-import { ReportCacheManager } from '@/lib/report-cache-manager';
 import { addNotificationJob } from '@/lib/queues';
 import { ICONS } from '@/lib/icons';
 import { createHash } from 'crypto';
@@ -43,7 +42,6 @@ interface IndividualReportResponse {
 }
 
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
   let creditHold: { success: boolean; holdId?: string } | null = null;
 
   try {
@@ -73,7 +71,6 @@ export async function POST(request: NextRequest) {
 
     // 2. Verificar cache se não forçar nova análise
     let cacheResult = null;
-    const cacheManager = new ReportCacheManager();
 
     if (!forceNewAnalysis) {
       cacheResult = await checkReportCache(workspaceId, processIds, type, format);

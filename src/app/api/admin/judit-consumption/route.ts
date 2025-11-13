@@ -11,17 +11,13 @@
  * - Preços sugeridos por margem
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
 
 // Constants
 const JUDIT_API_KEY = process.env.JUDIT_API_KEY;
 const JUDIT_API_URL = process.env.JUDIT_API_URL || 'https://api.judit.com.br';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // ================================================================
 // Types
@@ -129,7 +125,6 @@ async function fetchJuditData(startDate: string, endDate: string) {
 function calculateCost(request: JuditRequest): number {
   let cost = 0;
   const searchType = request.search?.search_type || 'unknown';
-  const origin = request.origin || 'api';
 
   // Base search cost
   const searchCosts: Record<string, number> = {
@@ -257,7 +252,7 @@ async function getCachedReport(): Promise<ConsumptionReport | null> {
   }
 }
 
-async function saveCachedReport(report: ConsumptionReport): Promise<void> {
+async function saveCachedReport(_report: ConsumptionReport): Promise<void> {
   try {
     // TODO: Save to database for future caching
     // await prisma.adminCache.upsert({...})
@@ -271,7 +266,7 @@ async function saveCachedReport(report: ConsumptionReport): Promise<void> {
 // Route Handlers
 // ================================================================
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 1. Authenticate user
     const { user, workspace } = await validateAuthAndGetUser();

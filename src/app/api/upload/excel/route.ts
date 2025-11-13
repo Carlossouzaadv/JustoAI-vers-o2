@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const { parseResult: parsed, estimate, preview } = excelParseResult;
+    const { parseResult: parsed, estimate } = excelParseResult;
 
     // Verificar se há linhas válidas para processar
     if (parsed!.summary.valid === 0) {

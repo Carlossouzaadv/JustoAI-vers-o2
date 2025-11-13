@@ -29,7 +29,7 @@ export async function getAuthenticatedUser(request: NextRequest) {
               value: cookie.value,
             }));
           },
-          setAll(cookiesToSet) {
+          setAll(_cookiesToSet) {
             // No-op for API routes
           },
         },
@@ -73,7 +73,7 @@ export async function getServerUser() {
               cookieStore.set(name, value);
             }
           },
-          remove(name: string, options: Record<string, unknown> | undefined) {
+          remove(name: string, _options: Record<string, unknown> | undefined) {
             cookieStore.delete(name);
           },
         },

@@ -3,7 +3,6 @@
 // ================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { usageTracker } from '@/lib/telemetry/usage-tracker';
 import { quotaEnforcement } from '@/lib/middleware/quota-enforcement';
 import { getCredits } from '@/lib/services/creditService';
@@ -31,93 +30,75 @@ interface CreditPackage {
   popular?: boolean;
 }
 
-interface CreditBalance {
-  workspaceId: string;
-  balance: number;
-  includedCredits: number;
-  purchasedCredits: number;
-  consumedCredits: number;
-  transactions: CreditTransaction[];
-}
-
-interface CreditTransaction {
-  id: string;
-  type: 'debit' | 'credit';
-  amount: number;
-  reason: string;
-  createdAt: string;
-  metadata?: Record<string, unknown>;
-}
-
-interface QuotaStatus {
-  quotaStatus: 'ok' | 'soft_warning' | 'hard_blocked';
-  percentage?: number;
-}
-
 interface PaymentWebhookPayload {
   provider?: string;
   headers?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
-interface TransactionData {
-  id: string;
-  type: string;
-  amount: {
-    toString(): string;
-  };
-  metadata: unknown;
-  createdAt: {
-    toISOString(): string;
-  };
-}
+// Note: TransactionData is currently unused but needed if getCreditTransactions is uncommented
+// interface TransactionData {
+//   id: string;
+//   type: string;
+//   amount: {
+//     toString(): string;
+//   };
+//   metadata: unknown;
+//   createdAt: {
+//     toISOString(): string;
+//   };
+// }
 
 // ================================================================
 // TYPE GUARDS (Mandato Inegociável)
 // ================================================================
 
-function isTransaction(data: unknown): data is {
-  id: string;
-  type: string;
-  amount: {
-    toString(): string;
-  };
-  metadata: unknown;
-  createdAt: {
-    toISOString(): string;
-  };
-} {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'id' in data &&
-    'type' in data &&
-    'amount' in data &&
-    'createdAt' in data
-  );
-}
+// Note: isTransaction is currently unused but needed if getCreditTransactions is uncommented
+// function isTransaction(data: unknown): data is {
+//   id: string;
+//   type: string;
+//   amount: {
+//     toString(): string;
+//   };
+//   metadata: unknown;
+//   createdAt: {
+//     toISOString(): string;
+//   };
+// } {
+//   return (
+//     typeof data === 'object' &&
+//     data !== null &&
+//     'id' in data &&
+//     'type' in data &&
+//     'amount' in data &&
+//     'createdAt' in data
+//   );
+// }
 
-function isMetadataWithReason(data: unknown): data is { reason?: string } {
-  return typeof data === 'object' && data !== null;
-}
+// Note: isMetadataWithReason is currently unused but needed if getCreditTransactions is uncommented
+// function isMetadataWithReason(data: unknown): data is { reason?: string } {
+//   return typeof data === 'object' && data !== null;
+// }
 
-function isQuotaStatus(data: unknown): data is QuotaStatus {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'quotaStatus' in data &&
-    typeof (data as QuotaStatus).quotaStatus === 'string'
-  );
-}
+// Note: isQuotaStatus is currently unused but needed if generateRecommendations is uncommented
+// function isQuotaStatus(data: unknown): data is QuotaStatus {
+//   return (
+//     typeof data === 'object' &&
+//     data !== null &&
+//     'quotaStatus' in data &&
+//     typeof (data as QuotaStatus).quotaStatus === 'string'
+//   );
+// }
 
-function isCreditBalance(data: unknown): data is { balance: number } {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    'balance' in data &&
-    typeof (data as CreditBalance).balance === 'number'
-  );
-}
+// Note: isCreditBalance is currently unused but needed if generateRecommendations is uncommented
+// function isCreditBalance(data: unknown): data is { balance: number } {
+//   return (
+//     typeof data === 'object' &&
+//     data !== null &&
+//     'balance' in data &&
+//     typeof (data as CreditBalance).balance === 'number'
+//   );
+// }
 
 function isPaymentWebhookPayload(data: unknown): data is PaymentWebhookPayload {
   return typeof data === 'object' && data !== null;
@@ -272,52 +253,54 @@ async function getCreditPackages(): Promise<NextResponse> {
   });
 }
 
-async function getCreditTransactions(workspaceId: string): Promise<NextResponse> {
-  try {
-    const transactions = await prisma.creditTransaction.findMany({
-      where: { workspaceId },
-      orderBy: { createdAt: 'desc' },
-      take: 50
-    });
+// Note: getCreditTransactions is currently unused but may be needed in future
+// IMPORTANT: If you uncomment this function, also uncomment the prisma import at the top
+// async function getCreditTransactions(workspaceId: string): Promise<NextResponse> {
+//   try {
+//     const transactions = await prisma.creditTransaction.findMany({
+//       where: { workspaceId },
+//       orderBy: { createdAt: 'desc' },
+//       take: 50
+//     });
 
-    const formattedTransactions: CreditTransaction[] = transactions
-      .filter(isTransaction)
-      .map((t: TransactionData) => {
-        const metadata = t.metadata as unknown;
-        const reason = isMetadataWithReason(metadata)
-          ? metadata.reason || 'Transação de crédito'
-          : 'Transação de crédito';
+//     const formattedTransactions: CreditTransaction[] = transactions
+//       .filter(isTransaction)
+//       .map((t: TransactionData) => {
+//         const metadata = t.metadata as unknown;
+//         const reason = isMetadataWithReason(metadata)
+//           ? metadata.reason || 'Transação de crédito'
+//           : 'Transação de crédito';
 
-        // Cast metadata safely - it's JsonValue from Prisma, convert to Record<string, unknown>
-        const safeMetadata = typeof metadata === 'object' && metadata !== null
-          ? (metadata as Record<string, unknown>)
-          : undefined;
+//         // Cast metadata safely - it's JsonValue from Prisma, convert to Record<string, unknown>
+//         const safeMetadata = typeof metadata === 'object' && metadata !== null
+//           ? (metadata as Record<string, unknown>)
+//           : undefined;
 
-        return {
-          id: t.id,
-          type: (t.type as 'debit' | 'credit'),
-          amount: parseFloat(t.amount.toString()),
-          reason,
-          createdAt: t.createdAt.toISOString(),
-          metadata: safeMetadata
-        };
-      });
+//         return {
+//           id: t.id,
+//           type: (t.type as 'debit' | 'credit'),
+//           amount: parseFloat(t.amount.toString()),
+//           reason,
+//           createdAt: t.createdAt.toISOString(),
+//           metadata: safeMetadata
+//         };
+//       });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        transactions: formattedTransactions
-      }
-    });
+//     return NextResponse.json({
+//       success: true,
+//       data: {
+//         transactions: formattedTransactions
+//       }
+//     });
 
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to get credit transactions:`, error);
-    return NextResponse.json(
-      { error: 'Erro ao buscar transações' },
-      { status: 500 }
-    );
-  }
-}
+//   } catch (error) {
+//     console.error(`${ICONS.ERROR} Failed to get credit transactions:`, error);
+//     return NextResponse.json(
+//       { error: 'Erro ao buscar transações' },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
   try {
@@ -577,8 +560,8 @@ async function simulatePurchase(request: {
 // ================================================================
 
 async function simulatePaymentProcessing(
-  paymentMethod: string,
-  amount: number
+  _paymentMethod: string,
+  _amount: number
 ): Promise<{ success: boolean; transactionId?: string; error?: string }> {
   // Simular delay de processamento
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -599,39 +582,40 @@ async function simulatePaymentProcessing(
   }
 }
 
-function generateRecommendations(
-  balance: unknown,
-  quotaStatus: unknown
-): string[] {
-  const recommendations: string[] = [];
+// Note: generateRecommendations is currently unused but may be needed in future
+// function generateRecommendations(
+//   balance: unknown,
+//   quotaStatus: unknown
+// ): string[] {
+//   const recommendations: string[] = [];
 
-  // Validate quotaStatus using type guard
-  if (isQuotaStatus(quotaStatus)) {
-    if (quotaStatus.quotaStatus === 'hard_blocked') {
-      recommendations.push('🚨 Compre créditos agora para continuar gerando relatórios');
-    } else if (quotaStatus.quotaStatus === 'soft_warning') {
-      recommendations.push('⚠️ Considere comprar créditos extras para evitar interrupções');
-    }
+//   // Validate quotaStatus using type guard
+//   if (isQuotaStatus(quotaStatus)) {
+//     if (quotaStatus.quotaStatus === 'hard_blocked') {
+//       recommendations.push('🚨 Compre créditos agora para continuar gerando relatórios');
+//     } else if (quotaStatus.quotaStatus === 'soft_warning') {
+//       recommendations.push('⚠️ Considere comprar créditos extras para evitar interrupções');
+//     }
 
-    // Check percentage only if it exists and is a number
-    if (typeof quotaStatus.percentage === 'number' && quotaStatus.percentage > 70) {
-      recommendations.push('📈 Use o agendamento noturno para economizar créditos');
-    }
-  }
+//     // Check percentage only if it exists and is a number
+//     if (typeof quotaStatus.percentage === 'number' && quotaStatus.percentage > 70) {
+//       recommendations.push('📈 Use o agendamento noturno para economizar créditos');
+//     }
+//   }
 
-  // Validate balance using type guard
-  if (isCreditBalance(balance)) {
-    if (balance.balance < 5) {
-      recommendations.push('💡 Saldo baixo - recomendamos comprar o pacote de 20 relatórios');
-    }
-  }
+//   // Validate balance using type guard
+//   if (isCreditBalance(balance)) {
+//     if (balance.balance < 5) {
+//       recommendations.push('💡 Saldo baixo - recomendamos comprar o pacote de 20 relatórios');
+//     }
+//   }
 
-  if (recommendations.length === 0) {
-    recommendations.push('✅ Tudo certo! Você tem créditos suficientes');
-  }
+//   if (recommendations.length === 0) {
+//     recommendations.push('✅ Tudo certo! Você tem créditos suficientes');
+//   }
 
-  return recommendations;
-}
+//   return recommendations;
+// }
 
 // ================================================================
 // ENDPOINT DE WEBHOOK PARA PAGAMENTOS (FUTURO)

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, TrendingUp, TrendingDown, DollarSign, Calendar, Download, ArrowRight } from 'lucide-react';
+import { CreditCard, TrendingUp, TrendingDown, DollarSign, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

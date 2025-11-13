@@ -281,7 +281,8 @@ export async function optimizePDF(
     const originalStats = await fs.stat(inputPath);
     const originalSize = originalStats.size;
 
-    // Configurações
+    // Configurações (for potential future use)
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     const config = {
       quality: options.quality || 'medium',
       dpi: options.dpi || COMPRESSION_CONFIG.PDF.DPI[options.quality || 'medium'],
@@ -485,7 +486,7 @@ function generateThumbnailPath(originalPath: string): string {
 async function ensureDirectory(dirPath: string): Promise<void> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
-  } catch (error) {
+  } catch (_error) {
     // Ignore se diretório já existe
   }
 }

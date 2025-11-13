@@ -238,7 +238,7 @@ export function generatePaginationUrls(
  * Middleware para validação de paginação
  */
 export function validatePaginationMiddleware() {
-  return (req: { query: PaginationQuery; pagination?: PaginationParams }, res: { status: (code: number) => { json: (data: unknown) => unknown } }, next: () => void) => {
+  return (req: { query: PaginationQuery; pagination?: PaginationParams }, res: { status: (_code: number) => { json: (_data: unknown) => unknown } }, next: () => void) => {
     try {
       const params = parsePaginationQuery(req.query);
       req.pagination = params;

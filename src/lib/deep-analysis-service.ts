@@ -5,7 +5,7 @@
 //
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
-import { PrismaClient, Prisma } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { JobStatus, type AnalysisType, type CaseAnalysisVersion, type AnalysisJob, type MonitoredProcess, type InputJsonValue, type CaseAnalysisVersionWhereInput } from '@/lib/types/database';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
@@ -13,17 +13,11 @@ import { ICONS } from './icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';
 import { getRedisClient } from './redis';
-import type { Redis as RedisClient } from 'ioredis';
 import type {
   AnalysisMetadata,
-  AIAnalysisData,
-  CaseMetadata,
-  ExtractedAnalysisData,
 } from './types/json-fields';
 import {
-  isAIAnalysisData,
   isAnalysisMetadata,
-  parseJsonWithGuard,
   createAIAnalysisData,
 } from './types/type-guards';
 
@@ -227,8 +221,8 @@ export class DeepAnalysisService {
   async processUploadedFiles(
     files: File[],
     processId: string,
-    workspaceId: string,
-    userId: string
+    _workspaceId: string,
+    _userId: string
   ): Promise<ProcessDocument[]> {
     const processedFiles: ProcessDocument[] = [];
 
@@ -265,7 +259,6 @@ export class DeepAnalysisService {
         // Extrair texto do PDF (simulação - implementar extração real)
         const extractedText = await this.extractTextFromPDF(buffer, file.name);
         const cleanText = this.cleanExtractedText(extractedText);
-        const textSha = createHash('sha256').update(cleanText).digest('hex');
 
         // Salvar documento no banco
         const savedDoc = await prisma.caseDocument.create({

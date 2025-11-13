@@ -47,7 +47,7 @@ export interface ScheduleReportModalProps {
     client: string;
     status: string;
   }>;
-  onScheduleComplete?: (result: unknown) => void;
+  onScheduleComplete?: (_result: unknown) => void;
 }
 
 interface ScheduleForm {

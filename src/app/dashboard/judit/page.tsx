@@ -13,7 +13,6 @@ import {
   TrendingUp,
   DollarSign,
   AlertTriangle,
-  BarChart3,
 } from 'lucide-react';
 import {
   useJuditHealth,

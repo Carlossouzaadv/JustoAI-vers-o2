@@ -509,7 +509,6 @@ export class ReportScheduler {
       }
 
       // Extrair informações do resultado com narrowing
-      const fileName = resultData.fileName || `report-${Date.now()}`;
       const fileSize = resultData.fileSize || 0;
       const downloadUrl = resultData.publicUrl || '#';
       const expiresAt = resultData.expiresAt ? new Date(resultData.expiresAt) : undefined;

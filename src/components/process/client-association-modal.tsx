@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,12 +23,12 @@ interface Client {
 interface ClientAssociationModalProps {
   caseId: string;
   currentClient?: Client | null;
-  onClientAssociated: (client: Client) => void;
+  onClientAssociated: (_client: Client) => void;
   trigger: React.ReactNode;
   bulkMode?: boolean;
   bulkSelectedCount?: number;
   isOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (_open: boolean) => void;
 }
 
 export function ClientAssociationModal({

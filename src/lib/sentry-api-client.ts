@@ -223,7 +223,7 @@ export async function getSentryHealth(): Promise<{
           : 'Taxa de erros crítica',
       lastUpdate: new Date().toISOString(),
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       status: 'critical',
       message: 'Erro ao conectar com Sentry',

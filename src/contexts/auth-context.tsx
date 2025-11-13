@@ -44,14 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Load user from API only once, on mount
   useEffect(() => {
     async function loadUser() {
       try {
-        // Mark that we've started the initialization
-        setHasInitialized(true);
 
         const response = await fetch(getApiUrl('/api/users/current'), {
           credentials: 'include',

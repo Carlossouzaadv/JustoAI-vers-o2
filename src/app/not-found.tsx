@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
@@ -13,9 +14,11 @@ export default function NotFound() {
         <div className="flex justify-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-3">
             <div className="w-12 h-12">
-              <img
+              <Image
                 src="/logo+nome.png"
                 alt="JustoAI"
+                width={144}
+                height={48}
                 className="w-full h-full object-contain"
               />
             </div>

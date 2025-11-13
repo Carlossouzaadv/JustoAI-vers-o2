@@ -10,7 +10,7 @@ import '@/styles/dashboard-animations.css';
 export interface DashboardContextType {
   selectedClientId: string;
   selectedClientName: string;
-  setSelectedClient: (id: string, name: string) => void;
+  setSelectedClient: (_id: string, _name: string) => void;
 }
 
 // Exported context for use in separate hook file (prevents TDZ during minification)
@@ -33,9 +33,9 @@ export default function DashboardLayout({
   const [selectedClientId, setSelectedClientId] = useState('');
   const [selectedClientName, setSelectedClientName] = useState('');
 
-  const setSelectedClient = (id: string, name: string) => {
-    setSelectedClientId(id);
-    setSelectedClientName(name);
+  const setSelectedClient = (_id: string, _name: string) => {
+    setSelectedClientId(_id);
+    setSelectedClientName(_name);
   };
 
   return (
@@ -50,9 +50,9 @@ export default function DashboardLayout({
         <div className="min-h-screen flex w-full">
           <DashboardSidebar
             selectedClientId={selectedClientId}
-            onClientSelect={(clientId) => {
+            onClientSelect={(_clientId) => {
               // Nome será carregado automaticamente pela página
-              setSelectedClient(clientId, '');
+              setSelectedClient(_clientId, '');
             }}
           />
           <div className="flex-1 flex flex-col">

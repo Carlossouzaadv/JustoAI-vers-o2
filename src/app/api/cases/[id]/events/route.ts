@@ -16,11 +16,12 @@ function isJuditStep(value: unknown): value is { step_id?: string; step_date?: s
   return ('step_date' in value || 'step_id' in value || 'content' in value);
 }
 
-function isTimelineMovement(value: unknown): value is { date?: string; description?: string } {
-  if (!isRecord(value)) return false;
-  // Padrão-Ouro: Use 'in' operator para safe narrowing (ZERO 'as')
-  return ('date' in value || 'description' in value);
-}
+// Note: isTimelineMovement is currently unused but may be needed in future
+// function isTimelineMovement(value: unknown): value is { date?: string; description?: string } {
+//   if (!isRecord(value)) return false;
+//   // Padrão-Ouro: Use 'in' operator para safe narrowing (ZERO 'as')
+//   return ('date' in value || 'description' in value);
+// }
 
 /**
  * Helpers: Extração segura de valores de objetos desconhecidos
@@ -252,7 +253,7 @@ export async function GET(
               if (typeof dateValue === 'string') {
                 try {
                   realEventDate = new Date(dateValue);
-                } catch (e) {
+                } catch {
                   // Manter date original se não conseguir parsear
                 }
               }
@@ -282,7 +283,7 @@ export async function GET(
               if (typeof stepDateValue === 'string') {
                 try {
                   realEventDate = new Date(stepDateValue);
-                } catch (e) {
+                } catch {
                   // Manter date original se não conseguir parsear
                 }
               }

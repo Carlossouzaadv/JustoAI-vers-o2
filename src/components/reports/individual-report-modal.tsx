@@ -4,7 +4,7 @@
 // MODAL DE RELATÓRIOS INDIVIDUAIS - Interface Frontend
 // ================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useCallback} from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,7 @@ interface IndividualReportModalProps {
     status: string;
     lastMovement?: { date: Date; description: string };
   }>;
-  onGenerate: (config: ReportGenerationConfig) => Promise<void>;
+  onGenerate: (_config: ReportGenerationConfig) => Promise<void>;
   creditBalance?: {
     reportCreditsAvailable: number;
     reportCreditsBalance: number;
@@ -93,10 +93,10 @@ export default function IndividualReportModal({
     if (isOpen && selectedProcesses.length > 0) {
       checkReportCache();
     }
-  }, [isOpen, selectedProcesses, reportType]);
+  }, [isOpen, selectedProcesses, reportType, checkReportCache]);
 
   // Verificar cache disponível
-  const checkReportCache = async () => {
+  const checkReportCache = useCallback(async () => {
     try {
       const processIds = selectedProcesses.map(p => p.id);
 
@@ -118,7 +118,7 @@ export default function IndividualReportModal({
       console.error('Erro ao verificar cache:', error);
       setCacheInfo(null);
     }
-  };
+  }, [selectedProcesses, reportType, formats]);
 
   // Type guards
   const isReportType = (value: string): value is 'JURIDICO' | 'EXECUTIVO' => {

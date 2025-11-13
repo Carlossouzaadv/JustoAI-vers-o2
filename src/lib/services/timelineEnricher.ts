@@ -8,7 +8,6 @@
  * 4. Detectar conflitos entre fontes
  */
 
-import { Prisma } from '@prisma/client'
 import type { ProcessTimelineEntry, ProcessTimelineEntryUpdateInput, ProcessTimelineEntryCreateInput } from '@/lib/types/database';
 import { TimelineSource, EventRelationType } from '@/lib/types/database';
 import { PrismaClient } from '@prisma/client';

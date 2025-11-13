@@ -140,7 +140,8 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promis
 }
 
 // Type declaration for extracted PDF data
-// Note: PDFData interface is used for type checking PDF parsing responses
+// Note: Kept for future PDF parsing needs
+// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 interface PDFData {
   text: string;
   numpages: number;
@@ -343,7 +344,7 @@ export class PDFProcessor {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const errorText = await response.text();
+          await response.text(); // Read response to free connection
           log(`${ICONS.ERROR}`, `OCR extraction failed (${response.status})`, {
             duration_ms: Date.now() - startTime,
           });
@@ -454,7 +455,7 @@ export class PDFProcessor {
   /**
    * Verificação de corrupção com tolerância baseada no plano
    */
-  private async checkCorruption(buffer: Buffer, userPlan: string): Promise<{isCorrupt: boolean, severity: 'low' | 'medium' | 'high'}> {
+  private async checkCorruption(buffer: Buffer, _userPlan: string): Promise<{isCorrupt: boolean, severity: 'low' | 'medium' | 'high'}> {
     try {
       // Tentativa básica de extração para detectar corrupção
       await this.extractWithPrimary(buffer);

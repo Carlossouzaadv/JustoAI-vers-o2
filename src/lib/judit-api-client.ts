@@ -33,10 +33,6 @@ function isNonRetryableStatusCode(code: unknown): code is NonRetryableStatusCode
   );
 }
 
-function isValidHttpStatusCode(code: unknown): code is ValidHttpStatusCode {
-  return isRetryableStatusCode(code) || isNonRetryableStatusCode(code);
-}
-
 class JuditApiError extends Error {
   retryable: boolean;
   statusCode?: ValidHttpStatusCode | number;
@@ -250,15 +246,15 @@ class CircuitBreaker {
   private requests: { timestamp: number; success: boolean }[] = [];
 
   constructor(
-    private threshold: number,
-    private windowMs: number,
-    private openTimeMs: number,
-    private minRequests: number
+    private _threshold: number,
+    private _windowMs: number,
+    private _openTimeMs: number,
+    private _minRequests: number
   ) {}
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {
-      if (Date.now() - this.lastFailureTime > this.openTimeMs) {
+      if (Date.now() - this.lastFailureTime > this._openTimeMs) {
         this.state = 'half-open';
         console.log(`${ICONS.INFO} Circuit breaker moving to half-open state`);
       } else {
@@ -803,7 +799,7 @@ export class JuditApiClient {
     });
   }
 
-  private async executeWithRetry<T>(operation: (attempt: number) => Promise<T>): Promise<T> {
+  private async executeWithRetry<T>(operation: (_attempt: number) => Promise<T>): Promise<T> {
     let lastError: Error;
 
     for (let attempt = 1; attempt <= JUDIT_CONFIG.MAX_RETRY_ATTEMPTS; attempt++) {
@@ -936,7 +932,7 @@ export class JuditApiClient {
     return matches ? `TR${matches[1]}` : 'UNKNOWN';
   }
 
-  private async checkAttachmentPermission(workspaceId: string): Promise<boolean> {
+  private async checkAttachmentPermission(_workspaceId: string): Promise<boolean> {
     // TODO: Implementar verificação de permissão/créditos para attachments
     // Por enquanto, sempre permitir
     return true;

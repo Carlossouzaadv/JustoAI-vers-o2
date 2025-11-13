@@ -25,7 +25,7 @@ const logger = {
 
 // Circuit breaker service interface - lazy loaded to avoid circular dependency
 interface CircuitBreakerService {
-  triggerQuotaExceeded?: (error: Error) => void;
+  triggerQuotaExceeded?: (_error: Error) => void;
 }
 
 let circuitBreakerService: CircuitBreakerService | null = null;

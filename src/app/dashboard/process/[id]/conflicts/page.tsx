@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ICONS } from '@/lib/icons';
 import {
   getSourceLabel,
-  getSourceBadgeVariant,
-  getSourceIcon,
 } from '@/lib/utils/timelineSourceUtils';
 import { TimelineSource } from '@/lib/types/database';
 import { AlertTriangle, CheckCircle, Copy, Merge, X } from 'lucide-react';
@@ -63,13 +61,7 @@ export default function TimelineConflictsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
 
-  useEffect(() => {
-    if (caseId) {
-      loadConflicts();
-    }
-  }, [caseId]);
-
-  const loadConflicts = async () => {
+  const loadConflicts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -92,7 +84,13 @@ export default function TimelineConflictsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [caseId]);
+
+  useEffect(() => {
+    if (caseId) {
+      loadConflicts();
+    }
+  }, [caseId, loadConflicts]);
 
   const handleResolution = (
     eventId: string,

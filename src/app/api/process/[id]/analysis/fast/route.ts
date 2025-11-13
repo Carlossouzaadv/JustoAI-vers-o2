@@ -4,11 +4,10 @@
 // POST /process/{id}/analysis/fast
 // Análise rápida usando documentos já anexados ao processo
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
-import { getCreditManager } from '@/lib/credit-system';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 import { AnalysisType } from '@/lib/types/database';
@@ -65,20 +64,19 @@ export const POST = withErrorHandler(async (
   const { id: processId } = resolvedParams;
 
   // Auth check
-  const { user, error: authError } = await requireAuth(request);
+  const { error: authError } = await requireAuth(request);
   if (authError) return authError;
 
   // Validate request body
   const { data, error: validationError } = await validateBody(request, fastAnalysisSchema);
   if (validationError) return validationError;
 
-  const { workspaceId, forceReprocessing, userId } = data;
+  const { workspaceId, forceReprocessing } = data;
 
   console.log(`${ICONS.PROCESS} Iniciando análise FAST para processo: ${processId}`);
 
   try {
     const analysisService = new DeepAnalysisService();
-    const creditSystem = getCreditManager();
 
     // Verificar se o processo existe e pertence ao workspace
     const processExists = await analysisService.validateProcessAccess(processId, workspaceId);
@@ -271,7 +269,7 @@ export const GET = withErrorHandler(async (
   }
 
   // Auth check
-  const { user, error: authError } = await requireAuth(request);
+  const { error: authError } = await requireAuth(request);
   if (authError) return authError;
 
   try {

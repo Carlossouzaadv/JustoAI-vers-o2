@@ -13,13 +13,13 @@ import { ICONS } from './icons';
  * Valida se um objeto é uma Page do Puppeteer com os métodos necessários.
  */
 function isPage(obj: unknown): obj is {
-  setRequestInterception: (flag: boolean) => Promise<void>;
-  on: (event: string, handler: (arg: unknown) => void) => void;
-  setJavaScriptEnabled: (enabled: boolean) => Promise<void>;
-  setViewport: (viewport: { width: number; height: number; deviceScaleFactor: number }) => Promise<void>;
-  setDefaultTimeout: (timeout: number) => Promise<void>;
-  setDefaultNavigationTimeout: (timeout: number) => Promise<void>;
-  addStyleTag: (options: { content: string }) => Promise<void>;
+  setRequestInterception: (_flag: boolean) => Promise<void>;
+  on: (_event: string, _handler: (_arg: unknown) => void) => void;
+  setJavaScriptEnabled: (_enabled: boolean) => Promise<void>;
+  setViewport: (_viewport: { width: number; height: number; deviceScaleFactor: number }) => Promise<void>;
+  setDefaultTimeout: (_timeout: number) => Promise<void>;
+  setDefaultNavigationTimeout: (_timeout: number) => Promise<void>;
+  addStyleTag: (_options: { content: string }) => Promise<void>;
 } {
   if (typeof obj !== 'object' || obj === null) {
     return false;

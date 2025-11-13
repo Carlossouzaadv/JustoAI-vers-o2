@@ -1,7 +1,6 @@
 /**
  * @jest-environment node
  */
-import { NextRequest } from 'next/server'
 
 /**
  * NOTE: API Health tests are temporarily disabled due to Prisma mocking complexity.

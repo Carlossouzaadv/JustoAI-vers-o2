@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -120,11 +120,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadDocuments();
-  }, [processId]);
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -163,7 +159,11 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [processId]);
+
+  useEffect(() => {
+    loadDocuments();
+  }, [loadDocuments]);
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;

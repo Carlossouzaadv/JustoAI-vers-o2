@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -78,9 +78,9 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
 
   useEffect(() => {
     loadProcessData();
-  }, [processId]);
+  }, [processId, loadProcessData]);
 
-  const loadProcessData = async () => {
+  const loadProcessData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -99,7 +99,7 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [processId]);
 
   const updateField = (field: keyof ProcessSummaryData, value: unknown) => {
     if (!data) return;

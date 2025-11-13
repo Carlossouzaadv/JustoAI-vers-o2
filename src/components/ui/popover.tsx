@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils'
 
 const Popover = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<'div'> & { open?: boolean; onOpenChange?: (open: boolean) => void }
->(({ children, open: _open, onOpenChange: _onOpenChange, ...props }, ref) => {
+  React.ComponentProps<'div'> & { open?: boolean; onOpenChange?: (_open: boolean) => void }
+>(({ children, ...props }, ref) => {
   return (
     <div ref={ref} {...props}>
       {children}

@@ -11,8 +11,7 @@ import { ICONS } from '@/lib/icons';
 // API Schema imports (SINGLE SOURCE OF TRUTH)
 import {
   ProcessUploadPayloadSchema,
-  ProcessUploadPayload,
-  parseProcessUpload
+  ProcessUploadPayload
 } from '@/lib/types/api-schemas';
 
 // Services
@@ -68,48 +67,10 @@ function isCleaningResult(data: unknown): data is CleaningResult {
 }
 
 /**
- * Helper to get error message safely from unknown
- */
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
-  return 'Erro desconhecido ao processar upload';
-}
-
-/**
  * Helper to validate clientId - must be string when provided
  */
 function isValidClientId(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
-}
-
-/**
- * Valid DocumentType enum values
- */
-type DocumentTypeValue = 'PETITION' | 'EVIDENCE' | 'DECISION' | 'MOVEMENT' | 'OTHER';
-
-/**
- * Type guard for DocumentType validation
- */
-function isDocumentType(value: unknown): value is DocumentTypeValue {
-  return (
-    typeof value === 'string' &&
-    ['PETITION', 'EVIDENCE', 'DECISION', 'MOVEMENT', 'OTHER'].includes(value)
-  );
-}
-
-/**
- * Helper to map extracted document type category to DocumentType
- */
-function mapToDocumentType(category: unknown): DocumentTypeValue {
-  if (isDocumentType(category)) {
-    return category;
-  }
-  return 'OTHER'; // Default fallback
 }
 
 /**
@@ -527,7 +488,7 @@ export async function POST(request: NextRequest) {
     console.log(`${ICONS.EXTRACT} [Upload] Consolidando resumo do caso...`);
 
     try {
-      const consolidatedDescription = await updateCaseSummaryDescription(newCase.id);
+      await updateCaseSummaryDescription(newCase.id);
       console.log(`${ICONS.SUCCESS} [Upload] Resumo consolidado e salvo no caso`);
     } catch (summaryError) {
       console.warn(`${ICONS.WARNING} [Upload] Erro ao consolidar resumo (continuando mesmo assim):`, summaryError);

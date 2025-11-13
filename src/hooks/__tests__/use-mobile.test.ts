@@ -4,7 +4,7 @@ import { useIsMobile } from '../use-mobile'
 describe('useIsMobile Hook', () => {
   // Mock window.matchMedia
   let matchMediaMock: jest.Mock
-  let listeners: ((event: MediaQueryListEvent) => void)[] = []
+  let listeners: ((_event: MediaQueryListEvent) => void)[] = []
 
   beforeEach(() => {
     listeners = []
@@ -12,13 +12,13 @@ describe('useIsMobile Hook', () => {
       matches: false,
       media: query,
       onchange: null,
-      addEventListener: jest.fn((event, handler) => {
-        if (event === 'change') {
+      addEventListener: jest.fn((_event, handler) => {
+        if (_event === 'change') {
           listeners.push(handler)
         }
       }),
-      removeEventListener: jest.fn((event, handler) => {
-        if (event === 'change') {
+      removeEventListener: jest.fn((_event, handler) => {
+        if (_event === 'change') {
           listeners = listeners.filter((l) => l !== handler)
         }
       }),

@@ -54,7 +54,6 @@ export async function GET(
     });
 
     if (!document) {
-  const { id } = await params;
       console.warn(`${ICONS.WARNING} [Document Download] Documento não encontrado: ${documentId}`);
       return NextResponse.json(
         { error: 'Documento não encontrado' },
@@ -67,7 +66,6 @@ export async function GET(
     // ============================================================
 
     if (!document.case?.workspace?.users || document.case.workspace.users.length === 0) {
-  const { id } = await params;
       console.warn(`${ICONS.WARNING} [Document Download] Acesso negado: ${user.id} tentando acessar documento do caso ${document.caseId}`);
       return NextResponse.json(
         { error: 'Acesso negado' },
@@ -80,7 +78,6 @@ export async function GET(
     // ============================================================
 
     if (!document.path) {
-  const { id } = await params;
       console.warn(`${ICONS.WARNING} [Document Download] Caminho do arquivo não definido: ${documentId}`);
       return NextResponse.json(
         { error: 'Arquivo não disponível' },
@@ -92,7 +89,6 @@ export async function GET(
     try {
       fileBuffer = await readFile(document.path);
     } catch (fileError) {
-  const { id } = await params;
       console.error(`${ICONS.ERROR} [Document Download] Erro ao ler arquivo:`, fileError);
       return NextResponse.json(
         { error: 'Arquivo não encontrado no servidor' },
@@ -127,7 +123,6 @@ export async function GET(
     });
 
   } catch (error) {
-  const { id } = await params;
     console.error(`${ICONS.ERROR} [Document Download] Erro:`, error);
 
     return NextResponse.json(

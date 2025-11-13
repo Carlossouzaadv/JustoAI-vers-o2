@@ -4,7 +4,7 @@
 // ================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getUnresolvedAlerts, resolveAlert } from '@/lib/observability/costTracking';
+import { resolveAlert } from '@/lib/observability/costTracking';
 import { PrismaClient } from '@prisma/client'
 import { AlertSeverity } from '@/lib/types/database';
 

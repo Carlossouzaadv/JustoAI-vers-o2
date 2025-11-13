@@ -14,16 +14,11 @@ import path from 'path';
 import { PDFTemplateEngine, PDFTemplateOptions } from './report-templates/pdf-template-engine';
 import { DOCXTemplateEngine, DOCXTemplateOptions } from './report-templates/docx-template-engine';
 import {
-  ReportParameters,
-  ReportResult,
   ReportFileUrls,
   CachedReportData,
-  ReportFilters,
 } from '@/lib/types/json-fields';
 import {
-  isReportFileUrls,
   isCachedReportData,
-  isReportResult,
 } from '@/lib/types/type-guards';
 
 // Type definitions for Gemini API result

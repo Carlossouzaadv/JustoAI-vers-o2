@@ -23,7 +23,7 @@ interface CreditsPack {
 
 interface CreditsPacksProps {
   creditPacks: CreditsPack[];
-  onBuyPack: (packId: string) => void;
+  onBuyPack: (_packId: string) => void;
   className?: string;
 }
 

@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { ICONS } from '@/lib/icons';
 
 interface WelcomeOnboardingProps {
@@ -140,7 +138,7 @@ export function WelcomeOnboarding({ onComplete }: WelcomeOnboardingProps) {
   );
 }
 
-function WelcomeStep({ profile, setProfile }: { profile: UserProfile; setProfile: (p: UserProfile) => void }) {
+function WelcomeStep({ profile: _profile, setProfile: _setProfile }: { profile: UserProfile; setProfile: (_p: UserProfile) => void }) {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -175,7 +173,7 @@ function WelcomeStep({ profile, setProfile }: { profile: UserProfile; setProfile
   );
 }
 
-function ProfileStep({ profile, setProfile }: { profile: UserProfile; setProfile: (p: UserProfile) => void }) {
+function ProfileStep({ profile, setProfile }: { profile: UserProfile; setProfile: (_p: UserProfile) => void }) {
   const roles = [
     'Advogado(a) Autônomo(a)',
     'Sócio(a) de Escritório',
@@ -266,7 +264,7 @@ function ProfileStep({ profile, setProfile }: { profile: UserProfile; setProfile
   );
 }
 
-function GoalsStep({ profile, setProfile }: { profile: UserProfile; setProfile: (p: UserProfile) => void }) {
+function GoalsStep({ profile, setProfile }: { profile: UserProfile; setProfile: (_p: UserProfile) => void }) {
   const goals = [
     {
       id: 'time',
@@ -348,7 +346,7 @@ function GoalsStep({ profile, setProfile }: { profile: UserProfile; setProfile: 
   );
 }
 
-function ActionStep({ profile, onComplete }: { profile: UserProfile; onComplete: () => void }) {
+function ActionStep({ profile: _profile, onComplete }: { profile: UserProfile; onComplete: () => void }) {
   const [selectedAction, setSelectedAction] = useState<string>('');
 
   const actions = [

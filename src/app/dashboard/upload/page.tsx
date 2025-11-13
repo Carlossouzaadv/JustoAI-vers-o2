@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
 
 interface UploadedFile {
@@ -35,12 +27,13 @@ interface AnalysisResult {
   recommendations: string[];
 }
 
-interface CaseData {
-  id: string;
-  title: string;
-  client?: { name?: string };
-  [key: string]: unknown;
-}
+// Reserved for future case selection feature
+// interface CaseData {
+//   id: string;
+//   title: string;
+//   client?: { name?: string };
+//   [key: string]: unknown;
+// }
 
 interface UploadResponse {
   documentType?: string;
@@ -58,11 +51,12 @@ interface DetectedProcess {
   [key: string]: unknown;
 }
 
-function isCaseData(data: unknown): data is CaseData {
-  if (typeof data !== 'object' || data === null) return false;
-  const obj = data as Record<string, unknown>;
-  return typeof obj.id === 'string';
-}
+// Reserved for future case selection feature
+// function isCaseData(data: unknown): data is CaseData {
+//   if (typeof data !== 'object' || data === null) return false;
+//   const obj = data as Record<string, unknown>;
+//   return typeof obj.id === 'string';
+// }
 
 function isUploadResponse(data: unknown): data is UploadResponse {
   return typeof data === 'object' && data !== null;
@@ -88,61 +82,56 @@ export default function UploadPage() {
   const [showDuplicateConfirmation, setShowDuplicateConfirmation] = useState(false);
   const [detectedProcess, setDetectedProcess] = useState<DetectedProcess | null>(null);
 
-  // Available cases from API (loaded dynamically)
-  const [availableCases, setAvailableCases] = useState<Array<{ id: string; title: string; client: string }>>([]);
-
+  // Reserved for future case selection feature
   // Load cases from API on mount
-  useEffect(() => {
-    const loadCases = async () => {
-      try {
-        const response = await fetch('/api/cases', {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const cases = data.data || data.cases || [];
-          setAvailableCases(cases.filter(isCaseData).map((c: CaseData) => ({
-            id: c.id,
-            title: c.title,
-            client: c.client?.name || 'Unknown'
-          })));
-        }
-      } catch (error) {
-        console.error('Erro ao carregar casos:', error);
-        // If API fails, set empty list - user can still upload without selecting a case
-        setAvailableCases([]);
-      }
-    };
+  // useEffect(() => {
+  //   const loadCases = async () => {
+  //     try {
+  //       const response = await fetch('/api/cases', {
+  //         credentials: 'include'
+  //       });
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         const cases = data.data || data.cases || [];
+  //         setAvailableCases(cases.filter(isCaseData).map((c: CaseData) => ({
+  //           id: c.id,
+  //           title: c.title,
+  //           client: c.client?.name || 'Unknown'
+  //         })));
+  //       }
+  //     } catch (error) {
+  //       console.error('Erro ao carregar casos:', error);
+  //       setAvailableCases([]);
+  //     }
+  //   };
+  //   loadCases();
+  // }, []);
 
-    loadCases();
-  }, []);
-
-  // Campos disponíveis para extração
-  const availableFields = [
-    'process_number',
-    'parties',
-    'dates',
-    'values',
-    'deadlines',
-    'court',
-    'judge',
-    'lawyers',
-    'summary',
-    'key_points'
-  ];
-
-  const fieldLabels: Record<string, string> = {
-    process_number: 'Número do Processo',
-    parties: 'Partes Envolvidas',
-    dates: 'Datas Importantes',
-    values: 'Valores',
-    deadlines: 'Prazos',
-    court: 'Tribunal',
-    judge: 'Juiz',
-    lawyers: 'Advogados',
-    summary: 'Resumo',
-    key_points: 'Pontos Chave'
-  };
+  // Reserved for future field extraction configuration
+  // const availableFields = [
+  //   'process_number',
+  //   'parties',
+  //   'dates',
+  //   'values',
+  //   'deadlines',
+  //   'court',
+  //   'judge',
+  //   'lawyers',
+  //   'summary',
+  //   'key_points'
+  // ];
+  // const fieldLabels: Record<string, string> = {
+  //   process_number: 'Número do Processo',
+  //   parties: 'Partes Envolvidas',
+  //   dates: 'Datas Importantes',
+  //   values: 'Valores',
+  //   deadlines: 'Prazos',
+  //   court: 'Tribunal',
+  //   judge: 'Juiz',
+  //   lawyers: 'Advogados',
+  //   summary: 'Resumo',
+  //   key_points: 'Pontos Chave'
+  // };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles: UploadedFile[] = acceptedFiles.map(file => ({

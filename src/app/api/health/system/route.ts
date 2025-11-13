@@ -23,14 +23,6 @@ interface SystemHealthResponse {
   version: string;
 }
 
-const COMPONENT_CHECKS = {
-  'database': checkDatabase,
-  'supabase': checkSupabase,
-  'resend': checkResendEmail,
-  'slack': checkSlack,
-  'judit-api': checkJuditApi,
-} as const;
-
 // ================================================================
 // HEALTH CHECK FUNCTIONS
 // ================================================================
@@ -270,7 +262,7 @@ async function checkJuditApi(): Promise<ComponentHealth> {
 // MAIN HANDLER
 // ================================================================
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(_request: NextRequest): Promise<NextResponse> {
   const overallStartTime = Date.now();
 
   try {

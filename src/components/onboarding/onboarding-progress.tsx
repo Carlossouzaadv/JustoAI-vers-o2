@@ -1,18 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   CheckCircle2,
   Clock,
   AlertCircle,
   Zap,
-  Download,
   BarChart3,
   Loader2,
   ChevronDown,
@@ -28,7 +26,7 @@ interface OnboardingProgressProps {
   juditJobId?: string;
   extractedProcessNumber?: string;
   previewData?: unknown;
-  onPhaseComplete?: (phase: 'PREVIEW' | 'ENRICHMENT') => void;
+  onPhaseComplete?: (_phase: 'PREVIEW' | 'ENRICHMENT') => void;
   onAnalyzeClick?: () => void;
 }
 

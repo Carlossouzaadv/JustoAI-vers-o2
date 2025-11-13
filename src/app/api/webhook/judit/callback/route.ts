@@ -12,7 +12,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getTimelineMergeService } from '@/lib/timeline-merge';
 import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
@@ -453,7 +452,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Health check endpoint
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json({
     status: 'webhook_operational',
     endpoint: '/api/webhook/judit/callback',

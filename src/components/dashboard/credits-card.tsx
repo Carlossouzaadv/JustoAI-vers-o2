@@ -4,7 +4,7 @@
 // CARD DE CRÉDITOS - Dashboard Principal
 // ================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,6 @@ import {
   RefreshCw,
   ShoppingCart
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -69,13 +67,8 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    loadDashboardData();
-  }, [workspaceId]);
-
   // Carregar dados do dashboard
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -137,7 +130,12 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId]);
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   // Refresh dados
   const handleRefresh = async () => {

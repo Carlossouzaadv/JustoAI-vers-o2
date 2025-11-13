@@ -4,14 +4,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getJuditApiClient } from '@/lib/judit-api-client';
 import { ICONS } from '@/lib/icons';
-import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { sendProcessAlert } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
-import { Prisma } from '@prisma/client'
-import type { MonitoredProcess, ProcessMovement, CaseDocument, UserWorkspace, User, Workspace, InputJsonValue } from '@/lib/types/database';
+import type { MonitoredProcess, ProcessMovement, InputJsonValue } from '@/lib/types/database';
 
 
 // ================================================================
@@ -350,7 +347,7 @@ async function processMovementEvent(
 async function processAttachmentEvent(
   process: MonitoredProcessWithWorkspace,
   payload: JuditWebhookPayload,
-  result: WebhookProcessingResult
+  _result: WebhookProcessingResult
 ) {
   console.log(`${ICONS.INFO} Processing attachment event for ${process.processNumber}`);
 
@@ -529,81 +526,6 @@ async function processMovementAttachments(movementId: string, attachments: Attac
   // Attachments are stored via their process, not individual movements
 }
 
-async function processAttachments(monitoredProcessId: string, attachments: AttachmentData[]): Promise<CaseDocument[]> {
-  // Store attachments in MonitoredProcess metadata rather than creating CaseDocuments
-  // since these are Judit API attachments, not case-specific documents
-  const process = await prisma.monitoredProcess.findUnique({
-    where: { id: monitoredProcessId }
-  });
-
-  if (!process) {
-    console.warn(`${ICONS.WARNING} MonitoredProcess not found: ${monitoredProcessId}`);
-    return [];
-  }
-
-  // Update processData with attachments
-  const currentData = (process.processData as Record<string, unknown>) || {};
-  const updatedData = {
-    ...currentData,
-    lastAttachments: attachments.map(att => ({
-      id: att.id,
-      name: att.name,
-      type: att.type,
-      size: att.size,
-      url: att.url,
-      important: att.important
-    })),
-    lastAttachmentSync: new Date().toISOString(),
-  };
-
-  await prisma.monitoredProcess.update({
-    where: { id: monitoredProcessId },
-    data: {
-      processData: updatedData as InputJsonValue
-    }
-  });
-
-  // Return empty array as we're not creating CaseDocuments
-  return [];
-}
-
-async function syncProcessMovements(processId: string, movements: MovementData[]): Promise<ProcessMovement[]> {
-  const newMovements: ProcessMovement[] = [];
-
-  for (const movement of movements) {
-    // Check if movement already exists
-    const existing = await prisma.processMovement.findFirst({
-      where: {
-        monitoredProcessId: processId,
-        type: movement.type,
-        date: new Date(movement.date),
-        description: movement.description,
-      }
-    });
-
-    if (!existing) {
-      // Store content and source in rawData JSON field
-      const rawData: ProcessMovementRawData = {
-        content: movement.content,
-        source: 'webhook'
-      };
-
-      const newMovement = await prisma.processMovement.create({
-        data: {
-          monitoredProcessId: processId,
-          type: movement.type,
-          date: new Date(movement.date),
-          description: movement.description,
-          rawData: rawData as InputJsonValue
-        }
-      });
-      newMovements.push(newMovement);
-    }
-  }
-
-  return newMovements;
-}
-
 async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, movement: ProcessMovement): Promise<number> {
   try {
     // Definir urgência baseado no tipo de movimentação
@@ -686,95 +608,6 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     return alertsGenerated;
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, error);
-    return 0;
-  }
-}
-
-async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, attachments: CaseDocument[]): Promise<number> {
-  try {
-    if (!attachments || attachments.length === 0) {
-      return 0;
-    }
-
-    // Definir tipos de anexos importantes
-    const importantTypes = [
-      'sentenca',      // Sentença
-      'acordao',       // Acórdão
-      'despacho',      // Despacho
-      'parecer',       // Parecer
-      'contrato',      // Contrato
-      'procuracao',    // Procuração
-      'mandado'        // Mandado
-    ];
-
-    const importantAttachments = attachments.filter(att => {
-      const attType = typeof att.type === 'string' ? att.type.toLowerCase() : '';
-      return importantTypes.some(type => attType.includes(type));
-    });
-
-    if (importantAttachments.length === 0) {
-      console.log(`${ICONS.INFO} Anexos recebidos mas nenhum é importante, sem alerta`);
-      return 0;
-    }
-
-    // Buscar usuários do workspace
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: process.workspaceId },
-      include: { users: { include: { user: true } } }
-    });
-
-    if (!workspace || workspace.users.length === 0) {
-      console.warn(`${ICONS.WARNING} Sem usuários para notificar sobre anexos`);
-      return 0;
-    }
-
-    // Criar descrição dos anexos
-    const attachmentsList = importantAttachments
-      .map((att, idx) => `${idx + 1}. ${att.name} (${att.type || 'tipo desconhecido'})`)
-      .join('\n');
-
-    // Enviar alerta para cada usuário
-    let alertsGenerated = 0;
-    for (const userWorkspace of workspace.users) {
-      const user = userWorkspace.user;
-      try {
-        await sendProcessAlert(
-          user.email,
-          process.processNumber,
-          'NOVOS_ANEXOS',
-          `Novos anexos foram adicionados ao processo:\n\n${attachmentsList}`,
-          'medium'
-        );
-        alertsGenerated++;
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Erro ao enviar alerta de anexo para ${user.email}:`, error);
-      }
-    }
-
-    if (alertsGenerated > 0) {
-      // Broadcaster em tempo real via SSE
-      const wsManager = getWebSocketManager();
-      wsManager.broadcastToWorkspace(process.workspace.id, {
-        type: 'movement:added',
-        processId: process.id,
-        data: {
-          processNumber: process.processNumber,
-          eventType: 'NOVOS_ANEXOS',
-          attachments: importantAttachments.map(att => ({
-            name: att.name,
-            type: att.type,
-            size: att.size
-          })),
-          timestamp: new Date().toISOString()
-        }
-      });
-
-      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de anexo enviado(s) + broadcaster SSE`);
-    }
-
-    return alertsGenerated;
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao gerar alertas de anexo:`, error);
     return 0;
   }
 }

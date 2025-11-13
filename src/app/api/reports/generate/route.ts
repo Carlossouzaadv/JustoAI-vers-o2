@@ -482,8 +482,8 @@ async function handleBatchGeneration(
   customizationProfile: unknown,
   baseData: unknown,
   workspaceId: string,
-  isDivinity: boolean = false,
-  userEmail: string = ''
+  _isDivinity: boolean = false,
+  _userEmail: string = ''
 ): Promise<NextResponse> {
   const dataCollector = getReportDataCollector();
   const customizationManager = getCustomizationManager();
@@ -579,9 +579,9 @@ async function handleBatchGeneration(
 // PERFORMANCE METRICS
 // ================================
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
-    const { user, workspace } = await validateAuthAndGetUser();
+    await validateAuthAndGetUser();
 
     const generator = getPDFGenerator();
     const metrics = await generator.getPerformanceMetrics();

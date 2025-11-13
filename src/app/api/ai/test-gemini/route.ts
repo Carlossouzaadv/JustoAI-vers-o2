@@ -23,8 +23,8 @@ interface GeminiContentResponse {
 }
 
 interface GeminiClient {
-  generateContent: (prompt: string, options: GeminiGenerateOptions) => Promise<GeminiContentResponse>;
-  generateJsonContent: (prompt: string, options: GeminiGenerateOptions) => Promise<unknown>;
+  generateContent: (_prompt: string, _options: GeminiGenerateOptions) => Promise<GeminiContentResponse>;
+  generateJsonContent: (_prompt: string, _options: GeminiGenerateOptions) => Promise<unknown>;
   getRateLimitStatus: () => unknown;
 }
 
@@ -40,7 +40,7 @@ function isGeminiClient(data: unknown): data is GeminiClient {
   );
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     console.log(`${ICONS.PROCESS} Testando conectividade Gemini`);
 

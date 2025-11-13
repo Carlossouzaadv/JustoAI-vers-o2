@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Clock, Zap, Upload, FileText, BarChart3 } from 'lucide-react';
+import { CheckCircle2, Clock, Zap, FileText, BarChart3 } from 'lucide-react';
 import DocumentsUploadPageClient from './documents-upload-client';
 
 export default async function DocumentsUploadPage() {
@@ -19,14 +19,14 @@ export default async function DocumentsUploadPage() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: Record<string, unknown> | undefined) {
-          if (options && typeof options === 'object') {
-            cookieStore.set({ name, value, ...options });
+        set(name: string, value: string, _options: Record<string, unknown> | undefined) {
+          if (_options && typeof _options === 'object') {
+            cookieStore.set({ name, value, ..._options });
           } else {
             cookieStore.set(name, value);
           }
         },
-        remove(name: string, options: Record<string, unknown> | undefined) {
+        remove(name: string, _options: Record<string, unknown> | undefined) {
           cookieStore.delete(name);
         },
       },

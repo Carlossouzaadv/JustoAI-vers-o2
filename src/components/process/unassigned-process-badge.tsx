@@ -44,10 +44,10 @@ export function UnassignedProcessBadge({
   onRetry,
   isRetrying = false,
 }: UnassignedProcessBadgeProps) {
-  if (!unassignedInfo) return null;
-
   const [popoverOpen, setPopoverOpen] = React.useState(false);
   const [retrying, setRetrying] = React.useState(false);
+
+  if (!unassignedInfo) return null;
 
   const handleRetry = async () => {
     if (!onRetry || retrying) return;

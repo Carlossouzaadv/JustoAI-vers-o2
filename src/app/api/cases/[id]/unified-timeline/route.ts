@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
-import { ProcessTimelineEntry, CaseDocument, TimelineSource, EventRelationType } from '@/lib/types/database';
+import { TimelineSource } from '@/lib/types/database';
 
 // ================================================================
 // TYPES
@@ -132,13 +132,14 @@ function isValidEventRelationType(
   return validTypes.includes(value);
 }
 
-/**
- * Normaliza valores nulos para undefined
- * Segue narrowing seguro sem casting
- */
-function normalizeNullToUndefined<T>(value: T | null): T | undefined {
-  return value === null ? undefined : value;
-}
+// Note: normalizeNullToUndefined is currently unused but may be needed in future
+// /**
+//  * Normaliza valores nulos para undefined
+//  * Segue narrowing seguro sem casting
+//  */
+// function normalizeNullToUndefined<T>(value: T | null): T | undefined {
+//   return value === null ? undefined : value;
+// }
 
 /**
  * Type guard: Valida se um valor unknown é um Date

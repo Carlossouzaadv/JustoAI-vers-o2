@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { useBulkCaseUpdate } from '@/hooks/useBulkCaseUpdate';
 import { ClientAssociationModal } from './client-association-modal';
-import { cn } from '@/lib/utils';
 
 interface Client {
   id: string;
@@ -26,8 +25,8 @@ interface BulkActionsBarProps {
   selectedCount: number;
   onClearSelection: () => void;
   selectedCaseIds: Set<string>;
-  onSuccess?: (message: string) => void;
-  onError?: (error: string) => void;
+  onSuccess?: (_message: string) => void;
+  onError?: (_error: string) => void;
 }
 
 /**

@@ -8,8 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { mkdir, writeFile } from 'fs/promises';
-import { z } from 'zod';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '@/lib/api-utils';
 import { getDocumentHashManager } from '@/lib/document-hash';
 import { getAnalysisCacheManager } from '@/lib/analysis-cache';
@@ -141,13 +140,6 @@ const CONFIG = {
   SUPPORTED_EXTENSIONS: ['.pdf']
 };
 
-// Schema de validação
-const uploadSchema = z.object({
-  caseId: z.string().cuid().optional(), // Opcional para permitir criação automática
-  processNumber: z.string().optional(), // Número do processo se conhecido
-  autoCreateProcess: z.boolean().default(true) // Permitir criação automática
-});
-
 // ================================================================
 // ENDPOINT PRINCIPAL
 // ================================================================
@@ -185,7 +177,6 @@ export async function POST(request: NextRequest) {
     // Type guard for FormData values
     const file = formData.get('file');
     const caseId = formData.get('caseId');
-    const processNumber = formData.get('processNumber');
     const requestedWorkspaceId = formData.get('workspaceId');
 
     // 3. VALIDAÇÕES BÁSICAS - Type guards com verificações seguras
@@ -212,7 +203,6 @@ export async function POST(request: NextRequest) {
 
     // Type guard for string fields
     const caseIdStr = typeof caseId === 'string' ? caseId : undefined;
-    const processNumberStr = typeof processNumber === 'string' ? processNumber : undefined;
     const requestedWorkspaceIdStr = typeof requestedWorkspaceId === 'string' ? requestedWorkspaceId : undefined;
 
     // 4. OBTER WORKSPACE DO USUÁRIO
@@ -758,7 +748,7 @@ export async function POST(request: NextRequest) {
       const timelineEntries = timelineService.extractTimelineFromAIAnalysis(aiAnalysisResult, document.id);
 
       if (timelineEntries.length > 0) {
-        const mergeResult = await timelineService.mergeEntries(targetCaseId, timelineEntries, prisma);
+        await timelineService.mergeEntries(targetCaseId, timelineEntries, prisma);
       }
     }
 
@@ -961,11 +951,12 @@ export async function POST(request: NextRequest) {
 // ================================================================
 export async function PUT(request: NextRequest) {
   try {
-    const { user, error: authError } = await requireAuth(request);
+    const { error: authError } = await requireAuth(request);
     if (authError) return authError;
 
     const body = await request.json();
-    const { temporaryFilePath, targetCaseId, textSha } = body;
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+    const { temporaryFilePath: _temporaryFilePath, targetCaseId: _targetCaseId, textSha: _textSha } = body as Record<string, unknown>;
 
     // TODO: Implementar lógica de anexar arquivo já processado a processo existente
     // Mover arquivo de temporário para final e anexar ao processo
@@ -989,7 +980,7 @@ export async function PUT(request: NextRequest) {
 // ================================================================
 export async function GET(request: NextRequest) {
   try {
-    const { user, error: authError } = await requireAuth(request);
+    const { error: authError } = await requireAuth(request);
     if (authError) return authError;
 
     const { searchParams } = new URL(request.url);

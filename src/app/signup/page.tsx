@@ -7,11 +7,11 @@ import { useState } from 'react';
 import { useForm, useController } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PasswordInput } from '@/components/ui/password-input';
-import { PhoneInput } from '@/components/ui/phone-input';
 import { ConsentCheckbox, MarketingConsent } from '@/components/ui/consent-checkbox';
 import { ICONS } from '@/lib/icons';
 import { signupSchema, type SignupFormData } from '@/lib/validations/auth';
@@ -125,7 +125,7 @@ export default function SignupPage() {
       if (error) {
         setAuthError(error.message);
       }
-    } catch (error) {
+    } catch (_error) {
       setAuthError('Erro ao conectar com Google. Tente novamente.');
     } finally {
       setIsLoading(false);
@@ -139,7 +139,7 @@ export default function SignupPage() {
         <div className="text-center">
           <Link href="/" className="inline-flex items-center space-x-3 mb-8">
             <div className="w-12 h-12">
-              <img src="/logo+nome.png" alt="JustoAI" className="w-full h-full object-contain" />
+              <Image src="/logo+nome.png" alt="JustoAI" width={144} height={48} className="w-full h-full object-contain" />
             </div>
             <span className="font-display font-bold text-2xl text-primary-800">JustoAI</span>
           </Link>

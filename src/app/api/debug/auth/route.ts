@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
             get(name: string) {
               return request.cookies.get(name)?.value
             },
-            set(name: string, value: string, options: unknown) {
+            set() {
               // We're not setting cookies here, just checking
             },
-            remove(name: string, options: unknown) {
+            remove() {
               // We're not removing cookies here, just checking
             },
           },

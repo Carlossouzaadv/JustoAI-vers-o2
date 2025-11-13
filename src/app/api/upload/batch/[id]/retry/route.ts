@@ -99,7 +99,7 @@ export async function POST(
     let rawBodyData: unknown;
     try {
       rawBodyData = await request.json();
-    } catch (parseJsonError) {
+    } catch (_parseJsonError) {
       rawBodyData = {}; // Default to empty if JSON parse fails
     }
 

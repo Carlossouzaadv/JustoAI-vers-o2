@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Download, Plus, Clock, FileText, Users, AlertCircle, Eye, Settings } from 'lucide-react';
+import { Calendar, Download, Plus, Clock, FileText, Users, AlertCircle, Settings } from 'lucide-react';
 import { ICONS } from '@/lib/icons';
 
 interface ReportSchedule {
@@ -113,7 +113,7 @@ export default function ReportsPage() {
     fetchReports();
   }, []);
 
-  const generateInstantReport = async (type: string) => {
+  const generateInstantReport = async (_type: string) => {
     try {
       setIsGenerating(true);
       setError(null);

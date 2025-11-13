@@ -13,12 +13,9 @@ import {
   PaymentWebhookPayload,
   PaymentWebhookPayloadSchema,
   StripeWebhook,
-  StripeWebhookSchema,
   MercadoPagoWebhook,
-  MercadoPagoWebhookSchema,
   PagSeguroWebhook,
   PagSeguroWebhookSchema,
-  parsePaymentWebhook,
   parseStripeWebhook,
   parseMercadoPagoWebhook,
 } from './types/external-api';
@@ -132,6 +129,7 @@ export class PaymentWebhookHandler {
       const credits = this.calculateCreditsFromAmount(payload.amount, payload.metadata?.planId);
 
       // Criar transação no banco
+      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
       const transaction = await prisma.creditTransaction.create({
         data: {
           id: randomUUID(),

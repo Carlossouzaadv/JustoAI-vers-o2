@@ -3,13 +3,13 @@
 // ================================
 // Endpoints para acompanhar, pausar, cancelar e visualizar importações
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { ICONS } from '@/lib/icons';
-import { SystemImport, ImportedDataItem } from '@/lib/types/database';
+import { SystemImport } from '@/lib/types/database';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -60,13 +60,7 @@ export default function ProcessPage() {
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
 
-  useEffect(() => {
-    if (caseId) {
-      loadCaseData();
-    }
-  }, [caseId]);
-
-  const loadCaseData = async (retryCount = 0, maxRetries = 3) => {
+  const loadCaseData = useCallback(async (retryCount = 0, maxRetries = 3) => {
     try {
       setLoading(true);
       if (retryCount === 0) setError(null);
@@ -111,7 +105,13 @@ export default function ProcessPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [caseId]);
+
+  useEffect(() => {
+    if (caseId) {
+      loadCaseData();
+    }
+  }, [caseId, loadCaseData]);
 
   const loadClients = async () => {
     try {

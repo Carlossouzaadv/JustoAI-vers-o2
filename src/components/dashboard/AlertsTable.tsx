@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { AlertCircle, CheckCircle, X } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { Alert, useResolveAlert } from '@/hooks/useJuditObservability';
 
 interface AlertsTableProps {

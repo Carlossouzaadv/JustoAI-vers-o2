@@ -4,7 +4,7 @@
 // BANNER DE USO MENSAL - Telemetria e Avisos
 // ================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '@/lib/api-client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -120,13 +120,8 @@ export default function UsageBanner({
   const [expanded, setExpanded] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 
-  // Carregar dados de uso
-  useEffect(() => {
-    loadUsageData();
-  }, [workspaceId]);
-
   // Carregar dados de uso mensal
-  const loadUsageData = async () => {
+  const loadUsageData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -163,13 +158,18 @@ export default function UsageBanner({
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId, convertToAlertBanner]);
+
+  // Carregar dados de uso
+  useEffect(() => {
+    loadUsageData();
+  }, [loadUsageData]);
 
   /**
    * Convert API alert response to AlertBanner component model.
    * Alert parameter is guaranteed to be validated by isApiAlertResponse type guard.
    */
-  const convertToAlertBanner = (alert: ApiAlertResponse): AlertBanner => {
+  const convertToAlertBanner = useCallback((alert: ApiAlertResponse): AlertBanner => {
     // Safely normalize alert type to known values
     const isKnownType = (type: string): type is AlertBanner['type'] => {
       return ['soft_threshold', 'hard_threshold', 'credit_low', 'api_high'].includes(type);
@@ -232,7 +232,7 @@ export default function UsageBanner({
     }
 
     return baseAlert;
-  };
+  }, [onUpgrade, onBuyCredits, setExpanded]);
 
   // Dismiss alerta
   const dismissAlert = (alertType: string) => {

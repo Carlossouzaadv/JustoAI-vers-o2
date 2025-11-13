@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,9 +48,9 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
 
   useEffect(() => {
     loadSchedules();
-  }, [clientId]);
+  }, [clientId, loadSchedules]);
 
-  const loadSchedules = async () => {
+  const loadSchedules = useCallback(async () => {
     try {
       setLoading(true);
       const params = clientId ? `?clientId=${clientId}` : '';
@@ -65,7 +65,7 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clientId]);
 
   const handleAction = async (scheduleId: string, action: string) => {
     try {

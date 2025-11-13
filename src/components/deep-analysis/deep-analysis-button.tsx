@@ -15,7 +15,7 @@ interface DeepAnalysisButtonProps {
     size: number;
     uploadedAt: string;
   }>;
-  onAnalysisComplete?: (result: unknown) => void;
+  onAnalysisComplete?: () => void;
   variant?: 'default' | 'outline' | 'secondary';
   size?: 'default' | 'sm' | 'lg';
   className?: string;

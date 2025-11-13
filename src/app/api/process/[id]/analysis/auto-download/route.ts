@@ -137,7 +137,7 @@ export async function POST(
 /**
  * Inicia sync automático com Judit
  */
-async function initiateAutoSync(monitoredProcessId: string, processId: string) {
+async function initiateAutoSync(monitoredProcessId: string, _processId: string) {
   try {
     console.log(`${ICONS.PROCESS} Iniciando sync para processo monitorado: ${monitoredProcessId}`);
 

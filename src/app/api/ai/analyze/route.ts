@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
 // ESTATÍSTICAS DO CACHE
 // ================================
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     console.log(`${ICONS.INFO} Requisição de estatísticas da análise Gemini`);
 
@@ -265,7 +265,7 @@ export async function GET(req: NextRequest) {
 // LIMPEZA DE CACHE
 // ================================
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE() {
   try {
     console.log(`${ICONS.WARNING} Requisição de limpeza de cache`);
 

@@ -41,11 +41,11 @@ async function getWorkerFunctions() {
 interface ProcessMonitorQueue {
   isReady(): Promise<boolean>;
   pause(): Promise<void>;
-  getActive(): Promise<Array<{ moveToFailed: (obj: Record<string, string>, bool: boolean) => Promise<void> }>>;
+  getActive(): Promise<Array<{ moveToFailed: (_obj: Record<string, string>, _bool: boolean) => Promise<void> }>>;
   resume(): Promise<void>;
   getWaiting(): Promise<unknown[]>;
   getFailed(): Promise<unknown[]>;
-  clean(number: number, status: string): Promise<void>;
+  clean(_number: number, _status: string): Promise<void>;
 }
 
 interface AdminRequest {
@@ -82,15 +82,6 @@ interface ComponentStatus {
   metrics?: Record<string, unknown>;
 }
 
-interface RecoveryAction {
-  id: string;
-  type: 'restart_worker' | 'clear_failed_jobs' | 'reset_circuit_breaker' | 'force_sync_workspace' | 'emergency_stop';
-  description: string;
-  risk: 'low' | 'medium' | 'high';
-  estimatedDuration: string;
-  requiredParameters?: string[];
-}
-
 // ================================================================
 // TYPE GUARDS
 // ================================================================
@@ -125,7 +116,7 @@ function isProcessMonitorQueue(queue: unknown): queue is ProcessMonitorQueue {
 // HANDLER PRINCIPAL
 // ================================================================
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 1. Authenticate user
     const { user, workspace } = await validateAuthAndGetUser();

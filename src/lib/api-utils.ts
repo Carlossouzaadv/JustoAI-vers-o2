@@ -158,7 +158,7 @@ export function validateQuery<T>(
 }
 
 // Auth middleware
-export async function requireAuth(request: NextRequest) {
+export async function requireAuth(_request: NextRequest) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
     console.log('⚠️ Development mode: Bypassing API auth validation')
@@ -232,7 +232,7 @@ export async function requireWorkspaceAccess(userId: string, workspaceId: string
 }
 
 // Error handler wrapper
-export function withErrorHandler(handler: (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>) {
+export function withErrorHandler(handler: (_request: NextRequest, _context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>) {
   return async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     try {
       return await handler(request, context)
@@ -249,7 +249,7 @@ export function withErrorHandler(handler: (request: NextRequest, context?: { par
 }
 
 // Method handler helper
-export function withMethods(handlers: Record<string, (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>>) {
+export function withMethods(handlers: Record<string, (_request: NextRequest, _context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>>) {
   return async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     const method = request.method
     const handler = handlers[method]
@@ -321,8 +321,8 @@ export function getClientIP(request: NextRequest): string {
 export class ApiError extends Error {
   constructor(
     message: string,
-    public status: number = 400,
-    public code?: string
+    public _status: number = 400,
+    public _code?: string
   ) {
     super(message)
     this.name = 'ApiError'

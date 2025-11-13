@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS } from '@/lib/icons';
 import { EnrichedTimelineEvent, EnrichedTimelineEventProps } from '@/components/timeline/EnrichedTimelineEvent';
-import { TimelineSource } from '@/lib/types/database';
 
 interface TimelineEvent extends EnrichedTimelineEventProps {
   // Extensão com campos adicionais se necessário
@@ -74,9 +72,9 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
 
   useEffect(() => {
     loadTimelineEvents();
-  }, [processId, caseId]);
+  }, [processId, caseId, loadTimelineEvents]);
 
-  const loadTimelineEvents = async () => {
+  const loadTimelineEvents = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -112,7 +110,7 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [processId, caseId]);
 
   const filteredEvents = events.filter(event => {
     if (filter === 'all') return true;

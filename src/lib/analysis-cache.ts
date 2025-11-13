@@ -9,14 +9,11 @@
 // Type-safe cache operations com Redis types from src/lib/types/redis.ts
 
 import { createHash } from 'crypto';
-import type { Redis } from 'ioredis';
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { getRedisClient } from './redis';
 import {
   type AnalysisCacheEntry,
-  type CachedValueResult,
-  type DistributedLockEntry,
   CacheKeys,
   isAnalysisCacheEntry,
 } from './types/redis';
@@ -359,7 +356,7 @@ export class AnalysisCacheManager {
       let memoryInfo = 0;
       try {
         memoryInfo = await this.redis.call('MEMORY', 'USAGE') as number;
-      } catch (error) {
+      } catch (_error) {
         console.warn('Redis MEMORY USAGE command not supported, using fallback');
       }
 
@@ -390,7 +387,7 @@ export class AnalysisCacheManager {
     processId: string,
     prisma: {
       processMovement: {
-        findFirst: (args: unknown) => Promise<{ date: Date } | null>;
+        findFirst: (_args: unknown) => Promise<{ date: Date } | null>;
       };
     }
   ): Promise<Date | null> {
@@ -419,7 +416,7 @@ export class AnalysisCacheManager {
   /**
    * Busca hashes de texto dos documentos do processo
    */
-  async getProcessDocumentHashes(processId: string, prisma: { caseDocument: { findMany: (args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
+  async getProcessDocumentHashes(processId: string, prisma: { caseDocument: { findMany: (_args: unknown) => Promise<Array<{ textSha: string | null }>> } }): Promise<string[]> {
     try {
       const documents = await prisma.caseDocument.findMany({
         where: {

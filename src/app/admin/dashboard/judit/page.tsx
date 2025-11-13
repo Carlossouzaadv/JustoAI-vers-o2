@@ -15,8 +15,6 @@ import React, { useEffect, useState } from 'react';
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -24,10 +22,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, RefreshCw, TrendingUp, DollarSign } from 'lucide-react';
+import { AlertCircle, RefreshCw, DollarSign } from 'lucide-react';
 
 // ================================================================
 // Types

@@ -6,7 +6,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Filter } from 'lucide-react';
+import { Filter } from 'lucide-react';
 
 export interface FilterState {
   period: '7' | '30' | '90' | 'custom';
@@ -17,7 +17,7 @@ export interface FilterState {
 
 interface DashboardFiltersProps {
   filters: FilterState;
-  onChange: (filters: FilterState) => void;
+  onChange: (_filters: FilterState) => void;
 }
 
 export function DashboardFilters({ filters, onChange }: DashboardFiltersProps) {

@@ -8,13 +8,11 @@ import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError } from '@/lib/api-utils';
 import {
-  ExcelProcessParser,
   createProductionParser,
   ExcelTemplateGenerator
 } from '@/lib/excel-parser';
 import {
   createProcessApiClient,
-  validateProcessNumber,
   normalizeProcessNumber
 } from '@/lib/process-apis';
 import { ICONS } from '@/lib/icons';
@@ -29,14 +27,6 @@ import { ICONS } from '@/lib/icons';
  */
 function isFile(value: unknown): value is File {
   return value instanceof File;
-}
-
-/**
- * Type guard to validate string values from FormData
- * FormData.get() returns string | File | null
- */
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
 }
 
 /**
@@ -239,7 +229,7 @@ function isValidFileSize(file: File): boolean {
 export async function POST(request: NextRequest) {
   try {
     // Autenticação
-    const { user, workspace } = await validateAuth();
+    const { workspace } = await validateAuth();
 
     // PASSO 1: Obter formData do request (nativo Next.js - 100% type-safe)
     let formData: FormData;

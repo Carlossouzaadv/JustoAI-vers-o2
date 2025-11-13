@@ -10,7 +10,7 @@ import { ICONS } from '@/lib/icons';
 /**
  * Type Guard: Validates if an object has the write method needed for SSE
  */
-function isSSEResponseLike(obj: unknown): obj is { write: (data: string) => void; end: () => void } {
+function isSSEResponseLike(obj: unknown): obj is { write: (_data: string) => void; end: () => void } {
   if (typeof obj !== 'object' || obj === null) {
     return false;
   }
@@ -46,7 +46,7 @@ function hasCloseMethod(obj: unknown): obj is { close: () => void } {
  *   console.log('Evento recebido:', message);
  * };
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Validar autenticação
     const { user, workspace } = await validateAuthAndGetUser();
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
 /**
  * CORS preflight
  */
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(_request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {

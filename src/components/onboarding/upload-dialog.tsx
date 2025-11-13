@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   Dialog,
@@ -47,9 +47,9 @@ function isUploadResult(data: unknown): data is UploadResult {
 
 interface UploadDialogProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onOpenChange: (_open: boolean) => void;
   workspaceId: string;
-  onUploadSuccess?: (data: UploadResult) => void;
+  onUploadSuccess?: (_data: UploadResult) => void;
 }
 
 export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess }: UploadDialogProps) {

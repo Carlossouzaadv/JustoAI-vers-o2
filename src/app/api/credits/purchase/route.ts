@@ -101,7 +101,7 @@ const CREDIT_PACKS = {
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   // Auth check
-  const { user, error: authError } = await requireAuth(request)
+  const { error: authError } = await requireAuth(request)
   if (authError) return authError
 
   // Validate request body
@@ -173,7 +173,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
 // GET endpoint to list available credit packs
 export const GET = withErrorHandler(async (request: NextRequest) => {
-  const { user, error: authError } = await requireAuth(request)
+  const { error: authError } = await requireAuth(request)
   if (authError) return authError
 
   return successResponse({

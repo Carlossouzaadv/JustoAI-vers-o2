@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { CaseWhereInput } from '@/lib/types/database';
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
   successResponse,

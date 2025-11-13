@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseAutosaveOptions<T> {
   delay?: number; // ms entre mudanças e salvamento (default: 1000ms)
-  onSave: (data: T) => Promise<void>;
-  onError?: (error: Error) => void;
+  onSave: (_data: T) => Promise<void>;
+  onError?: (_error: Error) => void;
 }
 
 export function useAutosave<T>(

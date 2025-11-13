@@ -7,18 +7,15 @@ import {
   requireAuth,
   validateBody,
   validateQuery,
-  withMethods,
   rateLimit,
   getClientIP
 } from '@/lib/api-utils'
 import {
   createWorkspaceSchema,
   workspaceQuerySchema,
-  CreateWorkspaceInput,
-  WorkspaceQuery
+  CreateWorkspaceInput
 } from '@/lib/validations'
 import type { Workspace, InputJsonValue, WorkspaceWhereInput, WorkspaceCreateInput } from '@/lib/types/database'
-import { Prisma } from '@prisma/client'
 
 // ================================
 // TYPE ALIASES
@@ -45,22 +42,6 @@ type WorkspaceWithRelations = Workspace & {
 // ================================
 // TYPE GUARDS FOR DATA SAFETY
 // ================================
-
-/**
- * Type guard for WorkspaceWhereInput
- * Validates that unknown data can be safely used as a Prisma WHERE filter
- */
-function isWorkspaceFilter(data: unknown): data is WorkspaceWhereInput {
-  if (typeof data !== 'object' || data === null) {
-    return false
-  }
-
-  const obj = data as Record<string, unknown>
-
-  // Must have at least one valid filter property
-  const validKeys = ['id', 'slug', 'status', 'name', 'users', 'OR', 'AND', 'NOT']
-  return validKeys.some(key => key in obj)
-}
 
 /**
  * Type guard for Workspace with included users relation

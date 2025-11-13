@@ -4,13 +4,13 @@
  * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
 import { getSentryProjectStats, getSentryReleases, getSentryHealth } from '@/lib/sentry-api-client';
 import { getBullBoardStats, systemHealthCheck } from '@/lib/bull-board';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // 1. Authenticate and check admin permissions
     const { user, workspace } = await validateAuthAndGetUser();

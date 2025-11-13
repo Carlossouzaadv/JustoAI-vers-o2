@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,15 +35,7 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'complete' | 'partial' | 'attention'>('all');
 
-  useEffect(() => {
-    if (clientId) {
-      loadProcesses();
-    } else {
-      setProcesses([]);
-    }
-  }, [clientId]);
-
-  const loadProcesses = async () => {
+  const loadProcesses = useCallback(async () => {
     if (!clientId) return;
 
     try {
@@ -58,7 +50,15 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [clientId]);
+
+  useEffect(() => {
+    if (clientId) {
+      loadProcesses();
+    } else {
+      setProcesses([]);
+    }
+  }, [clientId, loadProcesses]);
 
   const getStatusIcon = (status: Process['status']) => {
     switch (status) {

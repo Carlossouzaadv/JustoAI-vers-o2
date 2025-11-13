@@ -64,7 +64,7 @@ export function captureApiError(
  *   });
  */
 export function withErrorCapture(
-  handler: (request: Request, context?: unknown) => Promise<NextResponse | Response>
+  handler: (_request: Request, _context?: unknown) => Promise<NextResponse | Response>
 ) {
   return async (request: Request, context?: unknown) => {
     const startTime = Date.now();

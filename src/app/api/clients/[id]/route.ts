@@ -1,20 +1,17 @@
 import { NextRequest } from 'next/server'
 import type { InputJsonValue, ClientUpdateInput } from '@/lib/types/database';
 import { prisma } from '@/lib/prisma'
-import type { Prisma } from '@prisma/client'
 import {
   successResponse,
   errorResponse,
   requireAuth,
   validateBody,
   requireWorkspaceAccess,
-  withMethods,
   rateLimit,
   getClientIP
 } from '@/lib/api-utils'
 import {
-  updateClientSchema,
-  UpdateClientInput
+  updateClientSchema
 } from '@/lib/validations'
 
 interface RouteContext {

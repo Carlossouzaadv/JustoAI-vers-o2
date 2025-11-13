@@ -26,6 +26,7 @@ export type { InputJsonValue };
 // These enums are defined locally because Prisma Client generation
 // failed. They mirror the exact enums from schema.prisma.
 
+/* eslint-disable no-unused-vars */
 export enum TimelineSource {
   DOCUMENT_UPLOAD = 'DOCUMENT_UPLOAD',
   API_JUDIT = 'API_JUDIT',
@@ -545,7 +546,9 @@ export type WorkspaceCreateInput = Record<string, unknown>;
 export type ProcessAlertOrderByWithRelationInput = Partial<Record<string, 'asc' | 'desc'>>;
 
 // GetPayload Types (for type inference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type WorkspaceGetPayload<T> = Workspace & Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type UserWorkspaceGetPayload<T> = UserWorkspace & Record<string, unknown>;
 
 // FindMany Args Types

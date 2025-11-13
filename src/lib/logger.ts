@@ -5,7 +5,6 @@
 
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import path from 'path';
 import type { NextFunction } from 'express';
 import { Socket } from 'net';
 
@@ -21,7 +20,7 @@ interface ExtendedRequest {
   method: string;
   url: string;
   originalUrl?: string;
-  get(header: string): string | undefined;
+  get(_header: string): string | undefined;
   ip?: string;
   socket?: Socket;
   requestId?: string;
@@ -37,7 +36,7 @@ interface ExtendedRequest {
  */
 interface ExtendedResponse {
   statusCode: number;
-  end(...args: unknown[]): ExtendedResponse;
+  end(..._args: unknown[]): ExtendedResponse;
 }
 
 export interface LogContext {
@@ -128,7 +127,7 @@ const LOG_CONFIG = {
 const developmentFormat = winston.format.combine(
   winston.format.timestamp({ format: 'HH:mm:ss' }),
   winston.format.colorize({ all: true }),
-  winston.format.printf(({ timestamp, level, message, service, context, metadata }) => {
+  winston.format.printf(({ timestamp, level, message, service: _service, context, metadata }) => {
     let log = `[${timestamp}] ${level}: ${message}`;
 
     if (context) {

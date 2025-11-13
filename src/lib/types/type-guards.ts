@@ -18,7 +18,6 @@ import type {
   SystemImportValidation,
   SystemImportSummary,
   SystemImportSettings,
-  ImportedDataOriginal,
   ImportedDataMapped,
   TimelineConflictDetails,
   TimelineOriginalTexts,
@@ -84,7 +83,8 @@ export function isAIAnalysisData(value: unknown): value is AIAnalysisData {
   const obj = value as Record<string, unknown>;
 
   // All fields are optional Record<string, unknown>, so we just check the object shape
-  const validKeys = [
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
+  const _validKeys = [
     'identificacao_basica',
     'partes_envolvidas',
     'valores_financeiros',

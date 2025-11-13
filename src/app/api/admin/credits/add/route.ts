@@ -21,8 +21,6 @@ const addCreditsSchema = z.object({
   reason: z.string().min(1, 'Reason required')
 });
 
-type AddCreditsRequest = z.infer<typeof addCreditsSchema>;
-
 export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate user

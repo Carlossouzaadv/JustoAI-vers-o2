@@ -4,7 +4,7 @@
  */
 
 import { getEmailService, EmailNotification, EmailResult } from './email-service';
-import { getSlackService, SlackAlertOptions, SlackResult } from './slack-service';
+import { getSlackService, SlackResult } from './slack-service';
 import { ICONS } from './icons';
 
 export interface NotificationOptions {

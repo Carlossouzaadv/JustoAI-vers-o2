@@ -54,7 +54,7 @@ export class DocumentHashManager {
     workspaceId: string,
     prisma: {
       caseDocument: {
-        findFirst: (args: {
+        findFirst: (_args: {
           where: { textSha: string; case: { workspaceId: string } };
           include: { case: { select: { id: true; title: true; number: true } } };
         }) => Promise<{

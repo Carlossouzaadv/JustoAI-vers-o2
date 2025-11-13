@@ -392,7 +392,7 @@ export async function DELETE(
     // 5. DELETE NOTE
     // ============================================================
 
-    const deletedNote = await prisma.caseEvent.delete({
+    await prisma.caseEvent.delete({
       where: { id: noteId },
     });
 

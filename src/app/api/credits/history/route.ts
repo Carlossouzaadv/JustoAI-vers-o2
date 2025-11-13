@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server'
 import type { CreditTransactionFindManyArgs } from '@/lib/types/database';
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
-import { successResponse, errorResponse, validateQuery, requireAuth, withErrorHandler, paginatedResponse } from '@/lib/api-utils'
+import { errorResponse, validateQuery, requireAuth, withErrorHandler, paginatedResponse } from '@/lib/api-utils'
 import { prisma } from '@/lib/prisma'
 import { ICONS } from '@/lib/icons'
 
@@ -66,7 +65,7 @@ const historyQuerySchema = z.object({
 
 export const GET = withErrorHandler(async (request: NextRequest) => {
   // Auth check
-  const { user, error: authError } = await requireAuth(request)
+  const { error: authError } = await requireAuth(request)
   if (authError) return authError
 
   // Validate query parameters

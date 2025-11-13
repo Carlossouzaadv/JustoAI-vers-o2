@@ -118,11 +118,6 @@ export async function POST(
 // Type for valid actions
 type ControlAction = 'pause' | 'resume' | 'cancel';
 
-// Type guard to validate action string
-function isValidAction(value: unknown): value is ControlAction {
-  return value === 'pause' || value === 'resume' || value === 'cancel';
-}
-
 // Map internal status to Prisma-compatible status
 function mapToPrismaStatus(status: BatchStatusType): PrismaBatchStatus {
   // PAUSED is not supported in Prisma, so keep it as PROCESSING
@@ -235,7 +230,7 @@ async function executeControlAction(
 /**
  * Gera mensagem amigável para a ação executada
  */
-function getActionMessage(action: ControlAction, newStatus: BatchStatusType): string {
+function getActionMessage(action: ControlAction, _newStatus: BatchStatusType): string {
   const messages: Record<ControlAction, string> = {
     'pause': 'Processamento pausado. Use "resume" para continuar.',
     'resume': 'Processamento retomado.',

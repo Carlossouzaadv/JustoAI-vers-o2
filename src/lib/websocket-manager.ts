@@ -280,7 +280,7 @@ export class WebSocketManager {
   /**
    * Type guard para verificar se a response tem método write
    */
-  private hasWriteMethod(obj: unknown): obj is { write: (data: string) => void } {
+  private hasWriteMethod(obj: unknown): obj is { write: (_data: string) => void } {
     return (
       typeof obj === 'object' &&
       obj !== null &&

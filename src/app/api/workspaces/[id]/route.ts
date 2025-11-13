@@ -6,13 +6,11 @@ import {
   requireAuth,
   validateBody,
   requireWorkspaceAccess,
-  withMethods,
   rateLimit,
   getClientIP
 } from '@/lib/api-utils'
 import {
-  updateWorkspaceSchema,
-  UpdateWorkspaceInput
+  updateWorkspaceSchema
 } from '@/lib/validations'
 
 interface RouteContext {

@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ICONS } from '@/lib/icons';
 import { getApiUrl } from '@/lib/api-client';
@@ -116,7 +114,6 @@ const PRIORITY_ORDER = { high: 3, medium: 2, low: 1 } as const;
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [unreadNotifications, setUnreadNotifications] = useState(3);
 
   // FIXED: Removed try-catch with conditional assignment that caused TDZ violations
   // during minification. Hook validation happens in useDashboard() itself, so we can
@@ -291,36 +288,35 @@ export default function DashboardPage() {
     });
   };
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'upload': return ICONS.UPLOAD;
-      case 'analysis': return ICONS.PROCESS;
-      case 'client': return ICONS.CLIENT;
-      case 'error': return ICONS.ERROR;
-      default: return ICONS.INFO;
-    }
-  };
-
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case 'upload': return 'text-blue-500';
-      case 'analysis': return 'text-green-500';
-      case 'client': return 'text-purple-500';
-      case 'error': return 'text-red-500';
-      default: return 'text-gray-500';
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'processing':
-        return <Badge className="bg-blue-100 text-blue-800">{ICONS.PROCESS} Processando</Badge>;
-      case 'waiting':
-        return <Badge className="bg-yellow-100 text-yellow-800">{ICONS.TIME} Aguardando</Badge>;
-      default:
-        return <Badge variant="secondary">Desconhecido</Badge>;
-    }
-  };
+  // Reserved for future use - icon and color mapping for activity types
+  // const getActivityIcon = (type: string) => {
+  //   switch (type) {
+  //     case 'upload': return ICONS.UPLOAD;
+  //     case 'analysis': return ICONS.PROCESS;
+  //     case 'client': return ICONS.CLIENT;
+  //     case 'error': return ICONS.ERROR;
+  //     default: return ICONS.INFO;
+  //   }
+  // };
+  // const getActivityColor = (type: string) => {
+  //   switch (type) {
+  //     case 'upload': return 'text-blue-500';
+  //     case 'analysis': return 'text-green-500';
+  //     case 'client': return 'text-purple-500';
+  //     case 'error': return 'text-red-500';
+  //     default: return 'text-gray-500';
+  //   }
+  // };
+  // const getStatusBadge = (status: string) => {
+  //   switch (status) {
+  //     case 'processing':
+  //       return <Badge className="bg-blue-100 text-blue-800">{ICONS.PROCESS} Processando</Badge>;
+  //     case 'waiting':
+  //       return <Badge className="bg-yellow-100 text-yellow-800">{ICONS.TIME} Aguardando</Badge>;
+  //     default:
+  //       return <Badge variant="secondary">Desconhecido</Badge>;
+  //   }
+  // };
 
   const getPriorityBadge = (priority: string, isOverdue: boolean = false) => {
     if (isOverdue) {
@@ -339,13 +335,14 @@ export default function DashboardPage() {
     }
   };
 
-  const getAnalysisTypeLabel = (type: string) => {
-    switch (type) {
-      case 'essential': return 'Análise Essencial';
-      case 'strategic': return 'Análise Estratégica';
-      default: return 'Análise Padrão';
-    }
-  };
+  // Reserved for future use
+  // const getAnalysisTypeLabel = (type: string) => {
+  //   switch (type) {
+  //     case 'essential': return 'Análise Essencial';
+  //     case 'strategic': return 'Análise Estratégica';
+  //     default: return 'Análise Padrão';
+  //   }
+  // };
 
   const getDaysUntilDeadline = (deadline: string) => {
     const today = new Date();

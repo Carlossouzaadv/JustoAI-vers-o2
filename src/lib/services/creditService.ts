@@ -66,7 +66,7 @@ export async function debitCredits(userEmail: string | undefined, workspaceId: s
       data: { workspaceId, type: CreditTransactionType.DEBIT, creditCategory: category, amount: cost, reason }
     });
     return { success: true, newBalance: { reportCredits: Number(updated.reportCreditsBalance), fullCredits: Number(updated.fullCreditsBalance), unlimited: false, divinityAdmin: false } };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, reason: 'Error debiting' };
   }
 }
@@ -82,7 +82,7 @@ export async function addCredits(workspaceId: string, cost: number, category: Cr
       data: { workspaceId, type: CreditTransactionType.CREDIT, creditCategory: category, amount: cost, reason }
     });
     return { success: true, newBalance: { reportCredits: Number(updated.reportCreditsBalance), fullCredits: Number(updated.fullCreditsBalance), unlimited: false, divinityAdmin: false } };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, reason: 'Error adding' };
   }
 }

@@ -4,7 +4,7 @@
 // Endpoint para testar e usar os novos prompts de análise multi-frentes
 
 import { NextRequest, NextResponse } from 'next/server';
-import { AIModelRouter, ModelTier } from '@/lib/ai-model-router';
+import { AIModelRouter } from '@/lib/ai-model-router';
 import PromptsMaestros from '@/lib/prompts-maestros';
 
 export async function POST(request: NextRequest) {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   // Endpoint para listar tipos de análise disponíveis
   const tiposAnalise = {
     individual: {

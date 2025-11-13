@@ -27,7 +27,13 @@ const eslintConfig = [
       // Regras específicas para emojis e símbolos
       'no-unused-vars': ['warn', {
         varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN)$',
-        argsIgnorePattern: '^_'
+        argsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN)$',
+        argsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
       }],
 
       // Permite strings com caracteres especiais

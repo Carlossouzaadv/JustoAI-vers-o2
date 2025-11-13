@@ -313,7 +313,7 @@ IMPORTANT: Return your response in valid JSON format only. Do not include unknow
         model: response.model,
         latency
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         model: 'unknown',

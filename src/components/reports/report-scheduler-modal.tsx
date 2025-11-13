@@ -25,13 +25,11 @@ import {
   Users,
   Building,
   User,
-  Download,
   Moon,
   Zap,
   Info
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { useQuotaModal } from '@/components/quota/quota-modal';
 
 // ================================================================
@@ -43,7 +41,7 @@ interface ReportSchedulerModalProps {
   onClose: () => void;
   selectedProcesses: string[];
   workspaceId: string;
-  onScheduleSuccess?: (reportId: string) => void;
+  onScheduleSuccess?: (_reportId: string) => void;
 }
 
 interface QuotaStatus {
@@ -187,7 +185,7 @@ export default function ReportSchedulerModal({
       loadQuotaStatus();
       loadCreditBalance();
     }
-  }, [isOpen, workspaceId]);
+  }, [isOpen, workspaceId, loadQuotaStatus, loadCreditBalance]);
 
   // Calcular estimativas
   const selectedReportType = REPORT_TYPES.find(t => t.value === reportOptions.type)!;
@@ -196,7 +194,7 @@ export default function ReportSchedulerModal({
   const finalCredits = isNightSchedule ? estimatedCredits * 0.5 : estimatedCredits; // 50% desconto noturno
 
   // Carregar status de quota
-  const loadQuotaStatus = async () => {
+  const loadQuotaStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/reports/quota-status?workspaceId=${workspaceId}`);
       const data = await response.json();
@@ -207,10 +205,10 @@ export default function ReportSchedulerModal({
     } catch (error) {
       console.error('Erro ao carregar quota:', error);
     }
-  };
+  }, [workspaceId]);
 
   // Carregar saldo de créditos
-  const loadCreditBalance = async () => {
+  const loadCreditBalance = useCallback(async () => {
     try {
       const response = await fetch(`/api/billing/credits?workspaceId=${workspaceId}&action=balance`);
       const data = await response.json();
@@ -221,7 +219,7 @@ export default function ReportSchedulerModal({
     } catch (error) {
       console.error('Erro ao carregar créditos:', error);
     }
-  };
+  }, [workspaceId]);
 
   // Verificar se pode agendar
   const canSchedule = () => {

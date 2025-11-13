@@ -24,14 +24,11 @@ import {
   Server,
   Webhook,
   BarChart3,
-  Clock,
-  TrendingUp,
   AlertCircle,
   Play,
   Square,
   RotateCcw,
   Trash2,
-  Settings,
   Shield,
   Gauge
 } from 'lucide-react';

@@ -19,7 +19,6 @@ import {
   CreateAnalysisPayloadSchema,
   CreateAnalysisPayload,
   RouteIdParamSchema,
-  RouteIdParam,
   GetAnalysisQuerySchema,
   GetAnalysisQuery,
 } from '@/lib/types/api-schemas';
@@ -287,7 +286,7 @@ export async function POST(
       );
     }
 
-    const { level, includeDocuments, includeTimeline, workspaceId }: CreateAnalysisPayload =
+    const { level, workspaceId }: CreateAnalysisPayload =
       bodyParseResult.data;
 
     // ============================================================
@@ -497,7 +496,7 @@ async function processAnalysisInBackground(
     };
 
     // Salvar resultado (dados validados em runtime acima)
-    const resultUpdate = await prisma.caseAnalysisVersion.update({
+    await prisma.caseAnalysisVersion.update({
       where: { id: analysisVersionId },
       data: updateData,
     });

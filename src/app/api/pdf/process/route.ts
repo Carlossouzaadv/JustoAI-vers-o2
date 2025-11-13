@@ -10,7 +10,7 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import { execSync, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 
 const ICONS = {
   SUCCESS: '✅',
@@ -111,64 +111,6 @@ function executeWithTimeout(
 }
 
 // ================================================================
-// PDF EXTRACTION - Using system pdftotext command (from poppler-utils)
-// With aggressive timeout and graceful degradation
-// ================================================================
-async function extractTextFromPDF(pdfPath: string): Promise<string> {
-  const startTime = Date.now();
-  try {
-    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] Iniciando (timeout: ${PDFTOTEXT_TIMEOUT}ms)`);
-
-    // 1. VERIFICAR SE ARQUIVO EXISTE
-    try {
-      await fs.stat(pdfPath);
-    } catch (statError) {
-      const errorMsg = `Arquivo não encontrado: ${pdfPath}`;
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] ${errorMsg}`);
-      throw new Error(errorMsg);
-    }
-
-    // 2. EXECUTAR PDFTOTEXT COM TIMEOUT AGRESSIVO
-    console.log(`${ICONS.TIMER} [extractTextFromPDF] Executando pdftotext...`);
-    let result;
-    try {
-      result = executeWithTimeout('pdftotext', [pdfPath, '-'], PDFTOTEXT_TIMEOUT);
-    } catch (timeoutError) {
-      const duration = Date.now() - startTime;
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] TIMEOUT após ${duration}ms`);
-      // Retornar erro específico de timeout em vez de crashar
-      throw new Error(`pdftotext timeout (${PDFTOTEXT_TIMEOUT}ms exceeded). PDF pode ser muito complexo.`);
-    }
-
-    // 3. VALIDAR RESULTADO DO COMANDO
-    if (result.status !== 0 && result.status !== null) {
-      const errorMsg = result.stderr || `Exited with code ${result.status}`;
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] pdftotext exit code ${result.status}`);
-      throw new Error(`pdftotext failed: ${errorMsg.substring(0, 100)}`);
-    }
-
-    const text = result.stdout || '';
-
-    // 4. VALIDAR RESULTADO
-    if (!text || text.trim().length === 0) {
-      console.error(`${ICONS.ERROR} [extractTextFromPDF] Texto vazio - PDF pode ser sem texto ou imagens`);
-      // Não throw - retornar string vazia é ok
-      return '';
-    }
-
-    const duration = Date.now() - startTime;
-    console.log(`${ICONS.SUCCESS} [extractTextFromPDF] OK: ${text.length}c em ${duration}ms`);
-    return text;
-
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`${ICONS.ERROR} [extractTextFromPDF] ERRO após ${duration}ms: ${errorMsg.substring(0, 100)}`);
-    throw error;
-  }
-}
-
-// ================================================================
 // TEXT CLEANING
 // ================================================================
 function cleanText(text: string): string {
@@ -202,12 +144,6 @@ function extractProcessNumber(text: string): string | null {
 }
 
 // ================================================================
-// CONSTANTS
-// ================================================================
-const PDFTOTEXT_TIMEOUT = 8000; // 8 segundos MAX (Railway ~30s, Vercel ~60s)
-const MAX_PROCESSING_TIME = 25000; // 25 segundos total
-
-// ================================================================
 // ENDPOINT PRINCIPAL
 // ================================================================
 export async function POST(request: NextRequest) {
@@ -239,7 +175,7 @@ export async function POST(request: NextRequest) {
     const tempDir = join(tmpdir(), 'justoai-pdfs');
     try {
       await fs.mkdir(tempDir, { recursive: true });
-    } catch (err) {
+    } catch (_err) {
       // Ignore
     }
 
@@ -263,7 +199,7 @@ export async function POST(request: NextRequest) {
       if (result.status === 0) {
         extractedText = result.stdout || '';
       }
-    } catch (quickError) {
+    } catch (_quickError) {
       // Timeout or error - just continue with empty text
       extractionTimeMs = Date.now() - startTime;
       console.warn('Fast extraction failed, continuing with empty text');
@@ -329,7 +265,7 @@ export async function POST(request: NextRequest) {
     if (tempFilePath) {
       try {
         await fs.unlink(tempFilePath);
-      } catch (cleanupError) {
+      } catch (_cleanupError) {
         // Silently fail
       }
     }

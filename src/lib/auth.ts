@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
-import type { NextAuthOptions, Session } from 'next-auth'
+import type { NextAuthOptions } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
 
 // Supabase client for server-side auth

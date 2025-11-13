@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect , useCallback} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,9 +93,9 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
 
   useEffect(() => {
     loadNotes();
-  }, [processId]);
+  }, [processId, loadNotes]);
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -113,7 +113,7 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [processId]);
 
   const createNewNote = () => {
     const newNote: ProcessNote = {

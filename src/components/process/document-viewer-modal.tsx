@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -105,11 +106,12 @@ export function DocumentViewerModal({
               </p>
             </div>
           ) : isImage ? (
-            <div className="flex items-center justify-center h-full">
-              <img
+            <div className="flex items-center justify-center h-full relative">
+              <Image
                 src={downloadUrl}
                 alt={documentName}
-                className="max-w-full max-h-full object-contain"
+                fill
+                className="object-contain"
                 onError={() => setError('Erro ao carregar imagem')}
               />
             </div>

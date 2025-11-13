@@ -39,7 +39,7 @@ interface QuotaModalProps {
     actions?: QuotaAction[];
     planType?: string;
   };
-  onActionSelect?: (action: QuotaAction) => void;
+  onActionSelect?: (_action: QuotaAction) => void;
 }
 
 interface QuotaAction {
@@ -48,9 +48,6 @@ interface QuotaAction {
   url?: string;
   description: string;
 }
-
-// eslint-disable-next-line no-unused-vars
-type _UnusedAction = QuotaAction;
 
 // ================================================================
 // CONFIGURAÇÕES DE DISPLAY
@@ -115,15 +112,13 @@ const ACTION_CONFIG = {
 // ================================================================
 
 export default function QuotaModal({ isOpen, onClose, quotaData, onActionSelect }: QuotaModalProps) {
-  const [loading, setLoading] = useState(false);
-
+  // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+  const [loading, setLoading] = React.useState(false);
   const config = QUOTA_CONFIG[quotaData.quotaStatus];
   const Icon = config.icon;
 
   // Calcular informações de progresso
   const remaining = Math.max(0, quotaData.limit - quotaData.current);
-  const progressColor = quotaData.percentage >= 100 ? 'bg-red-500' :
-                       quotaData.percentage >= 80 ? 'bg-orange-500' : 'bg-blue-500';
 
   // Ordenar ações por prioridade
   const sortedActions = quotaData.actions?.sort((a, b) => {
@@ -351,12 +346,6 @@ export function QuotaStatus({ current, limit, percentage, className = '' }: Quot
     return 'text-green-600';
   };
 
-  const getProgressColor = (pct: number) => {
-    if (pct >= 100) return 'bg-red-500';
-    if (pct >= 80) return 'bg-orange-500';
-    return 'bg-blue-500';
-  };
-
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex justify-between text-sm">
@@ -401,7 +390,7 @@ export function useQuotaModal() {
     setQuotaData(null);
   };
 
-  const QuotaModalComponent = ({ onActionSelect }: { onActionSelect?: (action: QuotaAction) => void }) => {
+  const QuotaModalComponent = ({ onActionSelect: propOnActionSelect }: { onActionSelect?: (_action: QuotaAction) => void }) => {
     if (!quotaData) return null;
 
     return (
@@ -409,7 +398,7 @@ export function useQuotaModal() {
         isOpen={isOpen}
         onClose={hideQuotaModal}
         quotaData={quotaData}
-        onActionSelect={onActionSelect}
+        onActionSelect={propOnActionSelect}
       />
     );
   };

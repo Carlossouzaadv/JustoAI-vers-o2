@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 import type { ClientWhereInput } from '@/lib/types/database';
 import { prisma } from '@/lib/prisma'
-import type { Prisma } from '@prisma/client'
 import {
   successResponse,
   errorResponse,
@@ -15,9 +14,7 @@ import {
 } from '@/lib/api-utils'
 import {
   createClientSchema,
-  clientQuerySchema,
-  CreateClientInput,
-  ClientQuery
+  clientQuerySchema
 } from '@/lib/validations'
 
 /**

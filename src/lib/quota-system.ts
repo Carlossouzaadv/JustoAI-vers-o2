@@ -102,7 +102,8 @@ export class QuotaSystem {
     }
 
     // Filtrar campos para corresponder ao tipo esperado
-    const { createdAt, updatedAt, ...quotaData } = quota;
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+    const { createdAt: _createdAt, updatedAt: _updatedAt, ...quotaData } = quota;
     return quotaData as unknown as Awaited<ReturnType<typeof prisma.quotaManagement.findUnique>>;
   }
 

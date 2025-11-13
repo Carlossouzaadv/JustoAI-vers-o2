@@ -4,7 +4,7 @@
 // HISTÓRICO DE RELATÓRIOS INDIVIDUAIS - Componente Frontend
 // ================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useCallback} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,6 @@ import {
   Filter,
   RefreshCw,
   TrendingUp,
-  Users,
   Target
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -79,13 +78,8 @@ export default function IndividualReportsHistory({ workspaceId }: IndividualRepo
   const [showFilters, setShowFilters] = useState(false);
   const [hasMore, setHasMore] = useState(false);
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    loadReports();
-  }, [filters]);
-
   // Carregar relatórios
-  const loadReports = async (append = false) => {
+  const loadReports = useCallback(async (append = false) => {
     try {
       setLoading(true);
 
@@ -119,7 +113,12 @@ export default function IndividualReportsHistory({ workspaceId }: IndividualRepo
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, workspaceId]);
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   // Carregar mais relatórios
   const loadMore = () => {
