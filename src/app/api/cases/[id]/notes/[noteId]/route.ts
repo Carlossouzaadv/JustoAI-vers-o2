@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
 import { ICONS } from '@/lib/icons';
+import type { UserWorkspaceRecord } from '@/lib/types/database';
 
 // ================================================================
 // TYPE DEFINITIONS & VALIDATION SCHEMAS
@@ -153,7 +154,7 @@ export async function PATCH(
     // ============================================================
 
     const hasWorkspaceAccess = note.case?.workspace?.users?.some(
-      (userWorkspace) => userWorkspace.userId === userId
+      (userWorkspace: UserWorkspaceRecord) => userWorkspace.userId === userId
     );
 
     if (!hasWorkspaceAccess) {
@@ -358,7 +359,7 @@ export async function DELETE(
     // ============================================================
 
     const hasWorkspaceAccess = note.case?.workspace?.users?.some(
-      (userWorkspace) => userWorkspace.userId === userId
+      (userWorkspace: UserWorkspaceRecord) => userWorkspace.userId === userId
     );
 
     if (!hasWorkspaceAccess) {
