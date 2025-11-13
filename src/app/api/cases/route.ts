@@ -224,7 +224,7 @@ async function GET(request: NextRequest) {
     workspaceIds = [workspaceId]
   } else {
     // Get all workspaces user has access to
-    const userWorkspaces = await prisma.userWorkspace.findMany({
+    const userWorkspaces: { workspaceId: string }[] = await prisma.userWorkspace.findMany({
       where: {
         userId: user.id,
         status: 'ACTIVE'
