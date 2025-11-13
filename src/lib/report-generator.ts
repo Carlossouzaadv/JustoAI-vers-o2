@@ -62,6 +62,36 @@ function isPayloadProcess(process: unknown): process is PayloadProcess {
   return 'id' in obj && 'number' in obj && 'client' in obj && 'status' in obj;
 }
 
+// ================================================================
+// INTERFACES PARA QUERIES PRISMA - Padrão-Ouro Type Safety
+// ================================================================
+
+/**
+ * Representa um processo monitorado retornado pela query Prisma
+ * com includes de case.client e movements
+ */
+interface MonitoredProcessFromQuery {
+  id: string;
+  processNumber: string;
+  monitoringStatus: string;
+  case: {
+    client: {
+      name: string;
+      type: string;
+    } | null;
+  } | null;
+  movements: ProcessMovementFromQuery[];
+}
+
+/**
+ * Representa uma movimentação processual retornada pela query Prisma
+ */
+interface ProcessMovementFromQuery {
+  date: Date;
+  description: string;
+  type: string | null;
+}
+
 /**
  * Converte ReportSummary para objeto JSON-safe para armazenar em Prisma
  * Padrão-Ouro: Serialização segura JSON.parse(JSON.stringify) + validação de estrutura
@@ -352,7 +382,7 @@ export class ReportGenerator {
       }
     });
 
-    return processes.map(process => ({
+    return processes.map((process: MonitoredProcessFromQuery) => ({
       id: process.id,
       number: process.processNumber,
       client: {
@@ -364,7 +394,7 @@ export class ReportGenerator {
         date: process.movements[0].date,
         description: process.movements[0].description
       } : undefined,
-      movements: process.movements.map(mov => ({
+      movements: process.movements.map((mov: ProcessMovementFromQuery) => ({
         date: mov.date,
         description: mov.description,
         type: mov.type || 'MOVIMENTO'
