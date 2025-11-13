@@ -53,6 +53,16 @@ interface CostBreakdown {
   avgCost: number;
 }
 
+interface JuditCostGroupByResult {
+  operationType: JuditOperationType;
+  _count: {
+    id: number;
+  };
+  _sum: {
+    totalCost: number | null;
+  };
+}
+
 // ================================================================
 // COST TRACKING
 // ================================================================
@@ -212,7 +222,7 @@ export async function getCostBreakdown(
     },
   });
 
-  return records.map((record) => ({
+  return records.map((record: JuditCostGroupByResult) => ({
     operationType: record.operationType,
     count: record._count.id,
     totalCost: Number(record._sum.totalCost || 0),
