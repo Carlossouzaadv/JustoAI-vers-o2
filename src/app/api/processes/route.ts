@@ -14,8 +14,56 @@ import {
   normalizeProcessNumber
 } from '@/lib/process-apis';
 import { ICONS } from '@/lib/icons';
-import type { Prisma } from '@prisma/client';
-import type { MovementCategory, Priority } from '@prisma/client';
+
+// ================================
+// LOCAL TYPE DEFINITIONS (Padrão-Ouro)
+// ================================
+// Definidos localmente para evitar dependência de types não gerados do Prisma
+// Baseados no schema.prisma (linhas 100-120)
+
+type MovementCategory =
+  | 'HEARING'
+  | 'DECISION'
+  | 'PETITION'
+  | 'DOCUMENT_REQUEST'
+  | 'DEADLINE'
+  | 'NOTIFICATION'
+  | 'APPEAL'
+  | 'SETTLEMENT'
+  | 'OTHER';
+
+type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
+type MonitoringStatus = 'ACTIVE' | 'PAUSED' | 'STOPPED' | 'ERROR';
+
+// Interface para Where Input (baseado no modelo MonitoredProcess)
+interface MonitoredProcessWhereInput {
+  workspaceId?: string;
+  id?: { in: string[] };
+  processNumber?: { contains: string; mode: 'insensitive' } | { in: string[] };
+  clientName?: { contains: string; mode: 'insensitive' };
+  court?: { contains: string; mode: 'insensitive' };
+  caseId?: { not: null } | null;
+  monitoringStatus?: MonitoringStatus;
+  OR?: Array<{
+    processNumber?: { contains: string; mode: 'insensitive' };
+    clientName?: { contains: string; mode: 'insensitive' };
+    court?: { contains: string; mode: 'insensitive' };
+  }>;
+}
+
+// Interface para CreateManyInput (baseado no modelo ProcessMovement)
+interface ProcessMovementCreateManyInput {
+  monitoredProcessId: string;
+  date: Date;
+  type: string;
+  description: string;
+  category: MovementCategory;
+  importance: Priority;
+  requiresAction: boolean;
+  deadline: Date | null;
+  rawData: Record<string, unknown>;
+}
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO
@@ -231,7 +279,7 @@ export async function GET(request: NextRequest) {
     const offset = (query.page - 1) * query.limit;
 
     // Construir filtros
-    const where: Prisma.MonitoredProcessWhereInput = {
+    const where: MonitoredProcessWhereInput = {
       workspaceId: workspace.id
     };
 
@@ -317,7 +365,12 @@ export async function GET(request: NextRequest) {
       _count: true
     });
 
-    const statusStats = stats.reduce((acc, stat) => {
+    interface StatusCount {
+      monitoringStatus: MonitoringStatus;
+      _count: number;
+    }
+
+    const statusStats = stats.reduce((acc: Record<string, number>, stat: StatusCount) => {
       acc[stat.monitoringStatus] = stat._count;
       return acc;
     }, {} as Record<string, number>);
@@ -548,7 +601,7 @@ export async function POST(request: NextRequest) {
     // Criar movimentações iniciais (se existem)
     if (initialMovements.length > 0) {
       // Filter and validate movements using type guard
-      const validMovements: Prisma.ProcessMovementCreateManyInput[] = [];
+      const validMovements: ProcessMovementCreateManyInput[] = [];
 
       for (const item of initialMovements) {
         if (!isProcessMovement(item)) {
@@ -560,7 +613,7 @@ export async function POST(request: NextRequest) {
         const category = isValidMovementCategory(item.category) ? item.category : 'OTHER';
         const importance = isValidPriority(item.importance) ? item.importance : 'MEDIUM';
 
-        const validatedMovement: Prisma.ProcessMovementCreateManyInput = {
+        const validatedMovement: ProcessMovementCreateManyInput = {
           monitoredProcessId: monitoredProcess.id,
           date: new Date(item.date),
           type: item.type,
@@ -701,7 +754,7 @@ export async function DELETE(request: NextRequest) {
       throw new ApiError('IDs ou números de processo devem ser fornecidos', 400);
     }
 
-    const where: Prisma.MonitoredProcessWhereInput = {
+    const where: MonitoredProcessWhereInput = {
       workspaceId: workspace.id
     };
 
@@ -730,9 +783,15 @@ export async function DELETE(request: NextRequest) {
       where
     });
 
+    interface ProcessInfo {
+      id: string;
+      processNumber: string;
+      clientName: string;
+    }
+
     console.log(`${ICONS.SUCCESS} Processos removidos:`, {
       count: deleted.count,
-      processes: processesToDelete.map(p => p.processNumber)
+      processes: processesToDelete.map((p: ProcessInfo) => p.processNumber)
     });
 
     return apiResponse({
