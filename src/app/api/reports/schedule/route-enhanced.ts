@@ -224,8 +224,11 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const quotaSystem = new QuotaSystem();
     const quotaStats = await quotaSystem.getUsageStatistics(workspaceId);
 
+    // Type alias para schedules com relações (inferido do Prisma query)
+    type ScheduleWithRelations = typeof schedules[number];
+
     const responseData = {
-      schedules: schedules.map(schedule => ({
+      schedules: schedules.map((schedule: ScheduleWithRelations) => ({
         id: schedule.id,
         name: schedule.name,
         description: schedule.description,
@@ -245,7 +248,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       quotaInfo: quotaStats.quota,
       statistics: {
         totalSchedules: schedules.length,
-        activeSchedules: schedules.filter(s => s.enabled).length,
+        activeSchedules: schedules.filter((s: ScheduleWithRelations) => s.enabled).length,
         thisMonthExecutions: quotaStats.thisMonth.reports,
         successRate: quotaStats.thisMonth.successRate
       }
