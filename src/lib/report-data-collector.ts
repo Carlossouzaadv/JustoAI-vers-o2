@@ -58,6 +58,63 @@ export interface SummaryData {
   pending_actions: number;
 }
 
+/**
+ * Type for individual process movement from Prisma query
+ * Explicitly typed to match ProcessMovement model
+ */
+interface ProcessMovementFromQuery {
+  id: string;
+  monitoredProcessId: string;
+  date: Date;
+  type: string;
+  description: string;
+  content: string | null;
+  importance: string | null;
+  requiresAction: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Type for individual process alert from Prisma query
+ * Explicitly typed to match ProcessAlert model
+ */
+interface ProcessAlertFromQuery {
+  id: string;
+  monitoredProcessId: string;
+  type: string;
+  severity: string;
+  message: string;
+  read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Prisma query result type for processes with movements and alerts
+ * Explicitly typed to match MonitoredProcess model with relations
+ */
+interface ProcessWithRelations {
+  id: string;
+  workspaceId: string;
+  caseId: string | null;
+  processNumber: string;
+  court: string;
+  clientName: string;
+  processData: unknown;
+  monitoringStatus: string;
+  lastSync: Date | null;
+  syncFrequency: string;
+  alertsEnabled: boolean;
+  alertRecipients: string[];
+  source: string;
+  extractionMethod: string;
+  createdAt: Date;
+  updatedAt: Date;
+  movements: ProcessMovementFromQuery[];
+  alerts: ProcessAlertFromQuery[];
+}
+
 // ================================
 // TYPE GUARDS
 // ================================
@@ -367,20 +424,20 @@ export class ReportDataCollector {
     });
 
     // Converter para formato do relatório
-    return processes.map(process => {
+    return processes.map((process: ProcessWithRelations) => {
       const lastMovement = process.movements[0];
-      const recentMovements = process.movements.map(m => ({
+      const recentMovements = process.movements.map((m: ProcessMovementFromQuery) => ({
         date: m.date,
         type: m.type,
         description: m.description,
-        importance: m.importance
+        importance: m.importance ?? 'NORMAL'
       }));
 
       // Determinar prioridade baseada em alertas e movimentações
       let priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' = 'LOW';
-      if (process.alerts.some(a => a.severity === 'URGENT')) {
+      if (process.alerts.some((a: ProcessAlertFromQuery) => a.severity === 'URGENT')) {
         priority = 'URGENT';
-      } else if (process.alerts.some(a => a.severity === 'HIGH')) {
+      } else if (process.alerts.some((a: ProcessAlertFromQuery) => a.severity === 'HIGH')) {
         priority = 'HIGH';
       } else if (process.alerts.length > 0 || recentMovements.length > 2) {
         priority = 'MEDIUM';
@@ -581,7 +638,7 @@ export class ReportDataCollector {
    * Calcula próximo prazo baseado nas movimentações
    * Retorna apenas a Date do prazo mais próximo que é válido (futuro)
    */
-  private calculateNextDeadline(movements: Array<Record<string, unknown>>): Date | undefined {
+  private calculateNextDeadline(movements: ProcessMovementFromQuery[]): Date | undefined {
     try {
       if (!movements || movements.length === 0) {
         return undefined;
@@ -597,8 +654,7 @@ export class ReportDataCollector {
 
       for (const movement of movements) {
         // Buscar por padrões de prazo na descrição
-        const descriptionRaw = movement.description;
-        const description = typeof descriptionRaw === 'string' ? descriptionRaw : '';
+        const description = movement.description;
 
         // Validar que movement.date existe e é Date ou pode ser convertido
         const movementDate = movement.date instanceof Date

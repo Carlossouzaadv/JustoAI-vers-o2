@@ -170,10 +170,13 @@ export async function GET(request: NextRequest) {
       _count: true
     });
 
-    const readStats = quickStats.reduce((acc, stat) => {
-      acc[stat.read ? 'read' : 'unread'] = stat._count;
-      return acc;
-    }, { read: 0, unread: 0 } as Record<string, number>);
+    const readStats = quickStats.reduce(
+      (acc: Record<string, number>, stat: { read: boolean; _count: number }) => {
+        acc[stat.read ? 'read' : 'unread'] = stat._count;
+        return acc;
+      },
+      { read: 0, unread: 0 } as Record<string, number>
+    );
 
     return apiResponse({
       alerts,
@@ -361,13 +364,13 @@ export async function DELETE(request: NextRequest) {
     // Remover alertas
     const deleted = await prisma.processAlert.deleteMany({
       where: {
-        id: { in: alertsToDelete.map(a => a.id) }
+        id: { in: alertsToDelete.map((a: { id: string; title: string }) => a.id) }
       }
     });
 
     console.log(`${ICONS.SUCCESS} Alertas removidos:`, {
       count: deleted.count,
-      ids: alertsToDelete.map(a => a.id)
+      ids: alertsToDelete.map((a: { id: string; title: string }) => a.id)
     });
 
     return apiResponse({

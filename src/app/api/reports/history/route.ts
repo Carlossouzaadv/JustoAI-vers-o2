@@ -7,14 +7,73 @@ import { NextRequest, NextResponse } from 'next/server';
 import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-import { Prisma, ExecutionStatus } from '@prisma/client';
+
+/**
+ * Local type definitions (Prisma client stub fallback)
+ */
+enum ExecutionStatus {
+  AGENDADO = 'AGENDADO',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
+}
+
+/**
+ * Type definitions for Prisma query results
+ */
+interface ReportExecutionWithSchedule {
+  id: string;
+  workspaceId: string;
+  scheduleId: string | null;
+  reportType: string;
+  audienceType: string;
+  status: string;
+  startedAt: Date;
+  completedAt: Date | null;
+  duration: number | null;
+  processCount: number;
+  outputFormats: string[];
+  fileUrls: unknown;
+  tokensUsed: number | null;
+  cacheHit: boolean;
+  quotaConsumed: number;
+  error: string | null;
+  retryCount: number;
+  schedule: {
+    id: string;
+    name: string;
+    type: string;
+    audienceType: string;
+  } | null;
+}
+
+interface StatusBreakdownItem {
+  status: string;
+  _count: {
+    id: number;
+  };
+}
+
+interface ExecutionForTrend {
+  startedAt: Date;
+  status: string;
+  duration: number | null;
+}
+
+interface WhereClauseInput {
+  workspaceId: string;
+  scheduleId?: string;
+  status?: string;
+}
 
 /**
  * Type guard para validar ExecutionStatus
  */
 function isValidExecutionStatus(value: unknown): value is ExecutionStatus {
   if (typeof value !== 'string') return false;
-  return Object.values(ExecutionStatus).includes(value as ExecutionStatus);
+  const validStatuses: string[] = ['AGENDADO', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'];
+  return validStatuses.includes(value);
 }
 
 /**
@@ -24,8 +83,8 @@ function buildReportExecutionWhereClause(
   workspaceId: string,
   scheduleId?: string | null,
   status?: string | null
-): Prisma.ReportExecutionWhereInput {
-  const where: Prisma.ReportExecutionWhereInput = { workspaceId };
+): WhereClauseInput {
+  const where: WhereClauseInput = { workspaceId };
 
   if (scheduleId) {
     where.scheduleId = scheduleId;
@@ -33,7 +92,7 @@ function buildReportExecutionWhereClause(
 
   // Type narrowing: validar e converter status para ExecutionStatus
   if (status && isValidExecutionStatus(status)) {
-    where.status = status as ExecutionStatus;
+    where.status = status;
   }
 
   return where;
@@ -102,7 +161,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const statistics = await calculateExecutionStatistics(whereClause);
 
     const responseData = {
-      executions: executions.map(execution => {
+      executions: (executions as ReportExecutionWithSchedule[]).map((execution: ReportExecutionWithSchedule) => {
         // Type narrowing: schedule é optional na relação include
         const scheduleName = execution.schedule && 'name' in execution.schedule
           ? execution.schedule.name
@@ -151,7 +210,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 /**
  * Calcula estatísticas de execução
  */
-async function calculateExecutionStatistics(whereClause: Prisma.ReportExecutionWhereInput) {
+async function calculateExecutionStatistics(whereClause: WhereClauseInput) {
   // Estatísticas dos últimos 30 dias
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -217,12 +276,21 @@ async function calculateExecutionStatistics(whereClause: Prisma.ReportExecutionW
     : 0;
 
   // Type narrowing: statusBreakdown items têm _count.id quando _count: { id: true }
-  const statusBreakdownMap = statusBreakdown.reduce((acc, item) => {
-    if (typeof item._count === 'object' && item._count !== null && 'id' in item._count) {
-      acc[item.status] = item._count.id;
-    }
-    return acc;
-  }, {} as Record<string, number>);
+  const statusBreakdownMap = (statusBreakdown as StatusBreakdownItem[]).reduce(
+    (acc: Record<string, number>, item: StatusBreakdownItem) => {
+      // Validate that item is an object with expected structure
+      if (typeof item !== 'object' || item === null) {
+        return acc;
+      }
+      // Safe type narrowing after typeof validation
+      const validatedItem = item as StatusBreakdownItem;
+      if (typeof validatedItem._count === 'object' && validatedItem._count !== null && 'id' in validatedItem._count) {
+        acc[validatedItem.status] = validatedItem._count.id;
+      }
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   return {
     overview: {
@@ -242,7 +310,7 @@ async function calculateExecutionStatistics(whereClause: Prisma.ReportExecutionW
 /**
  * Calcula tendência mensal
  */
-async function getMonthlyTrend(whereClause: Prisma.ReportExecutionWhereInput) {
+async function getMonthlyTrend(whereClause: WhereClauseInput) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
@@ -266,7 +334,7 @@ async function getMonthlyTrend(whereClause: Prisma.ReportExecutionWhereInput) {
     avgDuration: number;
   }> = {};
 
-  executions.forEach(execution => {
+  (executions as ExecutionForTrend[]).forEach((execution: ExecutionForTrend) => {
     const monthKey = execution.startedAt.toISOString().substring(0, 7); // YYYY-MM
 
     if (!monthlyData[monthKey]) {

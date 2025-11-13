@@ -74,6 +74,26 @@ export interface AnalysisDocument {
   text: string;
 }
 
+/**
+ * Interface for Prisma query result with document selection
+ */
+interface PrismaCaseDocumentSelect {
+  id: string;
+  name: string;
+  textSha: string | null;
+  size: number | null;
+  cleanText: string | null;
+}
+
+/**
+ * Interface for Prisma query result with extracted text selection
+ */
+interface PrismaCaseDocumentWithText {
+  id: string;
+  name: string;
+  extractedText: string | null;
+}
+
 export interface AnalysisVersionParams {
   processId: string;
   workspaceId: string;
@@ -155,7 +175,7 @@ export class DeepAnalysisService {
         }
       });
 
-      return documents.map(doc => ({
+      return documents.map((doc: PrismaCaseDocumentSelect) => ({
         id: doc.id,
         name: doc.name,
         textSha: doc.textSha || '',
@@ -187,7 +207,7 @@ export class DeepAnalysisService {
         }
       });
 
-      return documents.map(doc => ({
+      return documents.map((doc: PrismaCaseDocumentSelect) => ({
         id: doc.id,
         name: doc.name,
         textSha: doc.textSha || '',
@@ -703,7 +723,7 @@ export class DeepAnalysisService {
       });
 
       // Extrair texto dos documentos com validação de tipo
-      const documentTexts = documents.map(doc => ({
+      const documentTexts = documents.map((doc: PrismaCaseDocumentWithText) => ({
         id: doc.id,
         name: doc.name,
         // extractedText pode vir como unknown do Prisma, garantir string

@@ -8,14 +8,21 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
 import { ICONS } from '@/lib/icons';
+// ================================================================
+// TYPES
+// ================================================================
+
+type JuditAlert = NonNullable<Awaited<ReturnType<typeof prisma.juditAlert.findFirst>>>;
 
 // ================================================================
 // GET HANDLER: Get active (unresolved) alerts
 // ================================================================
 
 export async function GET(request: NextRequest) {
+  let user: Awaited<ReturnType<typeof getAuthenticatedUser>> | null = null;
+
   try {
-    const user = await getAuthenticatedUser(request);
+    user = await getAuthenticatedUser(request);
     if (!user) {
       return unauthorizedResponse('Não autenticado');
     }
@@ -56,15 +63,15 @@ export async function GET(request: NextRequest) {
     // Count by severity
     const summary = {
       total: alerts.length,
-      critical: alerts.filter((a) => a.severity === 'CRITICAL').length,
-      high: alerts.filter((a) => a.severity === 'HIGH').length,
-      medium: alerts.filter((a) => a.severity === 'MEDIUM').length,
-      low: alerts.filter((a) => a.severity === 'LOW').length,
+      critical: alerts.filter((a: JuditAlert) => a.severity === 'CRITICAL').length,
+      high: alerts.filter((a: JuditAlert) => a.severity === 'HIGH').length,
+      medium: alerts.filter((a: JuditAlert) => a.severity === 'MEDIUM').length,
+      low: alerts.filter((a: JuditAlert) => a.severity === 'LOW').length,
     };
 
     const response = {
       success: true,
-      alerts: alerts.map((alert) => ({
+      alerts: alerts.map((alert: JuditAlert) => ({
         id: alert.id,
         workspaceId: alert.workspaceId,
         severity: alert.severity,

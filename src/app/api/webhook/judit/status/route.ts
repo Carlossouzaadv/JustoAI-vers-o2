@@ -35,15 +35,18 @@ export async function GET(request: NextRequest) {
       take: 20 // Últimas 20
     });
 
+    // Criar type alias para o resultado do Prisma com includes
+    type JuditRequestWithRelations = typeof juditRequests[number];
+
     const summary = {
       total: juditRequests.length,
       byStatus: {
-        pending: juditRequests.filter(r => r.status === 'pending').length,
-        processing: juditRequests.filter(r => r.status === 'processing').length,
-        completed: juditRequests.filter(r => r.status === 'completed').length,
-        failed: juditRequests.filter(r => r.status === 'failed').length
+        pending: juditRequests.filter((r: JuditRequestWithRelations) => r.status === 'pending').length,
+        processing: juditRequests.filter((r: JuditRequestWithRelations) => r.status === 'processing').length,
+        completed: juditRequests.filter((r: JuditRequestWithRelations) => r.status === 'completed').length,
+        failed: juditRequests.filter((r: JuditRequestWithRelations) => r.status === 'failed').length
       },
-      details: juditRequests.map(req => ({
+      details: juditRequests.map((req: JuditRequestWithRelations) => ({
         requestId: req.requestId,
         status: req.status,
         createdAt: req.createdAt,

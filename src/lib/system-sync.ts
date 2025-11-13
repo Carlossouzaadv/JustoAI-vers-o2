@@ -6,7 +6,28 @@
 
 import prisma from './prisma';
 import { ICONS } from './icons';
-import { SourceSystem } from '@prisma/client';
+import type { SourceSystem } from './system-importer';
+
+// ================================
+// TYPES (Prisma não completamente gerado)
+// ================================
+
+/**
+ * Tipo mínimo para SystemImport baseado no schema Prisma
+ */
+interface SystemImportFields {
+  processedRows: number | null;
+}
+
+/**
+ * Tipo mínimo para SystemSync com logs incluídos
+ */
+interface SystemSyncFields {
+  sourceSystem: SourceSystem;
+  currentStatus: string;
+  lastSync: Date | null;
+  updatedAt: Date;
+}
 
 // ================================
 // TYPE GUARDS E VALIDAÇÃO DE ENUM
@@ -92,7 +113,7 @@ export class SystemSynchronizer {
       // Contar itens processados baseado nos campos de contagem da SystemImport
       // (não há relação importedItems, usamos os campos de contagem disponíveis)
       session.itemsChecked = systemImports.reduce(
-        (total, imp) => total + (imp.processedRows || 0),
+        (total: number, imp: SystemImportFields) => total + (imp.processedRows || 0),
         0
       );
 
@@ -140,10 +161,10 @@ export class SystemSynchronizer {
     });
 
     return {
-      activeSyncs: lastSyncs.filter(sync => sync.currentStatus === 'SUCCESS').length,
+      activeSyncs: lastSyncs.filter((sync: SystemSyncFields) => sync.currentStatus === 'SUCCESS').length,
       totalSyncs: lastSyncs.length,
       lastSyncDate: lastSyncs[0]?.updatedAt,
-      systems: lastSyncs.map(sync => ({
+      systems: lastSyncs.map((sync: SystemSyncFields) => ({
         system: sync.sourceSystem,
         status: sync.currentStatus,
         lastSync: sync.lastSync

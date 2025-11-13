@@ -49,6 +49,22 @@ export interface AlertNotification {
 export type AlertType = 'MOVEMENT' | 'DEADLINE' | 'ERROR' | 'SYNC_FAILURE' | 'IMPORTANT_DECISION';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
+/**
+ * Resultado de groupBy do Prisma para severidade
+ */
+export interface AlertSeverityGroupResult {
+  severity: Priority;
+  _count: number;
+}
+
+/**
+ * Resultado de groupBy do Prisma para tipo
+ */
+export interface AlertTypeGroupResult {
+  type: AlertType;
+  _count: number;
+}
+
 // ================================
 // TYPE GUARDS E VALIDAÇÃO
 // ================================
@@ -460,15 +476,21 @@ export class ProcessAlertManager {
       })
     ]);
 
-    const severityStats = alertsBySeverity.reduce((acc, stat) => {
-      acc[stat.severity] = stat._count;
-      return acc;
-    }, {} as Record<string, number>);
+    const severityStats = alertsBySeverity.reduce(
+      (acc: Record<string, number>, stat: AlertSeverityGroupResult) => {
+        acc[stat.severity] = stat._count;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-    const typeStats = alertsByType.reduce((acc, stat) => {
-      acc[stat.type] = stat._count;
-      return acc;
-    }, {} as Record<string, number>);
+    const typeStats = alertsByType.reduce(
+      (acc: Record<string, number>, stat: AlertTypeGroupResult) => {
+        acc[stat.type] = stat._count;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       total: totalAlerts,
