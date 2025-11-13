@@ -263,6 +263,7 @@ async function processOnboardingJob(
         requestId: result.requestId,
         numeroCnj: cnj,
         duration,
+        workspaceId,
       };
     } else {
       operation.finish('failure', {

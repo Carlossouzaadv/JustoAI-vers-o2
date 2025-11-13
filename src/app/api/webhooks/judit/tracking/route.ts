@@ -623,7 +623,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     };
 
     // Detectar urgência - padrão é MEDIUM se não encontrado
-    const movementType = movement.type?.toLowerCase() || '';
+    const movementType = typeof movement.type === 'string' ? movement.type.toLowerCase() : '';
     const urgency = urgencyMap[movementType] || 'medium';
 
     // Verificar se é movimento importante para alertar
@@ -708,7 +708,7 @@ async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, 
     ];
 
     const importantAttachments = attachments.filter(att => {
-      const attType = att.type?.toLowerCase() || '';
+      const attType = typeof att.type === 'string' ? att.type.toLowerCase() : '';
       return importantTypes.some(type => attType.includes(type));
     });
 

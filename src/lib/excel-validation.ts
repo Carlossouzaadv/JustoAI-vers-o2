@@ -97,7 +97,7 @@ export function validateExcelRow(
     return { success: true, validatedData: validated };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const firstError = error.errors[0];
+      const firstError = error.issues[0];
       const field = String(firstError.path[0]);
       const message = firstError.message;
 

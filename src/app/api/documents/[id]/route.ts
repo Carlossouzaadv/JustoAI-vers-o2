@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
@@ -144,7 +145,11 @@ export async function PATCH(
     // ============================================================
 
     // Build update data safely, only including fields that changed
-    const updateInput: Parameters<typeof prisma.caseDocument.update>[0]['data'] = {};
+    const updateInput: {
+      name?: string;
+      tags?: string[];
+      metadata?: Record<string, unknown>;
+    } = {};
 
     if (body.name !== undefined) {
       updateInput.name = body.name;

@@ -129,6 +129,7 @@ export interface JuditOnboardingJobResult {
   requestId: string;
   numeroCnj: string;
   duration: number;
+  workspaceId?: string;
   error?: string;
 }
 

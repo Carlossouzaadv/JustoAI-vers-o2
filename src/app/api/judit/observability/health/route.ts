@@ -12,6 +12,37 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // ================================================================
+// TYPE DEFINITIONS & TYPE GUARDS
+// ================================================================
+
+interface QueueStats {
+  waiting: number;
+  active: number;
+  completed: number;
+  failed: number;
+  delayed: number;
+  total: number;
+}
+
+/**
+ * Type guard to validate QueueStats structure
+ */
+function isQueueStats(data: unknown): data is QueueStats {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const obj = data as Record<string, unknown>;
+  return (
+    typeof obj.waiting === 'number' &&
+    typeof obj.active === 'number' &&
+    typeof obj.completed === 'number' &&
+    typeof obj.failed === 'number' &&
+    typeof obj.delayed === 'number' &&
+    typeof obj.total === 'number'
+  );
+}
+
+// ================================================================
 // HANDLER
 // ================================================================
 
@@ -59,7 +90,7 @@ export async function GET(request: NextRequest) {
             totalCalls: totalApiCalls,
             totalErrors,
           },
-          queue: queueStats
+          queue: isQueueStats(queueStats)
             ? {
                 status:
                   queueStats.waiting < 100 && queueStats.failed < 10
@@ -135,7 +166,7 @@ function determineHealth(params: {
     };
   }
 
-  if (queueStats && queueStats.failed > 20) {
+  if (isQueueStats(queueStats) && queueStats.failed > 20) {
     return {
       status: 'degraded',
       message: `High number of failed queue jobs: ${queueStats.failed}`,

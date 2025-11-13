@@ -38,8 +38,10 @@ export const ICONS = {
   USER: '👤',
   BUILDING: '🏢',
   MONEY: '💰',
+  COINS: '🪙',
   TIME: '⏰',
   CALENDAR: '📅',
+  FOLDER: '📁',
 
   // Interface
   MENU: '☰',
@@ -57,6 +59,7 @@ export const ICONS = {
   CHARTS: '📈',
   COMPARE: '⚖️',
   URGENT: '🚨',
+  ACTIVITY: '⚡',
   DECISION: '⚖️',
   NOTIFICATION: '🔔',
   CLOCK: '⏰',

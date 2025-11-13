@@ -15,6 +15,13 @@ import { useBulkCaseUpdate } from '@/hooks/useBulkCaseUpdate';
 import { ClientAssociationModal } from './client-association-modal';
 import { cn } from '@/lib/utils';
 
+interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  type?: string;
+}
+
 interface BulkActionsBarProps {
   selectedCount: number;
   onClearSelection: () => void;
@@ -36,12 +43,12 @@ export function BulkActionsBar({
 }: BulkActionsBarProps) {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<unknown>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { updateClientsInBulk, loading, error } = useBulkCaseUpdate();
 
-  const handleClientSelect = (client: unknown) => {
+  const handleClientSelect = (client: Client) => {
     setSelectedClient(client);
     setIsClientModalOpen(false);
     setShowConfirm(true);
