@@ -116,6 +116,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
+interface MonitoredProcessSelect {
+  processNumber: string;
+}
+
 /**
  * Verifica processos existentes no workspace
  */
@@ -136,7 +140,7 @@ async function checkExistingProcesses(
       }
     });
 
-    return existing.map(p => p.processNumber);
+    return existing.map((p: MonitoredProcessSelect) => p.processNumber);
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao verificar processos existentes:`, error);
