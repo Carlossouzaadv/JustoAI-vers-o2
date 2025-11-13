@@ -135,7 +135,7 @@ async function GET(request: NextRequest) {
       },
       select: { workspaceId: true }
     })
-    workspaceIds = userWorkspaces.map(uw => uw.workspaceId)
+    workspaceIds = userWorkspaces.map((uw: { workspaceId: string }) => uw.workspaceId)
   }
 
   if (workspaceIds.length === 0) {
