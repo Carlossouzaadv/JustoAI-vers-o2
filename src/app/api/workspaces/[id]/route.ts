@@ -19,6 +19,24 @@ interface RouteContext {
   params: Promise<{ id: string }>
 }
 
+// Type for UserWorkspace with included user relation from Prisma query
+interface UserWorkspaceWithUser {
+  id: string
+  userId: string
+  workspaceId: string
+  role: string
+  status: string
+  permissions: unknown
+  createdAt: Date
+  user: {
+    id: string
+    name: string | null
+    email: string
+    avatar: string | null
+    role: string
+  }
+}
+
 // Type guard: validate schema output matches Prisma's WorkspaceUpdateInput expectations
 function isValidWorkspaceUpdateInput(
   data: unknown
@@ -130,13 +148,13 @@ async function GET(request: NextRequest, { params }: RouteContext) {
   }
 
   // Get current user role
-  const currentUserWorkspace = workspace.users.find(uw => uw.userId === user.id)
+  const currentUserWorkspace = workspace.users.find((uw: UserWorkspaceWithUser) => uw.userId === user.id)
 
   const transformedWorkspace = {
     ...workspace,
     currentUserRole: currentUserWorkspace?.role,
     currentUserStatus: currentUserWorkspace?.status,
-    members: workspace.users.map(uw => ({
+    members: workspace.users.map((uw: UserWorkspaceWithUser) => ({
       id: uw.id,
       role: uw.role,
       status: uw.status,
