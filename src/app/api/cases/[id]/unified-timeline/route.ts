@@ -88,6 +88,21 @@ type TimelineEntryInput = ProcessTimelineEntry & {
   linkedDocuments?: LinkedDocument[];
 };
 
+/**
+ * Type-Safe Document: Representa documento retornado do Prisma
+ * Usado para evitar 'any' implícito no callback .map()
+ */
+interface DocumentForTimeline {
+  id: string;
+  name: string | null;
+  originalName: string;
+  type: string | null;
+  documentDate: Date | null;
+  metadata: unknown;
+  sourceOrigin: string | null;
+  createdAt: Date;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -337,7 +352,7 @@ export async function GET(
 
     // Converter documentos em entradas de timeline
     // Type-safe mapping: documentos são convertidos para TimelineEntryInput
-    const documentTimelineEntries = documents.map((doc): TimelineEntryInput => {
+    const documentTimelineEntries = documents.map((doc: DocumentForTimeline): TimelineEntryInput => {
       const metadata = isRecord(doc.metadata) ? doc.metadata : {};
       const linkedDocIds: string[] = [];
       const contributingSourcesList: TimelineSource[] = ['DOCUMENT_UPLOAD'];
