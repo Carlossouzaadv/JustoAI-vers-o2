@@ -10,6 +10,18 @@ import {
 } from '@/lib/api-utils';
 
 /**
+ * Type for UserWorkspace relation with included workspace data
+ */
+interface UserWorkspaceWithWorkspace {
+  workspaceId: string;
+  workspace: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
+/**
  * PUT /api/users/profile
  * Update current user's profile (name, phone, etc)
  */
@@ -72,7 +84,7 @@ export async function PUT(request: NextRequest) {
         phone: updatedUser.phone,
         avatar: updatedUser.avatar,
         createdAt: updatedUser.createdAt,
-        workspaces: updatedUser.workspaces.map((uw) => ({
+        workspaces: updatedUser.workspaces.map((uw: UserWorkspaceWithWorkspace) => ({
           workspaceId: uw.workspaceId,
           workspace: uw.workspace,
         })),
@@ -117,7 +129,7 @@ export async function GET(request: NextRequest) {
         avatar: currentUser.avatar,
         role: currentUser.role,
         createdAt: currentUser.createdAt,
-        workspaces: currentUser.workspaces.map((uw) => ({
+        workspaces: currentUser.workspaces.map((uw: UserWorkspaceWithWorkspace) => ({
           workspaceId: uw.workspaceId,
           workspace: uw.workspace,
         })),
