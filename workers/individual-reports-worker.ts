@@ -503,7 +503,7 @@ export async function cleanupIndividualReportsQueue(): Promise<{
     if (orphanedExecutions.length > 0) {
       await prisma.reportExecution.updateMany({
         where: {
-          id: { in: orphanedExecutions.map(e => e.id) }
+          id: { in: orphanedExecutions.map((e: { id: string }) => e.id) }
         },
         data: {
           status: ExecutionStatus.CANCELLED,
