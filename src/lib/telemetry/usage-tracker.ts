@@ -10,6 +10,15 @@ import { ICONS } from '../icons';
 // TIPOS E INTERFACES
 // ================================================================
 
+/**
+ * Representa o resultado de prisma.creditTransaction.groupBy()
+ * Usado para tipar callbacks de agregação de créditos
+ */
+interface CreditTransactionGroupResult {
+  type: 'CREDIT' | 'DEBIT';
+  _sum: { amount: number | null };
+}
+
 interface UsageEvent {
   workspaceId: string;
   eventType: string;
@@ -466,7 +475,7 @@ export class UsageTracker {
     // Usar type guard para validar e processar transações de forma segura
     const credits = transactions
       .filter(isCreditTransaction)
-      .reduce((sum: number, t) => {
+      .reduce((sum: number, t: CreditTransactionGroupResult) => {
         const amount = t.type === 'CREDIT' ? (t._sum.amount || 0) : 0;
         // Converter Decimal do Prisma para número
         const numAmount = typeof amount === 'number' ? amount : Number(amount);
@@ -475,7 +484,7 @@ export class UsageTracker {
 
     const debits = transactions
       .filter(isCreditTransaction)
-      .reduce((sum: number, t) => {
+      .reduce((sum: number, t: CreditTransactionGroupResult) => {
         const amount = t.type === 'DEBIT' ? (t._sum.amount || 0) : 0;
         // Converter Decimal do Prisma para número
         const numAmount = typeof amount === 'number' ? amount : Number(amount);
