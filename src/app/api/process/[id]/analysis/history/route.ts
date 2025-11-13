@@ -230,22 +230,22 @@ export const GET = withErrorHandler(async (
     const stats = {
       totalVersions: versions.length,
       byType: {
-        fast: versions.filter(v => v.analysisType === 'FAST').length,
-        full: versions.filter(v => v.analysisType === 'FULL').length
+        fast: versions.filter((v: VersionWithJobs) => v.analysisType === 'FAST').length,
+        full: versions.filter((v: VersionWithJobs) => v.analysisType === 'FULL').length
       },
       byStatus: {
-        completed: versions.filter(v => v.status === 'COMPLETED').length,
-        failed: versions.filter(v => v.status === 'FAILED').length,
-        processing: versions.filter(v => v.status === 'PROCESSING').length,
-        pending: versions.filter(v => v.status === 'PENDING').length
+        completed: versions.filter((v: VersionWithJobs) => v.status === 'COMPLETED').length,
+        failed: versions.filter((v: VersionWithJobs) => v.status === 'FAILED').length,
+        processing: versions.filter((v: VersionWithJobs) => v.status === 'PROCESSING').length,
+        pending: versions.filter((v: VersionWithJobs) => v.status === 'PENDING').length
       },
       totalCreditsUsed: {
-        full: versions.reduce((sum, v) => sum + v.costEstimate, 0),
+        full: versions.reduce((sum: number, v: VersionWithJobs) => sum + v.costEstimate, 0),
         fast: 0
       },
       avgConfidence: versions
-        .filter(v => v.confidence && v.status === 'COMPLETED')
-        .reduce((sum, v, _, arr) => sum + v.confidence / arr.length, 0),
+        .filter((v: VersionWithJobs) => v.confidence && v.status === 'COMPLETED')
+        .reduce((sum: number, v: VersionWithJobs, _: number, arr: VersionWithJobs[]) => sum + v.confidence / arr.length, 0),
       dateRange: {
         first: versions[versions.length - 1]?.createdAt,
         last: versions[0]?.createdAt

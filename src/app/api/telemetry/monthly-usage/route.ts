@@ -15,6 +15,15 @@ function isSuccessStatus(status: unknown): status is 'success' {
   return status === 'success';
 }
 
+// Interface for JuditCostTracking data (Padrão-Ouro Type Safety)
+interface JuditCallData {
+  status: string;
+  totalCost: number | string;
+  durationMs: number | null;
+  documentsRetrieved: number | null;
+  operationType: string;
+}
+
 // ================================================================
 // GET HANDLER: Get monthly usage and costs
 // ================================================================
@@ -87,13 +96,13 @@ export async function GET(request: NextRequest) {
     // Aggregate JUDIT metrics
     const juditMetrics = {
       calls: juditCalls.length,
-      successful: juditCalls.filter((c) => isSuccessStatus(c.status)).length,
-      failed: juditCalls.filter((c) => !isSuccessStatus(c.status)).length,
-      totalCost: juditCalls.reduce((sum, c) => sum + Number(c.totalCost), 0),
+      successful: juditCalls.filter((c: JuditCallData) => isSuccessStatus(c.status)).length,
+      failed: juditCalls.filter((c: JuditCallData) => !isSuccessStatus(c.status)).length,
+      totalCost: juditCalls.reduce((sum: number, c: JuditCallData) => sum + Number(c.totalCost), 0),
       avgDuration: juditCalls.length > 0
-        ? juditCalls.reduce((sum, c) => sum + (c.durationMs || 0), 0) / juditCalls.length
+        ? juditCalls.reduce((sum: number, c: JuditCallData) => sum + (c.durationMs || 0), 0) / juditCalls.length
         : 0,
-      documentsRetrieved: juditCalls.reduce((sum, c) => sum + (c.documentsRetrieved || 0), 0),
+      documentsRetrieved: juditCalls.reduce((sum: number, c: JuditCallData) => sum + (c.documentsRetrieved || 0), 0),
       byOperation: {} as Record<string, { count: number; cost: number }>,
     };
 

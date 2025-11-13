@@ -268,7 +268,13 @@ export async function GET(request: NextRequest) {
       _count: true
     });
 
-    const statusStats = stats.reduce((acc, stat) => {
+    // Interface para o resultado do groupBy
+    interface StatusGroupResult {
+      status: string;
+      _count: number;
+    }
+
+    const statusStats = stats.reduce((acc: Record<string, number>, stat: StatusGroupResult) => {
       acc[stat.status] = stat._count;
       return acc;
     }, {} as Record<string, number>);
@@ -330,8 +336,15 @@ export async function DELETE(request: NextRequest) {
       throw new ApiError('Nenhuma importação encontrada para remoção', 404);
     }
 
+    // Interface para o tipo de importação a ser deletada
+    interface ImportToDelete {
+      id: string;
+      fileName: string;
+      status: string;
+    }
+
     // Não permitir remoção de importações em andamento
-    const inProgress = importsToDelete.filter(imp =>
+    const inProgress = importsToDelete.filter((imp: ImportToDelete) =>
       imp.status === 'ANALYZING' ||
       imp.status === 'MAPPING' ||
       imp.status === 'VALIDATING' ||
@@ -340,7 +353,7 @@ export async function DELETE(request: NextRequest) {
 
     if (inProgress.length > 0) {
       throw new ApiError(
-        `Não é possível remover importações em andamento: ${inProgress.map(i => i.fileName).join(', ')}`,
+        `Não é possível remover importações em andamento: ${inProgress.map((i: ImportToDelete) => i.fileName).join(', ')}`,
         400
       );
     }
@@ -348,13 +361,13 @@ export async function DELETE(request: NextRequest) {
     // Remover importações (cascade automático remove itens relacionados)
     const deleted = await prisma.systemImport.deleteMany({
       where: {
-        id: { in: importsToDelete.map(i => i.id) }
+        id: { in: importsToDelete.map((i: ImportToDelete) => i.id) }
       }
     });
 
     console.log(`${ICONS.SUCCESS} Importações removidas:`, {
       count: deleted.count,
-      files: importsToDelete.map(i => i.fileName)
+      files: importsToDelete.map((i: ImportToDelete) => i.fileName)
     });
 
     return apiResponse({

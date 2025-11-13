@@ -195,15 +195,23 @@ export class AggregationService {
       }),
     ]);
 
+    // Local interface for Prisma JuditCostTracking type
+    interface JuditCallData {
+      status: string;
+      totalCost: number | string;
+      durationMs: number | null;
+      operationType: string;
+    }
+
     // Aggregate JUDIT metrics
     const juditMetrics = {
       totalCalls: juditCalls.length,
-      successfulCalls: juditCalls.filter((c) => isSuccessfulJuditCall(c.status)).length,
-      failedCalls: juditCalls.filter((c) => !isSuccessfulJuditCall(c.status)).length,
-      totalCost: juditCalls.reduce((sum, c) => sum + Number(c.totalCost), 0),
+      successfulCalls: juditCalls.filter((c: JuditCallData) => isSuccessfulJuditCall(c.status)).length,
+      failedCalls: juditCalls.filter((c: JuditCallData) => !isSuccessfulJuditCall(c.status)).length,
+      totalCost: juditCalls.reduce((sum: number, c: JuditCallData) => sum + Number(c.totalCost), 0),
       avgDuration:
         juditCalls.length > 0
-          ? juditCalls.reduce((sum, c) => sum + (c.durationMs || 0), 0) / juditCalls.length
+          ? juditCalls.reduce((sum: number, c: JuditCallData) => sum + (c.durationMs || 0), 0) / juditCalls.length
           : 0,
       byOperation: {} as Record<string, { count: number; cost: number }>,
     };
@@ -235,12 +243,17 @@ export class AggregationService {
       distinct: ['caseId'],
     });
 
+    // Local interface for Prisma JuditAlert type
+    interface AlertData {
+      severity: string;
+    }
+
     // Count alerts by severity
     const alertCounts = {
-      critical: alerts.filter((a) => a.severity === 'CRITICAL').length,
-      high: alerts.filter((a) => a.severity === 'HIGH').length,
-      medium: alerts.filter((a) => a.severity === 'MEDIUM').length,
-      low: alerts.filter((a) => a.severity === 'LOW').length,
+      critical: alerts.filter((a: AlertData) => a.severity === 'CRITICAL').length,
+      high: alerts.filter((a: AlertData) => a.severity === 'HIGH').length,
+      medium: alerts.filter((a: AlertData) => a.severity === 'MEDIUM').length,
+      low: alerts.filter((a: AlertData) => a.severity === 'LOW').length,
     };
 
     return {

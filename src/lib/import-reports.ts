@@ -268,7 +268,7 @@ export class ImportReportGenerator {
         : 0,
       createdAt: imp.createdAt,
       errors: Array.isArray(imp.errors)
-        ? imp.errors.filter((e): e is string => typeof e === 'string')
+        ? imp.errors.filter((e: unknown): e is string => typeof e === 'string')
         : []
     }));
   }
@@ -310,7 +310,7 @@ export class ImportReportGenerator {
       }
 
       if (imp.errors && Array.isArray(imp.errors)) {
-        summary.errors.push(...imp.errors.filter((e): e is string => typeof e === 'string'));
+        summary.errors.push(...imp.errors.filter((e: unknown): e is string => typeof e === 'string'));
       }
 
       if (imp.createdAt > summary.lastImportDate) {
@@ -333,6 +333,12 @@ export class ImportReportGenerator {
   }
 
   private async generateTimeline(workspaceId: string, startDate: Date, endDate: Date): Promise<TimelineEntry[]> {
+    // Interface local para importação no timeline
+    interface TimelineImport {
+      status: string;
+      totalRows: number | null;
+    }
+
     // Gerar timeline diário
     const timeline: TimelineEntry[] = [];
     const current = new Date(startDate);
@@ -355,9 +361,9 @@ export class ImportReportGenerator {
       timeline.push({
         date: current.toISOString().split('T')[0],
         importsCount: dayImports.length,
-        successfulCount: dayImports.filter(imp => imp.status === 'COMPLETED').length,
-        failedCount: dayImports.filter(imp => imp.status === 'FAILED').length,
-        totalRowsProcessed: dayImports.reduce((total, imp) => total + (imp.totalRows || 0), 0)
+        successfulCount: dayImports.filter((imp: TimelineImport) => imp.status === 'COMPLETED').length,
+        failedCount: dayImports.filter((imp: TimelineImport) => imp.status === 'FAILED').length,
+        totalRowsProcessed: dayImports.reduce((total: number, imp: TimelineImport) => total + (imp.totalRows || 0), 0)
       });
 
       current.setDate(current.getDate() + 1);

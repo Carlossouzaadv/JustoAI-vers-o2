@@ -71,6 +71,45 @@ export interface CacheStatistics {
   sizeByWorkspace: Record<string, number>;
 }
 
+// ================================================================
+// Interfaces Locais para Type Safety em Callbacks
+// ================================================================
+
+/**
+ * Tipo para entrada de cache retornada em invalidateOnMovement
+ */
+interface MovementCacheEntry {
+  id: string;
+  cacheKey: string;
+  lastMovementTimestamp: Date;
+  processIds: string[];
+}
+
+/**
+ * Tipo para entrada de cache retornada em invalidateOnBulkMovements
+ */
+interface BulkInvalidationCacheEntry {
+  id: string;
+  processIds: string[];
+}
+
+/**
+ * Tipo para entrada de cache retornada em invalidateByWorkspace
+ */
+interface WorkspaceCacheEntry {
+  processIds: string[];
+}
+
+/**
+ * Tipo para resultado de groupBy de workspaceId
+ */
+interface WorkspaceGroupByResult {
+  workspaceId: string;
+  _count: {
+    id: number;
+  };
+}
+
 export class ReportCacheManager {
   /**
    * Invalida cache quando detectada nova movimentação
@@ -80,7 +119,7 @@ export class ReportCacheManager {
 
     try {
       // Encontrar todas as entradas de cache que incluem este processo
-      const cacheEntries = await prisma.reportCache.findMany({
+      const cacheEntries: MovementCacheEntry[] = await prisma.reportCache.findMany({
         where: {
           processIds: {
             has: processId
@@ -105,7 +144,7 @@ export class ReportCacheManager {
           });
 
           invalidated++;
-          entry.processIds.forEach(id => affectedProcessIds.add(id));
+          entry.processIds.forEach((id: string) => affectedProcessIds.add(id));
 
           console.log(`${ICONS.SUCCESS} Cache invalidado: ${entry.cacheKey}`);
         }
@@ -150,7 +189,7 @@ export class ReportCacheManager {
       const maxDate = new Date(Math.max(...batch.map(m => m.date.getTime())));
 
       // Encontrar cache afetado por este lote
-      const cacheEntries = await prisma.reportCache.findMany({
+      const cacheEntries: BulkInvalidationCacheEntry[] = await prisma.reportCache.findMany({
         where: {
           processIds: {
             hasSome: batchProcessIds
@@ -167,7 +206,7 @@ export class ReportCacheManager {
 
       // Deletar entradas invalidadas
       if (cacheEntries.length > 0) {
-        const idsToDelete = cacheEntries.map(entry => entry.id);
+        const idsToDelete = cacheEntries.map((entry: BulkInvalidationCacheEntry) => entry.id);
 
         await prisma.reportCache.deleteMany({
           where: {
@@ -178,8 +217,8 @@ export class ReportCacheManager {
         totalInvalidated += cacheEntries.length;
 
         // Coletar todos os process IDs afetados
-        cacheEntries.forEach(entry => {
-          entry.processIds.forEach(id => affectedProcessIds.add(id));
+        cacheEntries.forEach((entry: BulkInvalidationCacheEntry) => {
+          entry.processIds.forEach((id: string) => affectedProcessIds.add(id));
         });
       }
     }
@@ -200,7 +239,7 @@ export class ReportCacheManager {
   async invalidateByWorkspace(workspaceId: string, reason: string = 'Invalidação manual'): Promise<CacheInvalidationResult> {
     console.log(`${ICONS.PROCESS} Invalidando todo cache do workspace ${workspaceId}`);
 
-    const deletedEntries = await prisma.reportCache.findMany({
+    const deletedEntries: WorkspaceCacheEntry[] = await prisma.reportCache.findMany({
       where: { workspaceId },
       select: { processIds: true }
     });
@@ -210,8 +249,8 @@ export class ReportCacheManager {
     });
 
     const affectedProcessIds = new Set<string>();
-    deletedEntries.forEach(entry => {
-      entry.processIds.forEach(id => affectedProcessIds.add(id));
+    deletedEntries.forEach((entry: WorkspaceCacheEntry) => {
+      entry.processIds.forEach((id: string) => affectedProcessIds.add(id));
     });
 
     return {
@@ -355,7 +394,7 @@ export class ReportCacheManager {
     const hitRate = 75; // Mock - implementar tracking real
 
     const sizeByWorkspace: Record<string, number> = {};
-    workspaceStats.forEach(stat => {
+    workspaceStats.forEach((stat: WorkspaceGroupByResult) => {
       sizeByWorkspace[stat.workspaceId] = stat._count.id;
     });
 

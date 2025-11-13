@@ -4,10 +4,32 @@
 // Implementa Report Credits + FULL Credits com FIFO, rollover e expiration
 
 import { PrismaClient, Prisma } from '@prisma/client';
-import type { WorkspaceCredits } from '@prisma/client';
 import { ICONS } from './icons';
 import { isCreditTransactionMetadata } from './types/type-guards';
 import type { CreditTransactionMetadata } from './types/json-fields';
+
+// Tipos locais para dados do Prisma (Padrão-Ouro: interfaces explícitas)
+interface WorkspaceCreditsRecord {
+  id: string;
+  workspaceId: string;
+  reportCreditsBalance: number | { toNumber(): number };
+  fullCreditsBalance: number | { toNumber(): number };
+  reportCreditsRolloverCap: number | { toNumber(): number };
+  fullCreditsRolloverCap: number | { toNumber(): number };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CreditAllocationRecord {
+  id: string;
+  workspaceId: string;
+  type: string;
+  amount: number | { toNumber(): number };
+  remainingAmount: number | { toNumber(): number };
+  expiresAt: Date | null;
+  sourceDescription: string | null;
+  createdAt: Date;
+}
 
 // Tipos principais
 export interface CreditCost {
@@ -175,7 +197,7 @@ export class CreditManager {
     console.log(`${ICONS.PROCESS} Debitando créditos: ${reportCredits} report, ${fullCredits} full`);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Verificar saldo disponível
         const balance = await this.getCreditBalance(workspaceId);
 
@@ -253,7 +275,7 @@ export class CreditManager {
   ): Promise<string[]> {
     // Validate metadata if provided using type guard
     // Padrão-Ouro: JSON round-trip ensures Prisma compatibility without casting
-    let validatedMetadata: Prisma.InputJsonValue | undefined = undefined;
+    let validatedMetadata: Record<string, unknown> | undefined = undefined;
     if (metadata && typeof metadata === 'object' && isCreditTransactionMetadata(metadata)) {
       // After isCreditTransactionMetadata guard, metadata is guaranteed to be valid
       // Use JSON serialization (safe, no casting) to ensure Prisma compatibility
@@ -334,7 +356,7 @@ export class CreditManager {
     console.log(`${ICONS.PROCESS} Creditando: ${reportCredits} report, ${fullCredits} full (${type})`);
 
     try {
-      await this.prisma.$transaction(async (tx) => {
+      await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Criar allocations para report credits
         if (reportCredits > 0) {
           const reportAllocation = await tx.creditAllocation.create({
@@ -497,7 +519,7 @@ export class CreditManager {
         ]
       });
 
-      return allocations.map((allocation) => {
+      return allocations.map((allocation: CreditAllocationRecord) => {
         // Validate allocation type at runtime
         const type = allocation.type;
 
@@ -527,11 +549,11 @@ export class CreditManager {
   async initializeWorkspaceCredits(
     workspaceId: string,
     planName: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE' = 'STARTER'
-  ): Promise<WorkspaceCredits> {
+  ): Promise<WorkspaceCreditsRecord> {
     try {
       const planConfig = CREDIT_CONFIG.PLANS[planName];
 
-      return await this.prisma.$transaction(async (tx) => {
+      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Criar registro de créditos
         const credits = await tx.workspaceCredits.create({
           data: {
@@ -629,7 +651,7 @@ export class CreditManager {
     try {
       console.log(`${ICONS.PROCESS} Iniciando limpeza de créditos expirados...`);
 
-      const result = await this.prisma.$transaction(async (tx) => {
+      const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Buscar allocations expiradas com remaining > 0
         const expiredAllocations = await tx.creditAllocation.findMany({
           where: {

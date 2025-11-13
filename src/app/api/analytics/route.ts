@@ -57,6 +57,34 @@ interface AnalyticsData {
   performance?: PerformanceMetric;
 }
 
+// ================================================================
+// INTERFACES LOCAIS PARA TYPE GUARDS DE CALLBACKS
+// ================================================================
+
+// Interface para o resultado do select de userWorkspace (linha 111)
+interface UserWorkspaceSelect {
+  workspaceId: string;
+}
+
+// Interface para Case com campos de tempo de processamento (linha 147)
+interface ProcessingTimeCase {
+  createdAt: Date;
+  updatedAt: Date;
+  title: string;
+}
+
+// Interface para Case com campos de taxa de sucesso (linha 182)
+interface SuccessRateCase {
+  status: string;
+  createdAt: Date;
+}
+
+// Interface para resultado do groupBy de volume (linha 206)
+interface VolumeGroupByResult {
+  createdAt: Date;
+  _count: number;
+}
+
 // Validation schema
 const analyticsQuerySchema = z.object({
   metric: z.enum(['processing_time', 'success_rate', 'volume', 'performance']).optional(),
@@ -108,7 +136,7 @@ async function GET(request: NextRequest) {
         },
         select: { workspaceId: true }
       })
-      workspaceIds = userWorkspaces.map(uw => uw.workspaceId)
+      workspaceIds = userWorkspaces.map((uw: UserWorkspaceSelect) => uw.workspaceId)
     }
 
     if (workspaceIds.length === 0) {
@@ -144,7 +172,7 @@ async function GET(request: NextRequest) {
         }
       })
 
-      const processingTimeData = processingTimes.map(case_ => {
+      const processingTimeData = processingTimes.map((case_: ProcessingTimeCase) => {
         const processingTime = case_.updatedAt.getTime() - case_.createdAt.getTime()
         const processingHours = processingTime / (1000 * 60 * 60)
         return {
@@ -155,7 +183,7 @@ async function GET(request: NextRequest) {
       })
 
       const avgProcessingTime = processingTimeData.length > 0
-        ? processingTimeData.reduce((sum, item) => sum + item.processingTime, 0) / processingTimeData.length
+        ? processingTimeData.reduce((sum: number, item: ProcessingTimeData) => sum + item.processingTime, 0) / processingTimeData.length
         : 0
 
       analyticsData.processing_time = {
@@ -179,7 +207,7 @@ async function GET(request: NextRequest) {
       })
 
       const totalCases = cases.length
-      const successfulCases = cases.filter(c => c.status === 'CLOSED').length
+      const successfulCases = cases.filter((c: SuccessRateCase) => c.status === 'CLOSED').length
       const successRate = totalCases > 0 ? (successfulCases / totalCases) * 100 : 0
 
       analyticsData.success_rate = {
@@ -203,7 +231,7 @@ async function GET(request: NextRequest) {
 
       // Group by day
       const dailyVolume: { [key: string]: number } = {}
-      volumeData.forEach(item => {
+      volumeData.forEach((item: VolumeGroupByResult) => {
         const date = item.createdAt.toISOString().split('T')[0]
         dailyVolume[date] = (dailyVolume[date] || 0) + item._count
       })
