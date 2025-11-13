@@ -71,10 +71,13 @@ export async function GET(
         _count: true
       });
 
-      liveStats = itemStats.reduce((acc, stat) => {
-        acc[stat.status] = stat._count;
-        return acc;
-      }, {} as Record<string, number>);
+      liveStats = itemStats.reduce(
+        (acc: Record<string, number>, stat: ItemStatusGroupResult) => {
+          acc[stat.status] = stat._count;
+          return acc;
+        },
+        {}
+      );
     }
 
     // Estruturar resposta
@@ -474,6 +477,11 @@ function getAvailableActions(status: string): string[] {
 // ================================
 // TYPE GUARDS E VALIDAÇÃO
 // ================================
+
+interface ItemStatusGroupResult {
+  status: string;
+  _count: number;
+}
 
 interface ImportError {
   type: string;
