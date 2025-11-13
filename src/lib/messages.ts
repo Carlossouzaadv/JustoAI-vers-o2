@@ -305,7 +305,16 @@ export function getMessage(
   // Narrowing Seguro: verificar categoria válida antes de acessar
   if (isValidMessageCategory(category)) {
     const categoryMessages = messages[category];
-    const message = (categoryMessages as Record<string, unknown>)[key];
+
+    // Padrão-Ouro: validar object ANTES de casting
+    if (typeof categoryMessages !== 'object' || categoryMessages === null) {
+      return fallback;
+    }
+
+    // AGORA fazer cast seguro após validação
+    const obj = categoryMessages as Record<string, unknown>;
+    const message = obj[key];
+
     return typeof message === 'string' ? message : fallback;
   }
 
