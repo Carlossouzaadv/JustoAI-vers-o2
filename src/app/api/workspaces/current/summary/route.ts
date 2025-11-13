@@ -112,6 +112,9 @@ async function GET(request: NextRequest) {
       })
     ])
 
+    // Type for the activity event from Prisma query
+    type ActivityEvent = typeof recentActivity[number]
+
     const summary = {
       workspace: {
         id: currentWorkspace.id,
@@ -126,7 +129,7 @@ async function GET(request: NextRequest) {
         documents: documentsCount,
         users: currentWorkspace._count.users
       },
-      recentActivity: recentActivity.map(event => ({
+      recentActivity: recentActivity.map((event: ActivityEvent) => ({
         id: event.id,
         type: event.type,
         description: event.description,
