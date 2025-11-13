@@ -250,6 +250,14 @@ export async function requireWorkspaceRole(
 }
 
 /**
+ * Interface for UserWorkspace select result
+ * Used in getUserWorkspaceAccess to ensure type safety in map callback
+ */
+interface UserWorkspaceSelect {
+  workspaceId: string;
+}
+
+/**
  * Check multiple workspaces at once
  */
 export async function getUserWorkspaceAccess(
@@ -263,7 +271,7 @@ export async function getUserWorkspaceAccess(
       }
     });
 
-    const access = userWorkspaces.map(uw => ({
+    const access = userWorkspaces.map((uw: UserWorkspaceSelect) => ({
       workspaceId: uw.workspaceId,
       role: 'MEMBER' as WorkspaceRole // Default role
     }));
