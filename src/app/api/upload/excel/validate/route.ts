@@ -223,7 +223,7 @@ async function checkExistingProcesses(
       }
     });
 
-    return existing.map(p => p.processNumber);
+    return existing.map((p: { processNumber: string }) => p.processNumber);
 
   } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao verificar processos existentes:`, error);
