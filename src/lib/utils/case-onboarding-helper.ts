@@ -6,6 +6,14 @@
 import { prisma } from '@/lib/prisma';
 import { CaseStatus } from '@/lib/types/database';
 
+/**
+ * Type guard to validate if a value is a valid CaseStatus
+ */
+function isCaseStatus(value: unknown): value is CaseStatus {
+  if (typeof value !== 'string') return false;
+  return Object.values(CaseStatus).includes(value as CaseStatus);
+}
+
 export interface OnboardingError {
   timestamp: string;
   stage: 'PREVIEW' | 'ENRICHMENT' | 'ATTACHMENT_PROCESSING';
@@ -72,7 +80,9 @@ export async function recordOnboardingError(
     // Atualizar caso com error
     // Só muda para UNASSIGNED se stage for ENRICHMENT (JUDIT)
     // Se for PREVIEW, deixa como está (pode ser melhorado)
-    const newStatus: CaseStatus = stage === 'ENRICHMENT' ? 'UNASSIGNED' : currentCase.status as CaseStatus;
+    const newStatus: CaseStatus = stage === 'ENRICHMENT'
+      ? CaseStatus.UNASSIGNED
+      : (isCaseStatus(currentCase.status) ? currentCase.status : CaseStatus.ACTIVE);
 
     await prisma.case.update({
       where: { id: caseId },
@@ -118,9 +128,9 @@ export async function getUnassignedReason(caseId: string): Promise<{
     const metadata = (caseData.metadata || {}) as OnboardingMetadata;
     const lastError = metadata.last_onboarding_error;
 
-    if (caseData.status === 'UNASSIGNED') {
+    if (caseData.status === CaseStatus.UNASSIGNED) {
       return {
-        status: 'UNASSIGNED',
+        status: CaseStatus.UNASSIGNED,
         stage: lastError?.stage || 'ENRICHMENT',
         reason: 'Falha no processamento oficial (JUDIT)',
         errorMessage: lastError?.errorMessage || 'Erro desconhecido',
@@ -130,7 +140,7 @@ export async function getUnassignedReason(caseId: string): Promise<{
     }
 
     return {
-      status: caseData.status,
+      status: isCaseStatus(caseData.status) ? caseData.status : CaseStatus.ACTIVE,
       canRetry: false
     };
   } catch (error) {
@@ -149,7 +159,7 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
       select: { metadata: true, status: true, detectedCnj: true }
     });
 
-    if (!caseData || caseData.status !== 'UNASSIGNED') {
+    if (!caseData || caseData.status !== CaseStatus.UNASSIGNED) {
       return false;
     }
 
@@ -174,7 +184,7 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
     await prisma.case.update({
       where: { id: caseId },
       data: {
-        status: 'ACTIVE', // Voltar para ACTIVE para retry
+        status: CaseStatus.ACTIVE, // Voltar para ACTIVE para retry
         // Serialização segura: converte OnboardingMetadata para InputJsonValue
         // sem casting. JSON.parse(JSON.stringify()) garante compatibilidade
         metadata: JSON.parse(JSON.stringify(clearedMetadata)),

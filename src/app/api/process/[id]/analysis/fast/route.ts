@@ -11,6 +11,7 @@ import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { getCreditManager } from '@/lib/credit-system';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+import { AnalysisType } from '@/lib/types/database';
 
 // ================================================================
 // TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
@@ -32,6 +33,13 @@ function isRouteParams(params: unknown): params is { id: string } {
  */
 function isValidLockResult(result: { acquired: boolean; token?: string; ttl?: number }): result is { acquired: true; token: string; ttl?: number } {
   return result.acquired === true && typeof result.token === 'string';
+}
+
+/**
+ * Type guard: Validates that a value is a Date
+ */
+function isDate(value: unknown): value is Date {
+  return value instanceof Date && !isNaN(value.getTime());
 }
 
 // Schema de validação
@@ -91,7 +99,7 @@ export const POST = withErrorHandler(async (
     const analysisKey = await analysisService.generateAnalysisKey({
       processId,
       documentHashes: attachedDocs.map(doc => doc.textSha),
-      analysisType: 'GENERAL',
+      analysisType: AnalysisType.GENERAL,
       modelVersion: 'gemini-1.5-flash' // Model used for FAST analysis
     });
 
@@ -107,6 +115,12 @@ export const POST = withErrorHandler(async (
         // Incrementar contador de acesso ao cache
         await analysisService.incrementCacheAccess(analysisKey);
 
+        // Calculate cache age with type-safe narrowing
+        let cacheAge = 0;
+        if (isDate(cachedResult.createdAt)) {
+          cacheAge = Date.now() - cachedResult.createdAt.getTime();
+        }
+
         // Track cache hit telemetry
         await juditAPI.trackCall({
           workspaceId,
@@ -118,7 +132,7 @@ export const POST = withErrorHandler(async (
             eventType: 'analysis.cache_hit',
             analysisId: cachedResult.id,
             documentCount: attachedDocs.length,
-            cacheAge: Date.now() - cachedResult.createdAt.getTime(),
+            cacheAge,
           },
         });
 
@@ -172,7 +186,7 @@ export const POST = withErrorHandler(async (
         processId,
         workspaceId,
         version: nextVersion,
-        analysisType: 'GENERAL',
+        analysisType: AnalysisType.GENERAL,
         analysisKey,
         modelUsed: 'gemini-1.5-flash', // Model used for FAST analysis
         sourceFilesMetadata: attachedDocs.map(doc => ({
@@ -188,7 +202,7 @@ export const POST = withErrorHandler(async (
         processId,
         workspaceId,
         analysisKey,
-        analysisType: 'GENERAL',
+        analysisType: AnalysisType.GENERAL,
         modelHint: 'gemini-1.5-flash', // Model hint for FAST analysis
         filesMetadata: attachedDocs,
         resultVersionId: analysisVersion.id,
@@ -210,7 +224,7 @@ export const POST = withErrorHandler(async (
         jobId: analysisJob.id,
         version: nextVersion,
         source: 'processing',
-        analysisType: 'GENERAL',
+        analysisType: AnalysisType.GENERAL,
         model: analysisVersion.modelUsed,
         status: 'PROCESSING',
         documentsUsed: attachedDocs.length,

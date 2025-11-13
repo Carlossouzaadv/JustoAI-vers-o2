@@ -531,7 +531,7 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
         date: new Date(mov.date),
         type: mov.type || 'Movimento',
         description: mov.description || '',
-        source: 'DOCUMENT_UPLOAD',
+        source: TimelineSource.DOCUMENT_UPLOAD,
         confidence: 0.75, // Default confidence for document uploads
         metadata: {
           extractedBy: 'preview',
@@ -584,7 +584,7 @@ function extractMovementsFromJudit(dadosCompletos: unknown): TimelineMovement[] 
             date: new Date(String(dateValue)),
             type: String(typeValue),
             description: String(descValue || ''),
-            source: 'API_JUDIT',
+            source: TimelineSource.API_JUDIT,
             sourceId: String(idValue || ''),
             confidence: 1.0,
             metadata: {
@@ -619,7 +619,7 @@ function extractMovementsFromJudit(dadosCompletos: unknown): TimelineMovement[] 
                 date: new Date(String(dateValue)),
                 type: String(typeValue),
                 description: String(descValue || ''),
-                source: 'API_JUDIT',
+                source: TimelineSource.API_JUDIT,
                 sourceId: String(idValue || ''),
                 confidence: 1.0,
                 metadata: {

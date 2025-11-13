@@ -11,6 +11,7 @@ import { addNotificationJob } from '@/lib/queues';
 import { ICONS } from '@/lib/icons';
 import { createHash } from 'crypto';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+import { ReportType, AudienceType, OutputFormat } from '@/lib/types/database';
 
 // Tipos para o endpoint
 interface IndividualReportRequest {
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
       const reportExecution = await prisma.reportExecution.create({
         data: {
           workspaceId,
-          reportType: type === 'JURIDICO' ? 'COMPLETO' : 'NOVIDADES',
+          reportType: type === 'JURIDICO' ? ReportType.COMPLETO : ReportType.NOVIDADES,
           parameters: {
             processIds,
             type,
@@ -177,8 +178,8 @@ export async function POST(request: NextRequest) {
           },
           status: 'AGENDADO',
           scheduledFor: scheduledDate,
-          audienceType: type === 'JURIDICO' ? 'USO_INTERNO' : 'CLIENTE',
-          outputFormats: format.map(f => f as 'PDF' | 'DOCX'),
+          audienceType: type === 'JURIDICO' ? AudienceType.USO_INTERNO : AudienceType.CLIENTE,
+          outputFormats: format.map(toOutputFormat),
           quotaConsumed: reportCreditCost
         }
       });
@@ -239,12 +240,18 @@ export async function POST(request: NextRequest) {
       try {
         // Gerar relatório
         const generator = new ReportGenerator();
+
+        // Type-safe enum conversions (explicit type annotations to prevent literal inference)
+        const selectedReportType: ReportType = type === 'JURIDICO' ? ReportType.COMPLETO : ReportType.NOVIDADES;
+        const selectedAudienceType: AudienceType = type === 'JURIDICO' ? AudienceType.USO_INTERNO : AudienceType.CLIENTE;
+        const selectedOutputFormats: OutputFormat[] = format.map(toOutputFormat);
+
         const reportResult = await generator.generateScheduledReport({
           workspaceId,
-          reportType: type === 'JURIDICO' ? 'COMPLETO' : 'NOVIDADES',
+          reportType: selectedReportType,
           processIds,
-          audienceType: type === 'JURIDICO' ? 'USO_INTERNO' : 'CLIENTE',
-          outputFormats: format.map(f => f as 'PDF' | 'DOCX'),
+          audienceType: selectedAudienceType,
+          outputFormats: selectedOutputFormats,
           deltaDataOnly: type === 'EXECUTIVO'
         });
 
@@ -270,7 +277,7 @@ export async function POST(request: NextRequest) {
         const reportExecution = await prisma.reportExecution.create({
           data: {
             workspaceId,
-            reportType: type === 'JURIDICO' ? 'COMPLETO' : 'NOVIDADES',
+            reportType: type === 'JURIDICO' ? ReportType.COMPLETO : ReportType.NOVIDADES,
             parameters: {
               processIds,
               type,
@@ -284,8 +291,8 @@ export async function POST(request: NextRequest) {
             completedAt: new Date(),
             duration: reportResult.processingTime,
             tokensUsed: reportResult.tokensUsed,
-            audienceType: type === 'JURIDICO' ? 'USO_INTERNO' : 'CLIENTE',
-            outputFormats: format.map(f => f as 'PDF' | 'DOCX'),
+            audienceType: type === 'JURIDICO' ? AudienceType.USO_INTERNO : AudienceType.CLIENTE,
+            outputFormats: format.map(toOutputFormat),
             cacheHit: reportResult.cacheHit,
             quotaConsumed: reportCreditCost
           }
@@ -366,6 +373,16 @@ export async function POST(request: NextRequest) {
 // ================================================================
 // FUNÇÕES AUXILIARES
 // ================================================================
+
+/**
+ * Converte string de formato para o enum OutputFormat
+ */
+function toOutputFormat(format: 'PDF' | 'DOCX'): OutputFormat {
+  if (format === 'PDF') {
+    return OutputFormat.PDF;
+  }
+  return OutputFormat.DOCX;
+}
 
 /**
  * Verifica cache existente para o relatório

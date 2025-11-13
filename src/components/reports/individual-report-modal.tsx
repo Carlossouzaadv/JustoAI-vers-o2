@@ -59,7 +59,7 @@ export default function IndividualReportModal({
 }: IndividualReportModalProps) {
   // Estados
   const [reportType, setReportType] = useState<'JURIDICO' | 'EXECUTIVO'>('EXECUTIVO');
-  const [formats, setFormats] = useState<string[]>(['PDF']);
+  const [formats, setFormats] = useState<('PDF' | 'DOCX')[]>(['PDF']);
   const [deliveryMode, setDeliveryMode] = useState<'IMMEDIATE' | 'SCHEDULED'>('IMMEDIATE');
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>();
   const [scheduleTime, setScheduleTime] = useState<string>('23:00');
@@ -120,8 +120,17 @@ export default function IndividualReportModal({
     }
   };
 
+  // Type guards
+  const isReportType = (value: string): value is 'JURIDICO' | 'EXECUTIVO' => {
+    return value === 'JURIDICO' || value === 'EXECUTIVO';
+  };
+
+  const isDeliveryMode = (value: string): value is 'IMMEDIATE' | 'SCHEDULED' => {
+    return value === 'IMMEDIATE' || value === 'SCHEDULED';
+  };
+
   // Lidar com mudança de formato
-  const handleFormatChange = (format: string, checked: boolean) => {
+  const handleFormatChange = (format: 'PDF' | 'DOCX', checked: boolean) => {
     if (checked) {
       setFormats(prev => [...prev, format]);
     } else {
@@ -158,7 +167,7 @@ export default function IndividualReportModal({
       const config: ReportGenerationConfig = {
         processIds: selectedProcesses.map(p => p.id),
         type: reportType,
-        format: formats as ('PDF' | 'DOCX')[],
+        format: formats,
         forceNewAnalysis
       };
 
@@ -253,7 +262,11 @@ export default function IndividualReportModal({
                   <label className="flex items-center gap-2">
                     <Checkbox
                       checked={forceNewAnalysis}
-                      onCheckedChange={setForceNewAnalysis}
+                      onCheckedChange={(checked) => {
+                        if (typeof checked === 'boolean') {
+                          setForceNewAnalysis(checked);
+                        }
+                      }}
                     />
                     <span className="text-sm">Forçar Nova Análise (consumirá crédito)</span>
                   </label>
@@ -266,7 +279,14 @@ export default function IndividualReportModal({
           <div className="space-y-3">
             <Label className="text-base font-semibold">Tipo de Relatório</Label>
 
-            <RadioGroup value={reportType} onValueChange={(value) => setReportType(value as 'JURIDICO' | 'EXECUTIVO')}>
+            <RadioGroup
+              value={reportType}
+              onValueChange={(value) => {
+                if (isReportType(value)) {
+                  setReportType(value);
+                }
+              }}
+            >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="EXECUTIVO" id="executivo" />
                 <Label htmlFor="executivo" className="cursor-pointer">
@@ -297,7 +317,11 @@ export default function IndividualReportModal({
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={formats.includes('PDF')}
-                  onCheckedChange={(checked) => handleFormatChange('PDF', checked as boolean)}
+                  onCheckedChange={(checked) => {
+                    if (typeof checked === 'boolean') {
+                      handleFormatChange('PDF', checked);
+                    }
+                  }}
                 />
                 <span>PDF (Recomendado)</span>
               </label>
@@ -305,7 +329,11 @@ export default function IndividualReportModal({
               <label className="flex items-center gap-2">
                 <Checkbox
                   checked={formats.includes('DOCX')}
-                  onCheckedChange={(checked) => handleFormatChange('DOCX', checked as boolean)}
+                  onCheckedChange={(checked) => {
+                    if (typeof checked === 'boolean') {
+                      handleFormatChange('DOCX', checked);
+                    }
+                  }}
                 />
                 <span>Word (DOCX)</span>
               </label>
@@ -316,7 +344,14 @@ export default function IndividualReportModal({
           <div className="space-y-3">
             <Label className="text-base font-semibold">Modo de Entrega</Label>
 
-            <RadioGroup value={deliveryMode} onValueChange={(value) => setDeliveryMode(value as 'IMMEDIATE' | 'SCHEDULED')}>
+            <RadioGroup
+              value={deliveryMode}
+              onValueChange={(value) => {
+                if (isDeliveryMode(value)) {
+                  setDeliveryMode(value);
+                }
+              }}
+            >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="IMMEDIATE" id="immediate" />
                 <Label htmlFor="immediate" className="cursor-pointer">
@@ -361,9 +396,12 @@ export default function IndividualReportModal({
                       <Calendar
                         mode="single"
                         selected={scheduleDate}
-                        onSelect={setScheduleDate}
+                        onSelect={(date) => {
+                          if (date === undefined || date instanceof Date) {
+                            setScheduleDate(date);
+                          }
+                        }}
                         disabled={(date) => date < new Date()}
-                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>

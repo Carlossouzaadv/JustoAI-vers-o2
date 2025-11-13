@@ -244,10 +244,31 @@ async function loadCaseDocuments(caseId: string): Promise<DocumentSummaryData[]>
     },
   });
 
-  return documents.map((doc: PrismaCaseDocument): DocumentSummaryData => ({
-    ...doc,
-    metadata: doc.metadata || {},
-  }));
+  return documents.map((doc: PrismaCaseDocument): DocumentSummaryData => {
+    const result: DocumentSummaryData = {
+      id: doc.id,
+      name: doc.name,
+      originalName: doc.originalName,
+      type: doc.type,
+      sourceOrigin: doc.sourceOrigin,
+      metadata: doc.metadata || {},
+    };
+
+    // Convert null to undefined for optional properties using type narrowing
+    if (doc.documentDate !== null) {
+      result.documentDate = doc.documentDate;
+    }
+
+    if (doc.extractedText !== null) {
+      result.extractedText = doc.extractedText;
+    }
+
+    if (doc.summary !== null) {
+      result.summary = doc.summary;
+    }
+
+    return result;
+  });
 }
 
 /**

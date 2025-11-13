@@ -11,7 +11,7 @@ import { getRedisClient } from '@/lib/redis';
 import { createHash } from 'crypto';
 
 // Imports do Prisma
-import { ExecutionStatus } from '@/lib/types/database';
+import { ExecutionStatus, ReportType, AudienceType, OutputFormat } from '@/lib/types/database';
 
 // Interfaces para o worker
 interface IndividualReportJobData {
@@ -221,10 +221,10 @@ individualReportsQueue.process(
       const generator = new ReportGenerator();
       const reportResult = await generator.generateScheduledReport({
         workspaceId,
-        reportType: reportType === 'JURIDICO' ? 'COMPLETO' : 'NOVIDADES',
+        reportType: reportType === 'JURIDICO' ? ReportType.COMPLETO : ReportType.NOVIDADES,
         processIds,
-        audienceType: reportType === 'JURIDICO' ? 'USO_INTERNO' : 'CLIENTE',
-        outputFormats: format.map(f => f as 'PDF' | 'DOCX'),
+        audienceType: reportType === 'JURIDICO' ? AudienceType.USO_INTERNO : AudienceType.CLIENTE,
+        outputFormats: format.map(f => f === 'PDF' ? OutputFormat.PDF : OutputFormat.DOCX),
         deltaDataOnly: reportType === 'EXECUTIVO'
       });
 

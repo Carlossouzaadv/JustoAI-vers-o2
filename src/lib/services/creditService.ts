@@ -40,10 +40,10 @@ export async function getCredits(userEmail: string | undefined, workspaceId: str
   }
 }
 
-export async function hasEnoughCredits(userEmail: string | undefined, workspaceId: string, cost: number, category: CreditCategory = 'FULL'): Promise<boolean> {
+export async function hasEnoughCredits(userEmail: string | undefined, workspaceId: string, cost: number, category: CreditCategory = CreditCategory.FULL): Promise<boolean> {
   const balance = await getCredits(userEmail, workspaceId);
   if (balance.divinityAdmin) return true;
-  const available = category === 'REPORT' ? balance.reportCredits : balance.fullCredits;
+  const available = category === CreditCategory.REPORT ? balance.reportCredits : balance.fullCredits;
   return available >= cost;
 }
 
@@ -53,11 +53,11 @@ export async function debitCredits(userEmail: string | undefined, workspaceId: s
     if (balance.divinityAdmin) {
       return { success: true, newBalance: balance, reason: 'DIVINITY_ADMIN_NO_DEBIT' };
     }
-    const available = category === 'REPORT' ? balance.reportCredits : balance.fullCredits;
+    const available = category === CreditCategory.REPORT ? balance.reportCredits : balance.fullCredits;
     if (available < cost) {
       return { success: false, reason: 'Insufficient credits' };
     }
-    const fieldName = category === 'REPORT' ? 'reportCreditsBalance' : 'fullCreditsBalance';
+    const fieldName = category === CreditCategory.REPORT ? 'reportCreditsBalance' : 'fullCreditsBalance';
     const updated = await prisma.workspaceCredits.update({
       where: { workspaceId },
       data: { [fieldName]: { decrement: cost } }
@@ -73,7 +73,7 @@ export async function debitCredits(userEmail: string | undefined, workspaceId: s
 
 export async function addCredits(workspaceId: string, cost: number, category: CreditCategory, reason: string): Promise<CreditDebitResult> {
   try {
-    const fieldName = category === 'REPORT' ? 'reportCreditsBalance' : 'fullCreditsBalance';
+    const fieldName = category === CreditCategory.REPORT ? 'reportCreditsBalance' : 'fullCreditsBalance';
     const updated = await prisma.workspaceCredits.update({
       where: { workspaceId },
       data: { [fieldName]: { increment: cost } }
