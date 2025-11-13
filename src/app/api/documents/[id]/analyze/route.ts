@@ -16,6 +16,18 @@ const analyzeSchema = z.object({
   customFields: z.array(z.string()).optional()
 });
 
+interface AnalysisVersionData {
+  id: string;
+  version: number;
+  modelUsed: string | null;
+  confidence: number | null;
+  costEstimate: number | null;
+  processingTime: number | bigint | null;
+  createdAt: Date;
+  status: string | null;
+  metadata: unknown;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -402,7 +414,7 @@ export async function GET(
     }
 
     // 3. Formatar resposta
-    const analyses = document.case.analysisVersions.map(analysis => ({
+    const analyses = document.case.analysisVersions.map((analysis: AnalysisVersionData) => ({
       id: analysis.id,
       version: analysis.version,
       modelUsed: analysis.modelUsed,
