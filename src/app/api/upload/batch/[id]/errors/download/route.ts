@@ -19,6 +19,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: batchId } = await params;
+  let userId: string | undefined;
 
   try {
     // ============================================================
@@ -26,6 +27,7 @@ export async function GET(
     // ============================================================
 
     const user = await getAuthenticatedUser(request);
+    userId = user?.id;
     if (!user) {
       return unauthorizedResponse('Não autenticado');
     }
@@ -149,7 +151,7 @@ export async function GET(
       endpoint: '/api/upload/batch/[id]/errors/download',
       method: 'GET',
       batchId,
-      userId: user?.id,
+      userId,
     });
 
     return NextResponse.json(

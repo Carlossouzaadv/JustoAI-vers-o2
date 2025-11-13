@@ -124,30 +124,6 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
     resetDate: '2025-02-01T00:00:00Z'
   });
 
-  useEffect(() => {
-    loadAnalyses();
-  }, [processId, loadAnalyses]);
-
-  const loadCredits = async () => {
-    try {
-      const response = await fetch('/api/billing/credits');
-      if (response.ok) {
-        const data = await response.json();
-        const balance = data.data?.balance?.fullCreditsBalance || 999;
-        setCreditsBalance(balance);
-        console.log(`${ICONS.CREDIT} Créditos carregados: ${balance}`);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar créditos:', error);
-      setCreditsBalance(999); // Fallback
-    }
-  };
-
-  const handleOpenAnalysisModal = () => {
-    loadCredits(); // Carregar créditos antes de abrir
-    setShowUpgradeModal(true);
-  };
-
   const loadAnalyses = useCallback(async () => {
     try {
       setLoading(true);
@@ -197,6 +173,30 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
       setLoading(false);
     }
   }, [processId]);
+
+  useEffect(() => {
+    loadAnalyses();
+  }, [processId, loadAnalyses]);
+
+  const loadCredits = async () => {
+    try {
+      const response = await fetch('/api/billing/credits');
+      if (response.ok) {
+        const data = await response.json();
+        const balance = data.data?.balance?.fullCreditsBalance || 999;
+        setCreditsBalance(balance);
+        console.log(`${ICONS.CREDIT} Créditos carregados: ${balance}`);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar créditos:', error);
+      setCreditsBalance(999); // Fallback
+    }
+  };
+
+  const handleOpenAnalysisModal = () => {
+    loadCredits(); // Carregar créditos antes de abrir
+    setShowUpgradeModal(true);
+  };
 
   const generateNewAnalysis = async (level: 'FAST' | 'FULL') => {
     try {

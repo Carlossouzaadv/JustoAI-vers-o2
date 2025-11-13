@@ -273,8 +273,7 @@ export class WebSocketManager {
     this.broadcastToWorkspace(workspaceId, {
       type: messageType,
       processId,
-      data,
-      timestamp: Date.now()
+      data
     });
   }
 

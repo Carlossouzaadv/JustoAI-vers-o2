@@ -6,7 +6,7 @@
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
 import { PrismaClient, Prisma } from '@prisma/client'
-import type { AnalysisType, JobStatus, CaseAnalysisVersion, AnalysisJob, MonitoredProcess, InputJsonValue, CaseAnalysisVersionWhereInput } from '@/lib/types/database';
+import { JobStatus, type AnalysisType, type CaseAnalysisVersion, type AnalysisJob, type MonitoredProcess, type InputJsonValue, type CaseAnalysisVersionWhereInput } from '@/lib/types/database';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
 import { ICONS } from './icons';

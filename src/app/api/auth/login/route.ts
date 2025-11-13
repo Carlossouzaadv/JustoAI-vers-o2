@@ -31,14 +31,18 @@ export async function POST(request: NextRequest) {
           get(name: string) {
             return cookieStore.get(name)?.value
           },
-          set(name: string, value: string, options: unknown) {
+          set(name: string, value: string, options: Record<string, unknown> | undefined) {
             try {
-              cookieStore.set(name, value, options)
+              if (options && typeof options === 'object') {
+                cookieStore.set({ name, value, ...options })
+              } else {
+                cookieStore.set(name, value)
+              }
             } catch (error) {
               console.error('Error setting cookie:', name, error)
             }
           },
-          remove(name: string, options: unknown) {
+          remove(name: string, options: Record<string, unknown> | undefined) {
             try {
               cookieStore.delete(name)
             } catch (error) {

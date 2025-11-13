@@ -150,19 +150,32 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
           />
 
           <div className="flex gap-2">
-            {Object.entries(statusCounts).map(([key, count]) => (
-              <Button
-                key={key}
-                variant={filter === key ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter(key as unknown)}
-              >
-                {key === 'all' ? 'Todos' :
-                 key === 'complete' ? ICONS.SUCCESS :
-                 key === 'partial' ? ICONS.WARNING : ICONS.ERROR
-                } ({count})
-              </Button>
-            ))}
+            {Object.entries(statusCounts).map(([key, count]) => {
+              // Type guard to ensure key is a valid filter value
+              const isValidFilter = (
+                k: string
+              ): k is 'all' | 'complete' | 'partial' | 'attention' => {
+                return k === 'all' || k === 'complete' || k === 'partial' || k === 'attention';
+              };
+
+              if (!isValidFilter(key)) {
+                return null;
+              }
+
+              return (
+                <Button
+                  key={key}
+                  variant={filter === key ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilter(key)}
+                >
+                  {key === 'all' ? 'Todos' :
+                   key === 'complete' ? ICONS.SUCCESS :
+                   key === 'partial' ? ICONS.WARNING : ICONS.ERROR
+                  } ({count})
+                </Button>
+              );
+            })}
           </div>
         </div>
       </CardHeader>

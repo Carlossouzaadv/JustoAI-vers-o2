@@ -17,7 +17,7 @@ import {
   CreateWorkspaceInput,
   WorkspaceQuery
 } from '@/lib/validations'
-import type { Workspace, InputJsonValue, WorkspaceWhereInput, WorkspaceCreateInput, WorkspaceGetPayload } from '@/lib/types/database'
+import type { Workspace, InputJsonValue, WorkspaceWhereInput, WorkspaceCreateInput } from '@/lib/types/database'
 import { Prisma } from '@prisma/client'
 
 // ================================
@@ -27,25 +27,20 @@ import { Prisma } from '@prisma/client'
 /**
  * Type for Workspace with included relations from findMany query
  * Captures the exact return type from Prisma query with users and _count
+ * Manually defined to ensure proper type inference
  */
-type WorkspaceWithRelations = WorkspaceGetPayload<{
-  include: {
-    users: {
-      select: {
-        role: true
-        status: true
-        createdAt: true
-      }
-    }
-    _count: {
-      select: {
-        users: true
-        clients: true
-        cases: true
-      }
-    }
+type WorkspaceWithRelations = Workspace & {
+  users: Array<{
+    role: string
+    status: string
+    createdAt: Date
+  }>
+  _count: {
+    users: number
+    clients: number
+    cases: number
   }
-}>
+}
 
 // ================================
 // TYPE GUARDS FOR DATA SAFETY

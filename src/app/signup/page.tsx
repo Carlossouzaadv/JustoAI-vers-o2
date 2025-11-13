@@ -301,7 +301,7 @@ export default function SignupPage() {
               {/* Consentimento opcional para marketing */}
               <MarketingConsent
                 id="marketingConsent"
-                checked={marketingField.value}
+                checked={marketingField.value ?? false}
                 onChange={marketingField.onChange}
               />
             </div>

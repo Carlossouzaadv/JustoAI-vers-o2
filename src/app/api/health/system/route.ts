@@ -76,7 +76,7 @@ async function checkSupabase(): Promise<ComponentHealth> {
     const response = await fetch(`${supabaseUrl}/rest/v1/`, {
       method: 'GET',
       headers: {
-        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY!,
       },
       signal: AbortSignal.timeout(5000),
     });

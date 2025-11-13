@@ -19,10 +19,14 @@ export default async function DocumentsUploadPage() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: unknown) {
-          cookieStore.set({ name, value, ...options });
+        set(name: string, value: string, options: Record<string, unknown> | undefined) {
+          if (options && typeof options === 'object') {
+            cookieStore.set({ name, value, ...options });
+          } else {
+            cookieStore.set(name, value);
+          }
         },
-        remove(name: string, options: unknown) {
+        remove(name: string, options: Record<string, unknown> | undefined) {
           cookieStore.delete(name);
         },
       },

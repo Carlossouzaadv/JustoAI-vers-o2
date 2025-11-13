@@ -265,6 +265,17 @@ class MockRedis {
     return Array.from(this.mockData.keys());
   }
 
+  async setex(key: string, _seconds: number, value: string) {
+    console.log(`[MOCK REDIS] SETEX ${key}`);
+    this.mockData.set(key, value);
+    return 'OK';
+  }
+
+  async call(_command: string, ..._args: unknown[]) {
+    console.log(`[MOCK REDIS] CALL ${_command}`);
+    return 0; // Mock response for MEMORY USAGE
+  }
+
   async ping() {
     return 'PONG';
   }

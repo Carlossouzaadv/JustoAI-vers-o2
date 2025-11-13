@@ -43,8 +43,7 @@ export async function POST(request: NextRequest) {
           );
         }
         prompt = PromptsMaestros.getAnaliseMultiFrentesIndividual(
-          numeroProcesso,
-          ModelTier.BALANCED
+          numeroProcesso
         );
         break;
 

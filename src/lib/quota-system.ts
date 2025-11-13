@@ -73,7 +73,18 @@ export class QuotaSystem {
         throw new Error('Workspace não encontrado');
       }
 
-      const limits = PLAN_LIMITS[workspace.plan];
+      // Type guard to ensure plan is a valid Plan enum value
+      function isValidPlan(plan: unknown): plan is Plan {
+        return typeof plan === 'string' && plan in PLAN_LIMITS;
+      }
+
+      if (!isValidPlan(workspace.plan)) {
+        throw new Error(`Invalid plan: ${workspace.plan}`);
+      }
+
+      // After type guard, workspace.plan is narrowed to Plan
+      const validPlan: Plan = workspace.plan;
+      const limits = PLAN_LIMITS[validPlan];
 
       // Criar quota inicial
       quota = await prisma.workspaceQuota.create({

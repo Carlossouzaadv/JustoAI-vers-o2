@@ -19,6 +19,25 @@ import { ArrowLeft, Star, Shield } from 'lucide-react';
 // Import pricing data
 import pricingData from '@/config/pricing.json';
 
+// Type for the plan data from JSON
+type PlanData = typeof pricingData.plans[number];
+
+// Type guard to validate plan matches PlanModal expectations
+function isPlanData(data: unknown): data is PlanData {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const plan = data as Record<string, unknown>;
+  return (
+    typeof plan.id === 'string' &&
+    typeof plan.name === 'string' &&
+    typeof plan.subtitle === 'string' &&
+    'price_monthly' in plan &&
+    'price_annual' in plan &&
+    typeof plan.trial_days === 'number'
+  );
+}
+
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -98,8 +117,8 @@ export default function PricingPage() {
     return billingCycle === 'monthly' ? plan.price_monthly : plan.price_annual;
   };
 
-  const selectedPlanData = selectedPlan
-    ? pricingData.plans.find(p => p.id === selectedPlan)
+  const selectedPlanData: PlanData | null = selectedPlan
+    ? (pricingData.plans.find(p => p.id === selectedPlan) ?? null)
     : null;
 
   // Safety check for data
@@ -258,11 +277,11 @@ export default function PricingPage() {
       </section>
 
       {/* Plan Modal */}
-      {selectedPlanData && (
+      {isPlanData(selectedPlanData) && (
         <PlanModal
           isOpen={showPlanModal}
           onClose={() => setShowPlanModal(false)}
-          plan={selectedPlanData as unknown}
+          plan={selectedPlanData}
           billingCycle={billingCycle}
           onStartTrial={handleStartTrial}
           onContactSales={handleContactSales}

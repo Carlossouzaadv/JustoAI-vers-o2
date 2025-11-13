@@ -175,9 +175,12 @@ export default function IndividualReportsHistory({ workspaceId }: IndividualRepo
       'Concluído': { variant: 'default' as const, icon: CheckCircle },
       'Falhou': { variant: 'destructive' as const, icon: XCircle },
       'Cancelado': { variant: 'outline' as const, icon: XCircle }
-    };
+    } as const;
 
-    const config = statusConfig[status] || { variant: 'secondary' as const, icon: Clock };
+    type StatusKey = keyof typeof statusConfig;
+    const config = (status in statusConfig)
+      ? statusConfig[status as StatusKey]
+      : { variant: 'secondary' as const, icon: Clock };
     const Icon = config.icon;
 
     return (

@@ -23,18 +23,24 @@ import { getRedisConnection } from './redis';
 let _notificationQueue: Queue.Queue | null = null;
 
 // Helper function to get or create queue config
-const getQueueConfig = () => ({
-  redis: getRedisConnection(),
-  defaultJobOptions: {
-    removeOnComplete: 100, // Manter últimos 100 jobs completos
-    removeOnFail: 50,      // Manter últimos 50 jobs falhados
-    attempts: 3,           // 3 tentativas por padrão
-    backoff: {
-      type: 'exponential',
-      delay: 2000,
+const getQueueConfig = () => {
+  const redisConnection = getRedisConnection();
+  if (!redisConnection) {
+    throw new Error('Redis connection is not available');
+  }
+  return {
+    redis: redisConnection,
+    defaultJobOptions: {
+      removeOnComplete: 100, // Manter últimos 100 jobs completos
+      removeOnFail: 50,      // Manter últimos 50 jobs falhados
+      attempts: 3,           // 3 tentativas por padrão
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
     },
-  },
-});
+  };
+};
 
 // === FILAS PRINCIPAIS (Lazy Load) ===
 
@@ -47,7 +53,7 @@ function getNotificationQueue() {
   if (!_notificationQueue) {
     const config = getQueueConfig();
     _notificationQueue = new Queue('Notifications', {
-      ...config,
+      redis: config.redis,
       defaultJobOptions: {
         ...config.defaultJobOptions,
         priority: 10, // Alta prioridade

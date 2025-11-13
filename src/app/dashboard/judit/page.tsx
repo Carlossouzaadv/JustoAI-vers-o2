@@ -20,6 +20,10 @@ import {
   useJuditMetrics,
   useJuditCosts,
   useJuditAlerts,
+  type HealthData,
+  type MetricsData,
+  type CostsData,
+  type AlertsData,
 } from '@/hooks/useJuditObservability';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -59,13 +63,20 @@ export default function JuditDashboardPage() {
     refetch: refetchAlerts,
   } = useJuditAlerts({ resolved: false });
 
-  const health = healthData?.data;
-  const metrics = metricsData?.data;
-  const costs = costsData?.data;
-  const alerts = alertsData?.data;
+  const health: HealthData | undefined = healthData?.data;
+  const metrics: MetricsData | undefined = metricsData?.data;
+  const costs: CostsData | undefined = costsData?.data;
+  const alerts: AlertsData | undefined = alertsData?.data;
 
-  // Extract latency data from metrics
-  const getLatencyData = () => {
+  // Extract latency data from metrics with type guard
+  const getLatencyData = (): {
+    p50?: number;
+    p95?: number;
+    p99?: number;
+    avg: number;
+    min: number;
+    max: number;
+  } | null => {
     if (!metrics?.metrics) return null;
 
     const latencyMetric = Object.entries(metrics.metrics).find(([key]) =>
@@ -74,7 +85,30 @@ export default function JuditDashboardPage() {
 
     if (!latencyMetric) return null;
 
-    return latencyMetric[1];
+    const data = latencyMetric[1];
+
+    // Type guard: validate the structure
+    if (
+      typeof data !== 'object' ||
+      data === null ||
+      !('avg' in data) ||
+      !('min' in data) ||
+      !('max' in data) ||
+      typeof data.avg !== 'number' ||
+      typeof data.min !== 'number' ||
+      typeof data.max !== 'number'
+    ) {
+      return null;
+    }
+
+    return data as {
+      p50?: number;
+      p95?: number;
+      p99?: number;
+      avg: number;
+      min: number;
+      max: number;
+    };
   };
 
   return (
@@ -173,16 +207,19 @@ export default function JuditDashboardPage() {
       </div>
 
       {/* Latency Chart */}
-      {getLatencyData() && (
-        <DashboardCard
-          title="API Latency Distribution"
-          subtitle="Response time percentiles"
-          className="mb-6"
-          loading={metricsLoading}
-        >
-          <LatencyChart data={getLatencyData()!} />
-        </DashboardCard>
-      )}
+      {(() => {
+        const latencyData = getLatencyData();
+        return latencyData ? (
+          <DashboardCard
+            title="API Latency Distribution"
+            subtitle="Response time percentiles"
+            className="mb-6"
+            loading={metricsLoading}
+          >
+            <LatencyChart data={latencyData} />
+          </DashboardCard>
+        ) : null;
+      })()}
 
       {/* Alerts Table */}
       <DashboardCard

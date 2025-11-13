@@ -54,7 +54,13 @@ export function LatencyChart({ data }: LatencyChartProps) {
             border: '1px solid #e5e7eb',
             borderRadius: '6px',
           }}
-          formatter={(value: unknown) => [`${value.toFixed(0)} ms`, 'Latência']}
+          formatter={(value: unknown) => {
+            // Type guard to ensure value is a number before calling toFixed
+            if (typeof value === 'number') {
+              return [`${value.toFixed(0)} ms`, 'Latência'];
+            }
+            return ['0 ms', 'Latência'];
+          }}
         />
         <Legend />
         <Bar dataKey="value" fill="#3b82f6" name="Latência (ms)" />

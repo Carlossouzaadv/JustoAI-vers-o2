@@ -10,6 +10,7 @@ import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
 import { requireWorkspaceAdmin, isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { getCredits, debitCredits } from '@/lib/services/creditService';
+import { CreditCategory } from '@/lib/types/database';
 
 // ================================
 // VALIDAÇÃO DE INPUT
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
         user.email,
         workspace.id,
         creditCost,
-        'FULL',
+        CreditCategory.FULL,
         `AI ${validatedData.analysis_type} analysis`
       );
       // Use narrowing seguro to safely access newBalance

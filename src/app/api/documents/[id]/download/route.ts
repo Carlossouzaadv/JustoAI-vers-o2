@@ -121,7 +121,7 @@ export async function GET(
 
     console.log(`${ICONS.SUCCESS} [Document Download] Documento enviado: ${fileName} (${fileBuffer.length} bytes)`);
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers
     });

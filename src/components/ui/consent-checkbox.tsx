@@ -234,8 +234,13 @@ export const useConsentField = (
     defaultValue: false,
     rules: {
       required: required ? 'Este consentimento é obrigatório' : false,
-      validate: required ? (value: boolean) =>
-        value === true || 'Você deve aceitar os termos para continuar' : undefined
+      validate: required ? (value: unknown) => {
+        // Type narrowing: check if value is boolean and true
+        if (typeof value === 'boolean' && value === true) {
+          return true;
+        }
+        return 'Você deve aceitar os termos para continuar';
+      } : undefined
     }
   });
 

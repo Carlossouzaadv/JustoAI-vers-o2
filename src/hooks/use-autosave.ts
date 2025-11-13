@@ -84,7 +84,10 @@ export function useAutosave<T>(
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    save(data);
+    // Type narrowing: only save if data is not null
+    if (data !== null) {
+      save(data);
+    }
   }, [data, save]);
 
   const resetSaveState = useCallback(() => {

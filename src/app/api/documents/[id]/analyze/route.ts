@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getCredits, debitCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+import { CreditCategory } from '@/lib/types/database';
 
 const prisma = new PrismaClient();
 
@@ -272,7 +273,7 @@ export async function POST(
         user.email,
         document.case.workspaceId,
         1,
-        'FULL',
+        CreditCategory.FULL,
         `Strategic analysis for document ${documentId} - Case ${document.caseId}`
       );
 

@@ -52,7 +52,20 @@ export class DocumentHashManager {
   async checkDeduplication(
     textSha: string,
     workspaceId: string,
-    prisma: unknown
+    prisma: {
+      caseDocument: {
+        findFirst: (args: {
+          where: { textSha: string; case: { workspaceId: string } };
+          include: { case: { select: { id: true; title: true; number: true } } };
+        }) => Promise<{
+          id: string;
+          name: string;
+          caseId: string;
+          createdAt: Date;
+          case: { id: true; title: string; number: true };
+        } | null>;
+      };
+    }
   ): Promise<DeduplicationCheck> {
     console.log(`${ICONS.SEARCH} Verificando deduplicação para hash: ${textSha.substring(0, 16)}...`);
 

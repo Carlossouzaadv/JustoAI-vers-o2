@@ -351,7 +351,8 @@ function extractKeyInformation(text: string): Partial<PDFMetadata> {
   }
 
   // Determinar nível de tribunal baseado em palavras-chave
-  const courtLevelPatterns: Record<PDFMetadata['courtLevel'], RegExp[]> = {
+  type CourtLevel = NonNullable<PDFMetadata['courtLevel']>;
+  const courtLevelPatterns: Record<CourtLevel, RegExp[]> = {
     STF: [/supremo\s+tribunal\s+federal|stf/i],
     SUPERIOR: [/superior\s+tribunal|stj|oab/i],
     SECOND: [/tribunal\s+de\s+justiça|desembargador/i, /second\s+instance/i],

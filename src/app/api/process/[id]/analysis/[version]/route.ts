@@ -13,9 +13,12 @@ import { CaseAnalysisVersion, AnalysisJob } from '@/lib/types/database';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; version: string }> }
+  context?: { params: Promise<{ id: string; version: string }> }
 ) => {
-  const { id: processId, version } = await params;
+  if (!context) {
+    return errorResponse('Missing route parameters', 500);
+  }
+  const { id: processId, version } = await context.params;
   const versionNumber = parseInt(version);
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get('workspaceId');

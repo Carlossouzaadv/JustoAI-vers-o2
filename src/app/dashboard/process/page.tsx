@@ -380,7 +380,7 @@ export default function ProcessPage() {
             <div>
               <p className="text-sm font-medium text-neutral-600">Concluídos</p>
               <p className="text-2xl font-bold text-blue-600">
-                {cases.filter(c => c.status === 'CONCLUDED').length}
+                {cases.filter(c => c.status === 'CLOSED').length}
               </p>
             </div>
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">

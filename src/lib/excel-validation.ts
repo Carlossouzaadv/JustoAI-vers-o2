@@ -28,9 +28,7 @@ const excelRowSchema = z.object({
 
   'Status': z
     .enum(['ATIVO', 'ENCERRADO', 'SUSPENSO', 'PARADO'], {
-      errorMap: () => ({
-        message: 'Status deve ser ATIVO, ENCERRADO, SUSPENSO ou PARADO'
-      })
+      message: 'Status deve ser ATIVO, ENCERRADO, SUSPENSO ou PARADO'
     }),
 
   'Valor Causa': z

@@ -48,31 +48,50 @@ function isFeature(data: unknown): data is Feature {
   );
 }
 
+// Type guard for detailed features (with description)
+function isDetailedFeature(data: unknown): data is DetailedFeature {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const feature = data as Record<string, unknown>;
+  return 'description' in feature && typeof feature.description === 'string';
+}
+
+// Detailed feature type (for fully structured data)
+interface DetailedFeature {
+  limit?: number;
+  unlimited?: boolean;
+  custom?: boolean;
+  included?: boolean;
+  channels?: string[];
+  description: string;
+}
+
+// Simple feature type (for JSON data - just values)
+type SimpleFeatureValue = number | string | boolean;
+
+// Features can be either detailed or simple
+type FeaturesStructure = Record<string, DetailedFeature | SimpleFeatureValue>;
+
+// Plan type that matches JSON structure more flexibly
+type PlanType = {
+  readonly id: string;
+  readonly name: string;
+  readonly subtitle: string;
+  readonly price_monthly: number | null;
+  readonly price_annual: number | null;
+  readonly custom_pricing?: boolean;
+  readonly popular?: boolean;
+  readonly trial_days: number;
+  readonly features?: FeaturesStructure | Record<string, unknown>;
+  readonly highlighted_features?: readonly string[];
+  readonly contact_sales?: boolean;
+};
+
 export interface PlanModalProps {
   isOpen: boolean;
   onClose: () => void;
-  plan: {
-    id: string;
-    name: string;
-    subtitle: string;
-    price_monthly: number | null;
-    price_annual: number | null;
-    custom_pricing?: boolean;
-    popular?: boolean;
-    trial_days: number;
-    features: {
-      users: { limit?: number; unlimited?: boolean; description: string };
-      processes: { limit?: number; unlimited?: boolean; description: string };
-      reports_monthly: { limit?: number; unlimited?: boolean; description: string };
-      full_credits_first_month: { limit?: number; custom?: boolean; description: string };
-      full_credits_monthly: { limit?: number; custom?: boolean; description: string };
-      customization: { included: boolean; description: string };
-      support: { channels: string[]; description: string };
-      integrations: { included: boolean; custom?: boolean; description: string };
-      sla: { included: boolean; custom?: boolean; description: string };
-    };
-    contact_sales?: boolean;
-  } | null;
+  plan: PlanType | null;
   billingCycle: 'monthly' | 'annual';
   onStartTrial: (planId: string) => void;
   onContactSales?: () => void;
@@ -229,58 +248,94 @@ export function PlanModal({
           {/* Features Section */}
           <div>
             <h4 className="font-semibold text-lg mb-4">O que está incluído:</h4>
-            <div className="space-y-4">
-              {Object.entries(plan.features).flatMap(([key, feature]) => {
-                if (!isFeature(feature)) return [];
-                return [
-                  <div key={key} className="flex items-start gap-3">
-                    {getFeatureIcon(key)}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-gray-900">
-                          {feature.description.split(':')[0]}
-                        </span>
-                        {renderFeatureValue(feature)}
-                      </div>
-                      {feature.description.includes(':') && (
-                        <p className="text-sm text-gray-600">
-                          {feature.description.split(':')[1]?.trim()}
-                        </p>
-                      )}
-                    </div>
+
+            {/* Show highlighted features if available (simple JSON) */}
+            {plan.highlighted_features && plan.highlighted_features.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {plan.highlighted_features.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-green-500 mt-0.5" />
+                    <p className="text-sm text-gray-700">{feature}</p>
                   </div>
-                ];
-              })}
-            </div>
+                ))}
+              </div>
+            )}
+
+            {/* Show detailed features if available */}
+            {plan.features && (
+              <div className="space-y-4">
+                {Object.entries(plan.features).flatMap(([key, feature]) => {
+                  if (!isDetailedFeature(feature)) return [];
+                  return [
+                    <div key={key} className="flex items-start gap-3">
+                      {getFeatureIcon(key)}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-gray-900">
+                            {feature.description.split(':')[0]}
+                          </span>
+                          {renderFeatureValue(feature)}
+                        </div>
+                        {feature.description.includes(':') && (
+                          <p className="text-sm text-gray-600">
+                            {feature.description.split(':')[1]?.trim()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ];
+                })}
+              </div>
+            )}
           </div>
 
           <Separator />
 
-          {/* Support Section */}
-          <div>
-            <h4 className="font-semibold text-lg mb-3">Suporte incluído:</h4>
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                💬
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">
-                  {plan.features.support.description}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  {plan.features.support.channels.map((channel) => (
-                    <Badge key={channel} variant="outline" className="text-xs">
-                      {channel === 'email' && '📧 Email'}
-                      {channel === 'whatsapp' && '📱 WhatsApp'}
-                      {channel === 'ia_assistant' && '🤖 Assistente IA'}
-                      {channel === 'dedicated' && '👨‍💼 Dedicado'}
-                      {channel === 'phone' && '☎️ Telefone'}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Support Section - only show if detailed structure */}
+          {plan.features &&
+           (() => {
+             const support = plan.features.support;
+             // Type guard: check if support has the detailed structure
+             if (
+               typeof support === 'object' &&
+               support !== null &&
+               'description' in support &&
+               'channels' in support
+             ) {
+               const supportDetail = support as {
+                 description: string;
+                 channels: string[];
+               };
+               return (
+                 <div>
+                   <h4 className="font-semibold text-lg mb-3">Suporte incluído:</h4>
+                   <div className="flex items-start gap-3">
+                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                       💬
+                     </div>
+                     <div>
+                       <p className="font-medium text-gray-900">
+                         {supportDetail.description}
+                       </p>
+                       <div className="flex gap-2 mt-2">
+                         {supportDetail.channels.map((channel) => (
+                           <Badge key={channel} variant="outline" className="text-xs">
+                             {channel === 'email' && '📧 Email'}
+                             {channel === 'whatsapp' && '📱 WhatsApp'}
+                             {channel === 'ia_assistant' && '🤖 Assistente IA'}
+                             {channel === 'dedicated' && '👨‍💼 Dedicado'}
+                             {channel === 'phone' && '☎️ Telefone'}
+                           </Badge>
+                         ))}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               );
+             }
+             return null;
+           })()
+          }
 
           {/* Action Buttons */}
           <div className="space-y-3 pt-4">
