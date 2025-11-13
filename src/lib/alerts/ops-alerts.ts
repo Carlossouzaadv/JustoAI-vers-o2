@@ -5,6 +5,7 @@
 import { prisma } from '../prisma';
 import { usageTracker } from '../telemetry/usage-tracker';
 import { ICONS } from '../icons';
+import type { UsageEvent } from '@prisma/client';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -678,7 +679,7 @@ export class OpsAlerts {
     const todayBilling = todayMetadata?.billingEstimatedCost ? parseFloat(String(todayMetadata.billingEstimatedCost) || '0') : 0;
 
     const avgDaily = weeklyUsage.length > 0 ?
-      weeklyUsage.reduce((sum: number, day) => {
+      weeklyUsage.reduce((sum: number, day: UsageEvent) => {
         const dayMetadata = day.metadata as Record<string, unknown> | undefined;
         return sum + parseFloat(String(dayMetadata?.billingEstimatedCost) || '0');
       }, 0) / weeklyUsage.length :
