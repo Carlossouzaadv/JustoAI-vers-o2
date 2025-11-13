@@ -79,13 +79,21 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Interface for groupBy result item type
+    interface GroupedAlertCount {
+      severity: AlertSeverity;
+      _count: {
+        id: number;
+      };
+    }
+
     const countsBySeverity = counts.reduce(
-      (acc, item) => {
+      (acc: Record<string, number>, item: GroupedAlertCount) => {
         const countValue = item._count.id;
         acc[item.severity.toLowerCase()] = countValue;
         return acc;
       },
-      { critical: 0, high: 0, medium: 0, low: 0 } as Record<string, number>
+      { critical: 0, high: 0, medium: 0, low: 0 }
     );
 
     return NextResponse.json({
