@@ -193,6 +193,35 @@ interface VersionDiff {
 }
 
 /**
+ * Safely extracts a string property from unknown object
+ */
+function getStringProperty(obj: unknown, prop: string): string {
+  if (typeof obj !== 'object' || obj === null) {
+    return '';
+  }
+  const value = (obj as Record<string, unknown>)[prop];
+  return typeof value === 'string' ? value : '';
+}
+
+/**
+ * Safely extracts a number property from unknown object
+ */
+function getNumberProperty(obj: unknown, prop: string): number | null {
+  if (typeof obj !== 'object' || obj === null) {
+    return null;
+  }
+  const value = (obj as Record<string, unknown>)[prop];
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? null : parsed;
+  }
+  return null;
+}
+
+/**
  * Calcula diff entre duas versões (simplificado)
  */
 function calculateVersionDiff(
@@ -206,31 +235,39 @@ function calculateVersionDiff(
 
   const summaryParts: string[] = [];
 
+  // Extract properties safely
+  const prevAnalysisType = getStringProperty(previous, 'analysisType');
+  const currAnalysisType = getStringProperty(current, 'analysisType');
+  const prevModelUsed = getStringProperty(previous, 'modelUsed');
+  const currModelUsed = getStringProperty(current, 'modelUsed');
+  const prevConfidence = getNumberProperty(previous, 'confidence');
+  const currConfidence = getNumberProperty(current, 'confidence');
+
   // Tipo de análise
-  if (previous.analysisType !== current.analysisType) {
+  if (prevAnalysisType && currAnalysisType && prevAnalysisType !== currAnalysisType) {
     changes.analysisType = {
-      from: previous.analysisType,
-      to: current.analysisType
+      from: prevAnalysisType,
+      to: currAnalysisType
     };
-    summaryParts.push(`Tipo: ${previous.analysisType} → ${current.analysisType}`);
+    summaryParts.push(`Tipo: ${prevAnalysisType} → ${currAnalysisType}`);
   }
 
   // Modelo
-  if (previous.modelUsed !== current.modelUsed) {
+  if (prevModelUsed && currModelUsed && prevModelUsed !== currModelUsed) {
     changes.model = {
-      from: previous.modelUsed,
-      to: current.modelUsed
+      from: prevModelUsed,
+      to: currModelUsed
     };
     summaryParts.push(`Modelo alterado`);
   }
 
   // Confiança
-  if (previous.confidence && current.confidence) {
-    const confDiff = Number(current.confidence) - Number(previous.confidence);
+  if (prevConfidence !== null && currConfidence !== null) {
+    const confDiff = currConfidence - prevConfidence;
     if (Math.abs(confDiff) > 0.05) {
       changes.confidence = {
-        from: Number(previous.confidence),
-        to: Number(current.confidence),
+        from: prevConfidence,
+        to: currConfidence,
         delta: confDiff
       };
 

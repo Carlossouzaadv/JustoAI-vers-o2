@@ -141,10 +141,67 @@ function normalizeNullToUndefined<T>(value: T | null): T | undefined {
 }
 
 /**
+ * Type guard: Valida se um valor unknown é um Date
+ */
+function isDate(value: unknown): value is Date {
+  return value instanceof Date && !isNaN(value.getTime());
+}
+
+/**
+ * Type guard: Valida se um valor unknown é uma string
+ */
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+/**
+ * Type guard: Valida se um valor unknown é um número
+ */
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !isNaN(value);
+}
+
+/**
+ * Type guard: Valida se um valor unknown é TimelineSource
+ */
+function isTimelineSource(value: unknown): value is TimelineSource {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  const validSources: readonly string[] = [
+    'DOCUMENT_UPLOAD',
+    'API_JUDIT',
+    'MANUAL_ENTRY',
+    'SYSTEM_IMPORT',
+    'AI_EXTRACTION'
+  ];
+  return validSources.includes(value);
+}
+
+/**
+ * Type guard: Valida se um valor unknown é string[]
+ */
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+/**
+ * Type guard: Valida se um valor unknown é TimelineOriginalTexts (Record<string, string>)
+ */
+function isTimelineOriginalTexts(value: unknown): value is Record<string, string> {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return Object.values(value).every(v => typeof v === 'string');
+}
+
+/**
  * Enriquece entrada de timeline com ícone, metadados de fonte e dados de enriquecimento
  */
 function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
-  const sourceMetadata = SOURCE_METADATA[entry.source] || {
+  // Extrair source com type guard antes de usar como índice
+  const entrySource = isTimelineSource(entry.source) ? entry.source : TimelineSource.MANUAL_ENTRY;
+  const sourceMetadata = SOURCE_METADATA[entrySource] || {
     icon: '📌',
     name: 'Outro',
     color: '#64748B',
@@ -170,18 +227,43 @@ function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
     normalizedRelationType = undefined;
   }
 
+  // Extrair valores unknown de forma segura usando type guards
+  const eventDate = isDate(entry.eventDate) ? entry.eventDate : new Date();
+  const eventType = isString(entry.eventType) ? entry.eventType : 'UNKNOWN';
+  const description = isString(entry.description) ? entry.description : '';
+
+  // Extrair confidence com fallback seguro
+  const rawConfidence = entry.confidence;
+  const confidence = isNumber(rawConfidence) ? rawConfidence : 0.8;
+
+  // Extrair arrays com type guards
+  const contributingSources = isStringArray(entry.contributingSources)
+    ? entry.contributingSources
+    : undefined;
+
+  const linkedDocumentIds = isStringArray(entry.linkedDocumentIds)
+    ? entry.linkedDocumentIds
+    : undefined;
+
+  // Extrair originalTexts com type guard
+  const originalTexts = isTimelineOriginalTexts(entry.originalTexts)
+    ? entry.originalTexts
+    : undefined;
+
   // Normalizar baseEventId: null -> undefined
-  const normalizedBaseEventId = normalizeNullToUndefined(entry.baseEventId);
+  const baseEventId = isString(entry.baseEventId)
+    ? entry.baseEventId
+    : undefined;
 
   return {
     id: entry.id,
-    eventDate: entry.eventDate,
-    eventType: entry.eventType,
-    description: entry.description,
-    source: entry.source,
+    eventDate,
+    eventType,
+    description,
+    source: entrySource,
     sourceIcon: sourceMetadata.icon,
     sourceName: sourceMetadata.name,
-    confidence: entry.confidence || 0.8,
+    confidence,
     metadata: {
       ...metadata,
       sourceColor: sourceMetadata.color,
@@ -192,13 +274,13 @@ function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
     isEnriched: undefined,
     enrichedAt: undefined,
     enrichmentModel: undefined,
-    contributingSources: entry.contributingSources,
-    originalTexts: isRecord(entry.originalTexts) ? entry.originalTexts as Record<string, string> : undefined,
-    linkedDocumentIds: entry.linkedDocumentIds,
+    contributingSources,
+    originalTexts,
+    linkedDocumentIds,
     hasConflict: undefined,
     conflictDetails: undefined,
     relationType: normalizedRelationType,
-    baseEventId: normalizedBaseEventId,
+    baseEventId,
   };
 }
 
@@ -355,7 +437,7 @@ export async function GET(
     const documentTimelineEntries = documents.map((doc: DocumentForTimeline): TimelineEntryInput => {
       const metadata = isRecord(doc.metadata) ? doc.metadata : {};
       const linkedDocIds: string[] = [];
-      const contributingSourcesList: TimelineSource[] = ['DOCUMENT_UPLOAD'];
+      const contributingSourcesList: TimelineSource[] = [TimelineSource.DOCUMENT_UPLOAD];
       const enrichByIds: string[] = [];
 
       return {
@@ -366,7 +448,7 @@ export async function GET(
         eventType: doc.type || 'DOCUMENTO',
         description: `📎 ${doc.name || doc.originalName}`,
         normalizedContent: '',
-        source: 'DOCUMENT_UPLOAD' as TimelineSource,
+        source: TimelineSource.DOCUMENT_UPLOAD,
         sourceId: doc.id,
         metadata: {
           ...metadata,

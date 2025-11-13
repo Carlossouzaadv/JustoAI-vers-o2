@@ -26,6 +26,39 @@ function isRouteParams(params: unknown): params is { id: string } {
   return 'id' in p && typeof p.id === 'string';
 }
 
+/**
+ * Safely extracts a number from unknown, with fallback
+ */
+function safeNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && !isNaN(value)) {
+    return value;
+  }
+  return fallback;
+}
+
+/**
+ * Safely extracts a string from unknown, with fallback
+ */
+function safeString(value: unknown, fallback: string): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  return fallback;
+}
+
+/**
+ * Safely extracts a nullable string from unknown
+ */
+function safeNullableString(value: unknown): string | null {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value === null) {
+    return null;
+  }
+  return null;
+}
+
 // Types
 type VersionWithJobs = CaseAnalysisVersion & {
   jobs: AnalysisJob[];
@@ -177,19 +210,27 @@ export const GET = withErrorHandler(async (
       // Buscar job mais recente para esta versão
       const latestJob = current.jobs[0] || null;
 
+      // Safe extraction of properties from Record<string, unknown>
+      const costEstimate = safeNumber(current.costEstimate, 0);
+      const confidence = safeNumber(current.confidence, 0);
+      const processingTime = safeNumber(current.processingTime, 0);
+      const analysisType = safeString(current.analysisType, 'UNKNOWN');
+      const modelUsed = safeString(current.modelUsed, 'unknown');
+      const errorMessage = safeNullableString(current.error);
+
       const versionData: ProcessedVersion = {
         id: current.id,
-        versionNumber: current.version,
-        analysisType: current.analysisType,
-        modelUsed: current.modelUsed,
-        status: current.status,
+        versionNumber: safeNumber(current.version, 0),
+        analysisType,
+        modelUsed,
+        status: safeString(current.status, 'PENDING') as ProcessStatus,
         creditsUsed: {
-          full: current.costEstimate,
+          full: costEstimate,
           fast: 0,
-          total: current.costEstimate
+          total: costEstimate
         },
-        confidenceScore: current.confidence,
-        processingTime: current.processingTime,
+        confidenceScore: confidence,
+        processingTime,
         sourceFiles: {
           count: current.metadata && typeof current.metadata === 'object' && 'sourceFiles' in current.metadata && Array.isArray(current.metadata.sourceFiles)
             ? current.metadata.sourceFiles.length
@@ -198,20 +239,20 @@ export const GET = withErrorHandler(async (
             ? current.metadata.sourceFiles
             : null
         },
-        createdAt: current.createdAt,
+        createdAt: current.createdAt instanceof Date ? current.createdAt : new Date(String(current.createdAt)),
         createdBy: null,
         reportUrl: null,
-        errorMessage: current.error,
+        errorMessage,
         isLatest: i === 0,
         diff,
         job: latestJob ? {
           id: latestJob.id,
-          status: latestJob.status,
-          progress: latestJob.progress,
-          startedAt: latestJob.startedAt,
-          finishedAt: latestJob.finishedAt,
-          workerId: latestJob.workerId,
-          retryCount: latestJob.retryCount
+          status: safeString(latestJob.status, 'PENDING') as JobStatus,
+          progress: safeNumber(latestJob.progress, 0),
+          startedAt: latestJob.startedAt instanceof Date ? latestJob.startedAt : (latestJob.startedAt ? new Date(String(latestJob.startedAt)) : null),
+          finishedAt: latestJob.finishedAt instanceof Date ? latestJob.finishedAt : (latestJob.finishedAt ? new Date(String(latestJob.finishedAt)) : null),
+          workerId: safeNullableString(latestJob.workerId),
+          retryCount: safeNumber(latestJob.retryCount, 0)
         } : null
       };
 
@@ -230,25 +271,36 @@ export const GET = withErrorHandler(async (
     const stats = {
       totalVersions: versions.length,
       byType: {
-        fast: versions.filter((v: VersionWithJobs) => v.analysisType === 'FAST').length,
-        full: versions.filter((v: VersionWithJobs) => v.analysisType === 'FULL').length
+        fast: versions.filter((v: VersionWithJobs) => safeString(v.analysisType, '') === 'FAST').length,
+        full: versions.filter((v: VersionWithJobs) => safeString(v.analysisType, '') === 'FULL').length
       },
       byStatus: {
-        completed: versions.filter((v: VersionWithJobs) => v.status === 'COMPLETED').length,
-        failed: versions.filter((v: VersionWithJobs) => v.status === 'FAILED').length,
-        processing: versions.filter((v: VersionWithJobs) => v.status === 'PROCESSING').length,
-        pending: versions.filter((v: VersionWithJobs) => v.status === 'PENDING').length
+        completed: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'COMPLETED').length,
+        failed: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'FAILED').length,
+        processing: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'PROCESSING').length,
+        pending: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'PENDING').length
       },
       totalCreditsUsed: {
-        full: versions.reduce((sum: number, v: VersionWithJobs) => sum + v.costEstimate, 0),
+        full: versions.reduce((sum: number, v: VersionWithJobs) => sum + safeNumber(v.costEstimate, 0), 0),
         fast: 0
       },
       avgConfidence: versions
-        .filter((v: VersionWithJobs) => v.confidence && v.status === 'COMPLETED')
-        .reduce((sum: number, v: VersionWithJobs, _: number, arr: VersionWithJobs[]) => sum + v.confidence / arr.length, 0),
+        .filter((v: VersionWithJobs) => {
+          const conf = safeNumber(v.confidence, -1);
+          const status = safeString(v.status, '');
+          return conf >= 0 && status === 'COMPLETED';
+        })
+        .reduce((sum: number, v: VersionWithJobs, _: number, arr: VersionWithJobs[]) => {
+          const conf = safeNumber(v.confidence, 0);
+          return sum + conf / arr.length;
+        }, 0),
       dateRange: {
-        first: versions[versions.length - 1]?.createdAt,
-        last: versions[0]?.createdAt
+        first: versions[versions.length - 1]?.createdAt instanceof Date
+          ? versions[versions.length - 1]?.createdAt
+          : (versions[versions.length - 1]?.createdAt ? new Date(String(versions[versions.length - 1]?.createdAt)) : undefined),
+        last: versions[0]?.createdAt instanceof Date
+          ? versions[0]?.createdAt
+          : (versions[0]?.createdAt ? new Date(String(versions[0]?.createdAt)) : undefined)
       }
     };
 
@@ -286,35 +338,45 @@ function calculateVersionDiff(previous: VersionWithJobs, current: VersionWithJob
 
   const summaryParts: string[] = [];
 
+  // Safe extraction of values for comparison
+  const prevAnalysisType = safeString(previous.analysisType, '');
+  const currAnalysisType = safeString(current.analysisType, '');
+  const prevModelUsed = safeString(previous.modelUsed, '');
+  const currModelUsed = safeString(current.modelUsed, '');
+  const prevConfidence = safeNumber(previous.confidence, 0);
+  const currConfidence = safeNumber(current.confidence, 0);
+  const prevCredits = safeNumber(previous.costEstimate, 0);
+  const currCredits = safeNumber(current.costEstimate, 0);
+
   // Mudança de tipo de análise
-  if (previous.analysisType !== current.analysisType) {
+  if (prevAnalysisType !== currAnalysisType) {
     changes.analysisType = {
       changed: true,
-      from: previous.analysisType,
-      to: current.analysisType
+      from: prevAnalysisType,
+      to: currAnalysisType
     };
     changes.criticalChanges++;
-    summaryParts.push(`Tipo: ${previous.analysisType} → ${current.analysisType}`);
+    summaryParts.push(`Tipo: ${prevAnalysisType} → ${currAnalysisType}`);
   }
 
   // Mudança de modelo
-  if (previous.modelUsed !== current.modelUsed) {
+  if (prevModelUsed !== currModelUsed) {
     changes.model = {
       changed: true,
-      from: previous.modelUsed,
-      to: current.modelUsed
+      from: prevModelUsed,
+      to: currModelUsed
     };
     changes.criticalChanges++;
-    summaryParts.push(`Modelo: ${previous.modelUsed} → ${current.modelUsed}`);
+    summaryParts.push(`Modelo: ${prevModelUsed} → ${currModelUsed}`);
   }
 
   // Mudança de confiança
-  const confDiff = current.confidence - previous.confidence;
+  const confDiff = currConfidence - prevConfidence;
   if (Math.abs(confDiff) > 0.05) { // Mudança significativa > 5%
     changes.confidence = {
       changed: true,
-      from: previous.confidence,
-      to: current.confidence,
+      from: prevConfidence,
+      to: currConfidence,
       delta: confDiff
     };
     changes.totalChanges++;
@@ -355,9 +417,6 @@ function calculateVersionDiff(previous: VersionWithJobs, current: VersionWithJob
   }
 
   // Mudança nos créditos usados
-  const prevCredits = previous.costEstimate;
-  const currCredits = current.costEstimate;
-
   if (prevCredits !== currCredits) {
     changes.creditsUsed = {
       changed: true,

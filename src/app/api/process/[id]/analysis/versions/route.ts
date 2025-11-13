@@ -109,27 +109,61 @@ export async function GET(
 }
 
 /**
+ * Type guard to safely extract string field from CaseAnalysisVersion
+ */
+function getStringField(obj: CaseAnalysisVersion, field: string): string {
+  if (field in obj && typeof obj[field] === 'string') {
+    return obj[field] as string;
+  }
+  return '';
+}
+
+/**
+ * Type guard to safely extract number field from CaseAnalysisVersion
+ */
+function getNumberField(obj: CaseAnalysisVersion, field: string): number | null {
+  if (field in obj) {
+    const value = obj[field];
+    if (typeof value === 'number') {
+      return value;
+    }
+  }
+  return null;
+}
+
+/**
  * Calcula diff compacto entre duas versões
  */
 function calculateVersionDiff(current: CaseAnalysisVersion, previous: CaseAnalysisVersion): VersionDiffDetail {
+  // Safely extract fields with type guards
+  const currentAnalysisType = getStringField(current, 'analysisType');
+  const previousAnalysisType = getStringField(previous, 'analysisType');
+  const currentModelUsed = getStringField(current, 'modelUsed');
+  const previousModelUsed = getStringField(previous, 'modelUsed');
+  const currentConfidence = getNumberField(current, 'confidence');
+  const previousConfidence = getNumberField(previous, 'confidence');
+
   const diff: VersionDiffDetail = {
     analysisType: {
-      changed: current.analysisType !== previous.analysisType,
-      from: previous.analysisType,
-      to: current.analysisType
+      changed: currentAnalysisType !== previousAnalysisType,
+      from: previousAnalysisType,
+      to: currentAnalysisType
     },
     model: {
-      changed: current.modelUsed !== previous.modelUsed,
-      from: previous.modelUsed,
-      to: current.modelUsed
+      changed: currentModelUsed !== previousModelUsed,
+      from: previousModelUsed,
+      to: currentModelUsed
     },
     confidence: {
-      changed: Math.abs((current.confidence || 0) - (previous.confidence || 0)) > 0.05,
-      from: previous.confidence,
-      to: current.confidence,
-      delta: (current.confidence || 0) - (previous.confidence || 0)
+      changed: Math.abs((currentConfidence || 0) - (previousConfidence || 0)) > 0.05,
+      from: previousConfidence,
+      to: currentConfidence,
+      delta: (currentConfidence || 0) - (previousConfidence || 0)
     },
-    content: calculateContentDiff(current.aiAnalysis, previous.aiAnalysis)
+    content: calculateContentDiff(
+      'aiAnalysis' in current ? current.aiAnalysis : null,
+      'aiAnalysis' in previous ? previous.aiAnalysis : null
+    )
   };
 
   return diff;
@@ -211,26 +245,34 @@ function calculateContentDiff(
 function summarizeChanges(current: CaseAnalysisVersion, previous: CaseAnalysisVersion): VersionChangeSummary {
   const changes: ChangeDetail[] = [];
 
+  // Safely extract fields with type guards
+  const currentModelUsed = getStringField(current, 'modelUsed');
+  const previousModelUsed = getStringField(previous, 'modelUsed');
+  const currentAnalysisType = getStringField(current, 'analysisType');
+  const previousAnalysisType = getStringField(previous, 'analysisType');
+  const currentConfidence = getNumberField(current, 'confidence');
+  const previousConfidence = getNumberField(previous, 'confidence');
+
   // Mudança de modelo
-  if (current.modelUsed !== previous.modelUsed) {
+  if (currentModelUsed !== previousModelUsed) {
     changes.push({
       type: 'model_upgrade',
-      description: `Modelo atualizado: ${previous.modelUsed} → ${current.modelUsed}`,
+      description: `Modelo atualizado: ${previousModelUsed} → ${currentModelUsed}`,
       impact: 'medium'
     });
   }
 
   // Mudança de tipo de análise
-  if (current.analysisType !== previous.analysisType) {
+  if (currentAnalysisType !== previousAnalysisType) {
     changes.push({
       type: 'analysis_type',
-      description: `Tipo alterado: ${previous.analysisType} → ${current.analysisType}`,
+      description: `Tipo alterado: ${previousAnalysisType} → ${currentAnalysisType}`,
       impact: 'high'
     });
   }
 
   // Mudança significativa na confiança
-  const confidenceDelta = (current.confidence || 0) - (previous.confidence || 0);
+  const confidenceDelta = (currentConfidence || 0) - (previousConfidence || 0);
   if (Math.abs(confidenceDelta) > 0.1) {
     changes.push({
       type: 'confidence_change',

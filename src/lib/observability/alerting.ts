@@ -67,7 +67,7 @@ export async function sendAlert(options: AlertOptions): Promise<void> {
   const {
     workspaceId,
     type,
-    severity = 'MEDIUM',
+    severity = AlertSeverity.MEDIUM,
     title,
     message,
     errorCode,
@@ -196,7 +196,7 @@ async function sendSlackNotification(alert: AlertOptions): Promise<void> {
     return;
   }
 
-  const color = getSeverityColor(alert.severity || 'MEDIUM');
+  const color = getSeverityColor(alert.severity || AlertSeverity.MEDIUM);
 
   const payload = {
     attachments: [
@@ -305,7 +305,7 @@ export async function alertApiError(
 ): Promise<void> {
   await sendAlert({
     type: 'API_ERROR',
-    severity: 'HIGH',
+    severity: AlertSeverity.HIGH,
     title: 'JUDIT API Error',
     message: `Error calling ${context.method} ${context.endpoint}: ${error.message}`,
     errorCode: context.statusCode?.toString(),
@@ -330,7 +330,7 @@ export async function alertRateLimit(context: {
 }): Promise<void> {
   await sendAlert({
     type: 'RATE_LIMIT',
-    severity: 'MEDIUM',
+    severity: AlertSeverity.MEDIUM,
     title: 'JUDIT API Rate Limit',
     message: `Rate limit hit on ${context.endpoint}. Retry after ${context.retryAfter || 'unknown'}s`,
     metadata: context,
@@ -347,7 +347,7 @@ export async function alertCircuitBreaker(context: {
 }): Promise<void> {
   await sendAlert({
     type: 'CIRCUIT_BREAKER',
-    severity: 'CRITICAL',
+    severity: AlertSeverity.CRITICAL,
     title: 'Circuit Breaker Opened',
     message: `Circuit breaker opened for ${context.service}. Error rate: ${(context.errorRate * 100).toFixed(1)}%, Failed calls: ${context.failedCalls}`,
     metadata: context,
@@ -366,7 +366,7 @@ export async function alertTimeout(context: {
 }): Promise<void> {
   await sendAlert({
     type: 'TIMEOUT',
-    severity: 'HIGH',
+    severity: AlertSeverity.HIGH,
     title: 'Operation Timeout',
     message: `${context.operation} timed out after ${context.duration}ms (max: ${context.maxDuration}ms)`,
     requestId: context.requestId,
@@ -385,7 +385,7 @@ export async function alertAttachmentTrigger(context: {
 }): Promise<void> {
   await sendAlert({
     type: 'ATTACHMENT_TRIGGER',
-    severity: 'LOW',
+    severity: AlertSeverity.LOW,
     title: 'Attachment Fetch Triggered',
     message: `Attachment fetch triggered for ${context.numeroCnj}. Keywords: ${context.keywordsMatched.join(', ')}. Estimated cost: R$${context.estimatedCost.toFixed(2)}`,
     numeroCnj: context.numeroCnj,
@@ -404,7 +404,7 @@ export async function alertMonitoringFailed(context: {
 }): Promise<void> {
   await sendAlert({
     type: 'MONITORING_FAILED',
-    severity: 'MEDIUM',
+    severity: AlertSeverity.MEDIUM,
     title: 'Monitoring Check Failed',
     message: `Failed to check monitoring for ${context.numeroCnj}: ${context.error}`,
     numeroCnj: context.numeroCnj,
@@ -441,7 +441,7 @@ function getSeverityColor(severity: AlertSeverity | string): string {
 function formatEmailBody(alert: AlertOptions): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: ${getSeverityColor(alert.severity || 'MEDIUM')};">
+      <h2 style="color: ${getSeverityColor(alert.severity || AlertSeverity.MEDIUM)};">
         [${alert.severity}] ${alert.title}
       </h2>
 

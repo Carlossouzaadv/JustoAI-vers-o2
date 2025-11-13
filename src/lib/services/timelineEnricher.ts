@@ -9,7 +9,8 @@
  */
 
 import { Prisma } from '@prisma/client'
-import type { ProcessTimelineEntry, TimelineSource, EventRelationType, ProcessTimelineEntryUpdateInput, ProcessTimelineEntryCreateInput } from '@/lib/types/database';
+import type { ProcessTimelineEntry, ProcessTimelineEntryUpdateInput, ProcessTimelineEntryCreateInput } from '@/lib/types/database';
+import { TimelineSource, EventRelationType } from '@/lib/types/database';
 import { PrismaClient } from '@prisma/client';
 import { getTimelineConfig } from '@/lib/config/timelineConfig';
 import { isJuditSource } from '@/lib/utils/timelineSourceUtils';
@@ -57,6 +58,65 @@ export interface ConflictDetails {
  */
 function isObjectLike(metadata: unknown): metadata is Record<string, unknown> {
   return typeof metadata === 'object' && metadata !== null && !Array.isArray(metadata);
+}
+
+/**
+ * Type guard para validar se um ProcessTimelineEntry tem as propriedades necessárias
+ */
+function isValidTimelineEntry(entry: ProcessTimelineEntry): entry is ProcessTimelineEntry & {
+  eventDate: Date;
+  description: string;
+  eventType: string;
+  source: TimelineSource;
+  contributingSources: TimelineSource[];
+  enrichedByIds: string[];
+  metadata: unknown;
+  originalTexts: unknown;
+} {
+  if (typeof entry !== 'object' || entry === null) {
+    return false;
+  }
+
+  const e = entry as Record<string, unknown>;
+  return (
+    e.eventDate instanceof Date &&
+    typeof e.description === 'string' &&
+    typeof e.eventType === 'string' &&
+    typeof e.source === 'string' &&
+    Array.isArray(e.contributingSources) &&
+    Array.isArray(e.enrichedByIds)
+  );
+}
+
+/**
+ * Extrai contributingSources de forma segura
+ */
+function getContributingSources(entry: ProcessTimelineEntry): TimelineSource[] {
+  if (!isObjectLike(entry)) {
+    return [];
+  }
+  const sources = entry.contributingSources;
+  if (Array.isArray(sources)) {
+    return sources.filter((s): s is TimelineSource =>
+      typeof s === 'string' &&
+      Object.values(TimelineSource).includes(s as TimelineSource)
+    );
+  }
+  return [];
+}
+
+/**
+ * Extrai enrichedByIds de forma segura
+ */
+function getEnrichedByIds(entry: ProcessTimelineEntry): string[] {
+  if (!isObjectLike(entry)) {
+    return [];
+  }
+  const ids = entry.enrichedByIds;
+  if (Array.isArray(ids)) {
+    return ids.filter((id): id is string => typeof id === 'string');
+  }
+  return [];
 }
 
 /**
@@ -114,6 +174,9 @@ export class TimelineEnricherService {
 
     // Buscar candidatos por data
     const candidates = existingEvents.filter((e) => {
+      if (!isValidTimelineEntry(e)) {
+        return false;
+      }
       const daysDiff = Math.abs(
         (e.eventDate.getTime() - newEvent.date.getTime()) / (1000 * 60 * 60 * 24)
       );
@@ -128,6 +191,9 @@ export class TimelineEnricherService {
     let bestMatch: { event: ProcessTimelineEntry; similarity: number } | null = null;
 
     for (const candidate of candidates) {
+      if (!isValidTimelineEntry(candidate)) {
+        continue;
+      }
       const similarity = this.calculateSimilarity(
         newEvent.description,
         candidate.description
@@ -148,11 +214,11 @@ export class TimelineEnricherService {
 
     if (bestMatch.similarity >= this.config.similarityThresholdEnrichment) {
       // ENRICHMENT: novo evento adiciona contexto ao base
-      relationType = 'ENRICHMENT';
+      relationType = EventRelationType.ENRICHMENT;
       confidence = Math.min(confidence + 0.15, 1); // Boost se encontrou match forte
     } else if (bestMatch.similarity >= this.config.similarityThresholdRelated) {
       // RELATED: eventos semanticamente similares mas distintos
-      relationType = 'RELATED';
+      relationType = EventRelationType.RELATED;
     } else {
       // Sem associação clara
       return { baseEventId: null, relationType: null, similarity: bestMatch.similarity, confidence };
@@ -289,6 +355,10 @@ export class TimelineEnricherService {
     existing: ProcessTimelineEntry,
     newEvent: TimelineMovement
   ): ConflictDetails | null {
+    if (!isValidTimelineEntry(existing)) {
+      return null;
+    }
+
     // DATE_MISMATCH
     const daysDiff = Math.abs(
       (existing.eventDate.getTime() - newEvent.date.getTime()) / (1000 * 60 * 60 * 24)
@@ -337,10 +407,25 @@ export class TimelineEnricherService {
     newEvent: TimelineMovement,
     enrichmentResult: EnrichmentResult
   ): ProcessTimelineEntryUpdateInput {
+    const existingContributingSources = getContributingSources(baseEvent);
     const newContributingSource = [
-      ...baseEvent.contributingSources,
+      ...existingContributingSources,
       newEvent.source,
     ] as TimelineSource[];
+
+    const existingEnrichedByIds = getEnrichedByIds(baseEvent);
+
+    const baseMetadata = isObjectLike(baseEvent) && isObjectLike(baseEvent.metadata)
+      ? baseEvent.metadata
+      : {};
+
+    const existingEnrichmentHistory = Array.isArray(baseMetadata.enrichmentHistory)
+      ? baseMetadata.enrichmentHistory
+      : [];
+
+    const baseOriginalTexts = isObjectLike(baseEvent) && isObjectLike(baseEvent.originalTexts)
+      ? baseEvent.originalTexts
+      : {};
 
     return {
       description: enrichmentResult.enrichedDescription,
@@ -348,17 +433,15 @@ export class TimelineEnricherService {
       enrichedAt: new Date(),
       enrichmentModel: enrichmentResult.model,
       contributingSources: newContributingSource,
-      enrichedByIds: [...(baseEvent.enrichedByIds || []), newEvent.sourceId || 'unknown'],
+      enrichedByIds: [...existingEnrichedByIds, newEvent.sourceId || 'unknown'],
       originalTexts: {
-        ...(baseEvent.originalTexts as Record<string, string> || {}),
+        ...baseOriginalTexts,
         [newEvent.source]: newEvent.description,
       },
       metadata: {
-        ...(isObjectLike(baseEvent.metadata) ? baseEvent.metadata : {}),
+        ...baseMetadata,
         enrichmentHistory: [
-          ...(isObjectLike(baseEvent.metadata) && Array.isArray(baseEvent.metadata.enrichmentHistory)
-            ? baseEvent.metadata.enrichmentHistory
-            : []),
+          ...existingEnrichmentHistory,
           {
             timestamp: new Date(),
             source: newEvent.source,
@@ -389,7 +472,7 @@ export class TimelineEnricherService {
       sourceId: newEvent.sourceId,
       confidence: newEvent.confidence,
       metadata: filterJsonValue(newEvent.metadata),
-      relationType: 'RELATED',
+      relationType: EventRelationType.RELATED,
       baseEventId,
       contributingSources: [newEvent.source] as TimelineSource[],
       originalTexts: {

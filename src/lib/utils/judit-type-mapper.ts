@@ -71,7 +71,7 @@ function isGeminiAnalysisData(value: unknown): value is GeminiAnalysisData {
  * @returns CaseType enum value
  */
 export function mapJuditClassificationToCaseType(juditClassification: string): CaseType {
-  if (!juditClassification) return 'CIVIL'; // Default fallback
+  if (!juditClassification) return CaseType.CIVIL; // Default fallback
 
   const classification = juditClassification.toUpperCase().trim();
 
@@ -84,7 +84,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('MANDADO DE SEGURANÇA') ||
     classification.includes('HABEAS CORPUS')
   ) {
-    return 'CIVIL';
+    return CaseType.CIVIL;
   }
 
   // TRABALHISTA - Processos trabalhistas
@@ -93,7 +93,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('TRABALHISTA') ||
     classification.includes('RECLAMAÇÃO TRABALHISTA')
   ) {
-    return 'LABOR';
+    return CaseType.LABOR;
   }
 
   // TRIBUTÁRIO / EXECUÇÃO FISCAL - Processos de execução fiscal e tributários
@@ -104,7 +104,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('IMPOSTO') ||
     classification.includes('TAXA')
   ) {
-    return 'TAX';
+    return CaseType.TAX;
   }
 
   // PENAL / CRIMINAL - Processos criminais
@@ -114,7 +114,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('PENAL') ||
     classification.includes('CRIME')
   ) {
-    return 'CRIMINAL';
+    return CaseType.CRIMINAL;
   }
 
   // FAMÍLIA - Processos de família
@@ -127,7 +127,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('SUCESSÃO') ||
     classification.includes('FILIAÇÃO')
   ) {
-    return 'FAMILY';
+    return CaseType.FAMILY;
   }
 
   // COMERCIAL - Processos comerciais
@@ -137,7 +137,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('INSOLVÊNCIA') ||
     classification.includes('RECUPERAÇÃO JUDICIAL')
   ) {
-    return 'COMMERCIAL';
+    return CaseType.COMMERCIAL;
   }
 
   // ADMINISTRATIVO - Processos administrativos
@@ -146,7 +146,7 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('AÇÃO ADMINISTRATIVA') ||
     classification.includes('PROCESSO ADMINISTRATIVO')
   ) {
-    return 'ADMINISTRATIVE';
+    return CaseType.ADMINISTRATIVE;
   }
 
   // CONSTITUCIONAL - Ações constitucionais
@@ -158,11 +158,11 @@ export function mapJuditClassificationToCaseType(juditClassification: string): C
     classification.includes('ADC') ||
     classification.includes('ARGUIÇÃO DE DESCUMPRIMENTO')
   ) {
-    return 'CONSTITUTIONAL';
+    return CaseType.CONSTITUTIONAL;
   }
 
   // Se não conseguir mapear, retorna OTHER
-  return 'OTHER';
+  return CaseType.OTHER;
 }
 
 /**
@@ -191,7 +191,7 @@ export function extractCaseTypeFromJuditResponse(responseData: unknown): CaseTyp
   // Fallback: tentar extrair do campo phase se existir
   if (responseData.phase && typeof responseData.phase === 'string') {
     const mappedType = mapJuditClassificationToCaseType(responseData.phase);
-    if (mappedType !== 'OTHER') {
+    if (mappedType !== CaseType.OTHER) {
       console.log(`[CaseType Mapper] Extraído de phase: "${responseData.phase}" → ${mappedType}`);
       return mappedType;
     }
@@ -220,7 +220,7 @@ export function extractCaseTypeFromSubject(responseData: unknown): CaseType | nu
       const subjectName = (subject as { name?: unknown }).name;
       if (typeof subjectName === 'string') {
         const mappedType = mapJuditClassificationToCaseType(subjectName);
-        if (mappedType !== 'OTHER') {
+        if (mappedType !== CaseType.OTHER) {
           console.log(`[CaseType Mapper] Extraído de subject: "${subjectName}" → ${mappedType}`);
           return mappedType;
         }
@@ -248,7 +248,7 @@ export async function extractCaseTypeFromGeminiAnalysis(
   // Se documentAnalysis já tem um campo tipo/type, usar isso
   if (documentAnalysis.type && typeof documentAnalysis.type === 'string') {
     const mappedType = mapJuditClassificationToCaseType(documentAnalysis.type);
-    if (mappedType !== 'OTHER') {
+    if (mappedType !== CaseType.OTHER) {
       console.log(`[CaseType Mapper] Extraído de Gemini analysis.type: "${documentAnalysis.type}" → ${mappedType}`);
       return mappedType;
     }
@@ -257,7 +257,7 @@ export async function extractCaseTypeFromGeminiAnalysis(
   // Se tem um campo "subject" ou "assunto"
   if (documentAnalysis.subject && typeof documentAnalysis.subject === 'string') {
     const mappedType = mapJuditClassificationToCaseType(documentAnalysis.subject);
-    if (mappedType !== 'OTHER') {
+    if (mappedType !== CaseType.OTHER) {
       console.log(`[CaseType Mapper] Extraído de Gemini analysis.subject: "${documentAnalysis.subject}" → ${mappedType}`);
       return mappedType;
     }
@@ -266,7 +266,7 @@ export async function extractCaseTypeFromGeminiAnalysis(
   // Se tem um campo description que mencione o tipo
   if (documentAnalysis.description && typeof documentAnalysis.description === 'string') {
     const mappedType = mapJuditClassificationToCaseType(documentAnalysis.description);
-    if (mappedType !== 'OTHER') {
+    if (mappedType !== CaseType.OTHER) {
       console.log(`[CaseType Mapper] Extraído de Gemini analysis.description: → ${mappedType}`);
       return mappedType;
     }
