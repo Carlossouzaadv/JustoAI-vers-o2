@@ -11,6 +11,22 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // TYPES
 // ================================================================
 
+/**
+ * Interface representing the Prisma query result for case documents
+ */
+interface PrismaCaseDocument {
+  id: string;
+  name: string;
+  originalName: string;
+  type: string;
+  documentDate: Date | null;
+  metadata: Record<string, unknown> | null;
+  extractedText: string | null;
+  summary: string | null;
+  sourceOrigin: string;
+  createdAt: Date;
+}
+
 export interface DocumentSummaryData {
   id: string;
   name: string;
@@ -228,10 +244,10 @@ async function loadCaseDocuments(caseId: string): Promise<DocumentSummaryData[]>
     },
   });
 
-  return documents.map((doc) => ({
+  return documents.map((doc: PrismaCaseDocument): DocumentSummaryData => ({
     ...doc,
     metadata: doc.metadata || {},
-  })) as DocumentSummaryData[];
+  }));
 }
 
 /**
