@@ -96,6 +96,15 @@ function getAlertRecipients(data: unknown): string[] {
   return [];
 }
 
+/**
+ * Interface para itens retornados pela query de movimentações existentes
+ * Representa o formato selecionado: { date, description }
+ */
+interface ExistingMovementKey {
+  date: Date;
+  description: string;
+}
+
 // ================================
 // CLASSE PRINCIPAL DO MONITOR
 // ================================
@@ -314,7 +323,7 @@ export class ProcessMonitor {
         });
 
         const existingKeys = new Set(
-          existingMovements.map(m => `${m.date.toISOString()}_${m.description}`)
+          existingMovements.map((m: ExistingMovementKey) => `${m.date.toISOString()}_${m.description}`)
         );
 
         const newMovements = recentMovements.filter(movement => {
