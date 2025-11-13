@@ -21,6 +21,33 @@ import type { Workspace } from '@prisma/client'
 import { Prisma } from '@prisma/client'
 
 // ================================
+// TYPE ALIASES
+// ================================
+
+/**
+ * Type for Workspace with included relations from findMany query
+ * Captures the exact return type from Prisma query with users and _count
+ */
+type WorkspaceWithRelations = Prisma.WorkspaceGetPayload<{
+  include: {
+    users: {
+      select: {
+        role: true
+        status: true
+        createdAt: true
+      }
+    }
+    _count: {
+      select: {
+        users: true
+        clients: true
+        cases: true
+      }
+    }
+  }
+}>
+
+// ================================
 // TYPE GUARDS FOR DATA SAFETY
 // ================================
 
@@ -221,10 +248,10 @@ async function GET(request: NextRequest) {
 
   // Validate and transform data with type guard
   const transformedWorkspaces = workspacesRaw
-    .filter((workspace): workspace is typeof workspacesRaw[0] =>
+    .filter((workspace: WorkspaceWithRelations): workspace is WorkspaceWithRelations =>
       isWorkspaceWithUsers(workspace, true)
     )
-    .map(workspace => {
+    .map((workspace: WorkspaceWithRelations) => {
       // After narrowing, workspace.users is guaranteed to exist and be valid
       const userRole = workspace.users[0]?.role
       const userStatus = workspace.users[0]?.status
