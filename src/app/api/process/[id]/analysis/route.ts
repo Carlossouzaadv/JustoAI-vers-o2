@@ -25,6 +25,39 @@ import {
 import { isAIAnalysisData } from '@/lib/types/type-guards';
 import type { AIAnalysisData } from '@/lib/types/json-fields';
 
+// ================================================================
+// INTERFACES - Query Results (Type-Safe Prisma Selects)
+// ================================================================
+
+/**
+ * Interface para resultado da query de análises (linha 121)
+ * Baseada no select de prisma.caseAnalysisVersion.findMany()
+ */
+interface AnalysisVersionFromQuery {
+  id: string;
+  version: number;
+  status: string;
+  analysisType: string;
+  modelUsed: string | null;
+  aiAnalysis: unknown;
+  confidence: number | null;
+  processingTime: number | null;
+  createdAt: Date;
+  metadata: unknown;
+}
+
+/**
+ * Interface para resultado da query de documentos (linha 284)
+ * Baseada no select de prisma.caseDocument.findMany()
+ */
+interface CaseDocumentFromQuery {
+  id: string;
+  cleanText: string | null;
+  extractedText: string | null;
+  originalName: string;
+  type: string | null;
+}
+
 /**
  * Type Guard: Valida se valor é um JSON válido (exclui null e undefined)
  * PADRÃO-OURO: Type predicate sem casting
@@ -142,7 +175,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      analyses: analyses.map((a) => {
+      analyses: analyses.map((a: AnalysisVersionFromQuery) => {
         // --- VALIDAÇÃO DO OUTPUT (JSON) ---
         // Validar o campo 'aiAnalysis' usando type-guard
         if (!isAIAnalysisData(a.aiAnalysis)) {
@@ -297,7 +330,7 @@ export async function POST(
 
     // Concatenar texto dos documentos
     const fullText = documents
-      .map(d => d.cleanText || d.extractedText || '')
+      .map((d: CaseDocumentFromQuery) => d.cleanText || d.extractedText || '')
       .filter(Boolean)
       .join('\n\n');
 
