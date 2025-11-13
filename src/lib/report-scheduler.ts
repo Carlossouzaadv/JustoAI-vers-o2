@@ -9,7 +9,7 @@ import { ReportGenerator } from '@/lib/report-generator';
 import { ICONS } from '@/lib/icons';
 import { sendReportReady } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
-import { ReportType, AudienceType, OutputFormat } from '@prisma/client';
+import { ReportType, AudienceType, OutputFormat } from '@/lib/types/database';
 
 export interface ScheduleConfig {
   windowStart: string;    // "23:00"

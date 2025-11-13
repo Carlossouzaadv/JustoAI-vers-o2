@@ -12,7 +12,7 @@ import {
   getSourcePriority,
   isJuditSource,
 } from '@/lib/utils/timelineSourceUtils';
-import { TimelineSource } from '@prisma/client';
+import { TimelineSource } from '@/lib/types/database';
 import { AlertTriangle, ExternalLink, Sparkles } from 'lucide-react';
 
 export interface EnrichedTimelineEventProps {

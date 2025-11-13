@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { CaseWhereInput } from '@/lib/types/database';
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import {
@@ -146,7 +147,7 @@ function isValidCaseType(value: unknown): value is 'CIVIL' | 'CRIMINAL' | 'LABOR
 
 /**
  * Build safe Prisma Case WHERE conditions (Padrão-Ouro - 100% Type Safe)
- * Constructs Prisma.CaseWhereInput with full type safety through enum validation
+ * Constructs CaseWhereInput with full type safety through enum validation
  */
 function buildCaseFilters(params: {
   workspaceIds: string[]
@@ -155,8 +156,8 @@ function buildCaseFilters(params: {
   type?: string
   priority?: string
   clientId?: string
-}): Prisma.CaseWhereInput {
-  const conditions: Prisma.CaseWhereInput = {
+}): CaseWhereInput {
+  const conditions: CaseWhereInput = {
     workspaceId: { in: params.workspaceIds }
   };
 
@@ -238,7 +239,7 @@ async function GET(request: NextRequest) {
     return paginatedResponse([], page, limit, 0, 'No cases found')
   }
 
-  // Build filters - Type-safe Prisma.CaseWhereInput with enum validation (Padrão-Ouro 100%)
+  // Build filters - Type-safe CaseWhereInput with enum validation (Padrão-Ouro 100%)
   const whereConfig = buildCaseFilters({
     workspaceIds,
     search: search || undefined,

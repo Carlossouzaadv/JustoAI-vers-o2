@@ -15,61 +15,514 @@
  * ================================================================
  */
 
-import type { Decimal } from '@prisma/client/runtime/library';
-import type {
-  Plan,
-  Status,
-  Role,
-  WorkspaceRole,
-  ClientType,
-  CaseType,
-  CaseStatus,
-  Priority,
-  FeeType,
-  EventType,
-  DocumentType,
-  ProcessStatus,
-  ProcessOnboardingStatus,
-  AnalysisType,
-  ReportType,
-  Frequency,
-  CacheType,
-  MonitoringStatus,
-  SyncFrequency,
-  ProcessSource,
-  ExtractionMethod,
-  MovementCategory,
-  AlertType,
-  SyncType,
-  SyncStatus,
-  BatchStatus,
-  SourceSystem,
-  ImportStatus,
-  ImportedDataType,
-  ImportItemStatus,
-  SyncMode,
-  SyncSchedule,
-  ExecutionStatus,
-  LogLevel,
-  LogCategory,
-  TimelineSource,
-  EventRelationType,
-  CreditAllocationType,
-  CreditTransactionType,
-  CreditCategory,
-  UsageStatus,
-  UploadBatchStatus,
-  UploadRowStatus,
-  JobStatus,
-  AudienceType,
-  OutputFormat,
-  JuditOperationType,
-  JuditAlertType,
-  AlertSeverity,
-  WebhookDeliveryStatus,
-  JobExecutionStatus,
-  HealthStatus,
-} from '@prisma/client';
+import type { Decimal, InputJsonValue } from '@prisma/client/runtime/library';
+
+// Re-export InputJsonValue for use throughout the codebase
+export type { InputJsonValue };
+
+// ================================================================
+// LOCAL ENUM DEFINITIONS (Prisma Client fallback)
+// ================================================================
+// These enums are defined locally because Prisma Client generation
+// failed. They mirror the exact enums from schema.prisma.
+
+export enum TimelineSource {
+  DOCUMENT_UPLOAD = 'DOCUMENT_UPLOAD',
+  API_JUDIT = 'API_JUDIT',
+  MANUAL_ENTRY = 'MANUAL_ENTRY',
+  SYSTEM_IMPORT = 'SYSTEM_IMPORT',
+  AI_EXTRACTION = 'AI_EXTRACTION'
+}
+
+export enum EventRelationType {
+  DUPLICATE = 'DUPLICATE',
+  ENRICHMENT = 'ENRICHMENT',
+  RELATED = 'RELATED',
+  CONFLICT = 'CONFLICT'
+}
+
+export enum CreditCategory {
+  REPORT = 'REPORT',
+  FULL = 'FULL'
+}
+
+export enum JobStatus {
+  QUEUED = 'QUEUED',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum AudienceType {
+  CLIENTE = 'CLIENTE',
+  DIRETORIA = 'DIRETORIA',
+  USO_INTERNO = 'USO_INTERNO'
+}
+
+export enum OutputFormat {
+  PDF = 'PDF',
+  DOCX = 'DOCX'
+}
+
+export enum AlertSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL'
+}
+
+// ================================================================
+// ADDITIONAL ENUM DEFINITIONS (from schema.prisma)
+// ================================================================
+// All remaining enums needed by the application
+
+export enum Plan {
+  FREE = 'FREE',
+  STARTER = 'STARTER',
+  PROFESSIONAL = 'PROFESSIONAL',
+}
+
+export enum Status {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  DELETED = 'DELETED',
+}
+
+export enum Role {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+  VIEWER = 'VIEWER',
+}
+
+export enum WorkspaceRole {
+  OWNER = 'OWNER',
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+  VIEWER = 'VIEWER',
+}
+
+export enum ClientType {
+  INDIVIDUAL = 'INDIVIDUAL',
+  COMPANY = 'COMPANY',
+  GOVERNMENT = 'GOVERNMENT',
+  NGO = 'NGO',
+}
+
+export enum CaseType {
+  CIVIL = 'CIVIL',
+  CRIMINAL = 'CRIMINAL',
+  LABOR = 'LABOR',
+  FAMILY = 'FAMILY',
+  COMMERCIAL = 'COMMERCIAL',
+  ADMINISTRATIVE = 'ADMINISTRATIVE',
+  CONSTITUTIONAL = 'CONSTITUTIONAL',
+  TAX = 'TAX',
+  OTHER = 'OTHER',
+}
+
+export enum CaseStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  CLOSED = 'CLOSED',
+  ARCHIVED = 'ARCHIVED',
+  CANCELLED = 'CANCELLED',
+  UNASSIGNED = 'UNASSIGNED',
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export enum FeeType {
+  FIXED = 'FIXED',
+  HOURLY = 'HOURLY',
+  SUCCESS_FEE = 'SUCCESS_FEE',
+  MIXED = 'MIXED',
+}
+
+export enum EventType {
+  NOTE = 'NOTE',
+  CALL = 'CALL',
+  MEETING = 'MEETING',
+  EMAIL = 'EMAIL',
+  DOCUMENT_RECEIVED = 'DOCUMENT_RECEIVED',
+  DOCUMENT_SENT = 'DOCUMENT_SENT',
+  DOCUMENT_UPDATED = 'DOCUMENT_UPDATED',
+  DOCUMENT_DELETED = 'DOCUMENT_DELETED',
+  HEARING = 'HEARING',
+  DEADLINE = 'DEADLINE',
+  PAYMENT = 'PAYMENT',
+  OTHER = 'OTHER',
+}
+
+export enum DocumentType {
+  CONTRACT = 'CONTRACT',
+  PETITION = 'PETITION',
+  MOTION = 'MOTION',
+  EVIDENCE = 'EVIDENCE',
+  CORRESPONDENCE = 'CORRESPONDENCE',
+  COURT_ORDER = 'COURT_ORDER',
+  JUDGMENT = 'JUDGMENT',
+  APPEAL = 'APPEAL',
+  AGREEMENT = 'AGREEMENT',
+  INVOICE = 'INVOICE',
+  OTHER = 'OTHER',
+}
+
+export enum ProcessStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ProcessOnboardingStatus {
+  created = 'created',
+  previewed = 'previewed',
+  enriching = 'enriching',
+  enriched = 'enriched',
+  analysis_pending = 'analysis_pending',
+  analyzed = 'analyzed',
+}
+
+export enum AnalysisType {
+  GENERAL = 'GENERAL',
+  RISK_ASSESSMENT = 'RISK_ASSESSMENT',
+  DOCUMENT_REVIEW = 'DOCUMENT_REVIEW',
+  CASE_STRATEGY = 'CASE_STRATEGY',
+  PRECEDENT_RESEARCH = 'PRECEDENT_RESEARCH',
+  CONTRACT_ANALYSIS = 'CONTRACT_ANALYSIS',
+  COMPLIANCE_CHECK = 'COMPLIANCE_CHECK',
+}
+
+export enum ReportType {
+  CASE_SUMMARY = 'CASE_SUMMARY',
+  FINANCIAL = 'FINANCIAL',
+  PRODUCTIVITY = 'PRODUCTIVITY',
+  DEADLINE_ALERTS = 'DEADLINE_ALERTS',
+  CUSTOM = 'CUSTOM',
+  COMPLETO = 'COMPLETO',
+  NOVIDADES = 'NOVIDADES',
+}
+
+export enum Frequency {
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  BIWEEKLY = 'BIWEEKLY',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  YEARLY = 'YEARLY',
+}
+
+export enum CacheType {
+  ANALYSIS = 'ANALYSIS',
+  DOCUMENT_SUMMARY = 'DOCUMENT_SUMMARY',
+  PRECEDENT_SEARCH = 'PRECEDENT_SEARCH',
+  RISK_ASSESSMENT = 'RISK_ASSESSMENT',
+  CONTRACT_REVIEW = 'CONTRACT_REVIEW',
+}
+
+export enum MonitoringStatus {
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  STOPPED = 'STOPPED',
+  ERROR = 'ERROR',
+}
+
+export enum SyncFrequency {
+  HOURLY = 'HOURLY',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MANUAL = 'MANUAL',
+}
+
+export enum ProcessSource {
+  JUDIT_API = 'JUDIT_API',
+  CODILO_API = 'CODILO_API',
+  MANUAL_INPUT = 'MANUAL_INPUT',
+  EXCEL_UPLOAD = 'EXCEL_UPLOAD',
+}
+
+export enum ExtractionMethod {
+  API = 'API',
+  WEB_SCRAPING = 'WEB_SCRAPING',
+  MANUAL = 'MANUAL',
+}
+
+export enum MovementCategory {
+  HEARING = 'HEARING',
+  DECISION = 'DECISION',
+  PETITION = 'PETITION',
+  DOCUMENT_REQUEST = 'DOCUMENT_REQUEST',
+  DEADLINE = 'DEADLINE',
+  NOTIFICATION = 'NOTIFICATION',
+  APPEAL = 'APPEAL',
+  SETTLEMENT = 'SETTLEMENT',
+  OTHER = 'OTHER',
+}
+
+export enum AlertType {
+  MOVEMENT = 'MOVEMENT',
+  DEADLINE = 'DEADLINE',
+  ERROR = 'ERROR',
+  SYNC_FAILURE = 'SYNC_FAILURE',
+  IMPORTANT_DECISION = 'IMPORTANT_DECISION',
+}
+
+export enum SyncType {
+  FULL = 'FULL',
+  INCREMENTAL = 'INCREMENTAL',
+  MANUAL = 'MANUAL',
+}
+
+export enum SyncStatus {
+  SUCCESS = 'SUCCESS',
+  PARTIAL_SUCCESS = 'PARTIAL_SUCCESS',
+  FAILED = 'FAILED',
+  TIMEOUT = 'TIMEOUT',
+}
+
+export enum BatchStatus {
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum SourceSystem {
+  PROJURIS = 'PROJURIS',
+  LEGAL_ONE = 'LEGAL_ONE',
+  ASTREA = 'ASTREA',
+  CP_PRO = 'CP_PRO',
+  SAJ = 'SAJ',
+  ESAJ = 'ESAJ',
+  PJE = 'PJE',
+  THEMIS = 'THEMIS',
+  ADVBOX = 'ADVBOX',
+  JUSBRASIL = 'JUSBRASIL',
+  UNKNOWN = 'UNKNOWN',
+}
+
+export enum ImportStatus {
+  ANALYZING = 'ANALYZING',
+  MAPPING = 'MAPPING',
+  VALIDATING = 'VALIDATING',
+  IMPORTING = 'IMPORTING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ImportedDataType {
+  CASE = 'CASE',
+  CLIENT = 'CLIENT',
+  EVENT = 'EVENT',
+  DOCUMENT = 'DOCUMENT',
+  LAWYER = 'LAWYER',
+  CONTACT = 'CONTACT',
+  FINANCIAL = 'FINANCIAL',
+  DEADLINE = 'DEADLINE',
+  OTHER = 'OTHER',
+}
+
+export enum ImportItemStatus {
+  IMPORTED = 'IMPORTED',
+  UPDATED = 'UPDATED',
+  SKIPPED = 'SKIPPED',
+  FAILED = 'FAILED',
+  DUPLICATE = 'DUPLICATE',
+}
+
+export enum SyncMode {
+  IMPORT_ONLY = 'IMPORT_ONLY',
+  BIDIRECTIONAL = 'BIDIRECTIONAL',
+  EXPORT_ONLY = 'EXPORT_ONLY',
+}
+
+export enum SyncSchedule {
+  MANUAL = 'MANUAL',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  REAL_TIME = 'REAL_TIME',
+}
+
+export enum ExecutionStatus {
+  AGENDADO = 'AGENDADO',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum LogLevel {
+  DEBUG = 'DEBUG',
+  INFO = 'INFO',
+  WARN = 'WARN',
+  ERROR = 'ERROR',
+  FATAL = 'FATAL',
+}
+
+export enum LogCategory {
+  SYSTEM = 'SYSTEM',
+  USER_ACTION = 'USER_ACTION',
+  API_CALL = 'API_CALL',
+  SYNC = 'SYNC',
+  REPORT = 'REPORT',
+  AUTH = 'AUTH',
+  UPLOAD = 'UPLOAD',
+  ANALYSIS = 'ANALYSIS',
+  MONITORING = 'MONITORING',
+}
+
+export enum CreditAllocationType {
+  MONTHLY = 'MONTHLY',
+  BONUS = 'BONUS',
+  PACK = 'PACK',
+}
+
+export enum CreditTransactionType {
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT',
+}
+
+export enum UsageStatus {
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  INSUFFICIENT_CREDITS = 'INSUFFICIENT_CREDITS',
+}
+
+export enum UploadBatchStatus {
+  PROCESSING = 'PROCESSING',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum UploadRowStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  SKIPPED = 'SKIPPED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum JuditOperationType {
+  ONBOARDING = 'ONBOARDING',
+  MONITORING_CHECK = 'MONITORING_CHECK',
+  ATTACHMENT_FETCH = 'ATTACHMENT_FETCH',
+  MANUAL_SEARCH = 'MANUAL_SEARCH',
+}
+
+export enum JuditAlertType {
+  API_ERROR = 'API_ERROR',
+  RATE_LIMIT = 'RATE_LIMIT',
+  CIRCUIT_BREAKER = 'CIRCUIT_BREAKER',
+  HIGH_COST = 'HIGH_COST',
+  TIMEOUT = 'TIMEOUT',
+  ATTACHMENT_TRIGGER = 'ATTACHMENT_TRIGGER',
+  MONITORING_FAILED = 'MONITORING_FAILED',
+}
+
+export enum WebhookDeliveryStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  RETRYING = 'RETRYING',
+  SKIPPED = 'SKIPPED',
+}
+
+export enum WebhookQueueStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  RETRYING = 'RETRYING',
+  SKIPPED = 'SKIPPED',
+}
+
+export enum JobExecutionStatus {
+  PENDING = 'PENDING',
+  RUNNING = 'RUNNING',
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  RETRYING = 'RETRYING',
+  CANCELLED = 'CANCELLED',
+  TIMEOUT = 'TIMEOUT',
+}
+
+export enum HealthStatus {
+  HEALTHY = 'HEALTHY',
+  DEGRADED = 'DEGRADED',
+  UNHEALTHY = 'UNHEALTHY',
+  UNKNOWN = 'UNKNOWN',
+}
+
+// ================================================================
+// PRISMA MODEL TYPE ALIASES
+// ================================================================
+// Fallback type definitions when Prisma Client is not fully generated
+// These are minimal interfaces that allow type checking
+
+export type Workspace = Record<string, unknown> & { id: string; name: string; slug: string };
+export type User = Record<string, unknown> & { id: string; email: string };
+export type UserWorkspace = Record<string, unknown> & { userId: string; workspaceId: string };
+export type MonitoredProcess = Record<string, unknown> & { id: string; processNumber: string };
+export type ProcessMovement = Record<string, unknown> & { id: string; processId: string };
+export type ProcessTimelineEntry = Record<string, unknown> & { id: string; caseId: string };
+export type CaseDocument = Record<string, unknown> & { id: string; caseId: string };
+export type CaseAnalysisVersion = Record<string, unknown> & { id: string; caseId: string };
+export type AnalysisJob = Record<string, unknown> & { id: string; caseAnalysisVersionId: string };
+export type SystemImport = Record<string, unknown> & { id: string; workspaceId: string };
+export type ImportedDataItem = Record<string, unknown> & { id: string; systemImportId: string };
+export type UsageEvent = Record<string, unknown> & { id: string; workspaceId: string };
+
+// ================================================================
+// PRISMA OPERATION TYPES
+// ================================================================
+// Type aliases for Prisma operation types (WhereInput, UpdateInput, etc.)
+// These are fallbacks when Prisma Client is not fully generated
+
+// Where Input Types (for filtering)
+export type CaseWhereInput = Partial<Record<string, unknown>>;
+export type ClientWhereInput = Partial<Record<string, unknown>>;
+export type ProcessAlertWhereInput = Partial<Record<string, unknown>>;
+export type WorkspaceWhereInput = Partial<Record<string, unknown>>;
+export type CaseAnalysisVersionWhereInput = Partial<Record<string, unknown>>;
+export type SystemImportWhereInput = Partial<Record<string, unknown>>;
+
+// Update Input Types (for updates)
+export type ClientUpdateInput = Partial<Record<string, unknown>>;
+export type ProcessTimelineEntryUpdateInput = Partial<Record<string, unknown>>;
+
+// Create Input Types (for creation)
+export type ProcessTimelineEntryCreateInput = Record<string, unknown>;
+export type WorkspaceCreateInput = Record<string, unknown>;
+
+// OrderBy Types (for sorting)
+export type ProcessAlertOrderByWithRelationInput = Partial<Record<string, 'asc' | 'desc'>>;
+
+// GetPayload Types (for type inference)
+export type WorkspaceGetPayload<T> = Workspace & Record<string, unknown>;
+export type UserWorkspaceGetPayload<T> = UserWorkspace & Record<string, unknown>;
+
+// FindMany Args Types
+export type CreditTransactionFindManyArgs = {
+  where?: Partial<Record<string, unknown>>;
+  orderBy?: Partial<Record<string, 'asc' | 'desc'>>;
+  skip?: number;
+  take?: number;
+  include?: Partial<Record<string, boolean>>;
+};
 
 // ================================================================
 // CORE DOMAIN ENTITIES

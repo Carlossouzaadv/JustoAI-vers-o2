@@ -5,7 +5,7 @@
 import { prisma } from '../prisma';
 import { usageTracker } from '../telemetry/usage-tracker';
 import { ICONS } from '../icons';
-import type { UsageEvent } from '@prisma/client';
+import { UsageEvent } from '@/lib/types/database';
 
 // ================================================================
 // TIPOS E INTERFACES

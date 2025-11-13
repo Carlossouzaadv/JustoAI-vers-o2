@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { InputJsonValue, ClientUpdateInput } from '@/lib/types/database';
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
 import {
@@ -136,7 +137,7 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
   }
 
   // Update client - serialize metadata to JSON (Padrão-Ouro)
-  const updateData: Prisma.ClientUpdateInput = {
+  const updateData: ClientUpdateInput = {
     ...(input.name !== undefined && { name: input.name }),
     ...(input.email !== undefined && { email: input.email }),
     ...(input.phone !== undefined && { phone: input.phone }),
@@ -149,7 +150,7 @@ async function PUT(request: NextRequest, { params }: RouteContext) {
     ...(input.zipCode !== undefined && { zipCode: input.zipCode }),
     ...(input.country !== undefined && { country: input.country }),
     ...(input.notes !== undefined && { notes: input.notes }),
-    ...(input.metadata && { metadata: JSON.parse(JSON.stringify(input.metadata)) as Prisma.InputJsonValue }),
+    ...(input.metadata && { metadata: JSON.parse(JSON.stringify(input.metadata)) as InputJsonValue }),
   };
 
   const client = await prisma.client.update({

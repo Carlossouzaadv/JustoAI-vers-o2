@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { addCredits } from '@/lib/services/creditService';
-import { CreditCategory } from '@prisma/client';
+import { CreditCategory } from '@/lib/types/database';
 import { z } from 'zod';
 
 // Validation schema

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS } from '@/lib/icons';
 import { EnrichedTimelineEvent, EnrichedTimelineEventProps } from '@/components/timeline/EnrichedTimelineEvent';
-import { TimelineSource } from '@prisma/client';
+import { TimelineSource } from '@/lib/types/database';
 
 interface TimelineEvent extends EnrichedTimelineEventProps {
   // Extensão com campos adicionais se necessário

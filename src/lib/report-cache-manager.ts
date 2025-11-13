@@ -5,7 +5,7 @@
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ICONS } from '@/lib/icons';
-import { ReportType, AudienceType } from '@prisma/client';
+import { ReportType, AudienceType } from '@/lib/types/database';
 
 // ================================================================
 // Type Guard para Validação Segura de Configuração de Cache

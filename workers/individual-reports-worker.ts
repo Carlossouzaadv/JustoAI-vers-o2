@@ -11,7 +11,7 @@ import { getRedisClient } from '@/lib/redis';
 import { createHash } from 'crypto';
 
 // Imports do Prisma
-import { ExecutionStatus } from '@prisma/client';
+import { ExecutionStatus } from '@/lib/types/database';
 
 // Interfaces para o worker
 interface IndividualReportJobData {

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-import { OutputFormat } from '@prisma/client';
+import { OutputFormat } from '@/lib/types/database';
 import fs from 'fs/promises';
 import path from 'path';
 

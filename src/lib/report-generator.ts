@@ -5,7 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
-import { ReportType, AudienceType, OutputFormat } from '@prisma/client';
+import { ReportType, AudienceType, OutputFormat } from '@/lib/types/database';
 import { ICONS } from '@/lib/icons';
 import { getGeminiClient } from './gemini-client';
 import { ModelTier } from './ai-model-router';

@@ -4,6 +4,7 @@
 // Endpoints para visualizar e gerenciar alertas de processos
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { ProcessAlertWhereInput, ProcessAlertOrderByWithRelationInput } from '@/lib/types/database';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
@@ -49,8 +50,8 @@ type QueryType = z.infer<typeof QuerySchema>;
 /**
  * Constrói filtro WHERE de forma type-safe
  */
-function buildWhereFilter(query: QueryType, workspaceId: string): Prisma.ProcessAlertWhereInput {
-  const where: Prisma.ProcessAlertWhereInput = {
+function buildWhereFilter(query: QueryType, workspaceId: string): ProcessAlertWhereInput {
+  const where: ProcessAlertWhereInput = {
     monitoredProcess: {
       workspaceId
     }
@@ -80,7 +81,7 @@ function buildWhereFilter(query: QueryType, workspaceId: string): Prisma.Process
 /**
  * Constrói ordenação de forma type-safe
  */
-function buildOrderBy(query: QueryType): Prisma.ProcessAlertOrderByWithRelationInput | Prisma.ProcessAlertOrderByWithRelationInput[] {
+function buildOrderBy(query: QueryType): ProcessAlertOrderByWithRelationInput | ProcessAlertOrderByWithRelationInput[] {
   if (query.sortBy === 'severity') {
     // Ordenação especial para severidade (URGENT > HIGH > MEDIUM > LOW)
     return [
@@ -91,7 +92,7 @@ function buildOrderBy(query: QueryType): Prisma.ProcessAlertOrderByWithRelationI
     ];
   }
 
-  return { [query.sortBy]: query.sortOrder } as Prisma.ProcessAlertOrderByWithRelationInput;
+  return { [query.sortBy]: query.sortOrder } as ProcessAlertOrderByWithRelationInput;
 }
 
 // ================================

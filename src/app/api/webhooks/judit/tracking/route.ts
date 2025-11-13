@@ -10,7 +10,8 @@ import { headers } from 'next/headers';
 import crypto from 'crypto';
 import { sendProcessAlert } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
-import { MonitoredProcess, ProcessMovement, CaseDocument, UserWorkspace, User, Workspace, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client'
+import type { MonitoredProcess, ProcessMovement, CaseDocument, UserWorkspace, User, Workspace, InputJsonValue } from '@/lib/types/database';
 
 
 // ================================================================
@@ -320,7 +321,7 @@ async function processMovementEvent(
         type: movement.type,
         date: new Date(movement.date),
         description: movement.description,
-        rawData: rawData as Prisma.InputJsonValue,
+        rawData: rawData as InputJsonValue,
       }
     });
 
@@ -396,7 +397,7 @@ async function processStatusChangeEvent(
     await prisma.monitoredProcess.update({
       where: { id: process.id },
       data: {
-        processData: updatedProcessData as Prisma.InputJsonValue,
+        processData: updatedProcessData as InputJsonValue,
       }
     });
 
@@ -501,7 +502,7 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload, workspaceId: str
       workspaceId,
       eventType: payload.event_type,
       processNumber: payload.process_number,
-      payload: (payload as unknown) as Prisma.InputJsonValue,
+      payload: (payload as unknown) as InputJsonValue,
       status: 'PENDING',
     }
   });
@@ -558,7 +559,7 @@ async function processAttachments(monitoredProcessId: string, attachments: Attac
   await prisma.monitoredProcess.update({
     where: { id: monitoredProcessId },
     data: {
-      processData: updatedData as Prisma.InputJsonValue
+      processData: updatedData as InputJsonValue
     }
   });
 
@@ -593,7 +594,7 @@ async function syncProcessMovements(processId: string, movements: MovementData[]
           type: movement.type,
           date: new Date(movement.date),
           description: movement.description,
-          rawData: rawData as Prisma.InputJsonValue
+          rawData: rawData as InputJsonValue
         }
       });
       newMovements.push(newMovement);
@@ -886,7 +887,7 @@ async function updateProcessLastWebhook(processId: string) {
   await prisma.monitoredProcess.update({
     where: { id: processId },
     data: {
-      processData: metadata as Prisma.InputJsonValue
+      processData: metadata as InputJsonValue
     }
   });
 }
@@ -913,7 +914,7 @@ async function updateProcessMetadata(processId: string, data: JuditProcessData, 
         lastWebhookUpdate: webhookTimestamp,
         lastDataSync: new Date().toISOString(),
         ...dataMetadata
-      } as Prisma.InputJsonValue
+      } as InputJsonValue
     }
   });
 }
@@ -951,7 +952,7 @@ async function logWebhookError(request: NextRequest, error: unknown, processingT
           url: request.url,
           method: 'POST',
           processingTime
-        } as Prisma.InputJsonValue
+        } as InputJsonValue
       }
     });
   } catch (logError) {

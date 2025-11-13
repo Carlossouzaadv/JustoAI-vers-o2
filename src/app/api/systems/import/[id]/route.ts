@@ -9,7 +9,7 @@ import prisma from '@/lib/prisma';
 import { validateAuth } from '@/lib/auth';
 import { apiResponse, errorResponse, ApiError, validateJson } from '@/lib/api-utils';
 import { ICONS } from '@/lib/icons';
-import { SystemImport, ImportedDataItem } from '@prisma/client';
+import { SystemImport, ImportedDataItem } from '@/lib/types/database';
 
 // ================================
 // SCHEMAS DE VALIDAÇÃO

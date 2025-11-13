@@ -5,7 +5,8 @@
 //
 // EMERGENCY MODE: Se REDIS_DISABLED=true, usa mock client sem tentar conectar
 
-import { PrismaClient, AnalysisType, JobStatus, Prisma, CaseAnalysisVersion, AnalysisJob, MonitoredProcess } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client'
+import type { AnalysisType, JobStatus, CaseAnalysisVersion, AnalysisJob, MonitoredProcess, InputJsonValue, CaseAnalysisVersionWhereInput } from '@/lib/types/database';
 import { createHash } from 'crypto';
 import { Redis } from 'ioredis';
 import { ICONS } from './icons';
@@ -103,7 +104,7 @@ export interface AnalysisVersionParams {
   fullCreditsUsed?: number;
   fastCreditsUsed?: number;
   analysisKey?: string;
-  sourceFilesMetadata: Prisma.InputJsonValue[];
+  sourceFilesMetadata: InputJsonValue[];
   createdBy?: string;
 }
 
@@ -589,7 +590,7 @@ export class DeepAnalysisService {
   async createAnalysisVersion(params: AnalysisVersionParams): Promise<CaseAnalysisVersion> {
     try {
       // sourceFilesMetadata deve ser um array de objetos que podem ser serializados como JSON
-      // Prisma.InputJsonValue permite qualquer JSON-serializable value
+      // InputJsonValue permite qualquer JSON-serializable value
       // Validamos que é um array antes de persistir
       if (!Array.isArray(params.sourceFilesMetadata)) {
         throw new Error('sourceFilesMetadata must be an array');
@@ -638,7 +639,7 @@ export class DeepAnalysisService {
       }
 
       // Convert metadata to JSON-serializable format for Prisma
-      const metadataAsJson: Prisma.InputJsonValue = JSON.parse(JSON.stringify(validatedMetadata));
+      const metadataAsJson: InputJsonValue = JSON.parse(JSON.stringify(validatedMetadata));
 
       const job = await prisma.analysisJob.create({
         data: {
@@ -668,7 +669,7 @@ export class DeepAnalysisService {
    */
   async getLastAnalysis(processId: string, analysisType?: string): Promise<CaseAnalysisVersion | null> {
     try {
-      const where: Prisma.CaseAnalysisVersionWhereInput = { caseId: processId };
+      const where: CaseAnalysisVersionWhereInput = { caseId: processId };
       if (analysisType) {
         where.analysisType = analysisType as AnalysisType;
       }
@@ -774,7 +775,7 @@ export class DeepAnalysisService {
       }
 
       // Convert analysisResult to JSON-serializable format for Prisma
-      const analysisResultAsJson: Prisma.InputJsonValue = JSON.parse(JSON.stringify(analysisResult));
+      const analysisResultAsJson: InputJsonValue = JSON.parse(JSON.stringify(analysisResult));
 
       // Salvar resultado da análise
       await prisma.caseAnalysisVersion.update({

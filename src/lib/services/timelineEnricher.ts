@@ -8,7 +8,8 @@
  * 4. Detectar conflitos entre fontes
  */
 
-import { Prisma, ProcessTimelineEntry, TimelineSource, EventRelationType } from '@prisma/client';
+import { Prisma } from '@prisma/client'
+import type { ProcessTimelineEntry, TimelineSource, EventRelationType, ProcessTimelineEntryUpdateInput, ProcessTimelineEntryCreateInput } from '@/lib/types/database';
 import { PrismaClient } from '@prisma/client';
 import { getTimelineConfig } from '@/lib/config/timelineConfig';
 import { isJuditSource } from '@/lib/utils/timelineSourceUtils';
@@ -335,7 +336,7 @@ export class TimelineEnricherService {
     baseEvent: ProcessTimelineEntry,
     newEvent: TimelineMovement,
     enrichmentResult: EnrichmentResult
-  ): Prisma.ProcessTimelineEntryUpdateInput {
+  ): ProcessTimelineEntryUpdateInput {
     const newContributingSource = [
       ...baseEvent.contributingSources,
       newEvent.source,
@@ -377,7 +378,7 @@ export class TimelineEnricherService {
   prepareRelatedEventData(
     baseEventId: string,
     newEvent: TimelineMovement
-  ): Partial<Prisma.ProcessTimelineEntryCreateInput> & { baseEventId: string } {
+  ): Partial<ProcessTimelineEntryCreateInput> & { baseEventId: string } {
     return {
       // caseId and contentHash will be set by caller
       eventDate: newEvent.date,
@@ -404,7 +405,7 @@ export class TimelineEnricherService {
     baseEvent: ProcessTimelineEntry,
     conflictDetails: ConflictDetails,
     newEvent: TimelineMovement
-  ): Prisma.ProcessTimelineEntryUpdateInput {
+  ): ProcessTimelineEntryUpdateInput {
     return {
       hasConflict: true,
       conflictDetails: {

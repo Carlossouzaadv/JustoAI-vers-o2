@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import type { UserWorkspaceGetPayload } from '@/lib/types/database';
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function GET() {
       email: user.email,
       name: user.name,
       supabaseId: user.supabaseId,
-      workspaces: user.workspaces.map((uw: Prisma.UserWorkspaceGetPayload<{
+      workspaces: user.workspaces.map((uw: UserWorkspaceGetPayload<{
         include: { workspace: true }
       }>) => ({
         workspaceId: uw.workspaceId,

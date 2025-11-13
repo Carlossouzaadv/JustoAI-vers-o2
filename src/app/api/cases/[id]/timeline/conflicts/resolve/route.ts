@@ -4,6 +4,7 @@
 // ================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
+import type { InputJsonValue, ProcessTimelineEntryUpdateInput, ProcessTimelineEntryCreateInput } from '@/lib/types/database';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
@@ -36,22 +37,22 @@ function isResolveConflictsRequest(obj: unknown): obj is ResolveConflictsRequest
 interface UpdateData {
   description?: string;
   hasConflict?: boolean;
-  conflictDetails?: Prisma.InputJsonValue | null;
+  conflictDetails?: InputJsonValue | null;
   reviewedBy?: string;
   reviewedAt?: Date;
-  metadata?: Prisma.InputJsonValue;
+  metadata?: InputJsonValue;
 }
 
 // Helper to build Prisma update input safely
 function buildProcessTimelineUpdateInput(
   hasConflict: boolean,
-  conflictDetails: Prisma.InputJsonValue | null | undefined,
+  conflictDetails: InputJsonValue | null | undefined,
   reviewedBy: string,
   reviewedAt: Date,
-  metadata: Prisma.InputJsonValue | undefined,
+  metadata: InputJsonValue | undefined,
   description?: string
-): Prisma.ProcessTimelineEntryUpdateInput {
-  const input: Prisma.ProcessTimelineEntryUpdateInput = {
+): ProcessTimelineEntryUpdateInput {
+  const input: ProcessTimelineEntryUpdateInput = {
     hasConflict,
     conflictDetails: conflictDetails === null ? Prisma.DbNull : conflictDetails,
     reviewedBy,
@@ -229,7 +230,7 @@ export async function POST(
               ? JSON.parse(JSON.stringify(event.originalTexts))
               : undefined;
 
-            const relatedEventCreate: Prisma.ProcessTimelineEntryCreateInput = {
+            const relatedEventCreate: ProcessTimelineEntryCreateInput = {
               case: { connect: { id: caseId } },
               contentHash: `related-${event.id}`,
               eventDate: event.eventDate,

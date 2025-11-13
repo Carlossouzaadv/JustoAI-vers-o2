@@ -17,7 +17,7 @@ import {
   CreateWorkspaceInput,
   WorkspaceQuery
 } from '@/lib/validations'
-import type { Workspace } from '@prisma/client'
+import type { Workspace, InputJsonValue, WorkspaceWhereInput, WorkspaceCreateInput, WorkspaceGetPayload } from '@/lib/types/database'
 import { Prisma } from '@prisma/client'
 
 // ================================
@@ -28,7 +28,7 @@ import { Prisma } from '@prisma/client'
  * Type for Workspace with included relations from findMany query
  * Captures the exact return type from Prisma query with users and _count
  */
-type WorkspaceWithRelations = Prisma.WorkspaceGetPayload<{
+type WorkspaceWithRelations = WorkspaceGetPayload<{
   include: {
     users: {
       select: {
@@ -55,7 +55,7 @@ type WorkspaceWithRelations = Prisma.WorkspaceGetPayload<{
  * Type guard for WorkspaceWhereInput
  * Validates that unknown data can be safely used as a Prisma WHERE filter
  */
-function isWorkspaceFilter(data: unknown): data is Prisma.WorkspaceWhereInput {
+function isWorkspaceFilter(data: unknown): data is WorkspaceWhereInput {
   if (typeof data !== 'object' || data === null) {
     return false
   }
@@ -155,7 +155,7 @@ function isCreateWorkspaceInputValid(
 /**
  * Validates that a Record<string, unknown> can be safely used as InputJsonValue for Prisma
  */
-function isValidWorkspaceSettings(value: unknown): value is Prisma.InputJsonValue {
+function isValidWorkspaceSettings(value: unknown): value is InputJsonValue {
   if (value === null || value === undefined) {
     return true
   }
@@ -197,7 +197,7 @@ async function GET(request: NextRequest) {
   const { page, limit, search, status } = query
 
   // Build filters with type safety
-  const baseFilter: Prisma.WorkspaceWhereInput = {
+  const baseFilter: WorkspaceWhereInput = {
     users: {
       some: {
         userId: user.id,
@@ -207,7 +207,7 @@ async function GET(request: NextRequest) {
   }
 
   // Extend base filter conditionally
-  const where: Prisma.WorkspaceWhereInput = {
+  const where: WorkspaceWhereInput = {
     ...baseFilter,
     ...(search && {
       OR: [
@@ -314,11 +314,11 @@ async function POST(request: NextRequest) {
 
   // Build workspace data with proper type checking
   // Check if settings are provided and valid
-  let workspaceData: Prisma.WorkspaceCreateInput
+  let workspaceData: WorkspaceCreateInput
 
   if (input.settings && isValidWorkspaceSettings(input.settings)) {
     // Settings are provided and valid
-    // After type guard, input.settings is narrowed to Prisma.InputJsonValue
+    // After type guard, input.settings is narrowed to InputJsonValue
     workspaceData = {
       name: input.name,
       slug: input.slug,

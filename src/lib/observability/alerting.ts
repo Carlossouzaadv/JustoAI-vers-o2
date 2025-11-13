@@ -3,7 +3,7 @@
 // Sistema de alertas para falhas na API e eventos críticos
 // ================================================================
 
-import { AlertSeverity } from '@prisma/client';
+import { AlertSeverity } from '@/lib/types/database';
 import { alertLogger } from './logger';
 import { createAlert, type AlertType, type SeverityLevel } from './costTracking';
 

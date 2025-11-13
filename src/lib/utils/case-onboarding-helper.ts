@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import type { CaseStatus } from '@prisma/client';
+import { CaseStatus } from '@/lib/types/database';
 
 export interface OnboardingError {
   timestamp: string;

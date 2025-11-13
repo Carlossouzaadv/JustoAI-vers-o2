@@ -1,4 +1,5 @@
-import { PrismaClient, Plan } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
+import { Plan } from '@/lib/types/database'
 import { hash } from 'bcryptjs'
 
 const prisma = new PrismaClient()

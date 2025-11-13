@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { ICONS } from '@/lib/icons';
-import type { CaseAnalysisVersion, ProcessStatus } from '@prisma/client';
+import { CaseAnalysisVersion, ProcessStatus } from '@/lib/types/database';
 
 const prisma = new PrismaClient();
 

@@ -9,7 +9,7 @@ import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-import type { CaseAnalysisVersion, AnalysisJob, ProcessStatus, JobStatus } from '@prisma/client';
+import { CaseAnalysisVersion, AnalysisJob, ProcessStatus, JobStatus } from '@/lib/types/database';
 
 // ================================================================
 // TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)

@@ -16,7 +16,7 @@
  * CIVIL, CRIMINAL, LABOR, FAMILY, COMMERCIAL, ADMINISTRATIVE, CONSTITUTIONAL, TAX, OTHER
  */
 
-import type { CaseType } from '@prisma/client';
+import { CaseType } from '@/lib/types/database';
 
 // Type definitions for JUDIT API responses
 export interface JuditClassification {

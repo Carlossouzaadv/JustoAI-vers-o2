@@ -5,7 +5,7 @@
 
 import prisma from './prisma';
 import { ICONS } from './icons';
-import { SystemImport } from '@prisma/client';
+import type { SystemImport, SystemImportWhereInput } from '@/lib/types/database';
 import { Prisma } from '@prisma/client';
 
 // ================================
@@ -227,7 +227,7 @@ export class ImportReportGenerator {
     startDate?: Date,
     endDate?: Date
   ): Promise<SystemImport[]> {
-    const whereClause: Prisma.SystemImportWhereInput = {
+    const whereClause: SystemImportWhereInput = {
       workspaceId,
       ...(startDate || endDate ? {
         createdAt: {

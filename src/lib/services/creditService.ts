@@ -4,7 +4,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
-import { CreditCategory, CreditTransactionType } from '@prisma/client';
+import { CreditCategory, CreditTransactionType } from '@/lib/types/database';
 
 export interface CreditBalance {
   reportCredits: number;

@@ -7,7 +7,8 @@
 
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
-import type { PrismaClient, ProcessTimelineEntry } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
+import { ProcessTimelineEntry } from '@/lib/types/database';
 import type { TimelineConflictDetails, TimelineOriginalTexts } from './types/json-fields';
 import {
   isTimelineConflictDetails,

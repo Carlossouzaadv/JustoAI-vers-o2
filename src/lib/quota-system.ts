@@ -3,7 +3,7 @@
 // ================================================================
 
 import { prisma } from '@/lib/prisma';
-import { Plan } from '@prisma/client';
+import { Plan } from '@/lib/types/database';
 import { ICONS } from '@/lib/icons';
 
 export interface QuotaLimits {

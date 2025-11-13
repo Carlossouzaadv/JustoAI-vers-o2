@@ -5,7 +5,7 @@
  * Ícones, labels, badges e estilos por TimelineSource.
  */
 
-import { TimelineSource } from '@prisma/client';
+import { TimelineSource } from '@/lib/types/database';
 import React from 'react';
 import {
   FileText,

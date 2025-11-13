@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { CreditTransactionFindManyArgs } from '@/lib/types/database';
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { successResponse, errorResponse, validateQuery, requireAuth, withErrorHandler, paginatedResponse } from '@/lib/api-utils'
@@ -110,7 +111,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     }
 
     // Build Prisma where clause with type safety
-    type WhereClause = Prisma.CreditTransactionFindManyArgs['where'];
+    type WhereClause = CreditTransactionFindManyArgs['where'];
     const where: WhereClause = {
       workspaceId: filterInput.workspaceId,
     }

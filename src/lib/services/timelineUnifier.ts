@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ICONS } from '@/lib/icons';
 import { getTimelineEnricherService, TimelineMovement } from './timelineEnricher';
-import { TimelineSource } from '@prisma/client';
+import { TimelineSource } from '@/lib/types/database';
 
 // ================================================================
 // TYPE DEFINITIONS FOR TYPE GUARDS

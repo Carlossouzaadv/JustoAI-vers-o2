@@ -3,7 +3,8 @@
 // Rastreamento de custos em tempo real da integração JUDIT
 // ================================================================
 
-import { PrismaClient, JuditOperationType, JuditAlertType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
+import { JuditOperationType, JuditAlertType } from '@/lib/types/database';
 import { costLogger } from './logger';
 
 const prisma = new PrismaClient();

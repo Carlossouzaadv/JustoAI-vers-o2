@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import type { ClientWhereInput } from '@/lib/types/database';
 import { prisma } from '@/lib/prisma'
 import type { Prisma } from '@prisma/client'
 import {
@@ -159,7 +160,7 @@ async function GET(request: NextRequest) {
 
   // After validation, build where filter type-safely
   // Start with base filter (always required)
-  const whereBase: Prisma.ClientWhereInput = {
+  const whereBase: ClientWhereInput = {
     workspaceId: { in: workspaceIds }
   }
 

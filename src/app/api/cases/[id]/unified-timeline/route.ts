@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
-import { ProcessTimelineEntry, CaseDocument, TimelineSource, EventRelationType } from '@prisma/client';
+import { ProcessTimelineEntry, CaseDocument, TimelineSource, EventRelationType } from '@/lib/types/database';
 
 // ================================================================
 // TYPES

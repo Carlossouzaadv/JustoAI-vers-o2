@@ -9,7 +9,7 @@ import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
-import { CaseAnalysisVersion, AnalysisJob } from '@prisma/client';
+import { CaseAnalysisVersion, AnalysisJob } from '@/lib/types/database';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
