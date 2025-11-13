@@ -221,12 +221,9 @@ export const useAnalytics = () => {
 };
 
 // Declaração de tipos para window.gtag
+// Usando tipo genérico para compatibilidade com diferentes versões do gtag
 declare global {
   interface Window {
-    gtag?: (
-      command: 'config' | 'event' | 'consent',
-      targetId: string | 'default' | 'update',
-      config?: unknown
-    ) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }

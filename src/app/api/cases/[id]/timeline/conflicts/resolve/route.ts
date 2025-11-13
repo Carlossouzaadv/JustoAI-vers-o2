@@ -54,7 +54,7 @@ function buildProcessTimelineUpdateInput(
 ): ProcessTimelineEntryUpdateInput {
   const input: ProcessTimelineEntryUpdateInput = {
     hasConflict,
-    conflictDetails: conflictDetails === null ? Prisma.DbNull : conflictDetails,
+    conflictDetails: conflictDetails,
     reviewedBy,
     reviewedAt,
     metadata,

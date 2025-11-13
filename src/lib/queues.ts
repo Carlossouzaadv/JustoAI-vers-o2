@@ -24,12 +24,14 @@ let _notificationQueue: Queue.Queue | null = null;
 
 // Helper function to get or create queue config
 const getQueueConfig = () => {
-  const redisConnection = getRedisConnection();
-  if (!redisConnection) {
-    throw new Error('Redis connection is not available');
-  }
   return {
-    redis: redisConnection,
+    createClient: (type: 'client' | 'subscriber' | 'bclient') => {
+      const redisConnection = getRedisConnection();
+      if (!redisConnection) {
+        throw new Error(`Redis connection is not available for ${type}`);
+      }
+      return redisConnection;
+    },
     defaultJobOptions: {
       removeOnComplete: 100, // Manter últimos 100 jobs completos
       removeOnFail: 50,      // Manter últimos 50 jobs falhados
@@ -53,7 +55,7 @@ function getNotificationQueue() {
   if (!_notificationQueue) {
     const config = getQueueConfig();
     _notificationQueue = new Queue('Notifications', {
-      redis: config.redis,
+      createClient: config.createClient,
       defaultJobOptions: {
         ...config.defaultJobOptions,
         priority: 10, // Alta prioridade

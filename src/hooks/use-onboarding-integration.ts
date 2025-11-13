@@ -88,8 +88,8 @@ export function useOnboardingIntegration(config: OnboardingConfig = {}) {
     console.log('Onboarding Event:', event, data);
 
     // Exemplo de integração com Google Analytics
-    if (typeof window !== 'undefined' && (window as unknown).gtag) {
-      (window as unknown).gtag('event', 'onboarding', {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'onboarding', {
         event_category: 'user_engagement',
         event_label: event,
         custom_parameters: data

@@ -7,7 +7,7 @@ import Queue from 'bull';
 import { prisma } from '@/lib/prisma';
 import { usageTracker } from '@/lib/telemetry/usage-tracker';
 import { ICONS } from '@/lib/icons';
-import { getRedisClient } from '@/lib/redis';
+import { getRedisConnection } from '@/lib/redis';
 import { Decimal } from '@prisma/client/runtime/library';
 
 // ================================================================
@@ -55,7 +55,13 @@ let usageAggregatorQueueInstance: Queue.Queue<AggregatorJobData>;
 function getUsageAggregatorQueue(): Queue.Queue<AggregatorJobData> {
   if (!usageAggregatorQueueInstance) {
     usageAggregatorQueueInstance = new Queue('usage-aggregator', {
-      redis: getRedisClient(),
+      createClient: (type: 'client' | 'subscriber' | 'bclient') => {
+        const redisConnection = getRedisConnection();
+        if (!redisConnection) {
+          throw new Error(`Redis connection is not available for ${type}`);
+        }
+        return redisConnection;
+      },
       defaultJobOptions: {
         removeOnComplete: 10,
         removeOnFail: 5,
