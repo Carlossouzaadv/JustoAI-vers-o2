@@ -254,6 +254,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Type narrowing: After workspace verification, workspaceId is guaranteed to be a string
+    // because either it was provided or set from userWorkspace.workspaceId
+    if (!workspaceId) {
+      return NextResponse.json(
+        { error: 'WorkspaceId não pôde ser determinado' },
+        { status: 500 }
+      );
+    }
+
+    // Now workspaceId is narrowed to string type
+    const verifiedWorkspaceId: string = workspaceId;
+
     // 5. CALCULAR SHA256 DO ARQUIVO
     const buffer = Buffer.from(await file.arrayBuffer());
     const hashManager = getDocumentHashManager();
@@ -262,7 +274,7 @@ export async function POST(request: NextRequest) {
     // 6. VERIFICAR DEDUPLICAÇÃO
     const deduplicationCheck = await hashManager.checkDeduplication(
       hashResult.textSha,
-      workspaceId,
+      verifiedWorkspaceId,
       prisma
     );
 
@@ -278,7 +290,7 @@ export async function POST(request: NextRequest) {
           size: file.size,
           textSha: hashResult.textSha,
           userId: user.id,
-          workspaceId
+          workspaceId: verifiedWorkspaceId
         }
       }, prisma);
 
@@ -383,7 +395,7 @@ export async function POST(request: NextRequest) {
       existingProcess = await prisma.case.findFirst({
         where: {
           number: extractedProcessNumber,
-          workspaceId
+          workspaceId: verifiedWorkspaceId
         },
         include: {
           client: true,
@@ -435,7 +447,7 @@ export async function POST(request: NextRequest) {
       // Buscar ou criar cliente padrão "A Definir"
       let defaultClient = await prisma.client.findFirst({
         where: {
-          workspaceId,
+          workspaceId: verifiedWorkspaceId,
           name: CONFIG.UNASSIGNED_FOLDER
         }
       });
@@ -443,7 +455,7 @@ export async function POST(request: NextRequest) {
       if (!defaultClient) {
         defaultClient = await prisma.client.create({
           data: {
-            workspaceId,
+            workspaceId: verifiedWorkspaceId,
             name: CONFIG.UNASSIGNED_FOLDER,
             type: 'INDIVIDUAL',
             status: 'ACTIVE'
@@ -460,7 +472,7 @@ export async function POST(request: NextRequest) {
           where: {
             number_workspaceId: {
               number: extractedProcessNumber,
-              workspaceId
+              workspaceId: verifiedWorkspaceId
             }
           },
           update: {
@@ -468,7 +480,7 @@ export async function POST(request: NextRequest) {
             updatedAt: new Date()
           },
           create: {
-            workspaceId,
+            workspaceId: verifiedWorkspaceId,
             clientId: defaultClient.id,
             number: extractedProcessNumber,
             detectedCnj: extractedProcessNumber, // Preenchido automaticamente
@@ -495,7 +507,7 @@ export async function POST(request: NextRequest) {
         const existingCase = await prisma.case.findFirst({
           where: {
             number: extractedProcessNumber,
-            workspaceId
+            workspaceId: verifiedWorkspaceId
           }
         });
 
@@ -525,7 +537,7 @@ export async function POST(request: NextRequest) {
         const providedCase = await prisma.case.findFirst({
           where: {
             id: caseIdStr,
-            workspaceId // Garante que o case pertence ao workspace do usuário
+            workspaceId: verifiedWorkspaceId // Garante que o case pertence ao workspace do usuário
           }
         });
 
@@ -618,7 +630,7 @@ export async function POST(request: NextRequest) {
         const aiRouter = new AIModelRouter();
         // Use analyzePhase1 for initial preview (LITE→BALANCED→PRO fallback)
         // This ensures fast, cost-effective analysis while maintaining quality
-        const analysisResultRaw: unknown = await aiRouter.analyzePhase1(cleanText, file.size / (1024 * 1024), workspaceId);
+        const analysisResultRaw: unknown = await aiRouter.analyzePhase1(cleanText, file.size / (1024 * 1024), verifiedWorkspaceId);
 
         // Validar resultado com type guard antes de atribuir
         if (isAIAnalysisResult(analysisResultRaw)) {
@@ -638,7 +650,7 @@ export async function POST(request: NextRequest) {
             promptSignature,
             aiAnalysisResult,
             undefined, // lastMovementDate (optional, not available at upload time)
-            workspaceId
+            verifiedWorkspaceId
           );
         }
 
@@ -655,7 +667,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 15. SALVAR ARQUIVO FÍSICO (PERMANENTE EM SUPABASE STORAGE)
-    const finalPath = await savePermanentFile(buffer, file.name, workspaceId, targetCaseId);
+    const finalPath = await savePermanentFile(buffer, file.name, verifiedWorkspaceId, targetCaseId);
 
     // 16. CRIAR DOCUMENTO NO BANCO
     // Validar e extrair valores com fallbacks seguros
@@ -713,7 +725,7 @@ export async function POST(request: NextRequest) {
               connect: { id: targetCaseId }
             },
             workspace: {
-              connect: { id: workspaceId }
+              connect: { id: verifiedWorkspaceId }
             },
             version: nextVersion,
             status: 'COMPLETED',
@@ -777,7 +789,7 @@ export async function POST(request: NextRequest) {
         console.log(`${ICONS.ROCKET} [Onboarding] Enfileirando JUDIT para ${extractedProcessNumber} (Case: ${targetCaseId})`);
         const { jobId } = await addOnboardingJob(extractedProcessNumber, {
           caseId: targetCaseId, // NOVO: Passar case ID explícito para webhook usar
-          workspaceId,
+          workspaceId: verifiedWorkspaceId,
           userId: user.id,
           priority: 5
         });
@@ -813,7 +825,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await juditAPI.trackCall({
-        workspaceId,
+        workspaceId: verifiedWorkspaceId,
         operationType: JuditOperationType.ANALYSIS,
         durationMs: processingTime,
         success: true,

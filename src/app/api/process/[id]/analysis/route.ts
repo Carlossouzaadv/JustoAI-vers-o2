@@ -14,6 +14,7 @@ import { AIModelRouter } from '@/lib/ai-model-router';
 import { hasEnoughCredits, debitCredits } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+import { CreditCategory } from '@/lib/types/database';
 import {
   CreateAnalysisPayloadSchema,
   CreateAnalysisPayload,
@@ -295,7 +296,7 @@ export async function POST(
 
     // Verificar créditos
     const creditCost = level === 'FULL' ? 1 : 0;
-    const creditCategory = level === 'FULL' ? 'FULL' : 'REPORT';
+    const creditCategory = level === 'FULL' ? CreditCategory.FULL : CreditCategory.REPORT;
     const hasCredits = await hasEnoughCredits(
       undefined,
       workspaceId,
@@ -507,7 +508,7 @@ async function processAnalysisInBackground(
         undefined,
         workspaceId,
         1,
-        'FULL',
+        CreditCategory.FULL,
         'strategic_analysis'
       );
     }

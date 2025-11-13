@@ -3,7 +3,7 @@
 // ================================
 // Sistema otimizado para processar 100 relatórios em < 5 minutos
 
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser, Page, LaunchOptions } from 'puppeteer';
 import { promises as fs } from 'fs';
 import { ICONS } from './icons';
 import {
@@ -70,8 +70,8 @@ export class PDFGenerator {
   private browser: Browser | null = null;
   private pagePool: Page[] = [];
   private readonly maxConcurrentPages: number;
-  
-  private readonly puppeteerOptions: unknown;
+
+  private readonly puppeteerOptions: LaunchOptions;
 
   constructor(maxConcurrentPages: number = 10) {
     this.maxConcurrentPages = maxConcurrentPages;

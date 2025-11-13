@@ -63,7 +63,7 @@ function isValidJobState(state: unknown): state is 'waiting' | 'active' | 'compl
 /**
  * Safe type converter from JobState to our status type
  */
-function normalizeJobState(state: JobState): 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown' {
+function normalizeJobState(state: JobState | 'unknown'): 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown' {
   // Map JobState enum values to our normalized status type
   switch (state) {
     case 'waiting':
@@ -76,6 +76,8 @@ function normalizeJobState(state: JobState): 'waiting' | 'active' | 'completed' 
       return 'failed';
     case 'delayed':
       return 'delayed';
+    case 'unknown':
+      return 'unknown';
     default:
       // Handle any other state values (paused, repeat, etc) by treating as waiting
       return 'waiting';

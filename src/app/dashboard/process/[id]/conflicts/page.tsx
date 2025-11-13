@@ -13,6 +13,7 @@ import {
   getSourceBadgeVariant,
   getSourceIcon,
 } from '@/lib/utils/timelineSourceUtils';
+import { TimelineSource } from '@/lib/types/database';
 import { AlertTriangle, CheckCircle, Copy, Merge, X } from 'lucide-react';
 
 interface TimelineEvent {
@@ -33,8 +34,8 @@ interface TimelineEvent {
     severity: 'low' | 'medium' | 'high';
     message: string;
     sources?: {
-      source1: string;
-      source2: string;
+      source1: TimelineSource;
+      source2: TimelineSource;
       value1: string | Date;
       value2: string | Date;
     };

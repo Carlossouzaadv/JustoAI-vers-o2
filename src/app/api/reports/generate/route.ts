@@ -14,6 +14,7 @@ import { getCredits, debitCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import type { BatchGenerationJob } from '@/lib/pdf-generator';
 import type { ReportType } from '@/lib/report-templates';
+import { CreditCategory } from '@/lib/types/database';
 
 // ================================
 // VALIDAÇÃO DE INPUT
@@ -256,7 +257,7 @@ export async function POST(req: NextRequest) {
         user.email,
         workspace.id,
         creditCost,
-        'FULL',
+        CreditCategory.FULL,
         `Report generation (${validatedData.report_type}) with AI insights`
       );
       if (!debitResult.success) {
@@ -279,7 +280,17 @@ export async function POST(req: NextRequest) {
 
     const contentLength = pdfBuffer.length;
 
-    return new NextResponse(pdfBuffer, {
+    // Convert Buffer to ArrayBuffer for NextResponse compatibility with proper type safety
+    // Create a new ArrayBuffer copy to ensure proper type compatibility
+    const slicedBuffer = pdfBuffer.buffer.slice(pdfBuffer.byteOffset, pdfBuffer.byteOffset + pdfBuffer.byteLength);
+    // Type guard: Ensure we have an ArrayBuffer (not SharedArrayBuffer)
+    if (slicedBuffer instanceof SharedArrayBuffer) {
+      // This should not happen with Node.js Buffer, but TypeScript needs the check
+      throw new Error('Unexpected SharedArrayBuffer in PDF generation');
+    }
+    const pdfBlob = new Blob([slicedBuffer], { type: 'application/pdf' });
+
+    return new NextResponse(pdfBlob, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
@@ -417,7 +428,7 @@ export async function PUT(req: NextRequest) {
         user.email,
         workspace.id,
         actualCreditsUsed,
-        'FULL',
+        CreditCategory.FULL,
         `Batch report generation: ${stats.successful} reports`
       );
       if (!debitResult.success) {

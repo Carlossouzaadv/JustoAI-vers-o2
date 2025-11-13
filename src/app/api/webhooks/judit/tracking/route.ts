@@ -667,7 +667,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     if (alertsGenerated > 0) {
       // Broadcaster em tempo real via SSE
       const wsManager = getWebSocketManager();
-      wsManager.broadcastToWorkspace(process.workspaceId, {
+      wsManager.broadcastToWorkspace(process.workspace.id, {
         type: 'movement:added',
         processId: process.id,
         data: {
@@ -754,7 +754,7 @@ async function generateAttachmentAlerts(process: MonitoredProcessWithWorkspace, 
     if (alertsGenerated > 0) {
       // Broadcaster em tempo real via SSE
       const wsManager = getWebSocketManager();
-      wsManager.broadcastToWorkspace(process.workspaceId, {
+      wsManager.broadcastToWorkspace(process.workspace.id, {
         type: 'movement:added',
         processId: process.id,
         data: {
@@ -846,7 +846,7 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
     if (alertsGenerated > 0) {
       // Broadcaster em tempo real via SSE
       const wsManager = getWebSocketManager();
-      wsManager.broadcastToWorkspace(process.workspaceId, {
+      wsManager.broadcastToWorkspace(process.workspace.id, {
         type: 'status:changed',
         processId: process.id,
         data: {
