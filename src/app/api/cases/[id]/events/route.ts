@@ -89,6 +89,38 @@ interface TimelineEvent {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * Interface para ProcessTimelineEntry (Prisma type)
+ * Padrão-Ouro: Anotação explícita em callbacks .map()
+ */
+interface ProcessTimelineEntryType {
+  id: string;
+  eventDate: Date;
+  eventType: string;
+  description: string | null;
+  source: string;
+  confidence: number | null;
+  sourceId: string | null;
+  metadata: unknown;
+}
+
+/**
+ * Interface para CaseDocument (Prisma type)
+ * Padrão-Ouro: Anotação explícita em callbacks .map()
+ */
+interface CaseDocumentType {
+  id: string;
+  createdAt: Date;
+  originalName: string;
+  name: string | null;
+  mimeType: string;
+  size: number;
+  type: string | null;
+  pages: number | null;
+  extractedText: string | null;
+  sourceOrigin: string | null;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -126,7 +158,7 @@ export async function GET(
     // FONTE 1: ProcessTimelineEntry (timeline unificada)
     // ================================================================
     if (caseData.timelineEntries && caseData.timelineEntries.length > 0) {
-      const timelineEvents = caseData.timelineEntries.map((entry) => {
+      const timelineEvents = caseData.timelineEntries.map((entry: ProcessTimelineEntryType) => {
         // Padrão-Ouro: Safe narrowing para entry.metadata
         const entryMetadata = isRecord(entry.metadata) ? entry.metadata : {};
 
@@ -193,7 +225,7 @@ export async function GET(
     // FONTE 3: CaseDocument (documentos carregados)
     // ================================================================
     if (caseData.documents && caseData.documents.length > 0) {
-      const documentEvents = caseData.documents.map((doc) => {
+      const documentEvents = caseData.documents.map((doc: CaseDocumentType) => {
         // IMPORTANTE: Procurar data real do andamento/movimento
         let realEventDate = doc.createdAt; // fallback para createdAt
 
