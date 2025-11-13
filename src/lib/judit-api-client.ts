@@ -9,14 +9,42 @@ import { prisma } from './prisma';
 // TIPOS E INTERFACES
 // ================================================================
 
+/**
+ * Tipos literais para status codes HTTP (Padrão-Ouro: Type Safety)
+ */
+type RetryableStatusCode = 429 | 500 | 502 | 503 | 504;
+type NonRetryableStatusCode = 400 | 401 | 403 | 404;
+type ValidHttpStatusCode = RetryableStatusCode | NonRetryableStatusCode;
+
+/**
+ * Type guards para validação segura de status codes
+ */
+function isRetryableStatusCode(code: unknown): code is RetryableStatusCode {
+  return (
+    typeof code === 'number' &&
+    (code === 429 || code === 500 || code === 502 || code === 503 || code === 504)
+  );
+}
+
+function isNonRetryableStatusCode(code: unknown): code is NonRetryableStatusCode {
+  return (
+    typeof code === 'number' &&
+    (code === 400 || code === 401 || code === 403 || code === 404)
+  );
+}
+
+function isValidHttpStatusCode(code: unknown): code is ValidHttpStatusCode {
+  return isRetryableStatusCode(code) || isNonRetryableStatusCode(code);
+}
+
 class JuditApiError extends Error {
   retryable: boolean;
-  statusCode?: number;
+  statusCode?: ValidHttpStatusCode | number;
   retryAfter?: number;
   isTimeout?: boolean;
   isNetworkError?: boolean;
 
-  constructor(message: string, retryable: boolean = true, statusCode?: number) {
+  constructor(message: string, retryable: boolean = true, statusCode?: ValidHttpStatusCode | number) {
     super(message);
     this.name = 'JuditApiError';
     this.retryable = retryable;
@@ -731,20 +759,22 @@ export class JuditApiClient {
           throw new Error(responseText);
         }
 
-        // Handle server errors that should be retried
-        if (JUDIT_CONFIG.RETRY_ON_STATUS_CODES.includes(response.status)) {
+        // Handle server errors that should be retried (Padrão-Ouro: Narrowing Seguro)
+        if (isRetryableStatusCode(response.status)) {
           const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, true, response.status);
           throw error;
         }
 
-        // Handle client errors that should NOT be retried
-        if (JUDIT_CONFIG.NO_RETRY_STATUS_CODES.includes(response.status)) {
+        // Handle client errors that should NOT be retried (Padrão-Ouro: Narrowing Seguro)
+        if (isNonRetryableStatusCode(response.status)) {
           const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, false, response.status);
           throw error;
         }
 
         if (!response.ok) {
-          const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, response.status >= 500, response.status);
+          // Determine if error is retryable based on status code (Padrão-Ouro: Narrowing Seguro)
+          const shouldRetry = response.status >= 500;
+          const error = new JuditApiError(`HTTP ${response.status}: ${responseText}`, shouldRetry, response.status);
           throw error;
         }
 

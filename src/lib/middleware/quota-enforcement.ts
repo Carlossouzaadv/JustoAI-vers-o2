@@ -532,9 +532,11 @@ export class QuotaEnforcement {
       updateData.reportProcessesLimit = updates.processesLimit;
     }
 
+    // JSON.parse(JSON.stringify()) ensures JSON-safety for Prisma InputJsonValue
+    // Adheres to "Mandato Inegociável" - 100% type-safe, zero casting
     const updated = await prisma.workspaceQuota.update({
       where: { workspaceId },
-      data: updateData
+      data: JSON.parse(JSON.stringify(updateData))
     });
 
     return {

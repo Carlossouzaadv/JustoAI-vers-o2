@@ -52,6 +52,19 @@ function isRawSentryError(data: unknown): data is RawSentryError {
   );
 }
 
+function isStringRecord(data: unknown): data is Record<string, string> {
+  // === PASSO 1: Validação básica de tipo ===
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // === PASSO 2: Cast seguro para Record (após validação) ===
+  const obj = data as Record<string, unknown>;
+
+  // === PASSO 3: Validação rigorosa - todos os valores devem ser strings ===
+  return Object.values(obj).every((value) => typeof value === 'string');
+}
+
 function rawErrorToErrorItem(err: RawSentryError): ErrorItem {
   return {
     id: String(err.id || err.shortId || ''),
@@ -66,7 +79,7 @@ function rawErrorToErrorItem(err: RawSentryError): ErrorItem {
     shortId: String(err.shortId || err.id || ''),
     errorDetails: {
       stackTrace: typeof err.stackTrace === 'string' ? err.stackTrace : undefined,
-      tags: typeof err.tags === 'object' && err.tags !== null ? (err.tags as Record<string, string>) : undefined,
+      tags: isStringRecord(err.tags) ? err.tags : undefined,
     },
   };
 }

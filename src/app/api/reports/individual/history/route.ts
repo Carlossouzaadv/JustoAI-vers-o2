@@ -12,9 +12,13 @@ import { ICONS } from '@/lib/icons';
 // TYPE DEFINITIONS E GUARDS
 // ================================================================
 
-type ExecutionStatus = 'AGENDADO' | 'EM_PROCESSAMENTO' | 'CONCLUIDO' | 'FALHOU' | 'CANCELADO';
+// Prisma-aligned ExecutionStatus values (from schema)
+type PrismaExecutionStatus = 'AGENDADO' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
-const VALID_STATUSES = new Set<ExecutionStatus>([
+// User-facing Portuguese status values for API params
+type UserExecutionStatus = 'AGENDADO' | 'EM_PROCESSAMENTO' | 'CONCLUIDO' | 'FALHOU' | 'CANCELADO';
+
+const VALID_USER_STATUSES = new Set<UserExecutionStatus>([
   'AGENDADO',
   'EM_PROCESSAMENTO',
   'CONCLUIDO',
@@ -22,8 +26,27 @@ const VALID_STATUSES = new Set<ExecutionStatus>([
   'CANCELADO'
 ]);
 
-function isValidExecutionStatus(value: unknown): value is ExecutionStatus {
-  return typeof value === 'string' && VALID_STATUSES.has(value as ExecutionStatus);
+const STATUS_MAP: Record<UserExecutionStatus, PrismaExecutionStatus> = {
+  'AGENDADO': 'AGENDADO',
+  'EM_PROCESSAMENTO': 'RUNNING',
+  'CONCLUIDO': 'COMPLETED',
+  'FALHOU': 'FAILED',
+  'CANCELADO': 'CANCELLED'
+};
+
+function isValidUserExecutionStatus(value: unknown): value is UserExecutionStatus {
+  return typeof value === 'string' && VALID_USER_STATUSES.has(value as UserExecutionStatus);
+}
+
+/**
+ * Mapeia status de usuário (português) para Prisma ExecutionStatus (English)
+ */
+function mapUserStatusToPrisma(userStatus: UserExecutionStatus): PrismaExecutionStatus {
+  const prismaStatus = STATUS_MAP[userStatus];
+  if (!prismaStatus) {
+    throw new Error(`Invalid user status: ${userStatus}`);
+  }
+  return prismaStatus;
 }
 
 // Type guard para ReportParameters
@@ -64,7 +87,7 @@ function isAggregateSumObject(value: unknown): value is AggregateSumObject {
 }
 
 interface HistoryFilters {
-  status?: ExecutionStatus;
+  status?: UserExecutionStatus;
   dateFrom?: string;
   dateTo?: string;
   limit: number;
@@ -226,15 +249,10 @@ function extractAggregateSum(result: unknown, field: 'quotaConsumed' | 'duration
 }
 
 /**
- * Mapper seguro para status do Prisma update
+ * Extrai status de usuário e mapeia para Prisma
  */
-function mapStatusToPrismaUpdate(status: ExecutionStatus): ExecutionStatus {
-  // Garantir que é válido
-  if (!VALID_STATUSES.has(status)) {
-    throw new Error(`Invalid status for update: ${status}`);
-  }
-
-  return status;
+function extractAndMapPrismaStatus(userStatus: UserExecutionStatus): PrismaExecutionStatus {
+  return mapUserStatusToPrisma(userStatus);
 }
 
 // ================================================================
@@ -250,7 +268,7 @@ export async function GET(request: NextRequest) {
 
     // Parse e validar status com narrowing seguro
     const statusRaw = searchParams.get('status');
-    const statusValue: ExecutionStatus | undefined = isValidExecutionStatus(statusRaw)
+    const statusValue: UserExecutionStatus | undefined = isValidUserExecutionStatus(statusRaw)
       ? statusRaw
       : undefined;
 
@@ -272,45 +290,28 @@ export async function GET(request: NextRequest) {
         }
       : undefined;
 
-    // Construir where clause sem type assertions
-    // Usar builder pattern que deixa TypeScript inferir os tipos
+    // Construir objetos where com narrowing seguro
+    // Estratégia: construir incrementalmente, deixando TypeScript inferir tipos
+
     const baseWhere = {
       workspaceId,
       scheduleId: null
     };
 
-    // Query 1 & 2: Construir objects onde separadamente
-    // Estratégia: construir where clause com type safety usando union types
-    type DateRangeFilter = {
-      gte?: Date;
-      lte?: Date;
+    // Mapear status do usuário para Prisma se foi validado
+    const prismaStatus: PrismaExecutionStatus | undefined = filters.status
+      ? extractAndMapPrismaStatus(filters.status)
+      : undefined;
+
+    // Construir where para findMany - TypeScript infere o tipo de ReportExecutionWhereInput
+    const findManyWhereObject = {
+      ...baseWhere,
+      ...(dateFilter && { createdAt: dateFilter }),
+      ...(prismaStatus && { status: prismaStatus })
     };
-
-    type FindManyWhere = {
-      workspaceId: string;
-      scheduleId: null;
-      status?: ExecutionStatus;
-      createdAt?: DateRangeFilter;
-    };
-
-    // Construir where para findMany
-    const findManyWhere: FindManyWhere = {
-      workspaceId,
-      scheduleId: null
-    };
-
-    // Adicionar dateFilter se presente
-    if (dateFilter) {
-      findManyWhere.createdAt = dateFilter;
-    }
-
-    // Adicionar status apenas se passou a validação
-    if (filters.status && VALID_STATUSES.has(filters.status)) {
-      findManyWhere.status = filters.status;
-    }
 
     const findManyQuery = prisma.reportExecution.findMany({
-      where: findManyWhere,
+      where: findManyWhereObject,
       orderBy: { createdAt: 'desc' as const },
       take: filters.limit,
       skip: filters.offset,
@@ -329,31 +330,15 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Construir where para count
-    type CountWhere = {
-      workspaceId: string;
-      scheduleId: null;
-      status?: ExecutionStatus;
-      createdAt?: DateRangeFilter;
+    // Construir where para count - reutilizar a mesma lógica
+    const countWhereObject = {
+      ...baseWhere,
+      ...(dateFilter && { createdAt: dateFilter }),
+      ...(prismaStatus && { status: prismaStatus })
     };
-
-    const countWhere: CountWhere = {
-      workspaceId,
-      scheduleId: null
-    };
-
-    // Adicionar dateFilter se presente
-    if (dateFilter) {
-      countWhere.createdAt = dateFilter;
-    }
-
-    // Adicionar status se validado
-    if (filters.status && VALID_STATUSES.has(filters.status)) {
-      countWhere.status = filters.status;
-    }
 
     const countQuery = prisma.reportExecution.count({
-      where: countWhere
+      where: countWhereObject
     });
 
     // Query 3: monthly stats
@@ -370,21 +355,18 @@ export async function GET(request: NextRequest) {
       _sum: { quotaConsumed: true }
     });
 
-    // Query 4: overall stats
-    type OverallWhere = {
-      workspaceId: string;
-      scheduleId: null;
-      status?: ExecutionStatus;
-    };
+    // Query 4: overall stats - only COMPLETED reports
+    // Mapear CONCLUIDO (português) para COMPLETED (Prisma)
+    const completedStatus: PrismaExecutionStatus = 'COMPLETED';
 
-    const overallWhere: OverallWhere = {
+    const overallWhereObject = {
       workspaceId,
       scheduleId: null,
-      status: 'CONCLUIDO' // Directly assign validated literal
+      status: completedStatus
     };
 
     const overallQuery = prisma.reportExecution.aggregate({
-      where: overallWhere,
+      where: overallWhereObject,
       _count: { id: true },
       _sum: { quotaConsumed: true, duration: true }
     });
@@ -483,13 +465,13 @@ export async function DELETE(request: NextRequest) {
 
     console.log(`${ICONS.PROCESS} Cancelando relatório ${reportId}`);
 
-    // Buscar relatório com narrowing seguro
-    const agendadoStatus: ExecutionStatus = 'AGENDADO';
+    // Buscar relatório que está AGENDADO (scheduled) para poder cancelar
+    const scheduledStatus: PrismaExecutionStatus = 'AGENDADO';
     const report = await prisma.reportExecution.findFirst({
       where: {
         id: reportId,
         workspaceId,
-        status: agendadoStatus
+        status: scheduledStatus
       }
     });
 
@@ -500,15 +482,15 @@ export async function DELETE(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Mapear status com type safety
-    const cancelledStatus: ExecutionStatus = 'CANCELADO';
-    const mappedStatus = mapStatusToPrismaUpdate(cancelledStatus);
+    // Mapear status do usuário (português) para Prisma (English)
+    const userCancelledStatus: UserExecutionStatus = 'CANCELADO';
+    const prismaFilledStatus = extractAndMapPrismaStatus(userCancelledStatus);
 
-    // Atualizar com status validado
+    // Atualizar com status mapeado e validado
     await prisma.reportExecution.update({
       where: { id: reportId },
       data: {
-        status: mappedStatus,
+        status: prismaFilledStatus,
         completedAt: new Date()
       }
     });

@@ -106,18 +106,42 @@ import {
  */
 
 function isValidCaseStatus(value: unknown): value is 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ARCHIVED' | 'CANCELLED' | 'UNASSIGNED' {
-  const validStatuses: ReadonlySet<string> = new Set(['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED', 'UNASSIGNED']);
-  return typeof value === 'string' && validStatuses.has(value);
+  // === PASSO 1: Prova que é string ===
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  // === PASSO 2: Define array de verificação como readonly string[] ===
+  const validStatuses: readonly string[] = ['ACTIVE', 'SUSPENDED', 'CLOSED', 'ARCHIVED', 'CANCELLED', 'UNASSIGNED'];
+
+  // === PASSO 3: Compara string com string[] (100% seguro, ZERO 'as') ===
+  return validStatuses.includes(value);
 }
 
 function isValidCasePriority(value: unknown): value is 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' {
-  const validPriorities: ReadonlySet<string> = new Set(['LOW', 'MEDIUM', 'HIGH', 'URGENT']);
-  return typeof value === 'string' && validPriorities.has(value);
+  // === PASSO 1: Prova que é string ===
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  // === PASSO 2: Define array de verificação como readonly string[] ===
+  const validPriorities: readonly string[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
+  // === PASSO 3: Compara string com string[] (100% seguro, ZERO 'as') ===
+  return validPriorities.includes(value);
 }
 
 function isValidCaseType(value: unknown): value is 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'COMMERCIAL' | 'ADMINISTRATIVE' | 'CONSTITUTIONAL' | 'TAX' | 'OTHER' {
-  const validTypes: ReadonlySet<string> = new Set(['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'COMMERCIAL', 'ADMINISTRATIVE', 'CONSTITUTIONAL', 'TAX', 'OTHER']);
-  return typeof value === 'string' && validTypes.has(value);
+  // === PASSO 1: Prova que é string ===
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  // === PASSO 2: Define array de verificação como readonly string[] ===
+  const validTypes: readonly string[] = ['CIVIL', 'CRIMINAL', 'LABOR', 'FAMILY', 'COMMERCIAL', 'ADMINISTRATIVE', 'CONSTITUTIONAL', 'TAX', 'OTHER'];
+
+  // === PASSO 3: Compara string com string[] (100% seguro, ZERO 'as') ===
+  return validTypes.includes(value);
 }
 
 /**

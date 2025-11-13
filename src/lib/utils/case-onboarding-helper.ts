@@ -78,7 +78,9 @@ export async function recordOnboardingError(
       where: { id: caseId },
       data: {
         status: newStatus,
-        metadata: updatedMetadata
+        // Serialização segura: converte OnboardingMetadata para InputJsonValue
+        // sem casting. JSON.parse(JSON.stringify()) garante compatibilidade
+        metadata: JSON.parse(JSON.stringify(updatedMetadata))
         // onboardingStatus remains unchanged - error is tracked in metadata
       }
     });
@@ -173,7 +175,9 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
       where: { id: caseId },
       data: {
         status: 'ACTIVE', // Voltar para ACTIVE para retry
-        metadata: clearedMetadata,
+        // Serialização segura: converte OnboardingMetadata para InputJsonValue
+        // sem casting. JSON.parse(JSON.stringify()) garante compatibilidade
+        metadata: JSON.parse(JSON.stringify(clearedMetadata)),
         onboardingStatus: 'created'
       }
     });

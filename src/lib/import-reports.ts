@@ -404,6 +404,53 @@ export class ImportReportGenerator {
     };
   }
 
+  /**
+   * Type guard para validar se um valor é um error object com message
+   */
+  private isErrorWithMessage(error: unknown): error is { message: string } {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'message' in error &&
+      typeof (error as Record<string, unknown>).message === 'string'
+    );
+  }
+
+  /**
+   * Type guard para validar se um valor é um error object com type
+   */
+  private isErrorWithType(error: unknown): error is { type: string } {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'type' in error &&
+      typeof (error as Record<string, unknown>).type === 'string'
+    );
+  }
+
+  /**
+   * Extrai a mensagem de erro de forma segura com narrowing
+   */
+  private extractErrorMessage(error: unknown): string {
+    if (typeof error === 'string') {
+      return error;
+    }
+    if (this.isErrorWithMessage(error)) {
+      return error.message;
+    }
+    return 'Unknown error';
+  }
+
+  /**
+   * Extrai o tipo de erro de forma segura com narrowing
+   */
+  private extractErrorType(error: unknown): string {
+    if (this.isErrorWithType(error)) {
+      return error.type;
+    }
+    return 'UNKNOWN';
+  }
+
   private async analyzeErrors(imports: SystemImport[]): Promise<ErrorSummary[]> {
     interface ErrorInfo {
       type: string;
@@ -419,17 +466,18 @@ export class ImportReportGenerator {
     imports.forEach(imp => {
       if (Array.isArray(imp.errors) && imp.errors.length > 0) {
         imp.errors.forEach((error: unknown) => {
-          const message = typeof error === 'string' ? error : (error && typeof error === 'object' && 'message' in error ? (error as Record<string, unknown>).message : 'Unknown error');
-          const type = (error && typeof error === 'object' && 'type' in error) ? (error as Record<string, unknown>).type : 'UNKNOWN';
+          // Uso de type guards e narrowing seguro
+          const message = this.extractErrorMessage(error);
+          const type = this.extractErrorType(error);
 
           if (!errorMap.has(message)) {
             errorMap.set(message, {
-              type: typeof type === 'string' ? type : 'UNKNOWN',
+              type,
               message,
               count: 0,
               affectedSystems: new Set<string>(),
               lastOccurrence: imp.createdAt,
-              severity: this.assessErrorSeverity(message, typeof type === 'string' ? type : 'UNKNOWN')
+              severity: this.assessErrorSeverity(message, type)
             });
           }
 

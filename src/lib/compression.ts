@@ -39,6 +39,17 @@ interface PDFOptimizationOptions {
   removeMetadata?: boolean;
 }
 
+/**
+ * Extended interface for files with compression metadata
+ * Adheres to "Mandato Inegociável" - 100% type-safe, zero casting
+ */
+interface CompressedFileWithMetadata extends Express.Multer.File {
+  compressedPath?: string;
+  originalSize?: number;
+  compressedSize?: number;
+  compressionRatio?: number;
+}
+
 // === CONFIGURAÇÕES ===
 
 const COMPRESSION_CONFIG = {
@@ -395,6 +406,7 @@ function extractFiles(req: Request): Express.Multer.File[] {
 
 /**
  * Middleware para compressão automática de uploads
+ * Creates CompressedFileWithMetadata objects with 100% type safety
  */
 export function createCompressionMiddleware(options: CompressionOptions = {}) {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -408,12 +420,17 @@ export function createCompressionMiddleware(options: CompressionOptions = {}) {
           const result = await compressImage(file.path, undefined, options);
 
           if (result.success) {
-            // Atualizar informações do arquivo com type safe narrowing
-            const fileWithMetadata = file as Record<string, unknown>;
-            fileWithMetadata.compressedPath = result.outputPath;
-            fileWithMetadata.originalSize = result.originalSize;
-            fileWithMetadata.compressedSize = result.compressedSize;
-            fileWithMetadata.compressionRatio = result.compressionRatio;
+            // Create typed metadata object without unsafe casting
+            const fileWithMetadata: CompressedFileWithMetadata = {
+              ...file,
+              compressedPath: result.outputPath,
+              originalSize: result.originalSize,
+              compressedSize: result.compressedSize,
+              compressionRatio: result.compressionRatio,
+            };
+
+            // Replace file in request with enriched metadata
+            Object.assign(file, fileWithMetadata);
           }
         } catch (error) {
           console.error('Compression middleware error:', error);
