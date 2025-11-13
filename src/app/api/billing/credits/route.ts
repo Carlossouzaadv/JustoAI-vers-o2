@@ -60,6 +60,18 @@ interface PaymentWebhookPayload {
   [key: string]: unknown;
 }
 
+interface TransactionData {
+  id: string;
+  type: string;
+  amount: {
+    toString(): string;
+  };
+  metadata: unknown;
+  createdAt: {
+    toISOString(): string;
+  };
+}
+
 // ================================================================
 // TYPE GUARDS (Mandato Inegociável)
 // ================================================================
@@ -270,7 +282,7 @@ async function getCreditTransactions(workspaceId: string): Promise<NextResponse>
 
     const formattedTransactions: CreditTransaction[] = transactions
       .filter(isTransaction)
-      .map(t => {
+      .map((t: TransactionData) => {
         const metadata = t.metadata as unknown;
         const reason = isMetadataWithReason(metadata)
           ? metadata.reason || 'Transação de crédito'
