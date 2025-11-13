@@ -25,6 +25,53 @@ export interface DistributionResult {
 }
 
 /**
+ * Interface para ReportExecution com Schedule incluído (do Prisma)
+ */
+interface ReportExecutionWithSchedule {
+  id: string;
+  workspaceId: string;
+  scheduleId: string | null;
+  reportType: ReportType;
+  parameters: Record<string, unknown>;
+  recipients: string[];
+  status: string;
+  audienceType: AudienceType;
+  outputFormats: OutputFormat[];
+  processCount: number;
+  scheduledFor: Date | null;
+  quotaConsumed: number;
+  startedAt: Date;
+  completedAt: Date | null;
+  duration: number | null;
+  result: Record<string, unknown> | null;
+  fileUrls: Record<string, unknown> | null;
+  tokensUsed: number | null;
+  cacheHit: boolean | null;
+  cacheKey: string | null;
+  error: string | null;
+  retryCount: number;
+  schedule: {
+    id: string;
+    workspaceId: string;
+    name: string;
+    description: string | null;
+    type: ReportType;
+    frequency: string;
+    processIds: string[];
+    filters: Record<string, unknown> | null;
+    audienceType: AudienceType;
+    outputFormats: OutputFormat[];
+    recipients: string[];
+    enabled: boolean;
+    lastRun: Date | null;
+    nextRun: Date | null;
+    monthlyQuotaUsed: number;
+    createdAt: Date;
+    updatedAt: Date;
+  } | null;
+}
+
+/**
  * Type guard: Valida se um valor é um ReportType válido
  */
 function isValidReportType(value: unknown): value is ReportType {
@@ -212,7 +259,7 @@ export class ReportScheduler {
     const executionIds: string[] = [];
 
     // Processar em paralelo com limite
-    const promises = executions.map(async (execution) => {
+    const promises = executions.map(async (execution: ReportExecutionWithSchedule) => {
       try {
         await this.executeReport(execution.id);
         executed++;
