@@ -52,6 +52,9 @@ interface MonitoredProcessWhereInput {
   }>;
 }
 
+// JSON Value type (Padrão-Ouro para dados Prisma Json)
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 // Interface para CreateManyInput (baseado no modelo ProcessMovement)
 interface ProcessMovementCreateManyInput {
   monitoredProcessId: string;
@@ -62,7 +65,7 @@ interface ProcessMovementCreateManyInput {
   importance: Priority;
   requiresAction: boolean;
   deadline: Date | null;
-  rawData: Record<string, unknown>;
+  rawData: JsonValue;
 }
 
 // ================================
@@ -370,10 +373,11 @@ export async function GET(request: NextRequest) {
       _count: number;
     }
 
+    // Padrão-Ouro: ZERO casting - tipo inferido do accumulator
     const statusStats = stats.reduce((acc: Record<string, number>, stat: StatusCount) => {
       acc[stat.monitoringStatus] = stat._count;
       return acc;
-    }, {} as Record<string, number>);
+    }, {});
 
     return apiResponse({
       processes,
