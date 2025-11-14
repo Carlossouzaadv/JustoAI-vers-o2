@@ -4,7 +4,7 @@
 // MODAL DE AGENDAMENTO DE RELATÓRIOS - Com Quota e Tom/Público
 // ================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,20 +179,6 @@ export default function ReportSchedulerModal({
   // Hooks
   const { showQuotaModal, QuotaModalComponent } = useQuotaModal();
 
-  // Carregar dados iniciais
-  useEffect(() => {
-    if (isOpen) {
-      loadQuotaStatus();
-      loadCreditBalance();
-    }
-  }, [isOpen, workspaceId, loadQuotaStatus, loadCreditBalance]);
-
-  // Calcular estimativas
-  const selectedReportType = REPORT_TYPES.find(t => t.value === reportOptions.type)!;
-  const estimatedCredits = selectedReportType.credits * selectedProcesses.length;
-  const isNightSchedule = reportOptions.priority === 'night';
-  const finalCredits = isNightSchedule ? estimatedCredits * 0.5 : estimatedCredits; // 50% desconto noturno
-
   // Carregar status de quota
   const loadQuotaStatus = useCallback(async () => {
     try {
@@ -220,6 +206,20 @@ export default function ReportSchedulerModal({
       console.error('Erro ao carregar créditos:', error);
     }
   }, [workspaceId]);
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    if (isOpen) {
+      loadQuotaStatus();
+      loadCreditBalance();
+    }
+  }, [isOpen, workspaceId, loadQuotaStatus, loadCreditBalance]);
+
+  // Calcular estimativas
+  const selectedReportType = REPORT_TYPES.find(t => t.value === reportOptions.type)!;
+  const estimatedCredits = selectedReportType.credits * selectedProcesses.length;
+  const isNightSchedule = reportOptions.priority === 'night';
+  const finalCredits = isNightSchedule ? estimatedCredits * 0.5 : estimatedCredits; // 50% desconto noturno
 
   // Verificar se pode agendar
   const canSchedule = () => {

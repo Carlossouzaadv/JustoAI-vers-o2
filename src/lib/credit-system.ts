@@ -110,7 +110,7 @@ export const CREDIT_CONFIG = {
 } as const;
 
 export class CreditManager {
-  constructor(private _prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) {}
 
   /**
    * Calcula custo de report credit baseado no número de processos

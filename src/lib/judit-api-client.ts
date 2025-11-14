@@ -246,15 +246,15 @@ class CircuitBreaker {
   private requests: { timestamp: number; success: boolean }[] = [];
 
   constructor(
-    private _threshold: number,
-    private _windowMs: number,
-    private _openTimeMs: number,
-    private _minRequests: number
+    private threshold: number,
+    private windowMs: number,
+    private openTimeMs: number,
+    private minRequests: number
   ) {}
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {
-      if (Date.now() - this.lastFailureTime > this._openTimeMs) {
+      if (Date.now() - this.lastFailureTime > this.openTimeMs) {
         this.state = 'half-open';
         console.log(`${ICONS.INFO} Circuit breaker moving to half-open state`);
       } else {

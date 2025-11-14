@@ -661,7 +661,6 @@ class SystemPatterns {
       config.columnPatterns.forEach(pattern => {
         const found = headerRow.some(col => pattern.test(col));
         if (found) {
-          matches++;
           score += 1 / config.columnPatterns.length;
         }
       });

@@ -18,6 +18,7 @@ import {
   CachedReportData,
 } from '@/lib/types/json-fields';
 import {
+  isReportFileUrls,
   isCachedReportData,
 } from '@/lib/types/type-guards';
 

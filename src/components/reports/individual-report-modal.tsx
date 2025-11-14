@@ -88,13 +88,6 @@ export default function IndividualReportModal({
     }
   }, [selectedProcesses]);
 
-  // Verificar cache quando modal abre
-  useEffect(() => {
-    if (isOpen && selectedProcesses.length > 0) {
-      checkReportCache();
-    }
-  }, [isOpen, selectedProcesses, reportType, checkReportCache]);
-
   // Verificar cache disponível
   const checkReportCache = useCallback(async () => {
     try {
@@ -119,6 +112,13 @@ export default function IndividualReportModal({
       setCacheInfo(null);
     }
   }, [selectedProcesses, reportType, formats]);
+
+  // Verificar cache quando modal abre
+  useEffect(() => {
+    if (isOpen && selectedProcesses.length > 0) {
+      checkReportCache();
+    }
+  }, [isOpen, selectedProcesses, reportType, checkReportCache]);
 
   // Type guards
   const isReportType = (value: string): value is 'JURIDICO' | 'EXECUTIVO' => {

@@ -46,10 +46,6 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
   const [schedules, setSchedules] = useState<ScheduledReport[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSchedules();
-  }, [clientId, loadSchedules]);
-
   const loadSchedules = useCallback(async () => {
     try {
       setLoading(true);
@@ -66,6 +62,10 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
       setLoading(false);
     }
   }, [clientId]);
+
+  useEffect(() => {
+    loadSchedules();
+  }, [clientId, loadSchedules]);
 
   const handleAction = async (scheduleId: string, action: string) => {
     try {

@@ -321,7 +321,7 @@ export function getClientIP(request: NextRequest): string {
 export class ApiError extends Error {
   constructor(
     message: string,
-    public _status: number = 400,
+    public status: number = 400,
     public _code?: string
   ) {
     super(message)

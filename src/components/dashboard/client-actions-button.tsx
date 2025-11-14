@@ -50,6 +50,7 @@ function isApiProcessData(data: unknown): data is ApiProcessData {
 
 export function ClientActionsButton({ clientId, clientName }: ClientActionsButtonProps) {
   const [processes, setProcesses] = useState<ProcessOption[]>([]);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
 
   const loadClientProcesses = useCallback(async () => {
     try {

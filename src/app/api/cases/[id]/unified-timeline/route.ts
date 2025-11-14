@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
 import { TimelineSource } from '@/lib/types/database';
+import type { ProcessTimelineEntry } from '@/lib/types/database';
 
 // ================================================================
 // TYPES
@@ -201,7 +202,7 @@ function isTimelineOriginalTexts(value: unknown): value is Record<string, string
  */
 function enrichTimelineEntry(entry: TimelineEntryInput): UnifiedTimelineEntry {
   // Extrair source com type guard antes de usar como índice
-  const entrySource = isTimelineSource(entry.source) ? entry.source : TimelineSource.MANUAL_ENTRY;
+  const entrySource: TimelineSource = isTimelineSource(entry.source) ? entry.source : TimelineSource.MANUAL_ENTRY;
   const sourceMetadata = SOURCE_METADATA[entrySource] || {
     icon: '📌',
     name: 'Outro',

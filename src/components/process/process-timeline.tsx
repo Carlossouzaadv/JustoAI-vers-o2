@@ -70,10 +70,6 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
   const [filter, setFilter] = useState<'all' | 'enriched' | 'conflicts' | 'judit'>('all');
   const [stats, setStats] = useState<unknown>(null);
 
-  useEffect(() => {
-    loadTimelineEvents();
-  }, [processId, caseId, loadTimelineEvents]);
-
   const loadTimelineEvents = useCallback(async () => {
     try {
       setLoading(true);
@@ -111,6 +107,10 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
       setLoading(false);
     }
   }, [processId, caseId]);
+
+  useEffect(() => {
+    loadTimelineEvents();
+  }, [processId, caseId, loadTimelineEvents]);
 
   const filteredEvents = events.filter(event => {
     if (filter === 'all') return true;

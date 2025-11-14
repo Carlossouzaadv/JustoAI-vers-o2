@@ -51,6 +51,26 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
   const [filter, setFilter] = useState<'all' | ProcessNote['category']>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const loadNotes = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const response = await fetch(`/api/cases/${processId}/notes`);
+      if (response.ok) {
+        const data = await response.json();
+        setNotes(data.notes || []);
+      } else {
+        // Nenhuma nota disponível ainda
+        setNotes([]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar notas:', error);
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [processId]);
+
   // Autosave para a nota sendo editada
   const { isSaving, hasUnsavedChanges } = useAutosave(editingNote, {
     delay: 2000,
@@ -94,26 +114,6 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
   useEffect(() => {
     loadNotes();
   }, [processId, loadNotes]);
-
-  const loadNotes = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const response = await fetch(`/api/cases/${processId}/notes`);
-      if (response.ok) {
-        const data = await response.json();
-        setNotes(data.notes || []);
-      } else {
-        // Nenhuma nota disponível ainda
-        setNotes([]);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar notas:', error);
-      setNotes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
 
   const createNewNote = () => {
     const newNote: ProcessNote = {

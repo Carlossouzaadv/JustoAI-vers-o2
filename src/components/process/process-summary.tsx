@@ -45,6 +45,27 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
   const [error, setError] = useState<string | null>(null);
   const [regeneratingDescription, setRegeneratingDescription] = useState(false);
 
+  const loadProcessData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/cases/${processId}`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('Processo não encontrado');
+      }
+
+      const result = await response.json();
+      setData(result.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+    } finally {
+      setLoading(false);
+    }
+  }, [processId]);
+
   const { isSaving, lastSaved, hasUnsavedChanges } = useAutosave<ProcessSummaryData>(data, {
     delay: 2000, // 2 segundos
     onSave: async (processData) => {
@@ -79,27 +100,6 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
   useEffect(() => {
     loadProcessData();
   }, [processId, loadProcessData]);
-
-  const loadProcessData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`/api/cases/${processId}`, {
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        throw new Error('Processo não encontrado');
-      }
-
-      const result = await response.json();
-      setData(result.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
 
   const updateField = (field: keyof ProcessSummaryData, value: unknown) => {
     if (!data) return;

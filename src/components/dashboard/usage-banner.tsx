@@ -120,51 +120,6 @@ export default function UsageBanner({
   const [expanded, setExpanded] = useState(false);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
 
-  // Carregar dados de uso mensal
-  const loadUsageData = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const [usageResponse, alertsResponse] = await Promise.all([
-        fetch(getApiUrl(`/api/telemetry/monthly-usage?workspaceId=${workspaceId}`), { credentials: 'include' }),
-        fetch(getApiUrl(`/api/telemetry/active-alerts?workspaceId=${workspaceId}`), { credentials: 'include' })
-      ]);
-
-      const [usageData, alertsData] = await Promise.all([
-        usageResponse.json(),
-        alertsResponse.json()
-      ]);
-
-      if (usageData.success && usageData.data) {
-        setUsage(usageData.data);
-      }
-
-      if (alertsData.success && alertsData.alerts) {
-        const bannerAlerts = (alertsData.alerts as unknown[])
-          .filter(isApiAlertResponse)
-          .map(convertToAlertBanner);
-        setAlerts(bannerAlerts);
-      }
-
-    } catch (error) {
-      console.error('Erro ao carregar dados de uso:', error);
-      // Set default usage on error
-      setUsage({
-        processes: { monitored: 0, limit: 100, percentage: 0 },
-        reports: { used: 0, limit: 50, percentage: 0, status: 'ok' },
-        credits: { consumed: 0, included: 0, purchased: 0, remaining: 100 },
-        api: { juditCalls: 0, estimatedCost: 0 }
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId, convertToAlertBanner]);
-
-  // Carregar dados de uso
-  useEffect(() => {
-    loadUsageData();
-  }, [loadUsageData]);
-
   /**
    * Convert API alert response to AlertBanner component model.
    * Alert parameter is guaranteed to be validated by isApiAlertResponse type guard.
@@ -233,6 +188,51 @@ export default function UsageBanner({
 
     return baseAlert;
   }, [onUpgrade, onBuyCredits, setExpanded]);
+
+  // Carregar dados de uso mensal
+  const loadUsageData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [usageResponse, alertsResponse] = await Promise.all([
+        fetch(getApiUrl(`/api/telemetry/monthly-usage?workspaceId=${workspaceId}`), { credentials: 'include' }),
+        fetch(getApiUrl(`/api/telemetry/active-alerts?workspaceId=${workspaceId}`), { credentials: 'include' })
+      ]);
+
+      const [usageData, alertsData] = await Promise.all([
+        usageResponse.json(),
+        alertsResponse.json()
+      ]);
+
+      if (usageData.success && usageData.data) {
+        setUsage(usageData.data);
+      }
+
+      if (alertsData.success && alertsData.alerts) {
+        const bannerAlerts = (alertsData.alerts as unknown[])
+          .filter(isApiAlertResponse)
+          .map(convertToAlertBanner);
+        setAlerts(bannerAlerts);
+      }
+
+    } catch (error) {
+      console.error('Erro ao carregar dados de uso:', error);
+      // Set default usage on error
+      setUsage({
+        processes: { monitored: 0, limit: 100, percentage: 0 },
+        reports: { used: 0, limit: 50, percentage: 0, status: 'ok' },
+        credits: { consumed: 0, included: 0, purchased: 0, remaining: 100 },
+        api: { juditCalls: 0, estimatedCost: 0 }
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, convertToAlertBanner]);
+
+  // Carregar dados de uso
+  useEffect(() => {
+    loadUsageData();
+  }, [loadUsageData]);
 
   // Dismiss alerta
   const dismissAlert = (alertType: string) => {
