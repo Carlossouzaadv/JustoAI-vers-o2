@@ -1,23 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 import { CookieConsentProvider } from '@/contexts/cookie-consent-context';
 import { CookieBanner } from '@/components/ui/cookie-banner';
 import { Providers } from './providers';
 import { AuthProvider } from '@/contexts/auth-context';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const poppins = Poppins({
-  subsets: ['latin'],
-  variable: '--font-poppins',
-  weight: ['300', '400', '500', '600', '700'],
-  display: 'swap',
-});
+// Fonts are now defined locally in globals.css using @font-face
+// This eliminates the network dependency on Google Fonts during build
 
 export const metadata: Metadata = {
   title: 'JustoAI: Relatórios Jurídicos Automáticos para Advogados',
@@ -67,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${inter.variable} ${poppins.variable}`}>
+    <html lang="pt-BR">
       <head>
         <link rel="icon" href="/Justo_logo.png" />
         <link rel="apple-touch-icon" href="/Justo_logo.png" />

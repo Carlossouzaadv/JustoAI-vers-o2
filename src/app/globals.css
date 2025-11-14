@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+/* ============================================
+   LOCAL FONT DEFINITIONS (System Fonts Stack)
+   ============================================ */
+
+/* Inter - Modern sans-serif with excellent readability */
+@font-face {
+  font-family: 'InterLocal';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Inter'), local('Inter-Regular'), local('SF Pro Display'), local('system-ui');
+}
+
+/* Poppins - Geometric sans-serif for headings */
+@font-face {
+  font-family: 'PoppinsLocal';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: local('Poppins'), local('Poppins-Regular'), local('SF Pro Display'), local('system-ui');
+}
+
 @theme {
   --color-primary-50: #f0f6ff;
   --color-primary-100: #e0edff;
@@ -36,8 +58,8 @@
   --color-neutral-900: #18181b;
   --color-neutral-950: #09090b;
 
-  --font-family-sans: Inter, sans-serif;
-  --font-family-display: Poppins, sans-serif;
+  --font-family-sans: 'InterLocal', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  --font-family-display: 'PoppinsLocal', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 
   --radius: 0.625rem;
 }
