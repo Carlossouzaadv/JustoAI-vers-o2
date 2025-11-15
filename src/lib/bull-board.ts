@@ -84,38 +84,68 @@ serverAdapter.setBasePath('/admin/queues');
 /**
  * Configuração do Bull Board com todas as filas ativas
  * Note: Only notification queue is active (others disabled for cost optimization)
- * Queues are initialized lazily to avoid Redis connection issues during build
+ * Queues are initialized lazily at runtime, not during module load
  */
-const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
-  queues: [
-    new BullAdapter(getNotificationQueue()),
-  ],
-  serverAdapter: serverAdapter,
-  options: {
-    uiConfig: {
-      boardTitle: 'JustoAI - Queue Dashboard',
-      boardLogo: {
-        path: '/logo.png',
-        width: '100px',
-        height: 'auto',
-      },
-      miscLinks: [
-        {
-          text: 'Dashboard Principal',
-          url: '/dashboard',
+let addQueue: ReturnType<typeof createBullBoard>['addQueue'];
+let removeQueue: ReturnType<typeof createBullBoard>['removeQueue'];
+let setQueues: ReturnType<typeof createBullBoard>['setQueues'];
+let replaceQueues: ReturnType<typeof createBullBoard>['replaceQueues'];
+
+// Initialize Bull Board adapters lazily only when needed
+function initializeBullBoard() {
+  const { addQueue: add, removeQueue: remove, setQueues: set, replaceQueues: replace } = createBullBoard({
+    queues: [
+      new BullAdapter(getNotificationQueue()),
+    ],
+    serverAdapter: serverAdapter,
+    options: {
+      uiConfig: {
+        boardTitle: 'JustoAI - Queue Dashboard',
+        boardLogo: {
+          path: '/logo.png',
+          width: '100px',
+          height: 'auto',
         },
-        {
-          text: 'Documentação API',
-          url: '/api/docs',
+        miscLinks: [
+          {
+            text: 'Dashboard Principal',
+            url: '/dashboard',
+          },
+          {
+            text: 'Documentação API',
+            url: '/api/docs',
+          },
+        ],
+        favIcon: {
+          default: '/favicon.ico',
+          alternative: '/favicon.ico',
         },
-      ],
-      favIcon: {
-        default: '/favicon.ico',
-        alternative: '/favicon.ico',
       },
     },
-  },
-});
+  });
+
+  addQueue = add;
+  removeQueue = remove;
+  setQueues = set;
+  replaceQueues = replace;
+}
+
+// Safe getter that initializes on first use
+function ensureBullBoardInitialized() {
+  if (!addQueue) {
+    try {
+      initializeBullBoard();
+    } catch (error) {
+      console.warn('[BULL-BOARD] Warning: Bull Board could not be initialized (Redis may not be available)');
+      console.warn('[BULL-BOARD] This is expected during build phase. Queues will be available at runtime.');
+      // Provide no-op functions so code doesn't crash
+      addQueue = () => {};
+      removeQueue = () => {};
+      setQueues = () => {};
+      replaceQueues = () => {};
+    }
+  }
+}
 
 // === MIDDLEWARE DE AUTENTICAÇÃO ===
 
@@ -214,6 +244,7 @@ export async function bullBoardAuthMiddleware(
  * Coleta estatísticas detalhadas das filas
  */
 export async function getBullBoardStats() {
+  ensureBullBoardInitialized();
   try {
     // Only notification queue is active (others disabled for cost optimization)
     const queues = [
@@ -321,6 +352,7 @@ export async function getBullBoardStats() {
  * Pausa todas as filas ativas
  */
 export async function pauseAllQueues() {
+  ensureBullBoardInitialized();
   const queues = [getNotificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
@@ -337,6 +369,7 @@ export async function pauseAllQueues() {
  * Resume todas as filas ativas
  */
 export async function resumeAllQueues() {
+  ensureBullBoardInitialized();
   const queues = [getNotificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
@@ -353,6 +386,7 @@ export async function resumeAllQueues() {
  * Limpa jobs completados e falhados (desenvolvimento)
  */
 export async function cleanAllQueues() {
+  ensureBullBoardInitialized();
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Cannot clean queues in production');
   }
@@ -374,6 +408,7 @@ export async function cleanAllQueues() {
  * Retry jobs falhados
  */
 export async function retryFailedJobs(queueName?: string) {
+  ensureBullBoardInitialized();
   const queueMap = { notificationQueue };
   const queues = queueName && queueName in queueMap ?
     [queueMap[queueName as keyof typeof queueMap]] :
@@ -423,6 +458,7 @@ export async function retryFailedJobs(queueName?: string) {
  * Health check completo do sistema de filas
  */
 export async function systemHealthCheck() {
+  ensureBullBoardInitialized();
   try {
     const stats = await getBullBoardStats();
     const redisHealth = await checkRedisHealth();
@@ -505,12 +541,29 @@ async function checkRedisHealth() {
 
 // === EXPORTS ===
 
+// Create safe wrappers that ensure initialization before use
+export function getAddQueue() {
+  ensureBullBoardInitialized();
+  return addQueue;
+}
+
+export function getRemoveQueue() {
+  ensureBullBoardInitialized();
+  return removeQueue;
+}
+
+export function getSetQueues() {
+  ensureBullBoardInitialized();
+  return setQueues;
+}
+
+export function getReplaceQueues() {
+  ensureBullBoardInitialized();
+  return replaceQueues;
+}
+
 export {
   serverAdapter,
-  addQueue,
-  removeQueue,
-  setQueues,
-  replaceQueues,
 };
 
 const exported = {
