@@ -3,6 +3,8 @@
 // Health check e status geral da integração JUDIT
 // ================================================================
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { metrics } from '@/lib/observability/metrics';
 import { getCostSummary } from '@/lib/observability/costTracking';

@@ -3,6 +3,8 @@
 // Novo fluxo de onboarding com Preview (FASE 1)
 // ================================================================
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';

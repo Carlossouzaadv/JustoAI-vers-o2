@@ -3,6 +3,8 @@
 // Inicia processo de onboarding via fila de background
 // ================================================================
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { addOnboardingJob } from '@/lib/queue/juditQueue';

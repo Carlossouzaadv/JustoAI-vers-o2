@@ -4,6 +4,8 @@
 // Implementa: SHA256, deduplicação, extração de texto, identificação CNJ,
 // timeline unificada, cache Redis e análise IA otimizada
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 import { existsSync } from 'fs';

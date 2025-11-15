@@ -3,6 +3,8 @@
 // Verifica status de um job de onboarding
 // ================================================================
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getJobStatus } from '@/lib/queue/juditQueue';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';

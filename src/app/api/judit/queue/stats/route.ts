@@ -3,6 +3,8 @@
 // Retorna estatísticas da fila de onboarding
 // ================================================================
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { getQueueStats, getActiveJobs, getWaitingJobs } from '@/lib/queue/juditQueue';
 

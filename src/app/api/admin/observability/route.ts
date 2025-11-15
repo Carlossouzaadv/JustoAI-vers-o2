@@ -4,6 +4,8 @@
  * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
