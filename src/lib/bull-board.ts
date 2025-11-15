@@ -391,7 +391,7 @@ export async function cleanAllQueues() {
     throw new Error('Cannot clean queues in production');
   }
 
-  const queues = [notificationQueue];
+  const queues = [getNotificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -409,10 +409,10 @@ export async function cleanAllQueues() {
  */
 export async function retryFailedJobs(queueName?: string) {
   ensureBullBoardInitialized();
-  const queueMap = { notificationQueue };
+  const queueMap = { notificationQueue: getNotificationQueue() };
   const queues = queueName && queueName in queueMap ?
     [queueMap[queueName as keyof typeof queueMap]] :
-    [notificationQueue];
+    [getNotificationQueue()];
 
   const results = await Promise.allSettled(
     (Array.isArray(queues) ? queues : [queues]).map(async (queue) => {

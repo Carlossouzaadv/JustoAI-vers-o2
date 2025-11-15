@@ -4,6 +4,7 @@
 // Cache inteligente com Redis (1h) + PostgreSQL (7 dias) + memória local
 // Type-safe implementation using redis.ts types and CacheKeys builder
 
+import { Prisma } from '@prisma/client';
 import { ICONS } from './icons';
 import prisma from './prisma';
 
@@ -302,13 +303,16 @@ export class AiCacheManager {
       const expiresAt = new Date();
       expiresAt.setSeconds(expiresAt.getSeconds() + this.config.postgres_ttl);
 
+      // Convert value to Prisma-compatible JSON format
+      const resultAsJson: Prisma.InputJsonValue = JSON.parse(JSON.stringify(value));
+
       await prisma.aiCache.create({
         data: {
           workspaceId: metadata.workspaceId,
           cacheKey: cacheKey,
           type: 'ANALYSIS',
           prompt: analysisType,
-          result: value,
+          result: resultAsJson,
           model: metadata?.model || 'unknown',
           tokens: metadata?.tokens_saved || 0,
           cost: 0.001,

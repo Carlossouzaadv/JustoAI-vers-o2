@@ -16,6 +16,7 @@ import {
   CreateWorkspaceInput
 } from '@/lib/validations'
 import type { Workspace, InputJsonValue, WorkspaceWhereInput, WorkspaceCreateInput } from '@/lib/types/database'
+import { Plan } from '@/lib/types/database'
 
 // ================================
 // TYPE ALIASES
@@ -88,12 +89,12 @@ function isWorkspaceWithUsers(
  * Zod defines: FREE, BASIC, PRO, ENTERPRISE
  * Prisma defines: FREE, STARTER, PROFESSIONAL
  */
-function mapPlanToDbPlan(plan: string): 'FREE' | 'STARTER' | 'PROFESSIONAL' | null {
-  const planMap: Record<string, 'FREE' | 'STARTER' | 'PROFESSIONAL'> = {
-    'FREE': 'FREE',
-    'BASIC': 'STARTER',
-    'PRO': 'PROFESSIONAL',
-    'ENTERPRISE': 'PROFESSIONAL'
+function mapPlanToDbPlan(plan: string): Plan | null {
+  const planMap: Record<string, Plan> = {
+    'FREE': Plan.FREE,
+    'BASIC': Plan.STARTER,
+    'PRO': Plan.PROFESSIONAL,
+    'ENTERPRISE': Plan.PROFESSIONAL
   }
 
   return plan in planMap ? planMap[plan] : null
@@ -290,62 +291,73 @@ async function POST(request: NextRequest) {
 
   // Build workspace data with proper type checking
   // Check if settings are provided and valid
-  let workspaceData: WorkspaceCreateInput
-
-  if (input.settings && isValidWorkspaceSettings(input.settings)) {
-    // Settings are provided and valid
-    // After type guard, input.settings is narrowed to InputJsonValue
-    workspaceData = {
-      name: input.name,
-      slug: input.slug,
-      plan: dbPlan,
-      description: input.description ?? null,
-      logoUrl: input.logoUrl ?? null,
-      settings: input.settings,
-      users: {
-        create: {
-          userId: user.id,
-          role: 'OWNER'
+  // Inline the data object to let Prisma infer the exact type
+  const workspaceRaw = input.settings && isValidWorkspaceSettings(input.settings)
+    ? await prisma.workspace.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+          plan: dbPlan,
+          description: input.description ?? null,
+          logoUrl: input.logoUrl ?? null,
+          settings: input.settings,
+          users: {
+            create: {
+              userId: user.id,
+              role: 'OWNER'
+            }
+          }
+        },
+        include: {
+          users: {
+            where: { userId: user.id },
+            select: {
+              role: true,
+              status: true,
+              createdAt: true
+            }
+          },
+          _count: {
+            select: {
+              users: true,
+              clients: true,
+              cases: true
+            }
+          }
         }
-      }
-    }
-  } else {
-    // Settings not provided or invalid
-    workspaceData = {
-      name: input.name,
-      slug: input.slug,
-      plan: dbPlan,
-      description: input.description ?? null,
-      logoUrl: input.logoUrl ?? null,
-      users: {
-        create: {
-          userId: user.id,
-          role: 'OWNER'
+      })
+    : await prisma.workspace.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+          plan: dbPlan,
+          description: input.description ?? null,
+          logoUrl: input.logoUrl ?? null,
+          users: {
+            create: {
+              userId: user.id,
+              role: 'OWNER'
+            }
+          }
+        },
+        include: {
+          users: {
+            where: { userId: user.id },
+            select: {
+              role: true,
+              status: true,
+              createdAt: true
+            }
+          },
+          _count: {
+            select: {
+              users: true,
+              clients: true,
+              cases: true
+            }
+          }
         }
-      }
-    }
-  }
-
-  const workspaceRaw = await prisma.workspace.create({
-    data: workspaceData,
-    include: {
-      users: {
-        where: { userId: user.id },
-        select: {
-          role: true,
-          status: true,
-          createdAt: true
-        }
-      },
-      _count: {
-        select: {
-          users: true,
-          clients: true,
-          cases: true
-        }
-      }
-    }
-  })
+      })
 
   // Validate response with type guard before transformation
   if (!isWorkspaceWithUsers(workspaceRaw, true)) {

@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
 import { ICONS } from '@/lib/icons';
-import type { UserWorkspaceRecord } from '@/lib/types/database';
+import type { UserWorkspaceRecord, WorkspaceRole } from '@/lib/types/database';
 
 // ================================================================
 // TYPE DEFINITIONS & VALIDATION SCHEMAS
@@ -43,6 +43,31 @@ function isValidNoteMetadata(metadata: unknown): metadata is NoteMetadata {
     (meta.tags === undefined || Array.isArray(meta.tags)) &&
     (meta.priority === undefined || typeof meta.priority === 'string') &&
     (meta.isPinned === undefined || typeof meta.isPinned === 'boolean')
+  );
+}
+
+/**
+ * Type guard to validate WorkspaceRole from Prisma enum
+ * Narrows Prisma.$Enums.WorkspaceRole to our custom WorkspaceRole type
+ */
+function isWorkspaceRole(role: unknown): role is WorkspaceRole {
+  return (
+    typeof role === 'string' &&
+    (role === 'ADMIN' || role === 'OWNER' || role === 'MEMBER' || role === 'VIEWER')
+  );
+}
+
+/**
+ * Type guard to validate UserWorkspace from Prisma to UserWorkspaceRecord
+ */
+function isUserWorkspaceRecord(record: unknown): record is UserWorkspaceRecord {
+  if (typeof record !== 'object' || record === null) return false;
+  const obj = record as Record<string, unknown>;
+  return (
+    typeof obj.id === 'string' &&
+    typeof obj.userId === 'string' &&
+    typeof obj.workspaceId === 'string' &&
+    isWorkspaceRole(obj.role)
   );
 }
 
@@ -153,8 +178,8 @@ export async function PATCH(
     // 4. VERIFY WORKSPACE ACCESS
     // ============================================================
 
-    const hasWorkspaceAccess = note.case?.workspace?.users?.some(
-      (userWorkspace: UserWorkspaceRecord) => userWorkspace.userId === userId
+    const hasWorkspaceAccess = note.case?.workspace?.users?.filter(isUserWorkspaceRecord).some(
+      (userWorkspace) => userWorkspace.userId === userId
     );
 
     if (!hasWorkspaceAccess) {
@@ -358,8 +383,8 @@ export async function DELETE(
     // 3. VERIFY WORKSPACE ACCESS
     // ============================================================
 
-    const hasWorkspaceAccess = note.case?.workspace?.users?.some(
-      (userWorkspace: UserWorkspaceRecord) => userWorkspace.userId === userId
+    const hasWorkspaceAccess = note.case?.workspace?.users?.filter(isUserWorkspaceRecord).some(
+      (userWorkspace) => userWorkspace.userId === userId
     );
 
     if (!hasWorkspaceAccess) {

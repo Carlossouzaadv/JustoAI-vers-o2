@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ICONS } from '@/lib/icons';
 import { getTimelineEnricherService, TimelineMovement } from './timelineEnricher';
-import { TimelineSource } from '@/lib/types/database';
+import { TimelineSource, EventRelationType } from '@/lib/types/database';
 
 // ================================================================
 // TYPE DEFINITIONS FOR TYPE GUARDS
@@ -139,6 +139,16 @@ function isJuditResponse(data: unknown): data is JuditResponseData {
   }
 
   return true;
+}
+
+/**
+ * Type Guard: Validates if value is a valid EventRelationType
+ */
+function isValidEventRelationType(value: unknown): value is EventRelationType {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  return Object.values(EventRelationType).includes(value as EventRelationType);
 }
 
 // ================================================================
@@ -371,20 +381,50 @@ export async function mergeTimelines(
             ? JSON.parse(JSON.stringify(relatedEventData.metadata))
             : {};
 
+          // Type-safe extraction with fallbacks for required fields
+          const eventDate = relatedEventData.eventDate instanceof Date
+            ? relatedEventData.eventDate
+            : movement.date;
+
+          const eventType = typeof relatedEventData.eventType === 'string' && relatedEventData.eventType.trim() !== ''
+            ? relatedEventData.eventType
+            : movement.type;
+
+          const description = typeof relatedEventData.description === 'string' && relatedEventData.description.trim() !== ''
+            ? relatedEventData.description
+            : movement.description;
+
+          const normalizedContentValue = typeof relatedEventData.normalizedContent === 'string' && relatedEventData.normalizedContent.trim() !== ''
+            ? relatedEventData.normalizedContent
+            : normalizedContent;
+
+          const sourceId = typeof relatedEventData.sourceId === 'string'
+            ? relatedEventData.sourceId
+            : undefined;
+
+          const confidence = typeof relatedEventData.confidence === 'number'
+            ? relatedEventData.confidence
+            : 0.5;
+
+          // Use type guard to validate EventRelationType
+          const relationType = isValidEventRelationType(relatedEventData.relationType)
+            ? relatedEventData.relationType
+            : undefined;
+
           // Type-safe data construction for Prisma
           const newEvent = await prisma.processTimelineEntry.create({
             data: {
               caseId,
               contentHash,
-              eventDate: relatedEventData.eventDate || movement.date,
-              eventType: relatedEventData.eventType || movement.type,
-              description: relatedEventData.description || movement.description,
-              normalizedContent: relatedEventData.normalizedContent || normalizedContent,
+              eventDate,
+              eventType,
+              description,
+              normalizedContent: normalizedContentValue,
               source: (relatedEventData.source || movement.source) as TimelineSource,
-              sourceId: relatedEventData.sourceId,
-              confidence: relatedEventData.confidence || 0.5,
+              sourceId,
+              confidence,
               metadata: metadataForDb,
-              relationType: relatedEventData.relationType,
+              relationType,
               contributingSources: (relatedEventData.contributingSources || []) as TimelineSource[],
               originalTexts: (relatedEventData.originalTexts || {}) as Record<string, string>,
             },

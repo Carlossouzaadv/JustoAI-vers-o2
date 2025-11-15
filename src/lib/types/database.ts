@@ -540,7 +540,26 @@ export type ProcessTimelineEntryUpdateInput = Partial<Record<string, unknown>>;
 
 // Create Input Types (for creation)
 export type ProcessTimelineEntryCreateInput = Record<string, unknown>;
-export type WorkspaceCreateInput = Record<string, unknown>;
+export interface WorkspaceCreateInput {
+  name: string;
+  slug: string;
+  plan?: Plan;
+  description?: string | null;
+  logoUrl?: string | null;
+  settings?: InputJsonValue | null;
+  status?: Status;
+  users?: {
+    create?: {
+      userId: string;
+      role: string;
+      status?: string;
+    } | Array<{
+      userId: string;
+      role: string;
+      status?: string;
+    }>;
+  };
+}
 
 // OrderBy Types (for sorting)
 export type ProcessAlertOrderByWithRelationInput = Partial<Record<string, 'asc' | 'desc'>>;

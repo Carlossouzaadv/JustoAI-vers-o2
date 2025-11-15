@@ -192,35 +192,57 @@ export class AggregationService {
       }),
     ]);
 
-    // Local interface for Prisma JuditCostTracking type
-    interface JuditCallData {
+    // Local interface matching Prisma JuditCostTracking schema
+    interface PrismaJuditCostTracking {
+      id: string;
       status: string;
-      totalCost: number | string;
+      numeroCnj: string | null;
+      workspaceId: string | null;
+      createdAt: Date;
+      requestId: string | null;
+      movementsCount: number;
+      errorMessage: string | null;
+      totalCost: number;
+      inputCost: number;
+      outputCost: number;
+      inputTokens: number;
+      outputTokens: number;
       durationMs: number | null;
+      documentsRetrieved: number | null;
       operationType: string;
     }
 
+    // Helper functions for safe extraction
+    const getTotalCost = (call: PrismaJuditCostTracking): number =>
+      typeof call.totalCost === 'number' ? call.totalCost : 0;
+
+    const getDuration = (call: PrismaJuditCostTracking): number =>
+      typeof call.durationMs === 'number' ? call.durationMs : 0;
+
+    // Type assertion for Prisma result
+    const typedJuditCalls = juditCalls as unknown as PrismaJuditCostTracking[];
+
     // Aggregate JUDIT metrics
     const juditMetrics = {
-      totalCalls: juditCalls.length,
-      successfulCalls: juditCalls.filter((c: JuditCallData) => isSuccessfulJuditCall(c.status)).length,
-      failedCalls: juditCalls.filter((c: JuditCallData) => !isSuccessfulJuditCall(c.status)).length,
-      totalCost: juditCalls.reduce((sum: number, c: JuditCallData) => sum + Number(c.totalCost), 0),
+      totalCalls: typedJuditCalls.length,
+      successfulCalls: typedJuditCalls.filter((c) => isSuccessfulJuditCall(c.status)).length,
+      failedCalls: typedJuditCalls.filter((c) => !isSuccessfulJuditCall(c.status)).length,
+      totalCost: typedJuditCalls.reduce((sum, c) => sum + getTotalCost(c), 0),
       avgDuration:
-        juditCalls.length > 0
-          ? juditCalls.reduce((sum: number, c: JuditCallData) => sum + (c.durationMs || 0), 0) / juditCalls.length
+        typedJuditCalls.length > 0
+          ? typedJuditCalls.reduce((sum, c) => sum + getDuration(c), 0) / typedJuditCalls.length
           : 0,
       byOperation: {} as Record<string, { count: number; cost: number }>,
     };
 
     // Group by operation
-    for (const call of juditCalls) {
+    for (const call of typedJuditCalls) {
       const op = call.operationType;
       if (!juditMetrics.byOperation[op]) {
         juditMetrics.byOperation[op] = { count: 0, cost: 0 };
       }
       juditMetrics.byOperation[op].count++;
-      juditMetrics.byOperation[op].cost += Number(call.totalCost);
+      juditMetrics.byOperation[op].cost += getTotalCost(call);
     }
 
     // Count analyzed documents

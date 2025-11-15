@@ -488,12 +488,18 @@ export async function GET(
 
     console.log(`${ICONS.PROCESS} [Unified Timeline] Mesclando todas as fontes...`);
 
-    const allEntries = [...timelineEntries, ...documentTimelineEntries];
+    const allEntries: TimelineEntryInput[] = [...timelineEntries, ...documentTimelineEntries];
 
     // Remover duplicatas óbvias baseado em ID
-    const entriesByKey = new Map();
+    const entriesByKey = new Map<string, TimelineEntryInput>();
     for (const entry of allEntries) {
-      const key = `${entry.eventDate.toISOString().split('T')[0]}_${entry.eventType}`;
+      // Safe narrowing: eventDate is guaranteed to be Date in TimelineEntryInput
+      const eventDate = entry.eventDate instanceof Date
+        ? entry.eventDate
+        : (typeof entry.eventDate === 'string' || typeof entry.eventDate === 'number'
+          ? new Date(entry.eventDate)
+          : new Date());
+      const key = `${eventDate.toISOString().split('T')[0]}_${entry.eventType}`;
       if (!entriesByKey.has(key)) {
         entriesByKey.set(key, entry);
       }

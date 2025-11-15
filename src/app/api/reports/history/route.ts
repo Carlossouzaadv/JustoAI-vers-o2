@@ -7,6 +7,8 @@ import { NextRequest } from 'next/server';
 import { successResponse, errorResponse, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import type { Prisma } from '@prisma/client';
+import { ExecutionStatus } from '@/lib/types/database';
 
 /**
  * Type definitions for Prisma query results
@@ -50,16 +52,13 @@ interface ExecutionForTrend {
   duration: number | null;
 }
 
-interface WhereClauseInput {
-  workspaceId: string;
-  scheduleId?: string;
-  status?: string;
-}
+// Use Prisma's generated type for where clauses
+type ReportExecutionWhereInput = Prisma.ReportExecutionWhereInput;
 
 /**
  * Type guard para validar ExecutionStatus
  */
-function isValidExecutionStatus(value: unknown): value is string {
+function isValidExecutionStatus(value: unknown): value is ExecutionStatus {
   if (typeof value !== 'string') return false;
   const validStatuses: string[] = ['AGENDADO', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'];
   return validStatuses.includes(value);
@@ -72,8 +71,8 @@ function buildReportExecutionWhereClause(
   workspaceId: string,
   scheduleId?: string | null,
   status?: string | null
-): WhereClauseInput {
-  const where: WhereClauseInput = { workspaceId };
+): ReportExecutionWhereInput {
+  const where: ReportExecutionWhereInput = { workspaceId };
 
   if (scheduleId) {
     where.scheduleId = scheduleId;
@@ -81,7 +80,7 @@ function buildReportExecutionWhereClause(
 
   // Type narrowing: validar e converter status para ExecutionStatus
   if (status && isValidExecutionStatus(status)) {
-    where.status = status;
+    where.status = status; // Now type-safe: isValidExecutionStatus narrows to ExecutionStatus
   }
 
   return where;
@@ -199,7 +198,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 /**
  * Calcula estatísticas de execução
  */
-async function calculateExecutionStatistics(whereClause: WhereClauseInput) {
+async function calculateExecutionStatistics(whereClause: ReportExecutionWhereInput) {
   // Estatísticas dos últimos 30 dias
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -299,7 +298,7 @@ async function calculateExecutionStatistics(whereClause: WhereClauseInput) {
 /**
  * Calcula tendência mensal
  */
-async function getMonthlyTrend(whereClause: WhereClauseInput) {
+async function getMonthlyTrend(whereClause: ReportExecutionWhereInput) {
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 

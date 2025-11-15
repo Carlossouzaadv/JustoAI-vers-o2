@@ -161,10 +161,10 @@ export class SystemSynchronizer {
     });
 
     return {
-      activeSyncs: lastSyncs.filter((sync: SystemSyncFields) => sync.currentStatus === 'SUCCESS').length,
+      activeSyncs: lastSyncs.filter((sync) => sync.currentStatus === 'SUCCESS').length,
       totalSyncs: lastSyncs.length,
       lastSyncDate: lastSyncs[0]?.updatedAt,
-      systems: lastSyncs.map((sync: SystemSyncFields) => ({
+      systems: lastSyncs.map((sync) => ({
         system: sync.sourceSystem,
         status: sync.currentStatus,
         lastSync: sync.lastSync

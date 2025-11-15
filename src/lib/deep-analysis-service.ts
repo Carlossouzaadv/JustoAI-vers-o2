@@ -462,7 +462,7 @@ export class DeepAnalysisService {
   /**
    * Busca job ativo para analysis_key
    */
-  async getActiveJob(analysisKey: string): Promise<AnalysisJob | null> {
+  async getActiveJob(analysisKey: string) {
     try {
       const job = await prisma.analysisJob.findFirst({
         where: {
@@ -482,7 +482,7 @@ export class DeepAnalysisService {
   /**
    * Busca job por version ID
    */
-  async getActiveJobByVersion(versionId: string): Promise<AnalysisJob | null> {
+  async getActiveJobByVersion(versionId: string) {
     try {
       const job = await prisma.analysisJob.findFirst({
         where: {
@@ -618,7 +618,7 @@ export class DeepAnalysisService {
    * Cria job de análise
    * Valida metadata e filesMetadata antes de salvar
    */
-  async createAnalysisJob(params: AnalysisJobParams): Promise<AnalysisJob> {
+  async createAnalysisJob(params: AnalysisJobParams) {
     try {
       // Valida metadata se fornecida
       const validatedMetadata: AnalysisMetadata = params.metadata || {};

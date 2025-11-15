@@ -12,7 +12,8 @@ import { addNotificationJob } from '@/lib/queues';
 import { ICONS } from '@/lib/icons';
 import { createHash } from 'crypto';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
-import { ReportType, AudienceType, OutputFormat } from '@/lib/types/database';
+import { ReportType, AudienceType, OutputFormat, ExecutionStatus } from '@/lib/types/database';
+import type { Prisma } from '@prisma/client';
 
 // Tipos para o endpoint
 interface IndividualReportRequest {
@@ -283,8 +284,8 @@ export async function POST(request: NextRequest) {
               format,
               cacheHit: reportResult.cacheHit
             },
-            status: 'CONCLUIDO',
-            result: reportResult.summary,
+            status: ExecutionStatus.COMPLETED,
+            result: reportResult.summary as Prisma.InputJsonValue,
             filePath: Object.values(reportResult.fileUrls)[0],
             fileUrls: reportResult.fileUrls,
             completedAt: new Date(),

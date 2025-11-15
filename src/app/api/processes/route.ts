@@ -61,11 +61,11 @@ interface ProcessMovementCreateManyInput {
   date: Date;
   type: string;
   description: string;
-  category: MovementCategory;
-  importance: Priority;
-  requiresAction: boolean;
-  deadline: Date | null;
-  rawData: JsonValue;
+  category?: MovementCategory;
+  importance?: Priority;
+  requiresAction?: boolean;
+  deadline?: Date | null;
+  rawData?: JsonValue | null;
 }
 
 // ================================
@@ -607,7 +607,7 @@ export async function POST(request: NextRequest) {
     // Criar movimentações iniciais (se existem)
     if (initialMovements.length > 0) {
       // Filter and validate movements using type guard
-      const validMovements: ProcessMovementCreateManyInput[] = [];
+      const validMovementsData = [];
 
       for (const item of initialMovements) {
         if (!isProcessMovement(item)) {
@@ -616,10 +616,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Now 'item' is safely typed as ProcessMovementData
-        const category = isValidMovementCategory(item.category) ? item.category : 'OTHER';
-        const importance = isValidPriority(item.importance) ? item.importance : 'MEDIUM';
+        const category = isValidMovementCategory(item.category) ? item.category : ('OTHER' as const);
+        const importance = isValidPriority(item.importance) ? item.importance : ('MEDIUM' as const);
 
-        const validatedMovement: ProcessMovementCreateManyInput = {
+        validMovementsData.push({
           monitoredProcessId: monitoredProcess.id,
           date: new Date(item.date),
           type: item.type,
@@ -629,14 +629,12 @@ export async function POST(request: NextRequest) {
           requiresAction: item.requiresAction ?? false,
           deadline: item.deadline ? new Date(item.deadline) : null,
           rawData: JSON.parse(JSON.stringify(item))
-        };
-
-        validMovements.push(validatedMovement);
+        });
       }
 
-      if (validMovements.length > 0) {
+      if (validMovementsData.length > 0) {
         await prisma.processMovement.createMany({
-          data: validMovements
+          data: validMovementsData
         });
       }
     }

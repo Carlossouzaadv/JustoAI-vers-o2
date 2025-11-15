@@ -101,10 +101,22 @@ export class QuotaSystem {
       console.log(`${ICONS.SUCCESS} Quota criada para workspace ${workspaceId}: ${limits.reportsMonthlyLimit} relatórios/mês`);
     }
 
-    // Filtrar campos para corresponder ao tipo esperado
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
-    const { createdAt: _createdAt, updatedAt: _updatedAt, ...quotaData } = quota;
-    return quotaData as unknown as Awaited<ReturnType<typeof prisma.quotaManagement.findUnique>>;
+    // Return the quota object with all necessary fields
+    // Convert overrideLimits to Record<string, unknown> if it's an object
+    const overrideLimitsValue = quota.overrideLimits && typeof quota.overrideLimits === 'object' && !Array.isArray(quota.overrideLimits)
+      ? quota.overrideLimits as Record<string, unknown>
+      : undefined;
+
+    return {
+      id: quota.id,
+      workspaceId: quota.workspaceId,
+      plan: quota.plan as Plan,
+      reportsMonthlyLimit: quota.reportsMonthlyLimit,
+      reportProcessesLimit: quota.reportProcessesLimit,
+      reportsUsedThisMonth: quota.reportsUsedThisMonth,
+      quotaResetDate: quota.quotaResetDate,
+      overrideLimits: overrideLimitsValue
+    };
   }
 
   /**

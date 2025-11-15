@@ -80,18 +80,32 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Interface for groupBy result item type
+    // Interface for groupBy result item type (from Prisma)
     interface GroupedAlertCount {
-      severity: AlertSeverity;
+      severity: string; // Prisma returns string, not our custom enum
       _count: {
         id: number;
       };
     }
 
+    // Type-safe reduce: validate severity before using it
     const countsBySeverity = counts.reduce(
-      (acc: Record<string, number>, item: GroupedAlertCount) => {
-        const countValue = item._count.id;
-        acc[item.severity.toLowerCase()] = countValue;
+      (acc: Record<string, number>, item) => {
+        // Type narrowing: validate that item matches our expected structure
+        if (
+          typeof item === 'object' &&
+          item !== null &&
+          '_count' in item &&
+          typeof item._count === 'object' &&
+          item._count !== null &&
+          'id' in item._count &&
+          typeof item._count.id === 'number' &&
+          'severity' in item &&
+          typeof item.severity === 'string'
+        ) {
+          const countValue = item._count.id;
+          acc[item.severity.toLowerCase()] = countValue;
+        }
         return acc;
       },
       { critical: 0, high: 0, medium: 0, low: 0 }

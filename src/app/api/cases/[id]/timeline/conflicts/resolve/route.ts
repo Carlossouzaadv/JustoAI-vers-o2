@@ -229,23 +229,21 @@ export async function POST(
               ? JSON.parse(JSON.stringify(event.originalTexts))
               : undefined;
 
-            const relatedEventCreate: ProcessTimelineEntryCreateInput = {
-              case: { connect: { id: caseId } },
-              contentHash: `related-${event.id}`,
-              eventDate: event.eventDate,
-              eventType: event.eventType,
-              description: event.description || '',
-              normalizedContent: event.normalizedContent || '',
-              source: event.source,
-              confidence: event.confidence,
-              metadata: serializedEventMetadata,
-              baseEvent: { connect: { id: event.id } },
-              relationType: 'RELATED',
-              originalTexts: serializedOriginalTexts,
-            };
-
             const relatedEvent = await prisma.processTimelineEntry.create({
-              data: relatedEventCreate,
+              data: {
+                case: { connect: { id: caseId } },
+                contentHash: `related-${event.id}`,
+                eventDate: event.eventDate,
+                eventType: event.eventType,
+                description: event.description || '',
+                normalizedContent: event.normalizedContent || '',
+                source: event.source,
+                confidence: event.confidence,
+                metadata: serializedEventMetadata,
+                baseEvent: { connect: { id: event.id } },
+                relationType: 'RELATED',
+                originalTexts: serializedOriginalTexts,
+              },
             });
 
             console.log(

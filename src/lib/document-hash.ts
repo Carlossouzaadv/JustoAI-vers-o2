@@ -54,15 +54,15 @@ export class DocumentHashManager {
     workspaceId: string,
     prisma: {
       caseDocument: {
-        findFirst: (_args: {
+        findFirst: (args: {
           where: { textSha: string; case: { workspaceId: string } };
-          include: { case: { select: { id: true; title: true; number: true } } };
+          include: { case: { select: { id: boolean; title: boolean; number: boolean } } };
         }) => Promise<{
           id: string;
           name: string;
           caseId: string;
           createdAt: Date;
-          case: { id: true; title: string; number: true };
+          case: { id: string; title: string; number: string };
         } | null>;
       };
     }

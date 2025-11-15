@@ -13,6 +13,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 /**
  * Interface representing the Prisma query result for case documents
+ * Note: Prisma uses JsonValue for metadata field
  */
 interface PrismaCaseDocument {
   id: string;
@@ -20,11 +21,18 @@ interface PrismaCaseDocument {
   originalName: string;
   type: string;
   documentDate: Date | null;
-  metadata: Record<string, unknown> | null;
+  metadata: unknown; // Prisma JsonValue type
   extractedText: string | null;
   summary: string | null;
   sourceOrigin: string;
   createdAt: Date;
+}
+
+/**
+ * Type guard: Validates if metadata is a valid Record<string, unknown>
+ */
+function isValidMetadata(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export interface DocumentSummaryData {
@@ -245,13 +253,16 @@ async function loadCaseDocuments(caseId: string): Promise<DocumentSummaryData[]>
   });
 
   return documents.map((doc: PrismaCaseDocument): DocumentSummaryData => {
+    // Use type guard to safely extract metadata from JsonValue
+    const metadata = isValidMetadata(doc.metadata) ? doc.metadata : {};
+
     const result: DocumentSummaryData = {
       id: doc.id,
       name: doc.name,
       originalName: doc.originalName,
       type: doc.type,
       sourceOrigin: doc.sourceOrigin,
-      metadata: doc.metadata || {},
+      metadata,
     };
 
     // Convert null to undefined for optional properties using type narrowing

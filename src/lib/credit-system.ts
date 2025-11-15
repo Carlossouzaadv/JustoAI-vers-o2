@@ -144,7 +144,7 @@ export class CreditManager {
   async getCreditBalance(workspaceId: string): Promise<CreditBalance> {
     try {
       // Buscar créditos base
-      let credits = await this.prisma.workspaceCredits.findUnique({
+      let credits: WorkspaceCreditsRecord | null = await this.prisma.workspaceCredits.findUnique({
         where: { workspaceId }
       });
 
@@ -274,7 +274,7 @@ export class CreditManager {
   ): Promise<string[]> {
     // Validate metadata if provided using type guard
     // Padrão-Ouro: JSON round-trip ensures Prisma compatibility without casting
-    let validatedMetadata: Record<string, unknown> | undefined = undefined;
+    let validatedMetadata: Prisma.InputJsonValue | undefined = undefined;
     if (metadata && typeof metadata === 'object' && isCreditTransactionMetadata(metadata)) {
       // After isCreditTransactionMetadata guard, metadata is guaranteed to be valid
       // Use JSON serialization (safe, no casting) to ensure Prisma compatibility
@@ -282,7 +282,8 @@ export class CreditManager {
         validatedMetadata = JSON.parse(JSON.stringify(metadata));
       } catch (error) {
         console.warn(`${ICONS.WARNING} Failed to serialize transaction metadata:`, error);
-        // metadata is undefined - transaction will have no metadata
+        // Use undefined for invalid metadata
+        validatedMetadata = undefined;
       }
     }
 
@@ -552,9 +553,9 @@ export class CreditManager {
     try {
       const planConfig = CREDIT_CONFIG.PLANS[planName];
 
-      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const credits = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Criar registro de créditos
-        const credits = await tx.workspaceCredits.create({
+        return await tx.workspaceCredits.create({
           data: {
             workspaceId,
             reportCreditsBalance: 0,
@@ -563,26 +564,26 @@ export class CreditManager {
             fullCreditsRolloverCap: planConfig.fullRolloverCap
           }
         });
-
-        // Adicionar bônus do primeiro mês (se aplicável)
-        if (planConfig.firstMonthFullBonus > 0) {
-          const bonusExpiresAt = new Date();
-          bonusExpiresAt.setDate(bonusExpiresAt.getDate() + planConfig.firstMonthBonusExpiryDays);
-
-          await this.creditCredits(
-            workspaceId,
-            0,
-            planConfig.firstMonthFullBonus,
-            'BONUS',
-            'Bônus primeiro mês',
-            bonusExpiresAt
-          );
-        }
-
-        console.log(`${ICONS.SUCCESS} Créditos inicializados para workspace ${workspaceId} (${planName})`);
-
-        return credits;
       });
+
+      // Adicionar bônus do primeiro mês (se aplicável) - fora da transação
+      if (planConfig.firstMonthFullBonus > 0) {
+        const bonusExpiresAt = new Date();
+        bonusExpiresAt.setDate(bonusExpiresAt.getDate() + planConfig.firstMonthBonusExpiryDays);
+
+        await this.creditCredits(
+          workspaceId,
+          0,
+          planConfig.firstMonthFullBonus,
+          'BONUS',
+          'Bônus primeiro mês',
+          bonusExpiresAt
+        );
+      }
+
+      console.log(`${ICONS.SUCCESS} Créditos inicializados para workspace ${workspaceId} (${planName})`);
+
+      return credits;
 
     } catch (error) {
       console.error(`${ICONS.ERROR} Erro ao inicializar créditos:`, error);

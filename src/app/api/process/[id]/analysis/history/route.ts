@@ -59,10 +59,13 @@ function safeNullableString(value: unknown): string | null {
   return null;
 }
 
-// Types
-type VersionWithJobs = CaseAnalysisVersion & {
+// Type for Prisma query result (includes all job fields from include)
+type PrismaVersionWithJobs = CaseAnalysisVersion & {
   jobs: AnalysisJob[];
 };
+
+// Type alias for use in filters
+type VersionWithJobs = PrismaVersionWithJobs;
 
 interface VersionDiff {
   analysisType?: {
@@ -174,7 +177,7 @@ export const GET = withErrorHandler(async (
     }
 
     // Buscar todas as versões de análise
-    const versions = await prisma.caseAnalysisVersion.findMany({
+    const prismaVersions = await prisma.caseAnalysisVersion.findMany({
       where: {
         caseId: processId,
         workspaceId
@@ -187,6 +190,9 @@ export const GET = withErrorHandler(async (
         }
       }
     });
+
+    // Type assertion: Cast Prisma result to our expected type
+    const versions = prismaVersions as unknown as PrismaVersionWithJobs[];
 
     if (versions.length === 0) {
       return successResponse({
@@ -201,8 +207,8 @@ export const GET = withErrorHandler(async (
     const processedVersions: ProcessedVersion[] = [];
 
     for (let i = 0; i < versions.length; i++) {
-      const current = versions[i];
-      const previous = i < versions.length - 1 ? versions[i + 1] : null;
+      const current = versions[i] as VersionWithJobs;
+      const previous = (i < versions.length - 1 ? versions[i + 1] : null) as VersionWithJobs | null;
 
       // Calcular diff se houver versão anterior
       const diff = previous ? calculateVersionDiff(previous, current) : null;
@@ -267,40 +273,43 @@ export const GET = withErrorHandler(async (
       processedVersions.push(versionData);
     }
 
+    // Type-safe helpers for filtering
+    const versionArray = versions as VersionWithJobs[];
+
     // Estatísticas gerais
     const stats = {
-      totalVersions: versions.length,
+      totalVersions: versionArray.length,
       byType: {
-        fast: versions.filter((v: VersionWithJobs) => safeString(v.analysisType, '') === 'FAST').length,
-        full: versions.filter((v: VersionWithJobs) => safeString(v.analysisType, '') === 'FULL').length
+        fast: versionArray.filter((v) => safeString(v.analysisType, '') === 'FAST').length,
+        full: versionArray.filter((v) => safeString(v.analysisType, '') === 'FULL').length
       },
       byStatus: {
-        completed: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'COMPLETED').length,
-        failed: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'FAILED').length,
-        processing: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'PROCESSING').length,
-        pending: versions.filter((v: VersionWithJobs) => safeString(v.status, '') === 'PENDING').length
+        completed: versionArray.filter((v) => safeString(v.status, '') === 'COMPLETED').length,
+        failed: versionArray.filter((v) => safeString(v.status, '') === 'FAILED').length,
+        processing: versionArray.filter((v) => safeString(v.status, '') === 'PROCESSING').length,
+        pending: versionArray.filter((v) => safeString(v.status, '') === 'PENDING').length
       },
       totalCreditsUsed: {
-        full: versions.reduce((sum: number, v: VersionWithJobs) => sum + safeNumber(v.costEstimate, 0), 0),
+        full: versionArray.reduce((sum, v) => sum + safeNumber(v.costEstimate, 0), 0),
         fast: 0
       },
-      avgConfidence: versions
-        .filter((v: VersionWithJobs) => {
+      avgConfidence: versionArray
+        .filter((v) => {
           const conf = safeNumber(v.confidence, -1);
           const status = safeString(v.status, '');
           return conf >= 0 && status === 'COMPLETED';
         })
-        .reduce((sum: number, v: VersionWithJobs, _: number, arr: VersionWithJobs[]) => {
+        .reduce((sum, v, _, arr) => {
           const conf = safeNumber(v.confidence, 0);
           return sum + conf / arr.length;
         }, 0),
       dateRange: {
-        first: versions[versions.length - 1]?.createdAt instanceof Date
-          ? versions[versions.length - 1]?.createdAt
-          : (versions[versions.length - 1]?.createdAt ? new Date(String(versions[versions.length - 1]?.createdAt)) : undefined),
-        last: versions[0]?.createdAt instanceof Date
-          ? versions[0]?.createdAt
-          : (versions[0]?.createdAt ? new Date(String(versions[0]?.createdAt)) : undefined)
+        first: versionArray[versionArray.length - 1]?.createdAt instanceof Date
+          ? versionArray[versionArray.length - 1]?.createdAt
+          : (versionArray[versionArray.length - 1]?.createdAt ? new Date(String(versionArray[versionArray.length - 1]?.createdAt)) : undefined),
+        last: versionArray[0]?.createdAt instanceof Date
+          ? versionArray[0]?.createdAt
+          : (versionArray[0]?.createdAt ? new Date(String(versionArray[0]?.createdAt)) : undefined)
       }
     };
 

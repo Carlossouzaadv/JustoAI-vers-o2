@@ -223,8 +223,8 @@ export async function getCostBreakdown(
     },
   });
 
-  return records.map((record: JuditCostGroupByResult) => ({
-    operationType: record.operationType,
+  return records.map((record): CostBreakdown => ({
+    operationType: record.operationType as JuditOperationType,
     count: record._count.id,
     totalCost: Number(record._sum.totalCost || 0),
     avgCost: Number(record._sum.totalCost || 0) / record._count.id,

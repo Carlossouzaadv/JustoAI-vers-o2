@@ -259,7 +259,7 @@ export class ReportScheduler {
     const executionIds: string[] = [];
 
     // Processar em paralelo com limite
-    const promises = executions.map(async (execution: ReportExecutionWithSchedule) => {
+    const promises = executions.map(async (execution) => {
       try {
         await this.executeReport(execution.id);
         executed++;
@@ -309,14 +309,30 @@ export class ReportScheduler {
     }
 
     try {
+      // Validate enum types before using them
+      if (!isValidReportType(execution.reportType)) {
+        throw new Error(`Invalid report type: ${execution.reportType}`);
+      }
+      if (!isValidAudienceType(execution.audienceType)) {
+        throw new Error(`Invalid audience type: ${execution.audienceType}`);
+      }
+      if (!isValidOutputFormats(execution.outputFormats)) {
+        throw new Error(`Invalid output formats: ${JSON.stringify(execution.outputFormats)}`);
+      }
+
+      // Now the types are narrowed and safe to use
+      const reportType = execution.reportType;
+      const audienceType = execution.audienceType;
+      const outputFormats = execution.outputFormats;
+
       // Gerar relatório usando ReportGenerator
       const result = await this.reportGenerator.generateScheduledReport({
         workspaceId: execution.workspaceId,
-        reportType: execution.reportType,
+        reportType,
         processIds: execution.schedule.processIds,
-        audienceType: execution.audienceType,
-        outputFormats: execution.outputFormats,
-        deltaDataOnly: execution.reportType === 'NOVIDADES'
+        audienceType,
+        outputFormats,
+        deltaDataOnly: reportType === 'NOVIDADES'
       });
 
       // Marcar como concluído (converter summary para JSON-compatível)

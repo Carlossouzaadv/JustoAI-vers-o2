@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
 import { ICONS } from '@/lib/icons';
+import type { Prisma } from '@prisma/client';
 
 // ================================================================
 // VALIDATION SCHEMAS
@@ -147,7 +148,7 @@ export async function PATCH(
     const updateInput: {
       name?: string;
       tags?: string[];
-      metadata?: Record<string, unknown>;
+      metadata?: Prisma.InputJsonValue;
     } = {};
 
     if (body.name !== undefined) {
@@ -160,10 +161,15 @@ export async function PATCH(
 
     if (body.summary !== undefined) {
       // Preserve existing metadata and update summary
+      // Safe type narrowing: convert to Record first, then to Prisma.InputJsonValue
+      const existingMetadata = typeof document.metadata === 'object' && document.metadata !== null && !Array.isArray(document.metadata)
+        ? document.metadata as Record<string, unknown>
+        : {};
+
       updateInput.metadata = {
-        ...(document.metadata as Record<string, unknown> || {}),
+        ...existingMetadata,
         summary: body.summary,
-      };
+      } as Prisma.InputJsonValue;
     }
 
     const updatedDocument = await prisma.caseDocument.update({

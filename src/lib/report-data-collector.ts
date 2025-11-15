@@ -425,9 +425,9 @@ export class ReportDataCollector {
     });
 
     // Converter para formato do relatório
-    return processes.map((process: ProcessWithRelations) => {
+    return processes.map((process) => {
       const lastMovement = process.movements[0];
-      const recentMovements = process.movements.map((m: ProcessMovementFromQuery) => ({
+      const recentMovements = process.movements.map((m) => ({
         date: m.date,
         type: m.type,
         description: m.description,
@@ -436,9 +436,9 @@ export class ReportDataCollector {
 
       // Determinar prioridade baseada em alertas e movimentações
       let priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' = 'LOW';
-      if (process.alerts.some((a: ProcessAlertFromQuery) => a.severity === 'URGENT')) {
+      if (process.alerts.some((a) => a.severity === 'URGENT')) {
         priority = 'URGENT';
-      } else if (process.alerts.some((a: ProcessAlertFromQuery) => a.severity === 'HIGH')) {
+      } else if (process.alerts.some((a) => a.severity === 'HIGH')) {
         priority = 'HIGH';
       } else if (process.alerts.length > 0 || recentMovements.length > 2) {
         priority = 'MEDIUM';
@@ -639,7 +639,7 @@ export class ReportDataCollector {
    * Calcula próximo prazo baseado nas movimentações
    * Retorna apenas a Date do prazo mais próximo que é válido (futuro)
    */
-  private calculateNextDeadline(movements: ProcessMovementFromQuery[]): Date | undefined {
+  private calculateNextDeadline(movements: Array<{ deadline?: Date | null; date?: unknown; description?: unknown }>): Date | undefined {
     try {
       if (!movements || movements.length === 0) {
         return undefined;
@@ -664,8 +664,11 @@ export class ReportDataCollector {
             ? new Date(movement.date)
             : new Date();
 
+        // Validate description is a string before matching
+        const descriptionStr = typeof movement.description === 'string' ? movement.description : '';
+
         for (const pattern of deadlinePatterns) {
-          const match = description.match(pattern);
+          const match = descriptionStr.match(pattern);
           const deadline = this.extractDeadlineFromMatch(match, movementDate);
 
           if (deadline) {

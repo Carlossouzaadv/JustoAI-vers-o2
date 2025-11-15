@@ -167,7 +167,7 @@ export async function GET(
           id: entry.id,
           date: entry.eventDate.toISOString(),
           title: entry.eventType,
-          description: entry.description,
+          description: entry.description ?? undefined,
           type: mapEventType(entry.eventType),
           source: mapTimelineSource(entry.source),
           metadata: {

@@ -13,10 +13,11 @@ import { ICONS } from '../icons';
 /**
  * Representa o resultado de prisma.creditTransaction.groupBy()
  * Usado para tipar callbacks de agregação de créditos
+ * Note: amount é Decimal (do Prisma) que precisa ser convertido para number
  */
 interface CreditTransactionGroupResult {
   type: 'CREDIT' | 'DEBIT';
-  _sum: { amount: number | null };
+  _sum: { amount: { toNumber(): number } | null };
 }
 
 interface UsageEvent {
@@ -32,7 +33,7 @@ interface UsageEvent {
  */
 function isCreditTransaction(data: unknown): data is {
   type: 'CREDIT' | 'DEBIT';
-  _sum: { amount: number | null };
+  _sum: { amount: { toNumber(): number } | null };
 } {
   if (typeof data !== 'object' || data === null) {
     return false;
@@ -476,19 +477,25 @@ export class UsageTracker {
     const credits = transactions
       .filter(isCreditTransaction)
       .reduce((sum: number, t: CreditTransactionGroupResult) => {
-        const amount = t.type === 'CREDIT' ? (t._sum.amount || 0) : 0;
-        // Converter Decimal do Prisma para número
-        const numAmount = typeof amount === 'number' ? amount : Number(amount);
-        return sum + numAmount;
+        if (t.type === 'CREDIT') {
+          // Converter Decimal do Prisma para número usando .toNumber()
+          const amountDecimal = t._sum.amount;
+          const numAmount = amountDecimal ? amountDecimal.toNumber() : 0;
+          return sum + numAmount;
+        }
+        return sum;
       }, 0);
 
     const debits = transactions
       .filter(isCreditTransaction)
       .reduce((sum: number, t: CreditTransactionGroupResult) => {
-        const amount = t.type === 'DEBIT' ? (t._sum.amount || 0) : 0;
-        // Converter Decimal do Prisma para número
-        const numAmount = typeof amount === 'number' ? amount : Number(amount);
-        return sum + numAmount;
+        if (t.type === 'DEBIT') {
+          // Converter Decimal do Prisma para número usando .toNumber()
+          const amountDecimal = t._sum.amount;
+          const numAmount = amountDecimal ? amountDecimal.toNumber() : 0;
+          return sum + numAmount;
+        }
+        return sum;
       }, 0);
 
     const purchasedCredits = credits;

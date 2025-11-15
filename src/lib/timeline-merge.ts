@@ -8,7 +8,6 @@
 import { getDocumentHashManager } from './document-hash';
 import { ICONS } from './icons';
 import { PrismaClient } from '@prisma/client'
-import { ProcessTimelineEntry } from '@/lib/types/database';
 import {
   isTimelineMergedMetadata,
   isTimelineSourceMetadata,
@@ -86,13 +85,14 @@ export class TimelineMergeService {
   /**
    * Tenta recuperar uma entrada com retry e backoff exponencial
    * Útil quando race condition deixa entry não imediatamente disponível
+   * Retorna o tipo completo do Prisma (inferido automaticamente)
    */
   private async findEntryWithRetry(
     prisma: PrismaClient,
     caseId: string,
     contentHash: string,
     maxRetries: number = 3
-  ): Promise<ProcessTimelineEntry | null> {
+  ) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       const entry = await prisma.processTimelineEntry.findUnique({
         where: {

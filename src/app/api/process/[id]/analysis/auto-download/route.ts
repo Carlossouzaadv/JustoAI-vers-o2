@@ -158,28 +158,30 @@ async function initiateAutoSync(monitoredProcessId: string, _processId: string) 
 
     // Simular criação de movimentações
     const movementsToCreate = syncLog.newMovements;
-    const movements = [];
 
-    for (let i = 0; i < movementsToCreate; i++) {
-      movements.push({
-        monitoredProcessId,
-        date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000), // Últimos 30 dias
-        type: 'Juntada de Documento',
-        description: `Documento juntado automaticamente via sync - Item ${i + 1}`,
-        category: 'DOCUMENT_REQUEST',
-        importance: 'MEDIUM',
-        requiresAction: false,
-        rawData: {
+    if (movementsToCreate > 0) {
+      const movementsData = Array.from({ length: movementsToCreate }, (_, i) => {
+        const rawDataObj = {
           syncId: syncLog.id,
           autoDownload: true,
           timestamp: new Date().toISOString()
-        }
-      });
-    }
+        };
 
-    if (movements.length > 0) {
+        return {
+          monitoredProcessId,
+          date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+          type: 'Juntada de Documento',
+          description: `Documento juntado automaticamente via sync - Item ${i + 1}`,
+          category: 'DOCUMENT_REQUEST' as const,
+          importance: 'MEDIUM' as const,
+          requiresAction: false,
+          deadline: null,
+          rawData: JSON.parse(JSON.stringify(rawDataObj))
+        };
+      });
+
       await prisma.processMovement.createMany({
-        data: movements
+        data: movementsData
       });
     }
 
