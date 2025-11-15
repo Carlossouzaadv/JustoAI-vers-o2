@@ -135,7 +135,7 @@ function ensureBullBoardInitialized() {
   if (!addQueue) {
     try {
       initializeBullBoard();
-    } catch (error) {
+    } catch (_error) {
       console.warn('[BULL-BOARD] Warning: Bull Board could not be initialized (Redis may not be available)');
       console.warn('[BULL-BOARD] This is expected during build phase. Queues will be available at runtime.');
       // Provide no-op functions so code doesn't crash
