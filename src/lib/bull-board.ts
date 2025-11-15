@@ -11,9 +11,9 @@ import { notificationQueue as getNotificationQueue } from './queues';
 import { validateBullBoardAccess } from './bull-board-auth';
 import getRedisClient from './redis';
 
-// Call the getter function to get the actual queue instance
+// Keep as function reference to enable lazy loading at runtime (not at build time)
 // Note: Other queues (sync, reports, cache cleanup, document processing) have been disabled for cost optimization
-const notificationQueue = getNotificationQueue();
+// DO NOT call getNotificationQueue() here - it will cause build failures if Redis is unavailable
 
 /**
  * Type guard to check if data is a valid Express Request
@@ -84,10 +84,11 @@ serverAdapter.setBasePath('/admin/queues');
 /**
  * Configuração do Bull Board com todas as filas ativas
  * Note: Only notification queue is active (others disabled for cost optimization)
+ * Queues are initialized lazily to avoid Redis connection issues during build
  */
 const { addQueue, removeQueue, setQueues, replaceQueues } = createBullBoard({
   queues: [
-    new BullAdapter(notificationQueue),
+    new BullAdapter(getNotificationQueue()),
   ],
   serverAdapter: serverAdapter,
   options: {
@@ -216,7 +217,7 @@ export async function getBullBoardStats() {
   try {
     // Only notification queue is active (others disabled for cost optimization)
     const queues = [
-      { name: 'Notifications', queue: notificationQueue },
+      { name: 'Notifications', queue: getNotificationQueue() },
     ];
 
     const stats = await Promise.all(
@@ -320,7 +321,7 @@ export async function getBullBoardStats() {
  * Pausa todas as filas ativas
  */
 export async function pauseAllQueues() {
-  const queues = [notificationQueue];
+  const queues = [getNotificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
     try {
@@ -336,7 +337,7 @@ export async function pauseAllQueues() {
  * Resume todas as filas ativas
  */
 export async function resumeAllQueues() {
-  const queues = [notificationQueue];
+  const queues = [getNotificationQueue()];
 
   await Promise.all(queues.map(async (queue) => {
     try {
