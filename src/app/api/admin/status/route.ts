@@ -2,14 +2,16 @@
  * Admin Status API
  * Returns system health status for all components
  * Accessible to: Internal admins (@justoai.com.br)
+ *
+ * CACHING: Health checks are cached for 5 minutes (300 seconds) via Redis
+ * This significantly reduces the overhead of multiple external API calls
  */
-
-export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { systemHealthCheck } from '@/lib/bull-board';
+import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
 
 interface HealthCheck {
   name: string;
@@ -42,7 +44,179 @@ function hasComponents(
 }
 
 /**
- * Get system health status
+ * Perform all health checks
+ * Extracted to a separate function for caching support
+ */
+async function performHealthCheck(): Promise<SystemHealth> {
+  const startTime = Date.now();
+  const checks: Record<string, HealthCheck> = {};
+
+  // Check API Server
+  checks.api = {
+    name: 'API Server',
+    status: 'healthy',
+    lastCheck: new Date().toISOString(),
+    responseTime: Date.now() - startTime,
+    message: 'Next.js API running normally',
+  };
+
+  // Check PostgreSQL (via Prisma connectivity)
+  try {
+    const postgresStart = Date.now();
+    // TODO: Add actual database health check
+    // const dbHealth = await prisma.$queryRaw`SELECT 1`;
+    checks.postgres = {
+      name: 'PostgreSQL Database',
+      status: 'healthy',
+      lastCheck: new Date().toISOString(),
+      responseTime: Date.now() - postgresStart,
+      message: 'Database connection OK',
+    };
+  } catch (_err) {
+    checks.postgres = {
+      name: 'PostgreSQL Database',
+      status: 'critical',
+      lastCheck: new Date().toISOString(),
+      message: 'Database connection failed',
+      remediation: [
+        'Check database connection string in environment variables',
+        'Verify PostgreSQL service is running',
+        'Check database credentials and permissions',
+      ],
+    };
+  }
+
+  // Check Redis (via Bull Queue)
+  try {
+    const redisStart = Date.now();
+    const bullHealth = await systemHealthCheck();
+
+    // Type guard to safely access redis component
+    if (hasComponents(bullHealth) && 'redis' in bullHealth.components) {
+      const redis = bullHealth.components.redis as Record<string, unknown>;
+      checks.redis = {
+        name: 'Redis Cache',
+        status: redis.status === 'healthy' ? 'healthy' : 'degraded',
+        lastCheck: new Date().toISOString(),
+        responseTime: Date.now() - redisStart,
+        message: typeof redis.message === 'string' ? redis.message : 'Cache server operational',
+      };
+    } else {
+      checks.redis = {
+        name: 'Redis Cache',
+        status: 'degraded',
+        lastCheck: new Date().toISOString(),
+        responseTime: Date.now() - redisStart,
+        message: 'Cache server operational',
+      };
+    }
+  } catch (_err) {
+    checks.redis = {
+      name: 'Redis Cache',
+      status: 'critical',
+      lastCheck: new Date().toISOString(),
+      message: 'Redis connection failed',
+      remediation: [
+        'Check Redis connection string in environment variables',
+        'Verify Redis service is running',
+        'Check Redis authentication credentials',
+      ],
+    };
+  }
+
+  // Check Supabase Auth
+  checks.auth = {
+    name: 'Supabase Auth',
+    status: 'healthy',
+    lastCheck: new Date().toISOString(),
+    responseTime: 120,
+    message: 'Authentication service available',
+  };
+
+  // Check Bull Queues
+  try {
+    const bullStart = Date.now();
+    const bullHealth = await systemHealthCheck();
+
+    // Type guard to safely access queues summary
+    if (hasComponents(bullHealth) && 'queues' in bullHealth.components) {
+      const queues = bullHealth.components.queues as Record<string, unknown>;
+      const healthyQueues = typeof queues.healthy === 'number' ? queues.healthy : 0;
+      const totalQueues = typeof queues.total === 'number' ? queues.total : 0;
+
+      const queueStatus = healthyQueues === totalQueues ? 'healthy' : 'degraded';
+      checks.queues = {
+        name: 'Bull Queues',
+        status: queueStatus,
+        lastCheck: new Date().toISOString(),
+        responseTime: Date.now() - bullStart,
+        message: `${healthyQueues}/${totalQueues} queues healthy`,
+      };
+    } else {
+      checks.queues = {
+        name: 'Bull Queues',
+        status: 'degraded',
+        lastCheck: new Date().toISOString(),
+        responseTime: Date.now() - bullStart,
+        message: 'Queue status unknown',
+      };
+    }
+  } catch (_err) {
+    checks.queues = {
+      name: 'Bull Queues',
+      status: 'critical',
+      lastCheck: new Date().toISOString(),
+      message: 'Queue system unavailable',
+      remediation: [
+        'Restart Bull Board service',
+        'Check Redis connection for queues',
+        'Review queue job definitions',
+      ],
+    };
+  }
+
+  // Check Sentry Monitoring
+  checks.sentry = {
+    name: 'Sentry Monitoring',
+    status: 'healthy',
+    lastCheck: new Date().toISOString(),
+    responseTime: 200,
+    message: 'Error tracking active',
+  };
+
+  // Check JUDIT API
+  checks.judit = {
+    name: 'JUDIT API',
+    status: 'healthy',
+    lastCheck: new Date().toISOString(),
+    responseTime: 350,
+    message: 'External API responding normally',
+  };
+
+  // Check Supabase Storage
+  checks.storage = {
+    name: 'Supabase Storage',
+    status: 'healthy',
+    lastCheck: new Date().toISOString(),
+    responseTime: 180,
+    message: 'File storage service operational',
+  };
+
+  // Determine overall status
+  const criticalCount = Object.values(checks).filter((c) => c.status === 'critical').length;
+  const degradedCount = Object.values(checks).filter((c) => c.status === 'degraded').length;
+  const overall: 'healthy' | 'degraded' | 'critical' =
+    criticalCount > 0 ? 'critical' : degradedCount > 0 ? 'degraded' : 'healthy';
+
+  return {
+    overall,
+    checks,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Get system health status (with caching)
  */
 export async function GET() {
   try {
@@ -64,181 +238,24 @@ export async function GET() {
       );
     }
 
-    // 3. Perform health checks
-    const startTime = Date.now();
-    const checks: Record<string, HealthCheck> = {};
+    // 3. Get health status (cached for 5 minutes)
+    const health = await withAdminCache(
+      AdminCacheKeys.healthStatus(),
+      CacheTTL.HEALTH_CHECK,
+      () => performHealthCheck()
+    );
 
-    // Check API Server
-    checks.api = {
-      name: 'API Server',
-      status: 'healthy',
-      lastCheck: new Date().toISOString(),
-      responseTime: Date.now() - startTime,
-      message: 'Next.js API running normally',
-    };
-
-    // Check PostgreSQL (via Prisma connectivity)
-    try {
-      const postgresStart = Date.now();
-      // TODO: Add actual database health check
-      // const dbHealth = await prisma.$queryRaw`SELECT 1`;
-      checks.postgres = {
-        name: 'PostgreSQL Database',
-        status: 'healthy',
-        lastCheck: new Date().toISOString(),
-        responseTime: Date.now() - postgresStart,
-        message: 'Database connection OK',
-      };
-    } catch (_err) {
-      checks.postgres = {
-        name: 'PostgreSQL Database',
-        status: 'critical',
-        lastCheck: new Date().toISOString(),
-        message: 'Database connection failed',
-        remediation: [
-          'Check database connection string in environment variables',
-          'Verify PostgreSQL service is running',
-          'Check database credentials and permissions',
-        ],
-      };
-    }
-
-    // Check Redis (via Bull Queue)
-    try {
-      const redisStart = Date.now();
-      const bullHealth = await systemHealthCheck();
-
-      // Type guard to safely access redis component
-      if (hasComponents(bullHealth) && 'redis' in bullHealth.components) {
-        const redis = bullHealth.components.redis as Record<string, unknown>;
-        checks.redis = {
-          name: 'Redis Cache',
-          status: redis.status === 'healthy' ? 'healthy' : 'degraded',
-          lastCheck: new Date().toISOString(),
-          responseTime: Date.now() - redisStart,
-          message: typeof redis.message === 'string' ? redis.message : 'Cache server operational',
-        };
-      } else {
-        checks.redis = {
-          name: 'Redis Cache',
-          status: 'degraded',
-          lastCheck: new Date().toISOString(),
-          responseTime: Date.now() - redisStart,
-          message: 'Cache server operational',
-        };
-      }
-    } catch (_err) {
-      checks.redis = {
-        name: 'Redis Cache',
-        status: 'critical',
-        lastCheck: new Date().toISOString(),
-        message: 'Redis connection failed',
-        remediation: [
-          'Check Redis connection string in environment variables',
-          'Verify Redis service is running',
-          'Check Redis authentication credentials',
-        ],
-      };
-    }
-
-    // Check Supabase Auth
-    checks.auth = {
-      name: 'Supabase Auth',
-      status: 'healthy',
-      lastCheck: new Date().toISOString(),
-      responseTime: 120,
-      message: 'Authentication service available',
-    };
-
-    // Check Bull Queues
-    try {
-      const bullStart = Date.now();
-      const bullHealth = await systemHealthCheck();
-
-      // Type guard to safely access queues summary
-      if (hasComponents(bullHealth) && 'queues' in bullHealth.components) {
-        const queues = bullHealth.components.queues as Record<string, unknown>;
-        const healthyQueues = typeof queues.healthy === 'number' ? queues.healthy : 0;
-        const totalQueues = typeof queues.total === 'number' ? queues.total : 0;
-
-        const queueStatus = healthyQueues === totalQueues ? 'healthy' : 'degraded';
-        checks.queues = {
-          name: 'Bull Queues',
-          status: queueStatus,
-          lastCheck: new Date().toISOString(),
-          responseTime: Date.now() - bullStart,
-          message: `${healthyQueues}/${totalQueues} queues healthy`,
-        };
-      } else {
-        checks.queues = {
-          name: 'Bull Queues',
-          status: 'degraded',
-          lastCheck: new Date().toISOString(),
-          responseTime: Date.now() - bullStart,
-          message: 'Queue status unknown',
-        };
-      }
-    } catch (_err) {
-      checks.queues = {
-        name: 'Bull Queues',
-        status: 'critical',
-        lastCheck: new Date().toISOString(),
-        message: 'Queue system unavailable',
-        remediation: [
-          'Restart Bull Board service',
-          'Check Redis connection for queues',
-          'Review queue job definitions',
-        ],
-      };
-    }
-
-    // Check Sentry Monitoring
-    checks.sentry = {
-      name: 'Sentry Monitoring',
-      status: 'healthy',
-      lastCheck: new Date().toISOString(),
-      responseTime: 200,
-      message: 'Error tracking active',
-    };
-
-    // Check JUDIT API
-    checks.judit = {
-      name: 'JUDIT API',
-      status: 'healthy',
-      lastCheck: new Date().toISOString(),
-      responseTime: 350,
-      message: 'External API responding normally',
-    };
-
-    // Check Supabase Storage
-    checks.storage = {
-      name: 'Supabase Storage',
-      status: 'healthy',
-      lastCheck: new Date().toISOString(),
-      responseTime: 180,
-      message: 'File storage service operational',
-    };
-
-    // 4. Determine overall status
-    const criticalCount = Object.values(checks).filter((c) => c.status === 'critical').length;
-    const degradedCount = Object.values(checks).filter((c) => c.status === 'degraded').length;
-    const overall: 'healthy' | 'degraded' | 'critical' =
-      criticalCount > 0 ? 'critical' : degradedCount > 0 ? 'degraded' : 'healthy';
-
-    const health: SystemHealth = {
-      overall,
-      checks,
-      timestamp: new Date().toISOString(),
-    };
+    const criticalCount = Object.values(health.checks).filter((c) => c.status === 'critical').length;
+    const degradedCount = Object.values(health.checks).filter((c) => c.status === 'degraded').length;
 
     return NextResponse.json({
       success: true,
       health,
       summary: {
-        healthy: Object.values(checks).filter((c) => c.status === 'healthy').length,
+        healthy: Object.values(health.checks).filter((c) => c.status === 'healthy').length,
         degraded: degradedCount,
         critical: criticalCount,
-        total: Object.keys(checks).length,
+        total: Object.keys(health.checks).length,
       },
     });
   } catch (error) {

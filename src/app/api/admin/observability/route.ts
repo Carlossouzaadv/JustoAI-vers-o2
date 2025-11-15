@@ -4,13 +4,27 @@
  * Accessible to: Internal admins (@justoai.com.br) OR workspace admins
  */
 
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
 import { getSentryProjectStats, getSentryReleases, getSentryHealth } from '@/lib/sentry-api-client';
 import { getBullBoardStats, systemHealthCheck } from '@/lib/bull-board';
+import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
+
+/**
+ * Fetch all observability data (uncached)
+ */
+async function fetchObservabilityData() {
+  const [sentryStats, sentryReleases, sentryHealth, bullStats, systemHealth] = await Promise.allSettled([
+    getSentryProjectStats(),
+    getSentryReleases(5),
+    getSentryHealth(),
+    getBullBoardStats(),
+    systemHealthCheck(),
+  ]);
+
+  return { sentryStats, sentryReleases, sentryHealth, bullStats, systemHealth };
+}
 
 export async function GET() {
   try {
@@ -33,14 +47,12 @@ export async function GET() {
       );
     }
 
-    // 2. Fetch observability data
-    const [sentryStats, sentryReleases, sentryHealth, bullStats, systemHealth] = await Promise.allSettled([
-      getSentryProjectStats(),
-      getSentryReleases(5),
-      getSentryHealth(),
-      getBullBoardStats(),
-      systemHealthCheck(),
-    ]);
+    // 3. Fetch observability data (Redis cached for 5 minutes)
+    const { sentryStats, sentryReleases, sentryHealth, bullStats, systemHealth } = await withAdminCache(
+      AdminCacheKeys.observabilityStats(),
+      CacheTTL.OBSERVABILITY,
+      () => fetchObservabilityData()
+    );
 
     return NextResponse.json({
       success: true,

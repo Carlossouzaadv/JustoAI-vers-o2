@@ -14,6 +14,7 @@
 import { NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
+import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
 
 // Constants
 const JUDIT_API_KEY = process.env.JUDIT_API_KEY;
@@ -242,24 +243,42 @@ function analyzeRequests(requests: JuditRequest[]): ConsumptionReport {
   return analysis;
 }
 
-async function getCachedReport(): Promise<ConsumptionReport | null> {
-  try {
-    // Try to get from database (we'll implement caching in DB later)
-    // For now, return null to force fresh fetch
-    return null;
-  } catch {
-    return null;
+/**
+ * Fetch and analyze JUDIT consumption data (uncached)
+ */
+async function _fetchJuditConsumptionUncached(): Promise<ConsumptionReport> {
+  // Fetch fresh data from JUDIT
+  // Default: last 10 days
+  const endDate = new Date();
+  const startDate = new Date(endDate.getTime() - 10 * 24 * 60 * 60 * 1000);
+
+  const startDateStr = startDate.toISOString().split('T')[0];
+  const endDateStr = endDate.toISOString().split('T')[0];
+
+  console.log(`[JUDIT Cache] Fetching fresh data from ${startDateStr} to ${endDateStr}`);
+
+  if (!JUDIT_API_KEY) {
+    throw new Error('JUDIT_API_KEY not configured');
   }
+
+  const juditData = await fetchJuditData(startDateStr, endDateStr);
+  const requests = juditData.page_data || [];
+
+  console.log(`[JUDIT Cache] Received ${requests.length} requests from JUDIT`);
+
+  // Analyze data
+  return analyzeRequests(requests);
 }
 
-async function saveCachedReport(_report: ConsumptionReport): Promise<void> {
-  try {
-    // TODO: Save to database for future caching
-    // await prisma.adminCache.upsert({...})
-  } catch (error) {
-    console.error('Failed to cache report:', error);
-    // Don't throw - just log the error
-  }
+/**
+ * Get JUDIT consumption report (with Redis caching - 24 hour TTL)
+ */
+async function getJuditConsumptionReport(): Promise<ConsumptionReport> {
+  return withAdminCache(
+    AdminCacheKeys.juditConsumption(),
+    CacheTTL.JUDIT_CONSUMPTION,
+    () => _fetchJuditConsumptionUncached()
+  );
 }
 
 // ================================================================
@@ -299,41 +318,13 @@ export async function GET() {
       );
     }
 
-    // Check cache first
-    const cached = await getCachedReport();
-    if (cached) {
-      return NextResponse.json({
-        success: true,
-        data: cached,
-        fromCache: true
-      });
-    }
-
-    // Fetch fresh data from JUDIT
-    // Default: last 10 days
-    const endDate = new Date();
-    const startDate = new Date(endDate.getTime() - 10 * 24 * 60 * 60 * 1000);
-
-    const startDateStr = startDate.toISOString().split('T')[0];
-    const endDateStr = endDate.toISOString().split('T')[0];
-
-    console.log(`Fetching JUDIT data from ${startDateStr} to ${endDateStr}`);
-
-    const juditData = await fetchJuditData(startDateStr, endDateStr);
-    const requests = juditData.page_data || [];
-
-    console.log(`Received ${requests.length} requests from JUDIT`);
-
-    // Analyze data
-    const report = analyzeRequests(requests);
-
-    // Cache the report
-    await saveCachedReport(report);
+    // Get report (Redis cached for 24 hours)
+    const report = await getJuditConsumptionReport();
 
     return NextResponse.json({
       success: true,
       data: report,
-      fromCache: false
+      cached: true // Data is served with Redis caching (24h TTL)
     });
   } catch (error) {
     console.error('Error fetching JUDIT consumption:', error);

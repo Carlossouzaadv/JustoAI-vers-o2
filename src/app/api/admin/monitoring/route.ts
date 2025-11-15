@@ -12,6 +12,7 @@ import { ICONS } from '@/lib/icons';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
 import { getErrorMessage } from '@/lib/error-handling';
+import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
 
 // ================================================================
 // WORKER FUNCTIONS (MOCKED - process-monitor-worker not implemented)
@@ -139,7 +140,8 @@ export async function GET() {
 
     console.log(`${ICONS.ADMIN} Admin monitoring status request`);
 
-    const systemStatus = await getSystemStatus();
+    // Get system status (Redis cached for 5 minutes)
+    const systemStatus = await getSystemStatusCached();
 
     return NextResponse.json({
       status: 'success',
@@ -213,7 +215,10 @@ export async function POST(request: NextRequest) {
 // STATUS DO SISTEMA
 // ================================================================
 
-async function getSystemStatus(): Promise<SystemStatus> {
+/**
+ * Get system status (uncached - used for POST actions and cache fetcher)
+ */
+async function _getSystemStatusUncached(): Promise<SystemStatus> {
   const startTime = Date.now();
 
   // Verificar componentes em paralelo
@@ -526,10 +531,21 @@ async function checkWebhookStatus(): Promise<ComponentStatus> {
 // AÇÕES ADMINISTRATIVAS
 // ================================================================
 
+/**
+ * Get system status (with Redis caching - 5 minute TTL for GET requests)
+ */
+async function getSystemStatusCached(): Promise<SystemStatus> {
+  return withAdminCache(
+    AdminCacheKeys.systemStatus(),
+    CacheTTL.OBSERVABILITY,
+    () => _getSystemStatusUncached()
+  );
+}
+
 async function executeAdminAction(request: AdminRequest): Promise<unknown> {
   switch (request.action) {
     case 'status':
-      return await getSystemStatus();
+      return await _getSystemStatusUncached();
 
     case 'restart_worker':
       return await restartMonitoringWorker();

@@ -6,6 +6,7 @@
 import { PrismaClient } from '@prisma/client'
 import { JuditOperationType, JuditAlertType } from '@/lib/types/database';
 import { costLogger } from './logger';
+import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
 
 const prisma = new PrismaClient();
 
@@ -138,9 +139,9 @@ export async function trackJuditCost(input: CostTrackingInput): Promise<void> {
 }
 
 /**
- * Busca resumo de custos
+ * Busca resumo de custos (otimizado com aggregate + cache)
  */
-export async function getCostSummary(
+async function _getCostSummaryUncached(
   workspaceId?: string,
   startDate?: Date,
   endDate?: Date
@@ -158,31 +159,28 @@ export async function getCostSummary(
     };
   }
 
-  const records = await prisma.juditCostTracking.findMany({
+  // Use database-level aggregation instead of loading all records into memory
+  const aggregateResult = await prisma.juditCostTracking.aggregate({
     where,
-    select: {
+    _sum: {
       totalCost: true,
       searchCost: true,
       attachmentsCost: true,
       documentsRetrieved: true,
     },
+    _count: {
+      id: true,
+    },
   });
 
   const summary: CostSummary = {
-    totalCost: 0,
-    searchCost: 0,
-    attachmentsCost: 0,
-    operationsCount: records.length,
-    documentsRetrieved: 0,
+    totalCost: Number(aggregateResult._sum.totalCost || 0),
+    searchCost: Number(aggregateResult._sum.searchCost || 0),
+    attachmentsCost: Number(aggregateResult._sum.attachmentsCost || 0),
+    operationsCount: aggregateResult._count.id,
+    documentsRetrieved: Number(aggregateResult._sum.documentsRetrieved || 0),
     avgCostPerOperation: 0,
   };
-
-  for (const record of records) {
-    summary.totalCost += Number(record.totalCost);
-    summary.searchCost += Number(record.searchCost);
-    summary.attachmentsCost += Number(record.attachmentsCost);
-    summary.documentsRetrieved += record.documentsRetrieved;
-  }
 
   if (summary.operationsCount > 0) {
     summary.avgCostPerOperation = summary.totalCost / summary.operationsCount;
@@ -191,10 +189,25 @@ export async function getCostSummary(
   return summary;
 }
 
+export async function getCostSummary(
+  workspaceId?: string,
+  startDate?: Date,
+  endDate?: Date
+): Promise<CostSummary> {
+  // Generate cache key based on parameters
+  const cacheKey = `admin:cost:summary:${workspaceId ?? 'global'}:${startDate?.toISOString() ?? 'no-start'}:${endDate?.toISOString() ?? 'no-end'}:v1`;
+
+  return withAdminCache(
+    cacheKey,
+    CacheTTL.COST_SUMMARY,
+    () => _getCostSummaryUncached(workspaceId, startDate, endDate)
+  );
+}
+
 /**
- * Busca breakdown de custos por tipo de operação
+ * Busca breakdown de custos por tipo de operação (com cache)
  */
-export async function getCostBreakdown(
+async function _getCostBreakdownUncached(
   workspaceId?: string,
   startDate?: Date,
   endDate?: Date
@@ -231,10 +244,25 @@ export async function getCostBreakdown(
   }));
 }
 
+export async function getCostBreakdown(
+  workspaceId?: string,
+  startDate?: Date,
+  endDate?: Date
+): Promise<CostBreakdown[]> {
+  // Generate cache key based on parameters
+  const cacheKey = `admin:cost:breakdown:${workspaceId ?? 'global'}:${startDate?.toISOString() ?? 'no-start'}:${endDate?.toISOString() ?? 'no-end'}:v1`;
+
+  return withAdminCache(
+    cacheKey,
+    CacheTTL.COST_BREAKDOWN,
+    () => _getCostBreakdownUncached(workspaceId, startDate, endDate)
+  );
+}
+
 /**
- * Busca custos diários (últimos 30 dias)
+ * Busca custos diários (últimos N dias, com cache)
  */
-export async function getDailyCosts(
+async function _getDailyCostsUncached(
   workspaceId?: string,
   days: number = 30
 ): Promise<Array<{ date: string; cost: number; operations: number }>> {
@@ -282,6 +310,20 @@ export async function getDailyCosts(
       operations: data.operations,
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export async function getDailyCosts(
+  workspaceId?: string,
+  days: number = 30
+): Promise<Array<{ date: string; cost: number; operations: number }>> {
+  // Generate cache key based on parameters
+  const cacheKey = `admin:cost:daily:${workspaceId ?? 'global'}:${days}days:v1`;
+
+  return withAdminCache(
+    cacheKey,
+    CacheTTL.DAILY_COSTS,
+    () => _getDailyCostsUncached(workspaceId, days)
+  );
 }
 
 /**

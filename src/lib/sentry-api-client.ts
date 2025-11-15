@@ -3,6 +3,8 @@
  * Fetches error data, performance metrics, and health status from Sentry
  */
 
+import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
+
 export interface SentryError {
   id: string;
   title: string;
@@ -109,9 +111,9 @@ export async function getSentryErrors(
 }
 
 /**
- * Fetch project stats from Sentry
+ * Fetch project stats from Sentry (uncached)
  */
-export async function getSentryProjectStats(): Promise<SentryProjectStats> {
+async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
   try {
     const url = `${SENTRY_API_BASE}/projects/${SENTRY_ORG_SLUG}/${SENTRY_PROJECT_SLUG}/stats/?stat=received`;
 
@@ -168,6 +170,17 @@ export async function getSentryProjectStats(): Promise<SentryProjectStats> {
     console.error('Error fetching Sentry stats:', error);
     return getDefaultStats();
   }
+}
+
+/**
+ * Fetch project stats from Sentry (with Redis caching - 5 minute TTL)
+ */
+export async function getSentryProjectStats(): Promise<SentryProjectStats> {
+  return withAdminCache(
+    AdminCacheKeys.sentryStats(),
+    CacheTTL.SENTRY_STATS,
+    () => _getSentryProjectStatsUncached()
+  );
 }
 
 /**
