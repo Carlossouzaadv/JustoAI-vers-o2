@@ -49,23 +49,27 @@ model Workspace {
 }
 
 model User {
-  id            String          @id @default(cuid())
-  email         String          @unique
-  name          String?
-  phone         String?
-  avatar        String?
-  role          Role            @default(USER)
-  status        Status          @default(ACTIVE)
-  settings      Json?
-  supabaseId    String          @unique
-  emailVerified Boolean         @default(false)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  lastLoginAt   DateTime?
-  caseEvents    CaseEvent[]
-  assignedCases Case[]          @relation("CaseAssignedTo")
-  createdCases  Case[]          @relation("CaseCreatedBy")
-  workspaces    UserWorkspace[]
+  id                                  String          @id @default(cuid())
+  email                               String          @unique
+  name                                String?
+  phone                               String?
+  avatar                              String?
+  role                                Role            @default(USER)
+  status                              Status          @default(ACTIVE)
+  settings                            Json?
+  supabaseId                          String          @unique
+  emailVerified                       Boolean         @default(false)
+  emailVerificationToken              String?         @db.VarChar(256)
+  emailVerificationTokenExpiresAt     DateTime?
+  passwordResetToken                  String?         @db.VarChar(256)
+  passwordResetTokenExpiresAt         DateTime?
+  createdAt                           DateTime        @default(now())
+  updatedAt                           DateTime        @updatedAt
+  lastLoginAt                         DateTime?
+  caseEvents                          CaseEvent[]
+  assignedCases                       Case[]          @relation("CaseAssignedTo")
+  createdCases                        Case[]          @relation("CaseCreatedBy")
+  workspaces                          UserWorkspace[]
 
   @@map("users")
 }
@@ -1528,6 +1532,34 @@ model AnalysisCache {
   @@index([processId, createdAt])
   @@index([expiresAt])
   @@map("analysis_cache")
+}
+
+// ================================================================
+// PASSWORD RESET AND EMAIL VERIFICATION TOKENS
+// ================================================================
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String   @db.VarChar(256)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String   @db.VarChar(256)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 // Missing enums
