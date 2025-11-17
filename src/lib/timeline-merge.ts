@@ -427,19 +427,19 @@ export class TimelineMergeService {
                 });
               } else {
                 duplicatesSkipped++;
-                log.info({ msg: "${ICONS.INFO} Entrada recuperada mas sem mudanças: ${entry.eventType}", component: "timelineMerge" });
+                log.info({ msg: `${ICONS.INFO} Entrada recuperada mas sem mudanças: ${entry.eventType}`, component: "timelineMerge" });
               }
               }
             } else {
               // PROBLEMA: Não conseguiu recuperar a entrada mesmo com retries!
               // Isso é crítico - significa que o erro foi levantado mas a entrada não existe
               // após múltiplas tentativas. Pode indicar problema no banco de dados.
-              log.error({ msg: "${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType...", component: "timelineMerge" });
+              log.error({ msg: `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`, component: "timelineMerge" });
               duplicatesSkipped++;
             }
           } else {
             // Re-throw se for erro diferente
-            log.error({ msg: "${ICONS.ERROR} Erro ao criar entrada (não é P2002", component: "timelineMerge" });:`,
+            log.error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002`, component: "timelineMerge" },
               { code: prismaErrorCode, message: err.message }
             );
             throw err;
