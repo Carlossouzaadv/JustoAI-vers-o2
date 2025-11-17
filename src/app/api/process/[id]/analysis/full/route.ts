@@ -4,10 +4,11 @@ import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
 import { getGeminiClient } from '@/lib/gemini-client';
 import { ModelTier } from '@/lib/ai-model-types';
-import { getCredits, debitCredits } from '@/lib/services/creditService';
+import { getCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
-import { CreditCategory } from '@/lib/types/database';
+import { getCreditManager } from '@/lib/credit-system';
+import { log, logError } from '@/lib/services/logger';
 
 // Type Guards - Narrowing Seguro (Mandato Inegociável)
 function isAnalysisResult(data: unknown): data is Record<PropertyKey, unknown> {
@@ -58,18 +59,6 @@ function isCaseDataValid(data: unknown): data is { number?: string | number; tit
   );
 }
 
-function isDebitResultWithBalance(data: unknown): data is { success: boolean; newBalance?: { fullCredits: number } } {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-  const result = data as Record<PropertyKey, unknown>;
-  return (
-    'success' in result &&
-    typeof result.success === 'boolean' &&
-    ((!('newBalance' in result)) || (typeof result.newBalance === 'object' && result.newBalance !== null && 'fullCredits' in (result.newBalance as Record<PropertyKey, unknown>)))
-  );
-}
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -77,6 +66,7 @@ export async function POST(
   const { id } = await params;
   const startTime = Date.now();
   let userId = '';
+  let debitTransactionIds: string[] = [];
 
   try {
     const user = await getAuthenticatedUser(request);
@@ -90,6 +80,10 @@ export async function POST(
     setSentryUserContext(userId);
 
     console.log(`${ICONS.ROBOT} [Full Analysis] Iniciando para case ${caseId}`);
+
+    // ========================================================================
+    // PARTE 1: Validação básica (sem custos)
+    // ========================================================================
 
     const caseData = await prisma.case.findUnique({
       where: { id: caseId },
@@ -122,6 +116,45 @@ export async function POST(
       );
     }
 
+    // ========================================================================
+    // PARTE 2: 🚪 PORTÃO DE FERRO (ANTES DE TUDO)
+    // ========================================================================
+    // Cobrar o usuário ANTES de consumir recursos caros (Gemini API)
+
+    const isDivinity = isInternalDivinityAdmin(user.email);
+
+    if (!isDivinity) {
+      console.log(`${ICONS.INFO} [Full Analysis] Iniciando débito de créditos (portão de ferro)...`);
+
+      const creditManager = getCreditManager(prisma);
+      const debitResult = await creditManager.debitCredits(
+        caseData.workspaceId,
+        0, // 0 report credits
+        1, // 1 full credit
+        `Full analysis for case ${caseId}`,
+        { userId, caseId, timestamp: new Date().toISOString() }
+      );
+
+      // ✅ Se débito falha, REJEITA IMEDIATAMENTE (erro 402)
+      if (!debitResult.success) {
+        console.warn(`${ICONS.WARNING} [Full Analysis] Créditos insuficientes - portão fechado`);
+        return NextResponse.json(
+          {
+            success: false,
+            error: debitResult.error || 'Créditos insuficientes para análise completa',
+            required: 1,
+            available: (await getCredits(user.email, caseData.workspaceId)).fullCredits,
+            code: 'INSUFFICIENT_CREDITS'
+          },
+          { status: 402 } // Payment Required
+        );
+      }
+
+      // ✅ Débito passou - guardar IDs para reembolso em caso de erro
+      debitTransactionIds = debitResult.transactionIds || [];
+      console.log(`${ICONS.SUCCESS} [Full Analysis] Débito autorizado - ${debitTransactionIds.length} transações criadas`);
+    }
+
     const lastVersion = await prisma.caseAnalysisVersion.findFirst({
       where: { caseId },
       orderBy: { version: 'desc' }
@@ -142,35 +175,73 @@ export async function POST(
 
     console.log(`${ICONS.INFO} [Full Analysis] Prompt construído: ${prompt.length} chars`);
 
-    // Check credits before expensive operation
-    const isDivinity = isInternalDivinityAdmin(user.email);
-    if (!isDivinity) {
-      const credits = await getCredits(user.email, caseData.workspaceId);
-      if (credits.fullCredits < 1) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Créditos insuficientes para análise completa',
-            required: 1,
-            available: credits.fullCredits,
-            message: 'Você precisa de 1 crédito FULL para realizar uma análise completa. Entre em contato com o suporte para adquirir mais créditos.'
-          },
-          { status: 402 } // Payment Required
-        );
-      }
-    }
+    // ========================================================================
+    // PARTE 3: Operação Cara (só executa se débito passou ou é divinity)
+    // ========================================================================
 
     console.log(`${ICONS.ROBOT} [Full Analysis] Chamando Gemini Pro...`);
 
     const gemini = getGeminiClient();
     const analysisStartTime = Date.now();
 
-    const analysisRaw = await gemini.generateJsonContent(prompt, {
-      model: ModelTier.PRO,
-      maxTokens: 8000,
-      temperature: 0.2
-    });
+    // ========================================================================
+    // PARTE 4: Try-Catch da operação cara (com reembolso em caso de erro)
+    // ========================================================================
 
+    let analysisRaw: unknown;
+    try {
+      analysisRaw = await gemini.generateJsonContent(prompt, {
+        model: ModelTier.PRO,
+        maxTokens: 8000,
+        temperature: 0.2
+      });
+    } catch (geminiError) {
+      // ❌ Gemini API falhou após débito
+      console.error(`${ICONS.ERROR} [Full Analysis] Gemini API falhou:`, geminiError);
+
+      // Reembolsar créditos (rollback)
+      if (!isDivinity && debitTransactionIds.length > 0) {
+        console.log(`${ICONS.PROCESS} [Full Analysis] Iniciando reembolso após erro da API...`);
+
+        const creditManager = getCreditManager(prisma);
+        const refundResult = await creditManager.refundCredits(
+          debitTransactionIds,
+          `Análise falhou: Erro na API Gemini`,
+          { originalCaseId: caseId, error: String(geminiError) }
+        );
+
+        if (refundResult.success) {
+          console.log(`${ICONS.SUCCESS} [Full Analysis] Reembolso bem-sucedido`);
+        } else {
+          console.error(`${ICONS.ERROR} [Full Analysis] Reembolso falhou:`, refundResult.error);
+          // Log em alta prioridade (reembolso falhou = problema sério)
+          await logError(
+            `CRÍTICO: Reembolso de créditos falhou para case ${caseId}`,
+            "error",
+            { caseId, refundResult, debitTransactionIds, component: "creditSystem" }
+          );
+        }
+      }
+
+      // Retornar erro 500
+      captureApiError(geminiError, {
+        userId,
+        caseId: id,
+        endpoint: '/api/process/[id]/analysis/full',
+        severity: 'HIGH'
+      });
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Erro ao gerar análise completa. Créditos foram reembolsados.',
+          code: 'ANALYSIS_FAILED'
+        },
+        { status: 500 }
+      );
+    }
+
+    // ✅ Gemini API sucedeu - prosseguir com a análise
     // Validar analysis com type guard
     const analysis = analysisRaw ?? {};
     if (!isAnalysisResult(analysis)) {
@@ -193,6 +264,10 @@ export async function POST(
     // Converter para JSON seguro para Prisma (JSON.parse/stringify garante serialização segura)
     const analysisForDb = JSON.parse(JSON.stringify(analysis));
 
+    // ========================================================================
+    // PARTE 5: Salvar resultado (créditos já foram debitados)
+    // ========================================================================
+
     const version = await prisma.caseAnalysisVersion.create({
       data: {
         case: {
@@ -212,36 +287,13 @@ export async function POST(
         metadata: {
           userId,
           requestedAt: new Date().toISOString(),
-          tokensUsed
+          tokensUsed,
+          creditTransactionIds: debitTransactionIds // Auditoria
         }
       }
     });
 
     console.log(`${ICONS.SUCCESS} [Full Analysis] Versão salva: ${version.id} (v${nextVersion})`);
-
-    // Debit credits if not a divinity admin
-    if (!isDivinity) {
-      const debitResult = await debitCredits(
-        user.email,
-        caseData.workspaceId,
-        1,
-        CreditCategory.FULL,
-        `Full analysis for case ${caseId} - v${nextVersion}`
-      );
-
-      // Validar debitResult com type guard
-      if (!isDebitResultWithBalance(debitResult)) {
-        console.warn(`${ICONS.WARNING} Failed to debit credits: invalid response format`);
-      } else if (!debitResult.success) {
-        console.warn(`${ICONS.WARNING} Failed to debit credits`);
-        // Log but don't fail the request - the analysis was already completed
-      } else if (debitResult.newBalance) {
-        // Type guard já garantiu que newBalance tem a estrutura correta
-        console.log(`${ICONS.SUCCESS} Credits debited: 1 FULL credit (new balance: ${debitResult.newBalance.fullCredits})`);
-      } else {
-        console.warn(`${ICONS.WARNING} Credits debited but new balance unavailable`);
-      }
-    }
 
     await prisma.case.update({
       where: { id: caseId },
@@ -259,6 +311,7 @@ export async function POST(
       version: nextVersion,
       analysis: analysisForDb,
       creditsUsed: 1.0,
+      creditsDebitedAt: 'BEFORE_ANALYSIS', // ✅ Deixar claro
       timing: {
         total: totalDuration,
         analysis: analysisDuration
@@ -269,13 +322,45 @@ export async function POST(
   } catch (error) {
     const duration = Date.now() - startTime;
 
-    // Capture error to Sentry with context
+    // Se chegou aqui com debitTransactionIds, é um erro CRÍTICO (débito mas análise falhou)
+    if (debitTransactionIds.length > 0) {
+      console.error(
+        `${ICONS.ERROR} [CRÍTICO] Débito foi autorizado mas análise falhou de forma inesperada:`,
+        error
+      );
+
+      // Tentar reembolsar (esforço máximo)
+      try {
+        const creditManager = getCreditManager(prisma);
+        const refundResult = await creditManager.refundCredits(
+          debitTransactionIds,
+          `Erro inesperado durante análise`,
+          { error: String(error) }
+        );
+
+        if (!refundResult.success) {
+          console.error(`${ICONS.FATAL} [FATAL] Reembolso de emergência falhou:`, refundResult.error);
+          // Alertar ops (este é um bug crítico que afeta receita)
+          await logError(
+            `[FATAL] Reembolso de emergência falhou - créditos perdidos`,
+            "error",
+            { debitTransactionIds, error: String(error), component: "creditSystem" }
+          );
+        } else {
+          console.log(`${ICONS.SUCCESS} [Full Analysis] Reembolso de emergência bem-sucedido`);
+        }
+      } catch (refundError) {
+        console.error(`${ICONS.FATAL} [FATAL] Reembolso de emergência falhou com erro:`, refundError);
+      }
+    }
+
     captureApiError(error, {
       userId,
       caseId: id,
       endpoint: '/api/process/[id]/analysis/full',
       method: 'POST',
       duration,
+      debitTransactionIds: debitTransactionIds.length > 0 ? debitTransactionIds : undefined
     });
 
     console.error(`${ICONS.ERROR} [Full Analysis] Erro:`, error);

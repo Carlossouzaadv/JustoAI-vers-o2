@@ -53,6 +53,17 @@ export interface CreditDebitResult {
   transactionIds?: string[];
 }
 
+export interface CreditRefundResult {
+  success: boolean;
+  error?: string;
+  refundedAmount?: {
+    reportCredits: number;
+    fullCredits: number;
+  };
+  creditTransactionIds?: string[];
+  newBalance?: CreditBalance;
+}
+
 export interface CreditAllocationBreakdown {
   type: 'MONTHLY' | 'BONUS' | 'PACK';
   amount: number;
@@ -341,6 +352,207 @@ export class CreditManager {
     }
 
     return transactionIds;
+  }
+
+  /**
+   * Reembolsa créditos atomicamente (rollback de débitos anteriores)
+   *
+   * **Garantias Padrão-Ouro:**
+   * 1. Atomicidade: Tudo ou nada (prisma.$transaction)
+   * 2. Auditoria: Cada reembolso cria uma CreditTransaction CREDIT vinculada aos DEBITs originais
+   * 3. Idempotência: Pode ser chamado 2x com mesmos transactionIds (segunda vez não faz nada)
+   * 4. Rastreabilidade: Campo metadata.relatedDebits liga CREDIT → DEBITs originais
+   */
+  async refundCredits(
+    debitTransactionIds: string[],
+    refundReason: string,
+    metadata: unknown = {}
+  ): Promise<CreditRefundResult> {
+    log.info({
+      msg: `${ICONS.PROCESS} Iniciando reembolso para ${debitTransactionIds.length} transações de débito`,
+      component: "creditSystem"
+    });
+
+    try {
+      return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        // Step 1: Buscar transações originais (validar que são DEBITs)
+        const originalDebits = await tx.creditTransaction.findMany({
+          where: {
+            id: { in: debitTransactionIds },
+            type: 'DEBIT'
+          }
+        });
+
+        if (originalDebits.length === 0) {
+          return {
+            success: false,
+            error: 'Nenhuma transação de débito válida encontrada para reembolso'
+          };
+        }
+
+        if (originalDebits.length !== debitTransactionIds.length) {
+          log.warn({
+            msg: `${ICONS.WARNING} Aviso: ${debitTransactionIds.length - originalDebits.length} IDs não são transações de débito válidas`,
+            component: "creditSystem"
+          });
+        }
+
+        // Step 2: Agrupar por workspaceId e allocation para validação
+        const debitsByWorkspace = new Map<string, typeof originalDebits>();
+        const debitsByAllocation = new Map<string | null, typeof originalDebits>();
+
+        for (const debit of originalDebits) {
+          // Agrupar por workspace
+          if (!debitsByWorkspace.has(debit.workspaceId)) {
+            debitsByWorkspace.set(debit.workspaceId, []);
+          }
+          debitsByWorkspace.get(debit.workspaceId)!.push(debit);
+
+          // Agrupar por allocation (para refazer o FIFO)
+          const key = debit.allocationId || 'null';
+          if (!debitsByAllocation.has(key)) {
+            debitsByAllocation.set(key, []);
+          }
+          debitsByAllocation.get(key)!.push(debit);
+        }
+
+        // Validar: todos os débitos devem ser do mesmo workspace
+        if (debitsByWorkspace.size > 1) {
+          return {
+            success: false,
+            error: 'Não é permitido reembolsar débitos de múltiplos workspaces em uma única transação'
+          };
+        }
+
+        const workspaceId = Array.from(debitsByWorkspace.keys())[0];
+        const workspaceDebits = debitsByWorkspace.get(workspaceId)!;
+
+        // Step 3: Calcular totais por categoria
+        let totalReportCredits = 0;
+        let totalFullCredits = 0;
+
+        for (const debit of workspaceDebits) {
+          const amount = Number(debit.amount);
+          if (debit.creditCategory === 'REPORT') {
+            totalReportCredits += amount;
+          } else if (debit.creditCategory === 'FULL') {
+            totalFullCredits += amount;
+          }
+        }
+
+        // Step 4: Reembolsar allocations (incrementar remainingAmount)
+        for (const [allocationId, debits] of debitsByAllocation.entries()) {
+          if (allocationId === 'null') {
+            // Débito sem allocation associada - skip
+            continue;
+          }
+
+          let amountToRefund = 0;
+          for (const debit of debits) {
+            amountToRefund += Number(debit.amount);
+          }
+
+          await tx.creditAllocation.update({
+            where: { id: allocationId },
+            data: {
+              remainingAmount: { increment: amountToRefund }
+            }
+          });
+
+          log.info({
+            msg: `${ICONS.INFO} Reembolsado ${amountToRefund} créditos na allocation ${allocationId}`,
+            component: "creditSystem"
+          });
+        }
+
+        // Step 5: Atualizar saldo total do workspace
+        await tx.workspaceCredits.update({
+          where: { workspaceId },
+          data: {
+            reportCreditsBalance: { increment: totalReportCredits },
+            fullCreditsBalance: { increment: totalFullCredits }
+          }
+        });
+
+        // Step 6: Criar transações de CREDIT (auditoria do reembolso)
+        const creditTransactionIds: string[] = [];
+
+        // Validar metadata com type guard (Padrão-Ouro)
+        let validatedMetadata: Prisma.InputJsonValue | undefined = undefined;
+        if (metadata && typeof metadata === 'object') {
+          try {
+            const enrichedMetadata = {
+              ...metadata,
+              relatedDebits: debitTransactionIds,
+              refundedAt: new Date().toISOString(),
+              refundReason
+            };
+            validatedMetadata = JSON.parse(JSON.stringify(enrichedMetadata));
+          } catch (error) {
+            log.warn({
+              msg: `${ICONS.WARNING} Falha ao serializar metadata de reembolso`,
+              component: "creditSystem"
+            });
+          }
+        }
+
+        // Criar transação de CREDIT para REPORT
+        if (totalReportCredits > 0) {
+          const creditTx = await tx.creditTransaction.create({
+            data: {
+              workspaceId,
+              type: 'CREDIT',
+              creditCategory: 'REPORT',
+              amount: totalReportCredits,
+              reason: `Reembolso: ${refundReason}`,
+              metadata: validatedMetadata,
+              allocationId: null
+            }
+          });
+          creditTransactionIds.push(creditTx.id);
+        }
+
+        // Criar transação de CREDIT para FULL
+        if (totalFullCredits > 0) {
+          const creditTx = await tx.creditTransaction.create({
+            data: {
+              workspaceId,
+              type: 'CREDIT',
+              creditCategory: 'FULL',
+              amount: totalFullCredits,
+              reason: `Reembolso: ${refundReason}`,
+              metadata: validatedMetadata,
+              allocationId: null
+            }
+          });
+          creditTransactionIds.push(creditTx.id);
+        }
+
+        const newBalance = await this.getCreditBalance(workspaceId);
+
+        log.info({
+          msg: `${ICONS.SUCCESS} Reembolso concluído: +${totalReportCredits} REPORT, +${totalFullCredits} FULL`,
+          component: "creditSystem"
+        });
+
+        return {
+          success: true,
+          refundedAmount: {
+            reportCredits: totalReportCredits,
+            fullCredits: totalFullCredits
+          },
+          creditTransactionIds,
+          newBalance
+        };
+      });
+
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao reembolsar créditos:`, "error", { component: "creditSystem" });
+      return {
+        success: false,
+        error: 'Erro ao processar reembolso de créditos'
+      };
+    }
   }
 
   /**
