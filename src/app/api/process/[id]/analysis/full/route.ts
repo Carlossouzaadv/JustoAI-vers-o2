@@ -8,7 +8,8 @@ import { getCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handler';
 import { getCreditManager } from '@/lib/credit-system';
-import { log, logError } from '@/lib/services/logger';
+import { log } from '@/lib/services/logger';
+import { alert } from '@/lib/services/alert-service';
 
 // Type Guards - Narrowing Seguro (Mandato Inegociável)
 function isAnalysisResult(data: unknown): data is Record<PropertyKey, unknown> {
@@ -214,12 +215,14 @@ export async function POST(
           console.log(`${ICONS.SUCCESS} [Full Analysis] Reembolso bem-sucedido`);
         } else {
           console.error(`${ICONS.ERROR} [Full Analysis] Reembolso falhou:`, refundResult.error);
-          // Log em alta prioridade (reembolso falhou = problema sério)
-          await logError(
-            `CRÍTICO: Reembolso de créditos falhou para case ${caseId}`,
-            "error",
-            { caseId, refundResult, debitTransactionIds, component: "creditSystem" }
-          );
+          // Alert to Slack + log to Better Stack (reembolso falhou = problema sério)
+          await alert.fatal("Reembolso de créditos falhou após erro da API Gemini", {
+            component: "fullAnalysisRoute",
+            stage: "geminiErrorRefund",
+            caseId,
+            error: refundResult.error,
+            debitTransactionIds,
+          });
         }
       }
 
@@ -340,17 +343,30 @@ export async function POST(
 
         if (!refundResult.success) {
           console.error(`${ICONS.FATAL} [FATAL] Reembolso de emergência falhou:`, refundResult.error);
-          // Alertar ops (este é um bug crítico que afeta receita)
-          await logError(
-            `[FATAL] Reembolso de emergência falhou - créditos perdidos`,
-            "error",
-            { debitTransactionIds, error: String(error), component: "creditSystem" }
-          );
+          // Alert to Slack + log to Better Stack (este é um bug crítico que afeta receita)
+          await alert.fatal("Reembolso de emergência falhou durante catch geral", {
+            component: "fullAnalysisRoute",
+            stage: "mainCatchEmergencyRefund",
+            caseId,
+            error: refundResult.error,
+            debitTransactionIds,
+            originalError: String(error),
+            context: "Unexpected error occurred and emergency refund attempt also failed",
+          });
         } else {
           console.log(`${ICONS.SUCCESS} [Full Analysis] Reembolso de emergência bem-sucedido`);
         }
       } catch (refundError) {
-        console.error(`${ICONS.FATAL} [FATAL] Reembolso de emergência falhou com erro:`, refundError);
+        // Reembolso de emergência falhou - ALERTA CRÍTICO
+        // Esta é uma situação grave: débito foi feito mas nem a análise nem o reembolso funcionaram
+        await alert.fatal("Reembolso de emergência falhou - créditos podem estar perdidos", {
+          component: "fullAnalysisRoute",
+          stage: "emergencyRefundCatch",
+          caseId,
+          error: refundError,
+          debitTransactionIds,
+          context: "This is a critical financial issue requiring immediate investigation",
+        });
       }
     }
 
