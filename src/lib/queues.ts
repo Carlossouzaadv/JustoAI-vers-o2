@@ -21,6 +21,7 @@ import { getRedisConnection } from './redis';
 // Lazy initialization - queues are created on first use, not on import
 // ONLY keep notification queue - others removed for cost optimization
 let _notificationQueue: Queue.Queue | null = null;
+let _rollbackQueue: Queue.Queue | null = null;
 
 // Helper function to get or create queue config
 const getQueueConfig = () => {
@@ -66,15 +67,36 @@ function getNotificationQueue() {
   return _notificationQueue;
 }
 
+/**
+ * Fila para rollback atômico de importações em lote
+ * Medium priority queue for atomic batch import rollbacks
+ */
+function getRollbackQueue() {
+  if (!_rollbackQueue) {
+    const config = getQueueConfig();
+    _rollbackQueue = new Queue('rollback-batch', {
+      createClient: config.createClient,
+      defaultJobOptions: {
+        ...config.defaultJobOptions,
+        priority: 5, // Média prioridade
+        attempts: 3, // Tentativas padrão
+      }
+    });
+  }
+  return _rollbackQueue;
+}
+
 // Helper to get all queues dynamically
 function getAllQueues() {
   return [
     getNotificationQueue(),
+    getRollbackQueue(),
   ];
 }
 
-// Export only active queue getter
+// Export only active queue getters
 export const notificationQueue = getNotificationQueue;
+export const rollbackQueue = getRollbackQueue;
 
 // === UTILITY FUNCTIONS ===
 
@@ -92,7 +114,7 @@ export async function setupRecurringJobs() {
 // If needed in future, re-enable by restoring these functions
 
 /**
- * Adiciona job de notificação
+ * Adiciona job de notificação genérica
  */
 export async function addNotificationJob(type: string, data: Record<string, unknown>, options: Record<string, unknown> = {}) {
   return await getNotificationQueue().add(
@@ -105,6 +127,52 @@ export async function addNotificationJob(type: string, data: Record<string, unkn
     {
       priority: 10,
       attempts: 5,
+    }
+  );
+}
+
+/**
+ * Adiciona job de dispatch de notificação de alerta de processo
+ * Job type específico para processar alertas de processo
+ * @param alertId - ID do ProcessAlert para processar
+ */
+export async function addProcessAlertNotificationJob(alertId: string) {
+  return await getNotificationQueue().add(
+    'dispatch-process-alert',
+    {
+      alertId,
+      dispatchedAt: new Date().toISOString(),
+    },
+    {
+      priority: 10,
+      attempts: 5,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
+    }
+  );
+}
+
+/**
+ * Adiciona job de rollback atômico para importação em lote
+ * Payload: { systemImportId: string, workspaceId: string }
+ */
+export async function addRollbackJob(systemImportId: string, workspaceId: string) {
+  return await getRollbackQueue().add(
+    'rollback',
+    {
+      systemImportId,
+      workspaceId,
+      queuedAt: new Date().toISOString(),
+    },
+    {
+      priority: 5,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 2000,
+      },
     }
   );
 }
@@ -197,6 +265,7 @@ process.on('SIGTERM', closeAllQueues);
 
 const queuesExport = {
   notificationQueue: getNotificationQueue,
+  rollbackQueue: getRollbackQueue,
   getAllQueues,
   setupRecurringJobs,
   getQueuesStats,
@@ -204,6 +273,7 @@ const queuesExport = {
   resumeAllQueues,
   clearAllQueues,
   closeAllQueues,
+  addRollbackJob,
 };
 
 export default queuesExport;

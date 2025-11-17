@@ -9,67 +9,69 @@ datasource db {
 }
 
 model Workspace {
-  id                   String                  @id @default(cuid())
-  name                 String
-  slug                 String                  @unique
-  description          String?
-  logoUrl              String?
-  plan                 Plan                    @default(FREE)
-  status               Status                  @default(ACTIVE)
-  settings             Json?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  aiCache              AiCache[]
-  cases                Case[]
-  clients              Client[]
-  globalLogs           GlobalLog[]
-  monitoredProcesses   MonitoredProcess[]
-  processBatchUploads  ProcessBatchUpload[]
-  reportCustomizations ReportCustomization[]
-  reportExecutions     ReportExecution[]
-  reportSchedules      ReportSchedule[]
-  systemImports        SystemImport[]
-  mappingTemplates     SystemMappingTemplate[]
-  systemSyncs          SystemSync[]
-  users                UserWorkspace[]
-  credits              WorkspaceCredits?
-  creditAllocations    CreditAllocation[]
-  creditTransactions   CreditTransaction[]
-  creditHolds          ScheduledCreditHold[]
-  usageEvents          UsageEvent[]
-  uploadBatches        UploadBatch[]
-  juditTelemetry       JuditTelemetry[]
-  analysisVersions     CaseAnalysisVersion[]
-  analysisJobs         AnalysisJob[]
-  quota                WorkspaceQuota?
-  reportCache          ReportCache[]
-  reportTemplates      ReportTemplate[]
+  id                       String                     @id @default(cuid())
+  name                     String
+  slug                     String                     @unique
+  description              String?
+  logoUrl                  String?
+  plan                     Plan                       @default(FREE)
+  status                   Status                     @default(ACTIVE)
+  settings                 Json?
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  aiCache                  AiCache[]
+  cases                    Case[]
+  clients                  Client[]
+  globalLogs               GlobalLog[]
+  monitoredProcesses       MonitoredProcess[]
+  processBatchUploads      ProcessBatchUpload[]
+  reportCustomizations     ReportCustomization[]
+  reportExecutions         ReportExecution[]
+  reportSchedules          ReportSchedule[]
+  systemImports            SystemImport[]
+  mappingTemplates         SystemMappingTemplate[]
+  systemSyncs              SystemSync[]
+  users                    UserWorkspace[]
+  credits                  WorkspaceCredits?
+  creditAllocations        CreditAllocation[]
+  creditTransactions       CreditTransaction[]
+  creditHolds              ScheduledCreditHold[]
+  usageEvents              UsageEvent[]
+  uploadBatches            UploadBatch[]
+  juditTelemetry           JuditTelemetry[]
+  analysisVersions         CaseAnalysisVersion[]
+  analysisJobs             AnalysisJob[]
+  quota                    WorkspaceQuota?
+  reportCache              ReportCache[]
+  reportTemplates          ReportTemplate[]
+  userNotificationSettings UserNotificationSettings[]
 
   @@map("workspaces")
 }
 
 model User {
-  id                                  String          @id @default(cuid())
-  email                               String          @unique
-  name                                String?
-  phone                               String?
-  avatar                              String?
-  role                                Role            @default(USER)
-  status                              Status          @default(ACTIVE)
-  settings                            Json?
-  supabaseId                          String          @unique
-  emailVerified                       Boolean         @default(false)
-  emailVerificationToken              String?         @db.VarChar(256)
-  emailVerificationTokenExpiresAt     DateTime?
-  passwordResetToken                  String?         @db.VarChar(256)
-  passwordResetTokenExpiresAt         DateTime?
-  createdAt                           DateTime        @default(now())
-  updatedAt                           DateTime        @updatedAt
-  lastLoginAt                         DateTime?
-  caseEvents                          CaseEvent[]
-  assignedCases                       Case[]          @relation("CaseAssignedTo")
-  createdCases                        Case[]          @relation("CaseCreatedBy")
-  workspaces                          UserWorkspace[]
+  id                              String                     @id @default(cuid())
+  email                           String                     @unique
+  name                            String?
+  phone                           String?
+  avatar                          String?
+  role                            Role                       @default(USER)
+  status                          Status                     @default(ACTIVE)
+  settings                        Json?
+  supabaseId                      String                     @unique
+  emailVerified                   Boolean                    @default(false)
+  emailVerificationToken          String?                    @db.VarChar(256)
+  emailVerificationTokenExpiresAt DateTime?
+  passwordResetToken              String?                    @db.VarChar(256)
+  passwordResetTokenExpiresAt     DateTime?
+  createdAt                       DateTime                   @default(now())
+  updatedAt                       DateTime                   @updatedAt
+  lastLoginAt                     DateTime?
+  caseEvents                      CaseEvent[]
+  assignedCases                   Case[]                     @relation("CaseAssignedTo")
+  createdCases                    Case[]                     @relation("CaseCreatedBy")
+  workspaces                      UserWorkspace[]
+  notificationSettings            UserNotificationSettings[]
 
   @@map("users")
 }
@@ -91,93 +93,95 @@ model UserWorkspace {
 }
 
 model Client {
-  id                String             @id @default(cuid())
-  workspaceId       String
-  name              String
-  email             String?
-  phone             String?
-  document          String?
-  type              ClientType         @default(INDIVIDUAL)
-  status            Status             @default(ACTIVE)
-  address           String?
-  city              String?
-  state             String?
-  zipCode           String?
-  country           String?            @default("BR")
-  notes             String?
-  metadata          Json?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  cases             Case[]
-  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  importedDataItems ImportedDataItem[]
+  id                     String             @id @default(cuid())
+  workspaceId            String
+  name                   String
+  email                  String?
+  phone                  String?
+  document               String?
+  type                   ClientType         @default(INDIVIDUAL)
+  status                 Status             @default(ACTIVE)
+  address                String?
+  city                   String?
+  state                  String?
+  zipCode                String?
+  country                String?            @default("BR")
+  notes                  String?
+  metadata               Json?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  cases                  Case[]
+  workspace              Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  importedDataItems      ImportedDataItem[] @relation("ImportedDataItemClient")
+  createdByImportedItems ImportedDataItem[] @relation("ImportedItemCreatedClient")
 
   @@map("clients")
 }
 
 model Case {
-  id                 String                @id @default(cuid())
-  workspaceId        String
-  clientId           String
-  number             String
-  title              String
-  description        String?
-  type               CaseType              @default(CIVIL)
-  status             CaseStatus            @default(ACTIVE)
-  priority           Priority              @default(MEDIUM)
-  createdById        String
-  assignedToId       String?
-  claimValue         Decimal?              @db.Decimal(15, 2)
-  fee                Decimal?              @db.Decimal(15, 2)
-  feeType            FeeType               @default(FIXED)
-  filingDate         DateTime?
-  dueDate            DateTime?
-  closedAt           DateTime?
-  tags               String[]
-  metadata           Json?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
+  id           String     @id @default(cuid())
+  workspaceId  String
+  clientId     String
+  number       String
+  title        String
+  description  String?
+  type         CaseType   @default(CIVIL)
+  status       CaseStatus @default(ACTIVE)
+  priority     Priority   @default(MEDIUM)
+  createdById  String
+  assignedToId String?
+  claimValue   Decimal?   @db.Decimal(15, 2)
+  fee          Decimal?   @db.Decimal(15, 2)
+  feeType      FeeType    @default(FIXED)
+  filingDate   DateTime?
+  dueDate      DateTime?
+  closedAt     DateTime?
+  tags         String[]
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   // ============================================================
   // CAMPOS NOVOS PARA ONBOARDING 3 FASES
   // ============================================================
 
   // Preview snapshot (FASE 1)
-  previewSnapshot        Json?                 @map("preview_snapshot")
+  previewSnapshot Json? @map("preview_snapshot")
 
   // CNJ detectado automaticamente
-  detectedCnj            String?               @map("detected_cnj") @db.VarChar(255)
+  detectedCnj String? @map("detected_cnj") @db.VarChar(255)
 
   // Primeira página do PDF
-  firstPageText          String?               @map("first_page_text")
+  firstPageText String? @map("first_page_text")
 
   // Status do onboarding
-  onboardingStatus       ProcessOnboardingStatus @default(created) @map("onboarding_status")
+  onboardingStatus ProcessOnboardingStatus @default(created) @map("onboarding_status")
 
   // Timestamps de progresso
-  enrichmentStartedAt    DateTime?             @map("enrichment_started_at")
-  enrichmentCompletedAt  DateTime?             @map("enrichment_completed_at")
-  previewGeneratedAt     DateTime?             @map("preview_generated_at")
+  enrichmentStartedAt   DateTime? @map("enrichment_started_at")
+  enrichmentCompletedAt DateTime? @map("enrichment_completed_at")
+  previewGeneratedAt    DateTime? @map("preview_generated_at")
 
   // Relacionamento com Processo JUDIT (opcional)
-  processoId         String?               @unique
+  processoId String? @unique
 
-  analysisVersions   CaseAnalysisVersion[]
-  documents          CaseDocument[]
-  events             CaseEvent[]
-  assignedTo         User?                 @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
-  client             Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  createdBy          User                  @relation("CaseCreatedBy", fields: [createdById], references: [id])
-  workspace          Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  importedDataItems  ImportedDataItem[]
-  monitoredProcesses MonitoredProcess[]
-  timelineEntries    ProcessTimelineEntry[]
-  processo           Processo?             @relation(fields: [processoId], references: [id])
-  juditRequests      JuditRequest[]        @relation("JuditRequestCase")
+  analysisVersions       CaseAnalysisVersion[]
+  documents              CaseDocument[]
+  events                 CaseEvent[]
+  assignedTo             User?                  @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
+  client                 Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy              User                   @relation("CaseCreatedBy", fields: [createdById], references: [id])
+  workspace              Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  importedDataItems      ImportedDataItem[]     @relation("ImportedDataItemCase")
+  createdByImportedItems ImportedDataItem[]     @relation("ImportedItemCreatedCase")
+  monitoredProcesses     MonitoredProcess[]
+  timelineEntries        ProcessTimelineEntry[]
+  processo               Processo?              @relation(fields: [processoId], references: [id])
+  juditRequests          JuditRequest[]         @relation("JuditRequestCase")
 
+  @@unique([number, workspaceId])
   @@index([onboardingStatus, updatedAt])
   @@index([detectedCnj])
-  @@unique([number, workspaceId])
   @@map("cases")
 }
 
@@ -199,46 +203,47 @@ model CaseEvent {
 }
 
 model CaseDocument {
-  id                String             @id @default(cuid())
-  caseId            String
-  name              String
-  originalName      String
-  type              DocumentType       @default(OTHER)
-  mimeType          String
-  size              Int
-  url               String
-  path              String
-  pages             Int?
-  extractedText     String?
-  summary           String?
-  tags              String[]
-  processed         Boolean            @default(false)
-  ocrStatus         ProcessStatus      @default(PENDING)
+  id                 String        @id @default(cuid())
+  caseId             String
+  name               String
+  originalName       String
+  type               DocumentType  @default(OTHER)
+  mimeType           String
+  size               Int
+  url                String
+  path               String
+  pages              Int?
+  extractedText      String?
+  summary            String?
+  tags               String[]
+  processed          Boolean       @default(false)
+  ocrStatus          ProcessStatus @default(PENDING)
   // NOVOS CAMPOS PARA DEDUPLICAÇÃO E ANÁLISE
-  textSha           String?            // SHA256 do conteúdo binário do arquivo
-  isDuplicate       Boolean            @default(false)
-  originalDocumentId String?           // Referência ao documento original se for duplicata
-  cleanText         String?            // Texto limpo e normalizado (AI-friendly)
-  textExtractedAt   DateTime?          // Timestamp da extração de texto
-  analysisVersion   String?            // Versão da análise/modelo usado
-  analysisKey       String?            // Chave para cache de análise
-  workerId          String?            // ID do worker que processou
-  costEstimate      Float?             // Estimativa de custo da análise
-  documentDate      DateTime?          @map("document_date") // Data extraída do documento (não data de upload)
-  metadata          Json?              // Metadados estruturados do documento (tipo, partes, juiz, etc)
+  textSha            String? // SHA256 do conteúdo binário do arquivo
+  isDuplicate        Boolean       @default(false)
+  originalDocumentId String? // Referência ao documento original se for duplicata
+  cleanText          String? // Texto limpo e normalizado (AI-friendly)
+  textExtractedAt    DateTime? // Timestamp da extração de texto
+  analysisVersion    String? // Versão da análise/modelo usado
+  analysisKey        String? // Chave para cache de análise
+  workerId           String? // ID do worker que processou
+  costEstimate       Float? // Estimativa de custo da análise
+  documentDate       DateTime?     @map("document_date") // Data extraída do documento (não data de upload)
+  metadata           Json? // Metadados estruturados do documento (tipo, partes, juiz, etc)
 
   // CAMPOS PARA JUDIT ATTACHMENTS
-  juditAttachmentUrl String?           @map("judit_attachment_url") @db.VarChar(500)
-  sourceOrigin       String             @default("USER_UPLOAD") @map("source_origin")
+  juditAttachmentUrl String? @map("judit_attachment_url") @db.VarChar(500)
+  sourceOrigin       String  @default("USER_UPLOAD") @map("source_origin")
 
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  originalDocument  CaseDocument?      @relation("DocumentDuplicate", fields: [originalDocumentId], references: [id])
-  duplicates        CaseDocument[]     @relation("DocumentDuplicate")
-  importedDataItems ImportedDataItem[]
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  case                   Case                   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  originalDocument       CaseDocument?          @relation("DocumentDuplicate", fields: [originalDocumentId], references: [id])
+  duplicates             CaseDocument[]         @relation("DocumentDuplicate")
+  importedDataItems      ImportedDataItem[]     @relation("ImportedDataItemDocument")
+  createdByImportedItems ImportedDataItem[]     @relation("ImportedItemCreatedDocument")
   // Novo: Relacionamento com timeline (um documento pode estar vinculado a múltiplos eventos)
-  timelineEntries   ProcessTimelineEntry[] @relation("TimelineDocumentLinks")
+  timelineEntries        ProcessTimelineEntry[] @relation("TimelineDocumentLinks")
 
   @@index([textSha]) // Índice para busca rápida de duplicatas
   @@index([analysisKey]) // Índice para cache de análise
@@ -274,52 +279,52 @@ model CaseAnalysisVersion {
 }
 
 model ProcessTimelineEntry {
-  id                String             @id @default(cuid())
-  caseId            String             @map("case_id")
-  contentHash       String             @map("content_hash")             // Hash do conteúdo normalizado para deduplicação
-  eventDate         DateTime           @map("event_date")              // Data original do andamento
-  eventType         String             @map("event_type")             // Tipo do evento (ex: "Juntada", "Despacho", "Sentença")
-  description       String             // Descrição do andamento
-  normalizedContent String             @map("normalized_content")      // Conteúdo normalizado para comparação
-  source            TimelineSource     // Origem do andamento
-  sourceId          String?            @map("source_id")              // ID do registro original (documento, API, etc)
-  metadata          Json?              // Metadados específicos da fonte
-  confidence        Float              @default(1.0) // Confiança na extração
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  id                String         @id @default(cuid())
+  caseId            String         @map("case_id")
+  contentHash       String         @map("content_hash") // Hash do conteúdo normalizado para deduplicação
+  eventDate         DateTime       @map("event_date") // Data original do andamento
+  eventType         String         @map("event_type") // Tipo do evento (ex: "Juntada", "Despacho", "Sentença")
+  description       String // Descrição do andamento
+  normalizedContent String         @map("normalized_content") // Conteúdo normalizado para comparação
+  source            TimelineSource // Origem do andamento
+  sourceId          String?        @map("source_id") // ID do registro original (documento, API, etc)
+  metadata          Json? // Metadados específicos da fonte
+  confidence        Float          @default(1.0) // Confiança na extração
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
 
   // ============================================================
   // NOVOS CAMPOS PARA TIMELINE UNIFICADA INTELIGENTE (Oct 2025)
   // ============================================================
 
   // Vinculação: Este evento enriquece outro evento JUDIT base?
-  baseEventId       String?            @map("base_event_id")           // Se não-null, este evento enriquece um evento base
-  enrichedByIds     String[]           @map("enriched_by_ids") @default([])   // IDs de eventos que enriquecem este
-  relationType      EventRelationType? @map("relation_type")           // DUPLICATE, ENRICHMENT, RELATED, CONFLICT
+  baseEventId   String?            @map("base_event_id") // Se não-null, este evento enriquece um evento base
+  enrichedByIds String[]           @default([]) @map("enriched_by_ids") // IDs de eventos que enriquecem este
+  relationType  EventRelationType? @map("relation_type") // DUPLICATE, ENRICHMENT, RELATED, CONFLICT
 
   // Preservação de textos originais
-  originalTexts     Json?              @map("original_texts")          // {source: "texto original", ...}
-  contributingSources TimelineSource[] @map("contributing_sources") @default([])
+  originalTexts       Json?            @map("original_texts") // {source: "texto original", ...}
+  contributingSources TimelineSource[] @default([]) @map("contributing_sources")
 
   // Vinculação com documentos
-  linkedDocumentIds String[]           @map("linked_document_ids") @default([])
+  linkedDocumentIds String[] @default([]) @map("linked_document_ids")
 
   // Enriquecimento por IA
-  isEnriched        Boolean            @default(false) @map("is_enriched")
-  enrichedAt        DateTime?          @map("enriched_at")
-  enrichmentModel   String?            @map("enrichment_model")        // e.g. "gemini-1.5-flash"
+  isEnriched      Boolean   @default(false) @map("is_enriched")
+  enrichedAt      DateTime? @map("enriched_at")
+  enrichmentModel String?   @map("enrichment_model") // e.g. "gemini-1.5-flash"
 
   // Conflitos
-  hasConflict       Boolean            @default(false) @map("has_conflict")
-  conflictDetails   Json?              @map("conflict_details")        // {type, sources, details}
-  reviewedBy        String?            @map("reviewed_by")             // userId
-  reviewedAt        DateTime?          @map("reviewed_at")
+  hasConflict     Boolean   @default(false) @map("has_conflict")
+  conflictDetails Json?     @map("conflict_details") // {type, sources, details}
+  reviewedBy      String?   @map("reviewed_by") // userId
+  reviewedAt      DateTime? @map("reviewed_at")
 
   // Relacionamentos
-  case              Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  baseEvent         ProcessTimelineEntry? @relation("EventEnrichment", fields: [baseEventId], references: [id], onDelete: SetNull)
-  enrichingEvents   ProcessTimelineEntry[] @relation("EventEnrichment")
-  linkedDocuments   CaseDocument[]     @relation("TimelineDocumentLinks")
+  case            Case                   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  baseEvent       ProcessTimelineEntry?  @relation("EventEnrichment", fields: [baseEventId], references: [id], onDelete: SetNull)
+  enrichingEvents ProcessTimelineEntry[] @relation("EventEnrichment")
+  linkedDocuments CaseDocument[]         @relation("TimelineDocumentLinks")
 
   @@unique([caseId, contentHash]) // Evita duplicatas por hash do conteúdo
   @@index([eventDate]) // Índice para ordenação cronológica
@@ -386,51 +391,53 @@ model AiCache {
 }
 
 model MonitoredProcess {
-  id               String            @id @default(cuid())
+  id               String             @id @default(cuid())
   workspaceId      String
   caseId           String?
   processNumber    String
   court            String
   clientName       String
   processData      Json?
-  monitoringStatus MonitoringStatus  @default(ACTIVE)
+  monitoringStatus MonitoringStatus   @default(ACTIVE)
   lastSync         DateTime?
-  syncFrequency    SyncFrequency     @default(DAILY)
-  alertsEnabled    Boolean           @default(true)
+  syncFrequency    SyncFrequency      @default(DAILY)
+  alertsEnabled    Boolean            @default(true)
   alertRecipients  String[]
-  source           ProcessSource     @default(JUDIT_API)
-  extractionMethod ExtractionMethod  @default(API)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  case             Case?             @relation(fields: [caseId], references: [id])
-  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  source           ProcessSource      @default(JUDIT_API)
+  extractionMethod ExtractionMethod   @default(API)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  case             Case?              @relation(fields: [caseId], references: [id])
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   alerts           ProcessAlert[]
   movements        ProcessMovement[]
   syncLogs         ProcessSyncLog[]
+  importedItems    ImportedDataItem[] @relation("ImportedItemCreatedProcess")
 
   @@unique([workspaceId, processNumber])
   @@map("monitored_processes")
 }
 
 model ProcessMovement {
-  id                 String           @id @default(cuid())
+  id                 String             @id @default(cuid())
   monitoredProcessId String
   date               DateTime
   type               String
   description        String
-  category           MovementCategory @default(OTHER)
-  importance         Priority         @default(MEDIUM)
-  requiresAction     Boolean          @default(false)
+  category           MovementCategory   @default(OTHER)
+  importance         Priority           @default(MEDIUM)
+  requiresAction     Boolean            @default(false)
   deadline           DateTime?
   rawData            Json?
   aiSummary          String?
   aiTags             String[]
-  read               Boolean          @default(false)
-  archived           Boolean          @default(false)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  read               Boolean            @default(false)
+  archived           Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   alerts             ProcessAlert[]
-  monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+  monitoredProcess   MonitoredProcess   @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
+  importedItems      ImportedDataItem[] @relation("ImportedItemCreatedMovement")
 
   @@map("process_movements")
 }
@@ -551,11 +558,30 @@ model ImportedDataItem {
   importedAt       DateTime         @default(now())
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  case             Case?            @relation(fields: [caseId], references: [id])
-  client           Client?          @relation(fields: [clientId], references: [id])
-  document         CaseDocument?    @relation(fields: [documentId], references: [id])
-  event            CaseEvent?       @relation(fields: [eventId], references: [id])
-  systemImport     SystemImport     @relation(fields: [systemImportId], references: [id], onDelete: Cascade)
+
+  // --- ROLLBACK RELATIONS (Phase 18: Atomic Rollback) ---
+  // Tracks which entities this imported row created for rollback purposes
+  createdMonitoredProcessId String?
+  createdMonitoredProcess   MonitoredProcess? @relation("ImportedItemCreatedProcess", fields: [createdMonitoredProcessId], references: [id], onDelete: SetNull)
+
+  createdCaseDocumentId String?
+  createdCaseDocument   CaseDocument? @relation("ImportedItemCreatedDocument", fields: [createdCaseDocumentId], references: [id], onDelete: SetNull)
+
+  createdProcessMovementId String?
+  createdProcessMovement   ProcessMovement? @relation("ImportedItemCreatedMovement", fields: [createdProcessMovementId], references: [id], onDelete: SetNull)
+
+  createdClientId String?
+  createdClient   Client? @relation("ImportedItemCreatedClient", fields: [createdClientId], references: [id], onDelete: SetNull)
+
+  createdCaseId String?
+  createdCase   Case?   @relation("ImportedItemCreatedCase", fields: [createdCaseId], references: [id], onDelete: SetNull)
+  // --- END ROLLBACK RELATIONS ---
+
+  case         Case?         @relation("ImportedDataItemCase", fields: [caseId], references: [id])
+  client       Client?       @relation("ImportedDataItemClient", fields: [clientId], references: [id])
+  document     CaseDocument? @relation("ImportedDataItemDocument", fields: [documentId], references: [id])
+  event        CaseEvent?    @relation(fields: [eventId], references: [id])
+  systemImport SystemImport  @relation(fields: [systemImportId], references: [id], onDelete: Cascade)
 
   @@map("imported_data_items")
 }
@@ -749,9 +775,9 @@ model Processo {
   ultimaAtualizacao DateTime @updatedAt @map("ultima_atualizacao")
 
   // Relacionamentos
-  requisicoes       JuditRequest[]
-  monitoramento     JuditMonitoring?
-  case              Case?    // Relacionamento opcional com Case existente
+  requisicoes   JuditRequest[]
+  monitoramento JuditMonitoring?
+  case          Case? // Relacionamento opcional com Case existente
 
   @@index([numeroCnj])
   @@map("processos")
@@ -760,17 +786,17 @@ model Processo {
 model JuditRequest {
   id         String   @id @default(cuid())
   requestId  String   @unique @map("request_id") // O request_id retornado pela JUDIT
-  status     String   // ex: "pending", "completed", "failed"
-  finalidade String   // ex: "ONBOARDING", "BUSCA_ANEXOS"
+  status     String // ex: "pending", "completed", "failed"
+  finalidade String // ex: "ONBOARDING", "BUSCA_ANEXOS"
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  processoId String  @map("processo_id")
+  processoId String   @map("processo_id")
   processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
 
   // NOVO: Case explícito associado para evitar busca por CNJ ambígua
-  caseId     String? @map("case_id")
-  case       Case?   @relation("JuditRequestCase", fields: [caseId], references: [id], onDelete: SetNull)
+  caseId String? @map("case_id")
+  case   Case?   @relation("JuditRequestCase", fields: [caseId], references: [id], onDelete: SetNull)
 
   @@index([requestId])
   @@index([processoId, status])
@@ -780,10 +806,10 @@ model JuditRequest {
 }
 
 model JuditMonitoring {
-  id         String  @id @default(cuid())
-  trackingId String  @unique @map("tracking_id") // O tracking_id retornado pela JUDIT
-  tipo       String  @default("UNIVERSAL") // "UNIVERSAL" ou "ANEXOS"
-  ativo      Boolean @default(true)
+  id         String   @id @default(cuid())
+  trackingId String   @unique @map("tracking_id") // O tracking_id retornado pela JUDIT
+  tipo       String   @default("UNIVERSAL") // "UNIVERSAL" ou "ANEXOS"
+  ativo      Boolean  @default(true)
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
@@ -800,33 +826,33 @@ model JuditMonitoring {
 // ================================================================
 
 model JuditCostTracking {
-  id                  String              @id @default(cuid())
-  workspaceId         String?             @map("workspace_id") // Opcional para rastrear por workspace
-  operationType       JuditOperationType  @map("operation_type") // Tipo de operação
-  numeroCnj           String?             @map("numero_cnj") // CNJ do processo (se aplicável)
+  id            String             @id @default(cuid())
+  workspaceId   String?            @map("workspace_id") // Opcional para rastrear por workspace
+  operationType JuditOperationType @map("operation_type") // Tipo de operação
+  numeroCnj     String?            @map("numero_cnj") // CNJ do processo (se aplicável)
 
   // Custos em reais (BRL)
-  searchCost          Decimal             @default(0.69) @db.Decimal(10, 4) @map("search_cost") // Custo base da busca
-  attachmentsCost     Decimal             @default(0) @db.Decimal(10, 4) @map("attachments_cost")    // Custo de anexos
-  totalCost           Decimal             @db.Decimal(10, 4) @map("total_cost")                 // Custo total
+  searchCost      Decimal @default(0.69) @map("search_cost") @db.Decimal(10, 4) // Custo base da busca
+  attachmentsCost Decimal @default(0) @map("attachments_cost") @db.Decimal(10, 4) // Custo de anexos
+  totalCost       Decimal @map("total_cost") @db.Decimal(10, 4) // Custo total
 
   // Métricas de recursos
-  documentsRetrieved  Int                 @default(0) @map("documents_retrieved") // Número de documentos baixados
-  movementsCount      Int                 @default(0) @map("movements_count") // Número de movimentações
-  apiCallsCount       Int                 @default(1) @map("api_calls_count") // Número de chamadas à API
+  documentsRetrieved Int @default(0) @map("documents_retrieved") // Número de documentos baixados
+  movementsCount     Int @default(0) @map("movements_count") // Número de movimentações
+  apiCallsCount      Int @default(1) @map("api_calls_count") // Número de chamadas à API
 
   // Tempos de resposta (em ms)
-  durationMs          Int?                @map("duration_ms") // Duração total da operação
+  durationMs Int? @map("duration_ms") // Duração total da operação
 
   // Metadata
-  requestId           String?             @map("request_id") // ID da requisição JUDIT
-  trackingId          String?             @map("tracking_id") // ID de tracking JUDIT
-  jobId               String?             @map("job_id") // ID do job na fila (se aplicável)
-  status              String              @default("success") // success, failed, timeout
-  errorMessage        String?             @map("error_message") // Mensagem de erro (se houver)
+  requestId    String? @map("request_id") // ID da requisição JUDIT
+  trackingId   String? @map("tracking_id") // ID de tracking JUDIT
+  jobId        String? @map("job_id") // ID do job na fila (se aplicável)
+  status       String  @default("success") // success, failed, timeout
+  errorMessage String? @map("error_message") // Mensagem de erro (se houver)
 
   // Timestamps
-  createdAt           DateTime            @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([workspaceId, createdAt])
   @@index([operationType, createdAt])
@@ -836,30 +862,30 @@ model JuditCostTracking {
 }
 
 model JuditAlert {
-  id              String          @id @default(cuid())
-  workspaceId     String?         @map("workspace_id") // Opcional
-  alertType       JuditAlertType  @map("alert_type") // Tipo de alerta
-  severity        AlertSeverity   @default(MEDIUM)
+  id          String         @id @default(cuid())
+  workspaceId String?        @map("workspace_id") // Opcional
+  alertType   JuditAlertType @map("alert_type") // Tipo de alerta
+  severity    AlertSeverity  @default(MEDIUM)
 
   // Detalhes do alerta
-  title           String
-  message         String
-  errorCode       String?         @map("error_code")
+  title     String
+  message   String
+  errorCode String? @map("error_code")
 
   // Contexto
-  numeroCnj       String?         @map("numero_cnj")
-  requestId       String?         @map("request_id")
-  trackingId      String?         @map("tracking_id")
-  jobId           String?         @map("job_id")
-  metadata        Json?           // Dados adicionais
+  numeroCnj  String? @map("numero_cnj")
+  requestId  String? @map("request_id")
+  trackingId String? @map("tracking_id")
+  jobId      String? @map("job_id")
+  metadata   Json? // Dados adicionais
 
   // Estado
-  resolved        Boolean         @default(false)
-  resolvedAt      DateTime?       @map("resolved_at")
-  notified        Boolean         @default(false)
-  notifiedAt      DateTime?       @map("notified_at")
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime? @map("resolved_at")
+  notified   Boolean   @default(false)
+  notifiedAt DateTime? @map("notified_at")
 
-  createdAt       DateTime        @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([workspaceId, resolved, severity])
   @@index([alertType, resolved])
@@ -868,8 +894,61 @@ model JuditAlert {
 }
 
 // ================================================================
+// NOTIFICATION SETTINGS - User Notification Preferences (Phase 17)
+// ================================================================
+
+model UserNotificationSettings {
+  id          String  @id @default(cuid())
+  userId      String
+  workspaceId String? // NULL = global preferences
+
+  // Email notification preferences
+  emailEnabled Boolean @default(true) @map("email_enabled")
+
+  // Alert type preferences (which alert types to receive)
+  processAlerts  Boolean @default(true) @map("process_alerts")
+  billingAlerts  Boolean @default(true) @map("billing_alerts")
+  systemAlerts   Boolean @default(true) @map("system_alerts")
+  deadlineAlerts Boolean @default(true) @map("deadline_alerts")
+
+  // Notification frequency
+  frequency NotificationFrequency @default(IMMEDIATE) @map("frequency")
+
+  // Quiet hours configuration
+  quietHoursEnabled  Boolean @default(false) @map("quiet_hours_enabled")
+  quietHoursStart    String? @map("quiet_hours_start") // HH:mm format
+  quietHoursEnd      String? @map("quiet_hours_end") // HH:mm format
+  quietHoursTimezone String? @default("America/Sao_Paulo") @map("quiet_hours_timezone")
+
+  // Digest preferences
+  digestEnabled Boolean @default(false) @map("digest_enabled")
+  digestTime    String? @map("digest_time") // HH:mm format for daily digest
+
+  // Metadata and tracking
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("user_notification_settings")
+}
+
+// ================================================================
 // ENUMS
 // ================================================================
+
+enum NotificationFrequency {
+  IMMEDIATE // Send immediately upon event
+  DAILY_DIGEST // Send daily digest at configured time
+  WEEKLY_DIGEST // Send weekly digest
+  DISABLED // Do not send
+}
 
 enum Plan {
   FREE
@@ -1111,6 +1190,8 @@ enum ImportStatus {
   COMPLETED
   FAILED
   CANCELLED
+  ROLLING_BACK
+  ROLLED_BACK
 }
 
 enum ImportedDataType {
@@ -1131,6 +1212,7 @@ enum ImportItemStatus {
   SKIPPED
   FAILED
   DUPLICATE
+  ROLLED_BACK
 }
 
 enum SyncMode {
@@ -1177,17 +1259,17 @@ enum LogCategory {
 
 enum TimelineSource {
   DOCUMENT_UPLOAD // Extraído de documento PDF
-  API_JUDIT       // Obtido via API Judit
-  MANUAL_ENTRY    // Inserido manualmente
-  SYSTEM_IMPORT   // Importado de sistema externo
-  AI_EXTRACTION   // Extraído por IA
+  API_JUDIT // Obtido via API Judit
+  MANUAL_ENTRY // Inserido manualmente
+  SYSTEM_IMPORT // Importado de sistema externo
+  AI_EXTRACTION // Extraído por IA
 }
 
 enum EventRelationType {
-  DUPLICATE    // Hash idêntico - mesmo evento de diferentes fontes
-  ENRICHMENT   // Adiciona contexto a um evento base JUDIT
-  RELATED      // Semanticamente similar mas distinto
-  CONFLICT     // Informações conflitantes entre fontes
+  DUPLICATE // Hash idêntico - mesmo evento de diferentes fontes
+  ENRICHMENT // Adiciona contexto a um evento base JUDIT
+  RELATED // Semanticamente similar mas distinto
+  CONFLICT // Informações conflitantes entre fontes
 }
 
 // ================================================================
@@ -1195,29 +1277,29 @@ enum EventRelationType {
 // ================================================================
 
 model WorkspaceCredits {
-  id                          String    @id @default(cuid())
-  workspaceId                 String    @unique
-  reportCreditsBalance        Decimal   @default(0) @db.Decimal(10, 2)
-  fullCreditsBalance          Decimal   @default(0) @db.Decimal(10, 2)
-  reportCreditsRolloverCap    Decimal   @default(36) @db.Decimal(10, 2)
-  fullCreditsRolloverCap      Decimal   @default(50) @db.Decimal(10, 2)
-  createdAt                   DateTime  @default(now())
-  updatedAt                   DateTime  @updatedAt
-  workspace                   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                       String    @id @default(cuid())
+  workspaceId              String    @unique
+  reportCreditsBalance     Decimal   @default(0) @db.Decimal(10, 2)
+  fullCreditsBalance       Decimal   @default(0) @db.Decimal(10, 2)
+  reportCreditsRolloverCap Decimal   @default(36) @db.Decimal(10, 2)
+  fullCreditsRolloverCap   Decimal   @default(50) @db.Decimal(10, 2)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  workspace                Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("workspace_credits")
 }
 
 model CreditAllocation {
-  id                String             @id @default(cuid())
+  id                String               @id @default(cuid())
   workspaceId       String
   type              CreditAllocationType
-  amount            Decimal            @db.Decimal(10, 2)
-  remainingAmount   Decimal            @db.Decimal(10, 2)
+  amount            Decimal              @db.Decimal(10, 2)
+  remainingAmount   Decimal              @db.Decimal(10, 2)
   expiresAt         DateTime?
   sourceDescription String?
-  createdAt         DateTime           @default(now())
-  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt         DateTime             @default(now())
+  workspace         Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   transactions      CreditTransaction[]
 
   @@index([workspaceId, expiresAt, createdAt])
@@ -1226,17 +1308,17 @@ model CreditAllocation {
 }
 
 model CreditTransaction {
-  id               String            @id @default(cuid())
-  workspaceId      String
-  allocationId     String?
-  type             CreditTransactionType
-  creditCategory   CreditCategory
-  amount           Decimal           @db.Decimal(10, 2)
-  reason           String
-  metadata         Json              @default("{}")
-  createdAt        DateTime          @default(now())
-  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  allocation       CreditAllocation? @relation(fields: [allocationId], references: [id], onDelete: SetNull)
+  id             String                @id @default(cuid())
+  workspaceId    String
+  allocationId   String?
+  type           CreditTransactionType
+  creditCategory CreditCategory
+  amount         Decimal               @db.Decimal(10, 2)
+  reason         String
+  metadata       Json                  @default("{}")
+  createdAt      DateTime              @default(now())
+  workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  allocation     CreditAllocation?     @relation(fields: [allocationId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, createdAt])
   @@index([allocationId])
@@ -1244,14 +1326,14 @@ model CreditTransaction {
 }
 
 model ScheduledCreditHold {
-  id                      String    @id @default(cuid())
-  workspaceId             String
-  reportId                String
-  reportCreditsReserved   Decimal   @default(0) @db.Decimal(10, 2)
-  fullCreditsReserved     Decimal   @default(0) @db.Decimal(10, 2)
-  expiresAt               DateTime
-  createdAt               DateTime  @default(now())
-  workspace               Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                    String    @id @default(cuid())
+  workspaceId           String
+  reportId              String
+  reportCreditsReserved Decimal   @default(0) @db.Decimal(10, 2)
+  fullCreditsReserved   Decimal   @default(0) @db.Decimal(10, 2)
+  expiresAt             DateTime
+  createdAt             DateTime  @default(now())
+  workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([expiresAt])
@@ -1259,17 +1341,17 @@ model ScheduledCreditHold {
 }
 
 model UsageEvent {
-  id                String        @id @default(cuid())
+  id                String      @id @default(cuid())
   workspaceId       String
   eventType         String
   resourceType      String
   resourceId        String?
-  reportCreditsCost Decimal       @default(0) @db.Decimal(10, 2)
-  fullCreditsCost   Decimal       @default(0) @db.Decimal(10, 2)
-  status            UsageStatus   @default(COMPLETED)
-  metadata          Json          @default("{}")
-  createdAt         DateTime      @default(now())
-  workspace         Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  reportCreditsCost Decimal     @default(0) @db.Decimal(10, 2)
+  fullCreditsCost   Decimal     @default(0) @db.Decimal(10, 2)
+  status            UsageStatus @default(COMPLETED)
+  metadata          Json        @default("{}")
+  createdAt         DateTime    @default(now())
+  workspace         Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
   @@index([eventType, createdAt])
@@ -1277,24 +1359,24 @@ model UsageEvent {
 }
 
 model PlanConfiguration {
-  id                         String   @id @default(cuid())
-  planName                   String   @unique
-  monitorLimit               Int
-  reportCreditsMonth         Decimal  @db.Decimal(10, 2)
-  fullCreditsMonth           Decimal  @db.Decimal(10, 2)
-  firstMonthFullBonus        Decimal  @db.Decimal(10, 2)
-  firstMonthBonusExpiryDays  Int      @default(90)
-  fullRolloverCap            Decimal  @db.Decimal(10, 2)
-  reportRolloverCap          Decimal  @db.Decimal(10, 2)
-  tier1Processes             Int      @default(5)
-  tier1CreditCost            Decimal  @default(0.25) @db.Decimal(10, 2)
-  tier2Processes             Int      @default(12)
-  tier2CreditCost            Decimal  @default(0.5) @db.Decimal(10, 2)
-  tier3Processes             Int      @default(25)
-  tier3CreditCost            Decimal  @default(1.0) @db.Decimal(10, 2)
-  fullCreditPerBatch         Int      @default(10)
-  createdAt                  DateTime @default(now())
-  updatedAt                  DateTime @updatedAt
+  id                        String   @id @default(cuid())
+  planName                  String   @unique
+  monitorLimit              Int
+  reportCreditsMonth        Decimal  @db.Decimal(10, 2)
+  fullCreditsMonth          Decimal  @db.Decimal(10, 2)
+  firstMonthFullBonus       Decimal  @db.Decimal(10, 2)
+  firstMonthBonusExpiryDays Int      @default(90)
+  fullRolloverCap           Decimal  @db.Decimal(10, 2)
+  reportRolloverCap         Decimal  @db.Decimal(10, 2)
+  tier1Processes            Int      @default(5)
+  tier1CreditCost           Decimal  @default(0.25) @db.Decimal(10, 2)
+  tier2Processes            Int      @default(12)
+  tier2CreditCost           Decimal  @default(0.5) @db.Decimal(10, 2)
+  tier3Processes            Int      @default(25)
+  tier3CreditCost           Decimal  @default(1.0) @db.Decimal(10, 2)
+  fullCreditPerBatch        Int      @default(10)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 
   @@map("plan_configurations")
 }
@@ -1327,25 +1409,25 @@ enum UsageStatus {
 // ================================================================
 
 model UploadBatch {
-  id           String               @id @default(cuid())
-  workspaceId  String
-  fileName     String
-  filePath     String?
-  fileSize     BigInt
-  status       UploadBatchStatus    @default(PROCESSING)
-  totalRows    Int                  @default(0)
-  processed    Int                  @default(0)
-  successful   Int                  @default(0)
-  failed       Int                  @default(0)
-  errors       Json                 @default("[]")
-  summary      Json                 @default("{}")
-  config       Json                 @default("{}")
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  workspace    Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  rows         UploadBatchRow[]
-  events       UploadBatchEvent[]
-  telemetry    JuditTelemetry[]
+  id          String             @id @default(cuid())
+  workspaceId String
+  fileName    String
+  filePath    String?
+  fileSize    BigInt
+  status      UploadBatchStatus  @default(PROCESSING)
+  totalRows   Int                @default(0)
+  processed   Int                @default(0)
+  successful  Int                @default(0)
+  failed      Int                @default(0)
+  errors      Json               @default("[]")
+  summary     Json               @default("{}")
+  config      Json               @default("{}")
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  rows        UploadBatchRow[]
+  events      UploadBatchEvent[]
+  telemetry   JuditTelemetry[]
 
   @@index([workspaceId, createdAt])
   @@index([status, createdAt])
@@ -1353,17 +1435,17 @@ model UploadBatch {
 }
 
 model UploadBatchRow {
-  id           String            @id @default(cuid())
+  id           String          @id @default(cuid())
   batchId      String
   rowIndex     Int
   rowData      Json
-  status       UploadRowStatus   @default(PENDING)
+  status       UploadRowStatus @default(PENDING)
   processId    String?
   errorMessage Json?
-  retryCount   Int               @default(0)
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  batch        UploadBatch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  retryCount   Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  batch        UploadBatch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
 
   @@unique([batchId, rowIndex])
   @@index([batchId, status])
@@ -1384,23 +1466,23 @@ model UploadBatchEvent {
 }
 
 model JuditTelemetry {
-  id                String       @id @default(cuid())
-  workspaceId       String
-  batchId           String?
-  processNumber     String
-  tribunal          String
-  success           Boolean
-  responseTimeMs    Int?
-  docsRetrieved     Int          @default(0)
-  movementsCount    Int          @default(0)
-  partiesCount      Int          @default(0)
-  errorCode         String?
-  errorMessage      String?
-  retryCount        Int          @default(0)
-  rateLimitHit      Boolean      @default(false)
-  createdAt         DateTime     @default(now())
-  workspace         Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  batch             UploadBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  id             String       @id @default(cuid())
+  workspaceId    String
+  batchId        String?
+  processNumber  String
+  tribunal       String
+  success        Boolean
+  responseTimeMs Int?
+  docsRetrieved  Int          @default(0)
+  movementsCount Int          @default(0)
+  partiesCount   Int          @default(0)
+  errorCode      String?
+  errorMessage   String?
+  retryCount     Int          @default(0)
+  rateLimitHit   Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  batch          UploadBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
 
   @@index([workspaceId, createdAt])
   @@index([batchId, createdAt])
@@ -1428,27 +1510,27 @@ enum UploadRowStatus {
 
 // Missing models that were accidentally removed
 model AnalysisJob {
-  id                String                @id @default(cuid())
-  processId         String
-  workspaceId       String
-  analysisKey       String                @db.VarChar(64)
-  status            JobStatus             @default(QUEUED)
-  lockToken         String?               @db.VarChar(128)
-  lockAcquiredAt    DateTime?
-  lockExpiresAt     DateTime?
-  analysisType      AnalysisType
-  modelHint         String                @default("gemini-1.5-flash")
-  filesMetadata     Json                  @default("[]")
-  progress          Int                   @default(0)
-  resultVersionId   String?
-  createdAt         DateTime              @default(now())
-  startedAt         DateTime?
-  finishedAt        DateTime?
-  workerId          String?
-  retryCount        Int                   @default(0)
-  metadata          Json                  @default("{}")
-  workspace         Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  resultVersion     CaseAnalysisVersion?  @relation(fields: [resultVersionId], references: [id])
+  id              String               @id @default(cuid())
+  processId       String
+  workspaceId     String
+  analysisKey     String               @db.VarChar(64)
+  status          JobStatus            @default(QUEUED)
+  lockToken       String?              @db.VarChar(128)
+  lockAcquiredAt  DateTime?
+  lockExpiresAt   DateTime?
+  analysisType    AnalysisType
+  modelHint       String               @default("gemini-1.5-flash")
+  filesMetadata   Json                 @default("[]")
+  progress        Int                  @default(0)
+  resultVersionId String?
+  createdAt       DateTime             @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  workerId        String?
+  retryCount      Int                  @default(0)
+  metadata        Json                 @default("{}")
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  resultVersion   CaseAnalysisVersion? @relation(fields: [resultVersionId], references: [id])
 
   @@index([analysisKey])
   @@index([status, createdAt])
@@ -1458,34 +1540,34 @@ model AnalysisJob {
 }
 
 model WorkspaceQuota {
-  id                     String   @id @default(cuid())
-  workspaceId            String   @unique
-  plan                   Plan     @default(FREE)
-  reportsMonthlyLimit    Int      @default(20)
-  reportProcessesLimit   Int      @default(100)
-  reportsUsedThisMonth   Int      @default(0)
-  quotaResetDate         DateTime @default(now())
-  overrideLimits         Json?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  workspace              Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                   String    @id @default(cuid())
+  workspaceId          String    @unique
+  plan                 Plan      @default(FREE)
+  reportsMonthlyLimit  Int       @default(20)
+  reportProcessesLimit Int       @default(100)
+  reportsUsedThisMonth Int       @default(0)
+  quotaResetDate       DateTime  @default(now())
+  overrideLimits       Json?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("workspace_quotas")
 }
 
 model ReportCache {
-  id                     String       @id @default(cuid())
-  cacheKey               String       @unique
-  workspaceId            String
-  reportType             ReportType
-  processIds             String[]
-  audienceType           AudienceType
-  lastMovementTimestamp  DateTime
-  cachedData             Json
-  fileUrls               Json?
-  createdAt              DateTime     @default(now())
-  expiresAt              DateTime
-  workspace              Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id                    String       @id @default(cuid())
+  cacheKey              String       @unique
+  workspaceId           String
+  reportType            ReportType
+  processIds            String[]
+  audienceType          AudienceType
+  lastMovementTimestamp DateTime
+  cachedData            Json
+  fileUrls              Json?
+  createdAt             DateTime     @default(now())
+  expiresAt             DateTime
+  workspace             Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
   @@index([cacheKey])
@@ -1495,38 +1577,38 @@ model ReportCache {
 }
 
 model ReportTemplate {
-  id               String    @id @default(cuid())
-  workspaceId      String
-  name             String
-  description      String?
-  templateType     String    @default("DEFAULT") // 'DEFAULT', 'CUSTOM_HEADER_FOOTER', 'FULL_TEMPLATE'
-  headerContent    String?
-  footerContent    String?
-  templateFileUrl  String?
-  styles           Json?
-  isDefault        Boolean   @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  workspace        Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id              String    @id @default(cuid())
+  workspaceId     String
+  name            String
+  description     String?
+  templateType    String    @default("DEFAULT") // 'DEFAULT', 'CUSTOM_HEADER_FOOTER', 'FULL_TEMPLATE'
+  headerContent   String?
+  footerContent   String?
+  templateFileUrl String?
+  styles          Json?
+  isDefault       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceId, name])
   @@map("report_templates")
 }
 
 model AnalysisCache {
-  id                 String    @id @default(cuid())
-  analysisKey        String    @unique @db.VarChar(64)
-  resultData         Json
-  modelUsed          String
-  analysisType       String
-  processId          String
-  lastMovementDate   DateTime?
-  createdAt          DateTime  @default(now())
-  expiresAt          DateTime?
-  accessCount        Int       @default(0)
-  lastAccessedAt     DateTime  @default(now())
-  compressed         Boolean   @default(false)
-  dataSizeBytes      Int       @default(0)
+  id               String    @id @default(cuid())
+  analysisKey      String    @unique @db.VarChar(64)
+  resultData       Json
+  modelUsed        String
+  analysisType     String
+  processId        String
+  lastMovementDate DateTime?
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime?
+  accessCount      Int       @default(0)
+  lastAccessedAt   DateTime  @default(now())
+  compressed       Boolean   @default(false)
+  dataSizeBytes    Int       @default(0)
 
   @@index([analysisKey])
   @@index([processId, createdAt])
@@ -1587,23 +1669,23 @@ enum OutputFormat {
 // ================================================================
 
 model WebhookDelivery {
-  id              String                @id @default(cuid())
-  workspaceId     String
-  webhookType     String                // 'judit.tracking', 'judit.callback', etc
-  eventType       String                // 'movement', 'attachment', 'status_change'
-  processNumber   String
-  payload         Json                  // Full webhook payload
-  status          WebhookDeliveryStatus @default(PENDING)
-  statusCode      Int?                  // HTTP status code from delivery
-  error           String?               // Error message if failed
-  retryCount      Int                   @default(0)
-  maxRetries      Int                   @default(5)
-  nextRetryAt     DateTime?             // When to retry next
-  lastAttemptAt   DateTime?             // Last delivery attempt
-  deliveredAt     DateTime?             // Successful delivery time
-  signature       String?               // HMAC signature for security
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id            String                @id @default(cuid())
+  workspaceId   String
+  webhookType   String // 'judit.tracking', 'judit.callback', etc
+  eventType     String // 'movement', 'attachment', 'status_change'
+  processNumber String
+  payload       Json // Full webhook payload
+  status        WebhookDeliveryStatus @default(PENDING)
+  statusCode    Int? // HTTP status code from delivery
+  error         String? // Error message if failed
+  retryCount    Int                   @default(0)
+  maxRetries    Int                   @default(5)
+  nextRetryAt   DateTime? // When to retry next
+  lastAttemptAt DateTime? // Last delivery attempt
+  deliveredAt   DateTime? // Successful delivery time
+  signature     String? // HMAC signature for security
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
 
   @@index([workspaceId])
   @@index([status])
@@ -1617,19 +1699,19 @@ model WebhookDelivery {
 // ================================================================
 
 model WebhookQueue {
-  id              String                @id @default(cuid())
-  workspaceId     String
-  eventType       String                // 'movement', 'attachment', 'status_change'
-  processNumber   String
-  payload         Json                  // Webhook event payload
-  status          WebhookQueueStatus    @default(PENDING)
-  priority        Int                   @default(0)
-  processedAt     DateTime?
-  error           String?
-  retryCount      Int                   @default(0)
-  maxRetries      Int                   @default(3)
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id            String             @id @default(cuid())
+  workspaceId   String
+  eventType     String // 'movement', 'attachment', 'status_change'
+  processNumber String
+  payload       Json // Webhook event payload
+  status        WebhookQueueStatus @default(PENDING)
+  priority      Int                @default(0)
+  processedAt   DateTime?
+  error         String?
+  retryCount    Int                @default(0)
+  maxRetries    Int                @default(3)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   @@index([workspaceId])
   @@index([status])
@@ -1643,20 +1725,20 @@ model WebhookQueue {
 // ================================================================
 
 model WebhookError {
-  id              String                @id @default(cuid())
-  workspaceId     String
-  webhookQueueId  String?               // Reference to the webhook that caused the error
-  eventType       String                // Type of webhook event
-  processNumber   String?
-  errorCode       String?
-  errorMessage    String
-  errorStack      String?
-  payload         Json?                 // The payload that caused the error
-  severity        AlertSeverity         @default(MEDIUM)
-  resolved        Boolean               @default(false)
-  resolvedAt      DateTime?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id             String        @id @default(cuid())
+  workspaceId    String
+  webhookQueueId String? // Reference to the webhook that caused the error
+  eventType      String // Type of webhook event
+  processNumber  String?
+  errorCode      String?
+  errorMessage   String
+  errorStack     String?
+  payload        Json? // The payload that caused the error
+  severity       AlertSeverity @default(MEDIUM)
+  resolved       Boolean       @default(false)
+  resolvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([workspaceId])
   @@index([severity, resolved])
@@ -1669,25 +1751,25 @@ model WebhookError {
 // ================================================================
 
 model JobExecution {
-  id              String          @id @default(cuid())
-  workspaceId     String
-  jobType         String          // 'report_scheduler', 'judit_check', 'webhook_retry', etc
-  jobId           String          // Link to specific job (e.g., report schedule ID)
-  status          JobExecutionStatus @default(PENDING)
-  startedAt       DateTime?
-  completedAt     DateTime?
-  duration        Int?            // milliseconds
-  input           Json?           // Job input parameters
-  output          Json?           // Job result/output
-  error           String?         // Error message if failed
-  errorStack      String?         // Full error stack trace
-  retryCount      Int             @default(0)
-  maxRetries      Int             @default(3)
-  nextRetryAt     DateTime?
-  tags            String[]        // for filtering/searching
-  metrics         Json?           // performance metrics
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id          String             @id @default(cuid())
+  workspaceId String
+  jobType     String // 'report_scheduler', 'judit_check', 'webhook_retry', etc
+  jobId       String // Link to specific job (e.g., report schedule ID)
+  status      JobExecutionStatus @default(PENDING)
+  startedAt   DateTime?
+  completedAt DateTime?
+  duration    Int? // milliseconds
+  input       Json? // Job input parameters
+  output      Json? // Job result/output
+  error       String? // Error message if failed
+  errorStack  String? // Full error stack trace
+  retryCount  Int                @default(0)
+  maxRetries  Int                @default(3)
+  nextRetryAt DateTime?
+  tags        String[] // for filtering/searching
+  metrics     Json? // performance metrics
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 
   @@index([workspaceId])
   @@index([jobType])
@@ -1701,15 +1783,15 @@ model JobExecution {
 // ================================================================
 
 model SystemHealthMetric {
-  id              String          @id @default(cuid())
-  timestamp       DateTime        @default(now())
-  component       String          // 'database', 'supabase', 'resend', 'slack', 'judit_api', etc
-  status          HealthStatus    @default(UNKNOWN)
-  responseTimeMs  Int?
-  errorCount      Int             @default(0)
-  lastError       String?
-  metadata        Json?           // component-specific data
-  createdAt       DateTime        @default(now())
+  id             String       @id @default(cuid())
+  timestamp      DateTime     @default(now())
+  component      String // 'database', 'supabase', 'resend', 'slack', 'judit_api', etc
+  status         HealthStatus @default(UNKNOWN)
+  responseTimeMs Int?
+  errorCount     Int          @default(0)
+  lastError      String?
+  metadata       Json? // component-specific data
+  createdAt      DateTime     @default(now())
 
   @@index([component])
   @@index([timestamp])
@@ -1721,20 +1803,20 @@ model SystemHealthMetric {
 // ================================================================
 
 enum JuditOperationType {
-  ONBOARDING          // Consulta inicial completa com anexos
-  MONITORING_CHECK    // Verificação de monitoramento (low-cost)
-  ATTACHMENT_FETCH    // Busca de anexos após análise de keywords
-  MANUAL_SEARCH       // Busca manual disparada pelo usuário
+  ONBOARDING // Consulta inicial completa com anexos
+  MONITORING_CHECK // Verificação de monitoramento (low-cost)
+  ATTACHMENT_FETCH // Busca de anexos após análise de keywords
+  MANUAL_SEARCH // Busca manual disparada pelo usuário
 }
 
 enum JuditAlertType {
-  API_ERROR           // Erro na API
-  RATE_LIMIT          // Rate limit atingido
-  CIRCUIT_BREAKER     // Circuit breaker aberto
-  HIGH_COST           // Custo alto detectado
-  TIMEOUT             // Timeout na operação
-  ATTACHMENT_TRIGGER  // Trigger de busca de anexos
-  MONITORING_FAILED   // Falha no monitoramento
+  API_ERROR // Erro na API
+  RATE_LIMIT // Rate limit atingido
+  CIRCUIT_BREAKER // Circuit breaker aberto
+  HIGH_COST // Custo alto detectado
+  TIMEOUT // Timeout na operação
+  ATTACHMENT_TRIGGER // Trigger de busca de anexos
+  MONITORING_FAILED // Falha no monitoramento
 }
 
 enum AlertSeverity {
@@ -1749,37 +1831,36 @@ enum AlertSeverity {
 // ================================================================
 
 enum WebhookDeliveryStatus {
-  PENDING          // Waiting to be delivered
-  PROCESSING       // Currently being delivered
-  SUCCESS          // Successfully delivered
-  FAILED           // Delivery failed (not retrying)
-  RETRYING         // Failed but will retry
-  SKIPPED          // Skipped (e.g., duplicate)
+  PENDING // Waiting to be delivered
+  PROCESSING // Currently being delivered
+  SUCCESS // Successfully delivered
+  FAILED // Delivery failed (not retrying)
+  RETRYING // Failed but will retry
+  SKIPPED // Skipped (e.g., duplicate)
 }
 
 enum WebhookQueueStatus {
-  PENDING          // Waiting to be processed
-  PROCESSING       // Currently being processed
-  SUCCESS          // Successfully processed
-  FAILED           // Processing failed (not retrying)
-  RETRYING         // Failed but will retry
-  SKIPPED          // Skipped
+  PENDING // Waiting to be processed
+  PROCESSING // Currently being processed
+  SUCCESS // Successfully processed
+  FAILED // Processing failed (not retrying)
+  RETRYING // Failed but will retry
+  SKIPPED // Skipped
 }
 
 enum JobExecutionStatus {
-  PENDING          // Waiting to start
-  RUNNING          // Currently executing
-  SUCCESS          // Completed successfully
-  FAILED           // Execution failed
-  RETRYING         // Failed but will retry
-  CANCELLED        // Cancelled by user
-  TIMEOUT          // Timed out
+  PENDING // Waiting to start
+  RUNNING // Currently executing
+  SUCCESS // Completed successfully
+  FAILED // Execution failed
+  RETRYING // Failed but will retry
+  CANCELLED // Cancelled by user
+  TIMEOUT // Timed out
 }
 
 enum HealthStatus {
-  HEALTHY          // Component working normally
-  DEGRADED         // Component working but with issues
-  UNHEALTHY        // Component not working
-  UNKNOWN          // Status unknown
+  HEALTHY // Component working normally
+  DEGRADED // Component working but with issues
+  UNHEALTHY // Component not working
+  UNKNOWN // Status unknown
 }
-

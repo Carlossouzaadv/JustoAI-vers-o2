@@ -1,364 +1,167 @@
 // ================================================================
-// API ENDPOINT - Upload Excel Validation (Dry-Run)
+// API ENDPOINT - Upload Excel Validation (Phase 19 - Gold Standard)
 // ================================================================
-// POST /upload/excel/validate
-// Validação local rápida com preview de 10 linhas + resumo amigável
+// POST /api/upload/excel/validate
+//
+// Validação Síncrona - Padrão-Ouro
+// 1. ETAPA 1: Parsing (ler Excel em JSON)
+// 2. ETAPA 2: Validação (aplicar schema Zod)
+// 3. Feedback detalhado: linha + coluna + valor + erro
+//
+// Resposta de SUCESSO (200):
+// { success: true, message: "...", statistics: {...} }
+//
+// Resposta de FALHA (400):
+// { success: false, message: "...", errors: [...], statistics: {...} }
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ExcelUploadService, type BatchEstimate } from '@/lib/excel-upload-service';
-import { prisma } from '@/lib/prisma';
+import { ExcelValidationService } from '@/lib/services/excel-validation-service';
+import { ExcelParserSimple } from '@/lib/excel-parser-simple';
 import { ICONS } from '@/lib/icons';
-import type { ExcelRowError } from '@/lib/excel-parser';
 
-// Types
-
-interface ValidationError {
-  line: number;
-  field: string;
-  value: string;
-  message: string;
-}
-
-interface CategorizedErrors {
-  critical: ValidationError[];
-  warnings: ValidationError[];
-  info: ValidationError[];
-  totalErrors: number;
-}
-
-interface ValidationSummary {
-  total: number;
-  valid: number;
-  invalid: number;
-  duplicates: number;
-  warnings: number;
-}
-
-const uploadService = new ExcelUploadService();
+// ===== HANDLER PRINCIPAL =====
 
 export async function POST(request: NextRequest) {
-  console.log(`${ICONS.PROCESS} Iniciando validação Excel (dry-run)...`);
+  console.log(`${ICONS.PROCESS} Iniciando validação de Excel (Fase 19 - Padrão-Ouro)...`);
 
   try {
-    // Verificar Content-Type
+    // 1. Validar Content-Type
     const contentType = request.headers.get('content-type') || '';
-
     if (!contentType.includes('multipart/form-data')) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Content-Type deve ser multipart/form-data'
+          message: 'Content-Type deve ser multipart/form-data',
         },
         { status: 400 }
       );
     }
 
-    // Extrair dados do FormData
+    // 2. Extrair FormData
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const workspaceId = formData.get('workspaceId') as string;
+    const file = formData.get('file');
+    const workspaceId = formData.get('workspaceId');
 
-    // Validações básicas
-    if (!file) {
+    // 3. Type guards
+    if (!(file instanceof File)) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Arquivo não fornecido'
+          message: 'Arquivo não fornecido ou inválido',
         },
         { status: 400 }
       );
     }
 
-    if (!workspaceId) {
+    if (typeof workspaceId !== 'string' || workspaceId.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'WorkspaceId é obrigatório'
+          message: 'WorkspaceId é obrigatório',
         },
         { status: 400 }
       );
     }
 
-    // Validar tipo do arquivo
-    if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+    // 4. Validar arquivo
+    const fileValidationError = validateFile(file);
+    if (fileValidationError) {
+      return NextResponse.json(
+        { success: false, message: fileValidationError },
+        { status: 400 }
+      );
+    }
+
+    // 5. Converter para buffer
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    console.log(`${ICONS.PROCESS} Arquivo recebido: ${file.name} (${file.size} bytes)`);
+
+    // 6. ETAPA 1: PARSING (ler Excel em JSON)
+    console.log(`${ICONS.PROCESS} Executando ETAPA 1: Parsing...`);
+    let rows: Array<Record<string, unknown>>;
+
+    try {
+      rows = await ExcelParserSimple.parseToJson(buffer);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      console.log(`${ICONS.ERROR} Erro no parsing:`, message);
+
       return NextResponse.json(
         {
           success: false,
-          error: 'Arquivo deve ser Excel (.xlsx ou .xls)'
+          message: `Erro ao ler arquivo Excel: ${message}`,
         },
         { status: 400 }
       );
     }
 
-    // Validar tamanho (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Arquivo muito grande (máximo 10MB)'
+          message: 'Arquivo vazio ou sem dados válidos',
         },
         { status: 400 }
       );
     }
 
-    // Converter arquivo para buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    console.log(`${ICONS.PROCESS} ${rows.length} linhas extraídas`);
 
-    console.log(`${ICONS.PROCESS} Validando arquivo: ${file.name} (${file.size} bytes)`);
+    // 7. ETAPA 2: VALIDAÇÃO (aplicar schema Zod)
+    console.log(`${ICONS.PROCESS} Executando ETAPA 2: Validação com schema...`);
+    const validationResult = ExcelValidationService.validateBatch(rows);
 
-    // Parsing e validação (dry-run automático)
-    const parseResult = await uploadService.parseAndValidate(
-      buffer,
-      file.name,
-      workspaceId
+    console.log(
+      `${ICONS.SUCCESS} Validação concluída: ${validationResult.statistics?.validRows || 0} válidas, ${validationResult.statistics?.invalidRows || 0} com erro`
     );
 
-    if (!parseResult.success) {
-      console.log(`${ICONS.ERROR} Falha na validação:`, parseResult.errors);
-
-      return NextResponse.json({
-        success: false,
-        error: 'Erro na validação do arquivo',
-        details: parseResult.errors
-      }, { status: 400 });
-    }
-
-    const { parseResult: parsed, estimate, preview } = parseResult;
-
-    // Type guard - these should be defined if success is true
-    if (!parsed || !estimate || !preview) {
-      return NextResponse.json({
-        success: false,
-        error: 'Erro na estrutura de resposta do parsing'
-      }, { status: 500 });
-    }
-
-    // Add total field to summary for compatibility
-    const summaryWithTotal: ValidationSummary = {
-      ...parsed.summary,
-      total: parsed.totalRows
-    };
-
-    // Verificar processos existentes no workspace (para duplicatas)
-    const existingProcesses = await checkExistingProcesses(
-      parsed.validRows.map(row => row.numeroProcesso),
-      workspaceId
+    // 8. Retornar resultado (200 se sucesso, 400 se houver erros)
+    return NextResponse.json(
+      {
+        success: validationResult.success,
+        message: validationResult.message,
+        errors: validationResult.errors,
+        statistics: validationResult.statistics,
+        file: {
+          name: file.name,
+          size: file.size,
+        },
+      },
+      { status: validationResult.success ? 200 : 400 }
     );
-
-    // Categorizar erros para UX amigável
-    const errorsByType = categorizeValidationErrors(parsed.errors);
-
-    // Gerar resumo amigável
-    const friendlySummary = generateFriendlySummary(
-      summaryWithTotal,
-      existingProcesses.length,
-      estimate
-    );
-
-    console.log(`${ICONS.SUCCESS} Validação concluída: ${parsed.summary.valid} linhas válidas`);
-
-    return NextResponse.json({
-      success: true,
-      validation: true,
-      file: {
-        name: file.name,
-        size: file.size,
-        sizeFormatted: formatFileSize(file.size)
-      },
-      summary: friendlySummary,
-      preview: preview.slice(0, 10), // Exatamente 10 linhas conforme spec
-      details: {
-        totalLines: summaryWithTotal.total,
-        validLines: parsed.summary.valid,
-        invalidLines: parsed.summary.invalid,
-        duplicateLines: parsed.summary.duplicates,
-        existingInWorkspace: existingProcesses.length,
-        newProcesses: parsed.summary.valid - existingProcesses.length
-      },
-      consumption: {
-        juditQueries: parsed.summary.valid - existingProcesses.length,
-        message: `Este arquivo consumirá ${parsed.summary.valid - existingProcesses.length} consultas ao judiciário`
-      },
-      errors: errorsByType,
-      canProceed: parsed.summary.valid > 0 && errorsByType.critical.length === 0,
-      validationReport: {
-        downloadUrl: null, // TODO: Implementar geração de CSV com erros
-        hasErrors: parsed.errors.length > 0
-      }
-    });
-
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro na validação de Excel:`, error);
+    console.error(`${ICONS.ERROR} Erro na validação:`, error);
 
-    return NextResponse.json({
-      success: false,
-      error: 'Erro interno do servidor',
-      details: error instanceof Error ? error.message : 'Erro desconhecido'
-    }, { status: 500 });
-  }
-}
-
-/**
- * Verifica processos existentes no workspace
- */
-async function checkExistingProcesses(
-  processNumbers: string[],
-  workspaceId: string
-): Promise<string[]> {
-  try {
-    const existing = await prisma.monitoredProcess.findMany({
-      where: {
-        workspaceId,
-        processNumber: {
-          in: processNumbers
-        }
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Desconhecido',
       },
-      select: {
-        processNumber: true
-      }
-    });
-
-    return existing.map((p: { processNumber: string }) => p.processNumber);
-
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao verificar processos existentes:`, error);
-    return [];
+      { status: 500 }
+    );
   }
 }
 
-/**
- * Categoriza erros por tipo para UX amigável
- */
-function categorizeValidationErrors(errors: ExcelRowError[]): CategorizedErrors {
-  const critical: ValidationError[] = [];
-  const warnings: ValidationError[] = [];
-  const info: ValidationError[] = [];
-
-  for (const error of errors) {
-    if (error.tipo === 'ERROR') {
-      if (error.erro.includes('obrigatório') || error.erro.includes('formato inválido')) {
-        critical.push({
-          line: error.linha,
-          field: error.campo,
-          value: error.valor,
-          message: error.erro
-        });
-      } else {
-        warnings.push({
-          line: error.linha,
-          field: error.campo,
-          value: error.valor,
-          message: error.erro
-        });
-      }
-    } else {
-      info.push({
-        line: error.linha,
-        field: error.campo,
-        value: error.valor,
-        message: error.erro
-      });
-    }
-  }
-
-  return {
-    critical,
-    warnings,
-    info,
-    totalErrors: critical.length + warnings.length + info.length
-  };
-}
+// ===== HELPER FUNCTIONS =====
 
 /**
- * Gera resumo amigável para o usuário
+ * Valida arquivo antes do parsing
+ * Retorna mensagem de erro ou null se válido
  */
-function generateFriendlySummary(
-  summary: ValidationSummary,
-  existingCount: number,
-  estimate: BatchEstimate
-) {
-  const newProcesses = summary.valid - existingCount;
-
-  return {
-    message: generateSummaryMessage(summary, existingCount, newProcesses),
-    stats: {
-      totalFound: summary.total,
-      validProcesses: summary.valid,
-      newToAdd: newProcesses,
-      alreadyExists: existingCount,
-      hasErrors: summary.invalid > 0
-    },
-    recommendation: generateRecommendation(summary, newProcesses),
-    estimatedTime: estimate.estimatedTime > 0
-      ? `Aproximadamente ${estimate.estimatedTime} minuto${estimate.estimatedTime !== 1 ? 's' : ''}`
-      : 'Menos de 1 minuto'
-  };
-}
-
-/**
- * Gera mensagem de resumo amigável
- */
-function generateSummaryMessage(
-  summary: ValidationSummary,
-  existingCount: number,
-  newProcesses: number
-): string {
-  const messages = [];
-
-  if (summary.total > 0) {
-    messages.push(`${summary.total} linha${summary.total !== 1 ? 's' : ''} encontrada${summary.total !== 1 ? 's' : ''}`);
+function validateFile(file: File): string | null {
+  if (!file.name.match(/\.(xlsx|xls)$/i)) {
+    return 'Arquivo deve ser Excel (.xlsx ou .xls)';
   }
 
-  if (summary.valid > 0) {
-    messages.push(`${summary.valid} processo${summary.valid !== 1 ? 's' : ''} válido${summary.valid !== 1 ? 's' : ''}`);
+  if (file.size > 10 * 1024 * 1024) {
+    return 'Arquivo muito grande (máximo 10MB)';
   }
 
-  if (newProcesses > 0) {
-    messages.push(`${newProcesses} novo${newProcesses !== 1 ? 's' : ''} para adicionar`);
+  if (file.size === 0) {
+    return 'Arquivo vazio';
   }
 
-  if (existingCount > 0) {
-    messages.push(`${existingCount} já existe${existingCount !== 1 ? 'm' : ''} no workspace`);
-  }
-
-  if (summary.invalid > 0) {
-    messages.push(`${summary.invalid} com erro${summary.invalid !== 1 ? 's' : ''}`);
-  }
-
-  return messages.join(', ') + '.';
-}
-
-/**
- * Gera recomendação baseada nos dados
- */
-function generateRecommendation(summary: ValidationSummary, newProcesses: number): string {
-  if (summary.invalid > summary.valid) {
-    return 'Arquivo contém muitos erros. Recomendamos revisar antes de processar.';
-  }
-
-  if (newProcesses === 0) {
-    return 'Todos os processos já existem no workspace. Nenhum novo processo será adicionado.';
-  }
-
-  if (newProcesses > 500) {
-    return 'Arquivo grande detectado. O processamento será feito em lotes para melhor performance.';
-  }
-
-  if (summary.valid > 0) {
-    return 'Arquivo válido e pronto para processamento.';
-  }
-
-  return 'Revise os erros encontrados antes de continuar.';
-}
-
-/**
- * Formata tamanho do arquivo
- */
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return null;
 }

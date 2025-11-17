@@ -5,6 +5,7 @@
 
 import prisma from './prisma';
 import { ICONS } from './icons';
+import { addProcessAlertNotificationJob } from './queues';
 
 // ================================
 // TIPOS E INTERFACES
@@ -286,9 +287,16 @@ export class ProcessAlertManager {
 
     return alerts;
   }
-
   /**
-   * Envia notificações para um alerta específico
+   * Enfileira um job de dispatch de notificação de alerta
+   * (Phase 17 - Email Notification System)
+   *
+   * O job será processado pelo notification-worker que:
+   * 1. Busca o alerta e suas relações
+   * 2. Verifica preferências de notificação de cada usuário
+   * 3. Respeita quiet hours e frequência de notificações
+   * 4. Envia emails através do EmailService
+   * 5. Registra sucesso/falha
    */
   async sendAlertNotifications(alertId: string): Promise<void> {
     const alert = await prisma.processAlert.findUnique({
@@ -305,46 +313,35 @@ export class ProcessAlertManager {
     });
 
     if (!alert || alert.recipients.length === 0) {
+      console.log(`${ICONS.WARNING} No recipients for alert: ${alertId}`);
       return;
     }
 
-    console.log(`${ICONS.MAIL} Enviando notificações para alerta: ${alert.title}`);
+    console.log(`${ICONS.MAIL} Enfileirando job de notificação para alerta: ${alert.title}`);
 
     try {
-      const { getEmailService } = await import('./email-service');
-      const emailService = getEmailService();
+      // Enfileirar job de dispatch de notificação
+      const job = await addProcessAlertNotificationJob(alertId);
 
-      // Enviar email para cada recipient
-      const emailPromises = alert.recipients.map(async (recipient: string) => {
-        const processInfo = alert.monitoredProcess?.processNumber || 'Número não disponível';
+      console.log(
+        `${ICONS.SUCCESS} Alert notification job enqueued: jobId=${job.id}, alertId=${alertId}`
+      );
 
-        return emailService.sendProcessAlert(
-          recipient,
-          processInfo,
-          alert.title,
-          alert.message,
-          alert.severity === 'HIGH' ? 'high' : alert.severity === 'MEDIUM' ? 'medium' : 'low'
-        );
-      });
-
-      const results = await Promise.allSettled(emailPromises);
-      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
-
-      console.log(`${ICONS.SUCCESS} ${successCount}/${alert.recipients.length} emails enviados com sucesso`);
-
-      // Marcar como enviado
-      await prisma.processAlert.update({
-        where: { id: alertId },
-        data: {
-          sent: true,
-          sentAt: new Date()
-        }
-      });
+      // Job será processado de forma assíncrona pelo notification-worker
+      // O worker cuidará de:
+      // - Verificar preferências de notificação
+      // - Respeitar quiet hours
+      // - Reenviar com retry se necessário
+      // - Atualizar status do alerta
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao enviar notificações:`, error);
+      console.error(
+        `${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:`,
+        error
+      );
 
-      // Marcar como falha no envio
+      // Se enfileiramento falhar, ainda assim marcar como tentado
+      // (será reprocessado no próximo ciclo)
       await prisma.processAlert.update({
         where: { id: alertId },
         data: {
@@ -353,9 +350,6 @@ export class ProcessAlertManager {
         }
       });
     }
-
-    // TODO: Integrar com webhooks para sistemas externos
-    // TODO: Implementar rate limiting para evitar spam
   }
 
   /**
