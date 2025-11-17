@@ -10,6 +10,7 @@ import { extractTextFromPDF } from '@/lib/pdf-processor';
 import { validateAttachment, getFailureReasonMessage } from './attachment-validation-service';
 import { createHash } from 'crypto';
 import { TimelineSource } from '@/lib/types/database';
+import { log, logError, createContextLogger } from '@/lib/services/logger';
 
 // ================================================================
 // TYPES
@@ -89,7 +90,11 @@ export async function processJuditAttachments(
   };
 
   try {
-    console.log(`${ICONS.PROCESS} [JUDIT Attachments] Processando anexos para case ${caseId}`);
+    log.info({
+      msg: 'Starting attachment processing',
+      component: 'juditAttachmentProcessor',
+      caseId: caseId,
+    });
 
     // ============================================================
     // 1. EXTRAIR LISTA DE ANEXOS
@@ -100,16 +105,30 @@ export async function processJuditAttachments(
     result.total = attachments.length;
 
     if (attachments.length === 0) {
-      console.log(`${ICONS.INFO} [JUDIT Attachments] Nenhum anexo encontrado`);
+      log.info({
+        msg: 'No attachments found',
+        component: 'juditAttachmentProcessor',
+        caseId: caseId,
+      });
       return result;
     }
 
-    console.log(`${ICONS.INFO} [JUDIT Attachments] ${attachments.length} anexos encontrados`);
+    log.info({
+      msg: 'Attachments extracted',
+      component: 'juditAttachmentProcessor',
+      caseId: caseId,
+      attachmentCount: attachments.length,
+    });
 
     // Guard: validar se temos cnj_code e instance para baixar
     if (!cnj_code || instance === undefined) {
-      console.warn(`${ICONS.WARNING} [JUDIT Attachments] CNJ code ou instance não fornecidos - não é possível baixar anexos`);
-      console.log(`${ICONS.INFO} [JUDIT Attachments] cnj_code: ${cnj_code}, instance: ${instance}`);
+      log.warn({
+        msg: 'CNJ code or instance not provided - cannot download attachments',
+        component: 'juditAttachmentProcessor',
+        caseId: caseId,
+        cnj_code: cnj_code,
+        instance: instance,
+      });
       return result;
     }
 
@@ -131,12 +150,24 @@ export async function processJuditAttachments(
 
     await Promise.allSettled(downloadPromises);
 
-    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Processamento completo: ${result.processed}/${result.total} processados`);
+    log.info({
+      msg: 'Attachment processing completed',
+      component: 'juditAttachmentProcessor',
+      caseId: caseId,
+      processed: result.processed,
+      total: result.total,
+      failed: result.failed,
+    });
 
     return result;
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} [JUDIT Attachments] Erro geral:`, error);
+    logError(error, 'General error in attachment processing', {
+      component: 'juditAttachmentProcessor',
+      caseId: caseId,
+      processedCount: result.processed,
+      failedCount: result.failed,
+    });
     result.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
     return result;
   }
@@ -220,7 +251,9 @@ function extractAttachmentsFromJuditResponse(juditResponse: unknown): JuditAttac
     }
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} [JUDIT Attachments] Erro ao extrair anexos:`, error);
+    logError(error, 'Error extracting attachments from JUDIT response', {
+      component: 'extractAttachmentsFromJuditResponse',
+    });
   }
 
   return attachments;
@@ -237,7 +270,13 @@ async function downloadAndProcessAttachment(
   instance: number
 ): Promise<void> {
   try {
-    console.log(`${ICONS.DOWNLOAD} [JUDIT Attachments] Baixando: ${attachment.name} (ID: ${attachment.attachment_id})`);
+    log.info({
+      msg: 'Starting attachment download',
+      component: 'downloadAndProcessAttachment',
+      attachmentId: attachment.attachment_id,
+      attachmentName: attachment.name,
+      caseId: caseId,
+    });
 
     // ============================================================
     // 1. CONSTRUIR URL DE DOWNLOAD (usando API JUDIT)
@@ -280,7 +319,14 @@ async function downloadAndProcessAttachment(
 
     result.downloaded++;
 
-    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Baixado: ${attachment.name} (${buffer.length} bytes)`);
+    log.info({
+      msg: 'Attachment downloaded successfully',
+      component: 'downloadAndProcessAttachment',
+      attachmentName: attachment.name,
+      attachmentSize: buffer.length,
+      attachmentId: attachment.attachment_id,
+      caseId: caseId,
+    });
 
     // ============================================================
     // 2. ⭐ VALIDAÇÃO (PORTÃO DE FERRO - Fase 21)
@@ -292,9 +338,15 @@ async function downloadAndProcessAttachment(
     const validationResult = await validateAttachment(buffer, attachment.name, fileType);
 
     if (!validationResult.isValid) {
-      console.warn(
-        `${ICONS.WARNING} [JUDIT Attachments] ❌ Validação FALHOU: ${attachment.name} (${validationResult.reason})`
-      );
+      log.warn({
+        msg: 'Attachment validation failed',
+        component: 'downloadAndProcessAttachment',
+        attachmentId: attachment.attachment_id,
+        attachmentName: attachment.name,
+        caseId: caseId,
+        validationReason: validationResult.reason,
+        validationDetails: validationResult.details,
+      });
 
       // Incrementar falhas
       result.failed++;
@@ -314,9 +366,13 @@ async function downloadAndProcessAttachment(
       return;
     }
 
-    console.log(
-      `${ICONS.SUCCESS} [JUDIT Attachments] ✅ Validação passou: ${attachment.name}`
-    );
+    log.info({
+      msg: 'Attachment validation passed',
+      component: 'downloadAndProcessAttachment',
+      attachmentId: attachment.attachment_id,
+      attachmentName: attachment.name,
+      caseId: caseId,
+    });
 
     // ============================================================
     // 4. VERIFICAR SE JÁ FOI BAIXADO DA JUDIT (Deduplicação)
@@ -333,7 +389,13 @@ async function downloadAndProcessAttachment(
     });
 
     if (existingJuditAttachment) {
-      console.log(`${ICONS.WARNING} [JUDIT Attachments] Anexo JUDIT já baixado (ID: ${attachment.attachment_id}): ${attachment.name}`);
+      log.warn({
+        msg: 'JUDIT attachment already downloaded - skipping',
+        component: 'downloadAndProcessAttachment',
+        attachmentId: attachment.attachment_id,
+        attachmentName: attachment.name,
+        caseId: caseId,
+      });
       // NÃO incrementar downloaded novamente - o arquivo não foi baixado agora
       // (apenas reutilizando um já existente)
       result.processed++;
@@ -374,10 +436,24 @@ async function downloadAndProcessAttachment(
             typeof extractionResult.text === 'string' &&
             extractionResult.text.length > 0) {
           extractedText = extractionResult.text;
-          console.log(`${ICONS.EXTRACT} [JUDIT Attachments] Texto extraído: ${extractedText.length} chars`);
+          log.info({
+            msg: 'Text extracted from PDF',
+            component: 'downloadAndProcessAttachment',
+            attachmentName: attachment.name,
+            extractedCharCount: extractedText.length,
+            attachmentId: attachment.attachment_id,
+            caseId: caseId,
+          });
         }
       } catch (error) {
-        console.warn(`${ICONS.WARNING} [JUDIT Attachments] Falha ao extrair texto:`, error);
+        log.warn({
+          msg: 'Failed to extract text from PDF',
+          component: 'downloadAndProcessAttachment',
+          attachmentName: attachment.name,
+          attachmentId: attachment.attachment_id,
+          caseId: caseId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
@@ -430,13 +506,27 @@ async function downloadAndProcessAttachment(
 
     result.processed++;
 
-    console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Salvo no banco: ${sanitizedName}`);
+    log.info({
+      msg: 'Attachment saved to database',
+      component: 'downloadAndProcessAttachment',
+      attachmentName: sanitizedName,
+      attachmentId: attachment.attachment_id,
+      documentId: createdDoc.id,
+      caseId: caseId,
+      size: buffer.length,
+      hasExtractedText: !!extractedText,
+    });
 
   } catch (error) {
     result.failed++;
     const errorMsg = `Erro em ${attachment.name}: ${error instanceof Error ? error.message : 'Desconhecido'}`;
     result.errors.push(errorMsg);
-    console.error(`${ICONS.ERROR} [JUDIT Attachments] ${errorMsg}`);
+    logError(error, 'Error processing attachment', {
+      component: 'downloadAndProcessAttachment',
+      attachmentName: attachment.name,
+      attachmentId: attachment.attachment_id,
+      caseId: caseId,
+    });
   }
 }
 
@@ -502,9 +592,14 @@ async function createAttachmentValidationFailureTimeline(
     const reason = validationResult.reason;
 
     if (!reason || !['ZERO_BYTE', 'INVALID_TYPE', 'CORRUPTED', 'PASSWORD_PROTECTED'].includes(reason)) {
-      console.warn(
-        `${ICONS.WARNING} [AttachmentValidation Timeline] Reason inválido: ${reason}`
-      );
+      log.warn({
+        msg: 'Invalid validation failure reason',
+        component: 'createAttachmentValidationFailureTimeline',
+        caseId: caseId,
+        attachmentId: attachment.attachment_id,
+        attachmentName: attachment.name,
+        reason: reason,
+      });
       return;
     }
 
@@ -557,14 +652,21 @@ async function createAttachmentValidationFailureTimeline(
       },
     });
 
-    console.log(
-      `${ICONS.SUCCESS} [AttachmentValidation Timeline] ✅ Timeline entry criada para advogado: ${attachment.name} (${reason})`
-    );
+    log.info({
+      msg: 'Timeline entry created for validation failure',
+      component: 'createAttachmentValidationFailureTimeline',
+      caseId: caseId,
+      attachmentId: attachment.attachment_id,
+      attachmentName: attachment.name,
+      validationReason: reason,
+    });
   } catch (error) {
     // Se falhar criar timeline, logar mas não falhar o job
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(
-      `${ICONS.ERROR} [AttachmentValidation Timeline] Erro ao criar timeline: ${errorMsg}`
-    );
+    logError(error, 'Failed to create validation failure timeline entry', {
+      component: 'createAttachmentValidationFailureTimeline',
+      caseId: caseId,
+      attachmentId: attachment.attachment_id,
+      attachmentName: attachment.name,
+    });
   }
 }

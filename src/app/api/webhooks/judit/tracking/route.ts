@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { sendProcessAlert } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
 import type { MonitoredProcess, ProcessMovement, InputJsonValue } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 
 // ================================================================
@@ -126,13 +127,13 @@ const WEBHOOK_CONFIG = {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  console.log(`${ICONS.WEBHOOK} Received Judit tracking webhook`);
+  log.info({ msg: "${ICONS.WEBHOOK} Received Judit tracking webhook", component: "" });
 
   try {
     // Validar tamanho do payload
     const contentLength = parseInt(request.headers.get('content-length') || '0');
     if (contentLength > WEBHOOK_CONFIG.MAX_PAYLOAD_SIZE) {
-      console.error(`${ICONS.ERROR} Payload too large: ${contentLength} bytes`);
+      log.error({ msg: "${ICONS.ERROR} Payload too large: ${contentLength} bytes", component: "" });
       return NextResponse.json({ error: 'Payload too large' }, { status: 413 });
     }
 
@@ -141,13 +142,13 @@ export async function POST(request: NextRequest) {
 
     // Validar estrutura básica
     if (!payload.tracking_id || !payload.process_number || !payload.event_type) {
-      console.error(`${ICONS.ERROR} Invalid webhook payload structure`);
+      log.error({ msg: "${ICONS.ERROR} Invalid webhook payload structure", component: "" });
       return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 });
     }
 
     // Validar assinatura se habilitado
     if (WEBHOOK_CONFIG.VALIDATE_SIGNATURE && !await validateWebhookSignature(request, payload)) {
-      console.error(`${ICONS.ERROR} Invalid webhook signature`);
+      log.error({ msg: "${ICONS.ERROR} Invalid webhook signature", component: "" });
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar deduplicação
     if (await isDuplicateWebhook(payload, workspaceId)) {
-      console.log(`${ICONS.INFO} Duplicate webhook ignored: ${payload.tracking_id}`);
+      log.info({ msg: "${ICONS.INFO} Duplicate webhook ignored: ${payload.tracking_id}", component: "" });
       return NextResponse.json({ status: 'duplicate_ignored' }, { status: 200 });
     }
 
@@ -171,13 +172,9 @@ export async function POST(request: NextRequest) {
     await saveWebhookRecord(payload, result);
 
     const processingTime = Date.now() - startTime;
-    console.log(`${ICONS.SUCCESS} Webhook processed successfully in ${processingTime}ms`, {
+    log.info({ msg: "${ICONS.SUCCESS} Webhook processed successfully in ${processingTime}ms`, {
       trackingId: payload.tracking_id,
-      processNumber: payload.process_number,
-      eventType: payload.event_type,
-      newMovements: result.newMovements,
-      alertsGenerated: result.alertsGenerated
-    });
+      processNumber: payload.pr...", component: "" });
 
     return NextResponse.json({
       status: 'success',
@@ -189,7 +186,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error(`${ICONS.ERROR} Webhook processing failed:`, error);
+    logError(`${ICONS.ERROR} Webhook processing failed:`, "error", { component: "" });
 
     // Log detalhado do erro
     await logWebhookError(request, error, processingTime);
@@ -222,7 +219,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
     const process = await findProcessByTracking(payload.tracking_id, payload.process_number);
 
     if (!process) {
-      console.warn(`${ICONS.WARNING} Process not found for tracking: ${payload.tracking_id} / ${payload.process_number}`);
+      log.warn({ msg: "${ICONS.WARNING} Process not found for tracking: ${payload.tracking_id} / ${payload.process_number}", component: "" });
       result.error = 'Process not found';
       return result;
     }
@@ -248,7 +245,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
         break;
 
       default:
-        console.warn(`${ICONS.WARNING} Unknown event type: ${payload.event_type}`);
+        log.warn({ msg: "${ICONS.WARNING} Unknown event type: ${payload.event_type}", component: "" });
         result.error = `Unknown event type: ${payload.event_type}`;
         return result;
     }
@@ -262,7 +259,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
     return result;
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to process webhook:`, error);
+    logError(`${ICONS.ERROR} Failed to process webhook:`, "error", { component: "" });
     result.error = error instanceof Error ? error.message : 'Unknown error';
     result.processingTime = Date.now() - startTime;
     return result;
@@ -280,11 +277,11 @@ async function processMovementEvent(
 ) {
   const movement = payload.data.movement;
   if (!movement) {
-    console.warn(`${ICONS.WARNING} Movement event without movement data`);
+    log.warn({ msg: "${ICONS.WARNING} Movement event without movement data", component: "" });
     return;
   }
 
-  console.log(`${ICONS.PROCESS} Processing movement for ${process.processNumber}: ${movement.description}`);
+  log.info({ msg: "${ICONS.PROCESS} Processing movement for ${process.processNumber}: ${movement.description}", component: "" });
 
   try {
     // Build raw data with remote identifiers
@@ -307,7 +304,7 @@ async function processMovementEvent(
     });
 
     if (existingMovement) {
-      console.log(`${ICONS.INFO} Movement already exists, skipping: ${movement.id}`);
+      log.info({ msg: "${ICONS.INFO} Movement already exists, skipping: ${movement.id}", component: "" });
       return;
     }
 
@@ -336,10 +333,10 @@ async function processMovementEvent(
       result.alertsGenerated += alertsGenerated;
     }
 
-    console.log(`${ICONS.SUCCESS} Movement processed: ${movement.description}`);
+    log.info({ msg: "${ICONS.SUCCESS} Movement processed: ${movement.description}", component: "" });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to process movement:`, error);
+    logError(`${ICONS.ERROR} Failed to process movement:`, "error", { component: "" });
     throw error;
   }
 }
@@ -349,18 +346,18 @@ async function processAttachmentEvent(
   payload: JuditWebhookPayload,
   _result: WebhookProcessingResult
 ) {
-  console.log(`${ICONS.INFO} Processing attachment event for ${process.processNumber}`);
+  log.info({ msg: "${ICONS.INFO} Processing attachment event for ${process.processNumber}", component: "" });
 
   try {
     // Attachments are included in the webhook payload
     if (payload.data.metadata) {
-      console.log(`${ICONS.INFO} Attachment event received for ${process.processNumber}`);
+      log.info({ msg: "${ICONS.INFO} Attachment event received for ${process.processNumber}", component: "" });
       // The attachment data is typically in the metadata field
       // Store it in the process metadata for later retrieval
     }
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to process attachment event:`, error);
+    logError(`${ICONS.ERROR} Failed to process attachment event:`, "error", { component: "" });
     throw error;
   }
 }
@@ -372,11 +369,11 @@ async function processStatusChangeEvent(
 ) {
   const status = payload.data.status;
   if (!status) {
-    console.warn(`${ICONS.WARNING} Status change event without status data`);
+    log.warn({ msg: "${ICONS.WARNING} Status change event without status data", component: "" });
     return;
   }
 
-  console.log(`${ICONS.INFO} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}`);
+  log.info({ msg: "${ICONS.INFO} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}", component: "" });
 
   try {
     // Update processData with status metadata
@@ -404,10 +401,10 @@ async function processStatusChangeEvent(
       result.alertsGenerated += alertsGenerated;
     }
 
-    console.log(`${ICONS.SUCCESS} Status updated: ${status.previous} -> ${status.current}`);
+    log.info({ msg: "${ICONS.SUCCESS} Status updated: ${status.previous} -> ${status.current}", component: "" });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to process status change:`, error);
+    logError(`${ICONS.ERROR} Failed to process status change:`, "error", { component: "" });
     throw error;
   }
 }
@@ -417,7 +414,7 @@ async function processUpdateEvent(
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
-  console.log(`${ICONS.INFO} Processing general update for ${process.processNumber}`);
+  log.info({ msg: "${ICONS.INFO} Processing general update for ${process.processNumber}", component: "" });
 
   try {
     // Para updates gerais, processar dados que vieram no webhook
@@ -433,10 +430,10 @@ async function processUpdateEvent(
     // Atualizar metadados do processo
     await updateProcessMetadata(process.id, updatedData, payload.timestamp);
 
-    console.log(`${ICONS.SUCCESS} General update processed: ${result.newMovements} movements, ${result.attachmentsProcessed} attachments`);
+    log.info({ msg: "${ICONS.SUCCESS} General update processed: ${result.newMovements} movements, ${result.attachmentsProcessed} attachments", component: "" });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Failed to process general update:`, error);
+    logError(`${ICONS.ERROR} Failed to process general update:`, "error", { component: "" });
     throw error;
   }
 }
@@ -452,7 +449,7 @@ async function validateWebhookSignature(request: NextRequest, payload: JuditWebh
 
     const secret = process.env.JUDIT_WEBHOOK_SECRET;
     if (!secret) {
-      console.warn(`${ICONS.WARNING} JUDIT_WEBHOOK_SECRET not configured`);
+      log.warn({ msg: "${ICONS.WARNING} JUDIT_WEBHOOK_SECRET not configured", component: "" });
       return true; // Skip validation if secret not configured
     }
 
@@ -470,7 +467,7 @@ async function validateWebhookSignature(request: NextRequest, payload: JuditWebh
     );
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Signature validation failed:`, error);
+    logError(`${ICONS.ERROR} Signature validation failed:`, "error", { component: "" });
     return false;
   }
 }
@@ -489,7 +486,7 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload, workspaceId: str
   });
 
   if (existing) {
-    console.log(`${ICONS.INFO} Duplicate webhook detected, skipping`);
+    log.info({ msg: "${ICONS.INFO} Duplicate webhook detected, skipping", component: "" });
     return true;
   }
 
@@ -522,7 +519,7 @@ async function findProcessByTracking(trackingId: string, processNumber: string):
 async function processMovementAttachments(movementId: string, attachments: AttachmentData[]): Promise<void> {
   // Store attachment metadata in the ProcessMovement's rawData field
   // Don't create separate CaseDocuments as this is tracking data not case files
-  console.log(`${ICONS.INFO} Processing ${attachments.length} attachments for movement ${movementId}`);
+  log.info({ msg: "${ICONS.INFO} Processing ${attachments.length} attachments for movement ${movementId}", component: "" });
   // Attachments are stored via their process, not individual movements
 }
 
@@ -552,7 +549,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     const isImportant = urgency !== 'low';
 
     if (!isImportant) {
-      console.log(`${ICONS.INFO} Movimentação de baixa prioridade, sem alerta: ${movementType}`);
+      log.info({ msg: "${ICONS.INFO} Movimentação de baixa prioridade, sem alerta: ${movementType}", component: "" });
       return 0;
     }
 
@@ -565,12 +562,12 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     });
 
     if (!workspace) {
-      console.warn(`${ICONS.WARNING} Workspace not found: ${workspaceId}`);
+      log.warn({ msg: "${ICONS.WARNING} Workspace not found: ${workspaceId}", component: "" });
       return 0;
     }
 
     // Por enquanto, apenas log do alerta (integração com sistema de notificação será implementada)
-    console.log(`${ICONS.INFO} Alert would be sent to workspace ${workspace.name} users for movement`);
+    log.info({ msg: "${ICONS.INFO} Alert would be sent to workspace ${workspace.name} users for movement", component: "" });
 
     // Enviar alerta para cada usuário do workspace
     let alertsGenerated = 0;
@@ -594,12 +591,12 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
         }
       });
 
-      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s) + broadcaster SSE`);
+      log.info({ msg: "${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s) + broadcaster SSE", component: "" });
     }
 
     return alertsGenerated;
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, error);
+    logError(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, "error", { component: "" });
     return 0;
   }
 }
@@ -627,7 +624,7 @@ async function generateStatusChangeAlerts(process: MonitoredProcessWithWorkspace
     const isImportant = urgency !== 'low';
 
     if (!isImportant) {
-      console.log(`${ICONS.INFO} Mudança de status de baixa prioridade, sem alerta: ${currentStatus}`);
+      log.info({ msg: "${ICONS.INFO} Mudança de status de baixa prioridade, sem alerta: ${currentStatus}", component: "" });
       return 0;
     }
 
@@ -640,12 +637,12 @@ async function generateStatusChangeAlerts(process: MonitoredProcessWithWorkspace
     });
 
     if (!workspace) {
-      console.warn(`${ICONS.WARNING} Workspace not found for status change notification: ${workspaceId}`);
+      log.warn({ msg: "${ICONS.WARNING} Workspace not found for status change notification: ${workspaceId}", component: "" });
       return 0;
     }
 
     // Por enquanto, apenas log do alerta (integração com sistema de notificação será implementada)
-    console.log(`${ICONS.INFO} Status change alert would be sent to workspace ${workspace.name} users`);
+    log.info({ msg: "${ICONS.INFO} Status change alert would be sent to workspace ${workspace.name} users", component: "" });
 
     // Criar descrição da mudança
     const statusChangeDescription = `
@@ -677,12 +674,12 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
         }
       });
 
-      console.log(`${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s) + broadcaster SSE`);
+      log.info({ msg: "${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s) + broadcaster SSE", component: "" });
     }
 
     return alertsGenerated;
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao gerar alertas de status:`, error);
+    logError(`${ICONS.ERROR} Erro ao gerar alertas de status:`, "error", { component: "" });
     return 0;
   }
 }
@@ -774,7 +771,7 @@ async function logWebhookError(request: NextRequest, error: unknown, processingT
       }
     });
   } catch (logError) {
-    console.error(`${ICONS.ERROR} Failed to log webhook error:`, logError);
+    logError(`${ICONS.ERROR} Failed to log webhook error:`, "logError", { component: "" });
   }
 }
 

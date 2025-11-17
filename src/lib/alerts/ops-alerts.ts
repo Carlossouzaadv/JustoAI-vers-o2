@@ -6,6 +6,7 @@ import { prisma } from '../prisma';
 import { usageTracker } from '../telemetry/usage-tracker';
 import { ICONS } from '../icons';
 import { UsageEvent } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -227,7 +228,7 @@ export class OpsAlerts {
    */
   async checkWorkspaceAlerts(workspaceId: string): Promise<void> {
     try {
-      console.log(`${ICONS.ALERT} Checking alerts for workspace: ${workspaceId}`);
+      log.info({ msg: "${ICONS.ALERT} Checking alerts for workspace: ${workspaceId}", component: "opsAlerts" });
 
       const context = await this.buildAlertContext(workspaceId);
 
@@ -236,7 +237,7 @@ export class OpsAlerts {
       }
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to check workspace alerts:`, error);
+      logError(`${ICONS.ERROR} Failed to check workspace alerts:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -245,7 +246,7 @@ export class OpsAlerts {
    */
   async checkGlobalAlerts(): Promise<void> {
     try {
-      console.log(`${ICONS.ALERT} Checking global alerts`);
+      log.info({ msg: "${ICONS.ALERT} Checking global alerts", component: "opsAlerts" });
 
       // Verificar alertas por workspace
       const workspaces = await this.getActiveWorkspaces();
@@ -258,7 +259,7 @@ export class OpsAlerts {
       await this.checkAggregatedAlerts();
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to check global alerts:`, error);
+      logError(`${ICONS.ERROR} Failed to check global alerts:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -290,7 +291,7 @@ export class OpsAlerts {
       await this.sendAlert(alert as AlertEvent);
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to send manual alert:`, error);
+      logError(`${ICONS.ERROR} Failed to send manual alert:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -366,10 +367,10 @@ export class OpsAlerts {
         return; // Condição não atendida
       }
 
-      console.log(`${ICONS.WARNING} Alert rule triggered: ${rule.name}`, {
+      log.info({ msg: "${ICONS.WARNING} Alert rule triggered: ${rule.name}`, {
         workspace: context.workspaceId,
         severity: rule.severity
-      });
+      }", component: "opsAlerts" });
 
       // Criar evento de alerta
       const alert: AlertEvent = {
@@ -397,7 +398,7 @@ export class OpsAlerts {
       await this.saveAlertEvent(alert);
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to evaluate rule ${rule.id}:`, error);
+      logError(`${ICONS.ERROR} Failed to evaluate rule ${rule.id}:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -406,7 +407,7 @@ export class OpsAlerts {
   // ================================================================
 
   private async sendAlert(alert: AlertEvent): Promise<void> {
-    console.log(`${ICONS.ALERT} Sending alert: ${alert.title}`);
+    log.info({ msg: "${ICONS.ALERT} Sending alert: ${alert.title}", component: "opsAlerts" });
 
     const sendPromises = alert.channels.map(channel => {
       switch (channel) {
@@ -428,7 +429,7 @@ export class OpsAlerts {
 
   private async sendSlackAlert(alert: AlertEvent): Promise<void> {
     if (!ALERT_CONFIG.SLACK_WEBHOOK_URL) {
-      console.warn(`${ICONS.WARNING} Slack webhook URL not configured`);
+      log.warn({ msg: "${ICONS.WARNING} Slack webhook URL not configured", component: "opsAlerts" });
       return;
     }
 
@@ -481,10 +482,10 @@ export class OpsAlerts {
         throw new Error(`Slack API error: ${response.status}`);
       }
 
-      console.log(`${ICONS.SUCCESS} Slack alert sent successfully`);
+      log.info({ msg: "${ICONS.SUCCESS} Slack alert sent successfully", component: "opsAlerts" });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to send Slack alert:`, error);
+      logError(`${ICONS.ERROR} Failed to send Slack alert:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -508,13 +509,13 @@ export class OpsAlerts {
       });
 
       if (result.success) {
-        console.log(`${ICONS.SUCCESS} Email alert enviado: ${result.messageId}`);
+        log.info({ msg: "${ICONS.SUCCESS} Email alert enviado: ${result.messageId}", component: "opsAlerts" });
       } else {
-        console.error(`${ICONS.ERROR} Falha ao enviar email alert: ${result.error}`);
+        logError(`${ICONS.ERROR} Falha ao enviar email alert: ${result.error}`, "Error occurred", { component: "opsAlerts" });
       }
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to send email alert:`, error);
+      logError(`${ICONS.ERROR} Failed to send email alert:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -538,24 +539,23 @@ export class OpsAlerts {
       // Capture the alert as a Sentry message with appropriate level
       Sentry.captureMessage(alert.title, alert.severity as 'fatal' | 'error' | 'warning' | 'info' | 'debug');
 
-      console.log(`${ICONS.SUCCESS} Sentry alert captured:`, {
+      log.info({ msg: "${ICONS.SUCCESS} Sentry alert captured:`, {
         level: alert.severity,
         message: alert.title,
-        workspaceId: alert.workspaceId
-      });
+        workspaceId: alert.workspaceId...", component: "opsAlerts" });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to send Sentry alert:`, error);
+      logError(`${ICONS.ERROR} Failed to send Sentry alert:`, "error", { component: "opsAlerts" });
     }
   }
 
   private async sendWebhookAlert(alert: AlertEvent): Promise<void> {
     try {
       // TODO: Implementar webhook genérico
-      console.log(`${ICONS.ALERT} Webhook alert (simulated):`, alert);
+      log.info({ msg: "${ICONS.ALERT} Webhook alert (simulated", component: "opsAlerts" });:`, alert);
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to send webhook alert:`, error);
+      logError(`${ICONS.ERROR} Failed to send webhook alert:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -697,7 +697,7 @@ export class OpsAlerts {
 
   private async checkAggregatedAlerts(): Promise<void> {
     // TODO: Implementar alertas agregados (ex: total de custos global)
-    console.log(`${ICONS.INFO} Checking aggregated alerts (placeholder)`);
+    log.info({ msg: "${ICONS.INFO} Checking aggregated alerts (placeholder)", component: "opsAlerts" });
   }
 
   private async saveAlertEvent(alert: AlertEvent): Promise<void> {
@@ -718,7 +718,7 @@ export class OpsAlerts {
         }
       });
     } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to save alert event:`, error);
+      logError(`${ICONS.ERROR} Failed to save alert event:`, "error", { component: "opsAlerts" });
     }
   }
 
@@ -727,7 +727,7 @@ export class OpsAlerts {
   // ================================================================
 
   async acknowledgeAlert(alertId: string, userId: string): Promise<void> {
-    console.log(`${ICONS.CHECK} Alert acknowledged: ${alertId} by ${userId}`);
+    log.info({ msg: "${ICONS.CHECK} Alert acknowledged: ${alertId} by ${userId}", component: "opsAlerts" });
     // TODO: Implementar sistema de acknowledgment
   }
 
@@ -740,7 +740,7 @@ export class OpsAlerts {
     const ruleIndex = this.rules.findIndex(r => r.id === ruleId);
     if (ruleIndex >= 0) {
       this.rules[ruleIndex] = { ...this.rules[ruleIndex], ...updates };
-      console.log(`${ICONS.EDIT} Alert rule updated: ${ruleId}`);
+      log.info({ msg: "${ICONS.EDIT} Alert rule updated: ${ruleId}", component: "opsAlerts" });
     }
   }
 
@@ -759,7 +759,7 @@ export const opsAlerts = OpsAlerts.getInstance();
  * Job para verificação periódica de alertas
  */
 export async function runAlertCheck(): Promise<void> {
-  console.log(`${ICONS.ALERT} Running periodic alert check`);
+  log.info({ msg: "${ICONS.ALERT} Running periodic alert check", component: "opsAlerts" });
   await opsAlerts.checkGlobalAlerts();
 }
 
@@ -768,5 +768,5 @@ export async function runAlertCheck(): Promise<void> {
  */
 export async function setupAlertJobs(): Promise<void> {
   // TODO: Integrar com sistema de jobs (Bull/cron)
-  console.log(`${ICONS.SUCCESS} Alert jobs setup completed`);
+  log.info({ msg: "${ICONS.SUCCESS} Alert jobs setup completed", component: "opsAlerts" });
 }

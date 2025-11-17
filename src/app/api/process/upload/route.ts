@@ -25,6 +25,7 @@ import { getDocumentHashManager } from '@/lib/document-hash';
 import { extractPDFMetadata } from '@/lib/services/localPDFMetadataExtractor';
 import { updateCaseSummaryDescription } from '@/lib/services/summaryConsolidator';
 import { uploadCaseDocument } from '@/lib/services/supabaseStorageService';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPE GUARDS & NARROWING
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     const userId = user.id;
 
-    console.log(`${ICONS.UPLOAD} [Upload] Iniciando upload - User: ${userId}`);
+    log.info({ msg: "${ICONS.UPLOAD} [Upload] Iniciando upload - User: ${userId}", component: "" });
 
     // ============================================================
     // 2. PARSE FORM DATA & VALIDATE WITH ZOD
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`${ICONS.SUCCESS} [Upload] Validações OK - File: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] Validações OK - File: ${file.name} (${(file.size / 1024).toFixed(2)}KB)", component: "" });
 
     // ============================================================
     // 4. SALVAR ARQUIVO TEMPORARIAMENTE
@@ -222,7 +223,7 @@ export async function POST(request: NextRequest) {
     const fs = await import('fs/promises');
     await fs.writeFile(tempPath, buffer);
 
-    console.log(`${ICONS.SAVE} [Upload] Arquivo salvo: ${tempPath}`);
+    log.info({ msg: "${ICONS.SAVE} [Upload] Arquivo salvo: ${tempPath}", component: "" });
 
     // ============================================================
     // 5. CALCULAR HASH SHA256
@@ -232,7 +233,7 @@ export async function POST(request: NextRequest) {
     const hashResult = hashManager.calculateSHA256(buffer);
     const fileSha256 = hashResult.textSha;
 
-    console.log(`${ICONS.CLOCK} [Upload] SHA256: ${fileSha256.substring(0, 16)}...`);
+    log.info({ msg: "${ICONS.CLOCK} [Upload] SHA256: ${fileSha256.substring(0, 16)}...", component: "" });
 
     // ============================================================
     // 6. VERIFICAR DUPLICATA
@@ -244,7 +245,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingDoc) {
-      console.log(`${ICONS.WARNING} [Upload] Documento duplicado encontrado: ${existingDoc.id}`);
+      log.info({ msg: "${ICONS.WARNING} [Upload] Documento duplicado encontrado: ${existingDoc.id}", component: "" });
 
       return NextResponse.json({
         success: true,
@@ -259,7 +260,7 @@ export async function POST(request: NextRequest) {
     // 7. EXTRAIR TEXTO DO PDF
     // ============================================================
 
-    console.log(`${ICONS.EXTRACT} [Upload] Extraindo texto...`);
+    log.info({ msg: "${ICONS.EXTRACT} [Upload] Extraindo texto...", component: "" });
 
     const extractStartTime = Date.now();
     const extractionResult = await extractTextFromPDF(tempPath);
@@ -288,7 +289,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`${ICONS.SUCCESS} [Upload] Texto extraído: ${extractedText.length} chars em ${extractDuration}ms`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] Texto extraído: ${extractedText.length} chars em ${extractDuration}ms", component: "" });
 
     // ============================================================
     // 8. LIMPAR E NORMALIZAR TEXTO
@@ -310,24 +311,24 @@ export async function POST(request: NextRequest) {
 
     const cleanText = cleaningResult.cleanedText;
 
-    console.log(`${ICONS.CLEAN} [Upload] Texto limpo: ${cleanText.length} chars (redução: ${cleaningResult.reductionPercentage.toFixed(1)}%)`);
+    log.info({ msg: "${ICONS.CLEAN} [Upload] Texto limpo: ${cleanText.length} chars (redução: ${cleaningResult.reductionPercentage.toFixed(1)}%)", component: "" });
 
     // ============================================================
     // 8.5 EXTRAIR METADATA DO DOCUMENTO
     // ============================================================
 
-    console.log(`${ICONS.EXTRACT} [Upload] Extraindo metadata do documento...`);
+    log.info({ msg: "${ICONS.EXTRACT} [Upload] Extraindo metadata do documento...", component: "" });
 
     let documentMetadata;
     try {
       documentMetadata = await extractPDFMetadata(cleanText, file.name);
-      console.log(`${ICONS.SUCCESS} [Upload] Metadata extraída:`, {
+      log.info({ msg: "${ICONS.SUCCESS} [Upload] Metadata extraída:`, {
         documentType: documentMetadata.documentType,
-        documentDate: documentMetadata.documentDate?.toISOString(),
+        documentDate: documentMetadata.docu...", component: "" });,
         confidence: documentMetadata.confidence
       });
     } catch (metadataError) {
-      console.warn(`${ICONS.WARNING} [Upload] Erro ao extrair metadata (continuando mesmo assim):`, metadataError);
+      log.warn({ msg: "${ICONS.WARNING} [Upload] Erro ao extrair metadata (continuando mesmo assim", component: "" });:`, metadataError);
       documentMetadata = {
         documentType: 'UNKNOWN',
         documentTypeCategory: 'OTHER' as const,
@@ -341,19 +342,19 @@ export async function POST(request: NextRequest) {
     // 9. DETECTAR CNJ
     // ============================================================
 
-    console.log(`${ICONS.SEARCH} [Upload] Detectando CNJ...`);
+    log.info({ msg: "${ICONS.SEARCH} [Upload] Detectando CNJ...", component: "" });
 
     let detectedCnj = textCleaner.extractProcessNumber(cleanText);
 
     // Se não encontrou CNJ e usuário forneceu manualmente
     if (!detectedCnj && manualCnj) {
       detectedCnj = manualCnj;
-      console.log(`${ICONS.INFO} [Upload] CNJ fornecido manualmente: ${detectedCnj}`);
+      log.info({ msg: "${ICONS.INFO} [Upload] CNJ fornecido manualmente: ${detectedCnj}", component: "" });
     }
 
     // Se ainda não tem CNJ, retornar erro pedindo CNJ manual
     if (!detectedCnj) {
-      console.log(`${ICONS.WARNING} [Upload] CNJ não detectado automaticamente`);
+      log.info({ msg: "${ICONS.WARNING} [Upload] CNJ não detectado automaticamente", component: "" });
 
       return NextResponse.json({
         success: false,
@@ -364,7 +365,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log(`${ICONS.SUCCESS} [Upload] CNJ detectado: ${detectedCnj}`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] CNJ detectado: ${detectedCnj}", component: "" });
 
     // ============================================================
     // 10. EXTRAIR PRIMEIRA PÁGINA
@@ -376,7 +377,7 @@ export async function POST(request: NextRequest) {
     // 11. CRIAR CASE
     // ============================================================
 
-    console.log(`${ICONS.DATABASE} [Upload] Criando Case...`);
+    log.info({ msg: "${ICONS.DATABASE} [Upload] Criando Case...", component: "" });
 
     // Type narrowing: validate clientId only if provided
     const safeClientId = isValidClientId(clientId) ? clientId : undefined;
@@ -419,7 +420,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`${ICONS.SUCCESS} [Upload] Case criado: ${newCase.id}`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] Case criado: ${newCase.id}", component: "" });
 
     // ============================================================
     // 12. SALVAR DOCUMENTO (PERMANENTE EM SUPABASE STORAGE)
@@ -438,13 +439,13 @@ export async function POST(request: NextRequest) {
 
       if (permanentUrl) {
         documentUrl = permanentUrl;
-        console.log(`${ICONS.SUCCESS} [Storage] Document stored permanently: ${permanentUrl}`);
+        log.info({ msg: "${ICONS.SUCCESS} [Storage] Document stored permanently: ${permanentUrl}", component: "" });
       } else {
-        console.warn(`${ICONS.WARNING} [Storage] Could not upload to Supabase, using temporary path`);
+        log.warn({ msg: "${ICONS.WARNING} [Storage] Could not upload to Supabase, using temporary path", component: "" });
       }
     } catch (storageError) {
-      console.error(`${ICONS.ERROR} [Storage] Error uploading document:`, storageError);
-      console.warn(`${ICONS.INFO} Using temporary path as fallback`);
+      logError(`${ICONS.ERROR} [Storage] Error uploading document:`, "storageError", { component: "" });
+      log.warn({ msg: "${ICONS.INFO} Using temporary path as fallback", component: "" });
     }
 
     // Type narrowing: safely validate all document metadata before use
@@ -481,19 +482,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    console.log(`${ICONS.SUCCESS} [Upload] Documento salvo: ${document.id}`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] Documento salvo: ${document.id}", component: "" });
 
     // ============================================================
     // 12.5 CONSOLIDAR RESUMO DO CASO
     // ============================================================
 
-    console.log(`${ICONS.EXTRACT} [Upload] Consolidando resumo do caso...`);
+    log.info({ msg: "${ICONS.EXTRACT} [Upload] Consolidando resumo do caso...", component: "" });
 
     try {
       await updateCaseSummaryDescription(newCase.id);
-      console.log(`${ICONS.SUCCESS} [Upload] Resumo consolidado e salvo no caso`);
+      log.info({ msg: "${ICONS.SUCCESS} [Upload] Resumo consolidado e salvo no caso", component: "" });
     } catch (summaryError) {
-      console.warn(`${ICONS.WARNING} [Upload] Erro ao consolidar resumo (continuando mesmo assim):`, summaryError);
+      log.warn({ msg: "${ICONS.WARNING} [Upload] Erro ao consolidar resumo (continuando mesmo assim", component: "" });:`, summaryError);
       // Não falhar o upload por causa disso
     }
 
@@ -501,7 +502,7 @@ export async function POST(request: NextRequest) {
     // 13. GERAR PREVIEW COM GEMINI FLASH (COM FALLBACK)
     // ============================================================
 
-    console.log(`${ICONS.ROBOT} [Upload] Gerando preview...`);
+    log.info({ msg: "${ICONS.ROBOT} [Upload] Gerando preview...", component: "" });
 
     const previewStartTime = Date.now();
     const previewResult = await generatePreview(cleanText, newCase.id);
@@ -516,7 +517,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPreviewResult) {
       // ERRO CRÍTICO: Análise de IA falhou mesmo após fallback
-      console.error(`${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas:`, previewResult.error);
+      logError(`${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas:`, "previewResult.error", { component: "" });
 
       // Limpar o case incompleto
       await prisma.case.delete({
@@ -546,11 +547,11 @@ export async function POST(request: NextRequest) {
 
     // Preview gerado com sucesso
     const modelValue = typeof preview.model === 'string' ? preview.model : 'unknown';
-    console.log(`${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${modelValue}`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${modelValue}", component: "" });
 
     // Validar estrutura
     if (!validatePreviewSnapshot(preview)) {
-      console.warn(`${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim`);
+      log.warn({ msg: "${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim", component: "" });
     }
 
     // Prepare preview snapshot with safe JSON serialization
@@ -621,9 +622,9 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion`);
+      log.info({ msg: "${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion", component: "" });
     } catch (analysisError) {
-      console.error(`${ICONS.WARNING} [Upload] Erro ao salvar análise inicial:`, analysisError);
+      logError(`${ICONS.WARNING} [Upload] Erro ao salvar análise inicial:`, "analysisError", { component: "" });
       // Não falhar o upload se não conseguir salvar a análise
     }
 
@@ -634,7 +635,7 @@ export async function POST(request: NextRequest) {
     let juditJobId: string | undefined;
 
     if (!skipEnrichment) {
-      console.log(`${ICONS.ROCKET} [Upload] Enfileirando JUDIT...`);
+      log.info({ msg: "${ICONS.ROCKET} [Upload] Enfileirando JUDIT...", component: "" });
 
       try {
         const { jobId } = await addOnboardingJob(detectedCnj, {
@@ -654,11 +655,11 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        console.log(`${ICONS.SUCCESS} [Upload] Job de onboarding da JUDIT adicionado à fila para o processo ${detectedCnj}. Job ID: ${jobId}`);
-        console.log(`${ICONS.INFO} [Async Flow] JUDIT worker processará caso em background (workspaceId: ${workspaceId}, caseId: ${newCase.id})`);
+        log.info({ msg: "${ICONS.SUCCESS} [Upload] Job de onboarding da JUDIT adicionado à fila para o processo ${detectedCnj}. Job ID: ${jobId}", component: "" });
+        log.info({ msg: "${ICONS.INFO} [Async Flow] JUDIT worker processará caso em background (workspaceId: ${workspaceId}, caseId: ${newCase.id})", component: "" });
 
       } catch (error) {
-        console.error(`${ICONS.ERROR} [Upload] Erro ao enfileirar JUDIT:`, error);
+        logError(`${ICONS.ERROR} [Upload] Erro ao enfileirar JUDIT:`, "error", { component: "" });
         // Não falhar o upload por causa disso
       }
     }
@@ -669,7 +670,7 @@ export async function POST(request: NextRequest) {
 
     const overallDuration = Date.now() - overallStartTime;
 
-    console.log(`${ICONS.SUCCESS} [Upload] Upload completo em ${overallDuration}ms`);
+    log.info({ msg: "${ICONS.SUCCESS} [Upload] Upload completo em ${overallDuration}ms", component: "" });
 
     // Type-safe response: serialize preview for response
     const responsePreviewRaw = JSON.parse(JSON.stringify(preview));
@@ -695,7 +696,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200 });
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} [Upload] Erro geral:`, error);
+    logError(`${ICONS.ERROR} [Upload] Erro geral:`, "error", { component: "" });
 
     return NextResponse.json(
       {
