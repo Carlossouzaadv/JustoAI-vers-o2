@@ -51,22 +51,64 @@ export default function BillingPage() {
       }
 
       try {
-        // Carregar dados de créditos
+        // Carregar dados de créditos usando novo endpoint (Padrão-Ouro: sem query params)
         const creditsRes = await fetch(
-          getApiUrl(`/api/billing/credits?workspaceId=${workspaceId}`),
+          getApiUrl('/api/user/balance'),
           { credentials: 'include' }
         );
 
         if (creditsRes.ok) {
           const creditsData = await creditsRes.json();
           // Extract the balance data from the response
-          const balanceData = creditsData.data?.balance || creditsData;
-          setCredits(balanceData);
+          if (creditsData.success && creditsData.data?.balance) {
+            const balance = creditsData.data.balance;
+            setCredits({
+              balance: balance.reportCreditsBalance + balance.fullCreditsBalance,
+              includedCredits: balance.reportCreditsBalance,
+              purchasedCredits: balance.fullCreditsBalance,
+              consumedCredits: 0,
+            });
+          }
         }
 
-        // Carregar histórico de uso - criar dados de exemplo ou deixar vazio
-        // Por enquanto vamos usar dados vazios já que o endpoint de histórico não existe
-        setHistory([]);
+        // Carregar histórico de uso real do novo endpoint /api/user/activity (Padrão-Ouro)
+        const activityRes = await fetch(
+          getApiUrl('/api/user/activity?limit=50'),
+          { credentials: 'include' }
+        );
+
+        if (activityRes.ok) {
+          const activityData = await activityRes.json();
+
+          if (activityData.success && Array.isArray(activityData.data)) {
+            // Transform activity items to UsageHistory format
+            const transformedHistory: UsageHistory[] = activityData.data
+              .filter((item: Record<string, unknown>) => {
+                // Only include credit debit transactions (not credits received)
+                return (
+                  typeof item === 'object' &&
+                  item !== null &&
+                  'type' in item &&
+                  item.type === 'credit_debit'
+                );
+              })
+              .map((item: Record<string, unknown>) => ({
+                id: typeof item.id === 'string' ? item.id : '',
+                date: typeof item.timestamp === 'string' ? item.timestamp : new Date().toISOString(),
+                type: typeof item.creditCategory === 'string' && item.creditCategory === 'FULL'
+                  ? 'report'
+                  : 'analysis' as const,
+                description: typeof item.title === 'string' ? item.title : 'Crédito Utilizado',
+                creditsUsed: typeof item.creditAmount === 'number' ? Math.abs(item.creditAmount) : 0,
+                costBRL: 0 // Can be calculated from metadata if available
+              }));
+            setHistory(transformedHistory);
+          } else {
+            setHistory([]);
+          }
+        } else {
+          setHistory([]);
+        }
       } catch (error) {
         console.error('Erro ao carregar dados de billing:', error);
         // Set default empty credits to avoid undefined errors

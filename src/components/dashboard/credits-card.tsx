@@ -67,27 +67,38 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Carregar dados do dashboard
+  // Carregar dados do dashboard (Padrão-Ouro: sem query params, tudo vem do auth)
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
 
-      const [creditsResponse, quotaResponse] = await Promise.all([
-        fetch(getApiUrl(`/api/billing/credits?workspaceId=${workspaceId}`), { credentials: 'include' }),
+      // NEW: Use /api/user/balance endpoint (no workspaceId query param needed)
+      // The endpoint extracts workspaceId from authenticated user
+      const [balanceResponse, quotaResponse] = await Promise.all([
+        fetch(getApiUrl('/api/user/balance'), { credentials: 'include' }),
         fetch(getApiUrl(`/api/reports/quota-status?workspaceId=${workspaceId}`), { credentials: 'include' })
       ]);
 
-      const [creditsData, quotaData] = await Promise.all([
-        creditsResponse.json(),
+      const [balanceData, quotaData] = await Promise.all([
+        balanceResponse.json(),
         quotaResponse.json()
       ]);
 
-      if (creditsData.success && creditsData.data?.balance) {
-        setCredits(creditsData.data.balance);
+      // Process balance data from new endpoint
+      if (balanceData.success && balanceData.data?.balance) {
+        const balance = balanceData.data.balance;
+        const totalBalance = balance.reportCreditsBalance + balance.fullCreditsBalance;
+
+        setCredits({
+          balance: totalBalance,
+          includedCredits: balance.reportCreditsBalance || 0,
+          purchasedCredits: balance.fullCreditsBalance || 0,
+          consumedCredits: 0 // Can be enhanced with transaction history
+        });
         setUsage({
-          reportsThisMonth: creditsData.data.quotaStatus?.reports?.current || 0,
-          creditsThisMonth: creditsData.data.balance.consumedCredits || 0,
-          estimatedCost: creditsData.data.quotaStatus?.reports?.billingEstimate || 0,
+          reportsThisMonth: quotaData.data?.quotaStatus?.reports?.current || 0,
+          creditsThisMonth: totalBalance,
+          estimatedCost: 0,
           daysUntilReset: getDaysUntilMonthEnd()
         });
       } else {
