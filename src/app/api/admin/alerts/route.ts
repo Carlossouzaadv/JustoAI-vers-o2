@@ -12,6 +12,7 @@ import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalAdmin } from '@/lib/permission-validator';
 import { prisma } from '@/lib/prisma';
 import { getErrorMessage } from '@/lib/error-handling';
+import { broadcastAlertCountUpdate } from '@/lib/alerts/alert-broadcast';
 
 interface AdminAlert {
   id: string;
@@ -149,6 +150,24 @@ export async function GET(request: Request) {
     const unresolvedCount = validAlerts.filter(a => !a.resolved).length;
     const criticalCount = validAlerts.filter(a => a.severity === 'CRITICAL' && !a.resolved).length;
     const highCount = validAlerts.filter(a => a.severity === 'HIGH' && !a.resolved).length;
+
+    // 9. Broadcast alert count update to all workspaces (Phase 33 integration)
+    // This ensures the sidebar badge is updated in real-time
+    // We broadcast to each workspace that has unresolved alerts
+    const affectedWorkspaceIds = validAlerts
+      .filter(a => !a.resolved && a.workspaceId)
+      .map(a => a.workspaceId)
+      .filter((id, index, arr) => id && arr.indexOf(id) === index); // Unique IDs
+
+    // Broadcast updates in background (non-blocking)
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    Promise.all(
+      affectedWorkspaceIds.map(workspaceId =>
+        broadcastAlertCountUpdate(workspaceId as string)
+      )
+    ).catch(error => {
+      console.error('Error broadcasting alert counts:', error);
+    });
 
     return NextResponse.json({
       success: true,
