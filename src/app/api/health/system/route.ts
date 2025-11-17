@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { getRedisClient } from '@/lib/redis';
 
 // Health check results
 interface ComponentHealth {
@@ -47,6 +48,44 @@ async function checkDatabase(): Promise<ComponentHealth> {
     return {
       name: 'database',
       status: 'unhealthy',
+      responseTimeMs,
+      lastError: errorMsg,
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
+
+async function checkRedis(): Promise<ComponentHealth> {
+  const startTime = Date.now();
+  try {
+    // Gold-Standard command: redis.ping()
+    // - O(1) complexity (fastest)
+    // - Tests actual connection without side effects
+    // - Returns "PONG" on success
+    const redis = getRedisClient();
+    const pongResponse = await redis.ping();
+    const responseTimeMs = Date.now() - startTime;
+
+    // Type-safe validation
+    if (typeof pongResponse !== 'string' || pongResponse !== 'PONG') {
+      throw new Error('Invalid PING response');
+    }
+
+    return {
+      name: 'redis',
+      status: 'healthy',
+      responseTimeMs,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    const responseTimeMs = Date.now() - startTime;
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+
+    return {
+      name: 'redis',
+      status: error instanceof Error && error.message.includes('timeout')
+        ? 'degraded'
+        : 'unhealthy',
       responseTimeMs,
       lastError: errorMsg,
       timestamp: new Date().toISOString(),
@@ -268,9 +307,10 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
   try {
     console.log(`${ICONS.INFO} System health check initiated`);
 
-    // Run all health checks in parallel
+    // Run all health checks in parallel (6 checks: database + redis + 4 external APIs)
     const checkResults = await Promise.all([
       checkDatabase(),
+      checkRedis(), // <-- Critical: Heart of async system (BullMQ)
       checkSupabase(),
       checkResendEmail(),
       checkSlack(),
