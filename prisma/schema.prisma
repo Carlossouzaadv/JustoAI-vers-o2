@@ -1799,6 +1799,36 @@ model SystemHealthMetric {
 }
 
 // ================================================================
+// WORKER JOB RECORD (Ledger Imutável - Fase 29)
+// ================================================================
+// Registra cada execução de job em BullMQ (sucesso ou falha)
+// Este é o ledger (livro-razão) de todo o trabalho assíncrono
+// Necessário para auditoria, debugging, e métricas de confiabilidade
+
+model WorkerJobRecord {
+  id            String          @id @default(cuid())
+  jobId         String          @unique // ID único do job no BullMQ
+  queueName     String // Nome da fila (ex: 'juditQueue', 'notificationQueue')
+  status        WorkerJobStatus @default(PENDING) // PENDING, COMPLETED, FAILED
+  startedAt     DateTime        @default(now())
+  completedAt   DateTime? // Quando o job completou (sucesso ou falha)
+  durationMs    Int? // Tempo total de execução em milissegundos
+  errorDetails  Json? // Detalhes do erro (message, stack, code)
+  resultSummary Json? // Resumo do resultado (para sucesso)
+  metadata      Json? // Contexto do job (caseId, workspaceId, userId, etc)
+  retryCount    Int             @default(0) // Quantas vezes foi retentado
+  createdAt     DateTime        @default(now()) // Quando o registro foi criado
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([jobId, queueName]) // job ID é único por fila
+  @@index([queueName])
+  @@index([status])
+  @@index([startedAt])
+  @@index([completedAt])
+  @@map("worker_job_records")
+}
+
+// ================================================================
 // JUDIT OBSERVABILITY ENUMS
 // ================================================================
 
@@ -1856,6 +1886,12 @@ enum JobExecutionStatus {
   RETRYING // Failed but will retry
   CANCELLED // Cancelled by user
   TIMEOUT // Timed out
+}
+
+enum WorkerJobStatus {
+  PENDING // Job enqueued, waiting to start
+  COMPLETED // Job completed successfully
+  FAILED // Job failed
 }
 
 enum HealthStatus {

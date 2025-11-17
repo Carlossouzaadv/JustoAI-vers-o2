@@ -10,6 +10,7 @@ import { captureApiError, setSentryUserContext } from '@/lib/sentry-error-handle
 import { getCreditManager } from '@/lib/credit-system';
 import { log } from '@/lib/services/logger';
 import { alert } from '@/lib/services/alert-service';
+import { analyticsService } from '@/lib/services/analytics-service';
 
 // Type Guards - Narrowing Seguro (Mandato Inegociável)
 function isAnalysisResult(data: unknown): data is Record<PropertyKey, unknown> {
@@ -139,6 +140,15 @@ export async function POST(
       // ✅ Se débito falha, REJEITA IMEDIATAMENTE (erro 402)
       if (!debitResult.success) {
         console.warn(`${ICONS.WARNING} [Full Analysis] Créditos insuficientes - portão fechado`);
+
+        // ✅ RASTREAMENTO Padrão-Ouro (Evento de Produto)
+        await analyticsService.track(userId, 'analysis_rejected_insufficient_credits', {
+          component: 'fullAnalysisRoute',
+          caseId: caseId,
+          workspaceId: caseData.workspaceId,
+          reason: debitResult.error || 'INSUFFICIENT_CREDITS'
+        });
+
         return NextResponse.json(
           {
             success: false,
