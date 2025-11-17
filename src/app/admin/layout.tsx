@@ -11,6 +11,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 import React from 'react';
+import { AlertBadge } from '@/components/ui/alert-badge';
 
 interface NavItem {
   label: string;
@@ -135,25 +136,35 @@ export default function AdminLayout({
           <div className="p-4 space-y-2">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
+              const isAlertsItem = item.href === '/admin/alerts';
+
               return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                    isActive
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : 'text-slate-300 hover:bg-slate-700'
-                  }`}
-                  title={item.description}
-                >
-                  <span className="text-xl flex-shrink-0">{item.icon}</span>
-                  {sidebarOpen && (
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{item.label}</p>
-                      <p className="text-xs text-slate-400 truncate">{item.description}</p>
+                <div key={item.href} className="relative">
+                  <a
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'text-slate-300 hover:bg-slate-700'
+                    }`}
+                    title={item.description}
+                  >
+                    <span className="text-xl flex-shrink-0">{item.icon}</span>
+                    {sidebarOpen && (
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{item.label}</p>
+                        <p className="text-xs text-slate-400 truncate">{item.description}</p>
+                      </div>
+                    )}
+                  </a>
+
+                  {/* ⭐ Integração Padrão-Ouro: AlertBadge para item de Alertas */}
+                  {isAlertsItem && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <AlertBadge />
                     </div>
                   )}
-                </a>
+                </div>
               );
             })}
           </div>
