@@ -32,74 +32,22 @@ export default function AlertsPage() {
   // UI State
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Mock alerts - will be replaced by real API from OPÇÃO C
-  const mockAlerts: Alert[] = useMemo(() => [
-    {
-      id: '1',
-      severity: 'CRITICAL',
-      alertType: 'COST_WARNING',
-      title: 'CRITICAL: Daily JUDIT costs exceed threshold',
-      message: 'Daily costs reached R$ 125.50 (threshold: R$ 100)',
-      workspaceId: 'workspace-1',
-      resolved: false,
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      metadata: { dailyCost: 125.50, threshold: 100 }
-    },
-    {
-      id: '2',
-      severity: 'HIGH',
-      alertType: 'API_FAILURE',
-      title: 'High JUDIT API failure rate detected',
-      message: 'Failure rate: 18.5% (threshold: 15%)',
-      workspaceId: 'workspace-1',
-      resolved: false,
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      metadata: { failureRate: 0.185, failedCalls: 37, totalCalls: 200 }
-    },
-    {
-      id: '3',
-      severity: 'MEDIUM',
-      alertType: 'QUEUE_STUCK',
-      title: 'Queue processing delayed',
-      message: 'Document analysis queue has 150+ pending jobs',
-      resolved: false,
-      createdAt: new Date(Date.now() - 1800000).toISOString(),
-      metadata: { queueName: 'document-analysis', pendingCount: 152 }
-    },
-    {
-      id: '4',
-      severity: 'LOW',
-      alertType: 'PERFORMANCE',
-      title: 'API latency slightly elevated',
-      message: 'P95 latency is 450ms (normal: 200-300ms)',
-      resolved: false,
-      createdAt: new Date(Date.now() - 900000).toISOString(),
-      metadata: { p95: 450, expected: 250 }
-    },
-    {
-      id: '5',
-      severity: 'HIGH',
-      alertType: 'DATABASE',
-      title: 'PostgreSQL connection pool near limit',
-      message: 'Currently using 18 of 20 available connections',
-      resolved: true,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      resolvedAt: new Date(Date.now() - 3600000).toISOString(),
-      metadata: { current: 18, max: 20 }
-    }
-  ], []);
+  // Fetch real alerts from API (removed mock data)
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        // TODO: Replace with real API endpoint when OPÇÃO C is done
-        // const response = await fetch('/api/admin/alerts');
-        // if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        // const result = await response.json();
-        // setAlerts(result.alerts || mockAlerts);
+        const response = await fetch('/api/admin/alerts');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} - Failed to fetch alerts`);
+        }
 
-        // For now, use mock data
-        setAlerts(mockAlerts);
+        const result = await response.json();
+        if (result.success && result.alerts) {
+          setAlerts(result.alerts);
+        } else {
+          throw new Error(result.error || 'Invalid response from API');
+        }
         setLastUpdate(new Date());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch alerts');
@@ -112,7 +60,7 @@ export default function AlertsPage() {
     // Refresh every 30 seconds
     const interval = setInterval(fetchAlerts, 30000);
     return () => clearInterval(interval);
-  }, [mockAlerts]);
+  }, []);
 
   const handleResolveAlert = (alertId: string) => {
     setAlerts((prev) =>
@@ -422,11 +370,12 @@ export default function AlertsPage() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-900 mb-3 font-semibold">💡 Como usar</p>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Use o ícone ✓ para marcar alertas como resolvidos</li>
-          <li>• Use a lixeira para remover alertas resolvidos</li>
+          <li>• Use o ícone ✓ para marcar alertas como resolvidos (cliente)</li>
+          <li>• Use a lixeira para remover alertas do dashboard (cliente)</li>
           <li>• Clique &quot;+&quot; para expandir detalhes e metadados do alerta</li>
           <li>• Alertas críticos aparecem sempre no topo e em destaque vermelho</li>
-          <li>Note: Dados de demonstração. APIs reais serão conectadas em breve.</li>
+          <li>✅ Dados agora são carregados em tempo real (API real conectada)</li>
+          <li>• Dashboard atualiza automaticamente a cada 30 segundos</li>
         </ul>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, AlertCircle, CheckCircle, AlertTriangle, Zap, TrendingUp, Timer, Copy, ExternalLink } from 'lucide-react';
 import { getErrorMessage } from '@/lib/error-handling';
+import AdminActivity from '@/components/AdminActivity';
 
 interface DashboardData {
   sentry?: {
@@ -376,6 +377,11 @@ Navigate to: /admin/errors for full details
           </div>
         </div>
       )}
+
+      {/* Activity Feed Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <AdminActivity limit={8} autoRefresh={true} refreshInterval={30000} />
+      </div>
 
       {/* Quick Navigation Cards */}
       <div>

@@ -21,7 +21,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/admin', icon: '🏠', description: 'Overview rápido' },
-  { label: 'JUDIT', href: '/admin/dashboard/judit', icon: '📊', description: 'Monitoramento JUDIT' },
+  { label: 'Atividade', href: '/admin/activity', icon: '📊', description: 'Feed de atividade' },
+  { label: 'JUDIT', href: '/admin/dashboard/judit', icon: '🔌', description: 'Monitoramento JUDIT' },
   { label: 'Observabilidade', href: '/admin/observability', icon: '🔍', description: 'Sentry + Performance' },
   { label: 'Filas', href: '/admin/queues', icon: '⚙️', description: 'Bull Queue Dashboard' },
   { label: 'Erros', href: '/admin/errors', icon: '⚠️', description: 'Erro tracking' },
