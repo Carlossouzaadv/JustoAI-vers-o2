@@ -6,6 +6,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { ICONS } from './icons';
 import { isCreditTransactionMetadata } from './types/type-guards';
+import { log, logError } from '@/lib/services/logger';
 
 // Tipos locais para dados do Prisma (Padrão-Ouro: interfaces explícitas)
 interface WorkspaceCreditsRecord {
@@ -178,7 +179,7 @@ export class CreditManager {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao buscar saldo de créditos:`, error);
+      logError(`${ICONS.ERROR} Erro ao buscar saldo de créditos:`, "error", { component: "creditSystem" });
       throw new Error('Erro ao consultar saldo de créditos');
     }
   }
@@ -193,7 +194,7 @@ export class CreditManager {
     reason: string,
     metadata: unknown = {}
   ): Promise<CreditDebitResult> {
-    console.log(`${ICONS.PROCESS} Debitando créditos: ${reportCredits} report, ${fullCredits} full`);
+    log.info({ msg: "${ICONS.PROCESS} Debitando créditos: ${reportCredits} report, ${fullCredits} full", component: "creditSystem" });
 
     try {
       return await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -243,7 +244,7 @@ export class CreditManager {
 
         const newBalance = await this.getCreditBalance(workspaceId);
 
-        console.log(`${ICONS.SUCCESS} Créditos debitados com sucesso`);
+        log.info({ msg: "${ICONS.SUCCESS} Créditos debitados com sucesso", component: "creditSystem" });
 
         return {
           success: true,
@@ -253,7 +254,7 @@ export class CreditManager {
       });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao debitar créditos:`, error);
+      logError(`${ICONS.ERROR} Erro ao debitar créditos:`, "error", { component: "creditSystem" });
       return {
         success: false,
         error: 'Erro interno ao processar débito de créditos'
@@ -281,7 +282,7 @@ export class CreditManager {
       try {
         validatedMetadata = JSON.parse(JSON.stringify(metadata));
       } catch (error) {
-        console.warn(`${ICONS.WARNING} Failed to serialize transaction metadata:`, error);
+        log.warn({ msg: "${ICONS.WARNING} Failed to serialize transaction metadata:`, error", component: "creditSystem" });
         // Use undefined for invalid metadata
         validatedMetadata = undefined;
       }
@@ -332,7 +333,7 @@ export class CreditManager {
       transactionIds.push(transaction.id);
       remainingToDebit -= toDebitFromThisAllocation;
 
-      console.log(`${ICONS.INFO} Debitado ${toDebitFromThisAllocation} ${category} credits da allocation ${allocation.id}`);
+      log.info({ msg: "${ICONS.INFO} Debitado ${toDebitFromThisAllocation} ${category} credits da allocation ${allocation.id}", component: "creditSystem" });
     }
 
     if (remainingToDebit > 0) {
@@ -353,7 +354,7 @@ export class CreditManager {
     sourceDescription: string,
     expiresAt?: Date
   ): Promise<void> {
-    console.log(`${ICONS.PROCESS} Creditando: ${reportCredits} report, ${fullCredits} full (${type})`);
+    log.info({ msg: "${ICONS.PROCESS} Creditando: ${reportCredits} report, ${fullCredits} full (${type})", component: "creditSystem" });
 
     try {
       await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -422,10 +423,10 @@ export class CreditManager {
         });
       });
 
-      console.log(`${ICONS.SUCCESS} Créditos creditados com sucesso`);
+      log.info({ msg: "${ICONS.SUCCESS} Créditos creditados com sucesso", component: "creditSystem" });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao creditar créditos:`, error);
+      logError(`${ICONS.ERROR} Erro ao creditar créditos:`, "error", { component: "creditSystem" });
       throw new Error('Erro ao creditar créditos');
     }
   }
@@ -470,7 +471,7 @@ export class CreditManager {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Créditos reservados: ${reportCredits} report, ${fullCredits} full`);
+      log.info({ msg: "${ICONS.SUCCESS} Créditos reservados: ${reportCredits} report, ${fullCredits} full", component: "creditSystem" });
 
       return {
         success: true,
@@ -478,7 +479,7 @@ export class CreditManager {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao reservar créditos:`, error);
+      logError(`${ICONS.ERROR} Erro ao reservar créditos:`, "error", { component: "creditSystem" });
       return {
         success: false,
         error: 'Erro ao reservar créditos'
@@ -495,10 +496,10 @@ export class CreditManager {
         where: { id: holdId }
       });
 
-      console.log(`${ICONS.SUCCESS} Reserva de créditos liberada: ${holdId}`);
+      log.info({ msg: "${ICONS.SUCCESS} Reserva de créditos liberada: ${holdId}", component: "creditSystem" });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao liberar reserva:`, error);
+      logError(`${ICONS.ERROR} Erro ao liberar reserva:`, "error", { component: "creditSystem" });
       throw new Error('Erro ao liberar reserva de créditos');
     }
   }
@@ -538,7 +539,7 @@ export class CreditManager {
       });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao buscar breakdown:`, error);
+      logError(`${ICONS.ERROR} Erro ao buscar breakdown:`, "error", { component: "creditSystem" });
       throw new Error('Erro ao consultar breakdown de créditos');
     }
   }
@@ -581,12 +582,12 @@ export class CreditManager {
         );
       }
 
-      console.log(`${ICONS.SUCCESS} Créditos inicializados para workspace ${workspaceId} (${planName})`);
+      log.info({ msg: "${ICONS.SUCCESS} Créditos inicializados para workspace ${workspaceId} (${planName})", component: "creditSystem" });
 
       return credits;
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao inicializar créditos:`, error);
+      logError(`${ICONS.ERROR} Erro ao inicializar créditos:`, "error", { component: "creditSystem" });
       throw new Error('Erro ao inicializar créditos do workspace');
     }
   }
@@ -603,7 +604,7 @@ export class CreditManager {
         return;
       }
 
-      console.log(`${ICONS.PROCESS} Alocação mensal para ${workspaceId} (${planName})`);
+      log.info({ msg: "${ICONS.PROCESS} Alocação mensal para ${workspaceId} (${planName})", component: "creditSystem" });
 
       const balance = await this.getCreditBalance(workspaceId);
 
@@ -630,16 +631,16 @@ export class CreditManager {
 
         // Log de rollover se aplicável
         if (reportCreditsToAdd < planConfig.reportCreditsMonth) {
-          console.log(`${ICONS.WARNING} Rollover cap aplicado para report credits: ${reportCreditsToAdd}/${planConfig.reportCreditsMonth}`);
+          log.info({ msg: "${ICONS.WARNING} Rollover cap aplicado para report credits: ${reportCreditsToAdd}/${planConfig.reportCreditsMonth}", component: "creditSystem" });
         }
 
         if (fullCreditsToAdd < planConfig.fullCreditsMonth) {
-          console.log(`${ICONS.WARNING} Rollover cap aplicado para full credits: ${fullCreditsToAdd}/${planConfig.fullCreditsMonth}`);
+          log.info({ msg: "${ICONS.WARNING} Rollover cap aplicado para full credits: ${fullCreditsToAdd}/${planConfig.fullCreditsMonth}", component: "creditSystem" });
         }
       }
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na alocação mensal:`, error);
+      logError(`${ICONS.ERROR} Erro na alocação mensal:`, "error", { component: "creditSystem" });
       throw new Error('Erro na alocação mensal de créditos');
     }
   }
@@ -649,7 +650,7 @@ export class CreditManager {
    */
   async cleanupExpiredCredits(): Promise<{ expiredAllocations: number; expiredHolds: number }> {
     try {
-      console.log(`${ICONS.PROCESS} Iniciando limpeza de créditos expirados...`);
+      log.info({ msg: "${ICONS.PROCESS} Iniciando limpeza de créditos expirados...", component: "creditSystem" });
 
       const result = await this.prisma.$transaction(async (tx: Prisma.TransactionClient) => {
         // Buscar allocations expiradas com remaining > 0
@@ -709,12 +710,12 @@ export class CreditManager {
         };
       });
 
-      console.log(`${ICONS.SUCCESS} Limpeza concluída: ${result.expiredAllocations} allocations, ${result.expiredHolds} holds`);
+      log.info({ msg: "${ICONS.SUCCESS} Limpeza concluída: ${result.expiredAllocations} allocations, ${result.expiredHolds} holds", component: "creditSystem" });
 
       return result;
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na limpeza de créditos:`, error);
+      logError(`${ICONS.ERROR} Erro na limpeza de créditos:`, "error", { component: "creditSystem" });
       throw new Error('Erro na limpeza de créditos expirados');
     }
   }

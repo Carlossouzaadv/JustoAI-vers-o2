@@ -8,6 +8,7 @@
 
 import { createHmac } from 'crypto';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 /**
  * Verify Stripe webhook signature
@@ -21,13 +22,13 @@ export function verifyStripeSignature(headers: Record<string, string>, body: str
   try {
     const secret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!secret) {
-      console.warn(`${ICONS.WARNING} STRIPE_WEBHOOK_SECRET not configured`);
+      log.warn({ msg: "${ICONS.WARNING} STRIPE_WEBHOOK_SECRET not configured", component: "webhookSignatureVerifiers" });
       return false;
     }
 
     const signature = headers['stripe-signature'];
     if (!signature) {
-      console.warn(`${ICONS.WARNING} Missing stripe-signature header`);
+      log.warn({ msg: "${ICONS.WARNING} Missing stripe-signature header", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -42,7 +43,7 @@ export function verifyStripeSignature(headers: Record<string, string>, body: str
     const providedSignature = parts.v1;
 
     if (!timestamp || !providedSignature) {
-      console.warn(`${ICONS.WARNING} Invalid stripe-signature format`);
+      log.warn({ msg: "${ICONS.WARNING} Invalid stripe-signature format", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -50,7 +51,7 @@ export function verifyStripeSignature(headers: Record<string, string>, body: str
     const now = Math.floor(Date.now() / 1000);
     const diff = now - parseInt(timestamp);
     if (diff > 300) { // 5 minutes
-      console.warn(`${ICONS.WARNING} Stripe webhook timestamp too old: ${diff}s`);
+      log.warn({ msg: "${ICONS.WARNING} Stripe webhook timestamp too old: ${diff}s", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -63,17 +64,17 @@ export function verifyStripeSignature(headers: Record<string, string>, body: str
     const isValid = computedSignature === providedSignature;
 
     if (!isValid) {
-      console.warn(`${ICONS.WARNING} Stripe signature mismatch`);
+      log.warn({ msg: "${ICONS.WARNING} Stripe signature mismatch", component: "webhookSignatureVerifiers" });
       console.debug(`Expected: ${computedSignature}`);
       console.debug(`Received: ${providedSignature}`);
     } else {
-      console.log(`${ICONS.SUCCESS} Stripe signature verified`);
+      log.info({ msg: "${ICONS.SUCCESS} Stripe signature verified", component: "webhookSignatureVerifiers" });
     }
 
     return isValid;
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Error verifying Stripe signature:`, error);
+    logError(`${ICONS.ERROR} Error verifying Stripe signature:`, "error", { component: "webhookSignatureVerifiers" });
     return false;
   }
 }
@@ -90,13 +91,13 @@ export function verifyMercadoPagoSignature(headers: Record<string, string>, body
   try {
     const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
     if (!secret) {
-      console.warn(`${ICONS.WARNING} MERCADOPAGO_WEBHOOK_SECRET not configured`);
+      log.warn({ msg: "${ICONS.WARNING} MERCADOPAGO_WEBHOOK_SECRET not configured", component: "webhookSignatureVerifiers" });
       return false;
     }
 
     const signature = headers['x-signature'];
     if (!signature) {
-      console.warn(`${ICONS.WARNING} Missing x-signature header for MercadoPago`);
+      log.warn({ msg: "${ICONS.WARNING} Missing x-signature header for MercadoPago", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -111,7 +112,7 @@ export function verifyMercadoPagoSignature(headers: Record<string, string>, body
     const providedSignature = parts.v1;
 
     if (!timestamp || !providedSignature) {
-      console.warn(`${ICONS.WARNING} Invalid MercadoPago x-signature format`);
+      log.warn({ msg: "${ICONS.WARNING} Invalid MercadoPago x-signature format", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -122,7 +123,7 @@ export function verifyMercadoPagoSignature(headers: Record<string, string>, body
       const data = JSON.parse(body);
       resourceId = data.id || data.resource?.id || '';
     } catch {
-      console.warn(`${ICONS.WARNING} Could not parse MercadoPago body`);
+      log.warn({ msg: "${ICONS.WARNING} Could not parse MercadoPago body", component: "webhookSignatureVerifiers" });
     }
 
     const signedContent = `${resourceId}.${timestamp}`;
@@ -133,15 +134,15 @@ export function verifyMercadoPagoSignature(headers: Record<string, string>, body
     const isValid = computedSignature === providedSignature;
 
     if (!isValid) {
-      console.warn(`${ICONS.WARNING} MercadoPago signature mismatch`);
+      log.warn({ msg: "${ICONS.WARNING} MercadoPago signature mismatch", component: "webhookSignatureVerifiers" });
     } else {
-      console.log(`${ICONS.SUCCESS} MercadoPago signature verified`);
+      log.info({ msg: "${ICONS.SUCCESS} MercadoPago signature verified", component: "webhookSignatureVerifiers" });
     }
 
     return isValid;
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Error verifying MercadoPago signature:`, error);
+    logError(`${ICONS.ERROR} Error verifying MercadoPago signature:`, "error", { component: "webhookSignatureVerifiers" });
     return false;
   }
 }
@@ -158,14 +159,14 @@ export function verifyPagSeguroSignature(headers: Record<string, string>, body: 
   try {
     const secret = process.env.PAGSEGURO_WEBHOOK_SECRET;
     if (!secret) {
-      console.warn(`${ICONS.WARNING} PAGSEGURO_WEBHOOK_SECRET not configured`);
+      log.warn({ msg: "${ICONS.WARNING} PAGSEGURO_WEBHOOK_SECRET not configured", component: "webhookSignatureVerifiers" });
       return false;
     }
 
     // PagSeguro uses various header names, try both
     const signature = headers['x-pagseguro-signature'] || headers['X-PagSeguro-Signature'];
     if (!signature) {
-      console.warn(`${ICONS.WARNING} Missing PagSeguro signature header`);
+      log.warn({ msg: "${ICONS.WARNING} Missing PagSeguro signature header", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -177,15 +178,15 @@ export function verifyPagSeguroSignature(headers: Record<string, string>, body: 
     const isValid = computedSignature === signature;
 
     if (!isValid) {
-      console.warn(`${ICONS.WARNING} PagSeguro signature mismatch`);
+      log.warn({ msg: "${ICONS.WARNING} PagSeguro signature mismatch", component: "webhookSignatureVerifiers" });
     } else {
-      console.log(`${ICONS.SUCCESS} PagSeguro signature verified`);
+      log.info({ msg: "${ICONS.SUCCESS} PagSeguro signature verified", component: "webhookSignatureVerifiers" });
     }
 
     return isValid;
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Error verifying PagSeguro signature:`, error);
+    logError(`${ICONS.ERROR} Error verifying PagSeguro signature:`, "error", { component: "webhookSignatureVerifiers" });
     return false;
   }
 }
@@ -202,13 +203,13 @@ export function verifyPixSignature(headers: Record<string, string>, body: string
   try {
     const secret = process.env.PIX_WEBHOOK_SECRET;
     if (!secret) {
-      console.warn(`${ICONS.WARNING} PIX_WEBHOOK_SECRET not configured`);
+      log.warn({ msg: "${ICONS.WARNING} PIX_WEBHOOK_SECRET not configured", component: "webhookSignatureVerifiers" });
       return false;
     }
 
     const signature = headers['x-signature'];
     if (!signature) {
-      console.warn(`${ICONS.WARNING} Missing x-signature header for Pix`);
+      log.warn({ msg: "${ICONS.WARNING} Missing x-signature header for Pix", component: "webhookSignatureVerifiers" });
       return false;
     }
 
@@ -220,15 +221,15 @@ export function verifyPixSignature(headers: Record<string, string>, body: string
     const isValid = computedSignature === signature;
 
     if (!isValid) {
-      console.warn(`${ICONS.WARNING} Pix signature mismatch`);
+      log.warn({ msg: "${ICONS.WARNING} Pix signature mismatch", component: "webhookSignatureVerifiers" });
     } else {
-      console.log(`${ICONS.SUCCESS} Pix signature verified`);
+      log.info({ msg: "${ICONS.SUCCESS} Pix signature verified", component: "webhookSignatureVerifiers" });
     }
 
     return isValid;
 
   } catch (error) {
-    console.error(`${ICONS.ERROR} Error verifying Pix signature:`, error);
+    logError(`${ICONS.ERROR} Error verifying Pix signature:`, "error", { component: "webhookSignatureVerifiers" });
     return false;
   }
 }
@@ -253,7 +254,7 @@ export function verifyGenericHmacSignature(
 
     return computedSignature === providedSignature;
   } catch (error) {
-    console.error(`${ICONS.ERROR} Error in generic HMAC verification:`, error);
+    logError(`${ICONS.ERROR} Error in generic HMAC verification:`, "error", { component: "webhookSignatureVerifiers" });
     return false;
   }
 }

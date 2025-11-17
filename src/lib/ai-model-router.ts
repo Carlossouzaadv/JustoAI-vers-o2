@@ -6,6 +6,7 @@
 // Import & re-export from ai-model-types
 // NOTE: ModelTier is enum (runtime value), interfaces are type-only
 import { ModelTier, type ComplexityScore, type ProcessingConfig, type ModelCosts } from './ai-model-types';
+import { log, logError } from '@/lib/services/logger';
 export { ModelTier, type ComplexityScore, type ProcessingConfig, type ModelCosts } from './ai-model-types';
 
 /**
@@ -182,11 +183,11 @@ export class AIModelRouter {
    * 📍 ANÁLISE COMPLETA (Pro): Sentenças, acórdãos, decisões superiores
    */
   analyzeComplexity(text: string, fileSizeMB: number = 0): ComplexityScore {
-    console.log('🧮 Analisando complexidade do documento...');
+    log.info({ msg: "🧮 Analisando complexidade do documento...", component: "aiModelRouter" });
 
     // 1. DETECTAR TIPO DE DOCUMENTO
     const documentType = this.detectDocumentType(text);
-    console.log(`📄 Tipo detectado: ${documentType.type} (confiança: ${Math.round(documentType.confidence * 100)}%)`);
+    log.info({ msg: "📄 Tipo detectado: ${documentType.type} (confiança: ${Math.round(documentType.confidence * 100)}%)", component: "aiModelRouter" });
 
     // 2. APLICAR REGRAS ESPECÍFICAS POR TIPO
     const documentTypeScore = this.getDocumentTypeComplexityScore(documentType);
@@ -221,7 +222,7 @@ export class AIModelRouter {
       confidence = 0.95;
     }
 
-    console.log(`📊 Complexidade: ${totalScore} pontos (${documentType.type}) → Modelo: ${recommendedTier}`);
+    log.info({ msg: "📊 Complexidade: ${totalScore} pontos (${documentType.type}) → Modelo: ${recommendedTier}", component: "aiModelRouter" });
 
     return {
       totalScore,
@@ -367,7 +368,7 @@ export class AIModelRouter {
     // Aplicar confiança (reduzir pontuação se detecção incerta)
     const finalScore = Math.round(baseScore * confidence);
 
-    console.log(`📄 Tipo: ${type} → Base: ${baseScore}, Confiança: ${Math.round(confidence * 100)}%, Final: ${finalScore}`);
+    log.info({ msg: "📄 Tipo: ${type} → Base: ${baseScore}, Confiança: ${Math.round(confidence * 100)}%, Final: ${finalScore}", component: "aiModelRouter" });
 
     return finalScore;
   }
@@ -999,13 +1000,13 @@ PROFUNDIDADE: Completa e estratégica`;
 
     while (attempts < maxAttempts) {
       try {
-        console.log(`🤖 Tentativa ${attempts + 1} com modelo ${config.model}`);
+        log.info({ msg: "🤖 Tentativa ${attempts + 1} com modelo ${config.model}", component: "aiModelRouter" });
 
         result = await processingFunction(config);
 
         // Verificar se precisa fazer fallback
         if (this.shouldFallback(result, complexity) && config.fallbackModel && attempts === 0) {
-          console.log(`⬆️ Fazendo fallback para ${config.fallbackModel}`);
+          log.info({ msg: "⬆️ Fazendo fallback para ${config.fallbackModel}", component: "aiModelRouter" });
           config.model = config.fallbackModel;
           config = this.getProcessingConfig({ ...complexity, recommendedTier: config.fallbackModel });
           attempts++;
@@ -1015,10 +1016,10 @@ PROFUNDIDADE: Completa e estratégica`;
         break;
 
       } catch (error) {
-        console.error(`❌ Erro no modelo ${config.model}:`, error);
+        logError(`❌ Erro no modelo ${config.model}:`, "error", { component: "aiModelRouter" });
 
         if (config.fallbackModel && attempts === 0) {
-          console.log(`⬆️ Fallback por erro para ${config.fallbackModel}`);
+          log.info({ msg: "⬆️ Fallback por erro para ${config.fallbackModel}", component: "aiModelRouter" });
           config.model = config.fallbackModel;
           config = this.getProcessingConfig({ ...complexity, recommendedTier: config.fallbackModel });
           attempts++;
@@ -1034,7 +1035,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const outputTokens = this.estimateTokens(JSON.stringify(result));
     const cost = this.calculateCost(inputTokens, outputTokens, config.model);
 
-    console.log(`💰 Custo estimado: $${cost.estimatedCost} com modelo ${config.model}`);
+    log.info({ msg: "💰 Custo estimado: $${cost.estimatedCost} com modelo ${config.model}", component: "aiModelRouter" });
 
     return {
       result,
@@ -1078,7 +1079,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
-    console.log(`${ICONS.PROCESS} Análise ESSENCIAL iniciada (Flash 8B)`);
+    log.info({ msg: "${ICONS.PROCESS} Análise ESSENCIAL iniciada (Flash 8B)", component: "aiModelRouter" });
 
     const cache = getAiCache();
     const textHash = generateTextHash(text);
@@ -1088,7 +1089,7 @@ PROFUNDIDADE: Completa e estratégica`;
     if (cached) {
       const cachedRecord = cached as Record<string, unknown>;
       const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
-      console.log(`${ICONS.CACHE} Cache HIT - Análise essencial: ${routingInfo?.tokens_saved || 0} tokens economizados`);
+      log.info({ msg: "${ICONS.CACHE} Cache HIT - Análise essencial: ${routingInfo?.tokens_saved || 0} tokens economizados", component: "aiModelRouter" });
       return cached;
     }
 
@@ -1108,7 +1109,7 @@ PROFUNDIDADE: Completa e estratégica`;
       workspaceId
     });
 
-    console.log(`${ICONS.SUCCESS} Análise essencial concluída e cacheada`);
+    log.info({ msg: "${ICONS.SUCCESS} Análise essencial concluída e cacheada", component: "aiModelRouter" });
     return result.result;
   }
 
@@ -1121,7 +1122,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
-    console.log(`${ICONS.PROCESS} Análise PHASE 1 iniciada (LITE-first com fallback)`);
+    log.info({ msg: "${ICONS.PROCESS} Análise PHASE 1 iniciada (LITE-first com fallback)", component: "aiModelRouter" });
 
     const cache = getAiCache();
     const textHash = generateTextHash(text);
@@ -1131,7 +1132,7 @@ PROFUNDIDADE: Completa e estratégica`;
     if (cached) {
       const cachedRecord = cached as Record<string, unknown>;
       const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
-      console.log(`${ICONS.CACHE} Cache HIT - Phase 1: ${routingInfo?.tokens_saved || 0} tokens economizados`);
+      log.info({ msg: "${ICONS.CACHE} Cache HIT - Phase 1: ${routingInfo?.tokens_saved || 0} tokens economizados", component: "aiModelRouter" });
       return cached;
     }
 
@@ -1174,7 +1175,7 @@ PROFUNDIDADE: Completa e estratégica`;
       workspaceId
     });
 
-    console.log(`${ICONS.SUCCESS} Análise Phase 1 concluída (${result.modelUsed}) e cacheada`);
+    log.info({ msg: "${ICONS.SUCCESS} Análise Phase 1 concluída (${result.modelUsed}) e cacheada", component: "aiModelRouter" });
     return result.result;
   }
 
@@ -1187,7 +1188,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
-    console.log(`${ICONS.PROCESS} Análise ESTRATÉGICA iniciada (PHASE 3 - routing por complexidade)`);
+    log.info({ msg: "${ICONS.PROCESS} Análise ESTRATÉGICA iniciada (PHASE 3 - routing por complexidade)", component: "aiModelRouter" });
 
     const cache = getAiCache();
     const textHash = generateTextHash(text);
@@ -1198,7 +1199,7 @@ PROFUNDIDADE: Completa e estratégica`;
     if (cached) {
       const cachedRecord = cached as Record<string, unknown>;
       const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
-      console.log(`${ICONS.CACHE} Cache HIT - Análise estratégica: ${routingInfo?.tokens_saved || 0} tokens economizados`);
+      log.info({ msg: "${ICONS.CACHE} Cache HIT - Análise estratégica: ${routingInfo?.tokens_saved || 0} tokens economizados", component: "aiModelRouter" });
       return cached;
     }
 
@@ -1228,7 +1229,7 @@ PROFUNDIDADE: Completa e estratégica`;
       workspaceId
     });
 
-    console.log(`${ICONS.SUCCESS} Análise estratégica concluída (${complexityScore.recommendedTier}) e cacheada`);
+    log.info({ msg: "${ICONS.SUCCESS} Análise estratégica concluída (${complexityScore.recommendedTier}) e cacheada", component: "aiModelRouter" });
     return result.result;
   }
 
@@ -1244,7 +1245,7 @@ PROFUNDIDADE: Completa e estratégica`;
     const { getAiCache, generateTextHash } = await import('./ai-cache-manager');
     const { ICONS } = await import('./icons');
 
-    console.log(`${ICONS.PROCESS} Relatório iniciado (Flash)`);
+    log.info({ msg: "${ICONS.PROCESS} Relatório iniciado (Flash)", component: "aiModelRouter" });
 
     const cache = getAiCache();
     const reportHash = generateTextHash(JSON.stringify(reportData) + reportType);
@@ -1254,7 +1255,7 @@ PROFUNDIDADE: Completa e estratégica`;
     if (cached) {
       const cachedRecord = cached as Record<string, unknown>;
       const routingInfo = cachedRecord._routing_info as Record<string, unknown> | undefined;
-      console.log(`${ICONS.CACHE} Cache HIT - Relatório: ${routingInfo?.tokens_saved || 0} tokens economizados`);
+      log.info({ msg: "${ICONS.CACHE} Cache HIT - Relatório: ${routingInfo?.tokens_saved || 0} tokens economizados", component: "aiModelRouter" });
       return cached;
     }
 
@@ -1285,7 +1286,7 @@ PROFUNDIDADE: Completa e estratégica`;
       workspaceId
     });
 
-    console.log(`${ICONS.SUCCESS} Relatório concluído e cacheado`);
+    log.info({ msg: "${ICONS.SUCCESS} Relatório concluído e cacheado", component: "aiModelRouter" });
     return result.result;
   }
 
@@ -1301,7 +1302,7 @@ PROFUNDIDADE: Completa e estratégica`;
       const { getGeminiClient } = await import('./gemini-client');
       const { ICONS } = await import('./icons');
 
-      console.log(`${ICONS.PROCESS} Processando com Gemini ${modelTier} para análise ${analysisType}`);
+      log.info({ msg: "${ICONS.PROCESS} Processando com Gemini ${modelTier} para análise ${analysisType}", component: "aiModelRouter" });
 
       const geminiClient = getGeminiClient();
       const config = this.getProcessingConfig({
@@ -1350,19 +1351,19 @@ PROFUNDIDADE: Completa e estratégica`;
         }
       };
 
-      console.log(`${ICONS.SUCCESS} Análise ${analysisType} concluída com ${modelTier}`);
+      log.info({ msg: "${ICONS.SUCCESS} Análise ${analysisType} concluída com ${modelTier}", component: "aiModelRouter" });
       return result;
 
     } catch (error) {
       const { ICONS } = await import('./icons');
-      console.error(`${ICONS.ERROR} Erro na análise com ${modelTier}:`, error);
+      logError(`${ICONS.ERROR} Erro na análise com ${modelTier}:`, "error", { component: "aiModelRouter" });
 
       // Fallback para tier inferior em caso de erro
       if (modelTier === ModelTier.PRO) {
-        console.log(`${ICONS.WARNING} Fallback PRO → BALANCED`);
+        log.info({ msg: "${ICONS.WARNING} Fallback PRO → BALANCED", component: "aiModelRouter" });
         return this.processWithModel(text, ModelTier.BALANCED, analysisType);
       } else if (modelTier === ModelTier.BALANCED) {
-        console.log(`${ICONS.WARNING} Fallback BALANCED → LITE`);
+        log.info({ msg: "${ICONS.WARNING} Fallback BALANCED → LITE", component: "aiModelRouter" });
         return this.processWithModel(text, ModelTier.LITE, analysisType);
       }
 

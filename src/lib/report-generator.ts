@@ -21,6 +21,7 @@ import {
   isReportFileUrls,
   isCachedReportData,
 } from '@/lib/types/type-guards';
+import { log, logError } from '@/lib/services/logger';
 
 // Type definitions for Gemini API result
 interface GeminiResult {
@@ -110,7 +111,7 @@ function convertReportSummaryToJsonSafe(summary: ReportSummary): object {
 
     return jsonSafe;
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, error);
+    logError(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, "error", { component: "reportGenerator" });
     // Fallback: retornar objeto minimalista garantidamente JSON-safe
     return {
       totalProcesses: summary.totalProcesses,
@@ -189,13 +190,13 @@ export class ReportGenerator {
    */
   async generateScheduledReport(request: ReportGenerationRequest): Promise<ReportGenerationResult> {
     const startTime = Date.now();
-    console.log(`${ICONS.PROCESS} Iniciando geração de relatório ${request.reportType} para ${request.processIds.length} processos`);
+    log.info({ msg: "${ICONS.PROCESS} Iniciando geração de relatório ${request.reportType} para ${request.processIds.length} processos", component: "reportGenerator" });
 
     try {
       // 1. Verificar cache
       const cacheResult = await this.checkReportCache(request);
       if (cacheResult.hit) {
-        console.log(`${ICONS.SUCCESS} Cache hit para relatório`);
+        log.info({ msg: "${ICONS.SUCCESS} Cache hit para relatório", component: "reportGenerator" });
 
         // Build summary safely from cached data
         let cacheSummary: ReportSummary = {
@@ -260,7 +261,7 @@ export class ReportGenerator {
 
       const reportId = `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      console.log(`${ICONS.SUCCESS} Relatório gerado com sucesso em ${Date.now() - startTime}ms`);
+      log.info({ msg: "${ICONS.SUCCESS} Relatório gerado com sucesso em ${Date.now() - startTime}ms", component: "reportGenerator" });
 
       return {
         success: true,
@@ -274,7 +275,7 @@ export class ReportGenerator {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na geração do relatório:`, error);
+      logError(`${ICONS.ERROR} Erro na geração do relatório:`, "error", { component: "reportGenerator" });
       return {
         success: false,
         reportId: '',
@@ -324,13 +325,13 @@ export class ReportGenerator {
 
       // Validar fileUrls com type guard
       if (!isReportFileUrls(cached.fileUrls)) {
-        console.warn(`${ICONS.WARNING} Cache fileUrls validation failed, skipping cache`);
+        log.warn({ msg: "${ICONS.WARNING} Cache fileUrls validation failed, skipping cache", component: "reportGenerator" });
         return { hit: false };
       }
 
       // Validar cachedData se for CachedReportData
       if (cached.cachedData !== null && !isCachedReportData(cached.cachedData)) {
-        console.warn(`${ICONS.WARNING} Cache data validation failed, skipping cache`);
+        log.warn({ msg: "${ICONS.WARNING} Cache data validation failed, skipping cache", component: "reportGenerator" });
         return { hit: false };
       }
 
@@ -351,7 +352,7 @@ export class ReportGenerator {
       };
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao verificar cache:`, error);
+      logError(`${ICONS.ERROR} Erro ao verificar cache:`, "error", { component: "reportGenerator" });
       return { hit: false };
     }
   }
@@ -523,7 +524,7 @@ export class ReportGenerator {
     summary: ReportSummary;
     tokensUsed: number;
   }> {
-    console.log(`${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...`);
+    log.info({ msg: "${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...", component: "reportGenerator" });
 
     try {
       const geminiClient = getGeminiClient();
@@ -537,11 +538,11 @@ export class ReportGenerator {
         temperature: 0.3
       });
 
-      console.log(`${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}`);
+      log.info({ msg: "${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}", component: "reportGenerator" });
 
       // Validate result with type guard
       if (!isGeminiResult(result)) {
-        console.warn(`${ICONS.WARNING} Gemini result validation failed, using mock content`);
+        log.warn({ msg: "${ICONS.WARNING} Gemini result validation failed, using mock content", component: "reportGenerator" });
         const mockContent = this.generateMockContent(payload, audienceType);
         const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
 
@@ -585,7 +586,7 @@ export class ReportGenerator {
         tokensUsed
       };
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao chamar Gemini API:`, error);
+      logError(`${ICONS.ERROR} Erro ao chamar Gemini API:`, "error", { component: "reportGenerator" });
 
       // Fallback para conteúdo mock em caso de erro
       const mockContent = this.generateMockContent(payload, audienceType);
@@ -747,7 +748,7 @@ ${clientLanguage ?
 
     // Retornar URL do arquivo (ajustar conforme necessário)
     const fileUrl = `/files/${filePath}`;
-    console.log(`${ICONS.SUCCESS} Arquivo ${format} gerado: ${fileUrl}`);
+    log.info({ msg: "${ICONS.SUCCESS} Arquivo ${format} gerado: ${fileUrl}", component: "reportGenerator" });
 
     return fileUrl;
   }
@@ -763,7 +764,7 @@ ${clientLanguage ?
   ): Promise<void> {
     // ✅ Implementar geração real de PDF com Puppeteer
     try {
-      console.log(`${ICONS.PROCESS} Gerando PDF: ${filePath}`);
+      log.info({ msg: "${ICONS.PROCESS} Gerando PDF: ${filePath}", component: "reportGenerator" });
 
       // Aplicar template ao conteúdo HTML
       const htmlContent = this.applyTemplate(content, template, 'PDF');
@@ -791,12 +792,12 @@ ${clientLanguage ?
       const result = await this.pdfEngine.generatePDF(htmlContent, pdfOptions, filePath);
 
       if (result.success) {
-        console.log(`${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)`);
+        log.info({ msg: "${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)", component: "reportGenerator" });
       } else {
         throw new Error(result.error || 'Erro desconhecido ao gerar PDF');
       }
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao gerar PDF:`, error);
+      logError(`${ICONS.ERROR} Erro ao gerar PDF:`, "error", { component: "reportGenerator" });
       throw error;
     }
   }
@@ -812,7 +813,7 @@ ${clientLanguage ?
   ): Promise<void> {
     // ✅ Implementar geração real de DOCX com docx library
     try {
-      console.log(`${ICONS.PROCESS} Gerando DOCX: ${filePath}`);
+      log.info({ msg: "${ICONS.PROCESS} Gerando DOCX: ${filePath}", component: "reportGenerator" });
 
       // Converter HTML para conteúdo estruturado para DOCX
       const htmlContent = this.applyTemplate(content, template, 'DOCX');
@@ -845,12 +846,12 @@ ${clientLanguage ?
       );
 
       if (result.success) {
-        console.log(`${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)`);
+        log.info({ msg: "${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)", component: "reportGenerator" });
       } else {
         throw new Error(result.error || 'Erro desconhecido ao gerar DOCX');
       }
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao gerar DOCX:`, error);
+      logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, "error", { component: "reportGenerator" });
       throw error;
     }
   }
@@ -941,10 +942,10 @@ ${clientLanguage ?
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Cache salvo com chave: ${cacheKey}`);
+      log.info({ msg: "${ICONS.SUCCESS} Cache salvo com chave: ${cacheKey}", component: "reportGenerator" });
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao salvar cache:`, error);
+      logError(`${ICONS.ERROR} Erro ao salvar cache:`, "error", { component: "reportGenerator" });
       // Não falhar por erro de cache
     }
   }
