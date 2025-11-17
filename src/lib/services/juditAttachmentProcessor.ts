@@ -7,6 +7,9 @@
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import { extractTextFromPDF } from '@/lib/pdf-processor';
+import { validateAttachment, getFailureReasonMessage } from './attachment-validation-service';
+import { createHash } from 'crypto';
+import { TimelineSource } from '@/lib/types/database';
 
 // ================================================================
 // TYPES
@@ -280,7 +283,43 @@ async function downloadAndProcessAttachment(
     console.log(`${ICONS.SUCCESS} [JUDIT Attachments] Baixado: ${attachment.name} (${buffer.length} bytes)`);
 
     // ============================================================
-    // 2. VERIFICAR SE JÁ FOI BAIXADO DA JUDIT
+    // 2. ⭐ VALIDAÇÃO (PORTÃO DE FERRO - Fase 21)
+    // ============================================================
+    // Valida o anexo ANTES de qualquer processamento adicional
+    // Se falhar: logar erro + criar timeline entry (NÃO enfileirar IA)
+
+    const fileType = attachment.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'doc';
+    const validationResult = await validateAttachment(buffer, attachment.name, fileType);
+
+    if (!validationResult.isValid) {
+      console.warn(
+        `${ICONS.WARNING} [JUDIT Attachments] ❌ Validação FALHOU: ${attachment.name} (${validationResult.reason})`
+      );
+
+      // Incrementar falhas
+      result.failed++;
+
+      // Adicionar mensagem de erro ao resultado
+      const errorMsg = `[Validação] ${attachment.name}: ${validationResult.reason || 'Desconhecido'} - ${validationResult.details || ''}`;
+      result.errors.push(errorMsg);
+
+      // ⭐ CRIAR TIMELINE ENTRY VISÍVEL PARA O ADVOGADO
+      await createAttachmentValidationFailureTimeline(
+        caseId,
+        attachment,
+        validationResult
+      );
+
+      // NÃO CONTINUAR - pular enfileiramento de IA
+      return;
+    }
+
+    console.log(
+      `${ICONS.SUCCESS} [JUDIT Attachments] ✅ Validação passou: ${attachment.name}`
+    );
+
+    // ============================================================
+    // 4. VERIFICAR SE JÁ FOI BAIXADO DA JUDIT (Deduplicação)
     // ============================================================
     // Para anexos JUDIT: usar attachment_id como chave única (NÃO usar hash)
     // Razão: Cada anexo da API JUDIT tem um ID único
@@ -302,7 +341,7 @@ async function downloadAndProcessAttachment(
     }
 
     // ============================================================
-    // 3. SALVAR ARQUIVO TEMPORARIAMENTE
+    // 5. SALVAR ARQUIVO TEMPORARIAMENTE
     // ============================================================
 
     // Sanitizar nome do arquivo: remover / e caracteres inválidos para evitar path traversal
@@ -319,7 +358,7 @@ async function downloadAndProcessAttachment(
     await fs.writeFile(tempPath, buffer);
 
     // ============================================================
-    // 4. EXTRAIR TEXTO (se PDF)
+    // 6. EXTRAIR TEXTO (se PDF)
     // ============================================================
 
     let extractedText = '';
@@ -343,7 +382,7 @@ async function downloadAndProcessAttachment(
     }
 
     // ============================================================
-    // 5. CLASSIFICAR TIPO DE DOCUMENTO
+    // 7. CLASSIFICAR TIPO DE DOCUMENTO
     // ============================================================
 
     const classifiedType = classifyDocumentByName(attachment.name);
@@ -358,7 +397,7 @@ async function downloadAndProcessAttachment(
     const documentType = classifiedType;
 
     // ============================================================
-    // 6. SALVAR NO BANCO
+    // 8. SALVAR NO BANCO
     // ============================================================
 
     const createdDoc = await prisma.caseDocument.create({
@@ -444,4 +483,88 @@ function classifyDocumentByName(filename: string): string {
   }
 
   return 'OTHER';
+}
+
+/**
+ * ========================================================================
+ * HELPER: Criar Timeline Entry para Falha de Validação
+ * ========================================================================
+ * Cria uma ProcessTimelineEntry visível ao advogado quando anexo falha validação
+ * Mensagem clara e acionável
+ */
+async function createAttachmentValidationFailureTimeline(
+  caseId: string,
+  attachment: JuditAttachment,
+  validationResult: { isValid: boolean; reason?: string; details?: string }
+): Promise<void> {
+  try {
+    // Extrair reason com type safety
+    const reason = validationResult.reason;
+
+    if (!reason || !['ZERO_BYTE', 'INVALID_TYPE', 'CORRUPTED', 'PASSWORD_PROTECTED'].includes(reason)) {
+      console.warn(
+        `${ICONS.WARNING} [AttachmentValidation Timeline] Reason inválido: ${reason}`
+      );
+      return;
+    }
+
+    // Mapear ValidationFailureReason para mensagem legível em PT
+    const reasonMessages: Record<string, string> = {
+      ZERO_BYTE: 'O arquivo está vazio (0 bytes)',
+      INVALID_TYPE: 'O arquivo não é um PDF válido (type inválido)',
+      CORRUPTED: 'O arquivo PDF está corrompido ou danificado',
+      PASSWORD_PROTECTED: 'O arquivo PDF está protegido por senha e não pode ser lido',
+    };
+
+    const reasonMsg = reasonMessages[reason] || 'Motivo desconhecido';
+
+    // Criar descrição clara e acionável
+    const description = `Falha na Análise de IA: O anexo "${attachment.name}" não pôde ser processado. Motivo: ${reasonMsg}.`;
+
+    // Hash para deduplicação (evitar múltiplas entradas do mesmo erro)
+    const contentHash = createHash('sha256')
+      .update(`validation-failure-${attachment.attachment_id}-${reason}`)
+      .digest('hex');
+
+    // Criar ou atualizar entry de timeline
+    await prisma.processTimelineEntry.upsert({
+      where: {
+        caseId_contentHash: { caseId, contentHash },
+      },
+      create: {
+        caseId,
+        contentHash,
+        eventDate: new Date(),
+        eventType: 'ATTACHMENT_VALIDATION_FAILED',
+        description,
+        normalizedContent: `validation-failure-${reason}`,
+        source: 'SYSTEM_IMPORT',
+        sourceId: `attachment-validation-${attachment.attachment_id}`,
+        confidence: 1.0, // Certeza de 100% (é um erro de validação)
+        contributingSources: ['SYSTEM_IMPORT'] as TimelineSource[],
+        originalTexts: {
+          SYSTEM_IMPORT: description,
+        },
+        metadata: {
+          attachmentId: attachment.attachment_id,
+          attachmentName: attachment.name,
+          validationReason: reason,
+          validationDetails: validationResult.details,
+        },
+      },
+      update: {
+        eventDate: new Date(), // Atualizar timestamp se já existir
+      },
+    });
+
+    console.log(
+      `${ICONS.SUCCESS} [AttachmentValidation Timeline] ✅ Timeline entry criada para advogado: ${attachment.name} (${reason})`
+    );
+  } catch (error) {
+    // Se falhar criar timeline, logar mas não falhar o job
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(
+      `${ICONS.ERROR} [AttachmentValidation Timeline] Erro ao criar timeline: ${errorMsg}`
+    );
+  }
 }
