@@ -314,7 +314,7 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       checkSupabase(),
       checkResendEmail(),
       checkSlack(),
-      checkJuditApi(),
+      // checkJuditApi(), // <-- Fase 31.5: Desabilitado temporariamente (JUDIT offline)
     ]);
 
     // Determine overall system status

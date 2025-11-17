@@ -14,11 +14,41 @@ export default function ContactPage() {
     message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement form submission
-    console.log('Form submitted:', formData);
-    alert('Sua mensagem foi enviada! Nossa equipe responderá em breve.breve.quot;');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          formType: 'contact',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(result.message || 'Sua mensagem foi enviada com sucesso!');
+        setFormData({
+          name: '',
+          email: '',
+          subject: '',
+          company: '',
+          message: ''
+        });
+      } else {
+        const errorMsg = result.details
+          ? Object.values(result.details).flat().join(', ')
+          : result.error || 'Erro ao enviar mensagem';
+        alert(`Erro: ${errorMsg}`);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar formulário:', error);
+      alert('Erro ao enviar mensagem. Tente novamente.');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

@@ -159,6 +159,70 @@ export function ExportButton({
     document.body.removeChild(link);
   };
 
+  const exportToPDF = async (data: unknown) => {
+    try {
+      if (!isExportData(data)) {
+        console.error('Invalid export data structure for PDF');
+        alert('Erro: dados inválidos para exportação');
+        return;
+      }
+
+      const exportData = data as Record<string, unknown>;
+
+      // Prepare request payload
+      const payload = {
+        title: 'Relatório de Dados',
+        summary: exportData.summary || {},
+        breakdown: exportData.breakdown || [],
+        dailyCosts: exportData.dailyCosts || [],
+      };
+
+      // Call API endpoint
+      const response = await fetch('/api/export/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      // Get HTML blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio-${format(new Date(), 'yyyy-MM-dd')}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Open in new tab so user can Print > Save as PDF (without revoking URL first)
+      const newTab = window.open(url, '_blank');
+      if (newTab) {
+        setTimeout(() => {
+          newTab.print();
+          // Revoke after opening
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 2000);
+        }, 500);
+      } else {
+        // Fallback: revoke immediately if can't open new tab
+        URL.revokeObjectURL(url);
+      }
+
+      console.log('PDF export initiated - user can print to PDF');
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert('Erro ao exportar para PDF. Tente novamente.');
+    }
+  };
+
   const handleExport = (format: 'csv' | 'json' | 'pdf') => {
     switch (format) {
       case 'csv':
@@ -168,8 +232,7 @@ export function ExportButton({
         exportToJSON(data);
         break;
       case 'pdf':
-        // TODO: Implement PDF export
-        alert('Exportação para PDF será implementada em breve');
+        exportToPDF(data);
         break;
     }
     setIsOpen(false);

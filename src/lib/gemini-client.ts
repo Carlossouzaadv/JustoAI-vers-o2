@@ -42,6 +42,183 @@ export class GeminiClient {
   }
 
   /**
+   * Generate content stream using Gemini API (Server-Sent Events)
+   * PADRÃO-OURO: Retorna AsyncIterable<string> para zero buffering
+   */
+  async generateContentStream(
+    prompt: string,
+    config: Partial<GeminiConfig> = {}
+  ): Promise<AsyncIterable<string>> {
+    const finalConfig: GeminiConfig = {
+      apiKey: this.apiKey,
+      model: config.model || ModelTier.BALANCED,
+      maxTokens: config.maxTokens || 3000,
+      temperature: config.temperature || 0.1,
+      topP: config.topP || 0.95,
+      topK: Math.min(config.topK || 40, 40),
+      ...config
+    };
+
+    finalConfig.topK = Math.min(finalConfig.topK || 40, 40);
+
+    await this.checkRateLimit(finalConfig.model);
+
+    const modelName = this.modelMappings[finalConfig.model];
+    // Use streamGenerateContent endpoint for SSE
+    const url = `${this.baseUrl}/models/${modelName}:streamGenerateContent?key=${this.apiKey}`;
+
+    const requestBody = {
+      contents: [{
+        parts: [{
+          text: prompt
+        }]
+      }],
+      generationConfig: {
+        temperature: finalConfig.temperature,
+        topK: finalConfig.topK,
+        topP: finalConfig.topP,
+        maxOutputTokens: finalConfig.maxTokens
+      },
+      safetySettings: [
+        {
+          category: 'HARM_CATEGORY_HARASSMENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          category: 'HARM_CATEGORY_HATE_SPEECH',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+          category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+          threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+        }
+      ]
+    };
+
+    this.updateRateLimit(finalConfig.model);
+
+    console.log(`🤖 Calling Gemini API (STREAM): ${modelName}`);
+
+    // PADRÃO-OURO: Retorna async generator (AsyncIterable)
+    return (async function* () {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json() as unknown;
+          const error = new Error(`Gemini API error: ${response.status}`);
+          (error as Record<string, unknown>).geminiError = errorData;
+          throw error;
+        }
+
+        // Type-safe handling of ReadableStream
+        if (!response.body) {
+          throw new Error('No response body from Gemini API');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+
+            // Processar linhas completas
+            for (let i = 0; i < lines.length - 1; i++) {
+              const line = lines[i].trim();
+
+              if (line.startsWith('data: ')) {
+                const jsonStr = line.substring(6);
+                try {
+                  const data = JSON.parse(jsonStr) as unknown;
+
+                  // Type guard para resposta Gemini
+                  if (
+                    typeof data === 'object' &&
+                    data !== null &&
+                    'candidates' in data
+                  ) {
+                    const candidates = (data as Record<string, unknown>).candidates as unknown[];
+                    if (Array.isArray(candidates) && candidates[0]) {
+                      const candidate = candidates[0] as Record<string, unknown>;
+                      if ('content' in candidate && candidate.content) {
+                        const content = candidate.content as Record<string, unknown>;
+                        if ('parts' in content && Array.isArray(content.parts)) {
+                          const parts = content.parts;
+                          const part = parts[0] as Record<string, unknown> | undefined;
+                          if (part && 'text' in part && typeof part.text === 'string') {
+                            yield part.text;
+                          }
+                        }
+                      }
+                    }
+                  }
+                } catch (parseError) {
+                  console.warn('Failed to parse Gemini stream chunk:', parseError);
+                }
+              }
+            }
+
+            // Manter última linha incompleta no buffer
+            buffer = lines[lines.length - 1];
+          }
+
+          // Processar qualquer conteúdo restante no buffer
+          const lastLine = buffer.trim();
+          if (lastLine.startsWith('data: ')) {
+            const jsonStr = lastLine.substring(6);
+            try {
+              const data = JSON.parse(jsonStr) as unknown;
+              if (
+                typeof data === 'object' &&
+                data !== null &&
+                'candidates' in data
+              ) {
+                const candidates = (data as Record<string, unknown>).candidates as unknown[];
+                if (Array.isArray(candidates) && candidates[0]) {
+                  const candidate = candidates[0] as Record<string, unknown>;
+                  if ('content' in candidate && candidate.content) {
+                    const content = candidate.content as Record<string, unknown>;
+                    if ('parts' in content && Array.isArray(content.parts)) {
+                      const parts = content.parts;
+                      const part = parts[0] as Record<string, unknown> | undefined;
+                      if (part && 'text' in part && typeof part.text === 'string') {
+                        yield part.text;
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (parseError) {
+              console.warn('Failed to parse final Gemini stream chunk:', parseError);
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      } catch (error) {
+        console.error('Gemini stream error:', error);
+        throw error;
+      }
+    })();
+  }
+
+  /**
    * Generate content using Gemini API with the specified configuration
    */
   async generateContent(

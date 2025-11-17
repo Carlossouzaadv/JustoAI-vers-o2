@@ -232,28 +232,38 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
     setIsSaving(true);
     try {
-      // TODO: Implementar API endpoint para atualizar documento
-      // const response = await fetch(`/api/documents/${editingDocument.id}`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     name: editName,
-      //     category: editCategory,
-      //     notes: editNotes,
-      //   }),
-      // });
-
-      // Por enquanto, apenas atualizar no estado local
+      // Save document metadata locally
       setDocuments(documents.map(doc =>
         doc.id === editingDocument.id
           ? { ...doc, name: editName, category: editCategory }
           : doc
       ));
 
+      // Save notes to backend if notes were added
+      if (editNotes.trim()) {
+        const response = await fetch(`/api/documents/${editingDocument.id}/notes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: `Observação do documento: ${editName}`,
+            description: editNotes,
+            priority: 'normal',
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erro ao salvar notas');
+        }
+
+        console.log('Notas do documento salvas com sucesso');
+      }
+
       setEditingDocument(null);
     } catch (error) {
       console.error('Erro ao salvar documento:', error);
-      alert('Erro ao salvar documento');
+      alert('Erro ao salvar documento. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -562,17 +572,15 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
               </Select>
             </div>
 
-            {/* Observações/Tags - TODO */}
+            {/* Observações/Tags */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Observações (em desenvolvimento)</label>
+              <label className="text-sm font-medium">Observações</label>
               <Input
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 placeholder="Adicione observações sobre o documento..."
-                disabled
-                className="opacity-50"
               />
-              <p className="text-xs text-muted-foreground">Funcionalidade em desenvolvimento</p>
+              <p className="text-xs text-muted-foreground">Notas associadas a este documento</p>
             </div>
           </div>
 

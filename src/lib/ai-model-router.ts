@@ -1423,6 +1423,109 @@ RETORNE APENAS UM JSON VÁLIDO seguindo o schema fornecido.`;
   }
 
   /**
+   * Análise ESTRATÉGICA em STREAM - PADRÃO-OURO (Fase 34)
+   * Retorna AsyncIterable<string> para zero buffering
+   * Piping direto do Gemini → Cliente sem acumular em memória
+   */
+  async analyzeStrategicStream(
+    text: string,
+    workspaceId?: string
+  ): Promise<AsyncIterable<string>> {
+    const { getGeminiClient } = await import('./gemini-client');
+    const { ICONS } = await import('./icons');
+
+    log.info({
+      msg: '${ICONS.STREAM} Análise ESTRATÉGICA em STREAM iniciada',
+      component: 'aiModelRouter'
+    });
+
+    const geminiClient = getGeminiClient();
+    const complexity = this.analyzeComplexity(text);
+    const config = this.getProcessingConfig(complexity, 'legal');
+
+    // Gerar prompt otimizado
+    const prompt = this.buildAnalysisPrompt(
+      text,
+      'strategic',
+      config.promptTemplate
+    );
+
+    // PADRÃO-OURO: Chamar streaming e retornar iterator direto
+    const streamIterator = await geminiClient.generateContentStream(prompt, {
+      model: complexity.recommendedTier,
+      maxTokens: config.maxTokens,
+      temperature: config.temperature
+    });
+
+    log.info({
+      msg: '${ICONS.SUCCESS} Stream estratégico iniciado (${complexity.recommendedTier})',
+      component: 'aiModelRouter'
+    });
+
+    // Retornar iterator como-é (não acumular em memória)
+    return streamIterator;
+  }
+
+  /**
+   * Análise PHASE 1 em STREAM - PADRÃO-OURO (Fase 34)
+   * Retorna AsyncIterable<string> para zero buffering
+   * Piping direto do Gemini → Cliente sem acumular em memória
+   */
+  async analyzePhase1Stream(
+    text: string,
+    workspaceId?: string
+  ): Promise<AsyncIterable<string>> {
+    const { getGeminiClient } = await import('./gemini-client');
+    const { ICONS } = await import('./icons');
+
+    log.info({
+      msg: '${ICONS.STREAM} Análise PHASE 1 em STREAM iniciada',
+      component: 'aiModelRouter'
+    });
+
+    const geminiClient = getGeminiClient();
+
+    // Usar configuração LITE-first para Phase 1
+    const phaseOneComplexity: ComplexityScore = {
+      totalScore: 0,
+      factors: {
+        documentType: 0,
+        textLength: 0,
+        legalComplexity: 0,
+        structuralComplexity: 0,
+        filesizeComplexity: 0
+      },
+      recommendedTier: ModelTier.LITE,
+      confidence: 0.9,
+      documentType: 'PHASE_1_ANALYSIS'
+    };
+
+    const config = this.getProcessingConfig(phaseOneComplexity, 'legal');
+
+    // Gerar prompt otimizado para Phase 1
+    const prompt = this.buildAnalysisPrompt(
+      text,
+      'phase1',
+      config.promptTemplate
+    );
+
+    // PADRÃO-OURO: Chamar streaming e retornar iterator direto
+    const streamIterator = await geminiClient.generateContentStream(prompt, {
+      model: ModelTier.LITE,
+      maxTokens: config.maxTokens,
+      temperature: config.temperature
+    });
+
+    log.info({
+      msg: '${ICONS.SUCCESS} Stream Phase 1 iniciado (LITE)',
+      component: 'aiModelRouter'
+    });
+
+    // Retornar iterator como-é (não acumular em memória)
+    return streamIterator;
+  }
+
+  /**
    * Model mappings for Gemini API
    */
   private readonly modelMappings: Record<ModelTier, string> = {

@@ -11,6 +11,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
 import { spawnSync } from 'child_process';
+import { PDFExtractionService } from '@/lib/services/pdf-extraction-service';
 
 const ICONS = {
   SUCCESS: '✅',
@@ -111,37 +112,9 @@ function executeWithTimeout(
 }
 
 // ================================================================
-// TEXT CLEANING
+// NOTE: Text cleaning and process number extraction are now handled
+// by PDFExtractionService.extractAndClean() - See /lib/services/pdf-extraction-service.ts
 // ================================================================
-function cleanText(text: string): string {
-  if (!text) return '';
-
-  const cleaned = text
-    .replace(/\n{3,}/g, '\n\n') // Reduz quebras de linha múltiplas
-    .replace(/\s{2,}/g, ' ') // Reduz espaços múltiplos
-    .trim();
-
-  return cleaned;
-}
-
-// ================================================================
-// EXTRACT PROCESS NUMBER
-// ================================================================
-function extractProcessNumber(text: string): string | null {
-  const patterns = [
-    /\b\d{7}[-.]?\d{2}[-.]?\d{4}[-.]?\d[-.]?\d{2}[-.]?\d{4}\b/, // CNJ moderno
-    /\b\d{4}\.\d{2}\.\d{6}[-.]?\d\b/, // CNJ antigo
-  ];
-
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) {
-      return match[0];
-    }
-  }
-
-  return null;
-}
 
 // ================================================================
 // ENDPOINT PRINCIPAL
@@ -207,32 +180,37 @@ export async function POST(request: NextRequest) {
     }
 
 
-    // 4. LIMPAR TEXTO
-    const cleanedText = cleanText(extractedText);
+    // 4. LIMPAR TEXTO COM GOLD STANDARD SERVICE
+    const pdfExtractionService = new PDFExtractionService();
+    const extractionResult = pdfExtractionService.extractAndClean(extractedText);
 
-    // 5. EXTRAIR PROCESSO (mesmo se texto vazio)
-    const processNumber = extractedText ? extractProcessNumber(extractedText) : null;
-
-    // 6. PREPARAR RESPOSTA
+    // 5. PREPARAR RESPOSTA
     const totalTime = Date.now() - startTime;
 
     log('success', 'PDF processed', {
       totalTime: `${totalTime}ms`,
-      textLength: extractedText.length,
-      hasText: extractedText.length > 0,
+      textLength: extractionResult.originalText.length,
+      cleanedLength: extractionResult.cleanedText.length,
+      quality: extractionResult.quality,
+      hasProcess: extractionResult.processNumber !== null,
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        originalText: extractedText || '',
-        cleanedText: cleanedText || '',
-        processNumber: processNumber || null,
+        originalText: extractionResult.originalText,
+        cleanedText: extractionResult.cleanedText,
+        processNumber: extractionResult.processNumber,
+        quality: extractionResult.quality,
         metrics: {
-          originalLength: extractedText.length,
-          cleanedLength: cleanedText.length,
+          originalLength: extractionResult.metrics.originalLength,
+          cleanedLength: extractionResult.metrics.cleanedLength,
+          reductionPercentage: extractionResult.metrics.reductionPercentage,
           extractionTimeMs: extractionTimeMs,
+          processingTimeMs: extractionResult.metrics.processingTimeMs,
           totalTimeMs: totalTime,
+          confidence: extractionResult.metrics.confidence,
+          patternsApplied: extractionResult.metrics.patternsApplied,
         },
       },
     });

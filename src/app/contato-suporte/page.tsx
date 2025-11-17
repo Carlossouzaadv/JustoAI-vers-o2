@@ -15,11 +15,41 @@ export default function ContatoSuportePage() {
     name: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement form submission
-    console.log('Form submitted:', formData);
-    alert('Seu ticket foi enviado! Nossa equipe responderá em até 24 horas úteis.');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...formData,
+          formType: 'support',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(result.message || 'Seu ticket foi enviado com sucesso!');
+        setFormData({
+          problemType: '',
+          subject: '',
+          description: '',
+          email: '',
+          name: ''
+        });
+      } else {
+        const errorMsg = result.details
+          ? Object.values(result.details).flat().join(', ')
+          : result.error || 'Erro ao enviar ticket';
+        alert(`Erro: ${errorMsg}`);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar formulário:', error);
+      alert('Erro ao enviar ticket. Tente novamente.');
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
