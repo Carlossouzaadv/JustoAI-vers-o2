@@ -161,17 +161,19 @@ export async function POST(request: NextRequest) {
 
       // Validar que responseData é um record (type guard)
       if (!isJuditLawsuitResponse(responseData)) {
-        log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Dados de resposta inválidos`, { responseType }, component: "juditWebhookCallback" });
+        log.warn({ msg: `Dados de resposta inválidos`, responseType, component: "juditWebhookCallback" });
         return NextResponse.json(
           { error: 'Dados de resposta inválidos' },
           { status: 400 }
         );
       }
 
-      console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Resposta recebida:`, {
+      log.info({
+        msg: 'Resposta recebida',
         responseType,
         cached: isCachedResponse,
         cnj: hasCode(responseData) ? getCodeAsString(responseData) : undefined,
+        component: 'juditWebhookCallback'
       });
 
       // Encontrar o processo que iniciou essa requisição COM CASE ID EXPLÍCITO
@@ -198,19 +200,20 @@ export async function POST(request: NextRequest) {
           where: { id: juditRequest.caseId }
         });
         if (!targetCase) {
-          console.error(
-            `${ICONS.ERROR} [JUDIT Webhook] Case não encontrado com ID explícito:`,
-            juditRequest.caseId
-          );
+          logError(new Error('Case not found'), 'Case não encontrado com ID explícito', {
+            component: 'juditWebhookCallback',
+            caseId: juditRequest.caseId
+          });
           return NextResponse.json(
             { error: 'Case com ID explícito não encontrado' },
             { status: 404 }
           );
         }
 
-        console.log(
-          `${ICONS.SUCCESS} [JUDIT Webhook] Usando case ID explícito: ${targetCase.id}`
-        );
+        log.info({
+          msg: `Usando case ID explícito: ${targetCase.id}`,
+          component: 'juditWebhookCallback'
+        });
       }
 
       // Se há um caso associado, atualizar com dados da JUDIT
@@ -224,9 +227,12 @@ export async function POST(request: NextRequest) {
         const processedRequestIds = (isRecord(currentMetadata) && Array.isArray(currentMetadata.processed_webhook_request_ids) ? currentMetadata.processed_webhook_request_ids : []) as string[];
 
         if (processedRequestIds.includes(requestId)) {
-          console.warn(
-            `${ICONS.WARNING} [JUDIT Webhook] Webhook duplicado detectado (requestId: ${requestId}, case: ${targetCase.id}). Ignorando.`
-          );
+          log.warn({
+            msg: `Webhook duplicado detectado. Ignorando.`,
+            component: 'juditWebhookCallback',
+            requestId,
+            caseId: targetCase.id
+          });
           // Retornar sucesso mas não processar novamente
           return NextResponse.json({
             success: true,
@@ -257,7 +263,9 @@ export async function POST(request: NextRequest) {
         try {
           const unificationResult = await mergeTimelines(targetCase.id);
 
-          console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Timeline unificada com enriquecimento:`, {
+          log.info({
+            msg: 'Timeline unificada com enriquecimento',
+            component: 'juditWebhookCallback',
             case_id: targetCase.id,
             total_analyzed: unificationResult.total,
             new_events: unificationResult.new,
@@ -267,10 +275,10 @@ export async function POST(request: NextRequest) {
             conflicts: unificationResult.conflicts,
           });
         } catch (unificationError) {
-          console.error(
-            `${ICONS.ERROR} [JUDIT Webhook] Erro na unificação de timeline:`,
-            unificationError
-          );
+          logError(unificationError, 'Erro na unificação de timeline', {
+            component: 'juditWebhookCallback',
+            caseId: targetCase.id
+          });
           // Continuar mesmo se erro - não falha o webhook
         }
 
@@ -286,7 +294,9 @@ export async function POST(request: NextRequest) {
               getInstanceAsNumber(responseData) // instance (safe extraction - number or undefined)
             );
 
-            console.log(`${ICONS.SUCCESS} [JUDIT Webhook] Anexos processados:`, {
+            log.info({
+              msg: 'Anexos processados',
+              component: 'juditWebhookCallback',
               total: attachmentResult.total,
               downloaded: attachmentResult.downloaded,
               processed: attachmentResult.processed,
@@ -409,7 +419,9 @@ export async function POST(request: NextRequest) {
           : undefined;
       }
 
-      console.error(`${ICONS.ERROR} [JUDIT Webhook] Erro reportado pela JUDIT:`, {
+      log.error({
+        msg: 'Erro reportado pela JUDIT',
+        component: 'juditWebhookCallback',
         errorCode,
         errorMessage
       });
