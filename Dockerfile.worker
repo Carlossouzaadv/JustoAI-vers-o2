@@ -1,0 +1,58 @@
+# ========================================
+# JustoAI V2 - Worker Dockerfile
+# ========================================
+# Optimized for JUDIT Onboarding Worker
+# Handles graceful shutdown with proper signal forwarding
+#
+# Build: docker build -f Dockerfile.worker -t justoai-worker .
+# Run:   docker run --env-file .env.production justoai-worker
+
+FROM node:22-bookworm AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY .npmrc* ./
+
+# Install dependencies
+RUN npm install --legacy-peer-deps --prefer-offline --no-audit --ignore-scripts
+
+# Copy source code
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Production image
+FROM node:22-bookworm-slim
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+# Copy built artifacts from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.prisma ./.prisma
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/package.json ./
+
+# Copy source code (needed for workers)
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma ./prisma
+
+# Set environment
+ENV NODE_ENV=production
+
+# Create non-root user
+RUN useradd -m -u 1001 worker && chown -R worker:worker /app
+USER worker
+
+# Critical: Use node directly with tsx loader to ensure proper signal handling
+# This makes node PID 1 instead of npm, allowing graceful shutdown
+# SIGTERM will be properly forwarded to the worker process
+CMD ["node", "--loader", "tsx/esm", "src/workers/juditOnboardingWorker.ts"]
+
+# Alternative if --loader doesn't work (fallback):
+# CMD ["npx", "tsx", "--esm", "src/workers/juditOnboardingWorker.ts"]

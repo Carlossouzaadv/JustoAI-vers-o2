@@ -63,6 +63,38 @@ services:
     networks:
       - justoai-network
 
+  # JUDIT Onboarding Worker
+  # Processes document onboarding jobs asynchronously
+  # Signal handling: Uses node --loader for proper SIGTERM forwarding
+  judit-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: justoai-judit-worker
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - REDIS_URL=redis://redis:6379
+      - JUDIT_API_KEY=${JUDIT_API_KEY}
+      - JUDIT_BASE_URL=${JUDIT_BASE_URL}
+      - WORKER_CONCURRENCY=2
+    depends_on:
+      - redis
+      - supabase-db
+    networks:
+      - justoai-network
+    # Critical: Give worker 30 seconds for graceful shutdown
+    # Prevents SIGTERM errors during redeployment
+    stop_grace_period: 30s
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 volumes:
   supabase_db_data:
   redis_data:
