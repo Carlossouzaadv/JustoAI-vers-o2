@@ -954,6 +954,9 @@ enum Plan {
   FREE
   STARTER
   PROFESSIONAL
+  GESTAO
+  PERFORMANCE
+  ENTERPRISE
 }
 
 enum Status {
