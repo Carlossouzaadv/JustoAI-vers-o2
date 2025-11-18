@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         users: true,
+        credits: true,
       },
     })
 
@@ -127,8 +128,8 @@ export async function POST(request: NextRequest) {
     // Send welcome email to user
     try {
       const { sendWelcomeEmail } = await import('@/lib/email-service');
-      const reportCredits = workspace.credits?.reportCreditsBalance || 50;
-      const fullCredits = workspace.credits?.fullCreditsBalance || 50;
+      const reportCredits = Number(workspace.credits?.reportCreditsBalance || 50);
+      const fullCredits = Number(workspace.credits?.fullCreditsBalance || 50);
       const totalCredits = reportCredits + fullCredits;
 
       await sendWelcomeEmail(
