@@ -1,3 +1,19 @@
+/**
+ * ⚠️  DEPRECATED: This file is superseded by src/config/plans.ts (SSOT)
+ *
+ * The single source of truth for plan configurations is now:
+ * - src/config/plans.ts - Plan definitions (GESTAO, PERFORMANCE)
+ * - src/lib/services/planService.ts - Service layer to access plans
+ *
+ * Plan names have changed:
+ * - 'starter' → 'gestao'
+ * - 'professional' → 'performance'
+ * - 'enterprise' → 'enterprise' (kept for backwards compatibility)
+ *
+ * This file is kept for backwards compatibility. New code should use:
+ * import { PlanService } from '@/lib/services/planService'
+ */
+
 export type SubscriptionPlan = 'starter' | 'professional' | 'enterprise';
 
 export interface PlanLimits {

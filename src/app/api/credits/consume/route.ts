@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils'
 import { getCreditManager } from '@/lib/credit-system'
+import { PlanService } from '@/lib/services/planService'
 import { ICONS } from '@/lib/icons'
 
 // Consumption request validation schema
@@ -106,41 +107,48 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 })
 
 // GET endpoint to estimate credit cost for different operations
+// Uses unified credit system from SSOT (src/config/plans.ts)
 export const GET = withErrorHandler(async (request: NextRequest) => {
   const { error: authError } = await requireAuth(request)
   if (authError) return authError
 
   const { searchParams } = new URL(request.url)
   const processCount = parseInt(searchParams.get('processCount') || '1')
-  const analysisType = searchParams.get('analysisType') || 'FAST' // FAST or FULL
+  const operationType = searchParams.get('type') || 'report' // report or full_analysis
 
   try {
-    const creditSystem = getCreditManager()
+    const estimatedCost = { totalCredits: 0, unifiedCredits: 0 }
 
-    const estimatedCost = { reportCredits: 0, fullCredits: 0 }
-
-    if (analysisType === 'FAST') {
-      // Calculate micro-tier pricing for report credits
-      estimatedCost.reportCredits = creditSystem.calculateReportCreditCost(processCount)
-    } else if (analysisType === 'FULL') {
-      // FULL analysis pricing (10 processes per credit)
-      estimatedCost.fullCredits = Math.ceil(processCount / 10)
+    if (operationType === 'report') {
+      // Unified rate: 1 credit per ~50 processes
+      estimatedCost.unifiedCredits = PlanService.calculateReportCost(processCount)
+      estimatedCost.totalCredits = estimatedCost.unifiedCredits
+    } else if (operationType === 'full_analysis') {
+      // Full analysis: 1 credit per analysis (regardless of process count)
+      estimatedCost.unifiedCredits = PlanService.calculateFullAnalysisCost()
+      estimatedCost.totalCredits = estimatedCost.unifiedCredits
     }
 
     return successResponse({
+      operationType,
       processCount,
-      analysisType,
-      estimatedCost,
-      pricing: {
-        reportCreditTiers: [
-          { processes: '1-5', creditCost: 0.25 },
-          { processes: '6-12', creditCost: 0.5 },
-          { processes: '13-25', creditCost: 1.0 }
-        ],
-        fullCreditTier: {
-          processes: 'up to 10 per credit',
-          creditCost: 1.0
+      estimatedCost: {
+        unifiedCredits: estimatedCost.unifiedCredits,
+        totalCredits: estimatedCost.totalCredits
+      },
+      creditRates: {
+        reportCost: 'Unified: 1 credit per ~50 processes',
+        fullAnalysisCost: 'Unified: 1 credit per analysis',
+        examples: {
+          report50Processes: '1 credit',
+          report100Processes: '2 credits',
+          report150Processes: '3 credits',
+          fullAnalysis: '1 credit'
         }
+      },
+      systemInfo: {
+        creditSystem: 'Unified credits system',
+        description: 'One credit type for both reports and full analyses'
       }
     })
 

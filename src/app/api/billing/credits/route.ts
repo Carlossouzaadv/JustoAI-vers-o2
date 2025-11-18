@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { usageTracker } from '@/lib/telemetry/usage-tracker';
 import { quotaEnforcement } from '@/lib/middleware/quota-enforcement';
 import { getCredits } from '@/lib/services/creditService';
+import { PlanService } from '@/lib/services/planService';
 import { ICONS } from '@/lib/icons';
 
 // ================================================================
@@ -105,35 +106,29 @@ function isPaymentWebhookPayload(data: unknown): data is PaymentWebhookPayload {
 }
 
 // ================================================================
-// CONFIGURAÇÃO DE PACOTES
+// CONFIGURAÇÃO DE PACOTES (FROM SSOT)
 // ================================================================
 
-const CREDIT_PACKAGES: CreditPackage[] = [
-  {
-    id: 'extra_reports_5',
-    name: '5 Relatórios Extras',
-    description: 'Pacote básico para necessidades ocasionais',
-    reportCredits: 5,
-    price: 29.90
-  },
-  {
-    id: 'extra_reports_20',
-    name: '20 Relatórios Extras',
-    description: 'Ideal para escritórios pequenos e médios',
-    reportCredits: 20,
-    price: 99.90,
-    discount: 15,
-    popular: true
-  },
-  {
-    id: 'extra_reports_50',
-    name: '50 Relatórios Extras',
-    description: 'Para grandes volumes e escritórios maiores',
-    reportCredits: 50,
-    price: 199.90,
-    discount: 25
-  }
-];
+/**
+ * Get credit packages from SSOT (src/config/plans.ts)
+ * Mapping new unified system to legacy package format for backwards compatibility
+ */
+function getCreditPackages(): CreditPackage[] {
+  return PlanService.getAllCreditPacks().map(pack => {
+    const priceInfo = PlanService.getCreditPackEffectivePrice(pack);
+    const discountPercent = Math.round(pack.discount * 100);
+
+    return {
+      id: pack.id,
+      name: pack.name,
+      description: pack.description,
+      reportCredits: pack.credits, // Map unified credits to reportCredits for backward compat
+      price: pack.priceCents / 100, // Convert centavos to BRL
+      discount: discountPercent > 0 ? discountPercent : undefined,
+      popular: pack.id === 'pack-credits-medium' // Middle pack is popular
+    };
+  });
+}
 
 // ================================================================
 // HANDLERS DE ENDPOINTS
@@ -157,7 +152,7 @@ export async function GET(request: NextRequest) {
         return await getCreditBalance(workspaceId);
 
       case 'packages':
-        return await getCreditPackages();
+        return await getCreditPackagesEndpoint();
 
       case 'transactions':
         // Return empty transactions to avoid database errors
@@ -242,11 +237,11 @@ async function getCreditBalance(workspaceId: string): Promise<NextResponse> {
   }
 }
 
-async function getCreditPackages(): Promise<NextResponse> {
+async function getCreditPackagesEndpoint(): Promise<NextResponse> {
   return NextResponse.json({
     success: true,
     data: {
-      packages: CREDIT_PACKAGES,
+      packages: getCreditPackages(),
       currency: 'BRL',
       paymentMethods: ['credit_card', 'pix', 'boleto']
     }
@@ -322,7 +317,7 @@ async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
             percentage: 0
           }
         },
-        packages: CREDIT_PACKAGES,
+        packages: getCreditPackages(),
         recommendations: []
       }
     });
@@ -348,7 +343,7 @@ async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
             percentage: 0
           }
         },
-        packages: CREDIT_PACKAGES,
+        packages: getCreditPackages(),
         recommendations: []
       }
     });
@@ -367,8 +362,8 @@ async function purchaseCredits(request: CreditPurchaseRequest): Promise<NextResp
       );
     }
 
-    // Buscar pacote
-    const package_ = CREDIT_PACKAGES.find(p => p.id === packageType);
+    // Buscar pacote from SSOT
+    const package_ = getCreditPackages().find(p => p.id === packageType);
     if (!package_) {
       return NextResponse.json(
         { error: 'Pacote não encontrado' },
@@ -515,7 +510,8 @@ async function simulatePurchase(request: {
   try {
     const { packageType, quantity } = request;
 
-    const package_ = CREDIT_PACKAGES.find(p => p.id === packageType);
+    // Use getCreditPackages() from SSOT
+    const package_ = getCreditPackages().find((p: CreditPackage) => p.id === packageType);
     if (!package_) {
       return NextResponse.json(
         { error: 'Pacote não encontrado' },

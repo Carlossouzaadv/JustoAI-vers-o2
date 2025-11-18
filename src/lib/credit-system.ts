@@ -72,20 +72,37 @@ export interface CreditAllocationBreakdown {
   expiresAt?: Date;
 }
 
-// Configurações default conforme especificação
+/**
+ * DEPRECATED: Plan configurations below are superseded by src/config/plans.ts (SSOT)
+ *
+ * ⚠️  IMPORTANT:
+ * - The SINGLE SOURCE OF TRUTH for plans is now: src/config/plans.ts
+ * - Plan names have changed: STARTER→gestao, PROFESSIONAL→performance, ENTERPRISE→enterprise
+ * - Credit rates have unified: micro-tiers (0.25/0.5/1.0) → unified (1 credit per 50 processes)
+ *
+ * This CREDIT_CONFIG is kept for backwards compatibility with existing database records.
+ * New code should use PlanService from src/lib/services/planService.ts
+ *
+ * Migration path for old plan names:
+ * - 'starter' / 'STARTER' → 'gestao'
+ * - 'professional' / 'PROFESSIONAL' → 'performance'
+ * - 'enterprise' / 'ENTERPRISE' → 'enterprise'
+ */
 export const CREDIT_CONFIG = {
-  REPORT_CREDIT_UNIT: 25, // Até 25 processos = 1 report credit
-  FULL_CREDIT_PER_BATCH: 10, // Até 10 processos = 1 FULL credit
+  // DEPRECATED: These micro-tier rates are superseded by unified rate from SSOT
+  // New rate: 1 credit per ~50 processes (see src/config/plans.ts)
+  REPORT_CREDIT_UNIT: 25, // [DEPRECATED] Use src/config/plans.ts instead
+  FULL_CREDIT_PER_BATCH: 10, // [DEPRECATED] Use src/config/plans.ts instead
 
-  // Micro-tiers para report credits
-  TIER_1_PROCESSES: 5,    // 1-5 processes = 0.25 credit
-  TIER_1_COST: 0.25,
-  TIER_2_PROCESSES: 12,   // 6-12 processes = 0.5 credit
-  TIER_2_COST: 0.5,
-  TIER_3_PROCESSES: 25,   // 13-25 processes = 1 credit
-  TIER_3_COST: 1.0,
+  // Micro-tiers para report credits [DEPRECATED]
+  TIER_1_PROCESSES: 5,    // [DEPRECATED] Use SSOT from src/config/plans.ts
+  TIER_1_COST: 0.25,      // [DEPRECATED]
+  TIER_2_PROCESSES: 12,   // [DEPRECATED]
+  TIER_2_COST: 0.5,       // [DEPRECATED]
+  TIER_3_PROCESSES: 25,   // [DEPRECATED]
+  TIER_3_COST: 1.0,       // [DEPRECATED]
 
-  // Configurações de plano
+  // Configurações de plano [DEPRECATED - See src/config/plans.ts]
   PLANS: {
     STARTER: {
       monitorLimit: 100,

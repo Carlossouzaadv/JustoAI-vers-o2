@@ -17,91 +17,61 @@
   },
   "plans": [
     {
-      "id": "starter",
-      "name": "Starter",
-      "subtitle": "Para pequenos escritórios começando com automação",
-      "price_monthly": 297,
-      "price_annual": 250.45,
+      "id": "gestao",
+      "name": "Gestão",
+      "subtitle": "Para escritórios que começam com automação jurídica inteligente",
+      "price_monthly": 497,
+      "price_annual": 423.45,
       "trial_days": 7,
       "popular": false,
       "custom_pricing": false,
       "highlighted_features": [
-        "Até 50 processos monitorados",
-        "20 relatórios/mês",
-        "36 créditos de relatório/mês",
-        "12 análises completas/mês",
-        "Suporte por email"
+        "Até 200 processos monitorados",
+        "3 Usuários",
+        "10 créditos/mês",
+        "50 créditos no onboarding (30 dias)",
+        "Suporte Email/IA"
       ],
       "features": {
-        "processes": 50,
-        "reports_monthly": 20,
-        "report_credits": 36,
-        "full_credits": 12,
+        "processes": 200,
         "users": 3,
-        "support": "email"
+        "monthly_credits": 10,
+        "onboarding_credits": 50,
+        "onboarding_expiry_days": 30,
+        "support": "email_ia",
+        "reports_unlimited": true,
+        "strategic_revalidation": true,
+        "csv_import": true,
+        "template_type": "standard"
       }
     },
     {
-      "id": "professional",
-      "name": "Professional",
-      "subtitle": "Para escritórios em crescimento que precisam de mais poder",
-      "price_monthly": 697,
-      "price_annual": 592.45,
+      "id": "performance",
+      "name": "Performance",
+      "subtitle": "Para escritórios que precisam de mais poder e flexibilidade",
+      "price_monthly": 1197,
+      "price_annual": 1017.45,
       "trial_days": 7,
       "popular": true,
       "custom_pricing": false,
       "highlighted_features": [
-        "Até 200 processos monitorados",
-        "60 relatórios/mês",
-        "120 créditos de relatório/mês",
-        "40 análises completas/mês",
-        "Usuários ilimitados",
-        "Suporte prioritário",
-        "Relatórios personalizados",
-        "API access"
+        "Até 500 processos monitorados",
+        "10 Usuários",
+        "30 créditos/mês",
+        "150 créditos no onboarding (30 dias)",
+        "Suporte Email, IA & WhatsApp"
       ],
       "features": {
-        "processes": 200,
-        "reports_monthly": 60,
-        "report_credits": 120,
-        "full_credits": 40,
-        "users": -1,
-        "support": "priority",
-        "custom_reports": true,
-        "api_access": true
-      }
-    },
-    {
-      "id": "enterprise",
-      "name": "Enterprise",
-      "subtitle": "Para grandes escritórios com necessidades personalizadas",
-      "price_monthly": null,
-      "price_annual": null,
-      "trial_days": 14,
-      "popular": false,
-      "custom_pricing": true,
-      "highlighted_features": [
-        "Processos ilimitados",
-        "Relatórios ilimitados",
-        "Créditos personalizados",
-        "Análises ilimitadas",
-        "Usuários ilimitados",
-        "Suporte dedicado 24/7",
-        "Treinamento personalizado",
-        "Integrações customizadas",
-        "SLA garantido"
-      ],
-      "features": {
-        "processes": -1,
-        "reports_monthly": -1,
-        "report_credits": -1,
-        "full_credits": -1,
-        "users": -1,
-        "support": "dedicated",
-        "custom_reports": true,
-        "api_access": true,
-        "sla": true,
-        "training": true
+        "processes": 500,
+        "users": 10,
+        "monthly_credits": 30,
+        "onboarding_credits": 150,
+        "onboarding_expiry_days": 30,
+        "support": "email_ia_whatsapp",
+        "reports_unlimited": true,
+        "strategic_revalidation": true,
+        "csv_import": true,
+        "template_type": "branded"
       }
     }
   ],
@@ -112,85 +82,68 @@
       "features": [
         {
           "name": "Processos monitorados",
-          "starter": "50",
-          "professional": "200",
-          "enterprise": "Ilimitado"
+          "gestao": "200",
+          "performance": "500"
         },
         {
           "name": "Sincronização automática",
-          "starter": true,
-          "professional": true,
-          "enterprise": true
+          "gestao": true,
+          "performance": true
         },
         {
           "name": "Alertas em tempo real",
-          "starter": true,
-          "professional": true,
-          "enterprise": true
-        },
-        {
-          "name": "Integração com tribunais",
-          "starter": "Básica",
-          "professional": "Completa",
-          "enterprise": "Personalizada"
+          "gestao": true,
+          "performance": true
         }
       ]
     },
       {
-        "name": "Relatórios",
+        "name": "Créditos",
       "features": [
         {
-          "name": "Relatórios mensais",
-          "starter": "20",
-          "professional": "60",
-          "enterprise": "Ilimitado"
+          "name": "Créditos mensais",
+          "gestao": "10",
+          "performance": "30"
         },
         {
-          "name": "Créditos de relatório/mês",
-          "starter": "36",
-          "professional": "120",
-          "enterprise": "Personalizado"
+          "name": "Créditos onboarding (30 dias)",
+          "gestao": "50",
+          "performance": "150"
         },
         {
-          "name": "Análises completas/mês",
-          "starter": "12",
-          "professional": "40",
-          "enterprise": "Ilimitado"
+          "name": "Análise Completa (custo)",
+          "gestao": "1 crédito",
+          "performance": "1 crédito"
         },
         {
-          "name": "Personalização de marca",
-          "starter": false,
-          "professional": true,
-          "enterprise": true
+          "name": "Relatórios (custo)",
+          "gestao": "1 crédito por ~50 processos",
+          "performance": "1 crédito por ~50 processos"
         }
       ]
     },
       {
-        "name": "Inteligência Artificial",
+        "name": "Funcionalidades",
       "features": [
         {
-          "name": "Análise de documentos",
-          "starter": true,
-          "professional": true,
-          "enterprise": true
+          "name": "Relatórios agendados e avulsos",
+          "gestao": "Ilimitado",
+          "performance": "Ilimitado"
         },
         {
-          "name": "Resumos automáticos",
-          "starter": true,
-          "professional": true,
-          "enterprise": true
+          "name": "Revalidação Estratégica da IA",
+          "gestao": true,
+          "performance": true
         },
         {
-          "name": "Extração de dados",
-          "starter": "Básica",
-          "professional": "Avançada",
-          "enterprise": "Personalizada"
+          "name": "Importação via CSV/Excel",
+          "gestao": true,
+          "performance": true
         },
         {
-          "name": "Modelos de IA dedicados",
-          "starter": false,
-          "professional": false,
-          "enterprise": true
+          "name": "Templates de Relatório",
+          "gestao": "Padrão JustoAI",
+          "performance": "Logo e Cores do Cliente"
         }
       ]
     },
@@ -199,21 +152,8 @@
       "features": [
         {
           "name": "Usuários incluídos",
-          "starter": "3",
-          "professional": "Ilimitado",
-          "enterprise": "Ilimitado"
-        },
-        {
-          "name": "Permissões granulares",
-          "starter": false,
-          "professional": true,
-          "enterprise": true
-        },
-        {
-          "name": "Workspaces múltiplos",
-          "starter": false,
-          "professional": false,
-          "enterprise": true
+          "gestao": "3",
+          "performance": "10"
         }
       ]
     },
@@ -221,28 +161,9 @@
         "name": "Suporte",
       "features": [
         {
-          "name": "Suporte por email",
-          "starter": true,
-          "professional": true,
-          "enterprise": true
-        },
-        {
-          "name": "Suporte prioritário",
-          "starter": false,
-          "professional": true,
-          "enterprise": true
-        },
-        {
-          "name": "Suporte 24/7",
-          "starter": false,
-          "professional": false,
-          "enterprise": true
-        },
-        {
-          "name": "Gerente de conta dedicado",
-          "starter": false,
-          "professional": false,
-          "enterprise": true
+          "name": "Canais de suporte",
+          "gestao": "Email, IA",
+          "performance": "Email, IA, WhatsApp"
         }
       ]
       }
@@ -250,72 +171,47 @@
   },
   "credit_packs": [
     {
-      "id": "pack-reports-small",
-      "name": "Pacote Pequeno - Relatórios",
-      "description": "Para necessidades pontuais de relatórios",
-      "credits": 20,
-      "price": 97,
-      "type": "reports",
+      "id": "pack-credits-small",
+      "name": "Pacote Pequeno",
+      "description": "Para necessidades pontuais",
+      "credits": 10,
+      "price": 50,
+      "type": "unified",
       "popular": false
     },
     {
-      "id": "pack-reports-medium",
-      "name": "Pacote Médio - Relatórios",
-      "description": "Melhor custo-benefício em relatórios",
-      "credits": 50,
-      "price": 197,
-      "type": "reports",
-      "savings": "15%",
+      "id": "pack-credits-medium",
+      "name": "Pacote Médio",
+      "description": "Melhor custo-benefício",
+      "credits": 30,
+      "price": 135,
+      "type": "unified",
+      "savings": "10%",
       "popular": true
     },
     {
-      "id": "pack-reports-large",
-      "name": "Pacote Grande - Relatórios",
-      "description": "Máxima economia em relatórios",
-      "credits": 120,
-      "price": 397,
-      "type": "reports",
-      "savings": "25%",
-      "popular": false
-    },
-    {
-      "id": "pack-analysis-small",
-      "name": "Pacote Pequeno - Análises",
-      "description": "Para análises IA pontuais",
-      "credits": 5,
-      "price": 97,
-      "type": "analysis",
-      "popular": false
-    },
-    {
-      "id": "pack-analysis-medium",
-      "name": "Pacote Médio - Análises",
-      "description": "Melhor custo-benefício em análises",
-      "credits": 15,
-      "price": 197,
-      "type": "analysis",
-      "savings": "15%",
-      "popular": false
-    },
-    {
-      "id": "pack-analysis-large",
-      "name": "Pacote Grande - Análises",
-      "description": "Máxima economia em análises",
-      "credits": 40,
-      "price": 397,
-      "type": "analysis",
-      "savings": "25%",
+      "id": "pack-credits-large",
+      "name": "Pacote Grande",
+      "description": "Máxima economia",
+      "credits": 75,
+      "price": 300,
+      "type": "unified",
+      "savings": "20%",
       "popular": false
     }
   ],
   "faq": [
     {
-      "question": "O que são créditos de análise completa?",
-      "answer": "Créditos de análises completas são usados para análises profundas de processos que exigem processamento extra via nossa IA. Cada análise completa consome 1 crédito e inclui extração avançada de dados, análise de riscos, e insights detalhados."
+      "question": "Como funciona o sistema de créditos?",
+      "answer": "Utilizamos um sistema de créditos unificado. Cada plano fornece uma quantidade de créditos mensais que podem ser utilizados para Análises Completas (1 crédito cada) ou Relatórios (1 crédito por ~50 processos). Créditos iniciais de onboarding expiram em 30 dias se não utilizados. Créditos mensais renovam todo mês automaticamente."
+    },
+    {
+      "question": "Quanto custa cada ação?",
+      "answer": "Análise Completa (Revalidação Estratégica da IA) = 1 crédito. Relatórios custam 1 crédito a cada ~50 processos. Por exemplo: um relatório com 50 processos = 1 crédito, 100 processos = 2 créditos, 150 processos = 3 créditos."
     },
     {
       "question": "Os relatórios são realmente ilimitados?",
-      "answer": "Para proteção da plataforma e garantia de qualidade, aplicamos limites de fair-use por plano. No plano Starter são 20 relatórios/mês, no Professional 60 relatórios/mês. O plano Enterprise tem limites personalizados conforme acordo."
+      "answer": "Sim! Você pode gerar quantos relatórios quiser. Porém, cada relatório consome créditos baseado no número de processos inclusos. O plano Gestão fornece ~10 créditos/mês (suficiente para ~4 relatórios em média), e o Performance fornece ~30 créditos/mês (suficiente para ~10 relatórios em média)."
     },
     {
       "question": "Como funciona o desconto anual?",
@@ -327,15 +223,15 @@
     },
     {
       "question": "O que acontece com meus créditos não utilizados?",
-      "answer": "Créditos de relatório podem acumular até 36 créditos (Starter) ou 120 créditos (Professional). Créditos de análise completa podem acumular até 50 (Starter) ou mais conforme o plano. Créditos expiram seguindo a regra FIFO."
+      "answer": "Créditos mensais acumulam mês a mês. Créditos de onboarding expiram em 30 dias se não utilizados. Quando os créditos expiram, seguimos a regra FIFO (Primeiro a Entrar, Primeiro a Sair)."
     },
     {
-      "question": "Posso adicionar mais usuários?",
-      "answer": "No plano Starter, você tem 3 usuários incluídos. Nos planos Professional e Enterprise, usuários são ilimitados. Você pode gerenciar permissões e acessos pelo painel administrativo."
+      "question": "Posso comprar créditos adicionais?",
+      "answer": "Sim! Se seus créditos mensais não forem suficientes, você pode comprar pacotes adicionais de créditos. Oferecemos 3 opções: Pequeno (10 créditos), Médio (30 créditos com 10% desconto), e Grande (75 créditos com 20% desconto)."
     },
     {
       "question": "Como funciona o teste gratuito?",
-      "answer": "Oferecemos 7 dias de teste gratuito nos planos Starter e Professional, e 14 dias no Enterprise. Não é necessário cartão de crédito para começar. Você tem acesso completo a todas as funcionalidades do plano durante o período de teste."
+      "answer": "Oferecemos 7 dias de teste gratuito em ambos os planos (Gestão e Performance). Não é necessário cartão de crédito para começar. Você tem acesso completo a todas as funcionalidades do plano durante o período de teste."
     },
     {
       "question": "Posso mudar de plano depois?",
