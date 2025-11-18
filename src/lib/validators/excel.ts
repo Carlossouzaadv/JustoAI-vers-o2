@@ -15,32 +15,27 @@ import { z } from 'zod';
 // ===== ENUMERAÇÕES =====
 
 export const ProcessStatusEnum = z.enum(
-  ['ATIVO', 'ENCERRADO', 'SUSPENSO', 'PARADO'],
-  {
-    errorMap: () => ({
-      message: 'Status deve ser: ATIVO, ENCERRADO, SUSPENSO ou PARADO',
-    }),
-  }
+  ['ATIVO', 'ENCERRADO', 'SUSPENSO', 'PARADO']
 );
 export type ProcessStatus = z.infer<typeof ProcessStatusEnum>;
 
-export const CourtsEnum = z.enum(
-  ['TJSP', 'TRJ', 'TRF1', 'TRF2', 'TRF3', 'TRF4', 'TRF5', 'STJ', 'STF'],
-  {
-    errorMap: () => ({
-      message: 'Tribunal inválido. Tribunais aceitos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF',
-    }),
-  }
-);
+const VALID_COURTS = ['TJSP', 'TRJ', 'TRF1', 'TRF2', 'TRF3', 'TRF4', 'TRF5', 'STJ', 'STF'] as const;
+export const CourtsEnum = z
+  .string()
+  .superRefine((val, ctx) => {
+    if (!VALID_COURTS.includes(val as any)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.invalid_enum_value,
+        received: val,
+        options: VALID_COURTS as any,
+        message: 'Tribunal inválido. Tribunais aceitos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF',
+      });
+    }
+  });
 export type Court = z.infer<typeof CourtsEnum>;
 
 export const SyncFrequencyEnum = z.enum(
-  ['MANUAL', 'HOURLY', 'DAILY', 'WEEKLY'],
-  {
-    errorMap: () => ({
-      message: 'Frequência deve ser: MANUAL, HOURLY, DAILY ou WEEKLY',
-    }),
-  }
+  ['MANUAL', 'HOURLY', 'DAILY', 'WEEKLY']
 );
 export type SyncFrequency = z.infer<typeof SyncFrequencyEnum>;
 
@@ -144,10 +139,28 @@ export const ExcelRowSchema = z.object(
     'Data de Distribuição': DateSchema.optional(),
     'Frequência de Sincronização': SyncFrequencyEnum.optional(),
     'Alertas Ativos': z
-      .union([z.boolean(), z.enum(['sim', 'não', 'true', 'false', 'Sim', 'Não', 'True', 'False'])])
-      .transform((v) => v === true || String(v).toLowerCase() === 'sim' || String(v).toLowerCase() === 'true')
+      .union([z.boolean(), z.string()])
+      .transform((v) => {
+        // Handle boolean directly
+        if (typeof v === 'boolean') {
+          return v;
+        }
+        // Handle string variants: sim, s, true, 1, nao, n, false, 0
+        const str = String(v).trim().toLowerCase();
+        const truthy = ['sim', 's', 'true', '1', 'yes', 'y'];
+        const falsy = ['não', 'nao', 'n', 'false', '0', 'no'];
+
+        if (truthy.includes(str)) {
+          return true;
+        }
+        if (falsy.includes(str)) {
+          return false;
+        }
+        // Invalid value - will be caught by refinement
+        throw new Error(`Valor inválido para Alertas Ativos: "${v}". Use: sim/não, true/false, ou 1/0`);
+      })
       .optional()
-      .describe('Ativar alertas'),
+      .describe('Ativar alertas (sim/não, true/false)'),
     'Emails para Alerta': z
       .string()
       .transform((v) =>
@@ -161,11 +174,34 @@ export const ExcelRowSchema = z.object(
   },
   {
     errorMap: (issue, ctx) => {
-      // Mensagens customizadas por tipo de erro
-      if (issue.code === z.ZodErrorCode.invalid_type) {
-        return { message: `Campo esperado do tipo ${issue.expected}` };
+      // Mensagens customizadas por tipo de erro em PORTUGUÊS
+      // Detectar qual campo para mensagens específicas
+      const fieldPath = issue.path?.[0]?.toString() || '';
+
+      switch (issue.code) {
+        case 'invalid_type':
+          return { message: `Campo esperado do tipo ${issue.expected}` };
+        case 'invalid_enum_value':
+          // Mensagens específicas por campo enum
+          if (fieldPath === 'Tribunal') {
+            return { message: 'Tribunal inválido. Tribunais aceitos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF' };
+          }
+          if (fieldPath === 'Status') {
+            return { message: 'Status deve ser: ATIVO, ENCERRADO, SUSPENSO ou PARADO' };
+          }
+          if (fieldPath === 'Frequência de Sincronização') {
+            return { message: 'Frequência deve ser: MANUAL, HOURLY, DAILY ou WEEKLY' };
+          }
+          return { message: `Valor inválido. Opções aceitas: ${issue.options?.join(', ') || 'desconhecido'}` };
+        case 'invalid_string':
+          return { message: `Formato de string inválido: ${issue.validation}` };
+        case 'too_small':
+          return { message: `Campo deve ter no mínimo ${issue.minimum} caracteres` };
+        case 'too_big':
+          return { message: `Campo não pode ter mais de ${issue.maximum} caracteres` };
+        default:
+          return { message: ctx.defaultError };
       }
-      return { message: ctx.defaultError };
     },
   }
 );
