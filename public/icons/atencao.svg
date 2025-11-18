@@ -1,5 +1,14 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M32 8L12 18V32C12 45.2 24 56 32 56C40 56 52 45.2 52 32V18L32 8ZM50 32C50 44.4 39.2 54.2 32 54.2C24.8 54.2 14 44.4 14 32V19.2L32 10L50 19.2V32Z" fill="currentColor"/>
-  <path d="M32 24C31.4 24 31 24.4 31 25V35C31 35.6 31.4 36 32 36C32.6 36 33 35.6 33 35V25C33 24.4 32.6 24 32 24Z" fill="currentColor"/>
-  <circle cx="32" cy="42" r="2" fill="currentColor"/>
+  <!-- Improved Attention/Warning Shield Icon -->
+
+  <!-- Shield outline -->
+  <path d="M32 8L14 17V30C14 43.5 26 54 32 56C38 54 50 43.5 50 30V17L32 8Z"
+    stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+
+  <!-- Exclamation mark inside shield -->
+  <!-- Vertical line -->
+  <line x1="32" y1="22" x2="32" y2="36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Dot below -->
+  <circle cx="32" cy="42" r="1.5" fill="currentColor"/>
 </svg>

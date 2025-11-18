@@ -1,23 +1,35 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Improved AI Brain Icon - Professional Clean Design -->
+
   <!-- Left brain hemisphere -->
-  <path d="M24 28C22 28 20 30 20 33C20 36 21 38 22 40C22 43 24 45 26 45C28 45 29 43 30 40C31 37 31 33 31 30C31 28.5 29.5 28 28 28H24Z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  <path d="M24 30C22 30 20 32 20 35C20 38 21 40 22 42C22.5 44 24 46 26 46C28 46 29.5 44 30 42C31 39 31 34 31 31C31 29.5 29.5 30 28 30H24Z"
+    stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
 
   <!-- Right brain hemisphere -->
-  <path d="M40 28C42 28 44 30 44 33C44 36 43 38 42 40C42 43 40 45 38 45C36 45 35 43 34 40C33 37 33 33 33 30C33 28.5 34.5 28 36 28H40Z" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  <path d="M40 30C42 30 44 32 44 35C44 38 43 40 42 42C41.5 44 40 46 38 46C36 46 34.5 44 34 42C33 39 33 34 33 31C33 29.5 34.5 30 36 30H40Z"
+    stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
 
-  <!-- Brain folds pattern -->
-  <path d="M28 32C27 34 27 38 28 40" stroke="currentColor" stroke-width="1.5" fill="none"/>
-  <path d="M36 32C37 34 37 38 36 40" stroke="currentColor" stroke-width="1.5" fill="none"/>
-  <path d="M32 28V32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
-  <path d="M32 44V48" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Brain central fold -->
+  <path d="M32 30V46" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
 
-  <!-- Rays around brain -->
-  <line x1="16" y1="36" x2="20" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="44" y1="36" x2="48" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="19" y1="19" x2="22" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="42" y1="42" x2="45" y2="45" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="32" y1="12" x2="32" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="32" y1="48" x2="32" y2="52" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="45" y1="19" x2="42" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="22" y1="42" x2="19" y2="45" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  <!-- Neural connection lines -->
+  <path d="M27 35C27 36.5 27 39.5 28 41" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M37 35C37 36.5 37 39.5 36 41" stroke="currentColor" stroke-width="1" fill="none" stroke-linecap="round"/>
+
+  <!-- Light rays (energy/intelligence) -->
+  <g stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <!-- Top rays -->
+    <line x1="32" y1="10" x2="32" y2="16"/>
+    <line x1="19" y1="17" x2="23" y2="21"/>
+    <line x1="45" y1="17" x2="41" y2="21"/>
+
+    <!-- Side rays -->
+    <line x1="14" y1="38" x2="20" y2="38"/>
+    <line x1="50" y1="38" x2="44" y2="38"/>
+
+    <!-- Bottom rays -->
+    <line x1="32" y1="54" x2="32" y2="48"/>
+    <line x1="19" y1="51" x2="23" y2="47"/>
+    <line x1="45" y1="51" x2="41" y2="47"/>
+  </g>
 </svg>

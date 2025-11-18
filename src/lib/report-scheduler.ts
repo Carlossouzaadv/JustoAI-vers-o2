@@ -469,10 +469,8 @@ export class ReportScheduler {
   }): Date {
     const next = new Date();
 
+    // Supported frequencies: WEEKLY, BIWEEKLY, MONTHLY (no DAILY)
     switch (schedule.frequency) {
-      case 'DAILY':
-        next.setDate(next.getDate() + 1);
-        break;
       case 'WEEKLY':
         next.setDate(next.getDate() + 7);
         break;

@@ -4,132 +4,135 @@
 
 ---
 
-## Slide 1: Problema
+## Slide 1: O Problema
 
-### A Dor dos Advogados Brasileiros
+### 20+ Horas/Semana Perdidas em Relatórios para Clientes
 
 **Hoje, um advogado gasta:**
-- R$20.700+/mês em acesso JUDIT API (dados de processos)
-- 40–50 horas/mês extraindo informações manualmente
-- Horas em gerenciamento manual de documentos
+- **20–25 horas/semana** traduzindo "juridiquês" e montando relatórios manuais
+- **4–6 horas por relatório** (trabalho repetitivo, sem valor agregado)
+- **R$80K–100K/ano** em custos de oportunidade
 
 **Resultado:**
-- Análise lenta (horas vs minutos)
-- Custos altos
-- Informações incompletas
-- Decisões baseadas em intuição, não dados
+- Clientes **desinformados** (sem comunicação consistente)
+- Advogado **sem foco em estratégia** (preso em admin)
+- **Insatisfação bilateral** (cliente quer atualizações, advogado cansado)
 
 ---
 
 ## Slide 2: A Solução JustoAI
 
-### Análise Inteligente de Casos em 3 Fases
+### Relatórios Executivos Automáticos para Clientes
 
-**FASE 1 (Instantânea, Grátis)**
-- Upload PDF → 2–10 segundos → Caso estruturado
-- Análise automática com IA
-- Partes, valor, assunto, últimos movimentos
+**COMPONENTE 1: Timeline Unificada**
+- Centraliza status de todos os processos (JUDIT + manuais)
+- Histórico consolidado e organizado
+- Interface para advogado gerenciar
 
-**FASE 2 (Background, Grátis)**
-- Sistema busca JUDIT automaticamente
-- Mescla dados oficiais + documento
-- Timeline unificada e enriquecida
+**COMPONENTE 2: Geração de Relatórios**
+- IA traduz linguagem jurídica em insights para clientes
+- Formata em relatório profissional (PDF ou HTML)
+- Personalização por cliente (logo, cores, ênfase)
 
-**FASE 3 (Estratégica, 1 Crédito)**
-- Análise completa com recomendações
-- Avaliação de risco
-- Precedentes legais
+**COMPONENTE 3: Entrega Automática**
+- Agendamento (semanal, quinzenal, mensal)
+- Envio automático por email
+- Auditoria de entrega
 
 ---
 
 ## Slide 3: Impacto Financeiro
 
-### Números que Falam
+### ROI Comprovado
 
-| Métrica | Antes | Depois | Ganho |
-|---------|-------|--------|-------|
-| **Custo JUDIT/mês** | R$20.700 | R$834 | **96% economia** |
-| **Tempo análise por caso** | 4–6 horas | 30 minutos | **100x mais rápido** |
-| **Economia anual** | — | — | **~R$250K** |
+| Métrica | Ganho |
+|---------|-------|
+| **Tempo economizado** | **20+ horas/semana (~R$4K/semana)** |
+| **Custo por relatório** | De R$300–400 (manual) para **R$0** (automático) |
+| **Frequência relatórios** | De 1–2/mês para **ilimitados** (automáticos) |
+| **Economia anual** | **~R$80K–100K por advogado** |
+| **Satisfação cliente** | **Aumenta significativamente** (comunicação consistente) |
 
 ---
 
 ## Slide 4: User Journey
 
-### Do Upload ao Insight (30 segundos)
+### De 20h/Semana para 0h (Totalmente Automático)
 
 ```
-[Advogado Envia PDF]
-           ↓
-    [OCR + Análise IA]
-           ↓
-   [JUDIT Automático]
-           ↓
-  [Timeline Unificada]
-           ↓
- [Análise Estratégica Pronta]
+[Advogado Configura Relatório Uma Vez]
+             ↓
+[Agendamento: Semanal/Quinzenal/Mensal]
+             ↓
+[JustoAI Recolhe Dados JUDIT + Manuais]
+             ↓
+[IA Traduz para Linguagem Cliente]
+             ↓
+[Email Automático Entregue ao Cliente]
+             ↓
+[Advogado Liberto: 20h Economizadas]
 ```
 
 ---
 
 ## Slide 5: Funcionalidades Principais
 
-### O que JustoAI Oferece
-
-✅ **Processamento de Documentos**
-- Upload: PDF, DOCX, imagens
-- OCR automático para escaneados
-- Deduplicação inteligente
-
-✅ **Integração JUDIT**
-- Dados atualizados dos tribunais
-- 96% mais barato que alternativas
-- Webhooks em tempo real
-
-✅ **Análise IA**
-- 3 modelos Gemini (Lite, Balanced, Pro)
-- Análise instantânea ou estratégica
-- Cache inteligente
+### Tudo que Você Precisa para Relatórios Automáticos
 
 ✅ **Timeline Unificada**
-- Mescla 3 fontes de dados
-- Resolução de conflitos automática
-- Auditoria completa
+- Centraliza JUDIT + documentos manuais
+- Histórico consolidado por cliente
+- Sincronização automática em tempo real
 
-✅ **Relatórios**
-- Geração automática de PDFs
-- Agendamentos (diário/semanal/mensal)
-- White-label customization
+✅ **Integração JUDIT**
+- Webhooks automáticos (atualizações dos tribunais)
+- Sincronização 24/7
+- 96% mais barato que alternativas
 
-✅ **Colaboração**
-- Multi-usuário com RBAC
-- Alertas em tempo real
-- Integração Slack
+✅ **Geração de Relatórios com IA**
+- Tradução automática juriquês → linguagem cliente
+- Personalizados por cliente (logo, cores, ênfase)
+- Formatos: PDF, HTML, Email
+
+✅ **Agendamento Automático**
+- Frequências: Semanal, Quinzenal, Mensal
+- Envio automático por email
+- Sem intervenção do advogado
+
+✅ **Gerenciamento de Clientes**
+- Múltiplos usuários com controle de acesso
+- Alertas de mudanças importantes
+- Dashboard simples para advogado
+
+✅ **Integração com ERPs**
+- Compatível com Themis, Projuris, Softplan
+- Complementa qualquer sistema existente
+- Dados sincronizáveis
 
 ---
 
 ## Slide 6: Modelo de Negócio
 
-### Precificação Simples & Escalável
+### Precificação Baseada em Escala de Processos
 
-**Starter: R$199/mês**
-- 1 usuário
-- 10 análises FULL/mês
-- Casos ilimitados
+**Gestão: R$497/mês**
+- Até **200 processos** monitorados
+- ~1–2 relatórios automáticos/mês
+- Ideal: Solo advogados, pequenos casos
 
-**Professional: R$699/mês**
-- Até 5 usuários
-- 40 análises FULL/mês
-- Monitoramento JUDIT
-- Import em lote
+**Performance: R$1.197/mês**
+- Até **500 processos** monitorados
+- ~2–4 relatórios automáticos/mês
+- Ideal: Pequenos escritórios (5–15 advogados)
 
-**Enterprise: Customizado**
-- Usuários ilimitados
-- Sem limites de crédito
-- White-label
-- API access
+**Enterprise: Custom**
+- Ilimitado de processos
+- Ilimitado de relatórios
+- White-label, API, SLA customizado
 
-**Margem Bruta: >85%** (infraestrutura mínima)
+**Créditos:** 1 crédito cobre 50 processos em 1 relatório
+**Margem Bruta:** >85% (infraestrutura mínima)
+**Modelo:** Subscrição mensal + créditos opcionais
 
 ---
 

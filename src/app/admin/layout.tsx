@@ -22,6 +22,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/admin', icon: '🏠', description: 'Overview rápido' },
+  { label: 'Billing', href: '/admin/billing', icon: '💳', description: 'Manage workspaces & credits' },
   { label: 'Atividade', href: '/admin/activity', icon: '📊', description: 'Feed de atividade' },
   { label: 'JUDIT', href: '/admin/dashboard/judit', icon: '🔌', description: 'Monitoramento JUDIT' },
   { label: 'Observabilidade', href: '/admin/observability', icon: '🔍', description: 'Sentry + Performance' },

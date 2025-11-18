@@ -1,7 +1,21 @@
 <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
-  <rect x="8" y="16" width="48" height="12" fill="currentColor"/>
-  <rect x="12" y="38" width="20" height="4" rx="2" fill="currentColor"/>
-  <rect x="36" y="38" width="8" height="4" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
-  <line x1="12" y1="26" x2="40" y2="26" stroke="white" stroke-width="1"/>
+  <!-- Improved Credit Card Icon -->
+
+  <!-- Card body -->
+  <rect x="12" y="16" width="40" height="32" rx="3" stroke="currentColor" stroke-width="2.5" fill="none"/>
+
+  <!-- Card header area -->
+  <rect x="12" y="16" width="40" height="10" fill="currentColor" rx="3 3 0 0"/>
+
+  <!-- Chip -->
+  <rect x="18" y="28" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/>
+  <line x1="19.5" y1="30" x2="23" y2="30" stroke="currentColor" stroke-width="0.8"/>
+  <line x1="19.5" y1="32" x2="23" y2="32" stroke="currentColor" stroke-width="0.8"/>
+  <line x1="19.5" y1="34" x2="23" y2="34" stroke="currentColor" stroke-width="0.8"/>
+
+  <!-- Cardholder name area -->
+  <line x1="18" y1="38" x2="36" y2="38" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Magnetic stripe -->
+  <rect x="12" y="44" width="40" height="3" rx="1" fill="currentColor" opacity="0.3"/>
 </svg>

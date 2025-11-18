@@ -14,7 +14,7 @@ export interface EmailTemplate {
 export interface EmailNotification {
   to: string | string[];
   subject: string;
-  template: 'process-alert' | 'report-ready' | 'payment-success' | 'system-notification' | 'custom';
+  template: 'process-alert' | 'report-ready' | 'payment-success' | 'system-notification' | 'trial-expiring' | 'welcome' | 'custom';
   data: unknown;
   priority?: 'high' | 'normal' | 'low';
   attachments?: EmailAttachment[];
@@ -46,6 +46,23 @@ export interface PaymentSuccessData {
   amount: string;
   credits: number;
   transactionId: string;
+  timestamp: string;
+}
+
+export interface TrialExpiringData {
+  userName: string;
+  workspaceName: string;
+  daysRemaining: number;
+  expiresAt: string; // ISO date string
+  timestamp: string;
+}
+
+export interface WelcomeData {
+  userName: string;
+  workspaceName: string;
+  trialDaysRemaining: number;
+  trialEndsAt: string; // ISO date string
+  onboardingCredits: number;
   timestamp: string;
 }
 
@@ -236,6 +253,57 @@ export class EmailService {
   }
 
   /**
+   * Send trial expiration reminder email
+   */
+  async sendTrialExpiring(
+    to: string,
+    userName: string,
+    workspaceName: string,
+    daysRemaining: number,
+    expiresAt: Date
+  ): Promise<EmailResult> {
+    return this.sendNotification({
+      to,
+      subject: `⏰ Seu período de trial expira em ${daysRemaining} dias - JustoAI`,
+      template: 'trial-expiring',
+      priority: 'high',
+      data: {
+        userName,
+        workspaceName,
+        daysRemaining,
+        expiresAt: expiresAt.toISOString(),
+        timestamp: new Date().toLocaleString('pt-BR')
+      }
+    });
+  }
+
+  /**
+   * Send welcome email to new user
+   */
+  async sendWelcome(
+    to: string,
+    userName: string,
+    workspaceName: string,
+    trialDaysRemaining: number,
+    trialEndsAt: Date,
+    onboardingCredits: number
+  ): Promise<EmailResult> {
+    return this.sendNotification({
+      to,
+      subject: '👋 Bem-vindo ao JustoAI - Seu trial de 7 dias está ativo!',
+      template: 'welcome',
+      data: {
+        userName,
+        workspaceName,
+        trialDaysRemaining,
+        trialEndsAt: trialEndsAt.toISOString(),
+        onboardingCredits,
+        timestamp: new Date().toLocaleString('pt-BR')
+      }
+    });
+  }
+
+  /**
    * Get email template based on type
    */
   private getTemplate(templateType: EmailNotification['template'], data: unknown): EmailTemplate {
@@ -255,6 +323,16 @@ export class EmailService {
           throw new Error('Invalid data for payment-success template');
         }
         return this.getPaymentSuccessTemplate(data);
+      case 'trial-expiring':
+        if (!this.isTrialExpiringData(data)) {
+          throw new Error('Invalid data for trial-expiring template');
+        }
+        return this.getTrialExpiringTemplate(data);
+      case 'welcome':
+        if (!this.isWelcomeData(data)) {
+          throw new Error('Invalid data for welcome template');
+        }
+        return this.getWelcomeTemplate(data);
       case 'system-notification':
         if (!this.isSystemNotificationData(data)) {
           throw new Error('Invalid data for system-notification template');
@@ -313,6 +391,35 @@ export class EmailService {
       typeof obj.amount === 'string' &&
       typeof obj.credits === 'number' &&
       typeof obj.transactionId === 'string' &&
+      typeof obj.timestamp === 'string'
+    );
+  }
+
+  private isTrialExpiringData(data: unknown): data is TrialExpiringData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      typeof obj.userName === 'string' &&
+      typeof obj.workspaceName === 'string' &&
+      typeof obj.daysRemaining === 'number' &&
+      typeof obj.expiresAt === 'string' &&
+      typeof obj.timestamp === 'string'
+    );
+  }
+
+  private isWelcomeData(data: unknown): data is WelcomeData {
+    if (typeof data !== 'object' || data === null) {
+      return false;
+    }
+    const obj = data as Record<string, unknown>;
+    return (
+      typeof obj.userName === 'string' &&
+      typeof obj.workspaceName === 'string' &&
+      typeof obj.trialDaysRemaining === 'number' &&
+      typeof obj.trialEndsAt === 'string' &&
+      typeof obj.onboardingCredits === 'number' &&
       typeof obj.timestamp === 'string'
     );
   }
@@ -470,6 +577,215 @@ export class EmailService {
     };
   }
 
+  private getTrialExpiringTemplate(data: TrialExpiringData): EmailTemplate {
+    const expiresAtDate = new Date(data.expiresAt);
+    const formattedDate = expiresAtDate.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return {
+      subject: `⏰ Seu período de trial expira em ${data.daysRemaining} dias - JustoAI`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeaa7;">
+            <h2 style="color: #856404; margin: 0;">⏰ Seu Trial Está Terminando</h2>
+          </div>
+
+          <div style="background: white; padding: 20px; border: 1px solid #e9ecef; border-radius: 8px;">
+            <h3 style="color: #495057; margin-top: 0;">Olá, ${data.userName}!</h3>
+
+            <p>Você está usando o <strong>${data.workspaceName}</strong> em período de trial.</p>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #ffc107;">
+              <p style="margin: 5px 0;"><strong>⏳ Tempo Restante:</strong> ${data.daysRemaining} ${data.daysRemaining === 1 ? 'dia' : 'dias'}</p>
+              <p style="margin: 5px 0;"><strong>📅 Expira em:</strong> ${formattedDate}</p>
+            </div>
+
+            <p style="color: #495057;">Seu período de trial está chegando ao fim. Para continuar usando o JustoAI sem interrupção, você precisa escolher um plano pago e adicionar um método de pagamento.</p>
+
+            <h4 style="color: #495057; margin-top: 25px;">Próximos Passos:</h4>
+            <ol style="color: #666; line-height: 1.8;">
+              <li>Acesse seu dashboard</li>
+              <li>Clique em "Billing" ou "Planos"</li>
+              <li>Escolha entre <strong>Gestão (R$ 497)</strong> ou <strong>Performance (R$ 1.197)</strong></li>
+              <li>Adicione seu método de pagamento</li>
+            </ol>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://justoai.com.br'}/dashboard/billing"
+                 style="background: #ffc107; color: #333; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                ✨ Escolher Plano Agora
+              </a>
+            </div>
+
+            <p style="color: #666; font-size: 14px; margin-top: 20px;">
+              <strong>Ao expirar o trial:</strong>
+            </p>
+            <ul style="color: #666; font-size: 14px;">
+              <li>Seu workspace será automaticamente convertido para o plano FREE</li>
+              <li>Você terá acesso limitado aos seus dados</li>
+              <li>Qualquer momento você pode fazer upgrade para um plano pago</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <p style="margin: 0; color: #666; font-size: 14px;">
+              Em caso de dúvidas, entre em contato conosco pelo nosso support chat.
+            </p>
+          </div>
+        </div>
+      `,
+      text: `
+        Seu Período de Trial Está Terminando - JustoAI
+
+        Olá, ${data.userName}!
+
+        Você está usando o ${data.workspaceName} em período de trial.
+
+        ⏳ Tempo Restante: ${data.daysRemaining} ${data.daysRemaining === 1 ? 'dia' : 'dias'}
+        📅 Expira em: ${formattedDate}
+
+        Para continuar usando o JustoAI sem interrupção, escolha um plano pago:
+        - Gestão: R$ 497/mês (200 processos)
+        - Performance: R$ 1.197/mês (500 processos)
+
+        Acesse seu dashboard para fazer upgrade: ${process.env.NEXT_PUBLIC_APP_URL || 'https://justoai.com.br'}/dashboard/billing
+
+        Após expirar o trial, seu workspace será convertido para o plano FREE com acesso limitado.
+      `
+    };
+  }
+
+  private getWelcomeTemplate(data: WelcomeData): EmailTemplate {
+    const trialEndsAtDate = new Date(data.trialEndsAt);
+    const formattedDate = trialEndsAtDate.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    return {
+      subject: '👋 Bem-vindo ao JustoAI - Seu trial de 7 dias está ativo!',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+            <h2 style="color: white; margin: 0; font-size: 28px;">👋 Bem-vindo, ${data.userName}!</h2>
+          </div>
+
+          <div style="background: white; padding: 20px; border: 1px solid #e9ecef; border-radius: 8px;">
+            <p style="font-size: 16px; color: #495057; margin-top: 0;">
+              Você se registrou com sucesso no <strong>JustoAI</strong>. Sua jornada para automatizar a geração de relatórios executivos começa agora!
+            </p>
+
+            <div style="background: #f0f4ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+              <h3 style="margin-top: 0; color: #667eea;">🎁 Seu Trial Gratuito</h3>
+              <p style="margin: 5px 0; color: #495057;">
+                <strong>Workspace:</strong> ${data.workspaceName}
+              </p>
+              <p style="margin: 5px 0; color: #495057;">
+                <strong>Dias Disponíveis:</strong> ${data.trialDaysRemaining} dias
+              </p>
+              <p style="margin: 5px 0; color: #495057;">
+                <strong>Expira em:</strong> ${formattedDate}
+              </p>
+              <p style="margin: 5px 0; color: #495057;">
+                <strong>Créditos de Boas-vindas:</strong> ${data.onboardingCredits} créditos para usar imediatamente
+              </p>
+            </div>
+
+            <h3 style="color: #333; margin-top: 25px;">🚀 Próximos Passos:</h3>
+            <ol style="color: #495057; line-height: 1.8; margin-top: 10px;">
+              <li>
+                <strong>Acesse seu Dashboard:</strong> Entre em seu workspace para explorar todas as funcionalidades
+              </li>
+              <li>
+                <strong>Faça um Upload de Teste:</strong> Teste a análise inteligente com seus próprios dados
+              </li>
+              <li>
+                <strong>Configure Relatórios:</strong> Crie relatórios executivos automáticos personalizados para seus clientes
+              </li>
+              <li>
+                <strong>Experimente as Integrações:</strong> Teste nossas integrações com ERP e sistemas jurídicos
+              </li>
+            </ol>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://justoai.com.br'}/dashboard"
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+                Acessar Dashboard Agora
+              </a>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px;">
+              <h4 style="margin-top: 0; color: #495057;">💡 Dicas para Aproveitar Melhor:</h4>
+              <ul style="color: #666; font-size: 14px; margin-bottom: 0;">
+                <li>Comece com um pequeno upload (5-10 processos) para entender como o sistema funciona</li>
+                <li>Explore diferentes tipos de relatórios para ver qual se encaixa melhor com seus clientes</li>
+                <li>Configure lembretes de email para não perder prazos importantes</li>
+                <li>Acesse a seção de Ajuda para tutoriais e documentação completa</li>
+              </ul>
+            </div>
+
+            <div style="background: #e7f5ff; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #339af0;">
+              <p style="margin: 0; color: #0066cc; font-weight: bold;">
+                📈 Planos Pagos Disponíveis
+              </p>
+              <p style="margin: 5px 0; color: #495057; font-size: 13px;">
+                Quando seu trial expirar, escolha entre:
+              </p>
+              <ul style="margin: 5px 0; color: #495057; font-size: 13px;">
+                <li><strong>Gestão:</strong> R$ 497/mês - 200 processos por mês</li>
+                <li><strong>Performance:</strong> R$ 1.197/mês - 500 processos por mês</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+            <p style="margin: 0; color: #666; font-size: 14px;">
+              Tem dúvidas? Entre em contato via nosso <strong>chat de suporte</strong> - nossa equipe está aqui para ajudar!
+            </p>
+            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">
+              Este é um email automático do JustoAI. ${data.timestamp}
+            </p>
+          </div>
+        </div>
+      `,
+      text: `
+        Bem-vindo ao JustoAI, ${data.userName}!
+
+        Você se registrou com sucesso. Seu workspace "${data.workspaceName}" está ativo.
+
+        🎁 TRIAL GRATUITO
+        - Duração: ${data.trialDaysRemaining} dias
+        - Expira em: ${formattedDate}
+        - Créditos de boas-vindas: ${data.onboardingCredits}
+
+        🚀 PRÓXIMOS PASSOS:
+        1. Acesse seu dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://justoai.com.br'}/dashboard
+        2. Faça um upload de teste para explorar a análise inteligente
+        3. Configure seus primeiros relatórios executivos
+        4. Explore as integrações disponíveis
+
+        💡 DICAS:
+        - Comece com um pequeno upload (5-10 processos)
+        - Explore diferentes tipos de relatórios
+        - Acesse a seção de Ajuda para tutoriais completos
+
+        📈 PLANOS PAGOS (quando o trial expirar):
+        - Gestão: R$ 497/mês (200 processos)
+        - Performance: R$ 1.197/mês (500 processos)
+
+        Tem dúvidas? Use nosso chat de suporte - estamos aqui para ajudar!
+
+        JustoAI - Inteligência Artificial para Advocacia
+      `
+    };
+  }
+
   private getSystemNotificationTemplate(data: SystemNotificationData): EmailTemplate {
     return {
       subject: data.subject || 'Notificação do Sistema - JustoAI',
@@ -542,3 +858,9 @@ export const sendReportReady = (to: string, reportName: string, downloadUrl: str
 
 export const sendPaymentSuccess = (to: string, amount: number, credits: number, transactionId: string) =>
   getEmailService().sendPaymentSuccess(to, amount, credits, transactionId);
+
+export const sendTrialExpiringEmail = (to: string, userName: string, workspaceName: string, daysRemaining: number, expiresAt: Date) =>
+  getEmailService().sendTrialExpiring(to, userName, workspaceName, daysRemaining, expiresAt);
+
+export const sendWelcomeEmail = (to: string, userName: string, workspaceName: string, trialDaysRemaining: number, trialEndsAt: Date, onboardingCredits: number) =>
+  getEmailService().sendWelcome(to, userName, workspaceName, trialDaysRemaining, trialEndsAt, onboardingCredits);

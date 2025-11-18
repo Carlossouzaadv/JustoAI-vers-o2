@@ -93,15 +93,27 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ User created/updated in database:', user.id)
 
-    // Create default workspace
+    // Create default workspace with 7-day TRIAL plan
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 7); // 7 days from now
+
     const workspace = await prisma.workspace.create({
       data: {
         name: `${name || email}'s Workspace`,
         slug: `workspace-${Date.now()}`,
+        plan: 'TRIAL',
+        trialEndsAt,
         users: {
           create: {
             userId: user.id,
-            role: 'OWNER',
+            role: 'ADMIN',
+          },
+        },
+        // Grant onboarding credits for trial
+        credits: {
+          create: {
+            reportCreditsBalance: 50,
+            fullCreditsBalance: 50,
           },
         },
       },
@@ -110,7 +122,27 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('✅ Default workspace created:', workspace.id)
+    console.log('✅ Default workspace created with TRIAL plan (expires', trialEndsAt.toISOString(), '):', workspace.id)
+
+    // Send welcome email to user
+    try {
+      const { sendWelcomeEmail } = await import('@/lib/email-service');
+      const reportCredits = workspace.credits?.reportCreditsBalance || 50;
+      const fullCredits = workspace.credits?.fullCreditsBalance || 50;
+      const totalCredits = reportCredits + fullCredits;
+
+      await sendWelcomeEmail(
+        email,
+        user.name || email,
+        workspace.name,
+        7, // trialDaysRemaining
+        trialEndsAt,
+        totalCredits
+      );
+      console.log('✅ Welcome email sent to', email);
+    } catch (_error) {
+      console.warn('Could not send welcome email:', _error);
+    }
 
     return NextResponse.json(
       {

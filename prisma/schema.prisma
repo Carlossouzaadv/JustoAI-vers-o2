@@ -16,6 +16,7 @@ model Workspace {
   logoUrl                  String?
   plan                     Plan                       @default(FREE)
   status                   Status                     @default(ACTIVE)
+  trialEndsAt              DateTime?                  // Trial expiration date for TRIAL plan
   settings                 Json?
   createdAt                DateTime                   @default(now())
   updatedAt                DateTime                   @updatedAt
@@ -957,6 +958,7 @@ enum Plan {
   GESTAO
   PERFORMANCE
   ENTERPRISE
+  TRIAL  // 7-day free trial without credit card
 }
 
 enum Status {
