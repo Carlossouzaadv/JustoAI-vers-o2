@@ -139,7 +139,7 @@ export async function downgradeExpiredTrial(workspaceId: string) {
  */
 export async function convertTrialToPaidPlan(
   workspaceId: string,
-  newPlan: string // 'GESTAO' | 'PERFORMANCE' | 'ENTERPRISE'
+  newPlan: 'GESTAO' | 'PERFORMANCE' | 'ENTERPRISE'
 ) {
   try {
     await prisma.workspace.update({
