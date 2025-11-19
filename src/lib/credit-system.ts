@@ -416,7 +416,8 @@ export class CreditManager {
 
         // Step 2: Agrupar por workspaceId e allocation para validação
         const debitsByWorkspace = new Map<string, typeof originalDebits>();
-        const debitsByAllocation = new Map<string | null, typeof originalDebits>();
+        const debitsByAllocation = new Map<string, typeof originalDebits>();
+        const debitsWithoutAllocation: typeof originalDebits = [];
 
         for (const debit of originalDebits) {
           // Agrupar por workspace
@@ -426,11 +427,14 @@ export class CreditManager {
           debitsByWorkspace.get(debit.workspaceId)!.push(debit);
 
           // Agrupar por allocation (para refazer o FIFO)
-          const key = debit.allocationId || 'null';
-          if (!debitsByAllocation.has(key)) {
-            debitsByAllocation.set(key, []);
+          if (debit.allocationId) {
+            if (!debitsByAllocation.has(debit.allocationId)) {
+              debitsByAllocation.set(debit.allocationId, []);
+            }
+            debitsByAllocation.get(debit.allocationId)!.push(debit);
+          } else {
+            debitsWithoutAllocation.push(debit);
           }
-          debitsByAllocation.get(key)!.push(debit);
         }
 
         // Validar: todos os débitos devem ser do mesmo workspace
@@ -459,11 +463,6 @@ export class CreditManager {
 
         // Step 4: Reembolsar allocations (incrementar remainingAmount)
         for (const [allocationId, debits] of debitsByAllocation.entries()) {
-          if (allocationId === 'null') {
-            // Débito sem allocation associada - skip
-            continue;
-          }
-
           let amountToRefund = 0;
           for (const debit of debits) {
             amountToRefund += Number(debit.amount);

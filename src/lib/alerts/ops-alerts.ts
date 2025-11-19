@@ -369,8 +369,9 @@ export class OpsAlerts {
 
       log.info({ msg: `${ICONS.WARNING} Alert rule triggered: ${rule.name}`,
         workspace: context.workspaceId,
-        severity: rule.severity
-      }, { component: "opsAlerts" });
+        severity: rule.severity,
+        component: "opsAlerts"
+      });
 
       // Criar evento de alerta
       const alert: AlertEvent = {
@@ -407,7 +408,7 @@ export class OpsAlerts {
   // ================================================================
 
   private async sendAlert(alert: AlertEvent): Promise<void> {
-    log.info({ msg: `${ICONS.ALERT} Sending alert: ${alert.title}` }, { component: "opsAlerts" });
+    log.info({ msg: `${ICONS.ALERT} Sending alert: ${alert.title}`, component: "opsAlerts" });
 
     const sendPromises = alert.channels.map(channel => {
       switch (channel) {
@@ -429,7 +430,7 @@ export class OpsAlerts {
 
   private async sendSlackAlert(alert: AlertEvent): Promise<void> {
     if (!ALERT_CONFIG.SLACK_WEBHOOK_URL) {
-      log.warn({ msg: `${ICONS.WARNING} Slack webhook URL not configured` }, { component: "opsAlerts" });
+      log.warn({ msg: `${ICONS.WARNING} Slack webhook URL not configured`, component: "opsAlerts" });
       return;
     }
 
@@ -482,7 +483,7 @@ export class OpsAlerts {
         throw new Error(`Slack API error: ${response.status}`);
       }
 
-      log.info({ msg: `${ICONS.SUCCESS} Slack alert sent successfully` }, { component: "opsAlerts" });
+      log.info({ msg: `${ICONS.SUCCESS} Slack alert sent successfully`, component: "opsAlerts" });
 
     } catch (error) {
       logError(`${ICONS.ERROR} Failed to send Slack alert:`, "error", { component: "opsAlerts" });
@@ -509,7 +510,7 @@ export class OpsAlerts {
       });
 
       if (result.success) {
-        log.info({ msg: `${ICONS.SUCCESS} Email alert enviado: ${result.messageId}` }, { component: "opsAlerts" });
+        log.info({ msg: `${ICONS.SUCCESS} Email alert enviado: ${result.messageId}`, component: "opsAlerts" });
       } else {
         logError(`${ICONS.ERROR} Falha ao enviar email alert: ${result.error}`, "Error occurred", { component: "opsAlerts" });
       }
@@ -543,8 +544,9 @@ export class OpsAlerts {
         msg: `${ICONS.SUCCESS} Sentry alert captured`,
         level: alert.severity,
         message: alert.title,
-        workspaceId: alert.workspaceId
-      }, { component: "opsAlerts" });
+        workspaceId: alert.workspaceId,
+        component: "opsAlerts"
+      });
 
     } catch (error) {
       logError(`${ICONS.ERROR} Failed to send Sentry alert:`, "error", { component: "opsAlerts" });
@@ -554,7 +556,7 @@ export class OpsAlerts {
   private async sendWebhookAlert(alert: AlertEvent): Promise<void> {
     try {
       // TODO: Implementar webhook genérico
-      log.info({ msg: `${ICONS.ALERT} Webhook alert (simulated)` }, { component: "opsAlerts", alert });
+      log.info({ msg: `${ICONS.ALERT} Webhook alert (simulated)`, component: "opsAlerts" });
 
     } catch (error) {
       logError(`${ICONS.ERROR} Failed to send webhook alert:`, "error", { component: "opsAlerts" });
@@ -699,7 +701,7 @@ export class OpsAlerts {
 
   private async checkAggregatedAlerts(): Promise<void> {
     // TODO: Implementar alertas agregados (ex: total de custos global)
-    log.info({ msg: `${ICONS.INFO} Checking aggregated alerts (placeholder)` }, { component: "opsAlerts" });
+    log.info({ msg: `${ICONS.INFO} Checking aggregated alerts (placeholder)`, component: "opsAlerts" });
   }
 
   private async saveAlertEvent(alert: AlertEvent): Promise<void> {
@@ -729,7 +731,7 @@ export class OpsAlerts {
   // ================================================================
 
   async acknowledgeAlert(alertId: string, userId: string): Promise<void> {
-    log.info({ msg: `${ICONS.CHECK} Alert acknowledged: ${alertId} by ${userId}` }, { component: "opsAlerts" });
+    log.info({ msg: `${ICONS.CHECK} Alert acknowledged: ${alertId} by ${userId}`, component: "opsAlerts" });
     // TODO: Implementar sistema de acknowledgment
   }
 
@@ -742,7 +744,7 @@ export class OpsAlerts {
     const ruleIndex = this.rules.findIndex(r => r.id === ruleId);
     if (ruleIndex >= 0) {
       this.rules[ruleIndex] = { ...this.rules[ruleIndex], ...updates };
-      log.info({ msg: `${ICONS.EDIT} Alert rule updated: ${ruleId}` }, { component: "opsAlerts" });
+      log.info({ msg: `${ICONS.EDIT} Alert rule updated: ${ruleId}`, component: "opsAlerts" });
     }
   }
 
@@ -761,7 +763,7 @@ export const opsAlerts = OpsAlerts.getInstance();
  * Job para verificação periódica de alertas
  */
 export async function runAlertCheck(): Promise<void> {
-  log.info({ msg: `${ICONS.ALERT} Running periodic alert check` }, { component: "opsAlerts" });
+  log.info({ msg: `${ICONS.ALERT} Running periodic alert check`, component: "opsAlerts" });
   await opsAlerts.checkGlobalAlerts();
 }
 
@@ -770,5 +772,5 @@ export async function runAlertCheck(): Promise<void> {
  */
 export async function setupAlertJobs(): Promise<void> {
   // TODO: Integrar com sistema de jobs (Bull/cron)
-  log.info({ msg: `${ICONS.SUCCESS} Alert jobs setup completed` }, { component: "opsAlerts" });
+  log.info({ msg: `${ICONS.SUCCESS} Alert jobs setup completed`, component: "opsAlerts" });
 }

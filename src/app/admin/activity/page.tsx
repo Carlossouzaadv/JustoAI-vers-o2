@@ -217,7 +217,7 @@ export default function ActivityPage() {
           <li>• Este feed mostra eventos em tempo real do sistema</li>
           <li>• Inclui transações de crédito e versões de análise de casos</li>
           <li>• Os eventos são atualizados automaticamente a cada 30 segundos</li>
-          <li>• Use o botão "Atualizar" para carregar dados mais recentes</li>
+          <li>• Use o botão &quot;Atualizar&quot; para carregar dados mais recentes</li>
           <li>✅ Todos os dados são carregados da API real (Padrão-Ouro)</li>
         </ul>
       </div>

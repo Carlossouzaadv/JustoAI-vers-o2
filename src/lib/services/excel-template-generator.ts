@@ -4,8 +4,8 @@
 // Gera um modelo de Excel com campos, validações e exemplos
 // O usuário baixa este template e preenche corretamente
 
-import { Workbook, Worksheet, Font, PatternFill, Border, Alignment } from 'exceljs';
-import { EXCEL_SCHEMA_INFO } from '@/lib/validators/excel';
+import { Workbook, Worksheet, Font } from "exceljs";
+import { EXCEL_SCHEMA_INFO } from "@/lib/validators/excel";
 
 /**
  * Cores para formatação
@@ -30,23 +30,23 @@ export class ExcelTemplateGenerator {
     const workbook = new Workbook();
 
     // ===== SHEET 1: Dados =====
-    const dataSheet = workbook.addWorksheet('Dados', {
-      pageSetup: { paperSize: 9, orientation: 'landscape' },
+    const dataSheet = workbook.addWorksheet("Dados", {
+      pageSetup: { paperSize: 9, orientation: "landscape" },
     });
 
     this.setupDataSheet(dataSheet);
 
     // ===== SHEET 2: Instruções =====
-    const instructionsSheet = workbook.addWorksheet('Instruções');
+    const instructionsSheet = workbook.addWorksheet("Instruções");
     this.setupInstructionsSheet(instructionsSheet);
 
     // ===== SHEET 3: Exemplos =====
-    const examplesSheet = workbook.addWorksheet('Exemplos');
+    const examplesSheet = workbook.addWorksheet("Exemplos");
     this.setupExamplesSheet(examplesSheet);
 
     // Converter para buffer
     const buffer = await workbook.xlsx.writeBuffer();
-    return buffer as Buffer;
+    return Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
   }
 
   /**
@@ -70,20 +70,20 @@ export class ExcelTemplateGenerator {
       // Formatação de header
       cell.font = {
         bold: true,
-        color: { argb: 'FFFFFFFF' },
+        color: { argb: "FFFFFFFF" },
         size: 11,
-      } as Font;
+      };
 
       cell.fill = {
-        type: 'solid',
+        type: "solid",
         fgColor: {
           argb: isRequired
             ? this.rgbToArgb(COLORS.headerRequired)
             : this.rgbToArgb(COLORS.headerOptional),
         },
-      } as PatternFill;
+      };
 
-      cell.alignment = { horizontal: 'center', vertical: 'center', wrapText: true } as Alignment;
+      cell.alignment = { horizontal: "center", vertical: "center", wrapText: true };
 
       // Border
       cell.border = this.createBorder();
@@ -101,10 +101,10 @@ export class ExcelTemplateGenerator {
       const cell = sheet.getCell(2, index + 1);
       cell.value = value;
       cell.fill = {
-        type: 'solid',
+        type: "solid",
         fgColor: { argb: this.rgbToArgb(COLORS.exampleRow) },
-      } as PatternFill;
-      cell.alignment = { horizontal: 'left', vertical: 'center' } as Alignment;
+      };
+      cell.alignment = { horizontal: "left", vertical: "center" };
       cell.border = this.createBorder();
     });
 
@@ -114,7 +114,7 @@ export class ExcelTemplateGenerator {
     this.addValidationComments(sheet);
 
     // Freeze panes (primeira linha congelada)
-    sheet.views = [{ state: 'frozen', ySplit: 1 }];
+    sheet.views = [{ state: "frozen", ySplit: 1 }];
   }
 
   /**
@@ -126,61 +126,61 @@ export class ExcelTemplateGenerator {
 
     // Título
     const titleCell = sheet.getCell(1, 1);
-    titleCell.value = '📋 INSTRUÇÕES DE PREENCHIMENTO';
-    titleCell.font = { bold: true, size: 14 } as Font;
+    titleCell.value = "📋 INSTRUÇÕES DE PREENCHIMENTO";
+    titleCell.font = { bold: true, size: 14 };
     sheet.getRow(1).height = 25;
 
     let row = 3;
 
     // ===== Campos Obrigatórios =====
-    sheet.getCell(row, 1).value = 'CAMPOS OBRIGATÓRIOS';
-    sheet.getCell(row, 1).font = { bold: true, size: 12 } as Font;
+    sheet.getCell(row, 1).value = "CAMPOS OBRIGATÓRIOS";
+    sheet.getCell(row, 1).font = { bold: true, size: 12 };
     row += 2;
 
     for (const field of EXCEL_SCHEMA_INFO.requiredColumns) {
       const description = this.getFieldDescription(field);
       sheet.getCell(row, 1).value = `• ${field}`;
       sheet.getCell(row, 2).value = description;
-      sheet.getCell(row, 2).alignment = { wrapText: true } as Alignment;
+      sheet.getCell(row, 2).alignment = { wrapText: true };
       row++;
     }
 
     row += 2;
 
     // ===== Campos Opcionais =====
-    sheet.getCell(row, 1).value = 'CAMPOS OPCIONAIS';
-    sheet.getCell(row, 1).font = { bold: true, size: 12 } as Font;
+    sheet.getCell(row, 1).value = "CAMPOS OPCIONAIS";
+    sheet.getCell(row, 1).font = { bold: true, size: 12 };
     row += 2;
 
     for (const field of EXCEL_SCHEMA_INFO.optionalColumns) {
       const description = this.getFieldDescription(field);
       sheet.getCell(row, 1).value = `• ${field}`;
       sheet.getCell(row, 2).value = description;
-      sheet.getCell(row, 2).alignment = { wrapText: true } as Alignment;
+      sheet.getCell(row, 2).alignment = { wrapText: true };
       row++;
     }
 
     row += 2;
 
     // ===== Dicas Importantes =====
-    sheet.getCell(row, 1).value = '💡 DICAS IMPORTANTES';
-    sheet.getCell(row, 1).font = { bold: true, size: 12, color: { argb: 'FFFF9800' } } as Font;
+    sheet.getCell(row, 1).value = "💡 DICAS IMPORTANTES";
+    sheet.getCell(row, 1).font = { bold: true, size: 12, color: { argb: "FFFF9800" } };
     row += 2;
 
     const tips = [
-      'Use exatamente os nomes de colunas do template (não renomeie)',
-      'Não deixe linhas em branco no meio dos dados',
-      'Números de processo devem estar no formato: NNNNNNN-DD.AAAA.J.TT.OOOO',
-      'Datas podem ser DD/MM/YYYY ou YYYY-MM-DD',
-      'Valores monetários: use 1000,00 ou 1.000,00',
-      'Tribunais válidos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF',
-      'Frequência de sincronização: MANUAL, HOURLY, DAILY, WEEKLY',
-      'Alertas Ativos: sim, não, true, false (case-insensitive)',
+      "Use exatamente os nomes de colunas do template (não renomeie)",
+      "Não deixe linhas em branco no meio dos dados",
+      "Números de processo devem estar no formato: NNNNNNN-DD.AAAA.J.TT.OOOO",
+      "Datas podem ser DD/MM/YYYY ou YYYY-MM-DD",
+      "Valores monetários: use 1000,00 ou 1.000,00",
+      "Tribunais válidos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF",
+      "Frequência de sincronização: MANUAL, HOURLY, DAILY, WEEKLY",
+      "Alertas Ativos: sim, não, true, false (case-insensitive)",
     ];
 
     for (const tip of tips) {
       sheet.getCell(row, 1).value = `○ ${tip}`;
-      sheet.getCell(row, 1).alignment = { wrapText: true } as Alignment;
+      sheet.getCell(row, 1).alignment = { wrapText: true };
       row++;
     }
   }
@@ -200,16 +200,16 @@ export class ExcelTemplateGenerator {
       const isRequired = EXCEL_SCHEMA_INFO.requiredColumns.includes(header);
 
       cell.value = header;
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 } as Font;
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
       cell.fill = {
-        type: 'solid',
+        type: "solid",
         fgColor: {
           argb: isRequired
             ? this.rgbToArgb(COLORS.headerRequired)
             : this.rgbToArgb(COLORS.headerOptional),
         },
-      } as PatternFill;
-      cell.alignment = { horizontal: 'center', vertical: 'center', wrapText: true } as Alignment;
+      };
+      cell.alignment = { horizontal: "center", vertical: "center", wrapText: true };
       cell.border = this.createBorder();
       sheet.getColumn(index + 1).width = 18;
     });
@@ -331,8 +331,7 @@ export class ExcelTemplateGenerator {
       const description = this.getFieldDescription(header);
 
       cell.note = {
-        texts: [description],
-        margins: { insetmode: 'custom', l: 100, t: 100, r: 100, b: 100 },
+        texts: [{ rich: [{ font: { size: 10 }, value: description }] }],
       };
     });
   }
@@ -341,18 +340,18 @@ export class ExcelTemplateGenerator {
    * Converte RGB para ARGB (Excel format)
    */
   private static rgbToArgb(rgb: { r: number; g: number; b: number }): string {
-    return `FF${((rgb.r << 16) | (rgb.g << 8) | rgb.b).toString(16).toUpperCase().padStart(6, '0')}`;
+    return `FF${((rgb.r << 16) | (rgb.g << 8) | rgb.b).toString(16).toUpperCase().padStart(6, "0")}`;
   }
 
   /**
    * Cria border padrão
    */
-  private static createBorder(): Border {
+  private static createBorder() {
     return {
-      top: { style: 'thin' },
-      left: { style: 'thin' },
-      bottom: { style: 'thin' },
-      right: { style: 'thin' },
+      top: { style: "thin" },
+      left: { style: "thin" },
+      bottom: { style: "thin" },
+      right: { style: "thin" },
     };
   }
 }
