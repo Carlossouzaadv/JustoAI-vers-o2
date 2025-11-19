@@ -1,6 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
 import { HelpArticleLayout } from '@/components/help/help-article-layout';
 
+export const dynamic = 'force-dynamic';
+
 export default function ConfigurandoEntregaEmailPage() {
   return (
     <HelpArticleLayout
