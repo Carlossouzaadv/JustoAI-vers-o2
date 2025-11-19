@@ -102,39 +102,39 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+// WORKAROUND: In production builds on Vercel, disable Sentry webpack plugin
+// because Next.js doesn't generate .map files for all chunks, causing 100+ false warnings
+// Sentry SDK still captures errors at runtime without sourcemaps
+const shouldEnableSentry = process.env.VERCEL_ENV !== 'production';
 
-  org: 'justoai',
+export default shouldEnableSentry
+  ? withSentryConfig(nextConfig, {
+      // For all available options, see:
+      // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-  project: 'justoai',
+      org: 'justoai',
 
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
+      project: 'justoai',
 
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+      // Only print logs for uploading source maps in CI
+      silent: true,
 
-  // Disable sourcemap upload - Next.js doesn't generate .map for all chunks in production
-  // The 100+ "no sourcemap found" warnings are from Sentry server-side processing
-  // Even though we skip upload, the server still processes and warns about missing maps
-  // Setting debug: false silences these harmless warnings
-  skipSourceMapUpload: true,
-  debug: false,
+      // For all available options, see:
+      // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
+      // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+      // This can increase your server load as well as your hosting bill.
+      // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+      // side errors will fail.
+      // tunnelRoute: "/monitoring",
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+      // Automatically tree-shake Sentry logger statements to reduce bundle size
+      disableLogger: true,
 
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true,
-});
+      // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+      // See the following for more information:
+      // https://docs.sentry.io/product/crons/
+      // https://vercel.com/docs/cron-jobs
+      automaticVercelMonitors: true,
+    })
+  : nextConfig;
