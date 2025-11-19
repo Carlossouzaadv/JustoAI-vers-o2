@@ -119,6 +119,26 @@ export default withSentryConfig(nextConfig, {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
+  // Include ALL source maps - both .map files and referenced sourcemaps
+  include: [
+    './src',
+    './.next/standalone',
+    './.next/static',
+  ],
+
+  // Ignore patterns to exclude from upload
+  ignore: [
+    'node_modules',
+    '.next/cache',
+    'dist',
+  ],
+
+  // Ensure sourcemaps are uploaded (not a dry run)
+  dryRun: false,
+
+  // Automatically detect and upload sourcemaps
+  urlPrefix: '~/',
+
   // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
