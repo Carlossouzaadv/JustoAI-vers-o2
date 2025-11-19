@@ -425,7 +425,7 @@ describe('Batch Dashboard Integration Tests', () => {
 
       try {
         await BatchStatusService.getBatchStatus('batch-123');
-        expect.fail('Should have thrown error');
+        throw new Error('Should have thrown error');
       } catch (err) {
         expect(err).toEqual(error);
       }

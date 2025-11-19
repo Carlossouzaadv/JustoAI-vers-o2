@@ -162,7 +162,7 @@ export async function GET(
     // 2. VERIFY DOCUMENT EXISTS AND USER HAS ACCESS
     // ============================================================
 
-    const documentExists = await prisma.document.findUnique({
+    const documentExists = await prisma.caseDocument.findUnique({
       where: { id: documentId },
       select: { id: true, caseId: true },
     });
@@ -203,7 +203,7 @@ export async function GET(
       prisma.caseEvent.findMany({
         where: {
           // Link to document via metadata
-          type: 'DOCUMENT_NOTE',
+          type: 'NOTE',
           metadata: {
             path: ['documentId'],
             equals: documentId,
@@ -215,7 +215,7 @@ export async function GET(
       }),
       prisma.caseEvent.count({
         where: {
-          type: 'DOCUMENT_NOTE',
+          type: 'NOTE',
           metadata: {
             path: ['documentId'],
             equals: documentId,
@@ -314,7 +314,7 @@ export async function POST(
     // 3. VERIFY DOCUMENT EXISTS AND USER HAS ACCESS
     // ============================================================
 
-    const documentExists = await prisma.document.findUnique({
+    const documentExists = await prisma.caseDocument.findUnique({
       where: { id: documentId },
       select: { id: true, caseId: true },
     });
@@ -358,7 +358,7 @@ export async function POST(
       data: {
         caseId: documentExists.caseId,
         userId,
-        type: 'DOCUMENT_NOTE',
+        type: 'NOTE',
         title: body.title || 'Observação sem título',
         description: body.description,
         metadata: noteMetadata,

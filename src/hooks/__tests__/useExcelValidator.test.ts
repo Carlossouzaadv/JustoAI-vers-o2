@@ -15,7 +15,7 @@ interface MockResponse {
 }
 
 // Type-safe mock of fetch with proper signature
-const mockFetch = jest.fn<Promise<MockResponse>>();
+const mockFetch = jest.fn<() => Promise<MockResponse>>();
 global.fetch = mockFetch as unknown as typeof fetch;
 
 describe('useExcelValidator Hook', () => {
@@ -130,7 +130,7 @@ describe('useExcelValidator Hook', () => {
       const { result } = renderHook(() => useExcelValidator());
       const file = new File(['test'], 'test.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       await act(async () => {
         await result.current.validate(file, 'workspace-123');
@@ -222,6 +222,7 @@ describe('useExcelValidator Hook', () => {
 
       mockFetch.mockResolvedValueOnce({
         status: 400,
+        ok: false,
         json: async () => mockResponse,
       });
 
@@ -256,6 +257,7 @@ describe('useExcelValidator Hook', () => {
 
       mockFetch.mockResolvedValueOnce({
         status: 200,
+        ok: true,
         json: async () => mockResponse,
       });
 
@@ -336,6 +338,7 @@ describe('useExcelValidator Hook', () => {
       // Step 1: Validar
       mockFetch.mockResolvedValueOnce({
         status: 200,
+        ok: true,
         json: async () => mockValidationResponse,
       });
 

@@ -157,9 +157,9 @@ export async function GET(request: Request) {
     }));
 
     // 7. Validate all alerts
-    const validAlerts = transformedAlerts.filter(alert => {
+    const validAlerts = transformedAlerts.filter((alert): alert is AdminAlert => {
       if (!isAdminAlert(alert)) {
-        console.warn(`Invalid alert structure: ${alert.id}`);
+        console.warn(`Invalid alert structure`);
         return false;
       }
       return true;

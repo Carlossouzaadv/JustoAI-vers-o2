@@ -15,9 +15,11 @@ interface FeatureMatrixProps {
       name: string;
       features: Array<{
         name: string;
-        starter: string | boolean;
-        professional: string | boolean;
-        enterprise: string | boolean;
+        gestao?: string | boolean;
+        performance?: string | boolean;
+        starter?: string | boolean;
+        professional?: string | boolean;
+        enterprise?: string | boolean;
       }>;
     }>;
   };
@@ -94,25 +96,19 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
                 </th>
                 <th className="text-center py-4 px-4 w-1/4">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-sm font-medium text-gray-900">Starter</span>
+                    <span className="text-sm font-medium text-gray-900">Gestão</span>
                     <span className="text-xs text-gray-500">Para começar</span>
                   </div>
                 </th>
                 <th className="text-center py-4 px-4 w-1/4 relative">
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium text-gray-900">Professional</span>
+                      <span className="text-sm font-medium text-gray-900">Performance</span>
                       <Star className="w-3 h-3 text-blue-500" />
                     </div>
                     <span className="text-xs text-gray-500">Mais popular</span>
                   </div>
                   <div className="absolute inset-0 bg-blue-50 rounded-lg -z-10"></div>
-                </th>
-                <th className="text-center py-4 px-4 w-1/4">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-sm font-medium text-gray-900">Enterprise</span>
-                    <span className="text-xs text-gray-500">Personalizado</span>
-                  </div>
                 </th>
               </tr>
             </thead>
@@ -146,13 +142,10 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        {renderFeatureValue(feature.starter, 'starter')}
+                        {renderFeatureValue(feature.gestao || feature.starter, 'gestao')}
                       </td>
                       <td className="py-3 px-4 text-center bg-blue-25">
-                        {renderFeatureValue(feature.professional, 'professional')}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {renderFeatureValue(feature.enterprise, 'enterprise')}
+                        {renderFeatureValue(feature.performance || feature.professional, 'performance')}
                       </td>
                     </tr>
                   ))}
