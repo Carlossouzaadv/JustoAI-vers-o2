@@ -24,7 +24,7 @@ import {
   createMockCreditAllocation,
   createMockCreditTransaction,
   resetPrismaMocks,
-} from './mocks/prisma-mock';
+} from './mocks/prisma-mock.helpers';
 
 // Mock the logger
 jest.mock('@/lib/services/logger', () => ({

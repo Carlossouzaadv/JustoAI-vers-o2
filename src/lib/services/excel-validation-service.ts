@@ -75,6 +75,7 @@ export class ExcelValidationService {
 
     const validRows: ExcelRow[] = [];
     const errors: ValidationErrorDetail[] = [];
+    const invalidRowNumbers = new Set<number>();
 
     // Iterar sobre cada linha
     // Nota: Arquivo Excel começada em linha 1 (cabeçalho), dados em linha 2+
@@ -93,6 +94,7 @@ export class ExcelValidationService {
       } else {
         // Linha inválida - extrair detalhes de CADA erro
         // (não apenas o primeiro, como faria .parse())
+        invalidRowNumbers.add(rowNumber);
         for (const issue of result.error.issues) {
           const columnName = String(issue.path[0] ?? 'unknown');
           const cellValue = this.extractCellValue(rowData, columnName);
@@ -107,8 +109,10 @@ export class ExcelValidationService {
       }
     }
 
+    const invalidRowCount = invalidRowNumbers.size;
+
     // Gerar mensagem baseada em estatísticas
-    const message = this.generateMessage(validRows.length, errors.length, rows.length);
+    const message = this.generateMessage(validRows.length, invalidRowCount, rows.length);
 
     return {
       success: errors.length === 0,
@@ -118,7 +122,7 @@ export class ExcelValidationService {
       statistics: {
         totalRows: rows.length,
         validRows: validRows.length,
-        invalidRows: errors.length,
+        invalidRows: invalidRowCount,
       },
     };
   }
