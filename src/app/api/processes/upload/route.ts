@@ -204,9 +204,9 @@ const ALLOWED_EXCEL_MIMES = new Set([
 ]);
 
 /**
- * Maximum file size: 10MB
+ * Maximum file size: 100MB
  */
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 /**
  * Type guard to validate Excel file MIME type

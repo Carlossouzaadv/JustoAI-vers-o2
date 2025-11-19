@@ -4,6 +4,7 @@ import { CookieConsentProvider } from '@/contexts/cookie-consent-context';
 import { CookieBanner } from '@/components/ui/cookie-banner';
 import { Providers } from './providers';
 import { AuthProvider } from '@/contexts/auth-context';
+import { CrispChat } from '@/components/crisp-chat';
 
 // Fonts are now defined locally in globals.css using @font-face
 // This eliminates the network dependency on Google Fonts during build
@@ -91,6 +92,7 @@ export default function RootLayout({
             </CookieConsentProvider>
           </Providers>
         </AuthProvider>
+        <CrispChat />
       </body>
     </html>
   );

@@ -53,7 +53,9 @@
     "check:all": "npm run type-check && npm run lint && npm run check:imports",
     "verify:worker": "npx tsx scripts/verify-worker-config.ts",
     "verify:worker:local": "NODE_ENV=development npx tsx scripts/verify-worker-config.ts",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "extract:help-content": "node scripts/extract-help-content.js",
+    "sync:crisp-kb": "node scripts/sync-crisp-kb.js"
   },
   "dependencies": {
     "@bull-board/express": "^6.12.7",

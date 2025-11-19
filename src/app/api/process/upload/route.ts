@@ -110,7 +110,7 @@ function buildCaseCreateData(params: {
 // CONSTANTS
 // ================================================================
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 const ALLOWED_MIME_TYPES = ['application/pdf'];
 
 // ================================================================
