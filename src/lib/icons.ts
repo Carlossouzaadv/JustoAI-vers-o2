@@ -8,8 +8,13 @@ export const ICONS = {
   SUCCESS: '✓',
   ERROR: '✗',
   WARNING: '!',
+  WARN: '!',
   INFO: 'i',
   LOADING: '...',
+  DONE: '✓',
+  FATAL: '✗',
+  PLUS: '+',
+  STREAM: '📡',
 
   // Navegação
   ARROW_LEFT: '<',

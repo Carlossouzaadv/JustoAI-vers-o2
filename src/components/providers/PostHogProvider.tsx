@@ -20,7 +20,7 @@ type PostHogProviderProps = {
   children: ReactNode;
 };
 
-export function PostHogProvider({ children }: PostHogProviderProps): JSX.Element {
+export function PostHogProvider({ children }: PostHogProviderProps): ReactNode {
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
@@ -35,7 +35,7 @@ export function PostHogProvider({ children }: PostHogProviderProps): JSX.Element
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.posthog.com',
       person_profiles: 'identified_only', // Rastrear apenas usuários identificados
       session_recording: {
-        sampleRate: 0.1, // Gravar 10% das sessões para economizar banda
+        sample_rate: 0.1, // Gravar 10% das sessões para economizar banda
       },
       autocapture: true, // Autocapture de cliques e formulários
       mask_all_text: true, // Mascarar texto sensível

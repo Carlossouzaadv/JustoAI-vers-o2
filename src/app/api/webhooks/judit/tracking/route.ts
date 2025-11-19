@@ -133,8 +133,8 @@ export async function POST(request: NextRequest) {
     // Validar tamanho do payload
     const contentLength = parseInt(request.headers.get('content-length') || '0');
     if (contentLength > WEBHOOK_CONFIG.MAX_PAYLOAD_SIZE) {
-      logError(`${ICONS.ERROR} Payload too large: ${contentLength} bytes`);
-      return NextResponse.json({ error: 'Payload too large' }, '', { component: 'juditWebhookTracking' });
+      logError(new Error('Payload too large'), `${ICONS.ERROR} Payload too large: ${contentLength} bytes`, { component: 'juditWebhookTracking' });
+      return NextResponse.json({ error: 'Payload too large' }, { status: 400 });
     }
 
     // Parsear payload
@@ -142,14 +142,14 @@ export async function POST(request: NextRequest) {
 
     // Validar estrutura básica
     if (!payload.tracking_id || !payload.process_number || !payload.event_type) {
-      logError(`${ICONS.ERROR} Invalid webhook payload structure`);
-      return NextResponse.json({ error: 'Invalid payload structure' }, '', { component: 'juditWebhookTracking' });
+      logError(new Error('Invalid payload structure'), `${ICONS.ERROR} Invalid webhook payload structure`, { component: 'juditWebhookTracking' });
+      return NextResponse.json({ error: 'Invalid payload structure' }, { status: 400 });
     }
 
     // Validar assinatura se habilitado
     if (WEBHOOK_CONFIG.VALIDATE_SIGNATURE && !await validateWebhookSignature(request, payload)) {
-      logError(`${ICONS.ERROR} Invalid webhook signature`);
-      return NextResponse.json({ error: 'Invalid signature' }, '', { component: 'juditWebhookTracking' });
+      logError(new Error('Invalid signature'), `${ICONS.ERROR} Invalid webhook signature`, { component: 'juditWebhookTracking' });
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     // Get workspace from process to check for duplicates
@@ -774,8 +774,8 @@ async function logWebhookError(request: NextRequest, error: unknown, processingT
         } as InputJsonValue
       }
     });
-  } catch (logError) {
-    logError(`${ICONS.ERROR} Failed to log webhook error:`, '', { component: 'juditWebhookTracking' });
+  } catch (webhookError) {
+    logError(webhookError, `${ICONS.ERROR} Failed to process webhook`, { component: 'juditWebhookTracking' });
   }
 }
 

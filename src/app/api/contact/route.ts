@@ -140,7 +140,7 @@ function generateEmailHtml(
             <div class="label">Email:</div>
             <div class="value"><a href="mailto:${escapeHtml(formData.email)}">${escapeHtml(formData.email)}</a></div>
           </div>
-          ${formData.company ? `
+          ${'company' in formData && formData.company ? `
           <div class="field">
             <div class="label">Empresa:</div>
             <div class="value">${escapeHtml(formData.company)}</div>

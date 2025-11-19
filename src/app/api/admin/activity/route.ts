@@ -114,7 +114,7 @@ export async function GET() {
         case: {
           select: {
             id: true,
-            caseNumber: true
+            number: true
           }
         },
         workspace: {
@@ -157,12 +157,12 @@ export async function GET() {
         caseId: av.caseId,
         version: av.version,
         status: av.status,
-        caseNumber: av.case?.caseNumber || 'N/A'
+        caseNumber: av.case?.number || 'N/A'
       },
       createdAt: av.createdAt.toISOString(),
       relatedEntity: av.case ? {
         id: av.caseId,
-        name: `Caso ${av.case.caseNumber}`
+        name: `Caso ${av.case.number}`
       } : undefined
     }));
 

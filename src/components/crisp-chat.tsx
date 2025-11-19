@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 
 declare global {
   interface Window {
-    $crisp: Array<{ push: (args: unknown[]) => void }>;
+    $crisp: unknown[] | { push: (...args: unknown[]) => unknown };
     CRISP_WEBSITE_ID: string;
   }
 }
