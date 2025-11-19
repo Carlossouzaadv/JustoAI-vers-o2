@@ -160,7 +160,7 @@ export default function BatchPage() {
         totalRows={status.progress.totalRows}
         processedRows={status.progress.processedRows}
         estimatedTimeRemaining={status.statistics.estimatedTimeRemaining}
-        status={status.status as any}
+        status={status.status as string}
       />
 
       {/* Statistics */}

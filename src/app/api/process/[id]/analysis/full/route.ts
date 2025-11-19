@@ -226,9 +226,9 @@ export async function POST(
         } else {
           console.error(`${ICONS.ERROR} [Full Analysis] Reembolso falhou:`, refundResult.error);
           // Alert to Slack + log to Better Stack (reembolso falhou = problema sério)
-          await alert.fatal("Reembolso de créditos falhou após erro da API Gemini", {
-            component: "fullAnalysisRoute",
-            stage: "geminiErrorRefund",
+          await alert.fatal('Reembolso de créditos falhou após erro da API Gemini', {
+            component: 'fullAnalysisRoute',
+            stage: 'geminiErrorRefund',
             caseId,
             error: refundResult.error,
             debitTransactionIds,
@@ -354,14 +354,14 @@ export async function POST(
         if (!refundResult.success) {
           console.error(`${ICONS.FATAL} [FATAL] Reembolso de emergência falhou:`, refundResult.error);
           // Alert to Slack + log to Better Stack (este é um bug crítico que afeta receita)
-          await alert.fatal("Reembolso de emergência falhou durante catch geral", {
-            component: "fullAnalysisRoute",
-            stage: "mainCatchEmergencyRefund",
+          await alert.fatal('Reembolso de emergência falhou durante catch geral', {
+            component: 'fullAnalysisRoute',
+            stage: 'mainCatchEmergencyRefund',
             caseId,
             error: refundResult.error,
             debitTransactionIds,
             originalError: String(error),
-            context: "Unexpected error occurred and emergency refund attempt also failed",
+            context: 'Unexpected error occurred and emergency refund attempt also failed',
           });
         } else {
           console.log(`${ICONS.SUCCESS} [Full Analysis] Reembolso de emergência bem-sucedido`);
@@ -369,13 +369,13 @@ export async function POST(
       } catch (refundError) {
         // Reembolso de emergência falhou - ALERTA CRÍTICO
         // Esta é uma situação grave: débito foi feito mas nem a análise nem o reembolso funcionaram
-        await alert.fatal("Reembolso de emergência falhou - créditos podem estar perdidos", {
-          component: "fullAnalysisRoute",
-          stage: "emergencyRefundCatch",
+        await alert.fatal('Reembolso de emergência falhou - créditos podem estar perdidos', {
+          component: 'fullAnalysisRoute',
+          stage: 'emergencyRefundCatch',
           caseId,
           error: refundError,
           debitTransactionIds,
-          context: "This is a critical financial issue requiring immediate investigation",
+          context: 'This is a critical financial issue requiring immediate investigation',
         });
       }
     }

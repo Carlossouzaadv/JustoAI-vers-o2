@@ -149,7 +149,7 @@ export class ExcelValidationService {
    *
    * @private
    */
-  private static generateMessage(validCount: number, errorCount: number, totalCount: number): string {
+  private static generateMessage(validCount: number, errorCount: number, _totalCount: number): string {
     // Caso 1: Sem erros
     if (errorCount === 0) {
       const lines = validCount !== 1 ? 'linhas' : 'linha';

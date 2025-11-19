@@ -227,7 +227,7 @@ describe('CSVExportService', () => {
         click: clickSpy,
       };
 
-      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as any);
+      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as HTMLAnchorElement);
 
       const csv = 'field1,field2\nvalue1,value2';
       CSVExportService.downloadCSV(csv, 'test.csv');
@@ -244,7 +244,7 @@ describe('CSVExportService', () => {
         click: clickSpy,
       };
 
-      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as any);
+      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as HTMLAnchorElement);
 
       const csv = 'field1,field2\nvalue1,value2';
       CSVExportService.downloadCSV(csv, 'test.csv');

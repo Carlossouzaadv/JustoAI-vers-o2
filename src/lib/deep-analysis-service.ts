@@ -148,7 +148,7 @@ export class DeepAnalysisService {
 
       return !!process;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao validar acesso ao processo:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao validar acesso ao processo:`, 'error', { component: 'deepAnalysisService' });
       return false;
     }
   }
@@ -179,7 +179,7 @@ export class DeepAnalysisService {
         cleanText: doc.cleanText || undefined
       }));
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar documentos do processo:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao buscar documentos do processo:`, 'error', { component: 'deepAnalysisService' });
       return [];
     }
   }
@@ -211,7 +211,7 @@ export class DeepAnalysisService {
         cleanText: doc.cleanText || undefined
       }));
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar documentos específicos:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao buscar documentos específicos:`, 'error', { component: 'deepAnalysisService' });
       return [];
     }
   }
@@ -229,7 +229,7 @@ export class DeepAnalysisService {
 
     try {
       for (const file of files) {
-        log.info({ msg: "${ICONS.PROCESS} Processando arquivo: ${file.name}", component: "deepAnalysisService" });
+        log.info({ msg: '${ICONS.PROCESS} Processando arquivo: ${file.name}', component: 'deepAnalysisService' });
 
         // Converter File para Buffer
         const arrayBuffer = await file.arrayBuffer();
@@ -247,7 +247,7 @@ export class DeepAnalysisService {
         });
 
         if (existingDoc) {
-          log.info({ msg: "${ICONS.INFO} Arquivo ${file.name} já existe, reutilizando", component: "deepAnalysisService" });
+          log.info({ msg: '${ICONS.INFO} Arquivo ${file.name} já existe, reutilizando', component: 'deepAnalysisService' });
           processedFiles.push({
             id: existingDoc.id,
             name: existingDoc.name,
@@ -287,12 +287,12 @@ export class DeepAnalysisService {
           cleanText: savedDoc.cleanText || undefined
         });
 
-        log.info({ msg: "${ICONS.SUCCESS} Arquivo processado: ${file.name}", component: "deepAnalysisService" });
+        log.info({ msg: '${ICONS.SUCCESS} Arquivo processado: ${file.name}', component: 'deepAnalysisService' });
       }
 
       return processedFiles;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao processar arquivos:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao processar arquivos:`, 'error', { component: 'deepAnalysisService' });
       throw new Error('Falha no processamento dos arquivos enviados');
     }
   }
@@ -349,7 +349,7 @@ export class DeepAnalysisService {
     // Gerar SHA256
     const analysisKey = createHash('sha256').update(keyData).digest('hex');
 
-    log.info({ msg: "${ICONS.INFO} Analysis key gerada: ${analysisKey.substring(0, 16)}...", component: "deepAnalysisService" });
+    log.info({ msg: '${ICONS.INFO} Analysis key gerada: ${analysisKey.substring(0, 16)}...', component: 'deepAnalysisService' });
     return analysisKey;
   }
 
@@ -366,7 +366,7 @@ export class DeepAnalysisService {
 
       return lastMovement?.date || null;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar última movimentação:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao buscar última movimentação:`, 'error', { component: 'deepAnalysisService' });
       return null;
     }
   }
@@ -404,7 +404,7 @@ export class DeepAnalysisService {
 
       // Verificar se cache ainda é válido (não expirado)
       if (cached.expiresAt && cached.expiresAt < new Date()) {
-        log.info({ msg: "${ICONS.WARNING} Cache expirado para key: ${analysisKey}", component: "deepAnalysisService" });
+        log.info({ msg: '${ICONS.WARNING} Cache expirado para key: ${analysisKey}', component: 'deepAnalysisService' });
         await this.invalidateCache(analysisKey);
         return null;
       }
@@ -412,7 +412,7 @@ export class DeepAnalysisService {
       // Verificar se não houve movimentações após o cache
       const lastMovement = await this.getLastProcessMovement(processId);
       if (lastMovement && cached.lastMovementDate && lastMovement > cached.lastMovementDate) {
-        log.info({ msg: "${ICONS.WARNING} Cache invalidado por nova movimentação", component: "deepAnalysisService" });
+        log.info({ msg: '${ICONS.WARNING} Cache invalidado por nova movimentação', component: 'deepAnalysisService' });
         await this.invalidateCache(analysisKey);
         return null;
       }
@@ -425,7 +425,7 @@ export class DeepAnalysisService {
 
       return analysisVersion;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao verificar cache:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao verificar cache:`, 'error', { component: 'deepAnalysisService' });
       return null;
     }
   }
@@ -443,7 +443,7 @@ export class DeepAnalysisService {
         }
       });
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao incrementar acesso ao cache:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao incrementar acesso ao cache:`, 'error', { component: 'deepAnalysisService' });
     }
   }
 
@@ -456,7 +456,7 @@ export class DeepAnalysisService {
         where: { analysisKey }
       });
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao invalidar cache:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao invalidar cache:`, 'error', { component: 'deepAnalysisService' });
     }
   }
 
@@ -475,7 +475,7 @@ export class DeepAnalysisService {
 
       return job;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar job ativo:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao buscar job ativo:`, 'error', { component: 'deepAnalysisService' });
       return null;
     }
   }
@@ -494,7 +494,7 @@ export class DeepAnalysisService {
 
       return job;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar job por versão:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao buscar job por versão:`, 'error', { component: 'deepAnalysisService' });
       return null;
     }
   }
@@ -509,7 +509,7 @@ export class DeepAnalysisService {
     try {
       // Validate redis client before using
       if (!isRedisClient(redis)) {
-        log.error({ msg: "${ICONS.ERROR} Redis client não disponível", component: "deepAnalysisService" });
+        log.error({ msg: '${ICONS.ERROR} Redis client não disponível', component: 'deepAnalysisService' });
         return { acquired: false };
       }
 
@@ -517,16 +517,16 @@ export class DeepAnalysisService {
       const result = await redis.set(lockKey, token, 'EX', ttlSeconds, 'NX');
 
       if (result === 'OK') {
-        log.info({ msg: "${ICONS.SUCCESS} Lock adquirido: ${lockKey}", component: "deepAnalysisService" });
+        log.info({ msg: '${ICONS.SUCCESS} Lock adquirido: ${lockKey}', component: 'deepAnalysisService' });
         return { acquired: true, token };
       } else {
         // Lock já existe, verificar TTL
         const ttl = await redis.ttl(lockKey);
-        log.info({ msg: "${ICONS.WARNING} Lock já existe, TTL: ${ttl}s", component: "deepAnalysisService" });
+        log.info({ msg: '${ICONS.WARNING} Lock já existe, TTL: ${ttl}s', component: 'deepAnalysisService' });
         return { acquired: false, ttl: ttl > 0 ? ttl : undefined };
       }
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao adquirir lock:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao adquirir lock:`, 'error', { component: 'deepAnalysisService' });
       return { acquired: false };
     }
   }
@@ -547,15 +547,15 @@ export class DeepAnalysisService {
     try {
       // Validate redis client before using
       if (!isRedisClient(redis)) {
-        log.error({ msg: "${ICONS.ERROR} Redis client não disponível", component: "deepAnalysisService" });
+        log.error({ msg: '${ICONS.ERROR} Redis client não disponível', component: 'deepAnalysisService' });
         return;
       }
 
       const lockKey = `analysis_lock:${token.split('_')[0]}`; // Simplificado
       await redis.eval(script, 1, lockKey, token);
-      log.info({ msg: "${ICONS.SUCCESS} Lock liberado: ${token}", component: "deepAnalysisService" });
+      log.info({ msg: '${ICONS.SUCCESS} Lock liberado: ${token}', component: 'deepAnalysisService' });
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao liberar lock:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao liberar lock:`, 'error', { component: 'deepAnalysisService' });
     }
   }
 
@@ -572,7 +572,7 @@ export class DeepAnalysisService {
 
       return (lastVersion?.version || 0) + 1;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao obter próximo número de versão:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao obter próximo número de versão:`, 'error', { component: 'deepAnalysisService' });
       return 1;
     }
   }
@@ -607,10 +607,10 @@ export class DeepAnalysisService {
         }
       });
 
-      log.info({ msg: "${ICONS.SUCCESS} Versão de análise criada: ${version.id}", component: "deepAnalysisService" });
+      log.info({ msg: '${ICONS.SUCCESS} Versão de análise criada: ${version.id}', component: 'deepAnalysisService' });
       return version;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao criar versão de análise:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao criar versão de análise:`, 'error', { component: 'deepAnalysisService' });
       throw error;
     }
   }
@@ -650,10 +650,10 @@ export class DeepAnalysisService {
         }
       });
 
-      log.info({ msg: "${ICONS.SUCCESS} Job de análise criado: ${job.id}", component: "deepAnalysisService" });
+      log.info({ msg: '${ICONS.SUCCESS} Job de análise criado: ${job.id}', component: 'deepAnalysisService' });
       return job;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao criar job de análise:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao criar job de análise:`, 'error', { component: 'deepAnalysisService' });
       throw error;
     }
   }
@@ -675,7 +675,7 @@ export class DeepAnalysisService {
 
       return analysis;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar última análise:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro ao buscar última análise:`, 'error', { component: 'deepAnalysisService' });
       return null;
     }
   }
@@ -685,7 +685,7 @@ export class DeepAnalysisService {
    * Valida tipos de dados retornados do Gemini antes de persistir
    */
   async processAnalysisInBackground(jobId: string): Promise<void> {
-    log.info({ msg: "${ICONS.PROCESS} Iniciando processamento background para job: ${jobId}", component: "deepAnalysisService" });
+    log.info({ msg: '${ICONS.PROCESS} Iniciando processamento background para job: ${jobId}', component: 'deepAnalysisService' });
 
     try {
       // Buscar job no banco
@@ -793,9 +793,9 @@ export class DeepAnalysisService {
         }
       });
 
-      log.info({ msg: "${ICONS.SUCCESS} Job processado com sucesso com Gemini Pro: ${jobId}", component: "deepAnalysisService" });
+      log.info({ msg: '${ICONS.SUCCESS} Job processado com sucesso com Gemini Pro: ${jobId}', component: 'deepAnalysisService' });
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro no processamento background:`, "error", { component: "deepAnalysisService" });
+      logError(`${ICONS.ERROR} Erro no processamento background:`, 'error', { component: 'deepAnalysisService' });
 
       await prisma.analysisJob.update({
         where: { id: jobId },

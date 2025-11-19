@@ -279,10 +279,10 @@ describe('useExcelValidator Hook', () => {
       const { result } = renderHook(() => useExcelValidator());
 
       // Mock document.createElement, appendChild, removeChild
-      const mockLink = { click: jest.fn(), setAttribute: jest.fn() };
-      const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
-      const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockReturnValue(mockLink as any);
-      const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockReturnValue(mockLink as any);
+      const mockLink: Element = { click: jest.fn(), setAttribute: jest.fn() } as unknown as Element;
+      const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink as HTMLElement);
+      const appendChildSpy = jest.spyOn(document.body, 'appendChild').mockReturnValue(mockLink as Node);
+      const removeChildSpy = jest.spyOn(document.body, 'removeChild').mockReturnValue(mockLink as Node);
 
       // Setar validationErrors manualmente (simulando resposta de validação)
       const errors = [

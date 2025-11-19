@@ -127,14 +127,14 @@ const WEBHOOK_CONFIG = {
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  log.info({ msg: `${ICONS.WEBHOOK} Received Judit tracking webhook`, component: "juditWebhookTracking" });
+  log.info({ msg: `${ICONS.WEBHOOK} Received Judit tracking webhook`, component: 'juditWebhookTracking' });
 
   try {
     // Validar tamanho do payload
     const contentLength = parseInt(request.headers.get('content-length') || '0');
     if (contentLength > WEBHOOK_CONFIG.MAX_PAYLOAD_SIZE) {
       logError(`${ICONS.ERROR} Payload too large: ${contentLength} bytes`);
-      return NextResponse.json({ error: 'Payload too large' }, "", { component: "juditWebhookTracking" });
+      return NextResponse.json({ error: 'Payload too large' }, '', { component: 'juditWebhookTracking' });
     }
 
     // Parsear payload
@@ -143,13 +143,13 @@ export async function POST(request: NextRequest) {
     // Validar estrutura básica
     if (!payload.tracking_id || !payload.process_number || !payload.event_type) {
       logError(`${ICONS.ERROR} Invalid webhook payload structure`);
-      return NextResponse.json({ error: 'Invalid payload structure' }, "", { component: "juditWebhookTracking" });
+      return NextResponse.json({ error: 'Invalid payload structure' }, '', { component: 'juditWebhookTracking' });
     }
 
     // Validar assinatura se habilitado
     if (WEBHOOK_CONFIG.VALIDATE_SIGNATURE && !await validateWebhookSignature(request, payload)) {
       logError(`${ICONS.ERROR} Invalid webhook signature`);
-      return NextResponse.json({ error: 'Invalid signature' }, "", { component: "juditWebhookTracking" });
+      return NextResponse.json({ error: 'Invalid signature' }, '', { component: 'juditWebhookTracking' });
     }
 
     // Get workspace from process to check for duplicates
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar deduplicação
     if (await isDuplicateWebhook(payload, workspaceId)) {
-      log.info({ msg: `${ICONS.INFO} Duplicate webhook ignored: ${payload.tracking_id}`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.INFO} Duplicate webhook ignored: ${payload.tracking_id}`, component: 'juditWebhookTracking' });
       return NextResponse.json({ status: 'duplicate_ignored' }, { status: 200 });
     }
 
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    logError(`${ICONS.ERROR} Webhook processing failed:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Webhook processing failed:`, '', { component: 'juditWebhookTracking' });
 
     // Log detalhado do erro
     await logWebhookError(request, error, processingTime);
@@ -223,7 +223,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
     const process = await findProcessByTracking(payload.tracking_id, payload.process_number);
 
     if (!process) {
-      log.warn({ msg: `${ICONS.WARNING} Process not found for tracking: ${payload.tracking_id} / ${payload.process_number}`, component: "juditWebhookTracking" });
+      log.warn({ msg: `${ICONS.WARNING} Process not found for tracking: ${payload.tracking_id} / ${payload.process_number}`, component: 'juditWebhookTracking' });
       result.error = 'Process not found';
       return result;
     }
@@ -249,7 +249,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
         break;
 
       default:
-        log.warn({ msg: `${ICONS.WARNING} Unknown event type: ${payload.event_type}`, component: "juditWebhookTracking" });
+        log.warn({ msg: `${ICONS.WARNING} Unknown event type: ${payload.event_type}`, component: 'juditWebhookTracking' });
         result.error = `Unknown event type: ${payload.event_type}`;
         return result;
     }
@@ -263,7 +263,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
     return result;
 
   } catch (error) {
-    logError(`${ICONS.ERROR} Failed to process webhook:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Failed to process webhook:`, '', { component: 'juditWebhookTracking' });
     result.error = error instanceof Error ? error.message : 'Unknown error';
     result.processingTime = Date.now() - startTime;
     return result;
@@ -281,11 +281,11 @@ async function processMovementEvent(
 ) {
   const movement = payload.data.movement;
   if (!movement) {
-    log.warn({ msg: `${ICONS.WARNING} Movement event without movement data`, component: "juditWebhookTracking" });
+    log.warn({ msg: `${ICONS.WARNING} Movement event without movement data`, component: 'juditWebhookTracking' });
     return;
   }
 
-  log.info({ msg: `${ICONS.PROCESS} Processing movement for ${process.processNumber}: ${movement.description}`, component: "juditWebhookTracking" });
+  log.info({ msg: `${ICONS.PROCESS} Processing movement for ${process.processNumber}: ${movement.description}`, component: 'juditWebhookTracking' });
 
   try {
     // Build raw data with remote identifiers
@@ -308,7 +308,7 @@ async function processMovementEvent(
     });
 
     if (existingMovement) {
-      log.info({ msg: `${ICONS.INFO} Movement already exists, skipping: ${movement.id}`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.INFO} Movement already exists, skipping: ${movement.id}`, component: 'juditWebhookTracking' });
       return;
     }
 
@@ -337,10 +337,10 @@ async function processMovementEvent(
       result.alertsGenerated += alertsGenerated;
     }
 
-    log.info({ msg: `${ICONS.SUCCESS} Movement processed: ${movement.description}`, component: "juditWebhookTracking" });
+    log.info({ msg: `${ICONS.SUCCESS} Movement processed: ${movement.description}`, component: 'juditWebhookTracking' });
 
   } catch (error) {
-    logError(`${ICONS.ERROR} Failed to process movement:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Failed to process movement:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
 }
@@ -350,18 +350,18 @@ async function processAttachmentEvent(
   payload: JuditWebhookPayload,
   _result: WebhookProcessingResult
 ) {
-  log.info({ msg: `${ICONS.INFO} Processing attachment event for ${process.processNumber}`, component: "juditWebhookTracking" });
+  log.info({ msg: `${ICONS.INFO} Processing attachment event for ${process.processNumber}`, component: 'juditWebhookTracking' });
 
   try {
     // Attachments are included in the webhook payload
     if (payload.data.metadata) {
-      log.info({ msg: `${ICONS.INFO} Attachment event received for ${process.processNumber}`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.INFO} Attachment event received for ${process.processNumber}`, component: 'juditWebhookTracking' });
       // The attachment data is typically in the metadata field
       // Store it in the process metadata for later retrieval
     }
 
   } catch (error) {
-    logError(`${ICONS.ERROR} Failed to process attachment event:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Failed to process attachment event:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
 }
@@ -373,11 +373,11 @@ async function processStatusChangeEvent(
 ) {
   const status = payload.data.status;
   if (!status) {
-    log.warn({ msg: `${ICONS.WARNING} Status change event without status data`, component: "juditWebhookTracking" });
+    log.warn({ msg: `${ICONS.WARNING} Status change event without status data`, component: 'juditWebhookTracking' });
     return;
   }
 
-  log.info({ msg: `${ICONS.INFO} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}`, component: "juditWebhookTracking" });
+  log.info({ msg: `${ICONS.INFO} Processing status change for ${process.processNumber}: ${status.previous} -> ${status.current}`, component: 'juditWebhookTracking' });
 
   try {
     // Update processData with status metadata
@@ -405,10 +405,10 @@ async function processStatusChangeEvent(
       result.alertsGenerated += alertsGenerated;
     }
 
-    log.info({ msg: `${ICONS.SUCCESS} Status updated: ${status.previous} -> ${status.current}`, component: "juditWebhookTracking" });
+    log.info({ msg: `${ICONS.SUCCESS} Status updated: ${status.previous} -> ${status.current}`, component: 'juditWebhookTracking' });
 
   } catch (error) {
-    logError(`${ICONS.ERROR} Failed to process status change:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Failed to process status change:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
 }
@@ -418,7 +418,7 @@ async function processUpdateEvent(
   payload: JuditWebhookPayload,
   result: WebhookProcessingResult
 ) {
-  log.info({ msg: `${ICONS.INFO} Processing general update for ${process.processNumber}`, component: "juditWebhookTracking" });
+  log.info({ msg: `${ICONS.INFO} Processing general update for ${process.processNumber}`, component: 'juditWebhookTracking' });
 
   try {
     // Para updates gerais, processar dados que vieram no webhook
@@ -434,10 +434,10 @@ async function processUpdateEvent(
     // Atualizar metadados do processo
     await updateProcessMetadata(process.id, updatedData, payload.timestamp);
 
-    log.info({ msg: `${ICONS.SUCCESS} General update processed: ${result.newMovements} movements, ${result.attachmentsProcessed} attachments`, component: "juditWebhookTracking" });
+    log.info({ msg: `${ICONS.SUCCESS} General update processed: ${result.newMovements} movements, ${result.attachmentsProcessed} attachments`, component: 'juditWebhookTracking' });
 
   } catch (error) {
-    logError(`${ICONS.ERROR} Failed to process general update:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Failed to process general update:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
 }
@@ -453,7 +453,7 @@ async function validateWebhookSignature(request: NextRequest, payload: JuditWebh
 
     const secret = process.env.JUDIT_WEBHOOK_SECRET;
     if (!secret) {
-      log.warn({ msg: `${ICONS.WARNING} JUDIT_WEBHOOK_SECRET not configured`, component: "juditWebhookTracking" });
+      log.warn({ msg: `${ICONS.WARNING} JUDIT_WEBHOOK_SECRET not configured`, component: 'juditWebhookTracking' });
       return true; // Skip validation if secret not configured
     }
 
@@ -471,7 +471,7 @@ async function validateWebhookSignature(request: NextRequest, payload: JuditWebh
     );
 
   } catch (error) {
-    logError(`${ICONS.ERROR} Signature validation failed:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Signature validation failed:`, '', { component: 'juditWebhookTracking' });
     return false;
   }
 }
@@ -490,7 +490,7 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload, workspaceId: str
   });
 
   if (existing) {
-    log.info({ msg: `${ICONS.INFO} Duplicate webhook detected, skipping`, component: "juditWebhookTracking" });
+    log.info({ msg: `${ICONS.INFO} Duplicate webhook detected, skipping`, component: 'juditWebhookTracking' });
     return true;
   }
 
@@ -523,7 +523,7 @@ async function findProcessByTracking(trackingId: string, processNumber: string):
 async function processMovementAttachments(movementId: string, attachments: AttachmentData[]): Promise<void> {
   // Store attachment metadata in the ProcessMovement's rawData field
   // Don't create separate CaseDocuments as this is tracking data not case files
-  log.info({ msg: `${ICONS.INFO} Processing ${attachments.length} attachments for movement ${movementId}`, component: "juditWebhookTracking" });
+  log.info({ msg: `${ICONS.INFO} Processing ${attachments.length} attachments for movement ${movementId}`, component: 'juditWebhookTracking' });
   // Attachments are stored via their process, not individual movements
 }
 
@@ -553,7 +553,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     const isImportant = urgency !== 'low';
 
     if (!isImportant) {
-      log.info({ msg: `${ICONS.INFO} Movimentação de baixa prioridade, sem alerta: ${movementType}`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.INFO} Movimentação de baixa prioridade, sem alerta: ${movementType}`, component: 'juditWebhookTracking' });
       return 0;
     }
 
@@ -566,12 +566,12 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     });
 
     if (!workspace) {
-      log.warn({ msg: `${ICONS.WARNING} Workspace not found: ${workspaceId}`, component: "juditWebhookTracking" });
+      log.warn({ msg: `${ICONS.WARNING} Workspace not found: ${workspaceId}`, component: 'juditWebhookTracking' });
       return 0;
     }
 
     // Por enquanto, apenas log do alerta (integração com sistema de notificação será implementada)
-    log.info({ msg: `${ICONS.INFO} Alert would be sent to workspace ${workspace.name} users for movement`, component: "juditWebhookTracking" });
+    log.info({ msg: `${ICONS.INFO} Alert would be sent to workspace ${workspace.name} users for movement`, component: 'juditWebhookTracking' });
 
     // Enviar alerta para cada usuário do workspace
     let alertsGenerated = 0;
@@ -595,12 +595,12 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
         }
       });
 
-      log.info({ msg: `${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s) + broadcaster SSE`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de movimentação enviado(s) + broadcaster SSE`, component: 'juditWebhookTracking' });
     }
 
     return alertsGenerated;
   } catch (error) {
-    logError(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, '', { component: 'juditWebhookTracking' });
     return 0;
   }
 }
@@ -628,7 +628,7 @@ async function generateStatusChangeAlerts(process: MonitoredProcessWithWorkspace
     const isImportant = urgency !== 'low';
 
     if (!isImportant) {
-      log.info({ msg: `${ICONS.INFO} Mudança de status de baixa prioridade, sem alerta: ${currentStatus}`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.INFO} Mudança de status de baixa prioridade, sem alerta: ${currentStatus}`, component: 'juditWebhookTracking' });
       return 0;
     }
 
@@ -641,12 +641,12 @@ async function generateStatusChangeAlerts(process: MonitoredProcessWithWorkspace
     });
 
     if (!workspace) {
-      log.warn({ msg: `${ICONS.WARNING} Workspace not found for status change notification: ${workspaceId}`, component: "juditWebhookTracking" });
+      log.warn({ msg: `${ICONS.WARNING} Workspace not found for status change notification: ${workspaceId}`, component: 'juditWebhookTracking' });
       return 0;
     }
 
     // Por enquanto, apenas log do alerta (integração com sistema de notificação será implementada)
-    log.info({ msg: `${ICONS.INFO} Status change alert would be sent to workspace ${workspace.name} users`, component: "juditWebhookTracking" });
+    log.info({ msg: `${ICONS.INFO} Status change alert would be sent to workspace ${workspace.name} users`, component: 'juditWebhookTracking' });
 
     // Criar descrição da mudança
     const statusChangeDescription = `
@@ -678,12 +678,12 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
         }
       });
 
-      log.info({ msg: `${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s) + broadcaster SSE`, component: "juditWebhookTracking" });
+      log.info({ msg: `${ICONS.SUCCESS} ${alertsGenerated} alerta(s) de mudança de status enviado(s) + broadcaster SSE`, component: 'juditWebhookTracking' });
     }
 
     return alertsGenerated;
   } catch (error) {
-    logError(`${ICONS.ERROR} Erro ao gerar alertas de status:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Erro ao gerar alertas de status:`, '', { component: 'juditWebhookTracking' });
     return 0;
   }
 }
@@ -775,7 +775,7 @@ async function logWebhookError(request: NextRequest, error: unknown, processingT
       }
     });
   } catch (logError) {
-    logError(`${ICONS.ERROR} Failed to log webhook error:`, "", { component: "juditWebhookTracking" });
+    logError(`${ICONS.ERROR} Failed to log webhook error:`, '', { component: 'juditWebhookTracking' });
   }
 }
 

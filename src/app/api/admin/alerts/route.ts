@@ -160,7 +160,7 @@ export async function GET(request: Request) {
       .filter((id, index, arr) => id && arr.indexOf(id) === index); // Unique IDs
 
     // Broadcast updates in background (non-blocking)
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+     
     Promise.all(
       affectedWorkspaceIds.map(workspaceId =>
         broadcastAlertCountUpdate(workspaceId as string)

@@ -98,7 +98,7 @@ export class AnalysisCacheManager {
       try {
         parsedData = JSON.parse(data) as unknown as AnalysisCacheEntry;
       } catch (parseError) {
-        logError(`${ICONS.ERROR} Failed to parse cache data:`, "parseError", { component: "analysisCache" });
+        logError(`${ICONS.ERROR} Failed to parse cache data:`, 'parseError', { component: 'analysisCache' });
         await this.redis.del(cacheKey);
         return {
           hit: false,
@@ -108,7 +108,7 @@ export class AnalysisCacheManager {
 
       // Type-safe validation: use type guard
       if (!isAnalysisCacheEntry(parsedData)) {
-        log.warn({ msg: "${ICONS.WARNING} Invalid cache entry structure, invalidating", component: "analysisCache" });
+        log.warn({ msg: '${ICONS.WARNING} Invalid cache entry structure, invalidating', component: 'analysisCache' });
         await this.redis.del(cacheKey);
         return {
           hit: false,
@@ -124,7 +124,7 @@ export class AnalysisCacheManager {
       const isValidByMovement = !lastMovementDate || cacheCreatedAt > lastMovementDate;
 
       if (isValidByMovement) {
-        log.info({ msg: "${ICONS.SUCCESS} Cache HIT", component: "analysisCache" });
+        log.info({ msg: '${ICONS.SUCCESS} Cache HIT', component: 'analysisCache' });
         return {
           hit: true,
           data: parsedData.result.analysis || parsedData.result,
@@ -147,9 +147,9 @@ export class AnalysisCacheManager {
       const errorMsg = error instanceof Error ? error.message : String(error);
 
       if (errorMsg.includes('Stream isn\'t writeable') || errorMsg.includes('READONLY')) {
-        log.warn({ msg: "${ICONS.WARNING} Redis temporarily unavailable (graceful degradation)", component: "analysisCache" });
+        log.warn({ msg: '${ICONS.WARNING} Redis temporarily unavailable (graceful degradation)', component: 'analysisCache' });
       } else {
-        logError(`${ICONS.ERROR} Cache error:`, "errorMsg", { component: "analysisCache" });
+        logError(`${ICONS.ERROR} Cache error:`, 'errorMsg', { component: 'analysisCache' });
       }
 
       return {
@@ -190,7 +190,7 @@ export class AnalysisCacheManager {
 
       await this.redis.setex(cacheKey, this.ANALYSIS_CACHE_TTL, JSON.stringify(cacheData));
 
-      log.info({ msg: "${ICONS.SUCCESS} Análise salva no cache: ${analysisKey.substring(0, 16)}... (TTL: ${this.ANALYSIS_CACHE_TTL}s)", component: "analysisCache" });
+      log.info({ msg: '${ICONS.SUCCESS} Análise salva no cache: ${analysisKey.substring(0, 16)}... (TTL: ${this.ANALYSIS_CACHE_TTL}s)', component: 'analysisCache' });
       return true;
 
     } catch (error) {
@@ -198,7 +198,7 @@ export class AnalysisCacheManager {
       const errorMsg = error instanceof Error ? error.message : String(error);
 
       if (!errorMsg.includes('Stream isn\'t writeable') && !errorMsg.includes('READONLY')) {
-        logError(`${ICONS.ERROR} Cache save error:`, "errorMsg", { component: "analysisCache" });
+        logError(`${ICONS.ERROR} Cache save error:`, 'errorMsg', { component: 'analysisCache' });
       }
       return false;
     }
@@ -243,7 +243,7 @@ export class AnalysisCacheManager {
       const errorMsg = error instanceof Error ? error.message : String(error);
 
       if (!errorMsg.includes('Stream isn\'t writeable') && !errorMsg.includes('READONLY')) {
-        logError(`${ICONS.ERROR} Lock error:`, "errorMsg", { component: "analysisCache" });
+        logError(`${ICONS.ERROR} Lock error:`, 'errorMsg', { component: 'analysisCache' });
       }
 
       // Return false but with positive ttl to avoid triggering retries
@@ -262,10 +262,10 @@ export class AnalysisCacheManager {
   async releaseLock(lockKey: string): Promise<boolean> {
     try {
       const result = await this.redis.del(lockKey);
-      log.info({ msg: "${ICONS.SUCCESS} Lock liberado: ${lockKey}", component: "analysisCache" });
+      log.info({ msg: '${ICONS.SUCCESS} Lock liberado: ${lockKey}', component: 'analysisCache' });
       return result > 0;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao liberar lock:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao liberar lock:`, 'error', { component: 'analysisCache' });
       return false;
     }
   }
@@ -279,10 +279,10 @@ export class AnalysisCacheManager {
 
       await this.redis.setex(textKey, this.TEXT_CACHE_TTL, extractedText);
 
-      log.info({ msg: "${ICONS.SUCCESS} Texto extraído salvo no cache (TTL: ${this.TEXT_CACHE_TTL}s)", component: "analysisCache" });
+      log.info({ msg: '${ICONS.SUCCESS} Texto extraído salvo no cache (TTL: ${this.TEXT_CACHE_TTL}s)', component: 'analysisCache' });
       return true;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao cachear texto:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao cachear texto:`, 'error', { component: 'analysisCache' });
       return false;
     }
   }
@@ -296,12 +296,12 @@ export class AnalysisCacheManager {
       const text = await this.redis.get(textKey);
 
       if (text) {
-        log.info({ msg: "${ICONS.SUCCESS} Texto recuperado do cache", component: "analysisCache" });
+        log.info({ msg: '${ICONS.SUCCESS} Texto recuperado do cache', component: 'analysisCache' });
       }
 
       return text;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao recuperar texto do cache:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao recuperar texto do cache:`, 'error', { component: 'analysisCache' });
       return null;
     }
   }
@@ -311,7 +311,7 @@ export class AnalysisCacheManager {
    */
   async cleanupExpiredCaches(): Promise<number> {
     try {
-      log.info({ msg: "${ICONS.PROCESS} Iniciando limpeza de caches expirados...", component: "analysisCache" });
+      log.info({ msg: '${ICONS.PROCESS} Iniciando limpeza de caches expirados...', component: 'analysisCache' });
 
       const keys = await this.redis.keys('analysis:*');
       let cleanedCount = 0;
@@ -324,11 +324,11 @@ export class AnalysisCacheManager {
         }
       }
 
-      log.info({ msg: "${ICONS.SUCCESS} Limpeza concluída: ${cleanedCount} caches removidos", component: "analysisCache" });
+      log.info({ msg: '${ICONS.SUCCESS} Limpeza concluída: ${cleanedCount} caches removidos', component: 'analysisCache' });
       return cleanedCount;
 
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro na limpeza de cache:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro na limpeza de cache:`, 'error', { component: 'analysisCache' });
       return 0;
     }
   }
@@ -358,7 +358,7 @@ export class AnalysisCacheManager {
       try {
         memoryInfo = await this.redis.call('MEMORY', 'USAGE') as number;
       } catch (_error) {
-        log.warn({ msg: "Redis MEMORY USAGE command not supported, using fallback", component: "analysisCache" });
+        log.warn({ msg: 'Redis MEMORY USAGE command not supported, using fallback', component: 'analysisCache' });
       }
 
       const memoryUsageBytes = memoryInfo || 0;
@@ -375,7 +375,7 @@ export class AnalysisCacheManager {
         }
       };
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao obter estatísticas:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao obter estatísticas:`, 'error', { component: 'analysisCache' });
       return null;
     }
   }
@@ -409,7 +409,7 @@ export class AnalysisCacheManager {
 
       return lastMovement?.date || null;
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar última movimentação:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao buscar última movimentação:`, 'error', { component: 'analysisCache' });
       return null;
     }
   }
@@ -434,7 +434,7 @@ export class AnalysisCacheManager {
         .filter((hash): hash is string => Boolean(hash))
         .sort(); // Ordenar para consistência
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao buscar hashes de documentos:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao buscar hashes de documentos:`, 'error', { component: 'analysisCache' });
       return [];
     }
   }
@@ -477,10 +477,10 @@ export class AnalysisCacheManager {
       }
 
       if (invalidatedCount > 0) {
-        log.info({ msg: "${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${processId}", component: "analysisCache" });
+        log.info({ msg: '${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${processId}', component: 'analysisCache' });
       }
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao invalidar cache:`, "error", { component: "analysisCache" });
+      logError(`${ICONS.ERROR} Erro ao invalidar cache:`, 'error', { component: 'analysisCache' });
     }
   }
 

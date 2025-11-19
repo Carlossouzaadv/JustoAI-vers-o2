@@ -38,19 +38,6 @@ export interface ExtractionResult {
   processNumber: string | null;
 }
 
-interface LineMetadata {
-  text: string;
-  startsWithLowercase: boolean;
-  endsWithHyphen: boolean;
-  isBlank: boolean;
-  isSuspiciouslyRepetitive: boolean;
-}
-
-interface TextLine {
-  content: string;
-  frequency: number;
-}
-
 // ================================================================
 // REGEX PATTERNS - Gold Standard
 // ================================================================

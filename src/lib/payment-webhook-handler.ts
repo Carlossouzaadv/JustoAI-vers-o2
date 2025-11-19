@@ -43,7 +43,7 @@ export class PaymentWebhookHandler {
     headers: Record<string, string>,
     rawBody: string
   ): Promise<PaymentProcessingResult> {
-    log.info({ msg: `${ICONS.SYNC} Processando webhook de pagamento: ${provider}`, component: "paymentWebhookHandler" });
+    log.info({ msg: `${ICONS.SYNC} Processando webhook de pagamento: ${provider}`, component: 'paymentWebhookHandler' });
 
     try {
       // Verificar assinatura do webhook se configurada
@@ -65,7 +65,7 @@ export class PaymentWebhookHandler {
         case 'payment.refunded':
           return await this.handlePaymentRefunded(payload);
         default:
-          log.info({ msg: `${ICONS.WARNING} Evento de webhook não tratado: ${payload.event}`, component: "paymentWebhookHandler" });
+          log.info({ msg: `${ICONS.WARNING} Evento de webhook não tratado: ${payload.event}`, component: 'paymentWebhookHandler' });
           return {
             success: true,
             transactionId: payload.transactionId
@@ -73,7 +73,7 @@ export class PaymentWebhookHandler {
       }
 
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao processar webhook:`, "", { component: "paymentWebhookHandler" });
+      logError(`${ICONS.ERROR} Erro ao processar webhook:`, '', { component: 'paymentWebhookHandler' });
       return {
         success: false,
         transactionId: 'unknown',
@@ -87,7 +87,7 @@ export class PaymentWebhookHandler {
    * Handle successful payment
    */
   private async handlePaymentSuccess(payload: PaymentWebhookPayload): Promise<PaymentProcessingResult> {
-    log.info({ msg: `${ICONS.SUCCESS} Processando pagamento bem-sucedido: ${payload.transactionId}`, component: "paymentWebhookHandler" });
+    log.info({ msg: `${ICONS.SUCCESS} Processando pagamento bem-sucedido: ${payload.transactionId}`, component: 'paymentWebhookHandler' });
 
     try {
       // Verificar se transação já foi processada
@@ -101,7 +101,7 @@ export class PaymentWebhookHandler {
       });
 
       if (existingTransaction) {
-        log.info({ msg: `${ICONS.WARNING} Transação já processada: ${payload.transactionId}`, component: "paymentWebhookHandler" });
+        log.info({ msg: `${ICONS.WARNING} Transação já processada: ${payload.transactionId}`, component: 'paymentWebhookHandler' });
         return {
           success: true,
           transactionId: payload.transactionId,
@@ -171,7 +171,7 @@ export class PaymentWebhookHandler {
 
       // A transação já é registrada como movimentação de créditos
 
-      log.info({ msg: `${ICONS.SUCCESS} ${credits} créditos adicionados para usuário ${userId}`, component: "paymentWebhookHandler" });
+      log.info({ msg: `${ICONS.SUCCESS} ${credits} créditos adicionados para usuário ${userId}`, component: 'paymentWebhookHandler' });
 
       // Enviar email de confirmação
       try {
@@ -183,7 +183,7 @@ export class PaymentWebhookHandler {
           payload.transactionId
         );
       } catch (emailError) {
-        logError(`${ICONS.ERROR} Erro ao enviar email de confirmação:`, "", { component: "paymentWebhookHandler" });
+        logError(`${ICONS.ERROR} Erro ao enviar email de confirmação:`, '', { component: 'paymentWebhookHandler' });
         // Não falhar o webhook por erro de email
       }
 
@@ -194,7 +194,7 @@ export class PaymentWebhookHandler {
       };
 
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao processar pagamento bem-sucedido:`, "", { component: "paymentWebhookHandler" });
+      logError(`${ICONS.ERROR} Erro ao processar pagamento bem-sucedido:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
   }
@@ -203,7 +203,7 @@ export class PaymentWebhookHandler {
    * Handle failed payment
    */
   private async handlePaymentFailed(payload: PaymentWebhookPayload): Promise<PaymentProcessingResult> {
-    log.info({ msg: `${ICONS.ERROR} Processando pagamento falhado: ${payload.transactionId}`, component: "paymentWebhookHandler" });
+    log.info({ msg: `${ICONS.ERROR} Processando pagamento falhado: ${payload.transactionId}`, component: 'paymentWebhookHandler' });
 
     try {
       const userId = payload.metadata?.userId;
@@ -242,7 +242,7 @@ export class PaymentWebhookHandler {
         transactionId: payload.transactionId
       };
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao processar pagamento falhado:`, "", { component: "paymentWebhookHandler" });
+      logError(`${ICONS.ERROR} Erro ao processar pagamento falhado:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
   }
@@ -251,7 +251,7 @@ export class PaymentWebhookHandler {
    * Handle pending payment
    */
   private async handlePaymentPending(payload: PaymentWebhookPayload): Promise<PaymentProcessingResult> {
-    log.info({ msg: `${ICONS.CLOCK} Processando pagamento pendente: ${payload.transactionId}`, component: "paymentWebhookHandler" });
+    log.info({ msg: `${ICONS.CLOCK} Processando pagamento pendente: ${payload.transactionId}`, component: 'paymentWebhookHandler' });
 
     try {
       const userId = payload.metadata?.userId;
@@ -287,7 +287,7 @@ export class PaymentWebhookHandler {
         transactionId: payload.transactionId
       };
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao processar pagamento pendente:`, "", { component: "paymentWebhookHandler" });
+      logError(`${ICONS.ERROR} Erro ao processar pagamento pendente:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
   }
@@ -296,7 +296,7 @@ export class PaymentWebhookHandler {
    * Handle refunded payment
    */
   private async handlePaymentRefunded(payload: PaymentWebhookPayload): Promise<PaymentProcessingResult> {
-    log.info({ msg: `${ICONS.MONEY} Processando reembolso: ${payload.transactionId}`, component: "paymentWebhookHandler" });
+    log.info({ msg: `${ICONS.MONEY} Processando reembolso: ${payload.transactionId}`, component: 'paymentWebhookHandler' });
 
     try {
       // Buscar transação original
@@ -311,7 +311,7 @@ export class PaymentWebhookHandler {
 
       // Type guard: originalTransaction must exist and have valid metadata
       if (originalTransaction === null) {
-        log.info({ msg: `⚠️ Original transaction not found for refund: ${payload.transactionId}`, component: "paymentWebhookHandler" });
+        log.info({ msg: `⚠️ Original transaction not found for refund: ${payload.transactionId}`, component: 'paymentWebhookHandler' });
         return {
           success: false,
           transactionId: payload.transactionId,
@@ -364,7 +364,7 @@ export class PaymentWebhookHandler {
         transactionId: payload.transactionId
       };
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao processar reembolso:`, "", { component: "paymentWebhookHandler" });
+      logError(`${ICONS.ERROR} Erro ao processar reembolso:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
   }
@@ -516,13 +516,13 @@ export class PaymentWebhookHandler {
    */
   private verifyWebhookSignature(provider: string, headers: Record<string, string>, body: string): boolean {
     try {
-      log.info({ msg: `${ICONS.SHIELD} Verificando assinatura do webhook ${provider}...`, component: "paymentWebhookHandler" });
+      log.info({ msg: `${ICONS.SHIELD} Verificando assinatura do webhook ${provider}...`, component: 'paymentWebhookHandler' });
 
       // Get the appropriate verifier for this provider
       const verifier = getSignatureVerifier(provider);
 
       if (!verifier) {
-        log.warn({ msg: `${ICONS.WARNING} Nenhum verificador disponível para provider: ${provider}`, component: "paymentWebhookHandler" });
+        log.warn({ msg: `${ICONS.WARNING} Nenhum verificador disponível para provider: ${provider}`, component: 'paymentWebhookHandler' });
         // For unknown providers, accept but log warning
         return true;
       }
@@ -550,15 +550,15 @@ export class PaymentWebhookHandler {
         logError(
           `${ICONS.ERROR} Assinatura inválida do webhook ${provider}. ` +
           `Headers: ${JSON.stringify(Object.keys(headers))}`,
-          "",
-          { component: "paymentWebhookHandler" }
+          '',
+          { component: 'paymentWebhookHandler' }
         );
       }
 
       return isValid;
 
     } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao verificar assinatura do webhook:`, "", { component: "paymentWebhookHandler" });
+      console.error(`${ICONS.ERROR} Erro ao verificar assinatura do webhook:`, '', { component: 'paymentWebhookHandler' });
       // Log error to Sentry
       Sentry.captureMessage(
         `Error verifying webhook signature for ${provider}`,

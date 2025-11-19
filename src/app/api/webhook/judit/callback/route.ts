@@ -115,13 +115,13 @@ export async function POST(request: NextRequest) {
   try {
     // Log com timestamp exato para rastreamento
     const timestamp = new Date().toISOString();
-    log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] ✅ RECEBIDO EM ${timestamp}`, component: "judit-callback" });
-    log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] URL: ${request.url}`, component: "judit-callback" });
-    log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] Method: ${request.method}`, component: "judit-callback" });
+    log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] ✅ RECEBIDO EM ${timestamp}`, component: 'judit-callback' });
+    log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] URL: ${request.url}`, component: 'judit-callback' });
+    log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] Method: ${request.method}`, component: 'judit-callback' });
     log.info({ msg: `${ICONS.WEBHOOK} [JUDIT Webhook] Headers`, data: {
       'content-type': request.headers.get('content-type'),
       'user-agent': request.headers.get('user-agent'),
-    }, component: "judit-callback" });
+    }, component: 'judit-callback' });
 
     // Parse request body
     let webhook: JuditWebhookPayload;
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     const requestId = webhook.reference_id;
     const eventType = webhook.event_type;
 
-    log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] ✅ VÁLIDO - Event: ${eventType}, RequestID: ${requestId}`, component: "juditWebhookCallback" });
+    log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] ✅ VÁLIDO - Event: ${eventType}, RequestID: ${requestId}`, component: 'juditWebhookCallback' });
 
     // ================================================================
     // CASE 1: response_created - JUDIT encontrou dados
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
 
       // Validar que responseData é um record (type guard)
       if (!isJuditLawsuitResponse(responseData)) {
-        log.warn({ msg: `Dados de resposta inválidos`, responseType, component: "juditWebhookCallback" });
+        log.warn({ msg: `Dados de resposta inválidos`, responseType, component: 'juditWebhookCallback' });
         return NextResponse.json(
           { error: 'Dados de resposta inválidos' },
           { status: 400 }
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (!juditRequest) {
-        log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] JuditRequest não encontrado:`, requestId, component: "juditWebhookCallback" });
+        log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] JuditRequest não encontrado:`, requestId, component: 'juditWebhookCallback' });
         return NextResponse.json(
           { error: 'Request não encontrada' },
           { status: 404 }
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
         // Processar anexos (com retry silencioso se falhar)
         try {
           if (hasAttachments(responseData)) {
-            log.info({ msg: `${ICONS.PROCESS} [JUDIT Webhook] Iniciando processamento de ${responseData.attachments.length} anexos`, component: "juditWebhookCallback" });
+            log.info({ msg: `${ICONS.PROCESS} [JUDIT Webhook] Iniciando processamento de ${responseData.attachments.length} anexos`, component: 'juditWebhookCallback' });
 
             const attachmentResult = await processJuditAttachments(
               targetCase.id,
@@ -304,13 +304,13 @@ export async function POST(request: NextRequest) {
             });
           }
         } catch (attachmentError) {
-          logError(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar anexos:`, "", { component: "juditWebhookCallback" });
+          logError(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar anexos:`, '', { component: 'juditWebhookCallback' });
           // Continuar mesmo se erro em anexos
         }
 
         // Se não é resposta cacheada, é a resposta final completa
         if (!isCachedResponse) {
-          log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Resposta completa (não cacheada) recebida`, component: "juditWebhookCallback" });
+          log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Resposta completa (não cacheada) recebida`, component: 'juditWebhookCallback' });
 
           // ================================================================
           // EXTRAIR TIPO DE PROCESSO AUTOMATICAMENTE
@@ -322,15 +322,15 @@ export async function POST(request: NextRequest) {
           const classificationType = extractCaseTypeFromJuditResponse(responseData);
           if (classificationType) {
             mappedCaseType = classificationType;
-            log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Tipo mapeado automaticamente: ${mappedCaseType}`, component: "juditWebhookCallback" });
+            log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Tipo mapeado automaticamente: ${mappedCaseType}`, component: 'juditWebhookCallback' });
           } else {
             // Fallback: tentar extrair do subject
             const subjectType = extractCaseTypeFromSubject(responseData);
             if (subjectType) {
               mappedCaseType = subjectType;
-              log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Tipo extraído de subject: ${mappedCaseType}`, component: "juditWebhookCallback" });
+              log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Tipo extraído de subject: ${mappedCaseType}`, component: 'juditWebhookCallback' });
             } else {
-              log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Não foi possível mapear tipo automaticamente, mantendo ${targetCase.type}`, component: "juditWebhookCallback" });
+              log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Não foi possível mapear tipo automaticamente, mantendo ${targetCase.type}`, component: 'juditWebhookCallback' });
             }
           }
 
@@ -358,7 +358,7 @@ export async function POST(request: NextRequest) {
             }
           });
 
-          log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Caso ${targetCase.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`, component: "juditWebhookCallback" });
+          log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Caso ${targetCase.id} marcado como 'enriched' (FASE 2 completa) com type=${mappedCaseType} e status=ACTIVE`, component: 'juditWebhookCallback' });
         }
       } // Fechamento do if(targetCase)
 
@@ -385,7 +385,7 @@ export async function POST(request: NextRequest) {
 
     if (eventType === 'request_completed' || isApplicationInfoWith600) {
 
-      log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] REQUEST COMPLETED - Processamento finalizado:`, requestId, component: "juditWebhookCallback" });
+      log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] REQUEST COMPLETED - Processamento finalizado:`, requestId, component: 'juditWebhookCallback' });
 
       // Atualizar status no banco
       await prisma.juditRequest.update({
@@ -395,7 +395,7 @@ export async function POST(request: NextRequest) {
 
       // Log final de sucesso
       const duration = Date.now() - startTime;
-      log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Webhook processado com sucesso em ${duration}ms`, component: "juditWebhookCallback" });
+      log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Webhook processado com sucesso em ${duration}ms`, component: 'juditWebhookCallback' });
 
       return NextResponse.json({
         success: true,
@@ -445,7 +445,7 @@ export async function POST(request: NextRequest) {
     // ================================================================
     // CASE 4: Evento desconhecido - Apenas log, não falha
     // ================================================================
-    log.info({ msg: `${ICONS.INFO} [JUDIT Webhook] Evento desconhecido recebido:`, eventType, component: "juditWebhookCallback" });
+    log.info({ msg: `${ICONS.INFO} [JUDIT Webhook] Evento desconhecido recebido:`, eventType, component: 'juditWebhookCallback' });
     return NextResponse.json({
       success: true,
       message: 'Evento processado (tipo desconhecido)',
@@ -453,7 +453,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logError(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar webhook:`, "", { component: "juditWebhookCallback" });
+    logError(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar webhook:`, '', { component: 'juditWebhookCallback' });
 
     return NextResponse.json({
       success: false,

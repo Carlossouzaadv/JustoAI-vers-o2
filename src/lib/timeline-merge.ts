@@ -106,7 +106,7 @@ export class TimelineMergeService {
 
       if (entry) {
         if (attempt > 0) {
-          log.info({ msg: "${ICONS.INFO} Entrada encontrada após retry #${attempt}", component: "timelineMerge" });
+          log.info({ msg: '${ICONS.INFO} Entrada encontrada após retry #${attempt}', component: 'timelineMerge' });
         }
         return entry;
       }
@@ -114,7 +114,7 @@ export class TimelineMergeService {
       // Se não encontrou e ainda há tentativas, aguardar com backoff
       if (attempt < maxRetries - 1) {
         const delayMs = Math.pow(2, attempt) * 100; // 100ms, 200ms, 400ms
-        log.info({ msg: "${ICONS.WARNING} Entrada não encontrada na tentativa ${attempt + 1}. Aguardando ${delayMs}ms antes de retry...", component: "timelineMerge" });
+        log.info({ msg: '${ICONS.WARNING} Entrada não encontrada na tentativa ${attempt + 1}. Aguardando ${delayMs}ms antes de retry...', component: 'timelineMerge' });
         await this.sleep(delayMs);
       }
     }
@@ -247,7 +247,7 @@ export class TimelineMergeService {
     entries: TimelineEntry[],
     prisma: PrismaClient
   ): Promise<TimelineMergeResult> {
-    log.info({ msg: "${ICONS.PROCESS} Mesclando ${entries.length} entradas na timeline do caso ${caseId}", component: "timelineMerge" });
+    log.info({ msg: '${ICONS.PROCESS} Mesclando ${entries.length} entradas na timeline do caso ${caseId}', component: 'timelineMerge' });
 
     let newEntries = 0;
     let duplicatesSkipped = 0;
@@ -278,7 +278,7 @@ export class TimelineMergeService {
           // Convert Prisma result to TimelineEntry with safe type narrowing
           // Validate source using type guard before constructing object
           if (!isValidTimelineEntrySource(existingEntry.source)) {
-            log.warn({ msg: "${ICONS.WARNING} Entrada com source inválido: ${existingEntry.source}. Pulando merge.", component: "timelineMerge" });
+            log.warn({ msg: '${ICONS.WARNING} Entrada com source inválido: ${existingEntry.source}. Pulando merge.', component: 'timelineMerge' });
             continue;
           }
 
@@ -313,7 +313,7 @@ export class TimelineMergeService {
             });
 
             mergedDuplicates++;
-            log.info({ msg: "${ICONS.INFO} Entrada duplicada mesclada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}", component: "timelineMerge" });
+            log.info({ msg: '${ICONS.INFO} Entrada duplicada mesclada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}', component: 'timelineMerge' });
 
             mergedEntries.push({
               id: updatedEntry.id,
@@ -326,7 +326,7 @@ export class TimelineMergeService {
           } else {
             // Não houve mudanças
             duplicatesSkipped++;
-            log.info({ msg: "${ICONS.WARNING} Entrada duplicada sem mudanças: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}", component: "timelineMerge" });
+            log.info({ msg: '${ICONS.WARNING} Entrada duplicada sem mudanças: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}', component: 'timelineMerge' });
           }
           continue;
         }
@@ -349,7 +349,7 @@ export class TimelineMergeService {
           });
 
           newEntries++;
-          log.info({ msg: "${ICONS.SUCCESS} Nova entrada adicionada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}", component: "timelineMerge" });
+          log.info({ msg: '${ICONS.SUCCESS} Nova entrada adicionada: ${entry.eventType} - ${entry.eventDate.toLocaleDateString()}', component: 'timelineMerge' });
 
           mergedEntries.push({
             id: newEntry.id,
@@ -372,7 +372,7 @@ export class TimelineMergeService {
           // Se houver erro de constraint única, outra requisição criou a entrada
           // Recuperar e tentar merge com retry
           if (prismaErrorCode === 'P2002') {
-            log.info({ msg: "${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição para ${entry.eventType} - ${entry.eventDate.toLocaleDateStr...", component: "timelineMerge" });
+            log.info({ msg: '${ICONS.INFO} Race condition detectada: Recuperando entrada criada por outra requisição para ${entry.eventType} - ${entry.eventDate.toLocaleDateStr...', component: 'timelineMerge' });
 
             // Recuperar a entrada que foi criada pela outra requisição com retry
             existingEntry = await this.findEntryWithRetry(prisma, caseId, contentHash);
@@ -381,7 +381,7 @@ export class TimelineMergeService {
               // Tentar merge com a entrada recuperada
               // Validate source using type guard before constructing object
               if (!isValidTimelineEntrySource(existingEntry.source)) {
-                log.warn({ msg: "${ICONS.WARNING} Entrada recuperada com source inválido: ${existingEntry.source}. Pulando merge.", component: "timelineMerge" });
+                log.warn({ msg: '${ICONS.WARNING} Entrada recuperada com source inválido: ${existingEntry.source}. Pulando merge.', component: 'timelineMerge' });
                 duplicatesSkipped++;
               } else {
                 // Convert Prisma result to TimelineEntry with safe type narrowing
@@ -415,7 +415,7 @@ export class TimelineMergeService {
                 });
 
                 mergedDuplicates++;
-                log.info({ msg: "${ICONS.INFO} Entrada recuperada e mesclada via race condition recovery: ${entry.eventType}", component: "timelineMerge" });
+                log.info({ msg: '${ICONS.INFO} Entrada recuperada e mesclada via race condition recovery: ${entry.eventType}', component: 'timelineMerge' });
 
                 mergedEntries.push({
                   id: updatedEntry.id,
@@ -427,25 +427,25 @@ export class TimelineMergeService {
                 });
               } else {
                 duplicatesSkipped++;
-                log.info({ msg: `${ICONS.INFO} Entrada recuperada mas sem mudanças: ${entry.eventType}`, component: "timelineMerge" });
+                log.info({ msg: `${ICONS.INFO} Entrada recuperada mas sem mudanças: ${entry.eventType}`, component: 'timelineMerge' });
               }
               }
             } else {
               // PROBLEMA: Não conseguiu recuperar a entrada mesmo com retries!
               // Isso é crítico - significa que o erro foi levantado mas a entrada não existe
               // após múltiplas tentativas. Pode indicar problema no banco de dados.
-              log.error({ msg: `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`, component: "timelineMerge" });
+              log.error({ msg: `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`, component: 'timelineMerge' });
               duplicatesSkipped++;
             }
           } else {
             // Re-throw se for erro diferente
-            log.error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002)`, component: "timelineMerge", code: prismaErrorCode, message: err.message });
+            log.error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002)`, component: 'timelineMerge', code: prismaErrorCode, message: err.message });
             throw err;
           }
         }
 
-      } catch (error) {
-        logError(`${ICONS.ERROR} Erro ao processar entrada:`, "error", { component: "timelineMerge" });
+      } catch (_error) {
+        logError(`${ICONS.ERROR} Erro ao processar entrada:`, 'error', { component: 'timelineMerge' });
         // Continuar processamento mesmo com erro em uma entrada
       }
     }
@@ -455,7 +455,7 @@ export class TimelineMergeService {
       where: { caseId }
     });
 
-    log.info({ msg: "${ICONS.SUCCESS} Timeline merge concluído: ${newEntries} novas, ${mergedDuplicates} mescladas, ${duplicatesSkipped} ignoradas, ${totalEntries} total", component: "timelineMerge" });
+    log.info({ msg: '${ICONS.SUCCESS} Timeline merge concluído: ${newEntries} novas, ${mergedDuplicates} mescladas, ${duplicatesSkipped} ignoradas, ${totalEntries} total', component: 'timelineMerge' });
 
     return {
       newEntries: newEntries + mergedDuplicates,
@@ -525,7 +525,7 @@ export class TimelineMergeService {
 
       // Validar que rawEvents é um array
       if (!Array.isArray(rawEvents)) {
-        log.warn({ msg: "${ICONS.WARNING} raw_events_extracted não é um array válido", component: "timelineMerge" });
+        log.warn({ msg: '${ICONS.WARNING} raw_events_extracted não é um array válido', component: 'timelineMerge' });
         return entries;
       }
 
@@ -533,7 +533,7 @@ export class TimelineMergeService {
         try {
           // Type check do evento antes de usar seus campos
           if (typeof event !== 'object' || event === null) {
-            log.warn({ msg: "${ICONS.WARNING} Evento não é um objeto válido", component: "timelineMerge" });
+            log.warn({ msg: '${ICONS.WARNING} Evento não é um objeto válido', component: 'timelineMerge' });
             continue;
           }
 
@@ -569,7 +569,7 @@ export class TimelineMergeService {
 
           // Validar data resultante
           if (isNaN(eventDate.getTime())) {
-            log.warn({ msg: "${ICONS.WARNING} Data inválida para evento: ${eventObj.tipo_andamento || eventObj.type}", component: "timelineMerge" });
+            log.warn({ msg: '${ICONS.WARNING} Data inválida para evento: ${eventObj.tipo_andamento || eventObj.type}', component: 'timelineMerge' });
             continue;
           }
 
@@ -611,15 +611,15 @@ export class TimelineMergeService {
             confidence
           });
 
-        } catch (eventError) {
-          log.warn({ msg: "${ICONS.WARNING} Erro ao processar evento individual:`, eventError", component: "timelineMerge" });
+        } catch (_eventError) {
+          log.warn({ msg: '${ICONS.WARNING} Erro ao processar evento individual:`, _eventError', component: 'timelineMerge' });
         }
       }
 
-      log.info({ msg: "${ICONS.SUCCESS} Extraídos ${entries.length} andamentos da análise IA", component: "timelineMerge" });
+      log.info({ msg: '${ICONS.SUCCESS} Extraídos ${entries.length} andamentos da análise IA', component: 'timelineMerge' });
 
-    } catch (error) {
-      logError(`${ICONS.ERROR} Erro na extração de timeline da IA:`, "error", { component: "timelineMerge" });
+    } catch (_error) {
+      logError(`${ICONS.ERROR} Erro na extração de timeline da IA:`, 'error', { component: 'timelineMerge' });
     }
 
     return entries;
@@ -643,7 +643,7 @@ export class TimelineMergeService {
         }
       });
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao registrar auditoria:`, "error", { component: "timelineMerge" });
+      logError(`${ICONS.ERROR} Erro ao registrar auditoria:`, 'error', { component: 'timelineMerge' });
       // Silently fail - don't let audit logging block document upload
     }
   }

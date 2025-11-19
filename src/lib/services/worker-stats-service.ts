@@ -11,7 +11,6 @@
  * - Auditoria Completa: Todos os detalhes do erro/sucesso são salvos
  */
 
-import { Job } from 'bullmq';
 import { prisma } from '@/lib/prisma';
 import { log } from './logger';
 import { WorkerJobStatus } from '@prisma/client';
@@ -163,7 +162,7 @@ class WorkerStatsServiceImpl {
           retryCount: 0
         },
         update: {
-          status: "COMPLETED" as WorkerJobStatus,
+          status: 'COMPLETED' as WorkerJobStatus,
           completedAt: new Date(),
           durationMs,
           resultSummary: resultSummary.success ? resultSummary : undefined,
@@ -241,7 +240,7 @@ class WorkerStatsServiceImpl {
           errorDetails: {
             message: errorMessage,
             stack: errorStack,
-            code: error instanceof Error && 'code' in error ? (error as any).code : null
+            code: error instanceof Error && 'code' in error ? (error as Record<string, unknown>).code ?? null : null
           },
           metadata: validatedMetadata,
           retryCount
@@ -253,7 +252,7 @@ class WorkerStatsServiceImpl {
           errorDetails: {
             message: errorMessage,
             stack: errorStack,
-            code: error instanceof Error && 'code' in error ? (error as any).code : null
+            code: error instanceof Error && 'code' in error ? (error as Record<string, unknown>).code ?? null : null
           },
           metadata: validatedMetadata,
           retryCount

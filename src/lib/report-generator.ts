@@ -111,7 +111,7 @@ function convertReportSummaryToJsonSafe(summary: ReportSummary): object {
 
     return jsonSafe;
   } catch (error) {
-    logError(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, "error", { component: "reportGenerator" });
+    logError(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, 'error', { component: 'reportGenerator' });
     // Fallback: retornar objeto minimalista garantidamente JSON-safe
     return {
       totalProcesses: summary.totalProcesses,
@@ -190,13 +190,13 @@ export class ReportGenerator {
    */
   async generateScheduledReport(request: ReportGenerationRequest): Promise<ReportGenerationResult> {
     const startTime = Date.now();
-    log.info({ msg: "${ICONS.PROCESS} Iniciando geração de relatório ${request.reportType} para ${request.processIds.length} processos", component: "reportGenerator" });
+    log.info({ msg: '${ICONS.PROCESS} Iniciando geração de relatório ${request.reportType} para ${request.processIds.length} processos', component: 'reportGenerator' });
 
     try {
       // 1. Verificar cache
       const cacheResult = await this.checkReportCache(request);
       if (cacheResult.hit) {
-        log.info({ msg: "${ICONS.SUCCESS} Cache hit para relatório", component: "reportGenerator" });
+        log.info({ msg: '${ICONS.SUCCESS} Cache hit para relatório', component: 'reportGenerator' });
 
         // Build summary safely from cached data
         let cacheSummary: ReportSummary = {
@@ -261,7 +261,7 @@ export class ReportGenerator {
 
       const reportId = `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-      log.info({ msg: "${ICONS.SUCCESS} Relatório gerado com sucesso em ${Date.now() - startTime}ms", component: "reportGenerator" });
+      log.info({ msg: '${ICONS.SUCCESS} Relatório gerado com sucesso em ${Date.now() - startTime}ms', component: 'reportGenerator' });
 
       return {
         success: true,
@@ -275,7 +275,7 @@ export class ReportGenerator {
       };
 
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro na geração do relatório:`, "error", { component: "reportGenerator" });
+      logError(`${ICONS.ERROR} Erro na geração do relatório:`, 'error', { component: 'reportGenerator' });
       return {
         success: false,
         reportId: '',
@@ -325,13 +325,13 @@ export class ReportGenerator {
 
       // Validar fileUrls com type guard
       if (!isReportFileUrls(cached.fileUrls)) {
-        log.warn({ msg: "${ICONS.WARNING} Cache fileUrls validation failed, skipping cache", component: "reportGenerator" });
+        log.warn({ msg: '${ICONS.WARNING} Cache fileUrls validation failed, skipping cache', component: 'reportGenerator' });
         return { hit: false };
       }
 
       // Validar cachedData se for CachedReportData
       if (cached.cachedData !== null && !isCachedReportData(cached.cachedData)) {
-        log.warn({ msg: "${ICONS.WARNING} Cache data validation failed, skipping cache", component: "reportGenerator" });
+        log.warn({ msg: '${ICONS.WARNING} Cache data validation failed, skipping cache', component: 'reportGenerator' });
         return { hit: false };
       }
 
@@ -352,7 +352,7 @@ export class ReportGenerator {
       };
 
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao verificar cache:`, "error", { component: "reportGenerator" });
+      logError(`${ICONS.ERROR} Erro ao verificar cache:`, 'error', { component: 'reportGenerator' });
       return { hit: false };
     }
   }
@@ -524,7 +524,7 @@ export class ReportGenerator {
     summary: ReportSummary;
     tokensUsed: number;
   }> {
-    log.info({ msg: "${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...", component: "reportGenerator" });
+    log.info({ msg: '${ICONS.PROCESS} Chamando Gemini API real para gerar conteúdo...', component: 'reportGenerator' });
 
     try {
       const geminiClient = getGeminiClient();
@@ -538,11 +538,11 @@ export class ReportGenerator {
         temperature: 0.3
       });
 
-      log.info({ msg: "${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}", component: "reportGenerator" });
+      log.info({ msg: '${ICONS.SUCCESS} Conteúdo gerado com sucesso via Gemini ${modelTier}', component: 'reportGenerator' });
 
       // Validate result with type guard
       if (!isGeminiResult(result)) {
-        log.warn({ msg: "${ICONS.WARNING} Gemini result validation failed, using mock content", component: "reportGenerator" });
+        log.warn({ msg: '${ICONS.WARNING} Gemini result validation failed, using mock content', component: 'reportGenerator' });
         const mockContent = this.generateMockContent(payload, audienceType);
         const totalProcesses = typeof payload.totalProcesses === 'number' ? payload.totalProcesses : 0;
 
@@ -586,7 +586,7 @@ export class ReportGenerator {
         tokensUsed
       };
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao chamar Gemini API:`, "error", { component: "reportGenerator" });
+      logError(`${ICONS.ERROR} Erro ao chamar Gemini API:`, 'error', { component: 'reportGenerator' });
 
       // Fallback para conteúdo mock em caso de erro
       const mockContent = this.generateMockContent(payload, audienceType);
@@ -748,7 +748,7 @@ ${clientLanguage ?
 
     // Retornar URL do arquivo (ajustar conforme necessário)
     const fileUrl = `/files/${filePath}`;
-    log.info({ msg: "${ICONS.SUCCESS} Arquivo ${format} gerado: ${fileUrl}", component: "reportGenerator" });
+    log.info({ msg: '${ICONS.SUCCESS} Arquivo ${format} gerado: ${fileUrl}', component: 'reportGenerator' });
 
     return fileUrl;
   }
@@ -764,7 +764,7 @@ ${clientLanguage ?
   ): Promise<void> {
     // ✅ Implementar geração real de PDF com Puppeteer
     try {
-      log.info({ msg: "${ICONS.PROCESS} Gerando PDF: ${filePath}", component: "reportGenerator" });
+      log.info({ msg: '${ICONS.PROCESS} Gerando PDF: ${filePath}', component: 'reportGenerator' });
 
       // Aplicar template ao conteúdo HTML
       const htmlContent = this.applyTemplate(content, template, 'PDF');
@@ -792,12 +792,12 @@ ${clientLanguage ?
       const result = await this.pdfEngine.generatePDF(htmlContent, pdfOptions, filePath);
 
       if (result.success) {
-        log.info({ msg: "${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)", component: "reportGenerator" });
+        log.info({ msg: '${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)', component: 'reportGenerator' });
       } else {
         throw new Error(result.error || 'Erro desconhecido ao gerar PDF');
       }
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao gerar PDF:`, "error", { component: "reportGenerator" });
+      logError(`${ICONS.ERROR} Erro ao gerar PDF:`, 'error', { component: 'reportGenerator' });
       throw error;
     }
   }
@@ -813,7 +813,7 @@ ${clientLanguage ?
   ): Promise<void> {
     // ✅ Implementar geração real de DOCX com docx library
     try {
-      log.info({ msg: "${ICONS.PROCESS} Gerando DOCX: ${filePath}", component: "reportGenerator" });
+      log.info({ msg: '${ICONS.PROCESS} Gerando DOCX: ${filePath}', component: 'reportGenerator' });
 
       // Converter HTML para conteúdo estruturado para DOCX
       const htmlContent = this.applyTemplate(content, template, 'DOCX');
@@ -846,12 +846,12 @@ ${clientLanguage ?
       );
 
       if (result.success) {
-        log.info({ msg: "${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)", component: "reportGenerator" });
+        log.info({ msg: '${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)', component: 'reportGenerator' });
       } else {
         throw new Error(result.error || 'Erro desconhecido ao gerar DOCX');
       }
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, "error", { component: "reportGenerator" });
+      logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, 'error', { component: 'reportGenerator' });
       throw error;
     }
   }
@@ -942,10 +942,10 @@ ${clientLanguage ?
         }
       });
 
-      log.info({ msg: "${ICONS.SUCCESS} Cache salvo com chave: ${cacheKey}", component: "reportGenerator" });
+      log.info({ msg: '${ICONS.SUCCESS} Cache salvo com chave: ${cacheKey}', component: 'reportGenerator' });
 
     } catch (error) {
-      logError(`${ICONS.ERROR} Erro ao salvar cache:`, "error", { component: "reportGenerator" });
+      logError(`${ICONS.ERROR} Erro ao salvar cache:`, 'error', { component: 'reportGenerator' });
       // Não falhar por erro de cache
     }
   }

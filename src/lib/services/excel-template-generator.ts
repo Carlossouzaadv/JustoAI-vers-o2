@@ -4,8 +4,8 @@
 // Gera um modelo de Excel com campos, validações e exemplos
 // O usuário baixa este template e preenche corretamente
 
-import { Workbook, Worksheet, Alignment, BorderStyle } from "exceljs";
-import { EXCEL_SCHEMA_INFO } from "@/lib/validators/excel";
+import { Workbook, Worksheet, Alignment, BorderStyle } from 'exceljs';
+import { EXCEL_SCHEMA_INFO } from '@/lib/validators/excel';
 
 /**
  * Cores para formatação
@@ -30,18 +30,18 @@ export class ExcelTemplateGenerator {
     const workbook = new Workbook();
 
     // ===== SHEET 1: Dados =====
-    const dataSheet = workbook.addWorksheet("Dados", {
-      pageSetup: { paperSize: 9, orientation: "landscape" },
+    const dataSheet = workbook.addWorksheet('Dados', {
+      pageSetup: { paperSize: 9, orientation: 'landscape' },
     });
 
     this.setupDataSheet(dataSheet);
 
     // ===== SHEET 2: Instruções =====
-    const instructionsSheet = workbook.addWorksheet("Instruções");
+    const instructionsSheet = workbook.addWorksheet('Instruções');
     this.setupInstructionsSheet(instructionsSheet);
 
     // ===== SHEET 3: Exemplos =====
-    const examplesSheet = workbook.addWorksheet("Exemplos");
+    const examplesSheet = workbook.addWorksheet('Exemplos');
     this.setupExamplesSheet(examplesSheet);
 
     // Converter para buffer
@@ -73,13 +73,13 @@ export class ExcelTemplateGenerator {
       // Formatação de header
       cell.font = {
         bold: true,
-        color: { argb: "FFFFFFFF" },
+        color: { argb: 'FFFFFFFF' },
         size: 11,
       };
 
       cell.fill = {
-        type: "pattern",
-        pattern: "solid",
+        type: 'pattern',
+        pattern: 'solid',
         fgColor: {
           argb: isRequired
             ? this.rgbToArgb(COLORS.headerRequired)
@@ -87,7 +87,7 @@ export class ExcelTemplateGenerator {
         },
       };
 
-      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
 
       // Border
       cell.border = this.createBorder();
@@ -105,11 +105,11 @@ export class ExcelTemplateGenerator {
       const cell = sheet.getCell(2, index + 1);
       cell.value = value;
       cell.fill = {
-        type: "pattern",
-        pattern: "solid",
+        type: 'pattern',
+        pattern: 'solid',
         fgColor: { argb: this.rgbToArgb(COLORS.exampleRow) },
       };
-      cell.alignment = { horizontal: "left", vertical: "middle" };
+      cell.alignment = { horizontal: 'left', vertical: 'middle' };
       cell.border = this.createBorder();
     });
 
@@ -119,7 +119,7 @@ export class ExcelTemplateGenerator {
     this.addValidationComments(sheet);
 
     // Freeze panes (primeira linha congelada)
-    sheet.views = [{ state: "frozen", ySplit: 1 }];
+    sheet.views = [{ state: 'frozen', ySplit: 1 }];
   }
 
   /**
@@ -131,14 +131,14 @@ export class ExcelTemplateGenerator {
 
     // Título
     const titleCell = sheet.getCell(1, 1);
-    titleCell.value = "📋 INSTRUÇÕES DE PREENCHIMENTO";
+    titleCell.value = '📋 INSTRUÇÕES DE PREENCHIMENTO';
     titleCell.font = { bold: true, size: 14 };
     sheet.getRow(1).height = 25;
 
     let row = 3;
 
     // ===== Campos Obrigatórios =====
-    sheet.getCell(row, 1).value = "CAMPOS OBRIGATÓRIOS";
+    sheet.getCell(row, 1).value = 'CAMPOS OBRIGATÓRIOS';
     sheet.getCell(row, 1).font = { bold: true, size: 12 };
     row += 2;
 
@@ -153,7 +153,7 @@ export class ExcelTemplateGenerator {
     row += 2;
 
     // ===== Campos Opcionais =====
-    sheet.getCell(row, 1).value = "CAMPOS OPCIONAIS";
+    sheet.getCell(row, 1).value = 'CAMPOS OPCIONAIS';
     sheet.getCell(row, 1).font = { bold: true, size: 12 };
     row += 2;
 
@@ -168,19 +168,19 @@ export class ExcelTemplateGenerator {
     row += 2;
 
     // ===== Dicas Importantes =====
-    sheet.getCell(row, 1).value = "💡 DICAS IMPORTANTES";
-    sheet.getCell(row, 1).font = { bold: true, size: 12, color: { argb: "FFFF9800" } };
+    sheet.getCell(row, 1).value = '💡 DICAS IMPORTANTES';
+    sheet.getCell(row, 1).font = { bold: true, size: 12, color: { argb: 'FFFF9800' } };
     row += 2;
 
     const tips = [
-      "Use exatamente os nomes de colunas do template (não renomeie)",
-      "Não deixe linhas em branco no meio dos dados",
-      "Números de processo devem estar no formato: NNNNNNN-DD.AAAA.J.TT.OOOO",
-      "Datas podem ser DD/MM/YYYY ou YYYY-MM-DD",
-      "Valores monetários: use 1000,00 ou 1.000,00",
-      "Tribunais válidos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF",
-      "Frequência de sincronização: MANUAL, HOURLY, DAILY, WEEKLY",
-      "Alertas Ativos: sim, não, true, false (case-insensitive)",
+      'Use exatamente os nomes de colunas do template (não renomeie)',
+      'Não deixe linhas em branco no meio dos dados',
+      'Números de processo devem estar no formato: NNNNNNN-DD.AAAA.J.TT.OOOO',
+      'Datas podem ser DD/MM/YYYY ou YYYY-MM-DD',
+      'Valores monetários: use 1000,00 ou 1.000,00',
+      'Tribunais válidos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF',
+      'Frequência de sincronização: MANUAL, HOURLY, DAILY, WEEKLY',
+      'Alertas Ativos: sim, não, true, false (case-insensitive)',
     ];
 
     for (const tip of tips) {
@@ -208,17 +208,17 @@ export class ExcelTemplateGenerator {
       const isRequired = isRequiredColumn(header);
 
       cell.value = header;
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10 };
       cell.fill = {
-        type: "pattern",
-        pattern: "solid",
+        type: 'pattern',
+        pattern: 'solid',
         fgColor: {
           argb: isRequired
             ? this.rgbToArgb(COLORS.headerRequired)
             : this.rgbToArgb(COLORS.headerOptional),
         },
       };
-      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
       cell.border = this.createBorder();
       sheet.getColumn(index + 1).width = 18;
     });
@@ -350,14 +350,14 @@ export class ExcelTemplateGenerator {
    * Converte RGB para ARGB (Excel format)
    */
   private static rgbToArgb(rgb: { r: number; g: number; b: number }): string {
-    return `FF${((rgb.r << 16) | (rgb.g << 8) | rgb.b).toString(16).toUpperCase().padStart(6, "0")}`;
+    return `FF${((rgb.r << 16) | (rgb.g << 8) | rgb.b).toString(16).toUpperCase().padStart(6, '0')}`;
   }
 
   /**
    * Cria border padrão
    */
   private static createBorder() {
-    const borderStyle: BorderStyle = "thin";
+    const borderStyle: BorderStyle = 'thin';
     return {
       top: { style: borderStyle },
       left: { style: borderStyle },

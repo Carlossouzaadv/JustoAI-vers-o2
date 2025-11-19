@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useAuth } from "@/contexts/auth-context";
-import { usePathname } from "next/navigation";
+import { useEffect } from 'react';
+import { useAuth } from '@/contexts/auth-context';
+import { usePathname } from 'next/navigation';
 
 declare global {
   interface Window {
-    $crisp: any[];
+    $crisp: Array<{ push: (args: unknown[]) => void }>;
     CRISP_WEBSITE_ID: string;
   }
 }
@@ -31,16 +31,16 @@ export function CrispChat() {
 
   useEffect(() => {
     // Only load Crisp on client-side and prevent duplicate initialization
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     if (window.$crisp) return;
 
     // Initialize Crisp global variables
     window.$crisp = [];
-    window.CRISP_WEBSITE_ID = "7acdaf6a-3b6a-4089-bd4e-d611e6362313";
+    window.CRISP_WEBSITE_ID = '7acdaf6a-3b6a-4089-bd4e-d611e6362313';
 
     // Load Crisp script
-    const script = document.createElement("script");
-    script.src = "https://client.crisp.chat/l.js";
+    const script = document.createElement('script');
+    script.src = 'https://client.crisp.chat/l.js';
     script.async = true;
     script.defer = true;
 
@@ -56,29 +56,29 @@ export function CrispChat() {
 
   // Update user data when auth state changes or page changes
   useEffect(() => {
-    if (typeof window === "undefined" || !window.$crisp) return;
+    if (typeof window === 'undefined' || !window.$crisp) return;
 
     // Set user data if authenticated
     if (user) {
-      window.$crisp.push(["set", "user:email", [user.email]]);
-      window.$crisp.push(["set", "user:nickname", [user.name]]);
+      window.$crisp.push(['set', 'user:email', [user.email]]);
+      window.$crisp.push(['set', 'user:nickname', [user.name]]);
 
       // Set custom data
-      window.$crisp.push(["set", "session:data", {
+      window.$crisp.push(['set', 'session:data', {
         userId: user.id,
-        workspaceName: user.workspaces?.[0]?.workspace?.name || "Default",
-        userRole: "authenticated",
+        workspaceName: user.workspaces?.[0]?.workspace?.name || 'Default',
+        userRole: 'authenticated',
       }]);
 
       // Set segments for better bot targeting
-      window.$crisp.push(["set", "session:segments", ["authenticated", "customer"]]);
+      window.$crisp.push(['set', 'session:segments', ['authenticated', 'customer']]);
     } else {
       // For unauthenticated users
-      window.$crisp.push(["set", "session:segments", ["visitor"]]);
+      window.$crisp.push(['set', 'session:segments', ['visitor']]);
     }
 
     // Set current page context
-    window.$crisp.push(["set", "session:data", {
+    window.$crisp.push(['set', 'session:data', {
       currentPage: pathname,
       timestamp: new Date().toISOString(),
     }]);
@@ -86,19 +86,19 @@ export function CrispChat() {
 
   // Configure Crisp appearance and behavior
   useEffect(() => {
-    if (typeof window === "undefined" || !window.$crisp) return;
+    if (typeof window === 'undefined' || !window.$crisp) return;
 
     // Set theme colors to match JustoAI branding
-    window.$crisp.push(["set", "chatbox:settings", {
-      color: "#0A2A5B", // JustoAI primary blue
-      position: "br", // Bottom right
-      theme: "light",
+    window.$crisp.push(['set', 'chatbox:settings', {
+      color: '#0A2A5B', // JustoAI primary blue
+      position: 'br', // Bottom right
+      theme: 'light',
     }]);
 
     // Configure widget visibility
-    window.$crisp.push(["set", "session:data", {
-      helpChannel: "main",
-      supportTier: user ? "customer" : "visitor",
+    window.$crisp.push(['set', 'session:data', {
+      helpChannel: 'main',
+      supportTier: user ? 'customer' : 'visitor',
     }]);
   }, [user]);
 

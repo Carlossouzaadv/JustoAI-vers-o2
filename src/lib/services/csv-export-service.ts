@@ -4,7 +4,7 @@
 // Serviço para exportação de dados em formato CSV
 // Suporta exportação de erros e resultados de batch
 
-import { BatchErrorDetail, BatchStatus_Response } from './batch-status-service';
+import { BatchStatus_Response } from './batch-status-service';
 
 export class CSVExportService {
   /**

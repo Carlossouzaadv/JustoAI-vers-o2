@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     } catch (formDataError) {
       // Erro ao processar FormData geralmente indica arquivo muito grande
       const errorMsg = formDataError instanceof Error ? formDataError.message : 'Erro desconhecido';
-      logError(formDataError instanceof Error ? formDataError : new Error(errorMsg), `Erro ao processar FormData: ${errorMsg}`, { component: "documents-upload" });
+      logError(formDataError instanceof Error ? formDataError : new Error(errorMsg), `Erro ao processar FormData: ${errorMsg}`, { component: 'documents-upload' });
 
       if (errorMsg.includes('size') || errorMsg.includes('413')) {
         return NextResponse.json(
@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
 
     // Validar estrutura do resultado com type guard
     if (!isPdfExtractionResult(extractionResultRaw)) {
-      log.error({ msg: `${ICONS.ERROR} Extração de PDF retornou estrutura inválida`, data: extractionResultRaw, component: "documents-upload" });
+      log.error({ msg: `${ICONS.ERROR} Extração de PDF retornou estrutura inválida`, data: extractionResultRaw, component: 'documents-upload' });
       return NextResponse.json(
         { error: 'Não foi possível extrair texto do PDF. O arquivo pode estar corrompido.' },
         { status: 400 }
@@ -347,7 +347,7 @@ export async function POST(request: NextRequest) {
 
     // Verificar se houve sucesso, mas também aceitar resultados com extração parcial
     if (!extractionResult.success && (!extractionResult.texto_original && !extractionResult.texto_limpo)) {
-      log.error({ msg: `${ICONS.ERROR} Extração de PDF falhou completamente`, error: extractionResult.error, component: "documents-upload" });
+      log.error({ msg: `${ICONS.ERROR} Extração de PDF falhou completamente`, error: extractionResult.error, component: 'documents-upload' });
       return NextResponse.json(
         { error: 'Não foi possível extrair texto do PDF. O arquivo pode estar corrompido ou ser apenas imagens.' },
         { status: 400 }
@@ -359,7 +359,7 @@ export async function POST(request: NextRequest) {
     const extractedText = extractionResult.texto_original || extractionResult.texto_limpo || '';
 
     if (!extractedText || extractedText.trim().length === 0) {
-      log.error({ msg: `${ICONS.ERROR} Nenhum texto extraído do PDF`, component: "documents-upload" });
+      log.error({ msg: `${ICONS.ERROR} Nenhum texto extraído do PDF`, component: 'documents-upload' });
       return NextResponse.json(
         { error: 'Nenhum texto foi extraído do PDF. Pode ser um PDF com apenas imagens (OCR não suportado ainda).' },
         { status: 400 }
@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
     // 8. IDENTIFICAÇÃO DE PROCESSO CNJ
 
     const extractedProcessNumber = textCleaner.extractProcessNumber(cleanText);
-    log.info({ msg: extractedProcessNumber ? `${ICONS.SUCCESS} Processo identificado: ${extractedProcessNumber}` : `${ICONS.INFO} Número do processo não identificado`, component: "documents-upload" });
+    log.info({ msg: extractedProcessNumber ? `${ICONS.SUCCESS} Processo identificado: ${extractedProcessNumber}` : `${ICONS.INFO} Número do processo não identificado`, component: 'documents-upload' });
 
     // 9. BUSCAR PROCESSO EXISTENTE (SE NÚMERO IDENTIFICADO)
     let existingProcess = null;
@@ -504,7 +504,7 @@ export async function POST(request: NextRequest) {
         if (existingCase) {
           targetCaseId = existingCase.id;
         } else {
-          logError(upsertError instanceof Error ? upsertError : new Error(String(upsertError)), `${ICONS.ERROR} Erro ao processar case`, { component: "documents-upload" });
+          logError(upsertError instanceof Error ? upsertError : new Error(String(upsertError)), `${ICONS.ERROR} Erro ao processar case`, { component: 'documents-upload' });
           throw upsertError;
         }
       }
@@ -586,11 +586,11 @@ export async function POST(request: NextRequest) {
 
     if (cacheResult.hit && isValidCacheData(cacheResult.data)) {
       aiAnalysisResult = cacheResult.data;
-      log.info({ msg: `${ICONS.SUCCESS} Cache válido com estrutura correta`, component: "documents-upload" });
+      log.info({ msg: `${ICONS.SUCCESS} Cache válido com estrutura correta`, component: 'documents-upload' });
     } else {
       // Use cache if valid, or run Gemini if cache invalid/missing
       if (cacheResult.hit) {
-        log.warn({ msg: `${ICONS.WARNING} Cache encontrado mas com estrutura inválida - executando Gemini novamente`, component: "documents-upload" });
+        log.warn({ msg: `${ICONS.WARNING} Cache encontrado mas com estrutura inválida - executando Gemini novamente`, component: 'documents-upload' });
       }
 
       // 13. ADQUIRIR LOCK REDIS PARA ANÁLISE
@@ -615,7 +615,7 @@ export async function POST(request: NextRequest) {
 
       try {
         // 14. ANÁLISE IA PHASE 1 - Análise rápida inicial com LITE-first strategy
-        log.info({ msg: `${ICONS.ROBOT} [Upload] Chamando Gemini para analyzePhase1...`, component: "documents-upload" });
+        log.info({ msg: `${ICONS.ROBOT} [Upload] Chamando Gemini para analyzePhase1...`, component: 'documents-upload' });
 
         const aiRouter = new AIModelRouter();
         // Use analyzePhase1 for initial preview (LITE→BALANCED→PRO fallback)
@@ -626,11 +626,11 @@ export async function POST(request: NextRequest) {
         if (isAIAnalysisResult(analysisResultRaw)) {
           aiAnalysisResult = analysisResultRaw;
         } else {
-          log.warn({ msg: `${ICONS.WARNING} [Upload] Análise retornou estrutura inválida, usando null`, component: "documents-upload" });
+          log.warn({ msg: `${ICONS.WARNING} [Upload] Análise retornou estrutura inválida, usando null`, component: 'documents-upload' });
           aiAnalysisResult = null;
         }
 
-        log.info({ msg: `${ICONS.SUCCESS} [Upload] Gemini analyzePhase1 concluído`, component: "documents-upload" });
+        log.info({ msg: `${ICONS.SUCCESS} [Upload] Gemini analyzePhase1 concluído`, component: 'documents-upload' });
 
         // Salvar no cache (apenas se conseguiu resultado válido)
         if (aiAnalysisResult) {
@@ -645,7 +645,7 @@ export async function POST(request: NextRequest) {
         }
 
       } catch (analysisError) {
-        logError(analysisError instanceof Error ? analysisError : new Error(String(analysisError)), `${ICONS.ERROR} Erro na análise IA`, { component: "documents-upload" });
+        logError(analysisError instanceof Error ? analysisError : new Error(String(analysisError)), `${ICONS.ERROR} Erro na análise IA`, { component: 'documents-upload' });
         // Continuar sem análise IA
       } finally {
         // Liberar lock
@@ -734,9 +734,9 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        log.info({ msg: `${ICONS.SUCCESS} Análise salva como versão ${nextVersion}: ${analysisVersion.id}`, component: "documents-upload" });
+        log.info({ msg: `${ICONS.SUCCESS} Análise salva como versão ${nextVersion}: ${analysisVersion.id}`, component: 'documents-upload' });
       } catch (analysisVersionError) {
-        logError(analysisVersionError instanceof Error ? analysisVersionError : new Error(String(analysisVersionError)), `${ICONS.ERROR} Erro ao salvar análise`, { component: "documents-upload" });
+        logError(analysisVersionError instanceof Error ? analysisVersionError : new Error(String(analysisVersionError)), `${ICONS.ERROR} Erro ao salvar análise`, { component: 'documents-upload' });
         // Não falhar o upload por causa disso
       }
     }
@@ -755,7 +755,7 @@ export async function POST(request: NextRequest) {
     // 18.2 NOVO: CHAMAR MERGE TIMELINES V2 COM ENRIQUECIMENTO INTELIGENTE
     // Isto usa o novo TimelineEnricherService com associação e enriquecimento
     try {
-      log.info({ msg: `${ICONS.PROCESS} [Timeline] Iniciando unificação v2 com enriquecimento para case ${targetCaseId}`, component: "documents-upload" });
+      log.info({ msg: `${ICONS.PROCESS} [Timeline] Iniciando unificação v2 com enriquecimento para case ${targetCaseId}`, component: 'documents-upload' });
       const unificationResult = await mergeTimelines(targetCaseId, [document.id]);
 
       log.info({ msg: `${ICONS.SUCCESS} [Timeline] Unificação v2 concluída:
@@ -763,9 +763,9 @@ export async function POST(request: NextRequest) {
         Duplicados: ${unificationResult.duplicates}
         Enriquecidos: ${unificationResult.enriched}
         Relacionados: ${unificationResult.related}
-        Conflitos: ${unificationResult.conflicts}`, component: "documents-upload" });
+        Conflitos: ${unificationResult.conflicts}`, component: 'documents-upload' });
     } catch (timelineError) {
-      logError(timelineError instanceof Error ? timelineError : new Error(String(timelineError)), `${ICONS.WARNING} [Timeline] Erro na unificação v2 (não é crítico)`, { component: "documents-upload" });
+      logError(timelineError instanceof Error ? timelineError : new Error(String(timelineError)), `${ICONS.WARNING} [Timeline] Erro na unificação v2 (não é crítico)`, { component: 'documents-upload' });
       // Não falhar o upload por causa disso - timeline é secundária
     }
 
@@ -776,7 +776,7 @@ export async function POST(request: NextRequest) {
     let juditJobId: string | undefined;
     if (extractedProcessNumber) {
       try {
-        log.info({ msg: `${ICONS.ROCKET} [Onboarding] Enfileirando JUDIT para ${extractedProcessNumber} (Case: ${targetCaseId})`, component: "documents-upload" });
+        log.info({ msg: `${ICONS.ROCKET} [Onboarding] Enfileirando JUDIT para ${extractedProcessNumber} (Case: ${targetCaseId})`, component: 'documents-upload' });
         const { jobId } = await addOnboardingJob(extractedProcessNumber, {
           caseId: targetCaseId, // NOVO: Passar case ID explícito para webhook usar
           workspaceId: verifiedWorkspaceId,
@@ -784,9 +784,9 @@ export async function POST(request: NextRequest) {
           priority: 5
         });
         juditJobId = jobId;
-        log.info({ msg: `${ICONS.SUCCESS} [Onboarding] Job de JUDIT adicionado à fila (Job ID: ${jobId}). Worker processará em background.`, component: "documents-upload" });
+        log.info({ msg: `${ICONS.SUCCESS} [Onboarding] Job de JUDIT adicionado à fila (Job ID: ${jobId}). Worker processará em background.`, component: 'documents-upload' });
       } catch (juditError) {
-        logError(juditError instanceof Error ? juditError : new Error(String(juditError)), `${ICONS.ERROR} [Onboarding] Erro ao enfileirar JUDIT`, { component: "documents-upload" });
+        logError(juditError instanceof Error ? juditError : new Error(String(juditError)), `${ICONS.ERROR} [Onboarding] Erro ao enfileirar JUDIT`, { component: 'documents-upload' });
         // Não falhar o upload por causa disso - FASE 1 foi concluída com sucesso
       }
     }
@@ -834,7 +834,7 @@ export async function POST(request: NextRequest) {
         }
       });
     } catch (trackingError) {
-      log.warn({ msg: `${ICONS.WARNING} Erro ao rastrear telemetria de upload`, error: trackingError, component: "documents-upload" });
+      log.warn({ msg: `${ICONS.WARNING} Erro ao rastrear telemetria de upload`, error: trackingError, component: 'documents-upload' });
       // Don't fail the upload due to telemetry issues
     }
 
@@ -895,10 +895,10 @@ export async function POST(request: NextRequest) {
           if (isUnifiedProcessSchema(validAnalysis)) {
             // Agora validAnalysis foi validado pelo type guard e é seguro passar
             const coreInfo = extractCoreInfo(validAnalysis);
-            log.info({ msg: `${ICONS.SUCCESS} Análise mapeada para preview`, data: coreInfo, component: "documents-upload" });
+            log.info({ msg: `${ICONS.SUCCESS} Análise mapeada para preview`, data: coreInfo, component: 'documents-upload' });
           } else {
             // Se não é um UnifiedProcessSchema válido, fazer logging seguro sem casting
-            log.info({ msg: `${ICONS.INFO} Análise retornada pelo Gemini tem estrutura não-padrão (OK)`, data: { keys: Object.keys(validAnalysis).slice(0, 5) }, component: "documents-upload" });
+            log.info({ msg: `${ICONS.INFO} Análise retornada pelo Gemini tem estrutura não-padrão (OK)`, data: { keys: Object.keys(validAnalysis).slice(0, 5) }, component: 'documents-upload' });
           }
 
           // Serializar dados para JSON (Padrão-Ouro)
@@ -924,7 +924,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro no upload de PDF`, { component: "documents-upload" });
+    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro no upload de PDF`, { component: 'documents-upload' });
 
     // Liberar lock se ainda estiver ativo
     if (lockKey) {
@@ -965,7 +965,7 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro ao anexar documento`, { component: "documents-upload" });
+    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro ao anexar documento`, { component: 'documents-upload' });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -1002,7 +1002,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro ao obter timeline`, { component: "documents-upload" });
+    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro ao obter timeline`, { component: 'documents-upload' });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -1053,15 +1053,15 @@ async function savePermanentFile(
     );
 
     if (url) {
-      log.info({ msg: `${ICONS.SUCCESS} [Storage] Arquivo salvo permanentemente: ${url}`, component: "documents-upload" });
+      log.info({ msg: `${ICONS.SUCCESS} [Storage] Arquivo salvo permanentemente: ${url}`, component: 'documents-upload' });
       return url;
     }
 
     // If upload fails, fallback to temp storage
-    log.warn({ msg: `${ICONS.WARNING} [Storage] Supabase upload failed, using temporary storage`, component: "documents-upload" });
+    log.warn({ msg: `${ICONS.WARNING} [Storage] Supabase upload failed, using temporary storage`, component: 'documents-upload' });
     return await saveFinalFile(buffer, fileName);
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Storage] Error saving permanent file`, { component: "documents-upload" });
+    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Storage] Error saving permanent file`, { component: 'documents-upload' });
     // Fallback to temporary storage
     return await saveFinalFile(buffer, fileName);
   }

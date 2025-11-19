@@ -17,8 +17,8 @@
  * log.error(error, "Failed to process attachment", { caseId, attachmentId });
  */
 
-import pino from "pino";
-import type { Logger } from "pino";
+import pino from 'pino';
+import type { Logger } from 'pino';
 
 // ================================================================
 // ENVIRONMENT DETECTION
@@ -141,7 +141,7 @@ function createBetterStackTransport(token: string) {
 
 let transport: ReturnType<typeof pino.transport> | undefined;
 
-if (NODE_ENV === "production") {
+if (NODE_ENV === 'production') {
   /**
    * PRODUCTION: Send logs to Better Stack (Logtail)
    * HTTP delivery via custom transport
@@ -150,7 +150,7 @@ if (NODE_ENV === "production") {
   if (!LOGTAIL_SOURCE_TOKEN) {
     // Fallback: log warning to console if token is missing in production
     console.warn(
-      "🚨 [LoggerService] LOGTAIL_SOURCE_TOKEN not set in production. Logs will only go to console."
+      '🚨 [LoggerService] LOGTAIL_SOURCE_TOKEN not set in production. Logs will only go to console.'
     );
     // Continue with default transport (will log to stdout for Vercel logs)
   } else {
@@ -159,20 +159,20 @@ if (NODE_ENV === "production") {
     // Alternative: uncomment below to use custom HTTP transport
     // transport = createBetterStackTransport(LOGTAIL_SOURCE_TOKEN);
   }
-} else if (NODE_ENV === "development") {
+} else if (NODE_ENV === 'development') {
   /**
    * DEVELOPMENT: Use pino-pretty for human-readable terminal output
    * Colorized, formatted logs for local development convenience
    */
   transport = pino.transport({
-    target: "pino-pretty",
+    target: 'pino-pretty',
     options: {
       // Enable colors
       colorize: true,
       // Focus on message, hide metadata
-      ignore: "pid,hostname",
+      ignore: 'pid,hostname',
       // Readable timestamp format
-      translateTime: "HH:MM:ss Z",
+      translateTime: 'HH:MM:ss Z',
       // Pretty print nested objects
       singleLine: false,
     },

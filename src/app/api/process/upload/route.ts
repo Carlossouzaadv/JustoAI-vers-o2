@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     const userId = user.id;
 
-    log.info({ msg: `${ICONS.UPLOAD} [Upload] Iniciando upload - User: ${userId}`, component: "process-upload" });
+    log.info({ msg: `${ICONS.UPLOAD} [Upload] Iniciando upload - User: ${userId}`, component: 'process-upload' });
 
     // ============================================================
     // 2. PARSE FORM DATA & VALIDATE WITH ZOD
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] Validações OK - File: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] Validações OK - File: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`, component: 'process-upload' });
 
     // ============================================================
     // 4. SALVAR ARQUIVO TEMPORARIAMENTE
@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
     const fs = await import('fs/promises');
     await fs.writeFile(tempPath, buffer);
 
-    log.info({ msg: `${ICONS.SAVE} [Upload] Arquivo salvo: ${tempPath}`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SAVE} [Upload] Arquivo salvo: ${tempPath}`, component: 'process-upload' });
 
     // ============================================================
     // 5. CALCULAR HASH SHA256
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
     const hashResult = hashManager.calculateSHA256(buffer);
     const fileSha256 = hashResult.textSha;
 
-    log.info({ msg: `${ICONS.CLOCK} [Upload] SHA256: ${fileSha256.substring(0, 16)}...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.CLOCK} [Upload] SHA256: ${fileSha256.substring(0, 16)}...`, component: 'process-upload' });
 
     // ============================================================
     // 6. VERIFICAR DUPLICATA
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingDoc) {
-      log.warn({ msg: `${ICONS.WARNING} [Upload] Documento duplicado encontrado: ${existingDoc.id}`, component: "process-upload" });
+      log.warn({ msg: `${ICONS.WARNING} [Upload] Documento duplicado encontrado: ${existingDoc.id}`, component: 'process-upload' });
 
       return NextResponse.json({
         success: true,
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
     // 7. EXTRAIR TEXTO DO PDF
     // ============================================================
 
-    log.info({ msg: `${ICONS.EXTRACT} [Upload] Extraindo texto...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.EXTRACT} [Upload] Extraindo texto...`, component: 'process-upload' });
 
     const extractStartTime = Date.now();
     const extractionResult = await extractTextFromPDF(tempPath);
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] Texto extraído: ${extractedText.length} chars em ${extractDuration}ms`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] Texto extraído: ${extractedText.length} chars em ${extractDuration}ms`, component: 'process-upload' });
 
     // ============================================================
     // 8. LIMPAR E NORMALIZAR TEXTO
@@ -311,13 +311,13 @@ export async function POST(request: NextRequest) {
 
     const cleanText = cleaningResult.cleanedText;
 
-    log.info({ msg: `${ICONS.CLEAN} [Upload] Texto limpo: ${cleanText.length} chars (redução: ${cleaningResult.reductionPercentage.toFixed(1)}%)`, component: "process-upload" });
+    log.info({ msg: `${ICONS.CLEAN} [Upload] Texto limpo: ${cleanText.length} chars (redução: ${cleaningResult.reductionPercentage.toFixed(1)}%)`, component: 'process-upload' });
 
     // ============================================================
     // 8.5 EXTRAIR METADATA DO DOCUMENTO
     // ============================================================
 
-    log.info({ msg: `${ICONS.EXTRACT} [Upload] Extraindo metadata do documento...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.EXTRACT} [Upload] Extraindo metadata do documento...`, component: 'process-upload' });
 
     let documentMetadata;
     try {
@@ -326,9 +326,9 @@ export async function POST(request: NextRequest) {
         documentType: documentMetadata.documentType,
         documentDate: documentMetadata.documentDate?.toISOString(),
         confidence: documentMetadata.confidence
-      }, component: "process-upload" });
+      }, component: 'process-upload' });
     } catch (metadataError) {
-      log.warn({ msg: `${ICONS.WARNING} [Upload] Erro ao extrair metadata (continuando mesmo assim)`, error: metadataError, component: "process-upload" });
+      log.warn({ msg: `${ICONS.WARNING} [Upload] Erro ao extrair metadata (continuando mesmo assim)`, error: metadataError, component: 'process-upload' });
       documentMetadata = {
         documentType: 'UNKNOWN',
         documentTypeCategory: 'OTHER' as const,
@@ -342,19 +342,19 @@ export async function POST(request: NextRequest) {
     // 9. DETECTAR CNJ
     // ============================================================
 
-    log.info({ msg: `${ICONS.SEARCH} [Upload] Detectando CNJ...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SEARCH} [Upload] Detectando CNJ...`, component: 'process-upload' });
 
     let detectedCnj = textCleaner.extractProcessNumber(cleanText);
 
     // Se não encontrou CNJ e usuário forneceu manualmente
     if (!detectedCnj && manualCnj) {
       detectedCnj = manualCnj;
-      log.info({ msg: `${ICONS.INFO} [Upload] CNJ fornecido manualmente: ${detectedCnj}`, component: "process-upload" });
+      log.info({ msg: `${ICONS.INFO} [Upload] CNJ fornecido manualmente: ${detectedCnj}`, component: 'process-upload' });
     }
 
     // Se ainda não tem CNJ, retornar erro pedindo CNJ manual
     if (!detectedCnj) {
-      log.warn({ msg: `${ICONS.WARNING} [Upload] CNJ não detectado automaticamente`, component: "process-upload" });
+      log.warn({ msg: `${ICONS.WARNING} [Upload] CNJ não detectado automaticamente`, component: 'process-upload' });
 
       return NextResponse.json({
         success: false,
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] CNJ detectado: ${detectedCnj}`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] CNJ detectado: ${detectedCnj}`, component: 'process-upload' });
 
     // ============================================================
     // 10. EXTRAIR PRIMEIRA PÁGINA
@@ -377,7 +377,7 @@ export async function POST(request: NextRequest) {
     // 11. CRIAR CASE
     // ============================================================
 
-    log.info({ msg: `${ICONS.DATABASE} [Upload] Criando Case...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.DATABASE} [Upload] Criando Case...`, component: 'process-upload' });
 
     // Type narrowing: validate clientId only if provided
     const safeClientId = isValidClientId(clientId) ? clientId : undefined;
@@ -420,7 +420,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] Case criado: ${newCase.id}`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] Case criado: ${newCase.id}`, component: 'process-upload' });
 
     // ============================================================
     // 12. SALVAR DOCUMENTO (PERMANENTE EM SUPABASE STORAGE)
@@ -439,13 +439,13 @@ export async function POST(request: NextRequest) {
 
       if (permanentUrl) {
         documentUrl = permanentUrl;
-        log.info({ msg: `${ICONS.SUCCESS} [Storage] Document stored permanently: ${permanentUrl}`, component: "process-upload" });
+        log.info({ msg: `${ICONS.SUCCESS} [Storage] Document stored permanently: ${permanentUrl}`, component: 'process-upload' });
       } else {
-        log.warn({ msg: `${ICONS.WARNING} [Storage] Could not upload to Supabase, using temporary path`, component: "process-upload" });
+        log.warn({ msg: `${ICONS.WARNING} [Storage] Could not upload to Supabase, using temporary path`, component: 'process-upload' });
       }
     } catch (storageError) {
-      logError(storageError instanceof Error ? storageError : new Error(String(storageError)), `${ICONS.ERROR} [Storage] Error uploading document`, { component: "process-upload" });
-      log.warn({ msg: `${ICONS.INFO} Using temporary path as fallback`, component: "process-upload" });
+      logError(storageError instanceof Error ? storageError : new Error(String(storageError)), `${ICONS.ERROR} [Storage] Error uploading document`, { component: 'process-upload' });
+      log.warn({ msg: `${ICONS.INFO} Using temporary path as fallback`, component: 'process-upload' });
     }
 
     // Type narrowing: safely validate all document metadata before use
@@ -482,19 +482,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] Documento salvo: ${document.id}`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] Documento salvo: ${document.id}`, component: 'process-upload' });
 
     // ============================================================
     // 12.5 CONSOLIDAR RESUMO DO CASO
     // ============================================================
 
-    log.info({ msg: `${ICONS.EXTRACT} [Upload] Consolidando resumo do caso...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.EXTRACT} [Upload] Consolidando resumo do caso...`, component: 'process-upload' });
 
     try {
       await updateCaseSummaryDescription(newCase.id);
-      log.info({ msg: `${ICONS.SUCCESS} [Upload] Resumo consolidado e salvo no caso`, component: "process-upload" });
+      log.info({ msg: `${ICONS.SUCCESS} [Upload] Resumo consolidado e salvo no caso`, component: 'process-upload' });
     } catch (summaryError) {
-      log.warn({ msg: `${ICONS.WARNING} [Upload] Erro ao consolidar resumo (continuando mesmo assim)`, error: summaryError, component: "process-upload" });
+      log.warn({ msg: `${ICONS.WARNING} [Upload] Erro ao consolidar resumo (continuando mesmo assim)`, error: summaryError, component: 'process-upload' });
       // Não falhar o upload por causa disso
     }
 
@@ -502,7 +502,7 @@ export async function POST(request: NextRequest) {
     // 13. GERAR PREVIEW COM GEMINI FLASH (COM FALLBACK)
     // ============================================================
 
-    log.info({ msg: `${ICONS.ROBOT} [Upload] Gerando preview...`, component: "process-upload" });
+    log.info({ msg: `${ICONS.ROBOT} [Upload] Gerando preview...`, component: 'process-upload' });
 
     const previewStartTime = Date.now();
     const previewResult = await generatePreview(cleanText, newCase.id);
@@ -517,7 +517,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPreviewResult) {
       // ERRO CRÍTICO: Análise de IA falhou mesmo após fallback
-      log.error({ msg: `${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas`, error: previewResult.error, component: "process-upload" });
+      log.error({ msg: `${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas`, error: previewResult.error, component: 'process-upload' });
 
       // Limpar o case incompleto
       await prisma.case.delete({
@@ -547,11 +547,11 @@ export async function POST(request: NextRequest) {
 
     // Preview gerado com sucesso
     const modelValue = typeof preview.model === 'string' ? preview.model : 'unknown';
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${modelValue}`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] Preview gerado em ${previewDuration}ms com modelo ${modelValue}`, component: 'process-upload' });
 
     // Validar estrutura
     if (!validatePreviewSnapshot(preview)) {
-      log.warn({ msg: `${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim`, component: "process-upload" });
+      log.warn({ msg: `${ICONS.WARNING} [Upload] Preview com estrutura inválida, mas salvando mesmo assim`, component: 'process-upload' });
     }
 
     // Prepare preview snapshot with safe JSON serialization
@@ -622,9 +622,9 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      log.info({ msg: `${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion`, component: "process-upload" });
+      log.info({ msg: `${ICONS.SUCCESS} [Upload] Análise inicial (preview) salva em CaseAnalysisVersion`, component: 'process-upload' });
     } catch (analysisError) {
-      logError(analysisError instanceof Error ? analysisError : new Error(String(analysisError)), `${ICONS.WARNING} [Upload] Erro ao salvar análise inicial`, { component: "process-upload" });
+      logError(analysisError instanceof Error ? analysisError : new Error(String(analysisError)), `${ICONS.WARNING} [Upload] Erro ao salvar análise inicial`, { component: 'process-upload' });
       // Não falhar o upload se não conseguir salvar a análise
     }
 
@@ -635,7 +635,7 @@ export async function POST(request: NextRequest) {
     let juditJobId: string | undefined;
 
     if (!skipEnrichment) {
-      log.info({ msg: `${ICONS.ROCKET} [Upload] Enfileirando JUDIT...`, component: "process-upload" });
+      log.info({ msg: `${ICONS.ROCKET} [Upload] Enfileirando JUDIT...`, component: 'process-upload' });
 
       try {
         const { jobId } = await addOnboardingJob(detectedCnj, {
@@ -655,11 +655,11 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        log.info({ msg: `${ICONS.SUCCESS} [Upload] Job de onboarding da JUDIT adicionado à fila para o processo ${detectedCnj}. Job ID: ${jobId}`, component: "process-upload" });
-        log.info({ msg: `${ICONS.INFO} [Async Flow] JUDIT worker processará caso em background (workspaceId: ${workspaceId}, caseId: ${newCase.id})`, component: "process-upload" });
+        log.info({ msg: `${ICONS.SUCCESS} [Upload] Job de onboarding da JUDIT adicionado à fila para o processo ${detectedCnj}. Job ID: ${jobId}`, component: 'process-upload' });
+        log.info({ msg: `${ICONS.INFO} [Async Flow] JUDIT worker processará caso em background (workspaceId: ${workspaceId}, caseId: ${newCase.id})`, component: 'process-upload' });
 
       } catch (error) {
-        logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Upload] Erro ao enfileirar JUDIT`, { component: "process-upload" });
+        logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Upload] Erro ao enfileirar JUDIT`, { component: 'process-upload' });
         // Não falhar o upload por causa disso
       }
     }
@@ -670,7 +670,7 @@ export async function POST(request: NextRequest) {
 
     const overallDuration = Date.now() - overallStartTime;
 
-    log.info({ msg: `${ICONS.SUCCESS} [Upload] Upload completo em ${overallDuration}ms`, component: "process-upload" });
+    log.info({ msg: `${ICONS.SUCCESS} [Upload] Upload completo em ${overallDuration}ms`, component: 'process-upload' });
 
     // Type-safe response: serialize preview for response
     const responsePreviewRaw = JSON.parse(JSON.stringify(preview));
@@ -696,7 +696,7 @@ export async function POST(request: NextRequest) {
     }, { status: 200 });
 
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Upload] Erro geral`, { component: "process-upload" });
+    logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Upload] Erro geral`, { component: 'process-upload' });
 
     return NextResponse.json(
       {

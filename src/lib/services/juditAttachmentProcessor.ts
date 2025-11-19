@@ -7,10 +7,10 @@
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import { extractTextFromPDF } from '@/lib/pdf-processor';
-import { validateAttachment, getFailureReasonMessage } from './attachment-validation-service';
+import { validateAttachment } from './attachment-validation-service';
 import { createHash } from 'crypto';
 import { TimelineSource } from '@/lib/types/database';
-import { log, logError, createContextLogger } from '@/lib/services/logger';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPES
