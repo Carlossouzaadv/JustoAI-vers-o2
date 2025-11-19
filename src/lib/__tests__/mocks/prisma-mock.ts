@@ -47,19 +47,71 @@ export function setupTransactionMock(
 }
 
 /**
+ * Helper to build a complete aggregate result for scheduled credit hold.
+ * Ensures all aggregate fields are present with proper defaults.
+ */
+function buildScheduledCreditHoldAggregateResult(
+  sumOverrides?: {
+    reportCreditsReserved?: number | null;
+    fullCreditsReserved?: number | null;
+  }
+): {
+  _count: { id: number };
+  _sum: {
+    reportCreditsReserved: number | null;
+    fullCreditsReserved: number | null;
+  };
+  _avg: {
+    reportCreditsReserved: number | null;
+    fullCreditsReserved: number | null;
+  };
+  _min: {
+    reportCreditsReserved: number | null;
+    fullCreditsReserved: number | null;
+  };
+  _max: {
+    reportCreditsReserved: number | null;
+    fullCreditsReserved: number | null;
+  };
+} {
+  return {
+    _count: { id: 0 },
+    _sum: {
+      reportCreditsReserved: sumOverrides?.reportCreditsReserved ?? 0,
+      fullCreditsReserved: sumOverrides?.fullCreditsReserved ?? 0,
+    },
+    _avg: {
+      reportCreditsReserved: null,
+      fullCreditsReserved: null,
+    },
+    _min: {
+      reportCreditsReserved: null,
+      fullCreditsReserved: null,
+    },
+    _max: {
+      reportCreditsReserved: null,
+      fullCreditsReserved: null,
+    },
+  };
+}
+
+/**
  * Setup mock for aggregate operations
  * Example: creditHolds aggregation for available credits calculation
+ *
+ * Usage:
+ * const mockPrisma = createPrismaMock();
+ * setupAggregateMock(mockPrisma, { reportCreditsReserved: 100 });
  */
 export function setupAggregateMock(
   mockPrisma: DeepMockProxy<PrismaClient>,
-  aggregateResult: {
-    _sum: {
-      reportCreditsReserved: number | null;
-      fullCreditsReserved: number | null;
-    };
+  sumOverrides?: {
+    reportCreditsReserved?: number | null;
+    fullCreditsReserved?: number | null;
   }
 ): void {
-  mockPrisma.scheduledCreditHold.aggregate.mockResolvedValue(aggregateResult);
+  const aggregateResult = buildScheduledCreditHoldAggregateResult(sumOverrides);
+  mockPrisma.scheduledCreditHold.aggregate.mockResolvedValue(aggregateResult as never);
 }
 
 /**

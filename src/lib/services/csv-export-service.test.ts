@@ -5,6 +5,18 @@
 import { CSVExportService } from './csv-export-service';
 import { BatchStatus_Response } from './batch-status-service';
 
+/**
+ * Creates a mock anchor element with required properties for download testing.
+ * Type-safe: uses Partial<HTMLAnchorElement> instead of unsafe casting.
+ */
+function createMockAnchorElement(clickSpy: jest.Mock): Partial<HTMLAnchorElement> {
+  return {
+    href: '',
+    download: '',
+    click: clickSpy,
+  };
+}
+
 describe('CSVExportService', () => {
   const mockBatchStatus: BatchStatus_Response = {
     id: 'batch-123',
@@ -221,13 +233,9 @@ describe('CSVExportService', () => {
 
     it('should create and trigger download', () => {
       const clickSpy = jest.fn();
-      const linkElement = {
-        href: '',
-        download: '',
-        click: clickSpy,
-      };
+      const linkElement = createMockAnchorElement(clickSpy);
 
-      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as HTMLAnchorElement);
+      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as unknown as HTMLElement);
 
       const csv = 'field1,field2\nvalue1,value2';
       CSVExportService.downloadCSV(csv, 'test.csv');
@@ -238,13 +246,9 @@ describe('CSVExportService', () => {
 
     it('should cleanup after download', () => {
       const clickSpy = jest.fn();
-      const linkElement = {
-        href: '',
-        download: '',
-        click: clickSpy,
-      };
+      const linkElement = createMockAnchorElement(clickSpy);
 
-      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as HTMLAnchorElement);
+      jest.spyOn(document, 'createElement').mockReturnValue(linkElement as unknown as HTMLElement);
 
       const csv = 'field1,field2\nvalue1,value2';
       CSVExportService.downloadCSV(csv, 'test.csv');

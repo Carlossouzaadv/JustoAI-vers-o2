@@ -7,8 +7,16 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useExcelValidator } from '../useExcelValidator';
 
-// Mock do fetch global
-global.fetch = jest.fn();
+// Properly typed Response mock for fetch
+interface MockResponse {
+  status: number;
+  ok: boolean;
+  json: () => Promise<Record<string, unknown>>;
+}
+
+// Type-safe mock of fetch with proper signature
+const mockFetch = jest.fn<Promise<MockResponse>>();
+global.fetch = mockFetch as unknown as typeof fetch;
 
 describe('useExcelValidator Hook', () => {
   beforeEach(() => {
@@ -49,7 +57,7 @@ describe('useExcelValidator Hook', () => {
         },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 200,
         ok: true,
         json: async () => mockResponse,
@@ -100,7 +108,7 @@ describe('useExcelValidator Hook', () => {
         },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 400,
         ok: false,
         json: async () => mockResponse,
@@ -159,7 +167,7 @@ describe('useExcelValidator Hook', () => {
       };
 
       // Mock validação
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 200,
         ok: true,
         json: async () => mockValidationResponse,
@@ -173,7 +181,7 @@ describe('useExcelValidator Hook', () => {
       expect(result.current.isValid).toBe(true);
 
       // Mock upload
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 200,
         ok: true,
         json: async () => mockUploadResponse,
@@ -212,7 +220,7 @@ describe('useExcelValidator Hook', () => {
         statistics: { totalRows: 10, validRows: 9, invalidRows: 1 },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 400,
         json: async () => mockResponse,
       });
@@ -246,7 +254,7 @@ describe('useExcelValidator Hook', () => {
         statistics: { totalRows: 10, validRows: 10, invalidRows: 0 },
       };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 200,
         json: async () => mockResponse,
       });
@@ -326,7 +334,7 @@ describe('useExcelValidator Hook', () => {
       };
 
       // Step 1: Validar
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 200,
         json: async () => mockValidationResponse,
       });
@@ -341,7 +349,7 @@ describe('useExcelValidator Hook', () => {
       expect(result.current.currentFile).toBe(file);
 
       // Step 2: Upload
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockFetch.mockResolvedValueOnce({
         status: 200,
         ok: true,
         json: async () => mockUploadResponse,
