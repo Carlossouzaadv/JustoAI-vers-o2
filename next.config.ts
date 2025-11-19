@@ -116,28 +116,13 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
+  // Disable sourcemap upload during build to avoid 100+ warnings about missing maps
+  // Sentry will still capture errors with or without perfect sourcemaps
+  // This prevents warnings for chunks where Next.js doesn't generate .map files
+  skipSourceMapUpload: true,
+
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
-
-  // Include ALL source maps - both .map files and referenced sourcemaps
-  include: [
-    './src',
-    './.next/standalone',
-    './.next/static',
-  ],
-
-  // Ignore patterns to exclude from upload
-  ignore: [
-    'node_modules',
-    '.next/cache',
-    'dist',
-  ],
-
-  // Ensure sourcemaps are uploaded (not a dry run)
-  dryRun: false,
-
-  // Automatically detect and upload sourcemaps
-  urlPrefix: '~/',
 
   // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
