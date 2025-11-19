@@ -4,7 +4,7 @@
 // Gera um modelo de Excel com campos, validações e exemplos
 // O usuário baixa este template e preenche corretamente
 
-import { Workbook, Worksheet, Font } from "exceljs";
+import { Workbook, Worksheet, Alignment, BorderStyle } from "exceljs";
 import { EXCEL_SCHEMA_INFO } from "@/lib/validators/excel";
 
 /**
@@ -62,7 +62,10 @@ export class ExcelTemplateGenerator {
     // Adicionar headers
     headers.forEach((header, index) => {
       const cell = sheet.getCell(1, index + 1);
-      const isRequired = EXCEL_SCHEMA_INFO.requiredColumns.includes(header);
+      const isRequiredColumn = (col: string): boolean => {
+        return EXCEL_SCHEMA_INFO.requiredColumns.some(reqCol => reqCol === col);
+      };
+      const isRequired = isRequiredColumn(header);
 
       // Valor
       cell.value = header;
@@ -75,7 +78,8 @@ export class ExcelTemplateGenerator {
       };
 
       cell.fill = {
-        type: "solid",
+        type: "pattern",
+        pattern: "solid",
         fgColor: {
           argb: isRequired
             ? this.rgbToArgb(COLORS.headerRequired)
@@ -83,7 +87,7 @@ export class ExcelTemplateGenerator {
         },
       };
 
-      cell.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
 
       // Border
       cell.border = this.createBorder();
@@ -101,10 +105,11 @@ export class ExcelTemplateGenerator {
       const cell = sheet.getCell(2, index + 1);
       cell.value = value;
       cell.fill = {
-        type: "solid",
+        type: "pattern",
+        pattern: "solid",
         fgColor: { argb: this.rgbToArgb(COLORS.exampleRow) },
       };
-      cell.alignment = { horizontal: "left", vertical: "center" };
+      cell.alignment = { horizontal: "left", vertical: "middle" };
       cell.border = this.createBorder();
     });
 
@@ -197,19 +202,23 @@ export class ExcelTemplateGenerator {
 
     headers.forEach((header, index) => {
       const cell = sheet.getCell(1, index + 1);
-      const isRequired = EXCEL_SCHEMA_INFO.requiredColumns.includes(header);
+      const isRequiredColumn = (col: string): boolean => {
+        return EXCEL_SCHEMA_INFO.requiredColumns.some(reqCol => reqCol === col);
+      };
+      const isRequired = isRequiredColumn(header);
 
       cell.value = header;
       cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
       cell.fill = {
-        type: "solid",
+        type: "pattern",
+        pattern: "solid",
         fgColor: {
           argb: isRequired
             ? this.rgbToArgb(COLORS.headerRequired)
             : this.rgbToArgb(COLORS.headerOptional),
         },
       };
-      cell.alignment = { horizontal: "center", vertical: "center", wrapText: true };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
       cell.border = this.createBorder();
       sheet.getColumn(index + 1).width = 18;
     });
@@ -227,7 +236,8 @@ export class ExcelTemplateGenerator {
       exampleData.forEach((value, colIndex) => {
         const cell = sheet.getCell(rowIndex + 2, colIndex + 1);
         cell.value = value;
-        cell.alignment = { horizontal: 'left', vertical: 'center' } as Alignment;
+        const alignment: Partial<Alignment> = { horizontal: 'left', vertical: 'middle' };
+        cell.alignment = alignment;
         cell.border = this.createBorder();
       });
     });
@@ -331,7 +341,7 @@ export class ExcelTemplateGenerator {
       const description = this.getFieldDescription(header);
 
       cell.note = {
-        texts: [{ rich: [{ font: { size: 10 }, value: description }] }],
+        texts: [{ text: description, font: { size: 10 } }],
       };
     });
   }
@@ -347,11 +357,12 @@ export class ExcelTemplateGenerator {
    * Cria border padrão
    */
   private static createBorder() {
+    const borderStyle: BorderStyle = "thin";
     return {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      bottom: { style: "thin" },
-      right: { style: "thin" },
+      top: { style: borderStyle },
+      left: { style: borderStyle },
+      bottom: { style: borderStyle },
+      right: { style: borderStyle },
     };
   }
 }

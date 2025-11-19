@@ -116,8 +116,8 @@ export class GeminiClient {
 
         if (!response.ok) {
           const errorData = await response.json() as unknown;
-          const error = new Error(`Gemini API error: ${response.status}`);
-          (error as Record<string, unknown>).geminiError = errorData;
+          const error = new Error(`Gemini API error: ${response.status}`) as Error & { geminiError?: unknown };
+          error.geminiError = errorData;
           throw error;
         }
 

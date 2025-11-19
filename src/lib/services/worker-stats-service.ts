@@ -158,15 +158,15 @@ class WorkerStatsServiceImpl {
           startedAt: new Date(Date.now() - durationMs),
           completedAt: new Date(),
           durationMs,
-          resultSummary: resultSummary.success ? resultSummary : null,
+          resultSummary: resultSummary.success ? resultSummary : undefined,
           metadata: validatedMetadata,
           retryCount: 0
         },
         update: {
-          status: 'COMPLETED' as WorkerJobStatus,
+          status: "COMPLETED" as WorkerJobStatus,
           completedAt: new Date(),
           durationMs,
-          resultSummary: resultSummary.success ? resultSummary : null,
+          resultSummary: resultSummary.success ? resultSummary : undefined,
           metadata: validatedMetadata
         }
       });

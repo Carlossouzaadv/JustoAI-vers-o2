@@ -439,9 +439,7 @@ export class TimelineMergeService {
             }
           } else {
             // Re-throw se for erro diferente
-            log.error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002`, component: "timelineMerge" },
-              { code: prismaErrorCode, message: err.message }
-            );
+            log.error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002)`, component: "timelineMerge", code: prismaErrorCode, message: err.message });
             throw err;
           }
         }

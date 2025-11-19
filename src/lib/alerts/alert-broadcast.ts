@@ -87,7 +87,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
     // 3. Obter manager SSE e enviar evento
     const wsManager = getWebSocketManager();
     wsManager.broadcastToWorkspace(workspaceId, {
-      type: 'alert_count_update',
+      type: "alert:notification",
       data: {
         unreadCount: counts.unreadCount,
         criticalCount: counts.criticalCount

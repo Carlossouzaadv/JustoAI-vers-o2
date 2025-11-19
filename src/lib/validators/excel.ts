@@ -23,11 +23,13 @@ const VALID_COURTS = ['TJSP', 'TRJ', 'TRF1', 'TRF2', 'TRF3', 'TRF4', 'TRF5', 'ST
 export const CourtsEnum = z
   .string()
   .superRefine((val, ctx) => {
-    if (!VALID_COURTS.includes(val as any)) {
+    const isValidCourt = (value: string): value is typeof VALID_COURTS[number] => {
+      return VALID_COURTS.some(court => court === value);
+    };
+
+    if (!isValidCourt(val)) {
       ctx.addIssue({
-        code: z.ZodIssueCode.invalid_enum_value,
-        received: val,
-        options: VALID_COURTS as any,
+        code: z.ZodIssueCode.custom,
         message: 'Tribunal inválido. Tribunais aceitos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF',
       });
     }
@@ -171,38 +173,6 @@ export const ExcelRowSchema = z.object(
       )
       .optional()
       .describe('Emails separados por vírgula'),
-  },
-  {
-    errorMap: (issue, ctx) => {
-      // Mensagens customizadas por tipo de erro em PORTUGUÊS
-      // Detectar qual campo para mensagens específicas
-      const fieldPath = issue.path?.[0]?.toString() || '';
-
-      switch (issue.code) {
-        case 'invalid_type':
-          return { message: `Campo esperado do tipo ${issue.expected}` };
-        case 'invalid_enum_value':
-          // Mensagens específicas por campo enum
-          if (fieldPath === 'Tribunal') {
-            return { message: 'Tribunal inválido. Tribunais aceitos: TJSP, TRJ, TRF1, TRF2, TRF3, TRF4, TRF5, STJ, STF' };
-          }
-          if (fieldPath === 'Status') {
-            return { message: 'Status deve ser: ATIVO, ENCERRADO, SUSPENSO ou PARADO' };
-          }
-          if (fieldPath === 'Frequência de Sincronização') {
-            return { message: 'Frequência deve ser: MANUAL, HOURLY, DAILY ou WEEKLY' };
-          }
-          return { message: `Valor inválido. Opções aceitas: ${issue.options?.join(', ') || 'desconhecido'}` };
-        case 'invalid_string':
-          return { message: `Formato de string inválido: ${issue.validation}` };
-        case 'too_small':
-          return { message: `Campo deve ter no mínimo ${issue.minimum} caracteres` };
-        case 'too_big':
-          return { message: `Campo não pode ter mais de ${issue.maximum} caracteres` };
-        default:
-          return { message: ctx.defaultError };
-      }
-    },
   }
 );
 

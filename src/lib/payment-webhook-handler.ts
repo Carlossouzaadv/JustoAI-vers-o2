@@ -549,7 +549,9 @@ export class PaymentWebhookHandler {
 
         logError(
           `${ICONS.ERROR} Assinatura inválida do webhook ${provider}. ` +
-          `Headers: ${JSON.stringify(Object.keys(headers))}`
+          `Headers: ${JSON.stringify(Object.keys(headers))}`,
+          "",
+          { component: "paymentWebhookHandler" }
         );
       }
 

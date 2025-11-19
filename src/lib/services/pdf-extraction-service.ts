@@ -203,10 +203,10 @@ export class PDFExtractionService {
 
     for (let i = 0; i < lines.length; i++) {
       const currentLine = lines[i];
-      const nextLine = i + 1 < lines.length ? lines[i + 1] : null;
+      const nextLine = i + 1 < lines.length ? lines[i + 1] : undefined;
 
       // Verificar se deve juntar com a próxima linha
-      if (this.shouldJoinLines(currentLine, nextLine)) {
+      if (nextLine && this.shouldJoinLines(currentLine, nextLine)) {
         // Remover hyphen final e juntar com a próxima
         const joinedLine = currentLine.replace(/-\s*$/, '') + nextLine;
         result.push(joinedLine);

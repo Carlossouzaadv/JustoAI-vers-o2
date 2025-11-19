@@ -83,7 +83,7 @@ export async function validateAttachment(
 
   try {
     console.log(
-      `${ICONS.VERIFY} [AttachmentValidation] Iniciando validação: ${filename} (${buffer.length} bytes)`
+      `${ICONS.CHECK} [AttachmentValidation] Iniciando validação: ${filename} (${buffer.length} bytes)`
     );
 
     // ================================================================
