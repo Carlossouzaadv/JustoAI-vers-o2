@@ -91,10 +91,10 @@ export default function RootLayout({
             <CookieConsentProvider>
               {children}
               <CookieBanner />
+              <CrispChat />
             </CookieConsentProvider>
           </Providers>
         </AuthProvider>
-        <CrispChat />
       </body>
     </html>
   );
