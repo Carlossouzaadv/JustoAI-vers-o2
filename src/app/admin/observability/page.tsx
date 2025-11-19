@@ -1,6 +1,6 @@
 'use client';
-
 export const dynamic = 'force-dynamic';
+
 
 import { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle, AlertTriangle, TrendingUp, Activity, Zap, Timer } from 'lucide-react';

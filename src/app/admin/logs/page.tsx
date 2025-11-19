@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useMemo } from 'react';
 import { Activity, AlertCircle, Download, Filter, X, ChevronDown } from 'lucide-react';

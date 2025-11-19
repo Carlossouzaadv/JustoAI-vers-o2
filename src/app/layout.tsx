@@ -6,6 +6,8 @@ import { Providers } from './providers';
 import { AuthProvider } from '@/contexts/auth-context';
 import { CrispChat } from '@/components/crisp-chat';
 
+export const dynamic = 'force-dynamic';
+
 // Fonts are now defined locally in globals.css using @font-face
 // This eliminates the network dependency on Google Fonts during build
 
