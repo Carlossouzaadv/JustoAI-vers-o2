@@ -99,6 +99,14 @@ export async function GET(request: NextRequest) {
 
       const adminUser = workspace.users.find(uw => uw.role === 'ADMIN');
 
+      // Convert Decimal values to numbers for credit balances
+      const reportCreditsBalance = workspace.credits?.reportCreditsBalance
+        ? Number(workspace.credits.reportCreditsBalance)
+        : 0;
+      const fullCreditsBalance = workspace.credits?.fullCreditsBalance
+        ? Number(workspace.credits.fullCreditsBalance)
+        : 0;
+
       return {
         id: workspace.id,
         name: workspace.name,
@@ -107,9 +115,9 @@ export async function GET(request: NextRequest) {
         trialEndsAt: workspace.trialEndsAt?.toISOString() || null,
         daysUntilTrialExpires: daysUntilExpires,
         credits: {
-          reportCreditsBalance: workspace.credits?.reportCreditsBalance || 0,
-          fullCreditsBalance: workspace.credits?.fullCreditsBalance || 0,
-          totalBalance: (workspace.credits?.reportCreditsBalance || 0) + (workspace.credits?.fullCreditsBalance || 0)
+          reportCreditsBalance,
+          fullCreditsBalance,
+          totalBalance: reportCreditsBalance + fullCreditsBalance
         },
         users: {
           count: workspace.users.length,

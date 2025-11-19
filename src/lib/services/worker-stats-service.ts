@@ -73,8 +73,26 @@ function isValidMetadata(metadata: unknown): metadata is Record<string, string |
 /**
  * Valida se um resultado é um objeto seguro
  */
-function isValidResult(result: unknown): result is Record<string, unknown> {
-  return typeof result === 'object' && result !== null;
+function isValidResult(result: unknown): result is Record<string, string | number | boolean | null> {
+  if (typeof result !== 'object' || result === null || Array.isArray(result)) {
+    return false;
+  }
+
+  const obj = result as Record<PropertyKey, unknown>;
+  for (const key in obj) {
+    const value = obj[key];
+    const isValidType = (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      value === null
+    );
+    if (!isValidType) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // ================================================================
@@ -133,7 +151,7 @@ class WorkerStatsServiceImpl {
       }
 
       // Validar resultado com type guard
-      let resultSummary: Record<string, unknown> = {};
+      let resultSummary: Record<string, string | number | boolean | null> | undefined;
       if (isValidResult(result)) {
         // Pegar apenas campos relevantes do resultado (não o resultado completo)
         resultSummary = {
@@ -157,7 +175,7 @@ class WorkerStatsServiceImpl {
           startedAt: new Date(Date.now() - durationMs),
           completedAt: new Date(),
           durationMs,
-          resultSummary: resultSummary.success ? resultSummary : undefined,
+          resultSummary,
           metadata: validatedMetadata,
           retryCount: 0
         },
@@ -165,7 +183,7 @@ class WorkerStatsServiceImpl {
           status: 'COMPLETED' as WorkerJobStatus,
           completedAt: new Date(),
           durationMs,
-          resultSummary: resultSummary.success ? resultSummary : undefined,
+          resultSummary,
           metadata: validatedMetadata
         }
       });

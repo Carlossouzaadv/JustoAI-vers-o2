@@ -56,6 +56,25 @@ function normalizeAlertSeverity(severity: unknown): 'LOW' | 'MEDIUM' | 'HIGH' | 
   return 'MEDIUM'; // Default fallback
 }
 
+// Helper to normalize metadata from Prisma JSON to proper type
+function normalizeMetadata(metadata: unknown): Record<string, unknown> | null {
+  if (metadata === null || metadata === undefined) {
+    return null;
+  }
+
+  // If it's already an object, return it as-is
+  if (typeof metadata === 'object' && !Array.isArray(metadata)) {
+    return metadata as Record<string, unknown>;
+  }
+
+  // If it's a primitive or array, wrap it in an object
+  if (typeof metadata === 'string' || typeof metadata === 'number' || typeof metadata === 'boolean' || Array.isArray(metadata)) {
+    return { value: metadata };
+  }
+
+  return null;
+}
+
 export async function GET(request: Request) {
   try {
     // 1. Authenticate
@@ -133,7 +152,7 @@ export async function GET(request: Request) {
       resolved: alert.resolved,
       createdAt: alert.createdAt.toISOString(),
       resolvedAt: alert.resolvedAt?.toISOString() || null,
-      metadata: alert.metadata || null,
+      metadata: normalizeMetadata(alert.metadata),
       errorCode: alert.errorCode || null
     }));
 

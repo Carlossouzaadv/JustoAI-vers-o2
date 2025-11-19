@@ -12,6 +12,11 @@ import { Loader2, Download, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BatchStatusService, BatchStatus_Response, BatchStatus } from '@/lib/services/batch-status-service';
+
+// Type guard for valid batch status values
+function isValidBatchStatus(status: string): status is 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'PAUSED' | 'CANCELLED' {
+  return ['QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED', 'PAUSED', 'CANCELLED'].includes(status);
+}
 import { CSVExportService } from '@/lib/services/csv-export-service';
 import { BatchProgressCard } from '@/components/batch/batch-progress-card';
 import { BatchStatistics } from '@/components/batch/batch-statistics';
@@ -141,6 +146,15 @@ export default function BatchPage() {
     );
   }
 
+  // Validate status is a valid BatchStatus value
+  if (!isValidBatchStatus(status.status)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">Status inválido do batch</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 space-y-6">
       {/* Header */}
@@ -160,7 +174,7 @@ export default function BatchPage() {
         totalRows={status.progress.totalRows}
         processedRows={status.progress.processedRows}
         estimatedTimeRemaining={status.statistics.estimatedTimeRemaining}
-        status={status.status as string}
+        status={status.status}
       />
 
       {/* Statistics */}

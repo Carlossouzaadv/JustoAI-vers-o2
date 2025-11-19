@@ -83,16 +83,21 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       where: { id: user.id },
       select: {
         id: true,
-        workspaceId: true
+        workspaces: {
+          select: {
+            workspaceId: true
+          },
+          take: 1
+        }
       }
     })
 
-    if (!isUserWithWorkspace(userRecord)) {
+    if (!userRecord || !userRecord.workspaces[0]) {
       console.warn(`${ICONS.WARNING} User ${user.id} not found or missing workspace`)
       return errorResponse('User workspace not found', 404)
     }
 
-    const { workspaceId } = userRecord
+    const workspaceId = userRecord.workspaces[0].workspaceId
 
     // 3. Parse and validate query parameters
     const { searchParams } = new URL(request.url)

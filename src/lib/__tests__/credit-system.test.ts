@@ -114,10 +114,8 @@ describe('CreditManager', () => {
 
       mockPrisma.workspaceCredits.findUnique.mockResolvedValue(mockCredits as never);
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       const balance = await creditManager.getCreditBalance('ws-1');
@@ -139,10 +137,8 @@ describe('CreditManager', () => {
 
       mockPrisma.workspaceCredits.findUnique.mockResolvedValue(mockCredits as never);
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: 3,
-          fullCreditsReserved: 2,
-        },
+        reportCreditsReserved: 3,
+        fullCreditsReserved: 2,
       });
 
       const balance = await creditManager.getCreditBalance('ws-1');
@@ -168,10 +164,8 @@ describe('CreditManager', () => {
       );
 
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       const balance = await creditManager.getCreditBalance('new-ws');
@@ -200,10 +194,8 @@ describe('CreditManager', () => {
         mockCredits as never
       );
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       // Mock transaction to fail (since we're testing the contract)
@@ -239,10 +231,8 @@ describe('CreditManager', () => {
         mockCredits as never
       );
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       // Transaction won't be called because balance check fails first
@@ -276,10 +266,8 @@ describe('CreditManager', () => {
         mockCredits as never
       );
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       mockPrisma.$transaction.mockRejectedValue(
@@ -502,10 +490,8 @@ describe('CreditManager', () => {
         mockCredits as never
       );
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       // Transaction will fail but that's OK - we're testing metadata handling
@@ -539,10 +525,8 @@ describe('CreditManager', () => {
         mockCredits as never
       );
       setupAggregateMock(mockPrisma, {
-        _sum: {
-          reportCreditsReserved: null,
-          fullCreditsReserved: null,
-        },
+        reportCreditsReserved: null,
+        fullCreditsReserved: null,
       });
 
       mockPrisma.$transaction.mockRejectedValue(

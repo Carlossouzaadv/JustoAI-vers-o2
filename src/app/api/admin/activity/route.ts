@@ -170,10 +170,10 @@ export async function GET() {
     const allEvents: ActivityEvent[] = [...creditEvents, ...analysisEvents]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    // 8. Validate events
-    const validEvents = allEvents.filter(event => {
+    // 8. Validate events (filter with type predicate)
+    const validEvents: ActivityEvent[] = allEvents.filter((event): event is ActivityEvent => {
       if (!isActivityEvent(event)) {
-        console.warn(`Invalid activity event: ${event.id}`);
+        console.warn(`Invalid activity event:`, event);
         return false;
       }
       return true;

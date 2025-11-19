@@ -357,7 +357,7 @@ export async function POST(
           await alert.fatal('Reembolso de emergência falhou durante catch geral', {
             component: 'fullAnalysisRoute',
             stage: 'mainCatchEmergencyRefund',
-            caseId,
+            caseId: id,
             error: refundResult.error,
             debitTransactionIds,
             originalError: String(error),
@@ -372,7 +372,7 @@ export async function POST(
         await alert.fatal('Reembolso de emergência falhou - créditos podem estar perdidos', {
           component: 'fullAnalysisRoute',
           stage: 'emergencyRefundCatch',
-          caseId,
+          caseId: id,
           error: refundError,
           debitTransactionIds,
           context: 'This is a critical financial issue requiring immediate investigation',

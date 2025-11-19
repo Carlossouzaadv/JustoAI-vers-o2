@@ -427,6 +427,16 @@ interface ErrorRowProps {
 }
 
 function ErrorRow({ error }: ErrorRowProps) {
+  // Helper to safely convert unknown value to string for display
+  const getDisplayValue = (value: unknown): string => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value);
+  };
+
+  const displayValue = getDisplayValue(error.value);
+
   return (
     <div className="border border-red-200 rounded p-3 bg-red-50">
       <div className="flex items-start justify-between gap-2">
@@ -435,9 +445,9 @@ function ErrorRow({ error }: ErrorRowProps) {
             Linha {error.row} • {error.column}
           </p>
           <p className="text-sm text-red-800 font-medium">{error.error}</p>
-          {error.value && (
+          {displayValue && (
             <p className="text-xs text-red-600 mt-1">
-              Valor: <code className="bg-red-100 px-1 rounded">{String(error.value).substring(0, 50)}</code>
+              Valor: <code className="bg-red-100 px-1 rounded">{displayValue.substring(0, 50)}</code>
             </p>
           )}
         </div>

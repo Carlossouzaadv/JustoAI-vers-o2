@@ -391,13 +391,18 @@ async function saveAnalysisResult(
     const nextVersion = await getNextVersionNumber(processId);
 
     // Parse the analysis (deve ser JSON válido)
-    let analysisData: unknown;
+    // JSON.parse returns unknown, which we need to serialize for Prisma
+    let parsedData: unknown;
     try {
-      analysisData = JSON.parse(fullAnalysis);
+      parsedData = JSON.parse(fullAnalysis);
     } catch {
       // Se não conseguir parsear como JSON, armazenar como texto
-      analysisData = { raw_text: fullAnalysis };
+      parsedData = { raw_text: fullAnalysis };
     }
+
+    // Serialize to ensure Prisma compatibility
+    // JSON.stringify + JSON.parse ensures the data is a valid JSON structure
+    const safeJsonData = JSON.parse(JSON.stringify(parsedData));
 
     await prisma.caseAnalysisVersion.create({
       data: {
@@ -407,7 +412,7 @@ async function saveAnalysisResult(
         status: 'COMPLETED',
         analysisType: level === 'FULL' ? 'complete' : 'strategic',
         modelUsed,
-        aiAnalysis: analysisData,
+        aiAnalysis: safeJsonData,
         confidence: level === 'FULL' ? 0.95 : 0.85,
         processingTime,
         metadata: {

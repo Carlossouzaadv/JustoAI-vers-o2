@@ -35,11 +35,11 @@ export function PostHogProvider({ children }: PostHogProviderProps): ReactNode {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.posthog.com',
       person_profiles: 'identified_only', // Rastrear apenas usuários identificados
       session_recording: {
-        sample_rate: 0.1, // Gravar 10% das sessões para economizar banda
+        maskAllInputs: true, // Mascarar todos os inputs sensíveis
       },
       autocapture: true, // Autocapture de cliques e formulários
       mask_all_text: true, // Mascarar texto sensível
-      mask_all_input_on_document: true, // Mascarar inputs sensíveis
+      mask_all_element_attributes: true, // Mascarar atributos de elementos
     });
 
   }, []);

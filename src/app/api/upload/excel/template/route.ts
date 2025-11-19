@@ -32,7 +32,10 @@ export async function GET(request: NextRequest) {
     console.log(`${ICONS.SUCCESS} Template gerado com sucesso (${buffer.length} bytes)`);
 
     // Retornar como arquivo para download
-    return new NextResponse(buffer, {
+    // Convert Buffer to Uint8Array for NextResponse compatibility
+    const uint8Array = new Uint8Array(buffer);
+
+    return new NextResponse(uint8Array, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,

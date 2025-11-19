@@ -221,11 +221,22 @@ export function useExcelValidator(): UseExcelValidatorReturn {
         throw new Error(data.error || 'Erro ao enviar arquivo');
       }
 
+      // Validate that required fields exist before assigning to uploadResult
+      if (!data.batchId || !data.summary || !data.processing) {
+        throw new Error('Resposta incompleta do servidor');
+      }
+
+      const uploadResult: UploadResult = {
+        batchId: data.batchId,
+        summary: data.summary,
+        processing: data.processing,
+      };
+
       setState((prev) => ({
         ...prev,
         isUploading: false,
         uploadProgress: 100,
-        uploadResult: data,
+        uploadResult,
       }));
 
       return true;
