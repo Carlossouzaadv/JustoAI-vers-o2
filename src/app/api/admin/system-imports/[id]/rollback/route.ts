@@ -55,19 +55,20 @@ function isValidRouteParams(params: unknown): params is { id: string } {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: unknown }
+  { params }: { params: Promise<Record<string, string>> }
 ) {
   try {
     // 1. VALIDATE ROUTE PARAMS
-    if (!isValidRouteParams(params)) {
-      console.error('❌ [Rollback API] Invalid params:', params);
+    const resolvedParams = await params;
+    if (!isValidRouteParams(resolvedParams)) {
+      console.error('❌ [Rollback API] Invalid params:', resolvedParams);
       return NextResponse.json(
         { success: false, message: 'Invalid route parameters' },
         { status: 400 }
       );
     }
 
-    const { id: systemImportId } = params;
+    const { id: systemImportId } = resolvedParams;
 
     // 2. AUTHENTICATE USER
     let user;

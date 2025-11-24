@@ -233,7 +233,7 @@ export async function requireWorkspaceAccess(userId: string, workspaceId: string
 
 // Error handler wrapper
 export function withErrorHandler(handler: (_request: NextRequest, _context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>) {
-  return async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
+  const wrappedHandler = async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     try {
       return await handler(request, context)
     } catch (error) {
@@ -246,6 +246,7 @@ export function withErrorHandler(handler: (_request: NextRequest, _context?: { p
       return errorResponse('Internal server error', 500)
     }
   }
+  return wrappedHandler
 }
 
 // Method handler helper

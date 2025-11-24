@@ -1,4 +1,4 @@
-import {withSentryConfig} from '@sentry/nextjs';
+import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
 // ================================================================
@@ -20,14 +20,14 @@ const allowedHosts = [
 ].filter((host) => host && host.length > 0);
 
 const nextConfig: NextConfig = {
-  // ESLint config - ignore during builds for now
+  // ESLint config
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
-  // TypeScript config - ignore errors for performance testing
+  // TypeScript config
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Basic output configuration
@@ -109,32 +109,32 @@ const shouldEnableSentry = process.env.VERCEL_ENV !== 'production';
 
 export default shouldEnableSentry
   ? withSentryConfig(nextConfig, {
-      // For all available options, see:
-      // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+    // For all available options, see:
+    // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
-      org: 'justoai',
+    org: 'justoai',
 
-      project: 'justoai',
+    project: 'justoai',
 
-      // Only print logs for uploading source maps in CI
-      silent: true,
+    // Only print logs for uploading source maps in CI
+    silent: true,
 
-      // For all available options, see:
-      // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+    // For all available options, see:
+    // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-      // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-      // This can increase your server load as well as your hosting bill.
-      // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-      // side errors will fail.
-      // tunnelRoute: "/monitoring",
+    // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+    // This can increase your server load as well as your hosting bill.
+    // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+    // side errors will fail.
+    // tunnelRoute: "/monitoring",
 
-      // Automatically tree-shake Sentry logger statements to reduce bundle size
-      disableLogger: true,
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
+    disableLogger: true,
 
-      // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-      // See the following for more information:
-      // https://docs.sentry.io/product/crons/
-      // https://vercel.com/docs/cron-jobs
-      automaticVercelMonitors: true,
-    })
+    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+    // See the following for more information:
+    // https://docs.sentry.io/product/crons/
+    // https://vercel.com/docs/cron-jobs
+    automaticVercelMonitors: true,
+  })
   : nextConfig;

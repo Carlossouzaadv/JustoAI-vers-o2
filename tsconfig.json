@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -21,17 +25,35 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/lib/services/*": ["./src/lib/services/*"],
-      "@/lib/observability/*": ["./src/lib/observability/*"],
-      "@/lib/queue/*": ["./src/lib/queue/*"],
-      "@/lib/*": ["./src/lib/*"],
-      "@/workers/*": ["./src/workers/*"],
-      "@/*": ["./src/*"]
+      "@/lib/services/*": [
+        "./src/lib/services/*"
+      ],
+      "@/lib/observability/*": [
+        "./src/lib/observability/*"
+      ],
+      "@/lib/queue/*": [
+        "./src/lib/queue/*"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
+      ],
+      "@/workers/*": [
+        "./src/workers/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "next-env.d.ts",
+    ".next/types/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
+    ".next",
     "next.config.backup.ts"
   ]
 }
