@@ -28,7 +28,7 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
 
 ## SPRINT 1: Core Features Implementation 🔄 IN PROGRESS
 
-**Status**: 🔄 7/16 completed | Next task: Excel file saving
+**Status**: 🔄 8/16 completed | Next task: Database health check
 
 ### Backend - Real API Integrations
 
@@ -49,11 +49,20 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
   - Exponential backoff: 5s → 30s → 5m → 30m → 24h
   - Commit: `0776cc2`
 
-- ⏳ **Excel file saving** (📍 `src/routes/api/upload/excel`)
-  - 2 TODOs: real file storage and database references
-  - Replace mock file handling with actual S3/storage layer
+- ✅ **Excel file saving** (📍 `src/app/api/upload/excel/route.ts`)
+  - Real file upload to Supabase Storage with organized paths
+  - Type-safe storage integration with error handling
+  - Sanitized file names to prevent path traversal
+  - Commit: `74f26f5`
 
-- ⏳ **Database health check** (📍 `src/routes/api/admin/health`)
+- ✅ **Excel template generation** (📍 `src/lib/excel-template-generator.ts`)
+  - Dynamic Excel template generation with column definitions
+  - GET /api/upload/excel returns downloadable template
+  - Instructions sheet with field descriptions and limits
+  - Includes 2 example rows for user reference
+  - Commit: `74f26f5`
+
+- ⏳ **Database health check** (📍 `src/app/api/health/system/route.ts`)
   - Real database connectivity validation
   - Redis connection verification
   - Replace mock status responses
@@ -202,11 +211,11 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
 | Sprint | Status | Progress | Key Focus |
 |--------|--------|----------|-----------|
 | **SPRINT 0** | ✅ Complete | 5/5 (100%) | Build integrity & type safety |
-| **SPRINT 1** | 🔄 Active | 7/16 (44%) | Real API integrations |
+| **SPRINT 1** | 🔄 Active | 8/16 (50%) | Real API integrations |
 | **SPRINT 2** | ⏳ Planned | 0/11 (0%) | Code quality & maintainability |
 | **SPRINT 3** | ⏳ Planned | 0/11 (0%) | Testing & production readiness |
 
-**Total Progress**: 12/43 tasks (28%) ✅ Completed
+**Total Progress**: 13/43 tasks (30%) ✅ Completed
 
 ---
 
