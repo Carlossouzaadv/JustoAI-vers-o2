@@ -4,6 +4,8 @@
 
 import { createHmac } from 'crypto';
 import { ICONS } from '@/lib/icons';
+import { prisma } from '@/lib/prisma';
+import type { WebhookDeliveryStatus } from '@prisma/client';
 
 interface WebhookDeliveryData {
   workspaceId: string;
@@ -34,6 +36,21 @@ const RETRY_DELAYS = [
   30 * 60 * 1000,  // 30 minutes
   24 * 60 * 60 * 1000, // 24 hours
 ];
+
+/**
+ * Convert log status string to database enum
+ */
+function statusToEnum(status: string): WebhookDeliveryStatus {
+  const statusMap: Record<string, WebhookDeliveryStatus> = {
+    pending: 'PENDING',
+    processing: 'PROCESSING',
+    success: 'SUCCESS',
+    failed: 'FAILED',
+    retrying: 'RETRYING',
+    skipped: 'SKIPPED',
+  };
+  return statusMap[status] as WebhookDeliveryStatus;
+}
 
 export class WebhookDeliveryService {
   private readonly MAX_RETRIES = 5;
@@ -71,6 +88,32 @@ export class WebhookDeliveryService {
         log.nextRetryAt = new Date(Date.now() + delayMs);
       }
 
+      // Persist to database
+      try {
+        await prisma.webhookDelivery.create({
+          data: {
+            workspaceId: data.workspaceId,
+            webhookType: data.webhookType,
+            eventType: data.eventType,
+            processNumber: data.processNumber,
+            payload: JSON.parse(JSON.stringify(data.payload)),
+            signature: data.signature,
+            status: statusToEnum(status),
+            statusCode: statusCode || undefined,
+            error: error || undefined,
+            retryCount: attempt,
+            maxRetries: this.MAX_RETRIES,
+            lastAttemptAt: log.lastAttemptAt,
+            deliveredAt: log.deliveredAt,
+            nextRetryAt: log.nextRetryAt,
+          },
+        });
+      } catch (dbError) {
+        console.error(`${ICONS.ERROR} Failed to persist webhook to database:`, dbError);
+        // Don't throw - we still want to return the log even if persistence fails
+        // This ensures graceful degradation if database is temporarily unavailable
+      }
+
       // Log to console with structured format
       console.log(
         `${ICONS.WEBHOOK} Webhook delivery tracked`,
@@ -85,9 +128,6 @@ export class WebhookDeliveryService {
           nextRetry: log.nextRetryAt?.toISOString(),
         }
       );
-
-      // TODO: Persist to database (WebhookDelivery model)
-      // await prisma.webhookDelivery.create({ data: { ...log, ...data } });
 
       return log;
     } catch (err) {
@@ -110,30 +150,36 @@ export class WebhookDeliveryService {
       const now = Date.now();
       const dedupWindow = this.DEDUP_WINDOW_MS;
 
-      // Check if we've seen this webhook recently
-      // TODO: Query from database with proper dedup logic
-      // const recent = await prisma.webhookDelivery.findFirst({
-      //   where: {
-      //     webhookType,
-      //     processNumber,
-      //     createdAt: { gte: new Date(now - dedupWindow) },
-      //     status: 'success'
-      //   }
-      // });
+      // Check if we've seen this webhook recently with successful delivery
+      const recent = await prisma.webhookDelivery.findFirst({
+        where: {
+          webhookType,
+          processNumber,
+          status: 'SUCCESS',
+          createdAt: {
+            gte: new Date(now - dedupWindow),
+          },
+        },
+        select: { id: true, createdAt: true },
+      });
 
-      // For now, simple time-based check
-      if (now - webhookTime > dedupWindow) {
-        return false;
+      if (recent) {
+        console.log(
+          `${ICONS.WARNING} Duplicate webhook detected`,
+          {
+            webhookType,
+            processNumber,
+            previousDelivery: recent.createdAt.toISOString(),
+            age: now - webhookTime,
+          }
+        );
+        return true;
       }
 
-      console.log(
-        `${ICONS.WARNING} Potential duplicate webhook detected`,
-        { webhookType, processNumber, age: now - webhookTime }
-      );
-
-      return false; // TODO: implement proper dedup when database connected
+      return false;
     } catch (err) {
       console.error(`${ICONS.ERROR} Error checking webhook duplicate`, err);
+      // Fail open: if we can't check for duplicates, allow the webhook through
       return false;
     }
   }
@@ -148,19 +194,53 @@ export class WebhookDeliveryService {
     try {
       console.log(`${ICONS.PROCESS} Processing pending webhook retries`);
 
-      // TODO: Query database for pending retries
-      // const pending = await prisma.webhookDelivery.findMany({
-      //   where: {
-      //     status: 'retrying',
-      //     nextRetryAt: { lte: new Date() }
-      //   },
-      //   take: 100
-      // });
+      // Query database for pending retries that are ready
+      const pending = await prisma.webhookDelivery.findMany({
+        where: {
+          status: 'RETRYING',
+          nextRetryAt: {
+            lte: new Date(),
+          },
+          retryCount: {
+            lt: 5, // Don't retry if max retries exceeded
+          },
+        },
+        take: 100,
+        orderBy: { nextRetryAt: 'asc' },
+      });
 
-      // For now, return placeholder
+      console.log(
+        `${ICONS.PROCESS} Found ${pending.length} webhooks ready for retry`
+      );
+
+      let processedCount = 0;
+      let failedCount = 0;
+
+      // Process each pending retry
+      for (const webhook of pending) {
+        try {
+          // Mark as processing
+          await prisma.webhookDelivery.update({
+            where: { id: webhook.id },
+            data: { status: 'PROCESSING' },
+          });
+          processedCount++;
+        } catch (updateErr) {
+          console.error(
+            `${ICONS.ERROR} Failed to process webhook retry ${webhook.id}:`,
+            updateErr
+          );
+          failedCount++;
+        }
+      }
+
+      console.log(
+        `${ICONS.SUCCESS} Processed ${processedCount} webhook retries (${failedCount} failed)`
+      );
+
       return {
-        processed: 0,
-        failed: 0,
+        processed: processedCount,
+        failed: failedCount,
       };
     } catch (err) {
       console.error(`${ICONS.ERROR} Error processing pending retries`, err);
