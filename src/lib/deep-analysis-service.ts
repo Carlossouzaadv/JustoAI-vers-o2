@@ -298,12 +298,45 @@ export class DeepAnalysisService {
   }
 
   /**
-   * Extrai texto de PDF (simulação)
+   * Extrai texto de PDF usando pdf-parse
    */
   private async extractTextFromPDF(buffer: Buffer, fileName: string): Promise<string> {
-    // TODO: Implementar extração real com pdf-parse ou similar
-    // Por enquanto, texto simulado
-    return `Texto extraído do arquivo ${fileName}\n\nConteúdo simulado do PDF com informações processuais relevantes para análise de IA.\n\nEste é um placeholder que será substituído pela extração real de texto.`;
+    try {
+      log.info({ msg: '${ICONS.PROCESS} Extraindo texto do PDF: ${fileName}', component: 'deepAnalysisService' });
+
+      // Usar require para contornar problemas ESM/CJS
+      // eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports,global-require
+      const pdfParse = require('pdf-parse');
+
+      // Parse PDF e extrai texto
+      const pdfData: unknown = await pdfParse(buffer);
+
+      // Validar resultado do parse com type guard
+      if (!pdfData || typeof pdfData !== 'object') {
+        log.warn({ msg: '${ICONS.WARNING} PDF retornou resultado inválido: ${fileName}', component: 'deepAnalysisService' });
+        return `[Aviso: O arquivo ${fileName} não retornou dados válidos]`;
+      }
+
+      // Extract text safely with type narrowing
+      const extractedText = 'text' in pdfData && typeof pdfData.text === 'string' ? pdfData.text : '';
+
+      // Validar que extraímos texto
+      if (!extractedText || extractedText.trim().length === 0) {
+        log.warn({ msg: '${ICONS.WARNING} PDF vazio ou sem texto extraível: ${fileName}', component: 'deepAnalysisService' });
+        return `[Aviso: O arquivo ${fileName} não contém texto extraível]`;
+      }
+
+      const numPages = 'numpages' in pdfData && typeof pdfData.numpages === 'number' ? pdfData.numpages : 0;
+      log.info({ msg: '${ICONS.SUCCESS} Texto extraído: ${numPages} páginas, ${extractedText.length} caracteres', component: 'deepAnalysisService' });
+
+      return extractedText;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      log.warn({ msg: '${ICONS.WARNING} Erro ao extrair PDF (${fileName}): ${errorMsg}. Usando fallback.', component: 'deepAnalysisService' });
+
+      // Fallback: retornar mensagem de erro em vez de falhar completamente
+      return `[Erro ao processar PDF: ${errorMsg}. Por favor, verifique o arquivo.]`;
+    }
   }
 
   /**
