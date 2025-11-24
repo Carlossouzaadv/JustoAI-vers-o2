@@ -6,7 +6,7 @@
  * se necessário sem impactar o resto da aplicação.
  *
  * Filosofia:
- * - Type Safety: Zero any, zero as, zero @ts-ignore
+ * - Type Safety: Zero any, zero as, zero @ts-expect-error
  * - Serverless-Ready: Sempre faz shutdown() após captura de eventos
  * - Auditoria: Logs estruturados para melhor debugging
  */

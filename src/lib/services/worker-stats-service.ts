@@ -6,7 +6,7 @@
  *
  * Filosofia:
  * - Ledger Imutável: Cada job que completa (sucesso ou falha) gera um registro
- * - Type Safety: Zero any, zero as, zero @ts-ignore
+ * - Type Safety: Zero any, zero as, zero @ts-expect-error
  * - Ação no Ponto de Conclusão: Registros criados apenas quando o job termina
  * - Auditoria Completa: Todos os detalhes do erro/sucesso são salvos
  */

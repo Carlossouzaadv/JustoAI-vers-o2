@@ -2,7 +2,6 @@
 // WORKER DE AGREGAÇÃO DE USO - Consolidação Diária de Telemetria
 // ================================================================
 
-// @ts-ignore - esModuleInterop handles default import correctly at runtime
 import Queue from 'bull';
 import { prisma } from '@/lib/prisma';
 import { usageTracker } from '@/lib/telemetry/usage-tracker';

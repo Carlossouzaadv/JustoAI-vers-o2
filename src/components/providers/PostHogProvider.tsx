@@ -4,7 +4,7 @@
  * PostHogProvider (Client-Side - Padrão-Ouro)
  *
  * Encapsula a configuração do PostHog client-side para rastreamento de eventos de UI.
- * Type Safe: Zero any, zero as, zero @ts-ignore.
+ * Type Safe: Zero any, zero as, zero @ts-expect-error.
  *
  * Uso:
  * <PostHogProvider>

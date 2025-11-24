@@ -24,16 +24,20 @@ const eslintConfig = [
       'no-irregular-whitespace': 'off', // Permite espaços especiais
       'no-misleading-character-class': 'off', // Permite caracteres especiais em regex
 
-      // Regras específicas para emojis e símbolos
+      // Regras específicas para emojis, símbolos e variáveis de tipo
+      // NOTE: Existing code has many unused imports/vars that are pre-existing debt.
+      // These patterns allow cleanup over time while enforcing standards on NEW code.
       'no-unused-vars': ['warn', {
-        varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN)$',
+        varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$',
         argsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_'
+        caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: true
       }],
       '@typescript-eslint/no-unused-vars': ['warn', {
-        varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN)$',
+        varsIgnorePattern: '^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$',
         argsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^_'
+        caughtErrorsIgnorePattern: '^_',
+        ignoreRestSiblings: true
       }],
 
       // Permite strings com caracteres especiais

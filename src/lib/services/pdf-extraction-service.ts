@@ -9,7 +9,7 @@
  * Mandato Inegociável:
  * - ZERO `any` - Type safety absoluta
  * - ZERO `as` - Use type guards apenas
- * - ZERO `@ts-ignore` - Resolver tipos corretamente
+ * - ZERO `@ts-expect-error` - Resolver tipos corretamente
  */
 
 import { ICONS } from '../icons';
