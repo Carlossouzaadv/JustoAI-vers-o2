@@ -231,8 +231,10 @@ export async function requireWorkspaceAccess(userId: string, workspaceId: string
   return { hasAccess: true, error: null }
 }
 
-// Error handler wrapper
-export function withErrorHandler(handler: (_request: NextRequest, _context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>) {
+// Error handler wrapper - supports routes with or without dynamic segments
+type RouteHandler = (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>
+
+export function withErrorHandler(handler: RouteHandler): RouteHandler {
   const wrappedHandler = async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     try {
       return await handler(request, context)
@@ -250,7 +252,7 @@ export function withErrorHandler(handler: (_request: NextRequest, _context?: { p
 }
 
 // Method handler helper
-export function withMethods(handlers: Record<string, (_request: NextRequest, _context?: { params: Promise<Record<string, string>> }) => Promise<NextResponse>>) {
+export function withMethods(handlers: Record<string, RouteHandler>): RouteHandler {
   return async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     const method = request.method
     const handler = handlers[method]
