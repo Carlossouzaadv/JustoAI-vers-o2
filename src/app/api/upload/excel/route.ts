@@ -7,6 +7,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ExcelUploadService, DEFAULT_CONFIG } from '@/lib/excel-upload-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { uploadToStorage, STORAGE_BUCKETS } from '@/lib/services/supabaseStorageService';
+import { generateExcelTemplate } from '@/lib/excel-template-generator';
 import {
   ExcelUploadPayloadSchema,
   ExcelUploadPayload,
@@ -128,12 +130,29 @@ export async function POST(request: NextRequest) {
     }
 
     // FASE 2: Criação do batch (imediato)
-    // Salvar arquivo temporariamente
+    // Salvar arquivo em Supabase Storage
     const timestamp = Date.now();
-    const filePath = `/tmp/excel_uploads/${data.workspaceId}/${timestamp}_${file.name}`;
+    const safeFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filePath = `excel-uploads/${data.workspaceId}/${timestamp}_${safeFileName}`;
 
-    // TODO: Implementar salvamento real do arquivo
-    // await saveFileToStorage(buffer, filePath);
+    // Upload file to Supabase Storage
+    const uploadResult = await uploadToStorage(
+      STORAGE_BUCKETS.REPORTS,
+      filePath,
+      buffer,
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+
+    if (!uploadResult.success) {
+      console.error(`${ICONS.ERROR} Failed to upload file to storage:`, uploadResult.error);
+      return NextResponse.json({
+        success: false,
+        error: 'Erro ao salvar arquivo',
+        details: uploadResult.error
+      }, { status: 500 });
+    }
+
+    console.log(`${ICONS.SUCCESS} File uploaded to storage: ${uploadResult.storagePath}`);
 
     const batchInfo = await uploadService.createBatch(
       parsed!,
@@ -195,31 +214,36 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/upload/excel
- * Retorna template de exemplo
+ * Returns template information and download link
  */
 export async function GET() {
   try {
-    // TODO: Implementar geração de template
-    const templateUrl = '/templates/excel_upload_template.xlsx';
+    // Generate template file
+    const templateBuffer = generateExcelTemplate();
 
-    return NextResponse.json({
-      success: true,
-      templateUrl,
-      documentation: {
-        requiredColumns: ['numeroProcesso', 'tribunal', 'nomeCliente'],
-        optionalColumns: ['observacoes', 'frequenciaSync', 'alertasAtivos', 'emailsAlerta'],
-        maxRows: DEFAULT_CONFIG.MAX_ROWS,
-        supportedFormats: ['.xlsx', '.xls'],
-        maxFileSize: '10MB'
+    // Create response with file attachment
+    const response = new NextResponse(templateBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="justoai-processo-template.xlsx"',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     });
 
+    console.log(`${ICONS.SUCCESS} Excel template delivered to user`);
+    return response;
+
   } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao gerar template:`, error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`${ICONS.ERROR} Failed to generate template:`, errorMsg);
 
     return NextResponse.json({
       success: false,
-      error: 'Erro ao gerar template'
+      error: 'Failed to generate template',
+      details: errorMsg
     }, { status: 500 });
   }
 }
