@@ -257,6 +257,7 @@ export class JuditApiWrapper {
 
   /**
    * Wrap a JUDIT search operation
+   * Implements async polling pattern: POST /requests → GET /requests → GET /responses
    */
   static async search<T>(
     workspaceId: string,
@@ -267,19 +268,145 @@ export class JuditApiWrapper {
     } = {}
   ): Promise<JuditResponse<T>> {
     const startTime = Date.now();
+    const apiKey = process.env.JUDIT_API_KEY;
+    const searchBaseUrl = 'https://requests.prod.judit.io';
+
+    if (!apiKey) {
+      const errorMsg = 'JUDIT_API_KEY not configured';
+      console.error(`${ICONS.ERROR} [JUDIT Search] ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg,
+        metrics: {
+          durationMs: Date.now() - startTime,
+          documentsRetrieved: 0,
+          movementsCount: 0,
+          cost: JUDIT_COSTS.SEARCH,
+        },
+      };
+    }
 
     try {
       console.log(`${ICONS.PROCESS} [JUDIT Search] Starting search for CNJ: ${numeroCnj}`);
 
-      // TODO: Replace with actual JUDIT API call
-      // const response = await juditClient.search(numeroCnj);
+      // Extract search type (lawsuit_cnj is default, but could be cpf, cnpj, oab, name)
+      const searchType = 'lawsuit_cnj';
 
-      // Mock response for now
-      const mockData = {
-        success: true,
-        documents: [],
-        movements: [],
-      };
+      // Step 1: Create search request (POST /requests)
+      console.log(`${ICONS.INFO} [JUDIT Search] Creating search request...`);
+      const createResponse = await fetch(`${searchBaseUrl}/requests`, {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          search_type: searchType,
+          search_key: numeroCnj,
+          attachments: true, // Request attachments in results
+        }),
+      });
+
+      if (!createResponse.ok) {
+        const errorBody = await createResponse.text();
+        throw new Error(`Failed to create search request: ${createResponse.status} - ${errorBody}`);
+      }
+
+      const createData: unknown = await createResponse.json();
+
+      // Type guard for request ID
+      if (
+        typeof createData !== 'object' ||
+        createData === null ||
+        !('request_id' in createData) ||
+        typeof (createData as { request_id: unknown }).request_id !== 'string'
+      ) {
+        throw new Error('Invalid response from create search request: missing request_id');
+      }
+
+      const juditRequestId = (createData as { request_id: string }).request_id;
+      console.log(`${ICONS.SUCCESS} [JUDIT Search] Request created: ${juditRequestId}`);
+
+      // Step 2: Poll for completion (GET /requests/{request_id})
+      console.log(`${ICONS.INFO} [JUDIT Search] Polling for search completion...`);
+      const maxPolls = 30;
+      let pollCount = 0;
+      let searchStatus = 'pending';
+
+      while (pollCount < maxPolls) {
+        const pollResponse = await fetch(`${searchBaseUrl}/requests/${juditRequestId}`, {
+          method: 'GET',
+          headers: {
+            'api-key': apiKey,
+          },
+        });
+
+        if (!pollResponse.ok) {
+          const errorBody = await pollResponse.text();
+          throw new Error(`Failed to poll search status: ${pollResponse.status} - ${errorBody}`);
+        }
+
+        const pollData: unknown = await pollResponse.json();
+
+        // Type guard for status
+        if (
+          typeof pollData !== 'object' ||
+          pollData === null ||
+          !('status' in pollData) ||
+          typeof (pollData as { status: unknown }).status !== 'string'
+        ) {
+          throw new Error('Invalid response from poll: missing status');
+        }
+
+        searchStatus = (pollData as { status: string }).status;
+
+        if (searchStatus === 'completed') {
+          console.log(`${ICONS.SUCCESS} [JUDIT Search] Search completed after ${pollCount + 1} polls`);
+          break;
+        }
+
+        if (searchStatus === 'failed') {
+          throw new Error('Search request failed on JUDIT side');
+        }
+
+        pollCount++;
+        // Wait 1 second before next poll
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      if (searchStatus !== 'completed') {
+        throw new Error(`Search request timed out after ${maxPolls} polling attempts`);
+      }
+
+      // Step 3: Fetch results (GET /responses?request_id=...)
+      console.log(`${ICONS.INFO} [JUDIT Search] Fetching search results...`);
+      const resultsResponse = await fetch(`${searchBaseUrl}/responses?request_id=${juditRequestId}`, {
+        method: 'GET',
+        headers: {
+          'api-key': apiKey,
+        },
+      });
+
+      if (!resultsResponse.ok) {
+        const errorBody = await resultsResponse.text();
+        throw new Error(`Failed to fetch search results: ${resultsResponse.status} - ${errorBody}`);
+      }
+
+      const resultsData: unknown = await resultsResponse.json();
+
+      // Type guard for results
+      if (typeof resultsData !== 'object' || resultsData === null) {
+        throw new Error('Invalid response from fetch results: not an object');
+      }
+
+      // Extract documents and movements with safe narrowing
+      const documents = 'documents' in resultsData && Array.isArray((resultsData as { documents: unknown }).documents)
+        ? ((resultsData as { documents: unknown[] }).documents).length
+        : 0;
+
+      const movements = 'movements' in resultsData && Array.isArray((resultsData as { movements: unknown }).movements)
+        ? ((resultsData as { movements: unknown[] }).movements).length
+        : 0;
 
       const durationMs = Date.now() - startTime;
 
@@ -288,27 +415,33 @@ export class JuditApiWrapper {
         workspaceId,
         operationType: JuditOperationType.SEARCH,
         numeroCnj,
-        documentsRetrieved: 0,
-        movementsCount: 0,
+        documentsRetrieved: documents,
+        movementsCount: movements,
         durationMs,
         success: true,
-        requestId: options.requestId,
-        metadata: options.metadata,
+        requestId: juditRequestId,
+        apiCallsCount: 2 + pollCount, // Create + Fetch + Polls
+        metadata: {
+          ...options.metadata,
+          pollsRequired: pollCount,
+        },
       });
 
       return {
         success: true,
-        data: mockData as T,
+        data: resultsData as T,
         metrics: {
           durationMs,
-          documentsRetrieved: 0,
-          movementsCount: 0,
+          documentsRetrieved: documents,
+          movementsCount: movements,
           cost: JUDIT_COSTS.SEARCH,
         },
       };
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      console.error(`${ICONS.ERROR} [JUDIT Search] Error:`, errorMessage);
 
       await this.trackCall({
         workspaceId,
@@ -317,6 +450,7 @@ export class JuditApiWrapper {
         durationMs,
         success: false,
         error: errorMessage,
+        errorCode: errorMessage.includes('401') ? 'AUTH_FAILED' : errorMessage.includes('429') ? 'RATE_LIMIT' : 'API_ERROR',
         requestId: options.requestId,
         metadata: options.metadata,
       });
@@ -336,6 +470,7 @@ export class JuditApiWrapper {
 
   /**
    * Wrap a JUDIT monitoring operation
+   * Endpoint: POST /tracking to create recurring monitoring
    */
   static async monitoring<T>(
     workspaceId: string,
@@ -343,37 +478,107 @@ export class JuditApiWrapper {
     options: {
       requestId?: string;
       metadata?: Record<string, unknown>;
+      recurrenceIntervalDays?: number;
+      notificationEmail?: string;
+      keywordFilters?: string[];
     } = {}
   ): Promise<JuditResponse<T>> {
     const startTime = Date.now();
+    const apiKey = process.env.JUDIT_API_KEY;
+    const monitoringBaseUrl = 'https://tracking.prod.judit.io';
+
+    if (!apiKey) {
+      const errorMsg = 'JUDIT_API_KEY not configured';
+      console.error(`${ICONS.ERROR} [JUDIT Monitoring] ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg,
+        metrics: {
+          durationMs: Date.now() - startTime,
+          documentsRetrieved: 0,
+          movementsCount: 0,
+          cost: JUDIT_COSTS.MONITORING,
+        },
+      };
+    }
 
     try {
-      console.log(`${ICONS.SEARCH} [JUDIT Monitoring] Checking for updates: ${numeroCnj}`);
+      console.log(`${ICONS.SEARCH} [JUDIT Monitoring] Setting up monitoring for: ${numeroCnj}`);
 
-      // TODO: Replace with actual JUDIT monitoring call
-      // const response = await juditClient.monitoring(numeroCnj);
+      // Default recurrence: daily (1 day interval)
+      const recurrenceDays = options.recurrenceIntervalDays || 1;
 
-      // Mock response for now
-      const mockData = {
-        hasUpdates: false,
-        lastUpdate: null,
+      // Build monitoring payload
+      const monitoringPayload: Record<string, unknown> = {
+        lawsuit_cnj: numeroCnj,
+        recurrence: recurrenceDays, // In days
       };
+
+      // Add optional notification email
+      if (options.notificationEmail) {
+        monitoringPayload.email_notification = options.notificationEmail;
+      }
+
+      // Add optional keyword filters for step notifications
+      if (options.keywordFilters && options.keywordFilters.length > 0) {
+        monitoringPayload.step_terms = options.keywordFilters;
+      }
+
+      // Create monitoring (POST /tracking)
+      console.log(`${ICONS.INFO} [JUDIT Monitoring] Creating monitoring with ${recurrenceDays}-day recurrence...`);
+      const monitoringResponse = await fetch(`${monitoringBaseUrl}/tracking`, {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(monitoringPayload),
+      });
+
+      if (!monitoringResponse.ok) {
+        const errorBody = await monitoringResponse.text();
+        throw new Error(
+          `Failed to create monitoring: ${monitoringResponse.status} - ${errorBody}`
+        );
+      }
+
+      const monitoringData: unknown = await monitoringResponse.json();
+
+      // Type guard for monitoring response
+      if (
+        typeof monitoringData !== 'object' ||
+        monitoringData === null ||
+        !('tracking_id' in monitoringData) ||
+        typeof (monitoringData as { tracking_id: unknown }).tracking_id !== 'string'
+      ) {
+        throw new Error('Invalid response from create monitoring: missing tracking_id');
+      }
+
+      const trackingId = (monitoringData as { tracking_id: string }).tracking_id;
+      console.log(`${ICONS.SUCCESS} [JUDIT Monitoring] Monitoring created: ${trackingId}`);
 
       const durationMs = Date.now() - startTime;
 
+      // Track the call
       await this.trackCall({
         workspaceId,
         operationType: JuditOperationType.MONITORING,
         numeroCnj,
         durationMs,
         success: true,
-        requestId: options.requestId,
-        metadata: options.metadata,
+        requestId: trackingId,
+        apiCallsCount: 1,
+        metadata: {
+          ...options.metadata,
+          recurrenceDays,
+          hasEmailNotification: !!options.notificationEmail,
+          hasKeywordFilters: (options.keywordFilters?.length || 0) > 0,
+        },
       });
 
       return {
         success: true,
-        data: mockData as T,
+        data: monitoringData as T,
         metrics: {
           durationMs,
           documentsRetrieved: 0,
@@ -385,6 +590,8 @@ export class JuditApiWrapper {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      console.error(`${ICONS.ERROR} [JUDIT Monitoring] Error:`, errorMessage);
+
       await this.trackCall({
         workspaceId,
         operationType: JuditOperationType.MONITORING,
@@ -392,6 +599,7 @@ export class JuditApiWrapper {
         durationMs,
         success: false,
         error: errorMessage,
+        errorCode: errorMessage.includes('401') ? 'AUTH_FAILED' : 'MONITORING_FAILED',
         requestId: options.requestId,
         metadata: options.metadata,
       });
@@ -411,6 +619,7 @@ export class JuditApiWrapper {
 
   /**
    * Wrap a JUDIT fetch operation
+   * Endpoints: GET /transfer-file, GET /transfer-file/:id, PATCH /transfer-file/:id
    */
   static async fetch<T>(
     workspaceId: string,
@@ -422,41 +631,155 @@ export class JuditApiWrapper {
     } = {}
   ): Promise<JuditResponse<T>> {
     const startTime = Date.now();
+    const apiKey = process.env.JUDIT_API_KEY;
+    const fileTransferBaseUrl = 'https://lawsuits.prod.judit.io';
+
+    if (!apiKey) {
+      const errorMsg = 'JUDIT_API_KEY not configured';
+      console.error(`${ICONS.ERROR} [JUDIT Fetch] ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg,
+        metrics: {
+          durationMs: Date.now() - startTime,
+          documentsRetrieved: 0,
+          movementsCount: 0,
+          cost: JUDIT_COSTS.FETCH,
+        },
+      };
+    }
+
+    if (!documentIds || documentIds.length === 0) {
+      const errorMsg = 'No document IDs provided for fetch';
+      console.warn(`${ICONS.WARNING} [JUDIT Fetch] ${errorMsg}`);
+      return {
+        success: false,
+        error: errorMsg,
+        metrics: {
+          durationMs: Date.now() - startTime,
+          documentsRetrieved: 0,
+          movementsCount: 0,
+          cost: JUDIT_COSTS.FETCH,
+        },
+      };
+    }
 
     try {
       console.log(
         `${ICONS.DOWNLOAD} [JUDIT Fetch] Fetching ${documentIds.length} documents for CNJ: ${numeroCnj}`
       );
 
-      // TODO: Replace with actual JUDIT fetch call
-      // const response = await juditClient.fetch(numeroCnj, documentIds);
+      const documents: Array<{ id: string; downloadUrl?: string; error?: string }> = [];
+      let successCount = 0;
 
-      // Mock response
-      const mockData = {
-        documents: [],
-      };
+      // Fetch download URLs for each document
+      for (const documentId of documentIds) {
+        try {
+          console.log(`${ICONS.INFO} [JUDIT Fetch] Getting download URL for document: ${documentId}`);
+
+          // Step 1: Get download URL (GET /transfer-file/{id})
+          const downloadResponse = await fetch(
+            `${fileTransferBaseUrl}/transfer-file/${documentId}`,
+            {
+              method: 'GET',
+              headers: {
+                'api-key': apiKey,
+              },
+            }
+          );
+
+          if (!downloadResponse.ok) {
+            const errorBody = await downloadResponse.text();
+            throw new Error(
+              `Failed to get download URL: ${downloadResponse.status} - ${errorBody}`
+            );
+          }
+
+          const downloadData: unknown = await downloadResponse.json();
+
+          // Type guard for download URL response
+          if (
+            typeof downloadData !== 'object' ||
+            downloadData === null ||
+            !('download_url' in downloadData) ||
+            typeof (downloadData as { download_url: unknown }).download_url !== 'string'
+          ) {
+            throw new Error('Invalid response from get download URL: missing download_url');
+          }
+
+          const downloadUrl = (downloadData as { download_url: string }).download_url;
+          console.log(`${ICONS.SUCCESS} [JUDIT Fetch] Got download URL for ${documentId}`);
+
+          // Step 2: Update status to "downloaded" (PATCH /transfer-file/{id})
+          console.log(`${ICONS.INFO} [JUDIT Fetch] Updating document status to downloaded: ${documentId}`);
+          const statusResponse = await fetch(
+            `${fileTransferBaseUrl}/transfer-file/${documentId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'api-key': apiKey,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                status: 'downloaded',
+              }),
+            }
+          );
+
+          if (!statusResponse.ok) {
+            const errorBody = await statusResponse.text();
+            console.warn(
+              `${ICONS.WARNING} [JUDIT Fetch] Failed to update status: ${statusResponse.status} - ${errorBody}`
+            );
+            // Don't throw - status update is non-critical
+          }
+
+          documents.push({
+            id: documentId,
+            downloadUrl,
+          });
+          successCount++;
+        } catch (docError) {
+          const errorMsg = docError instanceof Error ? docError.message : 'Unknown error';
+          console.error(`${ICONS.ERROR} [JUDIT Fetch] Failed to fetch document ${documentId}:`, errorMsg);
+          documents.push({
+            id: documentId,
+            error: errorMsg,
+          });
+        }
+      }
+
+      if (successCount === 0) {
+        throw new Error('Failed to fetch any documents');
+      }
 
       const durationMs = Date.now() - startTime;
-      const attachmentsCost = documentIds.length * 0.15; // 0.15 per document
+      const attachmentsCost = successCount * 0.15; // 0.15 per document
 
+      // Track the call
       await this.trackCall({
         workspaceId,
         operationType: JuditOperationType.FETCH,
         numeroCnj,
-        documentsRetrieved: documentIds.length,
+        documentsRetrieved: successCount,
         durationMs,
         success: true,
         attachmentsCost,
+        apiCallsCount: documentIds.length * 2, // Get URL + Update status per document
         requestId: options.requestId,
-        metadata: options.metadata,
+        metadata: {
+          ...options.metadata,
+          totalRequested: documentIds.length,
+          successCount,
+        },
       });
 
       return {
         success: true,
-        data: mockData as T,
+        data: { documents } as T,
         metrics: {
           durationMs,
-          documentsRetrieved: documentIds.length,
+          documentsRetrieved: successCount,
           movementsCount: 0,
           cost: JUDIT_COSTS.FETCH + attachmentsCost,
         },
@@ -465,6 +788,8 @@ export class JuditApiWrapper {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
+      console.error(`${ICONS.ERROR} [JUDIT Fetch] Error:`, errorMessage);
+
       await this.trackCall({
         workspaceId,
         operationType: JuditOperationType.FETCH,
@@ -472,8 +797,12 @@ export class JuditApiWrapper {
         durationMs,
         success: false,
         error: errorMessage,
+        errorCode: errorMessage.includes('401') ? 'AUTH_FAILED' : 'API_ERROR',
         requestId: options.requestId,
-        metadata: options.metadata,
+        metadata: {
+          ...options.metadata,
+          totalRequested: documentIds.length,
+        },
       });
 
       return {
