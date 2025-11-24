@@ -40,7 +40,12 @@
       "Bash(echo:*)",
       "Bash(test:*)",
       "Bash(npx eslint:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(/tmp/webhook-service-backup.ts)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Bash(SPRINTS.md)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []

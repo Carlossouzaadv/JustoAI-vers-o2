@@ -222,7 +222,8 @@ export async function GET() {
     const templateBuffer = generateExcelTemplate();
 
     // Create response with file attachment
-    const response = new NextResponse(templateBuffer, {
+    // NextResponse accepts Uint8Array directly, and Buffer extends Uint8Array
+    const response = new NextResponse(new Uint8Array(templateBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

@@ -16,6 +16,7 @@ import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { processJuditAttachments } from '@/lib/services/juditAttachmentProcessor';
 import { ICONS } from '@/lib/icons';
 import { log, logError } from '@/lib/services/logger';
+import crypto from 'crypto';
 
 import {
   extractCaseTypeFromJuditResponse,
@@ -125,8 +126,9 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     let webhook: JuditWebhookPayload;
+    let bodyText: string;
     try {
-      const bodyText = await request.text();
+      bodyText = await request.text();
       log.info({ msg: `Body size: ${bodyText.length} bytes`, component: 'juditWebhookCallback' });
       webhook = JSON.parse(bodyText);
     } catch (parseError) {
@@ -134,6 +136,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'JSON inválido', details: parseError instanceof Error ? parseError.message : 'desconhecido' },
         { status: 400 }
+      );
+    }
+
+    // Verify webhook signature
+    if (!verifyJuditWebhookSignature(request, bodyText)) {
+      log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Signature verification failed - rejecting webhook`, component: 'judit-callback' });
+      return NextResponse.json(
+        { error: 'Invalid signature', details: 'Webhook signature verification failed' },
+        { status: 401 }
       );
     }
 
@@ -463,6 +474,64 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Verify JUDIT webhook signature
+ * JUDIT uses HMAC-SHA256 with format: sha256=signature
+ *
+ * @param request HTTP request
+ * @param body Raw request body text
+ * @returns true if signature is valid, false otherwise
+ */
+function verifyJuditWebhookSignature(request: NextRequest, body: string): boolean {
+  try {
+    const signature = request.headers.get('x-judit-signature');
+    if (!signature) {
+      log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Missing x-judit-signature header`, component: 'judit-callback' });
+      return false;
+    }
+
+    const secret = process.env.JUDIT_WEBHOOK_SECRET;
+    if (!secret) {
+      log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] JUDIT_WEBHOOK_SECRET not configured - skipping verification`, component: 'judit-callback' });
+      // Skip verification if secret not configured (for development)
+      return true;
+    }
+
+    // Compute expected signature: HMAC-SHA256(body, secret)
+    const computedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(body, 'utf8')
+      .digest('hex');
+
+    // Remove 'sha256=' prefix if present
+    const providedSignature = signature.replace(/^sha256=/, '');
+
+    // Use timing-safe comparison to prevent timing attacks
+    try {
+      const isValid = crypto.timingSafeEqual(
+        Buffer.from(computedSignature, 'hex'),
+        Buffer.from(providedSignature, 'hex')
+      );
+
+      if (!isValid) {
+        log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Signature mismatch`, component: 'judit-callback' });
+        return false;
+      }
+
+      log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Signature verified successfully`, component: 'judit-callback' });
+      return true;
+    } catch (error) {
+      // timingSafeEqual throws if lengths don't match
+      log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Signature length mismatch`, component: 'judit-callback' });
+      return false;
+    }
+
+  } catch (error) {
+    logError(`${ICONS.ERROR} [JUDIT Webhook] Error verifying signature:`, '', { component: 'judit-callback' });
+    return false;
+  }
+}
+
 // Health check endpoint
 export async function GET(_request: NextRequest) {
   return NextResponse.json({
@@ -473,6 +542,10 @@ export async function GET(_request: NextRequest) {
       'response_created - JUDIT found and sending data',
       'request_completed - JUDIT finished processing',
       'application_error - JUDIT encountered an error'
-    ]
+    ],
+    security: {
+      signature_validation: 'enabled (x-judit-signature header required)',
+      algorithm: 'HMAC-SHA256'
+    }
   });
 }
