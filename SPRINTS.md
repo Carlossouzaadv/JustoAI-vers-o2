@@ -1,6 +1,6 @@
 # JustoAI V2 - Development Roadmap
 
-Last Updated: 2025-11-24 | Branch: `main` | Commits: 4 (3 ahead of origin/main)
+Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
 
 ---
 
@@ -43,11 +43,11 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 4 (3 ahead of origin/main)
   - `.fetch()`: GET /transfer-file → PATCH /transfer-file/:id
   - Full metrics tracking and cost calculation
   - Commit: `5e8a81f`
-
-- ⏳ **Webhook persistence** (📍 `workers/webhook-delivery-service.ts`)
-  - 4 TODOs to implement database persistence for webhook events
-  - Integration with Bull queue system
-  - Status tracking and retry logic
+- ✅ **Webhook persistence** (📍 `src/lib/webhook-delivery-service.ts`)
+  - All 4 TODOs implemented: logWebhookDelivery, isDuplicate, processPendingRetries
+  - Type-safe database integration with Prisma ORM
+  - Exponential backoff: 5s → 30s → 5m → 30m → 24h
+  - Commit: `0776cc2`
 
 - ⏳ **Excel file saving** (📍 `src/routes/api/upload/excel`)
   - 2 TODOs: real file storage and database references
