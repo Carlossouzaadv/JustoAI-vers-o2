@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Credit API GET error:`, error);
+    console.error(`${ICONS.ERROR} Credit API GET error:`, _error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
