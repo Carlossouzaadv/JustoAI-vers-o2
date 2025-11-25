@@ -8,20 +8,7 @@
 // ================================================================
 
 import IORedis, { Redis, RedisOptions } from 'ioredis';
-
-// Logger interface for type-safe logging
-interface LogContext {
-  component?: string;
-  [key: string]: string | number | boolean | undefined;
-}
-
-// Simple inline logger to avoid external dependencies that may not be in container
-const logger = {
-  info: (msg: string | LogContext, data?: string) => console.log(`[INFO]`, msg, data || ''),
-  error: (msg: string | LogContext, data?: string) => console.error(`[ERROR]`, msg, data || ''),
-  warn: (msg: string | LogContext, data?: string) => console.warn(`[WARN]`, msg, data || ''),
-  debug: (msg: string | LogContext, data?: string) => console.debug(`[DEBUG]`, msg, data || ''),
-};
+import { log, logError } from '@/lib/services/logger';
 
 // Circuit breaker service interface - lazy loaded to avoid circular dependency
 interface CircuitBreakerService {
@@ -131,28 +118,24 @@ const getRedisConfig = (): RedisOptions => {
           // Stop retrying based on mode
           const maxAttempts = isStrictMode ? 10 : 10;
           if (times > maxAttempts) {
-            logger.error(
-              {
-                component: 'redis',
-                retries: times,
-                mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
-              },
-              `Max retry attempts reached for Redis (${isStrictMode ? 'strict mode' : 'graceful mode'}), giving up`
-            );
+            log.error({
+              msg: `Max retry attempts reached for Redis (${isStrictMode ? 'strict mode' : 'graceful mode'}), giving up`,
+              component: 'redis',
+              retries: times,
+              mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+            });
             return null; // Stop retrying
           }
 
           if (times % 3 === 0) {
             // Log every 3rd retry to avoid spam
-            logger.warn(
-              {
-                component: 'redis',
-                attempt: times,
-                delay_ms: delay,
-                mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
-              },
-              `Redis retry attempt (${isStrictMode ? 'strict' : 'graceful'} mode)`
-            );
+            log.warn({
+              msg: `Redis retry attempt (${isStrictMode ? 'strict' : 'graceful'} mode)`,
+              component: 'redis',
+              attempt: times,
+              delay_ms: delay,
+              mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+            });
           }
 
           return delay;
@@ -165,7 +148,7 @@ const getRedisConfig = (): RedisOptions => {
         enableReadyCheck: true, // Both modes: wait for READY state
       };
     } catch (error) {
-      console.error('[REDIS] Failed to parse REDIS_URL:', error);
+      logError(error, 'Failed to parse REDIS_URL', { component: 'redis' });
       throw new Error('Invalid REDIS_URL format');
     }
   }
@@ -192,27 +175,23 @@ const getRedisConfig = (): RedisOptions => {
       const maxAttempts = 10; // Increased from 5-10 to 10
 
       if (times > maxAttempts) {
-        logger.error(
-          {
-            component: 'redis',
-            retries: times,
-            mode: isStrictMode ? 'STRICT' : 'GRACEFUL',
-            config_source: 'REDIS_HOST/PORT (legacy)'
-          },
-          `Max retry attempts reached for Redis (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`
-        );
+        log.error({
+          msg: `Max retry attempts reached for Redis (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`,
+          component: 'redis',
+          retries: times,
+          mode: isStrictMode ? 'STRICT' : 'GRACEFUL',
+          config_source: 'REDIS_HOST/PORT (legacy)'
+        });
         return null;
       }
       if (times % 3 === 0) {
-        logger.warn(
-          {
-            component: 'redis',
-            attempt: times,
-            delay_ms: delay,
-            mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
-          },
-          `Redis retry attempt (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`
-        );
+        log.warn({
+          msg: `Redis retry attempt (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`,
+          component: 'redis',
+          attempt: times,
+          delay_ms: delay,
+          mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+        });
       }
       return delay;
     },
@@ -234,18 +213,18 @@ class MockRedis {
   private mockData: Map<string, string> = new Map();
 
   async get(key: string) {
-    console.log(`[MOCK REDIS] GET ${key}`);
+    log.debug({ msg: `MOCK REDIS GET ${key}`, component: 'redis', key, command: 'GET' });
     return this.mockData.get(key) || null;
   }
 
   async set(key: string, value: string, ..._args: unknown[]) {
-    console.log(`[MOCK REDIS] SET ${key}`);
+    log.debug({ msg: `MOCK REDIS SET ${key}`, component: 'redis', key, command: 'SET' });
     this.mockData.set(key, value);
     return 'OK';
   }
 
   async del(key: string) {
-    console.log(`[MOCK REDIS] DEL ${key}`);
+    log.debug({ msg: `MOCK REDIS DEL ${key}`, component: 'redis', key, command: 'DEL' });
     return this.mockData.delete(key) ? 1 : 0;
   }
 
@@ -266,13 +245,13 @@ class MockRedis {
   }
 
   async setex(key: string, _seconds: number, value: string) {
-    console.log(`[MOCK REDIS] SETEX ${key}`);
+    log.debug({ msg: `MOCK REDIS SETEX ${key}`, component: 'redis', key, command: 'SETEX' });
     this.mockData.set(key, value);
     return 'OK';
   }
 
   async call(_command: string, ..._args: unknown[]) {
-    console.log(`[MOCK REDIS] CALL ${_command}`);
+    log.debug({ msg: `MOCK REDIS CALL ${_command}`, component: 'redis', command: _command });
     return 0; // Mock response for MEMORY USAGE
   }
 
@@ -319,10 +298,11 @@ export const getRedisClient = (): Redis | MockRedis => {
 
   // Check if Redis should be disabled
   if (REDIS_DISABLED()) {
-    logger.warn(
-      { component: 'redis', mode: 'mock' },
-      'Running in MOCK mode (REDIS_DISABLED=true) - Workers and queues will NOT function properly'
-    );
+    log.warn({
+      msg: 'Running in MOCK mode (REDIS_DISABLED=true) - Workers and queues will NOT function properly',
+      component: 'redis',
+      mode: 'mock'
+    });
     redisClient = new MockRedis();
     return redisClient;
   }
@@ -330,10 +310,11 @@ export const getRedisClient = (): Redis | MockRedis => {
   // Check if REDIS_URL is configured
   const REDIS_URL = getRedisURL();
   if (!REDIS_URL && !process.env.REDIS_HOST) {
-    logger.warn(
-      { component: 'redis', mode: 'mock' },
-      'No REDIS_URL or REDIS_HOST configured - Falling back to MOCK mode for development'
-    );
+    log.warn({
+      msg: 'No REDIS_URL or REDIS_HOST configured - Falling back to MOCK mode for development',
+      component: 'redis',
+      mode: 'mock'
+    });
     redisClient = new MockRedis();
     return redisClient;
   }
@@ -341,18 +322,16 @@ export const getRedisClient = (): Redis | MockRedis => {
   // Create real Redis client
   const isStrictMode = IS_WORKER && IS_RAILWAY;
 
-  logger.info(
-    {
-      component: 'redis',
-      config_source: REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT',
-      mode: isStrictMode ? 'STRICT (Workers)' : 'GRACEFUL (Web/Dev)',
-      is_worker: IS_WORKER,
-      is_railway: IS_RAILWAY,
-      is_vercel: IS_VERCEL,
-      is_local: IS_LOCAL
-    },
-    'Initializing Redis client'
-  );
+  log.info({
+    msg: 'Initializing Redis client',
+    component: 'redis',
+    config_source: REDIS_URL ? 'REDIS_URL' : 'REDIS_HOST/PORT',
+    mode: isStrictMode ? 'STRICT (Workers)' : 'GRACEFUL (Web/Dev)',
+    is_worker: IS_WORKER,
+    is_railway: IS_RAILWAY,
+    is_vercel: IS_VERCEL,
+    is_local: IS_LOCAL
+  });
 
   const config = getRedisConfig();
   const client = new IORedis(config);
@@ -362,11 +341,11 @@ export const getRedisClient = (): Redis | MockRedis => {
   // ================================================================
 
   client.on('connect', () => {
-    logger.info({ component: 'redis', event: 'connect', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Connected to Redis');
+    log.info({ msg: 'Connected to Redis', component: 'redis', event: 'connect', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' });
   });
 
   client.on('ready', () => {
-    logger.info({ component: 'redis', event: 'ready', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis client ready');
+    log.info({ msg: 'Redis client ready', component: 'redis', event: 'ready', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' });
   });
 
   let hasErrored = false;
@@ -391,13 +370,13 @@ export const getRedisClient = (): Redis | MockRedis => {
       }
     }
 
-    const level = isQuotaExceededError ? 'error' : isMaxRetriesError ? 'warn' : 'error';
     const rawErrorCode = 'code' in error ? (error as { code?: unknown }).code : undefined;
     // Type narrowing: convert unknown to safe type
     const errorCode = typeof rawErrorCode === 'string' || typeof rawErrorCode === 'number' ? rawErrorCode : undefined;
 
-    logger[level](
-      {
+    if (isQuotaExceededError || isMaxRetriesError) {
+      log.warn({
+        msg: `Redis connection error: ${error.message}`,
         component: 'redis',
         event: 'error',
         error_message: error.message,
@@ -405,41 +384,47 @@ export const getRedisClient = (): Redis | MockRedis => {
         is_max_retries: isMaxRetriesError,
         is_quota_exceeded: isQuotaExceededError,
         mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
-      },
-      `Redis connection error: ${error.message}`
-    );
+      });
+    } else {
+      log.error(error, 'Redis connection error', {
+        component: 'redis',
+        event: 'error',
+        error_code: errorCode,
+        is_max_retries: isMaxRetriesError,
+        is_quota_exceeded: isQuotaExceededError,
+        mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+      });
+    }
 
     if (isMaxRetriesError && !isStrictMode) {
       // Graceful mode: fall back to mock after max retries
       if (!fallbackToMock && !hasErrored) {
         hasErrored = true;
-        logger.warn(
-          { component: 'redis' },
-          'Redis unavailable in GRACEFUL mode, will fall back to MockRedis on next operation'
-        );
+        log.warn({
+          msg: 'Redis unavailable in GRACEFUL mode, will fall back to MockRedis on next operation',
+          component: 'redis'
+        });
       }
     }
     // In STRICT mode, errors will propagate and crash the worker (correct behavior)
   });
 
   client.on('close', () => {
-    logger.info({ component: 'redis', event: 'close', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis connection closed');
+    log.info({ msg: 'Redis connection closed', component: 'redis', event: 'close', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' });
   });
 
   client.on('reconnecting', (timeToReconnect: number) => {
-    logger.info(
-      {
-        component: 'redis',
-        event: 'reconnecting',
-        time_to_reconnect_ms: timeToReconnect,
-        mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
-      },
-      `Reconnecting to Redis in ${timeToReconnect}ms`
-    );
+    log.info({
+      msg: `Reconnecting to Redis in ${timeToReconnect}ms`,
+      component: 'redis',
+      event: 'reconnecting',
+      time_to_reconnect_ms: timeToReconnect,
+      mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
+    });
   });
 
   client.on('end', () => {
-    logger.info({ component: 'redis', event: 'end', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' }, 'Redis connection ended');
+    log.info({ msg: 'Redis connection ended', component: 'redis', event: 'end', mode: isStrictMode ? 'STRICT' : 'GRACEFUL' });
   });
 
   // In graceful mode, wrap the client to fall back to mock on connection errors
@@ -450,7 +435,7 @@ export const getRedisClient = (): Redis | MockRedis => {
         if (hasErrored && typeof prop === 'string' && !['on', 'once', 'off', 'connect', 'ping'].includes(prop)) {
           // Return mock client methods
           if (!fallbackToMock) {
-            logger.warn({ component: 'redis' }, 'Falling back to MockRedis due to connection failure');
+            log.warn({ msg: 'Falling back to MockRedis due to connection failure', component: 'redis' });
             fallbackToMock = true;
             redisClient = new MockRedis();
             return (redisClient as unknown as { [key: string | symbol]: unknown })[prop];
@@ -473,13 +458,13 @@ export const getRedisClient = (): Redis | MockRedis => {
  */
 export const getRedisConnection = (): IORedis | null => {
   if (REDIS_DISABLED()) {
-    console.warn('[REDIS] ⚠️  Cannot create BullMQ connection - Redis disabled');
+    log.warn({ msg: 'Cannot create BullMQ connection - Redis disabled', component: 'redis' });
     return null;
   }
 
   const REDIS_URL = getRedisURL();
   if (!REDIS_URL && !process.env.REDIS_HOST) {
-    console.warn('[REDIS] ⚠️  Cannot create BullMQ connection - no Redis configured');
+    log.warn({ msg: 'Cannot create BullMQ connection - no Redis configured', component: 'redis' });
     return null;
   }
 
@@ -506,18 +491,15 @@ export const testRedisConnection = async (): Promise<boolean> => {
     const client = getRedisClient();
 
     if (client instanceof MockRedis) {
-      logger.warn({ component: 'redis' }, 'Using MockRedis - skipping real connection test');
+      log.warn({ msg: 'Using MockRedis - skipping real connection test', component: 'redis' });
       return true;
     }
 
     const result = await client.ping();
-    logger.info({ component: 'redis', ping_result: result }, 'Redis connection test successful');
+    log.info({ msg: 'Redis connection test successful', component: 'redis', ping_result: result });
     return result === 'PONG';
   } catch (error) {
-    logger.error(
-      { component: 'redis', error: error instanceof Error ? error.message : String(error) },
-      'Redis connection test failed'
-    );
+    logError(error, 'Redis connection test failed', { component: 'redis' });
     return false;
   }
 };
@@ -531,15 +513,12 @@ export const closeRedisConnection = async (): Promise<void> => {
   }
 
   try {
-    logger.info({ component: 'redis' }, 'Closing Redis connection');
+    log.info({ msg: 'Closing Redis connection', component: 'redis' });
     await redisClient.quit();
     redisClient = null;
-    logger.info({ component: 'redis' }, 'Redis connection closed successfully');
+    log.info({ msg: 'Redis connection closed successfully', component: 'redis' });
   } catch (error) {
-    logger.error(
-      { component: 'redis', error: error instanceof Error ? error.message : String(error) },
-      'Error closing Redis connection'
-    );
+    logError(error, 'Error closing Redis connection', { component: 'redis' });
 
     // Force disconnect
     if (redisClient && 'disconnect' in redisClient) {
@@ -554,12 +533,12 @@ export const closeRedisConnection = async (): Promise<void> => {
 // ================================================================
 
 process.on('SIGTERM', async () => {
-  console.log('[REDIS] 📡 SIGTERM received, closing Redis...');
+  log.info({ msg: 'SIGTERM received, closing Redis...', component: 'redis', signal: 'SIGTERM' });
   await closeRedisConnection();
 });
 
 process.on('SIGINT', async () => {
-  console.log('[REDIS] 📡 SIGINT received, closing Redis...');
+  log.info({ msg: 'SIGINT received, closing Redis...', component: 'redis', signal: 'SIGINT' });
   await closeRedisConnection();
 });
 

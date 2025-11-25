@@ -4,6 +4,7 @@
 // ================================================================
 
 import * as cron from 'node-cron';
+import { log, logError } from '@/lib/services/logger';
 import { executeDailyCheck } from './dailyJuditCheck';
 import { sendJobSuccess, sendJobFailure } from '@/lib/notification-service';
 
@@ -56,24 +57,6 @@ interface JobConfig<T = unknown> {
   onSuccess?: (_result: T) => void;
 }
 
-// ================================================================
-// LOGS
-// ================================================================
-
-const log = {
-  info: (message: string, data?: unknown) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [SCHEDULER] ${message}`, data || '');
-  },
-  error: (message: string, error?: unknown) => {
-    const timestamp = new Date().toISOString();
-    console.error(`[${timestamp}] [SCHEDULER ERROR] ${message}`, error || '');
-  },
-  success: (message: string, data?: unknown) => {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] [SCHEDULER ✓] ${message}`, data || '');
-  },
-};
 
 // ================================================================
 // CONFIGURAÇÃO DOS JOBS
@@ -88,7 +71,10 @@ const JOBS: JobConfig<DailyCheckResult>[] = [
     onSuccess: (result) => {
       // ✅ Validação segura via type guard (narrowing)
       if (!isDailyCheckResult(result)) {
-        log.error('Daily JUDIT Check retornou resultado inválido', {
+        log.warn({
+          msg: 'Daily JUDIT Check retornou resultado inválido',
+          component: 'scheduler',
+          job: 'Daily JUDIT Check',
           type: typeof result,
           keys: typeof result === 'object' && result !== null ? Object.keys(result) : 'N/A',
         });
@@ -96,11 +82,14 @@ const JOBS: JobConfig<DailyCheckResult>[] = [
       }
 
       // ✅ Agora é 100% seguro acessar todas as propriedades
-      log.success('Daily JUDIT Check concluído', {
+      log.info({
+        msg: 'Daily JUDIT Check concluído',
+        component: 'scheduler',
+        job: 'Daily JUDIT Check',
         total: result.total,
         successful: result.successful,
         withNewMovements: result.withNewMovements,
-        duration: `${(result.duration / 60000).toFixed(2)} min`,
+        duration_minutes: (result.duration / 60000).toFixed(2),
       });
 
       // ✅ Enviar notificação de sucesso
@@ -111,18 +100,18 @@ const JOBS: JobConfig<DailyCheckResult>[] = [
         'Com Novas Movimentações': result.withNewMovements,
         'Duração (minutos)': (result.duration / 60000).toFixed(2),
       }).catch((err) => {
-        log.error('Erro ao enviar notificação de sucesso', err);
+        logError(err, 'Erro ao enviar notificação de sucesso do Daily JUDIT Check', { component: 'scheduler' });
       });
     },
     onError: (error) => {
       // ✅ error agora é do tipo Error (não unknown)
-      log.error('Daily JUDIT Check falhou', error);
+      logError(error, 'Daily JUDIT Check falhou', { component: 'scheduler', job: 'Daily JUDIT Check' });
 
       // ✅ Enviar alerta crítico via email/Slack
       sendJobFailure('Daily JUDIT Check', error, {
         'Timestamp': new Date().toISOString(),
       }).catch((err) => {
-        log.error('Erro ao enviar alerta de falha', err);
+        logError(err, 'Erro ao enviar alerta de falha do Daily JUDIT Check', { component: 'scheduler' });
       });
     },
   },
@@ -170,27 +159,28 @@ function toError(error: unknown): Error {
  * Inicia todos os jobs agendados
  */
 export function startScheduler() {
-  log.info('========================================');
-  log.info('INICIANDO SCHEDULER DE JOBS');
-  log.info('========================================');
+  log.info({ msg: 'Starting scheduler', component: 'scheduler', status: 'starting' });
 
   for (const jobConfig of JOBS) {
     if (!jobConfig.enabled) {
-      log.info(`Job desabilitado: ${jobConfig.name}`);
+      log.info({ msg: `Job disabled: ${jobConfig.name}`, component: 'scheduler', job: jobConfig.name });
       continue;
     }
 
     try {
       const task = cron.schedule(jobConfig.schedule, async () => {
-        log.info(`Executando job: ${jobConfig.name}`);
+        log.info({ msg: `Running job: ${jobConfig.name}`, component: 'scheduler', job: jobConfig.name });
         const startTime = Date.now();
 
         try {
           const result = await jobConfig.task();
           const duration = Date.now() - startTime;
 
-          log.success(`Job concluído: ${jobConfig.name}`, {
-            duration: `${(duration / 1000).toFixed(2)}s`,
+          log.info({
+            msg: `Job completed: ${jobConfig.name}`,
+            component: 'scheduler',
+            job: jobConfig.name,
+            duration_seconds: (duration / 1000).toFixed(2),
           });
 
           if (jobConfig.onSuccess) {
@@ -199,7 +189,7 @@ export function startScheduler() {
         } catch (error) {
           // ✅ Converter error unknown para Error com segurança
           const errorObj = toError(error);
-          log.error(`Job falhou: ${jobConfig.name}`, errorObj);
+          logError(errorObj, `Job failed: ${jobConfig.name}`, { component: 'scheduler', job: jobConfig.name });
 
           if (jobConfig.onError) {
             jobConfig.onError(errorObj);
@@ -209,35 +199,41 @@ export function startScheduler() {
 
       scheduledJobs.set(jobConfig.name, task);
 
-      log.success(`Job agendado: ${jobConfig.name}`, {
+      log.info({
+        msg: `Job scheduled: ${jobConfig.name}`,
+        component: 'scheduler',
+        job: jobConfig.name,
         schedule: jobConfig.schedule,
         nextRun: getNextRunTime(jobConfig.schedule),
       });
     } catch (error) {
       // ✅ Converter error unknown para Error com segurança
       const errorObj = toError(error);
-      log.error(`Erro ao agendar job: ${jobConfig.name}`, errorObj);
+      logError(errorObj, `Error scheduling job: ${jobConfig.name}`, { component: 'scheduler', job: jobConfig.name });
     }
   }
 
-  log.info('========================================');
-  log.info(`${scheduledJobs.size} jobs ativos`);
-  log.info('========================================');
+  log.info({
+    msg: 'Scheduler started',
+    component: 'scheduler',
+    status: 'running',
+    active_jobs: scheduledJobs.size,
+  });
 }
 
 /**
  * Para todos os jobs agendados
  */
 export function stopScheduler() {
-  log.info('Parando scheduler...');
+  log.info({ msg: 'Stopping scheduler...', component: 'scheduler' });
 
   for (const [name, task] of scheduledJobs.entries()) {
     task.stop();
-    log.info(`Job parado: ${name}`);
+    log.info({ msg: `Job stopped: ${name}`, component: 'scheduler', job: name });
   }
 
   scheduledJobs.clear();
-  log.success('Scheduler parado');
+  log.info({ msg: 'Scheduler stopped', component: 'scheduler', status: 'stopped' });
 }
 
 /**
@@ -265,16 +261,16 @@ export async function runJobManually(jobName: string) {
     throw new Error(`Job não encontrado: ${jobName}`);
   }
 
-  log.info(`Executando job manualmente: ${jobName}`);
+  log.info({ msg: `Running job manually: ${jobName}`, component: 'scheduler', job: jobName, manual: true });
 
   try {
     const result = await job.task();
-    log.success(`Job manual concluído: ${jobName}`);
+    log.info({ msg: `Manual job completed: ${jobName}`, component: 'scheduler', job: jobName, manual: true });
     return result;
   } catch (error) {
     // ✅ Converter error unknown para Error com segurança
     const errorObj = toError(error);
-    log.error(`Job manual falhou: ${jobName}`, errorObj);
+    logError(errorObj, `Manual job failed: ${jobName}`, { component: 'scheduler', job: jobName, manual: true });
     throw errorObj;
   }
 }
@@ -317,22 +313,22 @@ function getNextRunTime(cronExpression: string): string {
 // ================================================================
 
 if (require.main === module) {
-  log.info('Iniciando scheduler em modo standalone...');
+  log.info({ msg: 'Starting scheduler in standalone mode', component: 'scheduler', mode: 'standalone' });
 
   startScheduler();
 
   // Manter processo vivo
   process.on('SIGINT', () => {
-    log.info('Recebido SIGINT, parando scheduler...');
+    log.info({ msg: 'Received SIGINT, stopping scheduler...', component: 'scheduler', signal: 'SIGINT' });
     stopScheduler();
     process.exit(0);
   });
 
   process.on('SIGTERM', () => {
-    log.info('Recebido SIGTERM, parando scheduler...');
+    log.info({ msg: 'Received SIGTERM, stopping scheduler...', component: 'scheduler', signal: 'SIGTERM' });
     stopScheduler();
     process.exit(0);
   });
 
-  log.info('Scheduler rodando. Pressione Ctrl+C para parar.');
+  log.info({ msg: 'Scheduler running. Press Ctrl+C to stop.', component: 'scheduler', status: 'ready' });
 }
