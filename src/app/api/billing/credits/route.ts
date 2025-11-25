@@ -115,7 +115,6 @@ function isPaymentWebhookPayload(data: unknown): data is PaymentWebhookPayload {
  */
 function getCreditPackages(): CreditPackage[] {
   return PlanService.getAllCreditPacks().map(pack => {
-    const priceInfo = PlanService.getCreditPackEffectivePrice(pack);
     const discountPercent = Math.round(pack.discount * 100);
 
     return {

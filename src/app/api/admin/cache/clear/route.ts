@@ -11,7 +11,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import {
-  clearAdminCache,
   clearAdminCachePattern,
   clearAllAdminCaches,
   getAdminCacheStats,

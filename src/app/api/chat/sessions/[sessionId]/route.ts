@@ -8,8 +8,6 @@ const actionSchema = z.object({
   action: z.enum(['archive', 'delete']),
 });
 
-type ActionRequest = z.infer<typeof actionSchema>;
-
 /**
  * GET /api/chat/sessions/[sessionId]
  * Get a specific chat session with all its messages

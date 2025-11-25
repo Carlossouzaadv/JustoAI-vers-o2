@@ -9,8 +9,6 @@ const sendMessageSchema = z.object({
   content: z.string().min(1, 'Message content is required').max(10000),
 });
 
-type SendMessageRequest = z.infer<typeof sendMessageSchema>;
-
 /**
  * POST /api/chat/messages
  * Send a message to an AI chat session and stream the response

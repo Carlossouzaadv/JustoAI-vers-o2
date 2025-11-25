@@ -1,7 +1,7 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Activity, AlertCircle, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface HealthCheck {

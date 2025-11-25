@@ -10,8 +10,6 @@ const createSessionSchema = z.object({
   contextId: z.string().optional(),
 });
 
-type CreateSessionRequest = z.infer<typeof createSessionSchema>;
-
 /**
  * POST /api/chat/sessions
  * Create a new chat session

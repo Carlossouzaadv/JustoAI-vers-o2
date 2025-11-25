@@ -4,6 +4,7 @@
 // Cache inteligente com Redis (1h) + PostgreSQL (7 dias) + memória local
 // Type-safe implementation using redis.ts types and CacheKeys builder
 
+import { log, logError } from '@/lib/services/logger';
 import { Prisma } from '@prisma/client';
 import { ICONS } from './icons';
 import prisma from './prisma';
@@ -143,9 +144,9 @@ export class AiCacheManager {
       //   url: process.env.REDIS_URL || 'redis://localhost:6379'
       // });
       // await this.redisClient.connect();
-      console.log(`${ICONS.SUCCESS} Redis conectado (cache nível 2)`);
+      log.info({ msg: 'Redis conectado (cache nível 2)', component: 'ai-cache' });
     } catch (_error) {
-      console.warn(`${ICONS.WARNING} Redis não disponível, usando apenas memória + PostgreSQL`);
+      log.warn({ msg: 'Redis não disponível, usando apenas memória + PostgreSQL', component: 'ai-cache' });
       this.config.enable_redis = false;
     }
   }

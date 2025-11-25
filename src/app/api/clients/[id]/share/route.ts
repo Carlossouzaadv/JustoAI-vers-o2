@@ -15,8 +15,6 @@ const createShareLinkSchema = z.object({
   }).optional(),
 });
 
-type CreateShareLinkRequest = z.infer<typeof createShareLinkSchema>;
-
 /**
  * POST /api/clients/[id]/share
  * Generate a shareable link for a client
