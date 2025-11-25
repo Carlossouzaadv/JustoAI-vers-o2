@@ -1,6 +1,6 @@
 # JustoAI V2 - Development Roadmap
 
-Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
+Last Updated: 2025-11-25 | Branch: `main` | Commits: 6 (5 ahead of origin/main)
 
 ---
 
@@ -28,7 +28,7 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
 
 ## SPRINT 1: Core Features Implementation 🔄 IN PROGRESS
 
-**Status**: 🔄 10/16 completed | Next task: Document processing pipeline
+**Status**: 🔄 9/16 completed (56%) | Next task: Document processing pipeline
 
 ### Backend - Real API Integrations
 
@@ -71,7 +71,7 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
   - Payment webhook verification (Stripe) - HMAC-SHA256 validation with replay attack protection
   - JUDIT webhook verification - Both callback and tracking endpoints with crypto.timingSafeEqual
   - Crypto-based signature validation for secure authentication
-  - Commits: `14bb4d5` (Stripe), `8f2a1c3` (JUDIT callback)
+  - Commits: `14bb4d5` (Stripe), `df01c3e` (JUDIT callback)
 
 - ⏳ **Document processing** (📍 `src/services/juditService.ts`)
   - Complete end-to-end document processing pipeline
@@ -212,11 +212,11 @@ Last Updated: 2025-11-24 | Branch: `main` | Commits: 5 (4 ahead of origin/main)
 | Sprint | Status | Progress | Key Focus |
 |--------|--------|----------|-----------|
 | **SPRINT 0** | ✅ Complete | 5/5 (100%) | Build integrity & type safety |
-| **SPRINT 1** | 🔄 Active | 10/16 (62%) | Real API integrations |
+| **SPRINT 1** | 🔄 Active | 9/16 (56%) | Real API integrations |
 | **SPRINT 2** | ⏳ Planned | 0/11 (0%) | Code quality & maintainability |
 | **SPRINT 3** | ⏳ Planned | 0/11 (0%) | Testing & production readiness |
 
-**Total Progress**: 15/43 tasks (35%) ✅ Completed
+**Total Progress**: 14/43 tasks (33%) ✅ Completed
 
 ---
 
@@ -241,10 +241,10 @@ Required env vars:
 ## Recent Commits
 
 ```
-5e8a81f feat(judit): implement real JUDIT API endpoints with async polling
-86863e6 feat(pdf): implement real PDF text extraction
-3a68631 fix(types): fix remaining EventType errors and filter type predicates
-68270fd fix(types): resolve 30+ TypeScript errors with type-safe narrowing
-2cf642f fix(tests): remove unsafe type casts and fix mock types
-08b7128 fix(types): resolve TypeScript errors - icons, providers, routes
+df01c3e feat(webhooks): implement JUDIT callback webhook signature validation
+0d07d8c docs(sprints): update progress to 8/16 (Excel file saving and template generation complete)
+74f26f5 feat(excel): implement real file saving and template generation
+f9bf797 docs(sprints): restore SPRINTS.md and update progress to 7/16 (webhook persistence complete)
+b5ad741 fix(types): resolve Next.js 15 route handler type checking issue
+02ddaaf docs(sprints): mark webhook persistence as completed (7/16 tasks)
 ```

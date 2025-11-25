@@ -33,6 +33,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const startTime = Date.now();
   try {
     // 1. Verificar autenticação
     const { user, error: authError } = await requireAuth(request);
@@ -254,7 +255,7 @@ export async function POST(
         aiAnalysis: aiAnalysis ? JSON.parse(JSON.stringify(aiAnalysis)) : undefined,
         modelUsed: routingInfo?.final_tier || 'gemini-2.5-flash',
         confidence: aiAnalysis ? 0.85 : 0.5, // Confiança menor se não houve análise IA
-        processingTime: Date.now(), // TODO: medir tempo real
+        processingTime: Date.now() - startTime,
         costEstimate: routingInfo?.cost_estimate?.estimated_cost_usd || 0.001,
         metadata: {
           document_id: documentId,
@@ -307,7 +308,7 @@ export async function POST(
     await juditAPI.trackCall({
       workspaceId: document.case.workspaceId,
       operationType: JuditOperationType.ANALYSIS,
-      durationMs: Date.now() - Date.parse(new Date().toISOString()) + (analysisVersion.processingTime as number),
+      durationMs: Date.now() - startTime,
       success: true,
       requestId: analysisVersion.id,
       metadata: {

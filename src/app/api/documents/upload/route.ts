@@ -149,6 +149,7 @@ const CONFIG = {
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   let lockKey: string | null = null;
+  let unificationResult: { new: number; duplicates: number; enriched: number; related: number; conflicts: number } | null = null;
 
   try {
     // 1. VERIFICAR AUTENTICAÇÃO
@@ -756,7 +757,7 @@ export async function POST(request: NextRequest) {
     // Isto usa o novo TimelineEnricherService com associação e enriquecimento
     try {
       log.info({ msg: `${ICONS.PROCESS} [Timeline] Iniciando unificação v2 com enriquecimento para case ${targetCaseId}`, component: 'documents-upload' });
-      const unificationResult = await mergeTimelines(targetCaseId, [document.id]);
+      unificationResult = await mergeTimelines(targetCaseId, [document.id]);
 
       log.info({ msg: `${ICONS.SUCCESS} [Timeline] Unificação v2 concluída:
         Novos: ${unificationResult.new}
@@ -866,7 +867,7 @@ export async function POST(request: NextRequest) {
           aiAnalyzed: !!aiAnalysisResult,
           cacheHit: cacheResult.hit,
           juditJobQueued: !!juditJobId,
-          timelineEntriesAdded: 0 // TODO: incluir do merge result
+          timelineEntriesAdded: unificationResult?.new ?? 0
         },
 
         // Informações da análise (PREVIEW COMPLETO)
