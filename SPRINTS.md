@@ -28,7 +28,7 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 11 (10 ahead of origin/main
 
 ## SPRINT 1: Core Features Implementation 🔄 IN PROGRESS
 
-**Status**: 🔄 12/16 completed (75%) | Next task: AI chat integration
+**Status**: 🔄 13/16 completed (81%) | Next task: Document deletion
 
 ### Backend - Real API Integrations
 
@@ -98,9 +98,21 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 11 (10 ahead of origin/main
   - ✅ Access tracking and audit logging
   - Commits: `936ff9a`, `a1991b5`
 
-- ⏳ **AI chat integration** (📍 `apps/web/src/components/chat/ChatInterface.tsx`)
-  - Remove hardcoded chat responses
-  - Connect to real AI backend
+- ✅ **AI chat integration** (📍 `src/lib/chat-service.ts`)
+  - ✅ ChatSession & ChatMessage database models (chat_sessions, chat_messages tables)
+  - ✅ ChatService with session management and streaming
+  - ✅ Gemini API integration for AI responses with streaming
+  - ✅ POST /api/chat/sessions - Create chat session
+  - ✅ GET /api/chat/sessions - List user's sessions
+  - ✅ POST /api/chat/messages - Send message with streaming response
+  - ✅ GET /api/chat/sessions/[sessionId] - Get session with messages
+  - ✅ PATCH /api/chat/sessions/[sessionId] - Archive/delete session
+  - ✅ DELETE /api/chat/sessions/[sessionId] - Hard delete session
+  - ✅ FloatingChat component for UI integration
+  - ✅ Removed hardcoded responses, connected to real AI backend
+  - ✅ Database migration applied to Supabase production (20251125_add_chat_system)
+  - ✅ Migration successfully registered in _prisma_migrations table
+  - Commits: `ad302d1` (implementation), `df041a6` (migration fix)
 
 - ⏳ **Document deletion** (📍 `apps/web/src/components/DocumentManager.tsx`)
   - API endpoint for document deletion
@@ -223,11 +235,11 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 11 (10 ahead of origin/main
 | Sprint | Status | Progress | Key Focus |
 |--------|--------|----------|-----------|
 | **SPRINT 0** | ✅ Complete | 5/5 (100%) | Build integrity & type safety |
-| **SPRINT 1** | 🔄 Active | 12/16 (75%) | Real API integrations |
+| **SPRINT 1** | 🔄 Active | 13/16 (81%) | Real API integrations |
 | **SPRINT 2** | ⏳ Planned | 0/11 (0%) | Code quality & maintainability |
 | **SPRINT 3** | ⏳ Planned | 0/11 (0%) | Testing & production readiness |
 
-**Total Progress**: 17/43 tasks (40%) ✅ Completed
+**Total Progress**: 18/43 tasks (42%) ✅ Completed
 
 ---
 
