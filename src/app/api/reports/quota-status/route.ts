@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
 import { PlanService } from '@/lib/services/planService'
+
+const prisma = new PrismaClient()
 
 /**
  * GET /api/reports/quota-status?workspaceId=xxx
  *
  * Returns quota status for reports based on the workspace's plan.
- * Uses SSOT (Single Source of Truth) from src/config/plans.ts
- *
- * TODO: In the future, integrate with database to get actual workspace plan
- * and track actual report counts. For now, returns plan-based limits.
+ * Fetches actual workspace plan and report counts from database.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,29 +21,55 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // TODO: Fetch actual workspace plan from database
-    // For now, use default plan (GESTAO) - this should be retrieved from DB
-    const defaultPlanId = 'gestao'
+    // Fetch actual workspace plan from database
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: {
+        id: true,
+        name: true,
+        plan: true,
+      }
+    })
 
-    const plan = PlanService.getPlanConfigSafe(defaultPlanId)
+    if (!workspace) {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404 }
+      )
+    }
+
+    // Map database plan to plan service ID
+    const planId = workspace.plan?.toLowerCase() || 'free'
+    const plan = PlanService.getPlanConfigSafe(planId)
 
     if (!plan) {
       return NextResponse.json(
-        { error: 'Plan not found' },
+        { error: 'Plan configuration not found' },
         { status: 500 }
       )
     }
 
-    // Calculate estimated quota based on monthly credits
-    // Reports cost: 1 credit per ~50 processes
-    // Assuming average report of 50 processes for quota calculation
-    const estimatedReportsPerMonth = plan.monthlyCredits
-    const estimatedReportsAvailable = estimatedReportsPerMonth
+    // Count actual report executions created this month for this workspace
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
 
-    // TODO: Get actual report count from database
-    const quotaUsed = 0 // Placeholder - should be fetched from DB
-    const quotaPercentage = estimatedReportsAvailable > 0
-      ? Math.round((quotaUsed / estimatedReportsAvailable) * 100)
+    const quotaUsed = await prisma.reportExecution.count({
+      where: {
+        workspace: {
+          id: workspaceId
+        },
+        createdAt: {
+          gte: monthStart,
+          lte: monthEnd
+        }
+      }
+    })
+
+    // Calculate quota limits based on plan
+    const estimatedReportsPerMonth = Math.floor(plan.monthlyCredits)
+    const quotaPercentage = estimatedReportsPerMonth > 0
+      ? Math.round((quotaUsed / estimatedReportsPerMonth) * 100)
       : 0
 
     return NextResponse.json({
@@ -54,20 +80,25 @@ export async function GET(request: NextRequest) {
           id: plan.id,
           name: plan.name,
           monthlyCredits: plan.monthlyCredits,
+          databasePlan: workspace.plan,
         },
         quota: {
-          limit: estimatedReportsAvailable,
+          limit: estimatedReportsPerMonth,
           used: quotaUsed,
-          remaining: Math.max(0, estimatedReportsAvailable - quotaUsed),
+          remaining: Math.max(0, estimatedReportsPerMonth - quotaUsed),
           percentage: quotaPercentage,
         },
         creditInfo: {
           system: 'Unified credits',
           costPerReport: '1 credit per ~50 processes',
           costPerFullAnalysis: '1 credit per analysis',
-          estimatedReportsPerMonth: Math.floor(plan.monthlyCredits),
+          estimatedReportsPerMonth: estimatedReportsPerMonth,
         },
-        note: 'Quota calculated based on monthly credit allocation. Actual usage tracked separately.',
+        period: {
+          start: monthStart.toISOString(),
+          end: monthEnd.toISOString(),
+        },
+        note: 'Quota calculated based on monthly credit allocation. Counts actual report executions.',
       },
     })
   } catch (error) {
@@ -76,5 +107,7 @@ export async function GET(request: NextRequest) {
       { error: 'Internal server error' },
       { status: 500 }
     )
+  } finally {
+    await prisma.$disconnect()
   }
 }
