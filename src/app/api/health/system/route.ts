@@ -301,7 +301,7 @@ async function checkJuditApi(): Promise<ComponentHealth> {
 // MAIN HANDLER
 // ================================================================
 
-export async function GET(_request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const overallStartTime = Date.now();
 
   try {

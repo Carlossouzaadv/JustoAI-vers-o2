@@ -169,7 +169,7 @@ export class AiCacheManager {
     const memoryResult = this.getFromMemory(cacheKey);
     if (memoryResult !== null) {
       this.stats.memory_hits++;
-      log.info({ msg: "Cache HIT (memória):" });
+      log.info({ msg: 'Cache HIT (memória):' });
       return memoryResult;
     }
     this.stats.memory_misses++;
@@ -183,7 +183,7 @@ export class AiCacheManager {
           try {
             parsed = JSON.parse(redisResult);
           } catch (_parseError) {
-            log.warn({ msg: "Failed to parse Redis data for key:" });
+            log.warn({ msg: 'Failed to parse Redis data for key:' });
             this.stats.redis_misses++;
             // Continue to next level
           }
@@ -193,13 +193,13 @@ export class AiCacheManager {
             // Recolocar na memória para próximas consultas
             this.setInMemory(cacheKey, parsed);
             this.stats.redis_hits++;
-            log.info({ msg: "Cache HIT (Redis):" });
+            log.info({ msg: 'Cache HIT (Redis):' });
             return parsed;
           }
         }
         this.stats.redis_misses++;
       } catch (_error) {
-        logError(error, "${ICONS.WARNING} Erro no Redis:", { component: "refactored" });
+        logError(error, '${ICONS.WARNING} Erro no Redis:', { component: 'refactored' });
       }
     }
 
@@ -230,7 +230,7 @@ export class AiCacheManager {
               );
             } catch (_redisError) {
               // Log but don't fail - continue with in-memory cache
-              log.warn({ msg: "Failed to update Redis cache" });
+              log.warn({ msg: 'Failed to update Redis cache' });
             }
           }
 
@@ -241,12 +241,12 @@ export class AiCacheManager {
           });
 
           this.stats.postgres_hits++;
-          log.info({ msg: "Cache HIT (PostgreSQL):" });
+          log.info({ msg: 'Cache HIT (PostgreSQL):' });
           return data;
         }
       }
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro no cache PostgreSQL:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro no cache PostgreSQL:', { component: 'refactored' });
     }
 
     // Nenhum cache encontrado
@@ -270,7 +270,7 @@ export class AiCacheManager {
   ): Promise<void> {
     // Validate value before caching
     if (!isSerializableValue(value)) {
-      log.warn({ msg: "Cannot cache non-serializable value for key:" });
+      log.warn({ msg: 'Cannot cache non-serializable value for key:' });
       return;
     }
 
@@ -289,7 +289,7 @@ export class AiCacheManager {
           serialized
         );
       } catch (_error) {
-        logError(error, "${ICONS.WARNING} Erro ao salvar no Redis:", { component: "refactored" });
+        logError(error, '${ICONS.WARNING} Erro ao salvar no Redis:', { component: 'refactored' });
       }
     }
 
@@ -297,7 +297,7 @@ export class AiCacheManager {
     try {
       // Skip PostgreSQL cache if no workspaceId (e.g., for tests)
       if (!metadata?.workspaceId) {
-        log.info({ msg: "⚠️ Pulando cache PostgreSQL: sem workspaceId" });
+        log.info({ msg: '⚠️ Pulando cache PostgreSQL: sem workspaceId' });
         return;
       }
 
@@ -327,9 +327,9 @@ export class AiCacheManager {
         this.stats.tokens_saved_today += metadata.tokens_saved;
       }
 
-      log.info({ msg: "Cache SAVED (todos os níveis):" });
+      log.info({ msg: 'Cache SAVED (todos os níveis):' });
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao salvar cache no PostgreSQL:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao salvar cache no PostgreSQL:', { component: 'refactored' });
     }
   }
 
@@ -464,9 +464,9 @@ export class AiCacheManager {
             }
           }
         });
-        log.info({ msg: "Cache PostgreSQL limpo (entries expirados)" });
+        log.info({ msg: 'Cache PostgreSQL limpo (entries expirados)' });
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Erro na limpeza do cache:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro na limpeza do cache:', { component: 'refactored' });
       }
     }, 60 * 60 * 1000);
   }
@@ -526,14 +526,14 @@ export class AiCacheManager {
       try {
         await this.redisClient.flushdb();
       } catch (_error) {
-        logError(error, "${ICONS.WARNING} Erro ao limpar Redis:", { component: "refactored" });
+        logError(error, '${ICONS.WARNING} Erro ao limpar Redis:', { component: 'refactored' });
       }
     }
 
     // Limpar PostgreSQL
     await prisma.aiCache.deleteMany();
 
-    log.info({ msg: "Todo o cache foi limpo" });
+    log.info({ msg: 'Todo o cache foi limpo' });
   }
 
   /**
@@ -621,7 +621,7 @@ export function withCache(
       // Tentar buscar no cache primeiro
       const cached = await cache.get(key, analysisType);
       if (cached !== null) {
-        log.info({ msg: "Cache hit para :" });
+        log.info({ msg: 'Cache hit para :' });
         return cached;
       }
 

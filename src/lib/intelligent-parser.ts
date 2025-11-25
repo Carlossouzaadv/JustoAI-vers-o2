@@ -160,7 +160,7 @@ export class IntelligentParser {
    * Análise completa de arquivo CSV/Excel
    */
   async parseFile(buffer: Buffer, fileName: string): Promise<IntelligentParseResult> {
-    log.info({ msg: "Iniciando análise inteligente:" });
+    log.info({ msg: 'Iniciando análise inteligente:' });
 
     try {
       // 1. Análise básica do arquivo
@@ -202,11 +202,11 @@ export class IntelligentParser {
         fileAnalysis
       };
 
-      log.info({ msg: "Análise concluída:  (%)" });
+      log.info({ msg: 'Análise concluída:  (%)' });
       return result;
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na análise:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na análise:', { component: 'refactored' });
 
       return {
         success: false,
@@ -393,7 +393,7 @@ export class IntelligentParser {
     Object.entries(fieldGroups).forEach(([category, fields]) => {
       // Safely narrow category to valid FieldMapping key using type guard
       if (!isValidFieldMappingKey(category)) {
-        log.warn({ msg: "Invalid field mapping category:" });
+        log.warn({ msg: 'Invalid field mapping category:' });
         return;
       }
 

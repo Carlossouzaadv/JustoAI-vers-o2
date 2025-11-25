@@ -113,7 +113,7 @@ export class PDFGenerator {
 
   async initialize(): Promise<void> {
     try {
-      log.info({ msg: "Inicializando Puppeteer para geração de PDF..." });
+      log.info({ msg: 'Inicializando Puppeteer para geração de PDF...' });
 
       this.browser = await puppeteer.launch(this.puppeteerOptions);
 
@@ -144,10 +144,10 @@ export class PDFGenerator {
         this.pagePool.push(page);
       }
 
-      log.info({ msg: "Puppeteer inicializado com  páginas simultâneas" });
+      log.info({ msg: 'Puppeteer inicializado com  páginas simultâneas' });
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao inicializar Puppeteer:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao inicializar Puppeteer:', { component: 'refactored' });
       throw error;
     }
   }
@@ -157,7 +157,7 @@ export class PDFGenerator {
       await this.browser.close();
       this.browser = null;
       this.pagePool = [];
-      log.info({ msg: "Puppeteer finalizado" });
+      log.info({ msg: 'Puppeteer finalizado' });
     }
   }
 
@@ -222,12 +222,12 @@ export class PDFGenerator {
       });
 
       const generationTime = Date.now() - startTime;
-      log.info({ msg: "PDF gerado em ms (KB)" });
+      log.info({ msg: 'PDF gerado em ms (KB)' });
 
       return Buffer.from(pdfBuffer);
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na geração de PDF:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na geração de PDF:', { component: 'refactored' });
       throw error;
     } finally {
       // Retornar página ao pool
@@ -246,7 +246,7 @@ export class PDFGenerator {
     const startTime = Date.now();
     const results: BatchGenerationResult[] = [];
 
-    log.info({ msg: "Iniciando batch de  relatórios..." });
+    log.info({ msg: 'Iniciando batch de  relatórios...' });
 
     if (!this.browser) {
       await this.initialize();
@@ -262,7 +262,7 @@ export class PDFGenerator {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      log.info({ msg: "Processando lote / ( relatórios)" });
+      log.info({ msg: 'Processando lote / ( relatórios)' });
 
       // Processar lote em paralelo
       const batchPromises = batch.map(async (job) => {
@@ -296,7 +296,7 @@ export class PDFGenerator {
           return result;
 
         } catch (_error) {
-          logError(error, "${ICONS.ERROR} Erro no job ${job.id}:", { component: "refactored" });
+          logError(error, '${ICONS.ERROR} Erro no job ${job.id}:', { component: 'refactored' });
           failed++;
 
           return {
@@ -333,8 +333,8 @@ export class PDFGenerator {
       throughput
     };
 
-    log.info({ msg: "Batch concluído: / sucessos em ms" });
-    log.info({ msg: "Throughput:  relatórios/min" });
+    log.info({ msg: 'Batch concluído: / sucessos em ms' });
+    log.info({ msg: 'Throughput:  relatórios/min' });
 
     return { results, stats };
   }
@@ -471,7 +471,7 @@ export class PDFGenerator {
 
   clearTemplateCache(): void {
     this.templateCache.clear();
-    log.info({ msg: "Cache de templates limpo" });
+    log.info({ msg: 'Cache de templates limpo' });
   }
 }
 

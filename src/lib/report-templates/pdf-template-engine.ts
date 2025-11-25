@@ -65,9 +65,9 @@ export class PDFTemplateEngine {
           '--disable-gpu'
         ]
       });
-      log.info({ msg: "PDF Template Engine initialized" });
+      log.info({ msg: 'PDF Template Engine initialized' });
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Failed to initialize PDF engine:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Failed to initialize PDF engine:', { component: 'refactored' });
       throw error;
     }
   }
@@ -87,7 +87,7 @@ export class PDFTemplateEngine {
         await this.initialize();
       }
 
-      log.info({ msg: "Generating PDF:" });
+      log.info({ msg: 'Generating PDF:' });
 
       // Criar página
       const page = await this.browser!.newPage();
@@ -136,7 +136,7 @@ export class PDFTemplateEngine {
       // Estimar número de páginas (aproximação)
       const pageCount = Math.max(1, Math.ceil(fileSize / 50000)); // ~50KB por página
 
-      log.info({ msg: "PDF generated successfully:  bytes, ~ pages" });
+      log.info({ msg: 'PDF generated successfully:  bytes, ~ pages' });
 
       return {
         success: true,
@@ -147,7 +147,7 @@ export class PDFTemplateEngine {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} PDF generation failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} PDF generation failed:', { component: 'refactored' });
       return {
         success: false,
         filePath: '',
@@ -685,7 +685,7 @@ export class PDFTemplateEngine {
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
-      log.info({ msg: "PDF Template Engine closed" });
+      log.info({ msg: 'PDF Template Engine closed' });
     }
   }
 }

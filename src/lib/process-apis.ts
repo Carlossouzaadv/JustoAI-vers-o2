@@ -204,7 +204,7 @@ export class ProcessApiClient {
           return result;
         }
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Erro na Judit API:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro na Judit API:', { component: 'refactored' });
       }
     }
 

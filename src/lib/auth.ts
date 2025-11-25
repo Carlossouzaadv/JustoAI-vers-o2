@@ -110,14 +110,14 @@ export async function getCurrentUser() {
           dbUser = reloadedUser
         }
       } catch (workspaceError) {
-        logError(workspaceError, "Error creating default workspace:", { component: "refactored" })
+        logError(workspaceError, 'Error creating default workspace:', { component: 'refactored' })
         // Continue mesmo se falhar - não quebra o login
       }
     }
 
     return dbUser
   } catch (_error) {
-    logError(error, "Error getting current user:", { component: "refactored" })
+    logError(error, 'Error getting current user:', { component: 'refactored' })
     return null
   }
 }
@@ -154,7 +154,7 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
 export async function validateAuth() {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
-    log.info({ msg: "⚠️ Development mode: Bypassing auth validation" })
+    log.info({ msg: '⚠️ Development mode: Bypassing auth validation' })
     return {
       user: {
         id: 'dev-user',

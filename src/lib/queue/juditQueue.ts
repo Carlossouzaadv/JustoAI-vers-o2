@@ -164,12 +164,12 @@ class MockQueue {
 
   constructor(name: string) {
     this.name = name;
-    log.warn({ msg: "[JUDIT QUEUE] ⚠️  Running in MOCK mode (Redis disabled)" });
-    log.warn({ msg: "[JUDIT QUEUE] ⚠️  Queue operations will be simulated only!" });
+    log.warn({ msg: '[JUDIT QUEUE] ⚠️  Running in MOCK mode (Redis disabled)' });
+    log.warn({ msg: '[JUDIT QUEUE] ⚠️  Queue operations will be simulated only!' });
   }
 
   async add() {
-    log.info({ msg: "[JUDIT QUEUE] MOCK: Job added (not really processed)" });
+    log.info({ msg: '[JUDIT QUEUE] MOCK: Job added (not really processed)' });
     return { id: 'mock-' + Date.now(), data: {} } as Record<string, unknown>;
   }
   async getJob() { return null; }

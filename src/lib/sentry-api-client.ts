@@ -83,14 +83,14 @@ export async function getSentryErrors(
     });
 
     if (!response.ok) {
-      log.warn({ msg: "Sentry API error:" });
+      log.warn({ msg: 'Sentry API error:' });
       return [];
     }
 
     const events = await response.json();
 
     if (!Array.isArray(events)) {
-      log.warn({ msg: "Sentry events response is not an array" });
+      log.warn({ msg: 'Sentry events response is not an array' });
       return [];
     }
 
@@ -106,7 +106,7 @@ export async function getSentryErrors(
       platform: typeof event.platform === 'string' ? event.platform : 'node',
     }));
   } catch (_error) {
-    logError(error, "Error fetching Sentry errors:", { component: "refactored" });
+    logError(error, 'Error fetching Sentry errors:', { component: 'refactored' });
     return [];
   }
 }
@@ -123,7 +123,7 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
     });
 
     if (!response.ok) {
-      log.warn({ msg: "Sentry stats API error:" });
+      log.warn({ msg: 'Sentry stats API error:' });
       return getDefaultStats();
     }
 
@@ -168,7 +168,7 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
       },
     };
   } catch (_error) {
-    logError(error, "Error fetching Sentry stats:", { component: "refactored" });
+    logError(error, 'Error fetching Sentry stats:', { component: 'refactored' });
     return getDefaultStats();
   }
 }
@@ -212,7 +212,7 @@ export async function getSentryReleases(limit: number = 5) {
       newGroups: typeof release.newGroups === 'number' ? release.newGroups : 0,
     }));
   } catch (_error) {
-    logError(error, "Error fetching Sentry releases:", { component: "refactored" });
+    logError(error, 'Error fetching Sentry releases:', { component: 'refactored' });
     return [];
   }
 }

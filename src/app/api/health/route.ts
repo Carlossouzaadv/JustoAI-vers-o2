@@ -61,7 +61,7 @@ function isHealthResponse(data: unknown): data is HealthResponse {
  *                     error: "Database connection failed"
  *                     environment: development
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const response: HealthResponse = {
       status: 'healthy',

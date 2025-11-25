@@ -95,7 +95,7 @@ export class QuotaEnforcement {
     } = {}
   ): Promise<QuotaCheckResult> {
     try {
-      log.info({ msg: "Checking report quota for workspace:" });
+      log.info({ msg: 'Checking report quota for workspace:' });
 
       // Verificar se enforcement está habilitado
       if (!this.config.ENABLE_QUOTA_ENFORCEMENT) {
@@ -111,7 +111,7 @@ export class QuotaEnforcement {
 
       // Verificar bypass de admin
       if (options.adminBypass) {
-        log.info({ msg: "Admin bypass enabled for workspace:" });
+        log.info({ msg: 'Admin bypass enabled for workspace:' });
         return {
           allowed: true,
           quotaStatus: 'ok',
@@ -189,7 +189,7 @@ export class QuotaEnforcement {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Quota check failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Quota check failed:', { component: 'refactored' });
 
       // Em caso de erro, permitir (fail-open) mas logar
       return {
@@ -242,7 +242,7 @@ export class QuotaEnforcement {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Credit quota check failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Credit quota check failed:', { component: 'refactored' });
 
       return {
         allowed: false,
@@ -398,7 +398,7 @@ export class QuotaEnforcement {
         creditsConsumed: 0 // Can be calculated if needed
       };
     } catch (_error) {
-      logError(error, "Error getting monthly usage:", { component: "refactored" });
+      logError(error, 'Error getting monthly usage:', { component: 'refactored' });
       return { reportsTotal: 0, creditsConsumed: 0 };
     }
   }

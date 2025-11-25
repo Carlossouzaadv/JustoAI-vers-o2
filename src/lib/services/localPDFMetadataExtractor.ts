@@ -392,7 +392,7 @@ export async function extractPDFMetadata(
   fileName: string
 ): Promise<PDFMetadata> {
   try {
-    log.info({ msg: "[PDF Metadata] Extraindo metadata de:" });
+    log.info({ msg: '[PDF Metadata] Extraindo metadata de:' });
 
     const metadata: PDFMetadata = {
       documentDate: extractPrimaryDocumentDate(text),
@@ -435,7 +435,7 @@ export async function extractPDFMetadata(
 
     return metadata;
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} PDF Metadata Erro ao extrair metadata:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} PDF Metadata Erro ao extrair metadata:', { component: 'refactored' });
 
     // Retornar metadata mínima em caso de erro
     return {

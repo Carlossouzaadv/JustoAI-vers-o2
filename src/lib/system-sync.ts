@@ -80,7 +80,7 @@ export class SystemSynchronizer {
    * Inicia sincronização manual de um sistema
    */
   async startManualSync(workspaceId: string, sourceSystem: string): Promise<SyncSession> {
-    log.info({ msg: "Iniciando sincronização manual:" });
+    log.info({ msg: 'Iniciando sincronização manual:' });
 
     const session: SyncSession = {
       id: `sync_${Date.now()}`,
@@ -140,7 +140,7 @@ export class SystemSynchronizer {
       session.finishedAt = new Date();
       session.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
 
-      logError(error, "${ICONS.ERROR} Erro na sincronização:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na sincronização:', { component: 'refactored' });
       return session;
     }
   }

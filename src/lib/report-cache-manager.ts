@@ -116,7 +116,7 @@ export class ReportCacheManager {
    * Invalida cache quando detectada nova movimentação
    */
   async invalidateOnMovement(processId: string, movementDate: Date): Promise<CacheInvalidationResult> {
-    log.info({ msg: "Invalidando cache para processo  - nova movimentação em" });
+    log.info({ msg: 'Invalidando cache para processo  - nova movimentação em' });
 
     try {
       // Encontrar todas as entradas de cache que incluem este processo
@@ -147,7 +147,7 @@ export class ReportCacheManager {
           invalidated++;
           entry.processIds.forEach((id: string) => affectedProcessIds.add(id));
 
-          log.info({ msg: "Cache invalidado:" });
+          log.info({ msg: 'Cache invalidado:' });
         }
       }
 
@@ -157,11 +157,11 @@ export class ReportCacheManager {
         reason: `Nova movimentação no processo ${processId}`
       };
 
-      log.info({ msg: "Invalidação concluída:  entradas removidas" });
+      log.info({ msg: 'Invalidação concluída:  entradas removidas' });
       return result;
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na invalidação de cache:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na invalidação de cache:', { component: 'refactored' });
       throw error;
     }
   }
@@ -173,7 +173,7 @@ export class ReportCacheManager {
     processId: string;
     date: Date;
   }>): Promise<CacheInvalidationResult> {
-    log.info({ msg: "Invalidação em massa:  movimentações" });
+    log.info({ msg: 'Invalidação em massa:  movimentações' });
 
     const affectedProcessIds = new Set<string>();
     let totalInvalidated = 0;
@@ -230,7 +230,7 @@ export class ReportCacheManager {
       reason: `Invalidação em massa de ${movements.length} movimentações`
     };
 
-    log.info({ msg: "Invalidação em massa concluída:  entradas removidas" });
+    log.info({ msg: 'Invalidação em massa concluída:  entradas removidas' });
     return result;
   }
 
@@ -238,7 +238,7 @@ export class ReportCacheManager {
    * Invalida cache por workspace (admin action)
    */
   async invalidateByWorkspace(workspaceId: string, reason: string = 'Invalidação manual'): Promise<CacheInvalidationResult> {
-    log.info({ msg: "Invalidando todo cache do workspace" });
+    log.info({ msg: 'Invalidando todo cache do workspace' });
 
     const deletedEntries: WorkspaceCacheEntry[] = await prisma.reportCache.findMany({
       where: { workspaceId },
@@ -269,7 +269,7 @@ export class ReportCacheManager {
     orphaned: number;
     errors: number;
   }> {
-    log.info({ msg: "Iniciando limpeza automática de cache" });
+    log.info({ msg: 'Iniciando limpeza automática de cache' });
 
     let expired = 0;
     let orphaned = 0;
@@ -300,10 +300,10 @@ export class ReportCacheManager {
         orphaned = orphanedResult.count;
       }
 
-      log.info({ msg: "Limpeza concluída:  expiradas,  órfãs" });
+      log.info({ msg: 'Limpeza concluída:  expiradas,  órfãs' });
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na limpeza de cache:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na limpeza de cache:', { component: 'refactored' });
       errors++;
     }
 
@@ -322,7 +322,7 @@ export class ReportCacheManager {
     skipped: number;
     errors: number;
   }> {
-    log.info({ msg: "Pré-aquecendo cache para  configurações" });
+    log.info({ msg: 'Pré-aquecendo cache para  configurações' });
 
     let warmed = 0;
     let skipped = 0;
@@ -352,12 +352,12 @@ export class ReportCacheManager {
         warmed++;
 
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Erro no pré-aquecimento:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro no pré-aquecimento:', { component: 'refactored' });
         errors++;
       }
     }
 
-    log.info({ msg: "Pré-aquecimento concluído:  gerados,  existentes,  erros" });
+    log.info({ msg: 'Pré-aquecimento concluído:  gerados,  existentes,  erros' });
     return { warmed, skipped, errors };
   }
 
@@ -415,7 +415,7 @@ export class ReportCacheManager {
     // Para implementação futura - invalidar cache por categorias
     // Ex: "client:123", "case-type:CIVIL", etc.
 
-    log.info({ msg: "Invalidação por tags:" });
+    log.info({ msg: 'Invalidação por tags:' });
 
     // Placeholder implementation
     const result: CacheInvalidationResult = {
@@ -438,7 +438,7 @@ export class ReportCacheManager {
     }>;
     totalInvalidated: number;
   }> {
-    log.info({ msg: "Executando invalidação inteligente para workspace" });
+    log.info({ msg: 'Executando invalidação inteligente para workspace' });
 
     const patterns = [];
     let totalInvalidated = 0;
@@ -465,7 +465,7 @@ export class ReportCacheManager {
     // Padrão 2: Cache de processos inativos
     // (implementar lógica específica conforme necessário)
 
-    log.info({ msg: "Invalidação inteligente concluída:  entradas" });
+    log.info({ msg: 'Invalidação inteligente concluída:  entradas' });
 
     return {
       patterns,

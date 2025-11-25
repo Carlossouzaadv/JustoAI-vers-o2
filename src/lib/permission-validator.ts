@@ -73,7 +73,7 @@ export async function isWorkspaceAdmin(
 
     return !!userWorkspace;
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Error checking admin status:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Error checking admin status:', { component: 'refactored' });
     return false;
   }
 }
@@ -100,21 +100,21 @@ export async function getUserWorkspaceRole(
 
     // Step 1: Validate object structure - ensure role property exists as string
     if (!isUserWorkspaceWithRole(userWorkspace)) {
-      log.warn({ msg: "UserWorkspace missing role property" });
+      log.warn({ msg: 'UserWorkspace missing role property' });
       return null;
     }
 
     // Step 2: At this point, userWorkspace.role is guaranteed to be string
     // Validate that it's a valid WorkspaceRole value (ADMIN | MEMBER | VIEWER)
     if (!isValidWorkspaceRole(userWorkspace.role)) {
-      log.warn({ msg: "Invalid WorkspaceRole value:" });
+      log.warn({ msg: 'Invalid WorkspaceRole value:' });
       return 'MEMBER'; // Safe default
     }
 
     // Step 3: Now userWorkspace.role is type WorkspaceRole - no casting needed!
     return userWorkspace.role;
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Error getting user role:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Error getting user role:', { component: 'refactored' });
     return null;
   }
 }
@@ -190,7 +190,7 @@ export async function validateUserRole(
       userId
     };
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Error validating user role:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Error validating user role:', { component: 'refactored' });
     return {
       isAuthorized: false,
       workspaceId,
@@ -211,14 +211,14 @@ export async function requireWorkspaceAdmin(
   const check = await validateUserRole(userId, workspaceId, 'ADMIN');
 
   if (!check.isAuthorized) {
-    log.warn({ msg: "Admin access denied for user  on workspace :" });
+    log.warn({ msg: 'Admin access denied for user  on workspace :' });
     return {
       authorized: false,
       error: check.denialReason || 'Unauthorized'
     };
   }
 
-  log.info({ msg: "Admin access granted for user  on workspace" });
+  log.info({ msg: 'Admin access granted for user  on workspace' });
   return { authorized: true };
 }
 
@@ -233,14 +233,14 @@ export async function requireWorkspaceRole(
   const check = await validateUserRole(userId, workspaceId, requiredRoles);
 
   if (!check.isAuthorized) {
-    log.warn({ msg: "Access denied for user  on workspace :" });
+    log.warn({ msg: 'Access denied for user  on workspace :' });
     return {
       authorized: false,
       error: check.denialReason || 'Unauthorized'
     };
   }
 
-  log.info({ msg: "Access granted () for user  on workspace" });
+  log.info({ msg: 'Access granted () for user  on workspace' });
   return { authorized: true, role: check.role || 'MEMBER' };
 }
 
@@ -273,7 +273,7 @@ export async function getUserWorkspaceAccess(
 
     return access;
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Error getting user workspace access:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Error getting user workspace access:', { component: 'refactored' });
     return [];
   }
 }
@@ -330,7 +330,7 @@ export async function requireAdminAccess(
 
   // Check if internal admin
   if (isInternalAdmin(email)) {
-    log.info({ msg: "Internal admin access granted for user  ()" });
+    log.info({ msg: 'Internal admin access granted for user  ()' });
     return {
       authorized: true,
       isInternal: true
@@ -348,14 +348,14 @@ export async function requireAdminAccess(
   const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
 
   if (!isAdmin) {
-    log.warn({ msg: "Admin access denied for user  () on workspace" });
+    log.warn({ msg: 'Admin access denied for user  () on workspace' });
     return {
       authorized: false,
       error: 'Admin access required'
     };
   }
 
-  log.info({ msg: "Workspace admin access granted for user  () on workspace" });
+  log.info({ msg: 'Workspace admin access granted for user  () on workspace' });
   return {
     authorized: true,
     isInternal: false

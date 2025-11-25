@@ -37,7 +37,7 @@ export class SlackService {
     this.webhookUrl = process.env.SLACK_WEBHOOK_URL || '';
 
     if (!this.webhookUrl) {
-      log.warn({ msg: "Slack webhook URL not configured - alerts will be simulated" });
+      log.warn({ msg: 'Slack webhook URL not configured - alerts will be simulated' });
     }
   }
 
@@ -45,10 +45,10 @@ export class SlackService {
    * Send alert to Slack
    */
   async sendAlert(options: SlackAlertOptions): Promise<SlackResult> {
-    log.info({ msg: "Enviando alerta para Slack:" });
+    log.info({ msg: 'Enviando alerta para Slack:' });
 
     if (!this.webhookUrl) {
-      log.info({ msg: "Simulando envio para Slack (webhook URL não configurada)" });
+      log.info({ msg: 'Simulando envio para Slack (webhook URL não configurada)' });
       return { success: true, messageId: 'simulated-' + Date.now() };
     }
 
@@ -75,14 +75,14 @@ export class SlackService {
         throw new Error(`Slack API error: ${response.statusText} - ${errorText}`);
       }
 
-      log.info({ msg: "Alerta enviado para Slack" });
+      log.info({ msg: 'Alerta enviado para Slack' });
       return {
         success: true,
         messageId: Date.now().toString()
       };
 
-    } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao enviar alerta para Slack:", { component: "refactored" });
+    } catch (error) {
+      logError(error, '${ICONS.ERROR} Erro ao enviar alerta para Slack:', { component: 'refactored' });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

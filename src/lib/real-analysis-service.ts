@@ -97,11 +97,11 @@ export class RealAnalysisService {
     const startTime = Date.now();
 
     try {
-      log.info({ msg: "Iniciando análise  -  caracteres" });
+      log.info({ msg: 'Iniciando análise  -  caracteres' });
 
       // 1. Analyze document complexity
       const complexity = this.router.analyzeComplexity(request.text, request.fileSizeMB || 0);
-      log.info({ msg: "Complexidade:  pontos → Modelo:" });
+      log.info({ msg: 'Complexidade:  pontos → Modelo:' });
 
       // 2. Check cache first
       const cacheResult = await this.checkCache(request, complexity);
@@ -123,13 +123,13 @@ export class RealAnalysisService {
       this.updateStats(request.analysisType, complexity.recommendedTier, Date.now() - startTime, false);
 
       const processingTime = Date.now() - startTime;
-      log.info({ msg: "Análise concluída em ms" });
+      log.info({ msg: 'Análise concluída em ms' });
 
       return this.buildSuccessResponse(analysisResult, complexity, false, processingTime);
 
     } catch (_error) {
       const processingTime = Date.now() - startTime;
-      logError(error, "${ICONS.ERROR} Erro na análise:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na análise:', { component: 'refactored' });
 
       this.updateStats(request.analysisType, ModelTier.BALANCED, processingTime, true);
 
@@ -166,7 +166,7 @@ export class RealAnalysisService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        log.info({ msg: "Tentativa / com modelo" });
+        log.info({ msg: 'Tentativa / com modelo' });
 
         // Build the analysis prompt
         const prompt = this.buildAnalysisPrompt(request, config.promptTemplate);
@@ -181,26 +181,26 @@ export class RealAnalysisService {
         // Validate and enhance the response
         const validatedResult = this.validateAndEnhanceResult(geminiResponse as Record<string, unknown>, request, complexity);
 
-        log.info({ msg: "Análise bem-sucedida na tentativa" });
+        log.info({ msg: 'Análise bem-sucedida na tentativa' });
         return validatedResult;
 
       } catch (_error) {
         // Narrow unknown to Error for type safety
         const err = error instanceof Error ? error : new Error(String(error));
         lastError = err;
-        logError(error, "${ICONS.WARNING} Tentativa ${attempt} falhou:", { component: "refactored" });
+        logError(error, '${ICONS.WARNING} Tentativa ${attempt} falhou:', { component: 'refactored' });
 
         // Check if we should retry
         if (attempt < maxRetries && this.shouldRetry(err)) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-          log.info({ msg: "Aguardando ms antes da próxima tentativa..." });
+          log.info({ msg: 'Aguardando ms antes da próxima tentativa...' });
           await this.sleep(delay);
           continue;
         }
 
         // Try fallback model on final attempt
         if (attempt === maxRetries && config.fallbackModel) {
-          log.info({ msg: "Tentando modelo de fallback:" });
+          log.info({ msg: 'Tentando modelo de fallback:' });
           config.model = config.fallbackModel;
           delete config.fallbackModel; // Prevent infinite fallback
         }
@@ -511,7 +511,7 @@ METADADOS ADICIONAIS:`;
           return null;
       }
     } catch (_error) {
-      logError(error, "${ICONS.WARNING} Cache check failed:", { component: "refactored" });
+      logError(error, '${ICONS.WARNING} Cache check failed:', { component: 'refactored' });
       return null;
     }
   }
@@ -544,7 +544,7 @@ METADADOS ADICIONAIS:`;
           break;
       }
     } catch (_error) {
-      logError(error, "${ICONS.WARNING} Cache save failed:", { component: "refactored" });
+      logError(error, '${ICONS.WARNING} Cache save failed:', { component: 'refactored' });
     }
   }
 

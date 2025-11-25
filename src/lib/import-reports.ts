@@ -161,7 +161,7 @@ export class ImportReportGenerator {
    * Gera relatório de comparação entre sistemas
    */
   async generateComparisonReport(workspaceId: string): Promise<ImportReport> {
-    log.info({ msg: "Gerando relatório de comparação de sistemas" });
+    log.info({ msg: 'Gerando relatório de comparação de sistemas' });
 
     const imports = await this.fetchImports(workspaceId);
     const systemStats = await this.generateSystemComparison(imports);
@@ -761,4 +761,4 @@ export function createReportGenerator(): ImportReportGenerator {
   return new ImportReportGenerator();
 }
 
-log.info({ msg: "Sistema de relatórios carregado" });
+log.info({ msg: 'Sistema de relatórios carregado' });

@@ -337,7 +337,7 @@ export class TimelineEnricherService {
         cost: this.config.enrichmentCreditCost,
       };
     } catch (_error) {
-      logError(error, "❌ Erro ao enriquecer descrição:", { component: "refactored" });
+      logError(error, '❌ Erro ao enriquecer descrição:', { component: 'refactored' });
       // Fallback: retornar descrição original
       throw error;
     }

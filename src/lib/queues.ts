@@ -106,7 +106,7 @@ export const rollbackQueue = getRollbackQueue;
  * NOTE: Cron jobs removidos - usar Vercel cron ou schedule direto na API
  */
 export async function setupRecurringJobs() {
-  log.info({ msg: "🔄 Recurring jobs setup skipped - using Vercel cron jobs instead" });
+  log.info({ msg: '🔄 Recurring jobs setup skipped - using Vercel cron jobs instead' });
   // All recurring jobs moved to vercel.json crons or direct API scheduling
 }
 
@@ -222,7 +222,7 @@ export async function getQueuesStats() {
 export async function pauseAllQueues() {
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.pause()));
-  log.info({ msg: "⏸️ All queues paused" });
+  log.info({ msg: '⏸️ All queues paused' });
 }
 
 /**
@@ -231,7 +231,7 @@ export async function pauseAllQueues() {
 export async function resumeAllQueues() {
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.resume()));
-  log.info({ msg: "▶️ All queues resumed" });
+  log.info({ msg: '▶️ All queues resumed' });
 }
 
 /**
@@ -246,14 +246,14 @@ export async function clearAllQueues() {
   await Promise.all(allQueues.map(queue => queue.clean(0, 'completed')));
   await Promise.all(allQueues.map(queue => queue.clean(0, 'failed')));
 
-  log.info({ msg: "🧹 All queues cleared" });
+  log.info({ msg: '🧹 All queues cleared' });
 }
 
 /**
  * Fecha todas as conexões gracefully
  */
 export async function closeAllQueues() {
-  log.info({ msg: "🔄 Closing all queues..." });
+  log.info({ msg: '🔄 Closing all queues...' });
 
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.close()));
@@ -263,7 +263,7 @@ export async function closeAllQueues() {
     await bullRedis.disconnect();
   }
 
-  log.info({ msg: "✅ All queues closed successfully" });
+  log.info({ msg: '✅ All queues closed successfully' });
 }
 
 // Process exit handlers

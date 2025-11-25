@@ -84,7 +84,7 @@ const CreateProcessSchema = z.object({
 });
 
 // Schema for future update endpoint implementation
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+ 
 const UpdateProcessSchema = z.object({
   court: z.string().min(1).optional(),
   clientName: z.string().min(1).optional(),

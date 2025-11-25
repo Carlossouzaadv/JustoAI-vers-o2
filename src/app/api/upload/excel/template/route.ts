@@ -18,7 +18,7 @@ import { ICONS } from '@/lib/icons';
  * GET /api/upload/excel/template
  * Retorna arquivo Excel com template para preenchimento
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   console.log(`${ICONS.PROCESS} Gerando template de Excel...`);
 
   try {

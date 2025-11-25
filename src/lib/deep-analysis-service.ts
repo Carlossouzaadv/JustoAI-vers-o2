@@ -305,7 +305,7 @@ export class DeepAnalysisService {
       log.info({ msg: '${ICONS.PROCESS} Extraindo texto do PDF: ${fileName}', component: 'deepAnalysisService' });
 
       // Usar require para contornar problemas ESM/CJS
-      // eslint-disable-next-line @typescript-eslint/no-var-requires,@typescript-eslint/no-require-imports,global-require
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const pdfParse = require('pdf-parse');
 
       // Parse PDF e extrai texto

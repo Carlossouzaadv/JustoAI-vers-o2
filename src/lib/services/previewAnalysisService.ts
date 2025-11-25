@@ -72,7 +72,7 @@ export async function generatePreview(
   ];
 
   try {
-    log.info({ msg: "[Preview] Gerando preview para case ..." });
+    log.info({ msg: '[Preview] Gerando preview para case ...' });
 
     // ============================================================
     // 1. PREPARAR TEXTO (Limitar para velocidade)
@@ -80,7 +80,7 @@ export async function generatePreview(
 
     const limitedText = cleanText.substring(0, MAX_TEXT_LENGTH);
 
-    log.info({ msg: "[Preview] Texto limitado:  chars (original: )" });
+    log.info({ msg: '[Preview] Texto limitado:  chars (original: )' });
 
     // ============================================================
     // 2. CONSTRUIR PROMPT ESTRITO
@@ -97,7 +97,7 @@ export async function generatePreview(
 
     for (const { tier, name } of modelStrategy) {
       try {
-        log.info({ msg: "[Preview] Tentativa com Gemini ..." });
+        log.info({ msg: '[Preview] Tentativa com Gemini ...' });
 
         // Call Gemini API - returns unknown (JSON parsed)
         const responseData = await gemini.generateJsonContent(prompt, {
@@ -135,8 +135,8 @@ export async function generatePreview(
 
         const duration = Date.now() - startTime;
 
-        log.info({ msg: "[Preview] Preview gerado com  em ms" });
-        log.info({ msg: "[Preview] Movimentos extraídos:" });
+        log.info({ msg: '[Preview] Preview gerado com  em ms' });
+        log.info({ msg: '[Preview] Movimentos extraídos:' });
 
         return {
           success: true,
@@ -147,7 +147,7 @@ export async function generatePreview(
 
       } catch (_error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        log.warn({ msg: "[Preview] Falha com :" });
+        log.warn({ msg: '[Preview] Falha com :' });
 
         // Continuar para próximo modelo se não for a última tentativa
         if (tier === ModelTier.PRO) {
@@ -162,7 +162,7 @@ export async function generatePreview(
   } catch (_error) {
     const duration = Date.now() - startTime;
 
-    logError(error, "${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:', { component: 'refactored' });
 
     return {
       success: false,

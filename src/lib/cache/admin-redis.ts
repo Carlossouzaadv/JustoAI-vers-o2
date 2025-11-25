@@ -33,7 +33,7 @@ function getAdminRedis() {
  */
 function handleRedisError(operation: string, error: unknown): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  logError(errorMessage, "AdminCache Redis ${operation} failed:", { component: "refactored" });
+  logError(errorMessage, 'AdminCache Redis ${operation} failed:', { component: 'refactored' });
   // Silently continue - caller will recompute if needed
 }
 
@@ -102,7 +102,7 @@ export async function withAdminCache<T>(
           return parsed as T;
         }
       } catch (_parseError) {
-        logError(parseError, "AdminCache JSON parse error for key ${key}:", { component: "refactored" });
+        logError(parseError, 'AdminCache JSON parse error for key ${key}:', { component: 'refactored' });
         // Continue to recompute
       }
     }

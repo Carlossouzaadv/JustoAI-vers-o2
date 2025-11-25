@@ -239,7 +239,7 @@ export class ReportCustomizationManager {
     profileData: Partial<CustomizationProfile>
   ): Promise<CustomizationProfile> {
     try {
-      log.info({ msg: "Criando perfil de customização:" });
+      log.info({ msg: 'Criando perfil de customização:' });
 
       // Se é o primeiro perfil, marca como padrão
       const existingProfiles = await this.getProfilesByWorkspace(workspaceId);
@@ -308,11 +308,11 @@ export class ReportCustomizationManager {
         }
       });
 
-      log.info({ msg: "Perfil criado:" });
+      log.info({ msg: 'Perfil criado:' });
       return profile as CustomizationProfile;
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao criar perfil:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao criar perfil:', { component: 'refactored' });
       throw error;
     }
   }
@@ -365,7 +365,7 @@ export class ReportCustomizationManager {
     updates: Partial<CustomizationProfile>
   ): Promise<CustomizationProfile> {
     try {
-      log.info({ msg: "Atualizando perfil:" });
+      log.info({ msg: 'Atualizando perfil:' });
 
       // Se está marcando como padrão, desmarcar outros do mesmo workspace
       if (updates.isDefault) {
@@ -390,11 +390,11 @@ export class ReportCustomizationManager {
         }
       });
 
-      log.info({ msg: "Perfil atualizado:" });
+      log.info({ msg: 'Perfil atualizado:' });
       return profile as CustomizationProfile;
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao atualizar perfil:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao atualizar perfil:', { component: 'refactored' });
       throw error;
     }
   }
@@ -404,7 +404,7 @@ export class ReportCustomizationManager {
    */
   async deleteProfile(profileId: string): Promise<void> {
     try {
-      log.info({ msg: "Removendo perfil:" });
+      log.info({ msg: 'Removendo perfil:' });
 
       const profile = await this.getProfileById(profileId);
       if (!profile) {
@@ -425,10 +425,10 @@ export class ReportCustomizationManager {
         where: { id: profileId }
       });
 
-      log.info({ msg: "Perfil removido:" });
+      log.info({ msg: 'Perfil removido:' });
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao remover perfil:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao remover perfil:', { component: 'refactored' });
       throw error;
     }
   }
@@ -446,7 +446,7 @@ export class ReportCustomizationManager {
     mimeType: string
   ): Promise<LogoUploadResult> {
     try {
-      log.info({ msg: "Processando upload de logo..." });
+      log.info({ msg: 'Processando upload de logo...' });
 
       // Validar tipo de arquivo
       if (!['image/jpeg', 'image/png', 'image/svg+xml'].includes(mimeType)) {
@@ -481,7 +481,7 @@ export class ReportCustomizationManager {
         logoHeight: height
       });
 
-      log.info({ msg: "Logo salvo (KB)" });
+      log.info({ msg: 'Logo salvo (KB)' });
 
       return {
         success: true,
@@ -492,7 +492,7 @@ export class ReportCustomizationManager {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro no upload de logo:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro no upload de logo:', { component: 'refactored' });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -509,7 +509,7 @@ export class ReportCustomizationManager {
       logoBase64: undefined
     });
 
-    log.info({ msg: "Logo removido do perfil:" });
+    log.info({ msg: 'Logo removido do perfil:' });
   }
 
   // ================================

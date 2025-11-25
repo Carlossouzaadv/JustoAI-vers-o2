@@ -55,7 +55,7 @@ export async function getAlertCounts(workspaceId: string): Promise<{ unreadCount
       criticalCount
     };
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Erro ao contar alertas do workspace ${workspaceId}:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Erro ao contar alertas do workspace ${workspaceId}:', { component: 'refactored' });
     // Retornar zeros em caso de erro (fail-safe)
     return {
       unreadCount: 0,
@@ -81,7 +81,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
 
     // 2. Validar dados com type guard
     if (!isAlertCountData(counts)) {
-      log.error({ msg: "Dados de alerta inválidos para workspace" });
+      log.error({ msg: 'Dados de alerta inválidos para workspace' });
       return;
     }
 
@@ -101,7 +101,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
       `${counts.unreadCount} não lido${counts.unreadCount !== 1 ? 's' : ''}`
     );
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Erro ao enviar atualização de alertas para ${workspaceId}:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Erro ao enviar atualização de alertas para ${workspaceId}:', { component: 'refactored' });
     // Não lançar erro (fail-safe)
   }
 }
@@ -114,7 +114,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
  * @param workspaceIds - Array de IDs de workspace
  */
 export async function broadcastAlertCountUpdateBatch(workspaceIds: string[]): Promise<void> {
-  log.info({ msg: "Enviando atualização de alertas para  workspace(s)" });
+  log.info({ msg: 'Enviando atualização de alertas para  workspace(s)' });
 
   // Enviar em paralelo (Promise.all é seguro pois cada broadcast é independente)
   const promises = workspaceIds.map(workspaceId => broadcastAlertCountUpdate(workspaceId));

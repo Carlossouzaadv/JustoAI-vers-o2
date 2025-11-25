@@ -253,7 +253,7 @@ export async function performFullProcessRequest(
         }
       }
     } catch (dbError) {
-      logError(dbError, "OnboardingError Erro ao registrar erro no banco:", { component: "refactored" });
+      logError(dbError, 'OnboardingError Erro ao registrar erro no banco:', { component: 'refactored' });
     }
 
     // Record failure metrics

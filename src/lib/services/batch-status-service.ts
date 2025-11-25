@@ -204,7 +204,7 @@ export class BatchStatusService {
         return (errorSummary[keyB] || 0) - (errorSummary[keyA] || 0);
       });
     } catch (_error) {
-      logError(error, "Erro ao processar erros do batch:", { component: "refactored" });
+      logError(error, 'Erro ao processar erros do batch:', { component: 'refactored' });
     }
 
     return { errorSummary, topErrors };

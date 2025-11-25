@@ -118,7 +118,7 @@ export class TextCleaner {
       return null;
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao extrair número CNJ:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao extrair número CNJ:', { component: 'refactored' });
       return null;
     }
   }
@@ -190,7 +190,7 @@ export class TextCleaner {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na limpeza do documento:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na limpeza do documento:', { component: 'refactored' });
 
       return {
         cleanedText: text,

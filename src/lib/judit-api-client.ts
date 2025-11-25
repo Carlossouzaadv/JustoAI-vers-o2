@@ -257,7 +257,7 @@ class CircuitBreaker {
     if (this.state === 'open') {
       if (Date.now() - this.lastFailureTime > this.openTimeMs) {
         this.state = 'half-open';
-        log.info({ msg: "Circuit breaker moving to half-open state" });
+        log.info({ msg: 'Circuit breaker moving to half-open state' });
       } else {
         throw new Error('Circuit breaker is open');
       }
@@ -280,7 +280,7 @@ class CircuitBreaker {
     if (this.state === 'half-open') {
       this.state = 'closed';
       this.failureCount = 0;
-      log.info({ msg: "Circuit breaker closed" });
+      log.info({ msg: 'Circuit breaker closed' });
     }
   }
 
@@ -294,7 +294,7 @@ class CircuitBreaker {
 
     if (totalRequests >= this.minRequests && errorRate >= this.threshold) {
       this.state = 'open';
-      log.error({ msg: "Circuit breaker opened (error rate: %)" });
+      log.error({ msg: 'Circuit breaker opened (error rate: %)' });
     }
   }
 
@@ -376,7 +376,7 @@ export class JuditApiClient {
    * Cria tracking para processo (webhook automático)
    */
   async createTracking(processNumber: string, callbackUrl: string): Promise<JuditTracking> {
-    log.info({ msg: "Creating Judit tracking for process" });
+    log.info({ msg: 'Creating Judit tracking for process' });
 
     return await this.circuitBreaker.execute(async () => {
       await this.rateLimiter.waitForTokens(1);
@@ -447,7 +447,7 @@ export class JuditApiClient {
     batchId?: string,
     withAttachments = false
   ): Promise<{ requestId: string; processNumber: string }[]> {
-    log.info({ msg: "Searching  processes in batch" });
+    log.info({ msg: 'Searching  processes in batch' });
 
     const requests: { requestId: string; processNumber: string }[] = [];
 
@@ -456,7 +456,7 @@ export class JuditApiClient {
 
     for (let i = 0; i < subbatches.length; i++) {
       const subbatch = subbatches[i];
-      log.info({ msg: "Processing subbatch / ( processes)" });
+      log.info({ msg: 'Processing subbatch / ( processes)' });
 
       // Processar subbatch com concorrência limitada
       const subbatchPromises = subbatch.map(processNumber =>
@@ -554,7 +554,7 @@ export class JuditApiClient {
     workspaceId: string,
     batchId?: string
   ): Promise<JuditResponse> {
-    log.info({ msg: "Polling for result:" });
+    log.info({ msg: 'Polling for result:' });
 
     let attempts = 0;
     const maxAttempts = JUDIT_CONFIG.MAX_POLLING_ATTEMPTS;
@@ -570,7 +570,7 @@ export class JuditApiClient {
         this.updateStats(true, responseTime);
 
         if (response.status === 'completed') {
-          log.info({ msg: "Request completed:" });
+          log.info({ msg: 'Request completed:' });
 
           // Registrar telemetria de conclusão
           this.recordTelemetry({
@@ -601,7 +601,7 @@ export class JuditApiClient {
         }
 
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Polling attempt ${attempts + 1} failed:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Polling attempt ${attempts + 1} failed:', { component: 'refactored' });
 
         // Registrar telemetria de erro
         this.recordTelemetry({
@@ -636,7 +636,7 @@ export class JuditApiClient {
     processNumber: string,
     workspaceId: string
   ): Promise<JuditResponse> {
-    log.info({ msg: "Searching with attachments (additional cost):" });
+    log.info({ msg: 'Searching with attachments (additional cost):' });
 
     // Confirmar se workspace tem permissão/créditos para attachments
     const hasPermission = await this.checkAttachmentPermission(workspaceId);
@@ -730,7 +730,7 @@ export class JuditApiClient {
           const retryAfter = response.headers.get('Retry-After');
           const delay = retryAfter ? parseInt(retryAfter) * 1000 : this.calculateBackoffDelay(attempt);
 
-          log.warn({ msg: "Rate limit hit, retrying after ms (attempt )" });
+          log.warn({ msg: 'Rate limit hit, retrying after ms (attempt )' });
 
           const error = new JuditApiError('Rate limit exceeded', true, 429);
           error.retryAfter = delay;
@@ -815,7 +815,7 @@ export class JuditApiClient {
         const isLastAttempt = attempt === JUDIT_CONFIG.MAX_RETRY_ATTEMPTS;
 
         if (!isRetryable || isLastAttempt) {
-          logError(error, "${ICONS.ERROR} Non-retryable error or max attempts reached:", { component: "refactored" });
+          logError(error, '${ICONS.ERROR} Non-retryable error or max attempts reached:', { component: 'refactored' });
           throw error;
         }
 
@@ -923,7 +923,7 @@ export class JuditApiClient {
         }
       });
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Failed to record telemetry:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Failed to record telemetry:', { component: 'refactored' });
     }
   }
 

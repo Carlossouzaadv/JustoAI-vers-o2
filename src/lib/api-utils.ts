@@ -162,7 +162,7 @@ export function validateQuery<T>(
 export async function requireAuth(_request: NextRequest) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
-    log.info({ msg: "⚠️ Development mode: Bypassing API auth validation" })
+    log.info({ msg: '⚠️ Development mode: Bypassing API auth validation' })
     return {
       user: {
         id: 'dev-user',
@@ -207,7 +207,7 @@ export async function requireAuth(_request: NextRequest) {
 export async function requireWorkspaceAccess(userId: string, workspaceId: string) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
-    log.info({ msg: "⚠️ Development mode: Bypassing workspace access check" })
+    log.info({ msg: '⚠️ Development mode: Bypassing workspace access check' })
     return { hasAccess: true, error: null }
   }
 
@@ -240,7 +240,7 @@ export function withErrorHandler(handler: RouteHandler): RouteHandler {
     try {
       return await handler(request, context)
     } catch (_error) {
-      logError(error, "API Error:", { component: "refactored" })
+      logError(error, 'API Error:', { component: 'refactored' })
 
       if (error instanceof Error) {
         return errorResponse(error.message, 500)

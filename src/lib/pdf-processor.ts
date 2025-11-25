@@ -34,7 +34,7 @@ function log(prefix: string, message: string, data?: Record<string, unknown>) {
   if (data) {
     console.log(`[${timestamp}] ${prefix} ${message}`, JSON.stringify(data, null, 2));
   } else if (process.env.NODE_ENV === 'development' || DEBUG || message.includes('Error')) {
-    log.info({ msg: "[]" });
+    log.info({ msg: '[]' });
   }
 }
 
@@ -44,7 +44,7 @@ function getPdfProcessorUrl(): string {
 
   // Log da URL (sem valores sensíveis)
   if (DEBUG) {
-    log.info({ msg: "PDF_PROCESSOR_URL configurada como:" });
+    log.info({ msg: 'PDF_PROCESSOR_URL configurada como:' });
   }
 
   return url;
@@ -96,7 +96,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promis
         }
 
         const errorMsg = `HTTP ${response.status}: ${errorDetails.substring(0, 200)}`;
-        log.error({ msg: "PDF extraction failed:" });
+        log.error({ msg: 'PDF extraction failed:' });
 
         // Log detalhado para debugging (mais conciso)
         log(`${ICONS.ERROR}`, `Railway error (${response.status})`, {
@@ -126,7 +126,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promis
     const duration = Date.now() - startTime;
     const errorMsg = getErrorMessage(error);
 
-    log.error({ msg: "Railway error (ms):" });
+    log.error({ msg: 'Railway error (ms):' });
 
     log(`${ICONS.ERROR}`, `Erro ao chamar Railway`, {
       error: errorMsg,
@@ -142,7 +142,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promis
 
 // Type declaration for extracted PDF data
 // Note: Kept for future PDF parsing needs
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+ 
 interface PDFData {
   text: string;
   numpages: number;
@@ -264,7 +264,7 @@ export class PDFProcessor {
 
     } catch (_error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      log.error({ msg: "Extraction error:" });
+      log.error({ msg: 'Extraction error:' });
       throw new Error(`Extraction failed: ${errorMsg}`);
     }
   }
@@ -290,7 +290,7 @@ export class PDFProcessor {
       return fullText;
     } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      log.error({ msg: "Primary extraction failed:" });
+      log.error({ msg: 'Primary extraction failed:' });
       return '';
     }
   }
@@ -300,11 +300,11 @@ export class PDFProcessor {
    */
   private async extractWithFallback(_buffer: Buffer): Promise<string> {
     try {
-      log.info({ msg: "🔄 Tentando extração fallback..." });
+      log.info({ msg: '🔄 Tentando extração fallback...' });
       // Implementação básica de fallback
       return '';
     } catch (_error) {
-      logError(error, "❌ Erro no método fallback:", { component: "refactored" });
+      logError(error, '❌ Erro no método fallback:', { component: 'refactored' });
       return '';
     }
   }
@@ -500,7 +500,7 @@ export class PDFProcessor {
       };
     } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      logError(errorMsg, "❌ Erro ao extrair metadados:", { component: "refactored" });
+      logError(errorMsg, '❌ Erro ao extrair metadados:', { component: 'refactored' });
       return {
         pages: 0,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
@@ -519,14 +519,14 @@ export class PDFProcessor {
       const usedMB = Math.round(usage.rss / 1024 / 1024);
 
       if (usedMB > 400) {
-        log.warn({ msg: "⚠️ HIGH MEMORY USAGE: MB -" });
+        log.warn({ msg: '⚠️ HIGH MEMORY USAGE: MB -' });
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
-          log.info({ msg: "🧹 Garbage collection forçado" });
+          log.info({ msg: '🧹 Garbage collection forçado' });
         }
       } else {
-        log.info({ msg: "📊 Memory usage: MB -" });
+        log.info({ msg: '📊 Memory usage: MB -' });
       }
     }
   }
@@ -729,7 +729,7 @@ export class PDFProcessor {
 
     } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      logError(errorMsg, "⚠️ Erro ao extrair informações básicas:", { component: "refactored" });
+      logError(errorMsg, '⚠️ Erro ao extrair informações básicas:', { component: 'refactored' });
     }
 
     return info;
@@ -742,7 +742,7 @@ export class PDFProcessor {
     try {
       // Validate pdfData structure using type guard
       if (!isPDFData(pdfData)) {
-        log.warn({ msg: "Invalid PDF data structure for image detection" });
+        log.warn({ msg: 'Invalid PDF data structure for image detection' });
         return false;
       }
 
@@ -774,7 +774,7 @@ export class PDFProcessor {
       return hasImageMarkers;
     } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      logError(errorMsg, "Erro ao detectar imagens:", { component: "refactored" });
+      logError(errorMsg, 'Erro ao detectar imagens:', { component: 'refactored' });
       return false;
     }
   }
@@ -864,7 +864,7 @@ export class PDFProcessor {
       return version;
 
     } catch (_error) {
-      logError(error, "Erro ao salvar versão da análise:", { component: "refactored" });
+      logError(error, 'Erro ao salvar versão da análise:', { component: 'refactored' });
       throw error;
     }
   }

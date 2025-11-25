@@ -75,7 +75,7 @@ export class DOCXTemplateEngine {
     const startTime = Date.now();
 
     try {
-      log.info({ msg: "Generating DOCX:" });
+      log.info({ msg: 'Generating DOCX:' });
 
       const customization = options.customization || this.getDefaultCustomization();
 
@@ -140,7 +140,7 @@ export class DOCXTemplateEngine {
       const stats = await fs.stat(outputPath);
       const fileSize = stats.size;
 
-      log.info({ msg: "DOCX generated successfully:  bytes" });
+      log.info({ msg: 'DOCX generated successfully:  bytes' });
 
       return {
         success: true,
@@ -150,7 +150,7 @@ export class DOCXTemplateEngine {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} DOCX generation failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} DOCX generation failed:', { component: 'refactored' });
       return {
         success: false,
         filePath: '',

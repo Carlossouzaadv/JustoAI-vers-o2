@@ -439,7 +439,7 @@ describe('Batch Dashboard Integration Tests', () => {
 
       try {
         await BatchStatusService.getBatchStatus('batch-123');
-      } catch (err) {
+      } catch (_err) {
         // First call failed
       }
 

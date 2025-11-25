@@ -51,11 +51,11 @@ export class TokenBucketRateLimiter {
 
     if (this.tokens >= tokens) {
       this.tokens -= tokens;
-      log.info({ msg: "Token consumido. Restantes: /" });
+      log.info({ msg: 'Token consumido. Restantes: /' });
       return true;
     }
 
-    log.info({ msg: "Rate limit atingido. Tokens disponíveis: , necessários:" });
+    log.info({ msg: 'Rate limit atingido. Tokens disponíveis: , necessários:' });
     return false;
   }
 
@@ -125,11 +125,11 @@ export class ExponentialBackoffRetry {
 
     for (let attempt = 1; attempt <= this.options.maxAttempts; attempt++) {
       try {
-        log.info({ msg: "- Tentativa /" });
+        log.info({ msg: '- Tentativa /' });
 
         const result = await fn();
 
-        log.info({ msg: "- Sucesso na tentativa" });
+        log.info({ msg: '- Sucesso na tentativa' });
         return {
           success: true,
           data: result,
@@ -139,20 +139,20 @@ export class ExponentialBackoffRetry {
 
       } catch (_error) {
         lastError = _error instanceof Error ? _error : new Error(String(_error));
-        log.info({ msg: "- Falha na tentativa :" });
+        log.info({ msg: '- Falha na tentativa :' });
 
         // Se não é a última tentativa, esperar antes de tentar novamente
         if (attempt < this.options.maxAttempts) {
           const delay = this.calculateDelay(attempt);
           totalDelay += delay;
 
-          log.info({ msg: "Aguardando ms antes da próxima tentativa..." });
+          log.info({ msg: 'Aguardando ms antes da próxima tentativa...' });
           await this.sleep(delay);
         }
       }
     }
 
-    log.info({ msg: "- Todas as tentativas falharam" });
+    log.info({ msg: '- Todas as tentativas falharam' });
     return {
       success: false,
       error: lastError?.message || 'Erro desconhecido',
@@ -211,7 +211,7 @@ export class RateLimitedApiClient {
       const waitTime = this.rateLimiter.getWaitTime(tokens);
 
       if (waitTime > 0) {
-        log.info({ msg: "Rate limit: aguardando ms para" });
+        log.info({ msg: 'Rate limit: aguardando ms para' });
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }

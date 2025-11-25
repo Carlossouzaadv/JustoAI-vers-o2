@@ -435,7 +435,7 @@ export function createCompressionMiddleware(options: CompressionOptions = {}) {
             Object.assign(file, fileWithMetadata);
           }
         } catch (_error) {
-          logError(error, "Compression middleware error:", { component: "refactored" });
+          logError(error, 'Compression middleware error:', { component: 'refactored' });
           // Continuar sem falhar se compressão falhar
         }
       }
@@ -543,7 +543,7 @@ export async function saveToCompressionCache(inputPath: string, compressedPath: 
     await fs.copyFile(compressedPath, finalCachePath);
   } catch (_error) {
     // Falha no cache não deve afetar operação principal
-    logError(error, "Failed to save to compression cache:", { component: "refactored" });
+    logError(error, 'Failed to save to compression cache:', { component: 'refactored' });
   }
 }
 

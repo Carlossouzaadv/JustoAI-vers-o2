@@ -244,10 +244,10 @@ export function debugSourcesConfig(): void {
   console.group('📊 Timeline Sources Configuration');
 
   Object.values(TimelineSource).forEach((source) => {
-    log.info({ msg: "\n" });
-    log.info({ msg: "Priority: /10" });
-    log.info({ msg: "Badge:" });
-    log.info({ msg: "Description:" });
+    log.info({ msg: '\n' });
+    log.info({ msg: 'Priority: /10' });
+    log.info({ msg: 'Badge:' });
+    log.info({ msg: 'Description:' });
   });
 
   console.groupEnd();

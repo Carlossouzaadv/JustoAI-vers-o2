@@ -1137,4 +1137,4 @@ export class DataValidator {
   }
 }
 
-log.info({ msg: "Sistema de mapeamentos carregado com  sistemas suportados" });
+log.info({ msg: 'Sistema de mapeamentos carregado com  sistemas suportados' });

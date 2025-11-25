@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     console.log(`${ICONS.INFO} [Webhook Status] Verificando status das requisições JUDIT`);
 

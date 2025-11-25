@@ -93,7 +93,7 @@ export async function validateBullBoardAccess(
 
     // Check if internal admin
     if (isInternalAdmin(user.email)) {
-      log.info({ msg: "Bull Board access granted (INTERNAL) for user  ()" });
+      log.info({ msg: 'Bull Board access granted (INTERNAL) for user  ()' });
       return {
         authorized: true,
         userId,
@@ -116,7 +116,7 @@ export async function validateBullBoardAccess(
     const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
 
     if (!isAdmin) {
-      log.warn({ msg: "Bull Board access denied for user  () - not a workspace admin" });
+      log.warn({ msg: 'Bull Board access denied for user  () - not a workspace admin' });
       return {
         authorized: false,
         userId,
@@ -126,7 +126,7 @@ export async function validateBullBoardAccess(
       };
     }
 
-    log.info({ msg: "Bull Board access granted (WORKSPACE) for user  ()" });
+    log.info({ msg: 'Bull Board access granted (WORKSPACE) for user  ()' });
     return {
       authorized: true,
       userId,
@@ -136,7 +136,7 @@ export async function validateBullBoardAccess(
       role: 'WORKSPACE_ADMIN'
     };
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Error validating Bull Board access:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Error validating Bull Board access:', { component: 'refactored' });
 
     return {
       authorized: false,
@@ -190,7 +190,7 @@ export async function validateBullBoardAccessNextJS(
       role: 'ADMIN'
     };
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Error validating Bull Board access (Next.js):", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Error validating Bull Board access (Next.js):', { component: 'refactored' });
 
     return {
       authorized: false,
@@ -207,7 +207,7 @@ export function validateBullBoardTokenDev(token: string | undefined): boolean {
   const expectedToken = process.env.BULL_BOARD_ACCESS_TOKEN;
 
   if (!expectedToken) {
-    log.warn({ msg: "BULL_BOARD_ACCESS_TOKEN not configured" });
+    log.warn({ msg: 'BULL_BOARD_ACCESS_TOKEN not configured' });
     return false;
   }
 

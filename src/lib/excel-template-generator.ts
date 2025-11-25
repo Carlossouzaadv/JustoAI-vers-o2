@@ -140,11 +140,11 @@ export function generateExcelTemplate(): Buffer {
     // Generate buffer
     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
 
-    log.info({ msg: "Excel template generated successfully" });
+    log.info({ msg: 'Excel template generated successfully' });
     return buffer as Buffer;
   } catch (_error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    logError(errorMsg, "${ICONS.ERROR} Failed to generate Excel template:", { component: "refactored" });
+    logError(errorMsg, '${ICONS.ERROR} Failed to generate Excel template:', { component: 'refactored' });
     throw error;
   }
 }

@@ -43,7 +43,7 @@ function getSupabaseClient(): ReturnType<typeof createClient> {
     }
   });
 
-  log.info({ msg: "[Storage] Supabase client initialized" });
+  log.info({ msg: '[Storage] Supabase client initialized' });
   return supabaseClient;
 }
 
@@ -91,7 +91,7 @@ export async function uploadToStorage(
       });
 
     if (error) {
-      logError(error, "${ICONS.ERROR} Storage Upload failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Storage Upload failed:', { component: 'refactored' });
 
       // If file exists, get its URL anyway
       if (error.message?.includes('duplicate')) {
@@ -113,7 +113,7 @@ export async function uploadToStorage(
     // Get public URL
     const publicUrl = getPublicUrl(bucket, filePath);
 
-    log.info({ msg: "[Storage] File uploaded:" });
+    log.info({ msg: '[Storage] File uploaded:' });
 
     return {
       success: true,
@@ -123,7 +123,7 @@ export async function uploadToStorage(
     };
   } catch (_error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    logError(errorMsg, "${ICONS.ERROR} Storage Upload error:", { component: "refactored" });
+    logError(errorMsg, '${ICONS.ERROR} Storage Upload error:', { component: 'refactored' });
     return {
       success: false,
       error: errorMsg
@@ -251,14 +251,14 @@ export async function deleteFromStorage(
       .remove([filePath]);
 
     if (error) {
-      logError(error, "${ICONS.ERROR} Storage Delete failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Storage Delete failed:', { component: 'refactored' });
       return false;
     }
 
-    log.info({ msg: "[Storage] File deleted:" });
+    log.info({ msg: '[Storage] File deleted:' });
     return true;
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Storage Delete error:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Storage Delete error:', { component: 'refactored' });
     return false;
   }
 }
@@ -276,13 +276,13 @@ export async function listStorageFiles(
       .list(folderPath);
 
     if (error) {
-      logError(error, "${ICONS.ERROR} Storage List failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Storage List failed:', { component: 'refactored' });
       return [];
     }
 
     return data || [];
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Storage List error:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Storage List error:', { component: 'refactored' });
     return [];
   }
 }
@@ -297,7 +297,7 @@ async function ensureBucketExists(bucketName: string): Promise<boolean> {
     const { data: buckets, error: listError } = await getSupabaseClient().storage.listBuckets();
 
     if (listError) {
-      logError(listError, "${ICONS.WARNING} Storage Could not list buckets:", { component: "refactored" });
+      logError(listError, '${ICONS.WARNING} Storage Could not list buckets:', { component: 'refactored' });
       return false;
     }
 
@@ -305,13 +305,13 @@ async function ensureBucketExists(bucketName: string): Promise<boolean> {
 
     if (!bucketExists) {
       log.warn({ msg: "[Storage] Bucket '' does not exist" });
-      log.warn({ msg: "Please create this bucket in Supabase dashboard: https://app.supabase.com" });
+      log.warn({ msg: 'Please create this bucket in Supabase dashboard: https://app.supabase.com' });
       return false;
     }
 
     return true;
   } catch (_error) {
-    logError(error, "${ICONS.WARNING} Storage Bucket check error:", { component: "refactored" });
+    logError(error, '${ICONS.WARNING} Storage Bucket check error:', { component: 'refactored' });
     return false;
   }
 }
@@ -329,13 +329,13 @@ export async function downloadFromStorage(
       .download(filePath);
 
     if (error) {
-      logError(error, "${ICONS.ERROR} Storage Download failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Storage Download failed:', { component: 'refactored' });
       return null;
     }
 
     return Buffer.from(await data.arrayBuffer());
   } catch (_error) {
-    logError(error, "${ICONS.ERROR} Storage Download error:", { component: "refactored" });
+    logError(error, '${ICONS.ERROR} Storage Download error:', { component: 'refactored' });
     return null;
   }
 }

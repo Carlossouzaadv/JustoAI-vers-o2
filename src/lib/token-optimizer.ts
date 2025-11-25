@@ -64,10 +64,10 @@ export class TokenOptimizer {
     const startTime = Date.now();
 
     try {
-      log.info({ msg: "🚀 Iniciando pipeline de otimização completo..." });
+      log.info({ msg: '🚀 Iniciando pipeline de otimização completo...' });
 
       // ETAPA 1: Validação robusta do PDF
-      log.info({ msg: "📋 Validando PDF..." });
+      log.info({ msg: '📋 Validando PDF...' });
       const validation = await this.pdfProcessor.validatePDF(buffer, filename, options.userPlan);
 
       if (!validation.isValid) {
@@ -79,37 +79,37 @@ export class TokenOptimizer {
       }
 
       // ETAPA 2: Extração em cascata
-      log.info({ msg: "🔍 Extraindo texto em cascata..." });
+      log.info({ msg: '🔍 Extraindo texto em cascata...' });
       const extractionResult = await this.pdfProcessor.extractText(buffer);
 
       if (!extractionResult.success) {
         throw new Error('Falha na extração de texto do PDF');
       }
 
-      log.info({ msg: "✅ Texto extraído:  caracteres" });
+      log.info({ msg: '✅ Texto extraído:  caracteres' });
 
       // ETAPA 3: Limpeza inteligente de texto
-      log.info({ msg: "🧹 Aplicando limpeza inteligente..." });
+      log.info({ msg: '🧹 Aplicando limpeza inteligente...' });
       const cleaningData = this.textCleaner.cleanLegalDocument(extractionResult.text);
       const cleaningResult: CleaningResult = {
         originalText: extractionResult.text,
         ...cleaningData
       };
 
-      log.info({ msg: "🎯 Texto limpo: % de redução" });
+      log.info({ msg: '🎯 Texto limpo: % de redução' });
 
       // ETAPA 4: Extração do número do processo
-      log.info({ msg: "🔍 Extraindo número do processo..." });
+      log.info({ msg: '🔍 Extraindo número do processo...' });
       const extractedProcessNumber = this.textCleaner.extractProcessNumber(extractionResult.text);
 
       if (extractedProcessNumber) {
-        log.info({ msg: "📋 Número do processo identificado:" });
+        log.info({ msg: '📋 Número do processo identificado:' });
       } else {
-        log.info({ msg: "⚠️ Número do processo não identificado no documento" });
+        log.info({ msg: '⚠️ Número do processo não identificado no documento' });
       }
 
       // ETAPA 5: Análise de complexidade
-      log.info({ msg: "🧮 Analisando complexidade..." });
+      log.info({ msg: '🧮 Analisando complexidade...' });
       const complexityAnalysis = this.modelRouter.analyzeComplexity(
         cleaningResult.cleanedText,
         validation.metadata.sizeMB
@@ -146,13 +146,13 @@ export class TokenOptimizer {
         qualityScore: this.calculateQualityScore(extractionResult, cleaningResult, complexityAnalysis)
       };
 
-      log.info({ msg: "🎉 Pipeline de otimização concluído!" });
-      log.info({ msg: "📊 Economia: % | Confiança: %" });
+      log.info({ msg: '🎉 Pipeline de otimização concluído!' });
+      log.info({ msg: '📊 Economia: % | Confiança: %' });
 
       return result;
 
     } catch (_error) {
-      logError(error, "❌ Erro no pipeline de otimização:", { component: "refactored" });
+      logError(error, '❌ Erro no pipeline de otimização:', { component: 'refactored' });
       throw error;
     }
   }
@@ -170,7 +170,7 @@ export class TokenOptimizer {
     savingsReport: unknown;
   }> {
 
-    log.info({ msg: "🤖 Iniciando processamento com IA otimizada..." });
+    log.info({ msg: '🤖 Iniciando processamento com IA otimizada...' });
 
     const { cleanedText } = optimizationResult.cleaningResult;
     const { complexityAnalysis } = optimizationResult;
@@ -190,7 +190,7 @@ export class TokenOptimizer {
       inputTokens
     );
 
-    log.info({ msg: "💰 Economia final: % vs modelo mais caro" });
+    log.info({ msg: '💰 Economia final: % vs modelo mais caro' });
 
     return {
       result: aiResult.result,

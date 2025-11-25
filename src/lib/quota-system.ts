@@ -99,7 +99,7 @@ export class QuotaSystem {
         }
       });
 
-      log.info({ msg: "Quota criada para workspace :  relatórios/mês" });
+      log.info({ msg: 'Quota criada para workspace :  relatórios/mês' });
     }
 
     // Return the quota object with all necessary fields
@@ -183,7 +183,7 @@ export class QuotaSystem {
       }
     });
 
-    log.info({ msg: "Quota consumida:  relatório(s) para workspace" });
+    log.info({ msg: 'Quota consumida:  relatório(s) para workspace' });
   }
 
   /**
@@ -200,7 +200,7 @@ export class QuotaSystem {
       }
     });
 
-    log.info({ msg: "Quota devolvida:  relatório(s) para workspace" });
+    log.info({ msg: 'Quota devolvida:  relatório(s) para workspace' });
   }
 
   /**
@@ -225,7 +225,7 @@ export class QuotaSystem {
       }
     });
 
-    log.info({ msg: "Override aplicado ao workspace :" });
+    log.info({ msg: 'Override aplicado ao workspace :' });
   }
 
   /**
@@ -254,7 +254,7 @@ export class QuotaSystem {
         }
       });
 
-      log.info({ msg: "Quota mensal resetada para workspace" });
+      log.info({ msg: 'Quota mensal resetada para workspace' });
     }
   }
 
@@ -381,7 +381,7 @@ export class QuotaSystem {
       }
     });
 
-    log.info({ msg: "Reset mensal:  workspaces atualizados" });
+    log.info({ msg: 'Reset mensal:  workspaces atualizados' });
     return result.count;
   }
 }

@@ -533,7 +533,7 @@ function verifyJuditWebhookSignature(request: NextRequest, body: string): boolea
 }
 
 // Health check endpoint
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   return NextResponse.json({
     status: 'webhook_operational',
     endpoint: '/api/webhook/judit/callback',

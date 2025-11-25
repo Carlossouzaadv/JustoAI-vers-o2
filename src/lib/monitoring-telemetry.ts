@@ -206,7 +206,7 @@ export class MonitoringTelemetry {
         }
       });
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Failed to get monitored processes count:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Failed to get monitored processes count:', { component: 'refactored' });
       return 0;
     }
   }

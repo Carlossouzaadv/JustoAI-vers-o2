@@ -141,7 +141,7 @@ export class ProcessAlertManager {
     for (const movement of movements) {
       // Validar movimento com type guard
       if (!isValidMovement(movement)) {
-        log.warn({ msg: "Movimentação inválida recebida, pulando" });
+        log.warn({ msg: 'Movimentação inválida recebida, pulando' });
         continue;
       }
 
@@ -166,7 +166,7 @@ export class ProcessAlertManager {
           await this.sendAlertNotifications(alert.id);
 
         } catch (_error) {
-          logError(error, "${ICONS.ERROR} Erro ao criar alerta:", { component: "refactored" });
+          logError(error, '${ICONS.ERROR} Erro ao criar alerta:', { component: 'refactored' });
         }
       }
     }
@@ -314,17 +314,17 @@ export class ProcessAlertManager {
     });
 
     if (!alert || alert.recipients.length === 0) {
-      log.info({ msg: "No recipients for alert:" });
+      log.info({ msg: 'No recipients for alert:' });
       return;
     }
 
-    log.info({ msg: "Enfileirando job de notificação para alerta:" });
+    log.info({ msg: 'Enfileirando job de notificação para alerta:' });
 
     try {
       // Enfileirar job de dispatch de notificação
       const job = await addProcessAlertNotificationJob(alertId);
 
-      log.info({ msg: "Alert notification job enqueued: jobId=, alertId=" });
+      log.info({ msg: 'Alert notification job enqueued: jobId=, alertId=' });
 
       // Job será processado de forma assíncrona pelo notification-worker
       // O worker cuidará de:
@@ -334,7 +334,7 @@ export class ProcessAlertManager {
       // - Atualizar status do alerta
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:', { component: 'refactored' });
 
       // Se enfileiramento falhar, ainda assim marcar como tentado
       // (será reprocessado no próximo ciclo)
@@ -570,7 +570,7 @@ export class ProcessAlertManager {
       }
     });
 
-    log.info({ msg: "Alertas antigos removidos:" });
+    log.info({ msg: 'Alertas antigos removidos:' });
     return result.count;
   }
 }

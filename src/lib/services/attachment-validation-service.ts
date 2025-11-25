@@ -83,7 +83,7 @@ export async function validateAttachment(
   const startTime = Date.now();
 
   try {
-    log.info({ msg: "[AttachmentValidation] Iniciando validação:  ( bytes)" });
+    log.info({ msg: '[AttachmentValidation] Iniciando validação:  ( bytes)' });
 
     // ================================================================
     // CHECK 1: ZERO-BYTE
@@ -91,7 +91,7 @@ export async function validateAttachment(
 
     const zeroByteCheck = checkZeroByte(buffer);
     if (!zeroByteCheck.isValid) {
-      log.warn({ msg: "[AttachmentValidation] ❌ ZERO-BYTE:" });
+      log.warn({ msg: '[AttachmentValidation] ❌ ZERO-BYTE:' });
       return zeroByteCheck;
     }
 
@@ -101,7 +101,7 @@ export async function validateAttachment(
 
     const magicNumberCheck = checkMagicNumber(buffer, fileType);
     if (!magicNumberCheck.isValid) {
-      log.warn({ msg: "[AttachmentValidation] ❌ INVALID_TYPE:" });
+      log.warn({ msg: '[AttachmentValidation] ❌ INVALID_TYPE:' });
       return magicNumberCheck;
     }
 
@@ -112,7 +112,7 @@ export async function validateAttachment(
     if (fileType === 'pdf') {
       const pdfCheck = await checkPdfIntegrity(buffer, filename);
       if (!pdfCheck.isValid) {
-        log.warn({ msg: "[AttachmentValidation] ❌ :" });
+        log.warn({ msg: '[AttachmentValidation] ❌ :' });
         return pdfCheck;
       }
     }
@@ -127,14 +127,14 @@ export async function validateAttachment(
     };
 
     const elapsedMs = Date.now() - startTime;
-    log.info({ msg: "[AttachmentValidation] ✅ VÁLIDO:  (ms)" });
+    log.info({ msg: '[AttachmentValidation] ✅ VÁLIDO:  (ms)' });
 
     return result;
 
   } catch (_error) {
     // Erro inesperado durante validação
     const errorMsg = error instanceof Error ? error.message : String(error);
-    logError(errorMsg, "${ICONS.ERROR} AttachmentValidation Erro inesperado:", { component: "refactored" });
+    logError(errorMsg, '${ICONS.ERROR} AttachmentValidation Erro inesperado:', { component: 'refactored' });
 
     return {
       isValid: false,

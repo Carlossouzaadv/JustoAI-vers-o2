@@ -215,7 +215,7 @@ export class ReportDataCollector {
     stats: DataCollectionStats;
   }> {
     const startTime = Date.now();
-    log.info({ msg: "Coletando dados para relatório:" });
+    log.info({ msg: 'Coletando dados para relatório:' });
 
     try {
       // Buscar workspace
@@ -296,11 +296,11 @@ export class ReportDataCollector {
         collectionTime: Date.now() - startTime
       };
 
-      log.info({ msg: "Dados coletados em ms" });
+      log.info({ msg: 'Dados coletados em ms' });
       return { data, stats };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na coleta de dados:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na coleta de dados:', { component: 'refactored' });
       throw error;
     }
   }
@@ -523,7 +523,7 @@ export class ReportDataCollector {
         financialInfo
       };
     } catch (_error) {
-      logError(error, "Erro ao analisar processData:", { component: "refactored" });
+      logError(error, 'Erro ao analisar processData:', { component: 'refactored' });
       return {};
     }
   }
@@ -594,7 +594,7 @@ export class ReportDataCollector {
 
       return Object.keys(financial).length > 0 ? financial : undefined;
     } catch (_error) {
-      logError(error, "Erro ao extrair informações financeiras:", { component: "refactored" });
+      logError(error, 'Erro ao extrair informações financeiras:', { component: 'refactored' });
       return undefined;
     }
   }
@@ -631,7 +631,7 @@ export class ReportDataCollector {
 
       return null;
     } catch (_error) {
-      logError(error, "Erro ao extrair prazo do padrão:", { component: "refactored" });
+      logError(error, 'Erro ao extrair prazo do padrão:', { component: 'refactored' });
       return null;
     }
   }
@@ -686,7 +686,7 @@ export class ReportDataCollector {
 
       return undefined;
     } catch (_error) {
-      logError(error, "Erro ao calcular próximo prazo:", { component: "refactored" });
+      logError(error, 'Erro ao calcular próximo prazo:', { component: 'refactored' });
       return undefined;
     }
   }
@@ -700,7 +700,7 @@ export class ReportDataCollector {
    */
   private async generateAIInsights(processes: ProcessReportData[], summary: Record<string, unknown>): Promise<string[]> {
     try {
-      log.info({ msg: "Gerando insights de IA..." });
+      log.info({ msg: 'Gerando insights de IA...' });
 
       const data = {
         summary,
@@ -727,7 +727,7 @@ export class ReportDataCollector {
       return insights.slice(0, 5); // Máximo 5 insights
 
     } catch (_error) {
-      logError(error, "${ICONS.WARNING} Erro ao gerar insights de IA:", { component: "refactored" });
+      logError(error, '${ICONS.WARNING} Erro ao gerar insights de IA:', { component: 'refactored' });
 
       // Safely build fallback insights from summary data
       const fallbackInsights: string[] = [];

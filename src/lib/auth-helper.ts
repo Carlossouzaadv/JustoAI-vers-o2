@@ -43,7 +43,7 @@ export async function getAuthenticatedUser(request: NextRequest) {
 
     return user;
   } catch (_error) {
-    logError(error, "Auth error in getAuthenticatedUser:", { component: "refactored" });
+    logError(error, 'Auth error in getAuthenticatedUser:', { component: 'refactored' });
     return null;
   }
 }
@@ -87,7 +87,7 @@ export async function getServerUser() {
 
     return user;
   } catch (_error) {
-    logError(error, "Auth error in getServerUser:", { component: "refactored" });
+    logError(error, 'Auth error in getServerUser:', { component: 'refactored' });
     return null;
   }
 }

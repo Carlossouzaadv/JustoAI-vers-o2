@@ -109,7 +109,7 @@ export const timelineConfig = getTimelineConfig();
 try {
   validateTimelineConfig(timelineConfig);
 } catch (_error) {
-  logError(error, "❌ Erro na configuração da Timeline:", { component: "refactored" });
+  logError(error, '❌ Erro na configuração da Timeline:', { component: 'refactored' });
   // Em produção, falhar rápido; em dev, apenas log
   if (process.env.NODE_ENV === 'production') {
     throw error;
@@ -120,11 +120,11 @@ try {
  * Debug: Exibir configuração atual (use apenas em desenvolvimento)
  */
 export function debugTimelineConfig(): void {
-  log.info({ msg: "📊 Timeline Unificada - Configuração Atual:" });
-  log.info({ msg: "✓ Enrichment Threshold:" });
-  log.info({ msg: "✓ Related Threshold:" });
-  log.info({ msg: "✓ Date Proximity: ± dias" });
-  log.info({ msg: "✓ Enrichment Cost:  crédito" });
-  log.info({ msg: "✓ Enrichment Model:" });
-  log.info({ msg: "✓ Enrichment Timeout: ms" });
+  log.info({ msg: '📊 Timeline Unificada - Configuração Atual:' });
+  log.info({ msg: '✓ Enrichment Threshold:' });
+  log.info({ msg: '✓ Related Threshold:' });
+  log.info({ msg: '✓ Date Proximity: ± dias' });
+  log.info({ msg: '✓ Enrichment Cost:  crédito' });
+  log.info({ msg: '✓ Enrichment Model:' });
+  log.info({ msg: '✓ Enrichment Timeout: ms' });
 }

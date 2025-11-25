@@ -51,7 +51,7 @@ export async function recordOnboardingError(
     });
 
     if (!currentCase) {
-      log.error({ msg: "[OnboardingError] Caso não encontrado:" });
+      log.error({ msg: '[OnboardingError] Caso não encontrado:' });
       return;
     }
 
@@ -103,7 +103,7 @@ export async function recordOnboardingError(
       newStatus
     });
   } catch (_error) {
-    logError(error, "OnboardingError Erro ao registrar falha de onboarding:", { component: "refactored" });
+    logError(error, 'OnboardingError Erro ao registrar falha de onboarding:', { component: 'refactored' });
   }
 }
 
@@ -145,7 +145,7 @@ export async function getUnassignedReason(caseId: string): Promise<{
       canRetry: false
     };
   } catch (_error) {
-    logError(error, "OnboardingError Erro ao buscar motivo:", { component: "refactored" });
+    logError(error, 'OnboardingError Erro ao buscar motivo:', { component: 'refactored' });
     return null;
   }
 }
@@ -166,12 +166,12 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
 
     const metadata = (caseData.metadata || {}) as OnboardingMetadata;
     if (metadata.can_retry !== true) {
-      log.warn({ msg: "[OnboardingError] Retry não permitido para caso" });
+      log.warn({ msg: '[OnboardingError] Retry não permitido para caso' });
       return false;
     }
 
     if (!caseData.detectedCnj) {
-      log.error({ msg: "[OnboardingError] CNJ não detectado para caso" });
+      log.error({ msg: '[OnboardingError] CNJ não detectado para caso' });
       return false;
     }
 
@@ -193,10 +193,10 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
       }
     });
 
-    log.info({ msg: "[OnboardingError] Retry iniciado para caso  (CNJ: )" });
+    log.info({ msg: '[OnboardingError] Retry iniciado para caso  (CNJ: )' });
     return true;
   } catch (_error) {
-    logError(error, "OnboardingError Erro ao fazer retry:", { component: "refactored" });
+    logError(error, 'OnboardingError Erro ao fazer retry:', { component: 'refactored' });
     return false;
   }
 }

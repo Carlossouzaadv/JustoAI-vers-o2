@@ -115,7 +115,7 @@ export class ReportScheduler {
     errors: number;
     distributions: DistributionResult[];
   }> {
-    log.info({ msg: "Iniciando scheduler diário de relatórios" });
+    log.info({ msg: 'Iniciando scheduler diário de relatórios' });
 
     const today = new Date();
     const tomorrow = new Date(today);
@@ -123,7 +123,7 @@ export class ReportScheduler {
 
     // Buscar agendamentos para hoje
     const schedules = await this.findSchedulesToRun(today);
-    log.info({ msg: "Encontrados  agendamentos para processar" });
+    log.info({ msg: 'Encontrados  agendamentos para processar' });
 
     const distributions: DistributionResult[] = [];
     let processed = 0;
@@ -139,7 +139,7 @@ export class ReportScheduler {
         );
 
         if (!quotaValidation.allowed) {
-          log.info({ msg: "Quota excedida para workspace :" });
+          log.info({ msg: 'Quota excedida para workspace :' });
 
           // Criar execução com status de erro
           await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation.error || 'Quota excedida');
@@ -205,15 +205,15 @@ export class ReportScheduler {
         scheduled++;
         processed++;
 
-        log.info({ msg: "Agendado relatório  para" });
+        log.info({ msg: 'Agendado relatório  para' });
 
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:', { component: 'refactored' });
         errors++;
       }
     }
 
-    log.info({ msg: "Scheduler concluído:  agendados,  erros" });
+    log.info({ msg: 'Scheduler concluído:  agendados,  erros' });
 
     return {
       processed,
@@ -253,7 +253,7 @@ export class ReportScheduler {
       take: this.config.maxConcurrent
     });
 
-    log.info({ msg: "Executando  relatórios na janela atual" });
+    log.info({ msg: 'Executando  relatórios na janela atual' });
 
     let executed = 0;
     let failed = 0;
@@ -266,7 +266,7 @@ export class ReportScheduler {
         executed++;
         executionIds.push(execution.id);
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Falha na execução ${execution.id}:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Falha na execução ${execution.id}:', { component: 'refactored' });
         failed++;
 
         // Reverter quota se falhou
@@ -276,7 +276,7 @@ export class ReportScheduler {
 
     await Promise.all(promises);
 
-    log.info({ msg: "Janela executada:  sucessos,  falhas" });
+    log.info({ msg: 'Janela executada:  sucessos,  falhas' });
 
     return {
       executed,
@@ -366,7 +366,7 @@ export class ReportScheduler {
         expiresAt: undefined
       });
 
-      log.info({ msg: "Relatório  concluído com sucesso" });
+      log.info({ msg: 'Relatório  concluído com sucesso' });
 
     } catch (_error) {
       // Marcar como falhou
@@ -519,7 +519,7 @@ export class ReportScheduler {
       });
 
       if (!schedule || !recipients || recipients.length === 0) {
-        log.warn({ msg: "[Report] Sem destinatários ou agendamento para notificação" });
+        log.warn({ msg: '[Report] Sem destinatários ou agendamento para notificação' });
         return;
       }
 
@@ -552,9 +552,9 @@ export class ReportScheduler {
         }
       });
 
-      log.info({ msg: "[Report] Notificação enviada para:" });
+      log.info({ msg: '[Report] Notificação enviada para:' });
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Report Erro ao enviar notificação:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Report Erro ao enviar notificação:', { component: 'refactored' });
       // Não lançar erro para não quebrar o fluxo de execução
     }
   }
@@ -577,7 +577,7 @@ export class ReportScheduler {
       }
     });
 
-    log.info({ msg: "Limpeza concluída:  execuções removidas" });
+    log.info({ msg: 'Limpeza concluída:  execuções removidas' });
     return result.count;
   }
 

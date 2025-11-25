@@ -300,7 +300,7 @@ export class JobLogger {
         this.logs.delete(jobId);
       }
 
-      log.info({ msg: "Pruned  old job logs" });
+      log.info({ msg: 'Pruned  old job logs' });
     }
   }
 
@@ -309,7 +309,7 @@ export class JobLogger {
    */
   clear(): void {
     this.logs.clear();
-    log.info({ msg: "Cleared all job logs" });
+    log.info({ msg: 'Cleared all job logs' });
   }
 }
 

@@ -54,7 +54,7 @@ export function captureApiError(
   });
 
   // Log to console as well
-  logError(error, "${ICONS.ERROR} Sentry Error captured:", { component: "refactored" });
+  logError(error, '${ICONS.ERROR} Sentry Error captured:', { component: 'refactored' });
 }
 
 /**
@@ -138,7 +138,7 @@ export function captureSentryMessage(
   }
 
   Sentry.captureMessage(message, level);
-  log.info({ msg: "[Sentry] Message captured:" });
+  log.info({ msg: '[Sentry] Message captured:' });
 }
 
 /**

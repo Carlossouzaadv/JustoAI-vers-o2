@@ -14,16 +14,16 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 export async function connectPrisma() {
   try {
     await prisma.$connect()
-    log.info({ msg: "✅ Connected to database" })
+    log.info({ msg: '✅ Connected to database' })
   } catch (_error) {
-    logError(error, "❌ Failed to connect to database:", { component: "refactored" })
+    logError(error, '❌ Failed to connect to database:', { component: 'refactored' })
     throw error
   }
 }
 
 export async function disconnectPrisma() {
   await prisma.$disconnect()
-  log.info({ msg: "🔌 Disconnected from database" })
+  log.info({ msg: '🔌 Disconnected from database' })
 }
 
 // Default export for compatibility

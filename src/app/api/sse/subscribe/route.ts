@@ -46,7 +46,7 @@ function hasCloseMethod(obj: unknown): obj is { close: () => void } {
  *   console.log('Evento recebido:', message);
  * };
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     // Validar autenticação
     const { user, workspace } = await validateAuthAndGetUser();

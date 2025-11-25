@@ -94,7 +94,7 @@ export class AggregationService {
     const errors: string[] = [];
 
     try {
-      log.info({ msg: "[Daily Aggregation] Starting daily telemetry aggregation..." });
+      log.info({ msg: '[Daily Aggregation] Starting daily telemetry aggregation...' });
 
       // Get all active workspaces
       const workspaces = await prisma.workspace.findMany({
@@ -102,7 +102,7 @@ export class AggregationService {
         where: { status: 'ACTIVE' },
       });
 
-      log.info({ msg: "[Daily Aggregation] Found  active workspaces" });
+      log.info({ msg: '[Daily Aggregation] Found  active workspaces' });
 
       let alertsCreated = 0;
 
@@ -113,17 +113,17 @@ export class AggregationService {
           const newAlerts = await this.evaluateAndCreateAlerts(workspace.id, metrics);
           alertsCreated += newAlerts;
 
-          log.info({ msg: "[Daily Aggregation] Processed workspace :  alerts created" });
+          log.info({ msg: '[Daily Aggregation] Processed workspace :  alerts created' });
         } catch (_error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           errors.push(`Workspace ${workspace.id}: ${errorMsg}`);
-          logError(error, "${ICONS.ERROR} Daily Aggregation Error processing workspace ${workspace.id}:", { component: "refactored" });
+          logError(error, '${ICONS.ERROR} Daily Aggregation Error processing workspace ${workspace.id}:', { component: 'refactored' });
         }
       }
 
       const duration = Date.now() - startTime;
 
-      log.info({ msg: "[Daily Aggregation] Daily aggregation complete in ms" });
+      log.info({ msg: '[Daily Aggregation] Daily aggregation complete in ms' });
 
       return {
         success: true,
@@ -137,7 +137,7 @@ export class AggregationService {
       const duration = Date.now() - startTime;
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
-      logError(error, "${ICONS.ERROR} Daily Aggregation Aggregation failed:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Daily Aggregation Aggregation failed:', { component: 'refactored' });
 
       return {
         success: false,
@@ -359,7 +359,7 @@ export class AggregationService {
         alertsCreated++;
       }
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Aggregation Error evaluating alerts for workspace ${workspaceId}:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Aggregation Error evaluating alerts for workspace ${workspaceId}:', { component: 'refactored' });
     }
 
     return alertsCreated;
@@ -403,13 +403,13 @@ export class AggregationService {
           },
         });
 
-        log.info({ msg: "[Aggregation] Created  alert:" });
+        log.info({ msg: '[Aggregation] Created  alert:' });
         return true;
       }
 
       return false;
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Aggregation Error creating alert:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Aggregation Error creating alert:', { component: 'refactored' });
       return false;
     }
   }

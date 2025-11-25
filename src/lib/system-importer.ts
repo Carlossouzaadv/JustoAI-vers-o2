@@ -218,7 +218,7 @@ export class SystemImporter {
     fileName: string,
     options: Partial<ImportOptions> = {}
   ): Promise<ImportSession> {
-    log.info({ msg: "Iniciando importação:" });
+    log.info({ msg: 'Iniciando importação:' });
 
     // Configurações padrão
     const importOptions: ImportOptions = {
@@ -304,7 +304,7 @@ export class SystemImporter {
 
     try {
       // Fase 1: Análise inteligente do arquivo
-      log.info({ msg: "Analisando estrutura do arquivo..." });
+      log.info({ msg: 'Analisando estrutura do arquivo...' });
       const parseResult = await this.parser.parseFile(buffer, fileName);
 
       if (!parseResult.success) {
@@ -348,7 +348,7 @@ export class SystemImporter {
 
       // Fase 2: Importação dos dados
       if (!importOptions.validateOnly) {
-        log.info({ msg: "Iniciando importação de dados..." });
+        log.info({ msg: 'Iniciando importação de dados...' });
         await this.importData(parseResult, importOptions);
       }
 
@@ -392,7 +392,7 @@ export class SystemImporter {
       return this.session;
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro na importação:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro na importação:', { component: 'refactored' });
 
       this.session.status = 'FAILED';
       this.session.finishedAt = new Date();
@@ -417,7 +417,7 @@ export class SystemImporter {
   cancelImport(): void {
     if (this.session?.status === 'IMPORTING') {
       this.cancelled = true;
-      log.info({ msg: "Cancelando importação..." });
+      log.info({ msg: 'Cancelando importação...' });
     }
   }
 
@@ -473,7 +473,7 @@ export class SystemImporter {
     for (const category of strategy.order) {
       if (this.cancelled) break;
 
-      log.info({ msg: "Importando categoria:" });
+      log.info({ msg: 'Importando categoria:' });
 
       // ================================================================
       // TYPE-SAFE NARROWING: SystemColumnMapping[] -> ColumnMapping[]
@@ -539,7 +539,7 @@ export class SystemImporter {
 
       await this.processBatch(category, batchRows, categoryMappings, systemMapping, options);
 
-      log.info({ msg: "Processado batch / da categoria" });
+      log.info({ msg: 'Processado batch / da categoria' });
     }
   }
 
@@ -628,7 +628,7 @@ export class SystemImporter {
             transformedValue = transformed;
             this.session!.summary.transformationsApplied++;
           } else {
-            log.warn({ msg: "Transformação resultou em tipo inválido:" });
+            log.warn({ msg: 'Transformação resultou em tipo inválido:' });
           }
         });
 
@@ -889,7 +889,7 @@ export class SystemImporter {
     // Verificar que todos os campos fornecidos são permitidos
     for (const key of Object.keys(data)) {
       if (!allowedFields.has(key)) {
-        log.warn({ msg: "Campo não reconhecido em updateImportRecord:" });
+        log.warn({ msg: 'Campo não reconhecido em updateImportRecord:' });
       }
     }
 
@@ -1051,4 +1051,4 @@ export async function getImportStatistics(workspaceId: string) {
   };
 }
 
-log.info({ msg: "Sistema de importação carregado" });
+log.info({ msg: 'Sistema de importação carregado' });

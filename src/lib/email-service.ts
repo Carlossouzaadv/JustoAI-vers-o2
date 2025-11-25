@@ -101,7 +101,7 @@ export class EmailService {
     this.fromEmail = process.env.FROM_EMAIL || 'contato@justoai.com.br';
 
     if (!this.apiKey) {
-      log.warn({ msg: "Resend API key not configured - emails will be simulated" });
+      log.warn({ msg: 'Resend API key not configured - emails will be simulated' });
     }
   }
 
@@ -109,10 +109,10 @@ export class EmailService {
    * Send email notification using predefined templates
    */
   async sendNotification(notification: EmailNotification): Promise<EmailResult> {
-    log.info({ msg: "Enviando notificação por email..." });
+    log.info({ msg: 'Enviando notificação por email...' });
 
     if (!this.apiKey) {
-      log.info({ msg: "Simulando envio de email (API key não configurada)" });
+      log.info({ msg: 'Simulando envio de email (API key não configurada)' });
       return { success: true, messageId: 'simulated-' + Date.now(), provider: 'resend' };
     }
 
@@ -147,7 +147,7 @@ export class EmailService {
       }
 
       const result = await response.json();
-      log.info({ msg: "Email enviado com sucesso:" });
+      log.info({ msg: 'Email enviado com sucesso:' });
 
       return {
         success: true,
@@ -156,7 +156,7 @@ export class EmailService {
       };
 
     } catch (_error) {
-      logError(error, "${ICONS.ERROR} Erro ao enviar email:", { component: "refactored" });
+      logError(error, '${ICONS.ERROR} Erro ao enviar email:', { component: 'refactored' });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',

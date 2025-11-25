@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Credit API POST error:`, error);
+    console.error(`${ICONS.ERROR} Credit API POST error:`, _error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -160,7 +160,7 @@ async function getCreditBalance(workspaceId: string): Promise<NextResponse> {
     });
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Failed to get credit balance:`, error);
+    console.error(`${ICONS.ERROR} Failed to get credit balance:`, _error);
     // Return default balance if service is unavailable
     return NextResponse.json({
       success: true,
@@ -323,7 +323,7 @@ async function purchaseCredits(request: CreditPurchaseRequest): Promise<NextResp
     });
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Credit purchase failed:`, error);
+    console.error(`${ICONS.ERROR} Credit purchase failed:`, _error);
     return NextResponse.json(
       { error: 'Erro no processamento da compra' },
       { status: 500 }
@@ -385,7 +385,7 @@ async function adminAddCredits(request: {
     });
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Admin credit addition failed:`, error);
+    console.error(`${ICONS.ERROR} Admin credit addition failed:`, _error);
     return NextResponse.json(
       { error: 'Erro na adição de créditos' },
       { status: 500 }
@@ -433,7 +433,7 @@ async function simulatePurchase(request: {
     });
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Purchase simulation failed:`, error);
+    console.error(`${ICONS.ERROR} Purchase simulation failed:`, _error);
     return NextResponse.json(
       { error: 'Erro na simulação' },
       { status: 500 }
@@ -556,7 +556,7 @@ async function handlePaymentWebhook(payload: unknown): Promise<NextResponse> {
     }
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Payment webhook failed:`, error);
+    console.error(`${ICONS.ERROR} Payment webhook failed:`, _error);
     return NextResponse.json(
       { error: 'Erro interno no webhook' },
       { status: 500 }

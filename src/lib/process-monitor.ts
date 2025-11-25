@@ -123,7 +123,7 @@ export class ProcessMonitor {
       throw new Error('Já existe uma sessão de monitoramento em execução');
     }
 
-    log.info({ msg: "Iniciando sessão de monitoramento..." });
+    log.info({ msg: 'Iniciando sessão de monitoramento...' });
 
     // Buscar processos que precisam ser sincronizados
     const processesToSync = await this.getProcessesForSync();
@@ -139,7 +139,7 @@ export class ProcessMonitor {
       status: 'RUNNING'
     };
 
-    log.info({ msg: "Encontrados  processos para sincronizar" });
+    log.info({ msg: 'Encontrados  processos para sincronizar' });
 
     const processesUpdated: string[] = [];
     let totalNewMovements = 0;
@@ -168,7 +168,7 @@ export class ProcessMonitor {
 
         // Log de progresso a cada 10 processos
         if (this.session.processed % 10 === 0) {
-          log.info({ msg: "Progresso: / processos" });
+          log.info({ msg: 'Progresso: / processos' });
         }
 
       } catch (_error) {
@@ -183,7 +183,7 @@ export class ProcessMonitor {
         this.session.processed++;
         this.session.failed++;
 
-        logError(error, "${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:', { component: 'refactored' });
       }
 
       // Pequena pausa entre processos para não sobrecarregar APIs
@@ -219,7 +219,7 @@ export class ProcessMonitor {
   cancelCurrentSession(): void {
     if (this.session?.status === 'RUNNING') {
       this.cancelled = true;
-      log.info({ msg: "Cancelando sessão de monitoramento..." });
+      log.info({ msg: 'Cancelando sessão de monitoramento...' });
     }
   }
 
@@ -434,21 +434,21 @@ export class ProcessMonitorScheduler {
       this.stop();
     }
 
-    log.info({ msg: "Iniciando scheduler de monitoramento (intervalo:  minutos)" });
+    log.info({ msg: 'Iniciando scheduler de monitoramento (intervalo:  minutos)' });
 
     this.intervalId = setInterval(async () => {
       try {
-        log.info({ msg: "Executando monitoramento automático..." });
+        log.info({ msg: 'Executando monitoramento automático...' });
         await this.monitor.startMonitoringSession();
       } catch (_error) {
-        logError(error, "${ICONS.ERROR} Erro no monitoramento automático:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro no monitoramento automático:', { component: 'refactored' });
       }
     }, intervalMinutes * 60 * 1000);
 
     // Executar uma vez imediatamente
     setTimeout(() => {
       this.monitor.startMonitoringSession().catch(error => {
-        logError(error, "${ICONS.ERROR} Erro no monitoramento inicial:", { component: "refactored" });
+        logError(error, '${ICONS.ERROR} Erro no monitoramento inicial:', { component: 'refactored' });
       });
     }, 5000); // Aguardar 5 segundos para inicialização
   }
@@ -461,7 +461,7 @@ export class ProcessMonitorScheduler {
       clearInterval(this.intervalId);
       this.intervalId = null;
       this.monitor.cancelCurrentSession();
-      log.info({ msg: "Scheduler de monitoramento parado" });
+      log.info({ msg: 'Scheduler de monitoramento parado' });
     }
   }
 
