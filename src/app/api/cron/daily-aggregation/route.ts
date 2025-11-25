@@ -12,21 +12,26 @@ import { ICONS } from '@/lib/icons';
 // VERIFICATION HEADERS
 // ================================================================
 
-const CRON_SECRET = process.env.CRON_SECRET || 'development-secret';
-
 /**
  * Verify cron request authenticity
+ * CRITICAL: CRON_SECRET must be defined in production
  */
 function verifyCronRequest(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization') || request.headers.get('x-cron-secret');
-
   // In development, allow requests without auth
   if (process.env.NODE_ENV === 'development') {
     return true;
   }
 
-  // In production, require valid secret
-  if (!authHeader || authHeader !== `Bearer ${CRON_SECRET}`) {
+  // In production, require CRON_SECRET to be defined
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error(`${ICONS.ERROR} [Cron] CRON_SECRET not defined in production - rejecting request`);
+    return false;
+  }
+
+  // Verify request has valid secret
+  const authHeader = request.headers.get('authorization') || request.headers.get('x-cron-secret');
+  if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
     console.warn(`${ICONS.WARNING} [Cron] Unauthorized aggregation request`);
     return false;
   }

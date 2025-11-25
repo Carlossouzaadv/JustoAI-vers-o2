@@ -12,16 +12,28 @@ import { ICONS } from '@/lib/icons';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify request is from Vercel (optional - add cron secret validation)
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'development-only';
+    // Verify request is from Vercel with CRON_SECRET
+    // CRITICAL: CRON_SECRET must be defined in production
 
     // Skip auth in development
-    if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (process.env.NODE_ENV !== 'development') {
+      const cronSecret = process.env.CRON_SECRET;
+      if (!cronSecret) {
+        console.error(`${ICONS.ERROR} [CRON] CRON_SECRET not defined in production - rejecting request`);
+        return NextResponse.json(
+          { error: 'Unauthorized - CRON_SECRET not configured' },
+          { status: 401 }
+        );
+      }
+
+      const authHeader = request.headers.get('authorization');
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        console.warn(`${ICONS.WARNING} [CRON] Unauthorized trial-reminders request`);
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
     }
 
     console.log(`${ICONS.CLOCK} [CRON] Starting trial expiration reminder check...`);
