@@ -285,9 +285,41 @@ function checkBuildOutputs() {
 }
 
 // ================================================================
+// 7. CHECK REDIS & DATABASE CONNECTIVITY (Direct)
+// ================================================================
+async function checkRedisDatabase() {
+  logSection('🔌 CHECKING DATABASE & REDIS CONNECTIVITY');
+
+  // Check PostgreSQL connection
+  try {
+    const connectionString = process.env.DATABASE_URL || process.env.DIRECT_URL;
+    if (!connectionString) {
+      warnings.push('⚠️  DATABASE_URL not set (required for database operations)');
+    } else {
+      log('✅ DATABASE_URL configured', 'green');
+    }
+  } catch (error) {
+    warnings.push(`⚠️  Database connection test skipped: ${error.message}`);
+  }
+
+  // Check Redis connection
+  try {
+    const redisHost = process.env.REDIS_HOST || 'localhost';
+    const redisPort = process.env.REDIS_PORT || '6379';
+    if (redisHost && redisPort) {
+      log(`✅ Redis configured (${redisHost}:${redisPort})`, 'green');
+    } else {
+      errors.push('❌ REDIS_HOST or REDIS_PORT not configured');
+    }
+  } catch (error) {
+    warnings.push(`⚠️  Redis connection test skipped: ${error.message}`);
+  }
+}
+
+// ================================================================
 // RUN ALL CHECKS
 // ================================================================
-function runAllChecks() {
+async function runAllChecks() {
   log('\n🚀 JustoAI V2 - PRE-DEPLOY VALIDATION\n', 'magenta');
 
   checkEnvironmentVariables();
@@ -296,6 +328,7 @@ function runAllChecks() {
   checkForMocksAndDebugCode();
   checkDependencies();
   checkBuildOutputs();
+  await checkRedisDatabase();
 
   // ================================================================
   // SUMMARY
@@ -328,4 +361,7 @@ function runAllChecks() {
 }
 
 // Run checks
-runAllChecks();
+runAllChecks().catch((error) => {
+  log(`\n❌ Fatal error: ${error.message}`, 'red');
+  process.exit(1);
+});

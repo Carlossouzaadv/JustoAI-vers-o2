@@ -157,14 +157,20 @@ export async function addProcessAlertNotificationJob(alertId: string) {
 
 /**
  * Adiciona job de rollback atômico para importação em lote
- * Payload: { systemImportId: string, workspaceId: string }
+ * Queue atomic rollback of failed batch import
+ *
+ * @param systemImportId - ID of the system import to rollback
+ * @param workspaceId - Workspace ID that owns the import
+ * @param userId - User ID who initiated the rollback (for audit trail)
+ * Payload: { systemImportId: string, workspaceId: string, userId: string, queuedAt: string }
  */
-export async function addRollbackJob(systemImportId: string, workspaceId: string) {
+export async function addRollbackJob(systemImportId: string, workspaceId: string, userId: string) {
   return await getRollbackQueue().add(
     'rollback',
     {
       systemImportId,
       workspaceId,
+      userId,
       queuedAt: new Date().toISOString(),
     },
     {
