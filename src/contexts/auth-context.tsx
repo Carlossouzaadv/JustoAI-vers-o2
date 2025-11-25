@@ -83,13 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const firstWorkspaceId = userData.workspaces[0].workspaceId;
             setWorkspaceId(firstWorkspaceId);
             setStoredWorkspaceId(firstWorkspaceId);
-
-            console.log('✅ AuthContext loaded:', {
-              user: userData.email,
-              workspace: userData.workspaces[0].workspace.name
-            });
           } else {
-            console.warn('⚠️ User has no workspaces');
             setWorkspaceId(null);
             setStoredWorkspaceId('');
           }
@@ -98,15 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           setWorkspaceId(null);
           clearAllAuthData();
-          console.log('ℹ️ User not authenticated (401)');
         } else {
           setError('Failed to load user data');
-          console.error('Error loading user - status:', response.status);
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Authentication error';
         setError(errorMessage);
-        console.error('Error loading user:', err);
       } finally {
         setLoading(false);
       }
@@ -120,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setWorkspaceId(null);
     setError(null);
     clearAllAuthData();
-    console.log('✅ User logged out');
   };
 
   const value: AuthContextType = {
