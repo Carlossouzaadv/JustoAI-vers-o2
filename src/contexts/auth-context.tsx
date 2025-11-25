@@ -4,25 +4,39 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { getApiUrl } from '@/lib/api-client';
 import { getStoredUser, setStoredUser, getStoredWorkspaceId, setStoredWorkspaceId, clearAllAuthData } from '@/lib/utils/auth-helpers';
 
+interface WorkspaceData {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+}
+
+interface WorkspaceCredits {
+  full: number;
+  fullHeld: number;
+  report: number;
+  reportHeld: number;
+}
+
+interface UserWorkspace {
+  workspaceId: string;
+  workspace: WorkspaceData;
+  credits: WorkspaceCredits;
+}
+
 interface UserWithWorkspaces {
   id: string;
   email: string;
   name: string;
   supabaseId: string;
-  workspaces: Array<{
-    workspaceId: string;
-    workspace: {
-      id: string;
-      name: string;
-      slug: string;
-    };
-  }>;
+  workspaces: UserWorkspace[];
   createdAt: string;
 }
 
 interface AuthContextType {
   user: UserWithWorkspaces | null;
   workspaceId: string | null;
+  currentWorkspace: UserWorkspace | null;
   loading: boolean;
   error: string | null;
   logout: () => void;
@@ -34,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Initialize from localStorage FIRST (sync)
   const [user, setUser] = useState<UserWithWorkspaces | null>(() => {
     if (typeof window === 'undefined') return null;
-    return getStoredUser();
+    return getStoredUser() as UserWithWorkspaces | null;
   });
 
   const [workspaceId, setWorkspaceId] = useState<string | null>(() => {
@@ -44,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Compute current workspace from user and workspaceId
+  const currentWorkspace = user && workspaceId
+    ? (user.workspaces.find(uw => uw.workspaceId === workspaceId) ?? null)
+    : null;
 
   // Load user from API only once, on mount
   useEffect(() => {
@@ -107,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextType = {
     user,
     workspaceId,
+    currentWorkspace,
     loading,
     error,
     logout,
