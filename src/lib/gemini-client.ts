@@ -4,6 +4,7 @@
 // ================================================================
 // Direct integration with Google Gemini API for production use
 
+import { log, logError } from '@/lib/services/logger';
 import { ModelTier, GeminiConfig, GeminiResponse, GeminiError } from './ai-model-types';
 import { getErrorMessage, isGeminiErrorResponse } from './types/type-guards';
 
@@ -101,7 +102,7 @@ export class GeminiClient {
 
     this.updateRateLimit(finalConfig.model);
 
-    console.log(`🤖 Calling Gemini API (STREAM): ${modelName}`);
+    log.debug({ msg: 'Calling Gemini API (STREAM)', component: 'gemini-client', modelName, model: finalConfig.model });
 
     // PADRÃO-OURO: Retorna async generator (AsyncIterable)
     return (async function* () {
@@ -169,7 +170,7 @@ export class GeminiClient {
                     }
                   }
                 } catch (parseError) {
-                  console.warn('Failed to parse Gemini stream chunk:', parseError);
+                  logError(parseError, 'Failed to parse Gemini stream chunk', { component: 'gemini-client' });
                 }
               }
             }
@@ -205,14 +206,14 @@ export class GeminiClient {
                 }
               }
             } catch (parseError) {
-              console.warn('Failed to parse final Gemini stream chunk:', parseError);
+              logError(parseError, 'Failed to parse final Gemini stream chunk', { component: 'gemini-client' });
             }
           }
         } finally {
           reader.releaseLock();
         }
       } catch (error) {
-        console.error('Gemini stream error:', error);
+        logError(error, 'Gemini stream error', { component: 'gemini-client' });
         throw error;
       }
     })();
@@ -279,7 +280,7 @@ export class GeminiClient {
     };
 
     try {
-      console.log(`🤖 Calling Gemini API: ${modelName}`);
+      log.debug({ msg: 'Calling Gemini API', component: 'gemini-client', modelName, model: finalConfig.model });
 
       const response = await fetch(url, {
         method: 'POST',
@@ -321,7 +322,7 @@ export class GeminiClient {
       };
 
     } catch (error) {
-      console.error(`❌ Gemini API error:`, error);
+      logError(error, 'Gemini API error', { component: 'gemini-client' });
 
       if (error instanceof Error && error.message.includes('rate limit')) {
         throw this.createGeminiError(429, {
@@ -356,8 +357,7 @@ IMPORTANT: Return your response in valid JSON format only. Do not include unknow
       return JSON.parse(jsonContent);
     } catch (error) {
       const errorMsg = getErrorMessage(error);
-      console.error('Failed to parse JSON response from Gemini:', errorMsg);
-      console.error('Raw response:', response.content);
+      logError(error, 'Failed to parse JSON response from Gemini', { component: 'gemini-client', errorMsg, contentLength: response.content?.length });
       throw new Error('Failed to parse JSON response from Gemini API');
     }
   }
