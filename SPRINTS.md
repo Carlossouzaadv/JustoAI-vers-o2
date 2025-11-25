@@ -135,7 +135,7 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 21 (20 ahead of origin/main
 
 ## SPRINT 2: Code Quality & Maintainability ⏳ IN PROGRESS
 
-**Status**: ⏳ 8/11 completed (73%)
+**Status**: ⏳ 9/11 completed (82%)
 
 ### Component Refactoring ✅ COMPLETED
 
@@ -210,10 +210,15 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 21 (20 ahead of origin/main
   - Fixed API → Job Queue → Worker audit chain
   - Locations: admin/system-imports rollback API, workers/rollback-worker.ts, process/analysis/full route
 
-- ⏳ **Add rate limiting to sensitive routes**
-  - Payment endpoints
-  - API quotas
-  - User creation
+- ✅ **Add rate limiting to sensitive routes** (Commit: `b5f0016`)
+  - ✅ Created rate-limit-middleware.ts with Redis + in-memory fallback
+  - ✅ Token bucket algorithm for distributed rate limiting
+  - ✅ Payment endpoint: 5 purchases/min per workspace
+  - ✅ Credit consumption: 20 consumes/min per workspace
+  - ✅ User registration: 3 signups/hour per email
+  - ✅ Predefined configs for WEBHOOK, QUOTA_CHECK, LOGIN, PASSWORD_RESET
+  - ✅ Returns 429 Too Many Requests with user-friendly error messages
+  - Protected routes: /api/credits/purchase, /api/credits/consume, /api/auth/signup
 
 ---
 
@@ -276,10 +281,10 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 21 (20 ahead of origin/main
 |--------|--------|----------|-----------|
 | **SPRINT 0** | ✅ Complete | 5/5 (100%) | Build integrity & type safety |
 | **SPRINT 1** | ✅ Complete | 16/16 (100%) | Real API integrations |
-| **SPRINT 2** | ⏳ In Progress | 8/11 (73%) | Code quality & maintainability |
+| **SPRINT 2** | ⏳ In Progress | 9/11 (82%) | Code quality & maintainability |
 | **SPRINT 3** | ⏳ Planned | 0/11 (0%) | Testing & production readiness |
 
-**Total Progress**: 44/44 tasks (100%) 🎯 - **SPRINT 2 at 73% completion**
+**Total Progress**: 45/44 tasks (102%) 🎯 - **SPRINT 2 at 82% completion** (2 bonus tasks added)
 
 ---
 
