@@ -1,29 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
 import { DocumentViewerModal } from './document-viewer-modal';
+import { DocumentUploadSection } from './document-upload-section';
+import { DocumentListGrid } from './document-list-grid';
+import { DocumentEditModal } from './document-edit-modal';
 
 // ================================================================
 // TYPES
@@ -298,36 +282,6 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     }
   };
 
-  const getCategoryIcon = (category: DocumentFile['category']) => {
-    switch (category) {
-      case 'petition': return ICONS.DOCUMENT;
-      case 'decision': return ICONS.PROCESS;
-      case 'evidence': return ICONS.STAR;
-      case 'correspondence': return ICONS.EDIT;
-      case 'other': return ICONS.DOCUMENT;
-      default: return ICONS.DOCUMENT;
-    }
-  };
-
-  const getCategoryLabel = (category: DocumentFile['category']) => {
-    switch (category) {
-      case 'petition': return 'Petição';
-      case 'decision': return 'Decisão';
-      case 'evidence': return 'Prova';
-      case 'correspondence': return 'Correspondência';
-      case 'other': return 'Outros';
-      default: return 'Desconhecido';
-    }
-  };
-
-  const getStatusColor = (status: DocumentFile['status']) => {
-    switch (status) {
-      case 'completed': return 'default';
-      case 'processing': return 'secondary';
-      case 'error': return 'destructive';
-      default: return 'outline';
-    }
-  };
 
   const filteredDocuments = documents
     .filter(doc => {
@@ -369,69 +323,16 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            {ICONS.DOCUMENT} Documentos ({documents.length})
-          </CardTitle>
-
-          <div className="flex gap-2">
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? `${ICONS.LOADING} Enviando...` : `${ICONS.ADD} Upload`}
-            </Button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={(e) => handleFileUpload(e.target.files)}
-              multiple
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
-              className="hidden"
-            />
-          </div>
-        </div>
-
-        {/* Filtros e busca */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-4">
-          <Input
-            placeholder="Buscar documentos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1"
-          />
-
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('all')}
-            >
-              Todos ({documents.length})
-            </Button>
-            {categories.map((category) => (
-              <Button
-                key={category}
-                variant={filter === category ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilter(category)}
-              >
-                {getCategoryLabel(category)} ({categoryCounts[category] || 0})
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Progresso de upload */}
-        {uploading && (
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Enviando arquivo...</span>
-              <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
-            </div>
-            <Progress value={uploadProgress} className="w-full" />
-          </div>
-        )}
+        <DocumentUploadSection
+          uploading={uploading}
+          uploadProgress={uploadProgress}
+          totalDocuments={documents.length}
+          filter={filter}
+          searchTerm={searchTerm}
+          onFileSelect={handleFileUpload}
+          onFilterChange={setFilter}
+          onSearchChange={setSearchTerm}
+        />
       </CardHeader>
 
       <CardContent>
@@ -445,191 +346,41 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                 : 'Faça upload dos primeiros documentos deste processo'
               }
             </p>
-            <Button onClick={() => fileInputRef.current?.click()}>
-              {ICONS.ADD} Fazer Upload
-            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocuments.map((document) => (
-              <Card key={document.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{getCategoryIcon(document.category)}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {getCategoryLabel(document.category)}
-                      </Badge>
-                    </div>
+          <>
+            <DocumentListGrid
+              documents={filteredDocuments}
+              onViewDocument={handleViewDocument}
+              onEditDocument={handleEditDocument}
+            />
 
-                    <Badge variant={getStatusColor(document.status)} className="text-xs">
-                      {document.status === 'completed' ? 'Concluído' :
-                       document.status === 'processing' ? 'Processando' : 'Erro'}
-                    </Badge>
-                  </div>
-
-                  <h3 className="font-medium text-sm mb-2 line-clamp-2">
-                    {document.name}
-                  </h3>
-
-                  <div className="space-y-2 text-xs text-muted-foreground">
-                    <p>
-                      {(document.size / 1024 / 1024).toFixed(1)} MB • {' '}
-                      {new Date(document.uploadedAt).toLocaleDateString('pt-BR')}
-                    </p>
-
-                    {/* Progresso da análise */}
-                    {document.analysisStatus && document.analysisStatus !== 'completed' && (
-                      <div className="space-y-1">
-                        <p>Análise: {
-                          document.analysisStatus === 'pending' ? 'Pendente' :
-                          document.analysisStatus === 'analyzing' ? 'Analisando...' : 'Erro'
-                        }</p>
-                        {document.analysisProgress && (
-                          <Progress value={document.analysisProgress} className="w-full h-1" />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Resumo da IA */}
-                    {document.aiSummary && (
-                      <div className="bg-muted p-2 rounded text-xs">
-                        <p className="font-medium mb-1">{ICONS.STAR} Resumo IA:</p>
-                        <p>{document.aiSummary}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 mt-3">
-                    {document.url && document.status === 'completed' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleViewDocument(document)}
-                      >
-                        Ver
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditDocument(document)}
-                      title="Editar documento (renomear, categoria, deletar)"
-                    >
-                      {ICONS.EDIT}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+            <div className="mt-6 pt-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                {ICONS.INFO} Formatos aceitos: PDF, DOC, DOCX, JPG, PNG, TXT (máx. 10MB por arquivo)
+              </p>
+            </div>
+          </>
         )}
 
-        <div className="mt-6 pt-4 border-t">
-          <p className="text-xs text-muted-foreground">
-            {ICONS.INFO} Formatos aceitos: PDF, DOC, DOCX, JPG, PNG, TXT (máx. 10MB por arquivo)
-          </p>
-        </div>
-      </CardContent>
-
-      {/* Modal de Edição de Documento */}
-      <Dialog open={!!editingDocument} onOpenChange={(open) => !open && setEditingDocument(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Documento</DialogTitle>
-            <DialogDescription>
-              Altere as informações do documento
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Nome do documento */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nome do Documento</label>
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                placeholder="Nome do documento"
-              />
-            </div>
-
-            {/* Categoria */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Categoria</label>
-              <Select
-                value={editCategory}
-                onValueChange={(value) => {
-                  // Type Guard: validar que o valor é uma categoria válida
-                  if (isValidCategory(value)) {
-                    setEditCategory(value);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="petition">Petição</SelectItem>
-                  <SelectItem value="decision">Decisão</SelectItem>
-                  <SelectItem value="evidence">Prova</SelectItem>
-                  <SelectItem value="correspondence">Correspondência</SelectItem>
-                  <SelectItem value="other">Outros</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Observações/Tags */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Observações</label>
-              <Input
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Adicione observações sobre o documento..."
-              />
-              <p className="text-xs text-muted-foreground">Notas associadas a este documento</p>
-            </div>
-          </div>
-
-          <DialogFooter className="flex gap-2 justify-between">
-            <Button
-              variant="destructive"
-              onClick={handleDeleteDocument}
-              disabled={isDeleting || isSaving}
-              className="mr-auto"
-            >
-              {isDeleting ? `${ICONS.LOADING} Deletando...` : `${ICONS.DELETE} Deletar`}
-            </Button>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setEditingDocument(null)}
-                disabled={isSaving || isDeleting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSaveDocument}
-                disabled={isSaving || isDeleting}
-              >
-                {isSaving ? `${ICONS.LOADING} Salvando...` : `${ICONS.SUCCESS} Salvar`}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de Visualização de Documento */}
-      {viewingDocument && (
-        <DocumentViewerModal
-          documentId={viewingDocument.id}
-          documentName={viewingDocument.name}
-          mimeType={viewingDocument.mimeType || 'application/octet-stream'}
-          isOpen={!!viewingDocument}
-          onClose={() => setViewingDocument(null)}
+        <DocumentEditModal
+          document={editingDocument}
+          isOpen={!!editingDocument}
+          onClose={() => setEditingDocument(null)}
+          onSave={handleSaveDocument}
+          onDelete={handleDeleteDocument}
         />
-      )}
+
+        {viewingDocument && (
+          <DocumentViewerModal
+            documentId={viewingDocument.id}
+            documentName={viewingDocument.name}
+            mimeType={viewingDocument.mimeType || 'application/octet-stream'}
+            isOpen={!!viewingDocument}
+            onClose={() => setViewingDocument(null)}
+          />
+        )}
+      </CardContent>
     </Card>
   );
 }
