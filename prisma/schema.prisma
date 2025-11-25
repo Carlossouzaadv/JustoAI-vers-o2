@@ -16,7 +16,7 @@ model Workspace {
   logoUrl                  String?
   plan                     Plan                       @default(FREE)
   status                   Status                     @default(ACTIVE)
-  trialEndsAt              DateTime?                  // Trial expiration date for TRIAL plan
+  trialEndsAt              DateTime? // Trial expiration date for TRIAL plan
   settings                 Json?
   createdAt                DateTime                   @default(now())
   updatedAt                DateTime                   @updatedAt
@@ -71,6 +71,8 @@ model User {
   caseEvents                      CaseEvent[]
   assignedCases                   Case[]                     @relation("CaseAssignedTo")
   createdCases                    Case[]                     @relation("CaseCreatedBy")
+  clientShareLinks                ClientShareLink[]          @relation("ClientShareLinkCreatedBy")
+  caseShareLinks                  CaseShareLink[]            @relation("CaseShareLinkCreatedBy")
   workspaces                      UserWorkspace[]
   notificationSettings            UserNotificationSettings[]
 
@@ -112,6 +114,7 @@ model Client {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   cases                  Case[]
+  shareLinks             ClientShareLink[]
   workspace              Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   importedDataItems      ImportedDataItem[] @relation("ImportedDataItemClient")
   createdByImportedItems ImportedDataItem[] @relation("ImportedItemCreatedClient")
@@ -169,6 +172,7 @@ model Case {
   analysisVersions       CaseAnalysisVersion[]
   documents              CaseDocument[]
   events                 CaseEvent[]
+  shareLinks             CaseShareLink[]
   assignedTo             User?                  @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
   client                 Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
   createdBy              User                   @relation("CaseCreatedBy", fields: [createdById], references: [id])
@@ -958,7 +962,7 @@ enum Plan {
   GESTAO
   PERFORMANCE
   ENTERPRISE
-  TRIAL  // 7-day free trial without credit card
+  TRIAL // 7-day free trial without credit card
 }
 
 enum Status {
@@ -1620,6 +1624,58 @@ model AnalysisCache {
   @@index([processId, createdAt])
   @@index([expiresAt])
   @@map("analysis_cache")
+}
+
+// ================================================================
+// CLIENT AND CASE SHARING LINKS
+// ================================================================
+
+model ClientShareLink {
+  id             String    @id @default(cuid())
+  clientId       String
+  token          String    @unique @db.VarChar(64)
+  tokenHash      String    @unique @db.VarChar(64) // SHA256 hash for security
+  expiresAt      DateTime?
+  createdById    String
+  accessCount    Int       @default(0)
+  lastAccessedAt DateTime?
+  isActive       Boolean   @default(true)
+  permissions    Json? // { canViewCases: bool, canDownload: bool }
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("ClientShareLinkCreatedBy", fields: [createdById], references: [id])
+
+  @@index([clientId, isActive])
+  @@index([expiresAt])
+  @@index([createdById])
+  @@map("client_share_links")
+}
+
+model CaseShareLink {
+  id             String    @id @default(cuid())
+  caseId         String
+  token          String    @unique @db.VarChar(64)
+  tokenHash      String    @unique @db.VarChar(64) // SHA256 hash for security
+  expiresAt      DateTime?
+  createdById    String
+  accessCount    Int       @default(0)
+  lastAccessedAt DateTime?
+  isActive       Boolean   @default(true)
+  permissions    Json? // { canViewDocuments: bool, canDownload: bool }
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  case      Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  createdBy User @relation("CaseShareLinkCreatedBy", fields: [createdById], references: [id])
+
+  @@index([caseId, isActive])
+  @@index([expiresAt])
+  @@index([createdById])
+  @@map("case_share_links")
 }
 
 // ================================================================
