@@ -4,6 +4,7 @@
  */
 
 import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
+import { log, logError } from '@/lib/services/logger';
 
 export interface SentryError {
   id: string;
@@ -82,14 +83,14 @@ export async function getSentryErrors(
     });
 
     if (!response.ok) {
-      console.warn(`Sentry API error: ${response.status} ${response.statusText}`);
+      log.warn({ msg: "Sentry API error:" });
       return [];
     }
 
     const events = await response.json();
 
     if (!Array.isArray(events)) {
-      console.warn('Sentry events response is not an array');
+      log.warn({ msg: "Sentry events response is not an array" });
       return [];
     }
 
@@ -104,8 +105,8 @@ export async function getSentryErrors(
       lastSeen: typeof event.lastSeen === 'string' ? event.lastSeen : new Date().toISOString(),
       platform: typeof event.platform === 'string' ? event.platform : 'node',
     }));
-  } catch (error) {
-    console.error('Error fetching Sentry errors:', error);
+  } catch (_error) {
+    logError(error, "Error fetching Sentry errors:", { component: "refactored" });
     return [];
   }
 }
@@ -122,7 +123,7 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
     });
 
     if (!response.ok) {
-      console.warn(`Sentry stats API error: ${response.status}`);
+      log.warn({ msg: "Sentry stats API error:" });
       return getDefaultStats();
     }
 
@@ -166,8 +167,8 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
         p99: 1200,
       },
     };
-  } catch (error) {
-    console.error('Error fetching Sentry stats:', error);
+  } catch (_error) {
+    logError(error, "Error fetching Sentry stats:", { component: "refactored" });
     return getDefaultStats();
   }
 }
@@ -210,8 +211,8 @@ export async function getSentryReleases(limit: number = 5) {
       dateReleased: typeof release.dateReleased === 'string' ? release.dateReleased : undefined,
       newGroups: typeof release.newGroups === 'number' ? release.newGroups : 0,
     }));
-  } catch (error) {
-    console.error('Error fetching Sentry releases:', error);
+  } catch (_error) {
+    logError(error, "Error fetching Sentry releases:", { component: "refactored" });
     return [];
   }
 }

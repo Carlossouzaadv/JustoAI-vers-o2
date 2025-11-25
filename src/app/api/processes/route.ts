@@ -395,7 +395,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao listar processos:`, error);
 
     if (error instanceof ApiError) {
@@ -656,7 +656,7 @@ export async function POST(request: NextRequest) {
       message: 'Processo adicionado ao monitoramento com sucesso'
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao criar processo monitorado:`, error);
 
     if (error instanceof ApiError) {
@@ -804,7 +804,7 @@ export async function DELETE(request: NextRequest) {
       message: `${deleted.count} processos removidos do monitoramento`
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao remover processos:`, error);
 
     if (error instanceof ApiError) {

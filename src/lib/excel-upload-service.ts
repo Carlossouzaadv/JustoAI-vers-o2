@@ -7,6 +7,7 @@ import { createJuditRateLimiter, RateLimitedApiClient } from './rate-limiter';
 import { ExcelProcessParser, ExcelParseResult, ExcelProcessRow } from './excel-parser';
 import { ICONS } from './icons';
 import { PrismaClient } from '@prisma/client';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // INTERFACES E TIPOS
@@ -219,7 +220,7 @@ export class ExcelUploadService {
     errors?: string[];
   }> {
     try {
-      console.log(`${ICONS.PROCESS} Iniciando parsing do arquivo: ${fileName}`);
+      log.info({ msg: "Iniciando parsing do arquivo:" });
 
       // Parse do Excel
       const parseResult = await this.parser.parseExcelBuffer(buffer, fileName);
@@ -240,7 +241,7 @@ export class ExcelUploadService {
       // Preview das primeiras 10 linhas
       const preview = parseResult.validRows.slice(0, 10);
 
-      console.log(`${ICONS.SUCCESS} Parsing concluído: ${parseResult.summary.valid} linhas válidas`);
+      log.info({ msg: "Parsing concluído:  linhas válidas" });
 
       return {
         success: true,
@@ -249,8 +250,8 @@ export class ExcelUploadService {
         preview
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro no parsing:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro no parsing:", { component: "refactored" });
       return {
         success: false,
         errors: [error instanceof Error ? error.message : 'Erro desconhecido no parsing']
@@ -269,7 +270,7 @@ export class ExcelUploadService {
     workspaceId: string,
     prisma: PrismaClient
   ): Promise<{ batchId: string; preview: ExcelProcessRow[] }> {
-    console.log(`${ICONS.PROCESS} Criando batch no banco de dados...`);
+    log.info({ msg: "Criando batch no banco de dados..." });
 
     const batch = await prisma.processBatchUpload.create({
       data: {
@@ -289,7 +290,7 @@ export class ExcelUploadService {
 
     const preview = parseResult.validRows.slice(0, 10);
 
-    console.log(`${ICONS.SUCCESS} Batch criado: ${batch.id}`);
+    log.info({ msg: "Batch criado:" });
 
     return {
       batchId: batch.id,
@@ -306,7 +307,7 @@ export class ExcelUploadService {
     workspaceId: string,
     prisma: PrismaClient
   ): Promise<void> {
-    console.log(`${ICONS.PROCESS} Iniciando processamento em background para batch: ${batchId}`);
+    log.info({ msg: "Iniciando processamento em background para batch:" });
 
     const startTime = Date.now();
     const validRows = parseResult.validRows;
@@ -324,7 +325,7 @@ export class ExcelUploadService {
         const endIdx = Math.min(startIdx + this.config.PAGE_SIZE, totalRows);
         const pageRows = validRows.slice(startIdx, endIdx);
 
-        console.log(`${ICONS.PROCESS} Processando página ${page + 1}/${totalPages} (${pageRows.length} linhas)`);
+        log.info({ msg: "Processando página / ( linhas)" });
 
         // Processar página em sub-lotes
         const pageResults = await this.processPage(pageRows, workspaceId, batchId, prisma);
@@ -375,10 +376,10 @@ export class ExcelUploadService {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Batch ${batchId} concluído: ${successful}/${totalRows} sucessos`);
+      log.info({ msg: "Batch  concluído: / sucessos" });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro no processamento do batch ${batchId}:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro no processamento do batch ${batchId}:", { component: "refactored" });
 
       await prisma.processBatchUpload.update({
         where: { id: batchId },
@@ -493,8 +494,8 @@ export class ExcelUploadService {
         };
       }
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao processar linha ${row.linha}:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao processar linha ${row.linha}:", { component: "refactored" });
 
       return {
         lineNumber: row.linha,
@@ -589,7 +590,7 @@ export class ExcelUploadService {
         error: result.error
       };
 
-    } catch (error) {
+    } catch (_error) {
       // Falha - registrar telemetria
       const responseTime = Date.now() - startTime;
       telemetryData = {
@@ -837,8 +838,8 @@ export class ExcelUploadService {
           rateLimitHit: data.rateLimitHit || false
         }
       });
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao registrar telemetria Judit:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao registrar telemetria Judit:", { component: "refactored" });
     }
   }
 
@@ -876,12 +877,12 @@ export class ExcelUploadService {
 
     // Se não há configuração da API, usar simulação
     if (!juditApiUrl || !juditApiKey) {
-      console.log(`${ICONS.WARNING} API Judit não configurada - usando simulação`);
+      log.info({ msg: "API Judit não configurada - usando simulação" });
       return this.simulateJuditResponse(numeroProcesso, tribunal);
     }
 
     try {
-      console.log(`${ICONS.PROCESS} Consultando Judit API para processo ${numeroProcesso}`);
+      log.info({ msg: "Consultando Judit API para processo" });
 
       const response = await fetch(`${juditApiUrl}/search`, {
         method: 'POST',
@@ -907,18 +908,18 @@ export class ExcelUploadService {
 
       const data = await response.json();
 
-      console.log(`${ICONS.SUCCESS} Resposta da Judit API recebida para ${numeroProcesso}`);
+      log.info({ msg: "Resposta da Judit API recebida para" });
 
       return {
         success: true,
         data: this.transformJuditResponse(data)
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na API Judit para ${numeroProcesso}:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na API Judit para ${numeroProcesso}:", { component: "refactored" });
 
       // Fallback para simulação em caso de erro
-      console.log(`${ICONS.WARNING} Usando simulação como fallback`);
+      log.info({ msg: "Usando simulação como fallback" });
       return this.simulateJuditResponse(numeroProcesso, tribunal);
     }
   }
@@ -1049,8 +1050,8 @@ export class ExcelUploadService {
         assunto: assunto,
         data_distribuicao: dataDistribuicao
       };
-    } catch (error) {
-      console.error('Erro ao transformar resposta da Judit:', error);
+    } catch (_error) {
+      logError(error, "Erro ao transformar resposta da Judit:", { component: "refactored" });
       // Retornar dados mínimos em caso de erro
       return {
         numero_processo: '',

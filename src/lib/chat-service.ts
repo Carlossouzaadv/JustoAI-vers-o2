@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { getGeminiClient } from './gemini-client';
 import { getErrorMessage } from './error-handling';
+import { log, logError } from '@/lib/services/logger';
 
 interface CreateSessionParams {
   workspaceId: string;
@@ -229,7 +230,7 @@ export class ChatService {
           }
         }
       })();
-    } catch (error) {
+    } catch (_error) {
       // Clean up on error
       try {
         await prisma.chatMessage.delete({

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         }
       )
       console.log('✅ Supabase client created successfully')
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Failed to create Supabase client:', error)
       return NextResponse.json(
         {
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         userId: authResult.data.user?.id?.substring(0, 8),
         error: authResult.error?.message,
       })
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Failed to get user:', error)
       return NextResponse.json(
         {
@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
     console.log('📤 Debug Response:', response)
 
     return NextResponse.json(response, { status: 200 })
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ DEBUG AUTH ERROR:', error)
     return NextResponse.json(
       {

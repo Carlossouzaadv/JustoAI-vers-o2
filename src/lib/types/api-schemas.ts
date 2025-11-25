@@ -549,7 +549,7 @@ export function parseProcessUpload(
   try {
     const parsed = ProcessUploadPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -567,7 +567,7 @@ export function parseCreateAnalysis(
   try {
     const parsed = CreateAnalysisPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -585,7 +585,7 @@ export function parseCasesListQuery(
   try {
     const parsed = CasesListQuerySchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -603,7 +603,7 @@ export function parseCreateCase(
   try {
     const parsed = CreateCasePayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -621,7 +621,7 @@ export function parseBulkUpdateCases(
   try {
     const parsed = BulkUpdateCasesPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -639,7 +639,7 @@ export function parseBulkDeleteCases(
   try {
     const parsed = BulkDeleteCasesPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -657,7 +657,7 @@ export function parseRouteIdParam(
   try {
     const parsed = RouteIdParamSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }

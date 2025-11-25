@@ -11,6 +11,7 @@
 import { prisma } from '@/lib/prisma';
 import { getWebSocketManager } from '@/lib/websocket-manager';
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 /**
  * Type Guard: Valida estrutura de contadores de alerta
@@ -53,8 +54,8 @@ export async function getAlertCounts(workspaceId: string): Promise<{ unreadCount
       unreadCount,
       criticalCount
     };
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao contar alertas do workspace ${workspaceId}:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Erro ao contar alertas do workspace ${workspaceId}:", { component: "refactored" });
     // Retornar zeros em caso de erro (fail-safe)
     return {
       unreadCount: 0,
@@ -80,7 +81,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
 
     // 2. Validar dados com type guard
     if (!isAlertCountData(counts)) {
-      console.error(`${ICONS.ERROR} Dados de alerta inválidos para workspace ${workspaceId}`);
+      log.error({ msg: "Dados de alerta inválidos para workspace" });
       return;
     }
 
@@ -99,8 +100,8 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
       `${counts.criticalCount} crítico${counts.criticalCount !== 1 ? 's' : ''}, ` +
       `${counts.unreadCount} não lido${counts.unreadCount !== 1 ? 's' : ''}`
     );
-  } catch (error) {
-    console.error(`${ICONS.ERROR} Erro ao enviar atualização de alertas para ${workspaceId}:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Erro ao enviar atualização de alertas para ${workspaceId}:", { component: "refactored" });
     // Não lançar erro (fail-safe)
   }
 }
@@ -113,7 +114,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
  * @param workspaceIds - Array de IDs de workspace
  */
 export async function broadcastAlertCountUpdateBatch(workspaceIds: string[]): Promise<void> {
-  console.log(`${ICONS.INFO} Enviando atualização de alertas para ${workspaceIds.length} workspace(s)`);
+  log.info({ msg: "Enviando atualização de alertas para  workspace(s)" });
 
   // Enviar em paralelo (Promise.all é seguro pois cada broadcast é independente)
   const promises = workspaceIds.map(workspaceId => broadcastAlertCountUpdate(workspaceId));

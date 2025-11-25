@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { prisma } from './prisma'
 import type { NextAuthOptions } from 'next-auth'
 import { JWT } from 'next-auth/jwt'
+import { log, logError } from '@/lib/services/logger';
 
 // Supabase client for server-side auth
 export async function createSupabaseServerClient() {
@@ -109,14 +110,14 @@ export async function getCurrentUser() {
           dbUser = reloadedUser
         }
       } catch (workspaceError) {
-        console.error('Error creating default workspace:', workspaceError)
+        logError(workspaceError, "Error creating default workspace:", { component: "refactored" })
         // Continue mesmo se falhar - não quebra o login
       }
     }
 
     return dbUser
-  } catch (error) {
-    console.error('Error getting current user:', error)
+  } catch (_error) {
+    logError(error, "Error getting current user:", { component: "refactored" })
     return null
   }
 }
@@ -153,7 +154,7 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
 export async function validateAuth() {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
-    console.log('⚠️ Development mode: Bypassing auth validation')
+    log.info({ msg: "⚠️ Development mode: Bypassing auth validation" })
     return {
       user: {
         id: 'dev-user',

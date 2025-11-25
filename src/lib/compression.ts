@@ -10,6 +10,7 @@ import * as path from 'path';
 import { createGunzip, createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import type { Request, Response, NextFunction } from 'express';
+import { log, logError } from '@/lib/services/logger';
 
 // === TIPOS E INTERFACES ===
 
@@ -203,7 +204,7 @@ export async function compressImage(
       format: config.format,
     };
 
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       originalSize: 0,
@@ -246,7 +247,7 @@ export async function compressBatchImages(
     try {
       const result = await compressImage(inputPath, undefined, options);
       results.push(result);
-    } catch (error) {
+    } catch (_error) {
       results.push({
         success: false,
         originalSize: 0,
@@ -308,7 +309,7 @@ export async function optimizePDF(
       format: 'pdf',
     };
 
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       originalSize: 0,
@@ -433,8 +434,8 @@ export function createCompressionMiddleware(options: CompressionOptions = {}) {
             // Replace file in request with enriched metadata
             Object.assign(file, fileWithMetadata);
           }
-        } catch (error) {
-          console.error('Compression middleware error:', error);
+        } catch (_error) {
+          logError(error, "Compression middleware error:", { component: "refactored" });
           // Continuar sem falhar se compressão falhar
         }
       }
@@ -540,9 +541,9 @@ export async function saveToCompressionCache(inputPath: string, compressedPath: 
 
     const finalCachePath = path.join(cacheDir, cacheKey);
     await fs.copyFile(compressedPath, finalCachePath);
-  } catch (error) {
+  } catch (_error) {
     // Falha no cache não deve afetar operação principal
-    console.warn('Failed to save to compression cache:', error);
+    logError(error, "Failed to save to compression cache:", { component: "refactored" });
   }
 }
 

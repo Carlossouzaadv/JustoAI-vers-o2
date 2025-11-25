@@ -326,7 +326,7 @@ export const GET = withErrorHandler(async (
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao buscar histórico de análises:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',

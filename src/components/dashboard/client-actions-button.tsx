@@ -69,7 +69,7 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
           }));
         setProcesses(processOptions);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar processos:', error);
     }
   }, [clientId, clientName]);
@@ -91,7 +91,7 @@ export function ClientActionsButton({ clientId, clientName }: ClientActionsButto
       });
 
       window.open(`/reports/generate?${params}`, '_blank');
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao gerar relatório:', error);
     }
   };

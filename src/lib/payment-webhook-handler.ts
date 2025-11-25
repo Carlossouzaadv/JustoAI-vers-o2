@@ -72,7 +72,7 @@ export class PaymentWebhookHandler {
           };
       }
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao processar webhook:`, '', { component: 'paymentWebhookHandler' });
       return {
         success: false,
@@ -193,7 +193,7 @@ export class PaymentWebhookHandler {
         creditsAdded: credits
       };
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao processar pagamento bem-sucedido:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
@@ -241,7 +241,7 @@ export class PaymentWebhookHandler {
         success: true,
         transactionId: payload.transactionId
       };
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao processar pagamento falhado:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
@@ -286,7 +286,7 @@ export class PaymentWebhookHandler {
         success: true,
         transactionId: payload.transactionId
       };
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao processar pagamento pendente:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
@@ -363,7 +363,7 @@ export class PaymentWebhookHandler {
         success: true,
         transactionId: payload.transactionId
       };
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao processar reembolso:`, '', { component: 'paymentWebhookHandler' });
       throw error;
     }
@@ -378,7 +378,7 @@ export class PaymentWebhookHandler {
 
     try {
       rawData = JSON.parse(rawBody);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Invalid JSON in webhook body: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
@@ -557,7 +557,7 @@ export class PaymentWebhookHandler {
 
       return isValid;
 
-    } catch (error) {
+    } catch (_error) {
       console.error(`${ICONS.ERROR} Erro ao verificar assinatura do webhook:`, '', { component: 'paymentWebhookHandler' });
       // Log error to Sentry
       Sentry.captureMessage(

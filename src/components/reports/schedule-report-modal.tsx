@@ -123,7 +123,7 @@ export function ScheduleReportModal({
         sufficient: true
       };
       setQuotaInfo(quota);
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao verificar quota:', error);
     }
   };
@@ -205,7 +205,7 @@ export function ScheduleReportModal({
       onScheduleComplete?.(result.schedule);
       onClose();
 
-    } catch (error) {
+    } catch (_error) {
       setError(error instanceof Error ? error.message : 'Erro desconhecido');
     } finally {
       setIsSubmitting(false);

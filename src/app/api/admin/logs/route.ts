@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
         search: search || null,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching logs:', error);
     return NextResponse.json(
       {

@@ -186,7 +186,7 @@ export function startScheduler() {
           if (jobConfig.onSuccess) {
             jobConfig.onSuccess(result);
           }
-        } catch (error) {
+        } catch (_error) {
           // ✅ Converter error unknown para Error com segurança
           const errorObj = toError(error);
           logError(errorObj, `Job failed: ${jobConfig.name}`, { component: 'scheduler', job: jobConfig.name });
@@ -206,7 +206,7 @@ export function startScheduler() {
         schedule: jobConfig.schedule,
         nextRun: getNextRunTime(jobConfig.schedule),
       });
-    } catch (error) {
+    } catch (_error) {
       // ✅ Converter error unknown para Error com segurança
       const errorObj = toError(error);
       logError(errorObj, `Error scheduling job: ${jobConfig.name}`, { component: 'scheduler', job: jobConfig.name });
@@ -267,7 +267,7 @@ export async function runJobManually(jobName: string) {
     const result = await job.task();
     log.info({ msg: `Manual job completed: ${jobName}`, component: 'scheduler', job: jobName, manual: true });
     return result;
-  } catch (error) {
+  } catch (_error) {
     // ✅ Converter error unknown para Error com segurança
     const errorObj = toError(error);
     logError(errorObj, `Manual job failed: ${jobName}`, { component: 'scheduler', job: jobName, manual: true });

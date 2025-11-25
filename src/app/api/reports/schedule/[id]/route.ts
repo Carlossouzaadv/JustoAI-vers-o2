@@ -67,7 +67,7 @@ export async function GET(
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao obter agendamento:`, error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
@@ -166,7 +166,7 @@ export async function PATCH(
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao atualizar agendamento:`, error);
 
     if (error instanceof z.ZodError) {
@@ -226,7 +226,7 @@ export async function DELETE(
       message: 'Agendamento excluído com sucesso'
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao excluir agendamento:`, error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
@@ -379,7 +379,7 @@ export async function POST(
         );
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao executar ação:`, error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

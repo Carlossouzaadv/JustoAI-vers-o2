@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { CaseStatus } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 /**
  * Type guard to validate if a value is a valid CaseStatus
@@ -50,7 +51,7 @@ export async function recordOnboardingError(
     });
 
     if (!currentCase) {
-      console.error(`[OnboardingError] Caso não encontrado: ${caseId}`);
+      log.error({ msg: "[OnboardingError] Caso não encontrado:" });
       return;
     }
 
@@ -101,8 +102,8 @@ export async function recordOnboardingError(
       retryCount,
       newStatus
     });
-  } catch (error) {
-    console.error(`[OnboardingError] Erro ao registrar falha de onboarding:`, error);
+  } catch (_error) {
+    logError(error, "OnboardingError Erro ao registrar falha de onboarding:", { component: "refactored" });
   }
 }
 
@@ -143,8 +144,8 @@ export async function getUnassignedReason(caseId: string): Promise<{
       status: isCaseStatus(caseData.status) ? caseData.status : CaseStatus.ACTIVE,
       canRetry: false
     };
-  } catch (error) {
-    console.error(`[OnboardingError] Erro ao buscar motivo:`, error);
+  } catch (_error) {
+    logError(error, "OnboardingError Erro ao buscar motivo:", { component: "refactored" });
     return null;
   }
 }
@@ -165,12 +166,12 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
 
     const metadata = (caseData.metadata || {}) as OnboardingMetadata;
     if (metadata.can_retry !== true) {
-      console.warn(`[OnboardingError] Retry não permitido para caso ${caseId}`);
+      log.warn({ msg: "[OnboardingError] Retry não permitido para caso" });
       return false;
     }
 
     if (!caseData.detectedCnj) {
-      console.error(`[OnboardingError] CNJ não detectado para caso ${caseId}`);
+      log.error({ msg: "[OnboardingError] CNJ não detectado para caso" });
       return false;
     }
 
@@ -192,10 +193,10 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
       }
     });
 
-    console.log(`[OnboardingError] Retry iniciado para caso ${caseId} (CNJ: ${caseData.detectedCnj})`);
+    log.info({ msg: "[OnboardingError] Retry iniciado para caso  (CNJ: )" });
     return true;
-  } catch (error) {
-    console.error(`[OnboardingError] Erro ao fazer retry:`, error);
+  } catch (_error) {
+    logError(error, "OnboardingError Erro ao fazer retry:", { component: "refactored" });
     return false;
   }
 }

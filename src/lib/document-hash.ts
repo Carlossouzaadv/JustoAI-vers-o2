@@ -7,6 +7,7 @@
 
 import * as crypto from 'crypto';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface DocumentHashResult {
   textSha: string;
@@ -31,13 +32,13 @@ export class DocumentHashManager {
    * Calcula SHA256 do binário do arquivo
    */
   calculateSHA256(buffer: Buffer): DocumentHashResult {
-    console.log(`${ICONS.PROCESS} Calculando SHA256 do arquivo (${buffer.length} bytes)...`);
+    log.info({ msg: "Calculando SHA256 do arquivo ( bytes)..." });
 
     const hash = crypto.createHash('sha256');
     hash.update(buffer);
     const textSha = hash.digest('hex');
 
-    console.log(`${ICONS.SUCCESS} SHA256 calculado: ${textSha.substring(0, 16)}...`);
+    log.info({ msg: "SHA256 calculado: ..." });
 
     return {
       textSha,
@@ -67,7 +68,7 @@ export class DocumentHashManager {
       };
     }
   ): Promise<DeduplicationCheck> {
-    console.log(`${ICONS.SEARCH} Verificando deduplicação para hash: ${textSha.substring(0, 16)}...`);
+    log.info({ msg: "Verificando deduplicação para hash: ..." });
 
     try {
       // Buscar documento existente com mesmo hash no workspace
@@ -90,7 +91,7 @@ export class DocumentHashManager {
       });
 
       if (existingDocument) {
-        console.log(`${ICONS.WARNING} Documento duplicado encontrado: ${existingDocument.name} (caso: ${existingDocument.case.title})`);
+        log.info({ msg: "Documento duplicado encontrado:  (caso: )" });
 
         return {
           isDuplicate: true,
@@ -105,11 +106,11 @@ export class DocumentHashManager {
         };
       }
 
-      console.log(`${ICONS.SUCCESS} Documento é único no workspace`);
+      log.info({ msg: "Documento é único no workspace" });
       return { isDuplicate: false };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na verificação de deduplicação:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na verificação de deduplicação:", { component: "refactored" });
       // Em caso de erro, assumir que não é duplicata para não bloquear upload
       return { isDuplicate: false };
     }

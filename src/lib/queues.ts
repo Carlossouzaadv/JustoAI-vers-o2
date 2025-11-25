@@ -17,6 +17,7 @@
 
 import Queue from 'bull';
 import { getRedisConnection } from './redis';
+import { log, logError } from '@/lib/services/logger';
 
 // Lazy initialization - queues are created on first use, not on import
 // ONLY keep notification queue - others removed for cost optimization
@@ -105,7 +106,7 @@ export const rollbackQueue = getRollbackQueue;
  * NOTE: Cron jobs removidos - usar Vercel cron ou schedule direto na API
  */
 export async function setupRecurringJobs() {
-  console.log('🔄 Recurring jobs setup skipped - using Vercel cron jobs instead');
+  log.info({ msg: "🔄 Recurring jobs setup skipped - using Vercel cron jobs instead" });
   // All recurring jobs moved to vercel.json crons or direct API scheduling
 }
 
@@ -215,7 +216,7 @@ export async function getQueuesStats() {
 export async function pauseAllQueues() {
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.pause()));
-  console.log('⏸️ All queues paused');
+  log.info({ msg: "⏸️ All queues paused" });
 }
 
 /**
@@ -224,7 +225,7 @@ export async function pauseAllQueues() {
 export async function resumeAllQueues() {
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.resume()));
-  console.log('▶️ All queues resumed');
+  log.info({ msg: "▶️ All queues resumed" });
 }
 
 /**
@@ -239,14 +240,14 @@ export async function clearAllQueues() {
   await Promise.all(allQueues.map(queue => queue.clean(0, 'completed')));
   await Promise.all(allQueues.map(queue => queue.clean(0, 'failed')));
 
-  console.log('🧹 All queues cleared');
+  log.info({ msg: "🧹 All queues cleared" });
 }
 
 /**
  * Fecha todas as conexões gracefully
  */
 export async function closeAllQueues() {
-  console.log('🔄 Closing all queues...');
+  log.info({ msg: "🔄 Closing all queues..." });
 
   const allQueues = getAllQueues();
   await Promise.all(allQueues.map(queue => queue.close()));
@@ -256,7 +257,7 @@ export async function closeAllQueues() {
     await bullRedis.disconnect();
   }
 
-  console.log('✅ All queues closed successfully');
+  log.info({ msg: "✅ All queues closed successfully" });
 }
 
 // Process exit handlers

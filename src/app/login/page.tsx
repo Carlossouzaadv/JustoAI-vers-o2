@@ -55,7 +55,7 @@ export default function LoginPage() {
         // Redirect to dashboard
         window.location.href = '/dashboard';
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Unexpected login error:', error);
       setAuthError('Erro inesperado. Tente novamente.');
       setPassword('');
@@ -97,7 +97,7 @@ export default function LoginPage() {
       } else {
         setHelpMessage(data.error || 'Erro ao enviar email. Tente novamente.');
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Error:', error);
       setHelpMessage('Erro ao processar. Tente novamente.');
     } finally {

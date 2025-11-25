@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
     let parseResult;
     try {
       parseResult = await parser.parseExcelBuffer(buffer, file.name);
-    } catch (parseError) {
+    } catch (_parseError) {
       console.error(`${ICONS.ERROR} Erro ao fazer parse Excel:`, getErrorMessage(parseError));
       throw new ApiError(
         'Erro ao processar arquivo Excel. Verifique o formato.',
@@ -345,7 +345,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro no upload:`, getErrorMessage(error));
 
     if (error instanceof ApiError) {
@@ -421,7 +421,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao processar GET:`, getErrorMessage(error));
 
     if (error instanceof ApiError) {
@@ -628,7 +628,7 @@ async function processValidRowsInBackground(
 
     console.log(`${ICONS.SUCCESS} Batch processado: ${successful} sucessos, ${failed} falhas`);
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro crítico no processamento:`, getErrorMessage(error));
 
     const errorData = JSON.parse(JSON.stringify([{

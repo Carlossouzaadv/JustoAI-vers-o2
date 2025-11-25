@@ -341,7 +341,7 @@ export async function GET(
         status: caseData.status,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao buscar timeline:`, error);
 
     return NextResponse.json(

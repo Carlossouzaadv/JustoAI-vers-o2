@@ -119,7 +119,7 @@ export async function exampleMainCatchEmergencyRefund() {
  *
  * POINT 2 (Line ~347-355): Main catch block, emergency refund fails
  * ────────────────────────────────────────────────────────────────
- * } catch (error) {
+ * } catch (_error) {
  *   // ... if emergency refund fails:
  *   await alert.fatal("Reembolso de emergência falhou durante catch geral", {...});
  * }

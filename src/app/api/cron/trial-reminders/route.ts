@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
           `${ICONS.CHECK} Sent trial reminder email to ${adminUser.user.email} ` +
           `(${trialStatus.daysRemaining} days remaining)`
         );
-      } catch (error) {
+      } catch (_error) {
         console.error(
           `${ICONS.ERROR} Error sending trial reminder for workspace ${workspace.id}:`,
           error
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [CRON] Trial reminders error:`, error);
     return NextResponse.json(
       {

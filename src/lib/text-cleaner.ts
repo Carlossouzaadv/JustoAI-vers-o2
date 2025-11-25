@@ -4,6 +4,7 @@
 // Implementa extração de números CNJ e limpeza de texto conforme especificação
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface CleaningResult {
   originalText: string;
@@ -116,8 +117,8 @@ export class TextCleaner {
 
       return null;
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao extrair número CNJ:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao extrair número CNJ:", { component: "refactored" });
       return null;
     }
   }
@@ -188,8 +189,8 @@ export class TextCleaner {
         confidence
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na limpeza do documento:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na limpeza do documento:", { component: "refactored" });
 
       return {
         cleanedText: text,

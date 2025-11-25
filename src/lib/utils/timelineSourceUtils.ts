@@ -7,6 +7,7 @@
 
 import { TimelineSource } from '@/lib/types/database';
 import React from 'react';
+import { log, logError } from '@/lib/services/logger';
 import {
   FileText,
   Scale,
@@ -243,10 +244,10 @@ export function debugSourcesConfig(): void {
   console.group('📊 Timeline Sources Configuration');
 
   Object.values(TimelineSource).forEach((source) => {
-    console.log(`\n${getSourceEmoji(source)} ${getSourceLabel(source)}`);
-    console.log(`  Priority: ${getSourcePriority(source)}/10`);
-    console.log(`  Badge: ${getSourceBadgeVariant(source)}`);
-    console.log(`  Description: ${getSourceDescription(source)}`);
+    log.info({ msg: "\n" });
+    log.info({ msg: "Priority: /10" });
+    log.info({ msg: "Badge:" });
+    log.info({ msg: "Description:" });
   });
 
   console.groupEnd();

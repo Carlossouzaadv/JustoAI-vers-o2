@@ -97,7 +97,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       timestamp: new Date().toISOString()
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Credit consumption failed:`, error)
     return errorResponse(
       error instanceof Error ? error.message : 'Failed to consume credits',
@@ -152,7 +152,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Credit estimation failed:`, error)
     return errorResponse(
       error instanceof Error ? error.message : 'Failed to estimate credit cost',

@@ -642,7 +642,7 @@ export class TimelineMergeService {
           data: JSON.parse(JSON.stringify(details)) // Safe JSON serialization for Prisma
         }
       });
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao registrar auditoria:`, 'error', { component: 'timelineMerge' });
       // Silently fail - don't let audit logging block document upload
     }

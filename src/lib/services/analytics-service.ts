@@ -81,7 +81,7 @@ class AnalyticsServiceImpl {
         component: 'AnalyticsService',
         stage: 'initialize'
       });
-    } catch (error) {
+    } catch (_error) {
       log.error({
         msg: 'Erro ao inicializar PostHog',
         component: 'AnalyticsService',
@@ -158,7 +158,7 @@ class AnalyticsServiceImpl {
       // 🔥 CRÍTICO (Padrão-Ouro): Aguardar shutdown para garantir envio em serverless
       await this.posthog.shutdown();
 
-    } catch (error) {
+    } catch (_error) {
       log.error({
         msg: 'Erro ao rastrear evento',
         component: 'AnalyticsService',
@@ -212,7 +212,7 @@ class AnalyticsServiceImpl {
 
       await this.posthog.shutdown();
 
-    } catch (error) {
+    } catch (_error) {
       log.error({
         msg: 'Erro ao identificar usuário',
         component: 'AnalyticsService',

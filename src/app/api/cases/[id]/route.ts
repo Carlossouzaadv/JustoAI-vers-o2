@@ -133,7 +133,7 @@ export async function GET(
       updatedAt: caseData.updatedAt,
       createdBy: caseData.createdById,
     })
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Error fetching case:`, error)
     return errorResponse('Erro ao carregar caso', 500)
   }
@@ -238,7 +238,7 @@ export async function PATCH(
     console.log(`${ICONS.SUCCESS} Case updated successfully: ${caseId}`)
 
     return successResponse(updatedCase, 'Caso atualizado com sucesso')
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Error updating case:`, error)
     return errorResponse('Erro ao atualizar caso', 500)
   }
@@ -303,7 +303,7 @@ export async function DELETE(
       { id: caseId },
       'Caso deletado com sucesso'
     )
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Error deleting case:`, error)
     return errorResponse('Erro ao deletar caso', 500)
   }

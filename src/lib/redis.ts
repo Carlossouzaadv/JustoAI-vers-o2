@@ -147,7 +147,7 @@ const getRedisConfig = (): RedisOptions => {
         enableOfflineQueue: true, // Queue commands if connection drops (was: isStrictMode ? false : true)
         enableReadyCheck: true, // Both modes: wait for READY state
       };
-    } catch (error) {
+    } catch (_error) {
       logError(error, 'Failed to parse REDIS_URL', { component: 'redis' });
       throw new Error('Invalid REDIS_URL format');
     }
@@ -498,7 +498,7 @@ export const testRedisConnection = async (): Promise<boolean> => {
     const result = await client.ping();
     log.info({ msg: 'Redis connection test successful', component: 'redis', ping_result: result });
     return result === 'PONG';
-  } catch (error) {
+  } catch (_error) {
     logError(error, 'Redis connection test failed', { component: 'redis' });
     return false;
   }
@@ -517,7 +517,7 @@ export const closeRedisConnection = async (): Promise<void> => {
     await redisClient.quit();
     redisClient = null;
     log.info({ msg: 'Redis connection closed successfully', component: 'redis' });
-  } catch (error) {
+  } catch (_error) {
     logError(error, 'Error closing Redis connection', { component: 'redis' });
 
     // Force disconnect

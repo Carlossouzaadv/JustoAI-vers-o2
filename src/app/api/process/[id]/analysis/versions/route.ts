@@ -99,7 +99,7 @@ export async function GET(
       latestVersion: versions[0]?.version || 0
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao buscar versões:`, error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

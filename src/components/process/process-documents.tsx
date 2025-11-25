@@ -137,7 +137,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
         console.error('Erro ao carregar documentos:', response.status);
         setDocuments([]);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar documentos:', error);
       setDocuments([]);
     } finally {
@@ -182,7 +182,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
           throw new Error('Erro no upload');
         }
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro no upload:', error);
       alert('Erro ao fazer upload do arquivo');
     } finally {
@@ -245,7 +245,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       }
 
       setEditingDocument(null);
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao salvar documento:', error);
       alert('Erro ao salvar documento. Tente novamente.');
     } finally {
@@ -273,7 +273,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       setDocuments(documents.filter(doc => doc.id !== editingDocument.id));
       setEditingDocument(null);
       alert('Documento deletado com sucesso');
-    } catch (error) {
+    } catch (_error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido ao deletar documento';
       console.error('Erro ao deletar documento:', message);
       alert(`Erro ao deletar documento: ${message}`);

@@ -147,7 +147,7 @@ export class DeepAnalysisService {
       });
 
       return !!process;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao validar acesso ao processo`, { component: 'deepAnalysisService' });
       return false;
     }
@@ -178,7 +178,7 @@ export class DeepAnalysisService {
         size: doc.size || 0,
         cleanText: doc.cleanText || undefined
       }));
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao buscar documentos do processo`, { component: 'deepAnalysisService' });
       return [];
     }
@@ -210,7 +210,7 @@ export class DeepAnalysisService {
         size: doc.size || 0,
         cleanText: doc.cleanText || undefined
       }));
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao buscar documentos específicos`, { component: 'deepAnalysisService' });
       return [];
     }
@@ -291,7 +291,7 @@ export class DeepAnalysisService {
       }
 
       return processedFiles;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao processar arquivos`, { component: 'deepAnalysisService' });
       throw new Error('Falha no processamento dos arquivos enviados');
     }
@@ -330,7 +330,7 @@ export class DeepAnalysisService {
       log.info({ msg: '${ICONS.SUCCESS} Texto extraído: ${numPages} páginas, ${extractedText.length} caracteres', component: 'deepAnalysisService' });
 
       return extractedText;
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       log.warn({ msg: '${ICONS.WARNING} Erro ao extrair PDF (${fileName}): ${errorMsg}. Usando fallback.', component: 'deepAnalysisService' });
 
@@ -398,7 +398,7 @@ export class DeepAnalysisService {
       });
 
       return lastMovement?.date || null;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao buscar última movimentação`, { component: 'deepAnalysisService' });
       return null;
     }
@@ -457,7 +457,7 @@ export class DeepAnalysisService {
       });
 
       return analysisVersion;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao verificar cache`, { component: 'deepAnalysisService' });
       return null;
     }
@@ -475,7 +475,7 @@ export class DeepAnalysisService {
           lastAccessedAt: new Date()
         }
       });
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao incrementar acesso ao cache`, { component: 'deepAnalysisService' });
     }
   }
@@ -488,7 +488,7 @@ export class DeepAnalysisService {
       await prisma.analysisCache.delete({
         where: { analysisKey }
       });
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao invalidar cache`, { component: 'deepAnalysisService' });
     }
   }
@@ -507,7 +507,7 @@ export class DeepAnalysisService {
       });
 
       return job;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao buscar job ativo`, { component: 'deepAnalysisService' });
       return null;
     }
@@ -526,7 +526,7 @@ export class DeepAnalysisService {
       });
 
       return job;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao buscar job por versão`, { component: 'deepAnalysisService' });
       return null;
     }
@@ -558,7 +558,7 @@ export class DeepAnalysisService {
         log.info({ msg: '${ICONS.WARNING} Lock já existe, TTL: ${ttl}s', component: 'deepAnalysisService' });
         return { acquired: false, ttl: ttl > 0 ? ttl : undefined };
       }
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao adquirir lock`, { component: 'deepAnalysisService' });
       return { acquired: false };
     }
@@ -587,7 +587,7 @@ export class DeepAnalysisService {
       const lockKey = `analysis_lock:${token.split('_')[0]}`; // Simplificado
       await redis.eval(script, 1, lockKey, token);
       log.info({ msg: '${ICONS.SUCCESS} Lock liberado: ${token}', component: 'deepAnalysisService' });
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao liberar lock`, { component: 'deepAnalysisService' });
     }
   }
@@ -604,7 +604,7 @@ export class DeepAnalysisService {
       });
 
       return (lastVersion?.version || 0) + 1;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao obter próximo número de versão`, { component: 'deepAnalysisService' });
       return 1;
     }
@@ -642,7 +642,7 @@ export class DeepAnalysisService {
 
       log.info({ msg: '${ICONS.SUCCESS} Versão de análise criada: ${version.id}', component: 'deepAnalysisService' });
       return version;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao criar versão de análise`, { component: 'deepAnalysisService' });
       throw error;
     }
@@ -685,7 +685,7 @@ export class DeepAnalysisService {
 
       log.info({ msg: '${ICONS.SUCCESS} Job de análise criado: ${job.id}', component: 'deepAnalysisService' });
       return job;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao criar job de análise`, { component: 'deepAnalysisService' });
       throw error;
     }
@@ -707,7 +707,7 @@ export class DeepAnalysisService {
       });
 
       return analysis;
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro ao buscar última análise`, { component: 'deepAnalysisService' });
       return null;
     }
@@ -827,7 +827,7 @@ export class DeepAnalysisService {
       });
 
       log.info({ msg: '${ICONS.SUCCESS} Job processado com sucesso com Gemini Pro: ${jobId}', component: 'deepAnalysisService' });
-    } catch (error) {
+    } catch (_error) {
       logError(error, `${ICONS.ERROR} Erro no processamento background`, { component: 'deepAnalysisService' });
 
       await prisma.analysisJob.update({

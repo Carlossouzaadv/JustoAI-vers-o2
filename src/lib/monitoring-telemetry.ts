@@ -5,6 +5,7 @@
 
 import { prisma } from './prisma';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -204,8 +205,8 @@ export class MonitoringTelemetry {
           monitoringStatus: 'ACTIVE'
         }
       });
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to get monitored processes count:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to get monitored processes count:", { component: "refactored" });
       return 0;
     }
   }

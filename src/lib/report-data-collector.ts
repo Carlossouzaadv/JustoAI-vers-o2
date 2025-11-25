@@ -6,6 +6,7 @@
 import { ICONS } from './icons';
 import prisma from './prisma';
 import { AIModelRouter } from './ai-model-router';
+import { log, logError } from '@/lib/services/logger';
 import type {
   ReportData,
   ProcessReportData,
@@ -214,7 +215,7 @@ export class ReportDataCollector {
     stats: DataCollectionStats;
   }> {
     const startTime = Date.now();
-    console.log(`${ICONS.PROCESS} Coletando dados para relatório: ${options.type}`);
+    log.info({ msg: "Coletando dados para relatório:" });
 
     try {
       // Buscar workspace
@@ -295,11 +296,11 @@ export class ReportDataCollector {
         collectionTime: Date.now() - startTime
       };
 
-      console.log(`${ICONS.SUCCESS} Dados coletados em ${stats.collectionTime}ms`);
+      log.info({ msg: "Dados coletados em ms" });
       return { data, stats };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na coleta de dados:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na coleta de dados:", { component: "refactored" });
       throw error;
     }
   }
@@ -521,8 +522,8 @@ export class ReportDataCollector {
         subject: subject?.trim(),
         financialInfo
       };
-    } catch (error) {
-      console.error('Erro ao analisar processData:', error);
+    } catch (_error) {
+      logError(error, "Erro ao analisar processData:", { component: "refactored" });
       return {};
     }
   }
@@ -592,8 +593,8 @@ export class ReportDataCollector {
       }
 
       return Object.keys(financial).length > 0 ? financial : undefined;
-    } catch (error) {
-      console.error('Erro ao extrair informações financeiras:', error);
+    } catch (_error) {
+      logError(error, "Erro ao extrair informações financeiras:", { component: "refactored" });
       return undefined;
     }
   }
@@ -629,8 +630,8 @@ export class ReportDataCollector {
       }
 
       return null;
-    } catch (error) {
-      console.error('Erro ao extrair prazo do padrão:', error);
+    } catch (_error) {
+      logError(error, "Erro ao extrair prazo do padrão:", { component: "refactored" });
       return null;
     }
   }
@@ -684,8 +685,8 @@ export class ReportDataCollector {
       }
 
       return undefined;
-    } catch (error) {
-      console.error('Erro ao calcular próximo prazo:', error);
+    } catch (_error) {
+      logError(error, "Erro ao calcular próximo prazo:", { component: "refactored" });
       return undefined;
     }
   }
@@ -699,7 +700,7 @@ export class ReportDataCollector {
    */
   private async generateAIInsights(processes: ProcessReportData[], summary: Record<string, unknown>): Promise<string[]> {
     try {
-      console.log(`${ICONS.PROCESS} Gerando insights de IA...`);
+      log.info({ msg: "Gerando insights de IA..." });
 
       const data = {
         summary,
@@ -725,8 +726,8 @@ export class ReportDataCollector {
       const insights = this.extractInsights(analysisText);
       return insights.slice(0, 5); // Máximo 5 insights
 
-    } catch (error) {
-      console.warn(`${ICONS.WARNING} Erro ao gerar insights de IA:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.WARNING} Erro ao gerar insights de IA:", { component: "refactored" });
 
       // Safely build fallback insights from summary data
       const fallbackInsights: string[] = [];

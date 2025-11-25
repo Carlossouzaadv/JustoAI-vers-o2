@@ -119,7 +119,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('[API] Error checking health:', error);
 
     return NextResponse.json(

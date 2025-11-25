@@ -6,6 +6,7 @@
 import { ICONS } from './icons';
 import prisma from './prisma';
 import type { ReportData, ReportCustomization } from './report-templates';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TYPE GUARDS E VALIDAÇÃO
@@ -238,7 +239,7 @@ export class ReportCustomizationManager {
     profileData: Partial<CustomizationProfile>
   ): Promise<CustomizationProfile> {
     try {
-      console.log(`${ICONS.PROCESS} Criando perfil de customização: ${profileData.profileName}`);
+      log.info({ msg: "Criando perfil de customização:" });
 
       // Se é o primeiro perfil, marca como padrão
       const existingProfiles = await this.getProfilesByWorkspace(workspaceId);
@@ -307,11 +308,11 @@ export class ReportCustomizationManager {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Perfil criado: ${profile.id}`);
+      log.info({ msg: "Perfil criado:" });
       return profile as CustomizationProfile;
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao criar perfil:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao criar perfil:", { component: "refactored" });
       throw error;
     }
   }
@@ -364,7 +365,7 @@ export class ReportCustomizationManager {
     updates: Partial<CustomizationProfile>
   ): Promise<CustomizationProfile> {
     try {
-      console.log(`${ICONS.PROCESS} Atualizando perfil: ${profileId}`);
+      log.info({ msg: "Atualizando perfil:" });
 
       // Se está marcando como padrão, desmarcar outros do mesmo workspace
       if (updates.isDefault) {
@@ -389,11 +390,11 @@ export class ReportCustomizationManager {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Perfil atualizado: ${profileId}`);
+      log.info({ msg: "Perfil atualizado:" });
       return profile as CustomizationProfile;
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao atualizar perfil:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao atualizar perfil:", { component: "refactored" });
       throw error;
     }
   }
@@ -403,7 +404,7 @@ export class ReportCustomizationManager {
    */
   async deleteProfile(profileId: string): Promise<void> {
     try {
-      console.log(`${ICONS.WARNING} Removendo perfil: ${profileId}`);
+      log.info({ msg: "Removendo perfil:" });
 
       const profile = await this.getProfileById(profileId);
       if (!profile) {
@@ -424,10 +425,10 @@ export class ReportCustomizationManager {
         where: { id: profileId }
       });
 
-      console.log(`${ICONS.SUCCESS} Perfil removido: ${profileId}`);
+      log.info({ msg: "Perfil removido:" });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao remover perfil:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao remover perfil:", { component: "refactored" });
       throw error;
     }
   }
@@ -445,7 +446,7 @@ export class ReportCustomizationManager {
     mimeType: string
   ): Promise<LogoUploadResult> {
     try {
-      console.log(`${ICONS.PROCESS} Processando upload de logo...`);
+      log.info({ msg: "Processando upload de logo..." });
 
       // Validar tipo de arquivo
       if (!['image/jpeg', 'image/png', 'image/svg+xml'].includes(mimeType)) {
@@ -480,7 +481,7 @@ export class ReportCustomizationManager {
         logoHeight: height
       });
 
-      console.log(`${ICONS.SUCCESS} Logo salvo (${Math.round(logoFile.length / 1024)}KB)`);
+      log.info({ msg: "Logo salvo (KB)" });
 
       return {
         success: true,
@@ -490,8 +491,8 @@ export class ReportCustomizationManager {
         fileSize: logoFile.length
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro no upload de logo:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro no upload de logo:", { component: "refactored" });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Erro desconhecido'
@@ -508,7 +509,7 @@ export class ReportCustomizationManager {
       logoBase64: undefined
     });
 
-    console.log(`${ICONS.SUCCESS} Logo removido do perfil: ${profileId}`);
+    log.info({ msg: "Logo removido do perfil:" });
   }
 
   // ================================

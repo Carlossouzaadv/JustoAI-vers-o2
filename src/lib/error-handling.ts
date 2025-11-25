@@ -1,3 +1,5 @@
+import { log, logError } from '@/lib/services/logger';
+
 /**
  * Error Handling Utilities
  * Provides type-safe error handling and message extraction
@@ -114,7 +116,7 @@ export async function safeExecute<T>(
   try {
     const data = await fn();
     return { success: true, data };
-  } catch (error) {
+  } catch (_error) {
     const errorMessage = getErrorMessage(error);
     logError(context, error);
     return { success: false, error: errorMessage };

@@ -6,6 +6,7 @@
 import { Queue, Job, JobState } from 'bullmq';
 import { getRedisConnection } from '../redis';
 import { queueLogger } from '../observability/logger';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPE GUARDS & VALIDATORS
@@ -163,12 +164,12 @@ class MockQueue {
 
   constructor(name: string) {
     this.name = name;
-    console.warn(`[JUDIT QUEUE] ⚠️  Running in MOCK mode (Redis disabled)`);
-    console.warn(`[JUDIT QUEUE] ⚠️  Queue operations will be simulated only!`);
+    log.warn({ msg: "[JUDIT QUEUE] ⚠️  Running in MOCK mode (Redis disabled)" });
+    log.warn({ msg: "[JUDIT QUEUE] ⚠️  Queue operations will be simulated only!" });
   }
 
   async add() {
-    console.log('[JUDIT QUEUE] MOCK: Job added (not really processed)');
+    log.info({ msg: "[JUDIT QUEUE] MOCK: Job added (not really processed)" });
     return { id: 'mock-' + Date.now(), data: {} } as Record<string, unknown>;
   }
   async getJob() { return null; }
@@ -618,7 +619,7 @@ async function gracefulShutdown() {
 
     // Note: Redis connection is managed centrally by src/lib/redis.ts
     // It will handle its own shutdown via SIGTERM/SIGINT handlers
-  } catch (error) {
+  } catch (_error) {
     queueLogger.error({
       action: 'graceful_shutdown_error',
       error: error instanceof Error ? error.message : String(error),

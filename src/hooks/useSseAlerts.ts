@@ -106,7 +106,7 @@ export function useSseAlerts() {
                 console.log('🚨 Novo alerta crítico:', data.message)
               }
             }
-          } catch (error) {
+          } catch (_error) {
             console.error('❌ Erro ao parsear alerta SSE:', error)
           }
         })
@@ -122,7 +122,7 @@ export function useSseAlerts() {
           // Retry automático em 3 segundos
           reconnectTimeoutRef.current = setTimeout(connectSSE, 3000)
         })
-      } catch (error) {
+      } catch (_error) {
         console.error('❌ Erro ao conectar SSE:', error)
         setIsConnected(false)
       }

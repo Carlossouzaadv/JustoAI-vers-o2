@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: session,
     });
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request', issues: error.issues },
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       data: sessions,
       total: sessions.length,
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error listing chat sessions:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

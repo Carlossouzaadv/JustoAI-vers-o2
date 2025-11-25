@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../prisma';
 import { usageTracker } from '../telemetry/usage-tracker';
 import { ICONS } from '../icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -94,7 +95,7 @@ export class QuotaEnforcement {
     } = {}
   ): Promise<QuotaCheckResult> {
     try {
-      console.log(`${ICONS.SHIELD} Checking report quota for workspace: ${workspaceId}`);
+      log.info({ msg: "Checking report quota for workspace:" });
 
       // Verificar se enforcement está habilitado
       if (!this.config.ENABLE_QUOTA_ENFORCEMENT) {
@@ -110,7 +111,7 @@ export class QuotaEnforcement {
 
       // Verificar bypass de admin
       if (options.adminBypass) {
-        console.log(`${ICONS.USER} Admin bypass enabled for workspace: ${workspaceId}`);
+        log.info({ msg: "Admin bypass enabled for workspace:" });
         return {
           allowed: true,
           quotaStatus: 'ok',
@@ -187,8 +188,8 @@ export class QuotaEnforcement {
         message: `Você usou ${currentReports} de ${limit} relatórios este mês (${percentage.toFixed(1)}%)`
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Quota check failed:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Quota check failed:", { component: "refactored" });
 
       // Em caso de erro, permitir (fail-open) mas logar
       return {
@@ -240,8 +241,8 @@ export class QuotaEnforcement {
         message: `Créditos suficientes: ${creditBalance.balance} disponíveis`
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Credit quota check failed:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Credit quota check failed:", { component: "refactored" });
 
       return {
         allowed: false,
@@ -396,8 +397,8 @@ export class QuotaEnforcement {
         reportsTotal: quota.reportsUsedThisMonth,
         creditsConsumed: 0 // Can be calculated if needed
       };
-    } catch (error) {
-      console.error('Error getting monthly usage:', error);
+    } catch (_error) {
+      logError(error, "Error getting monthly usage:", { component: "refactored" });
       return { reportsTotal: 0, creditsConsumed: 0 };
     }
   }

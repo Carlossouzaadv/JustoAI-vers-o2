@@ -95,7 +95,7 @@ describe('Batch Dashboard Integration Tests', () => {
 
       try {
         await BatchStatusService.getBatchStatus('batch-123');
-      } catch (error) {
+      } catch (_error) {
         expect(error).toBeInstanceOf(Error);
         expect((error as Error).message).toContain('Batch não encontrado');
       }

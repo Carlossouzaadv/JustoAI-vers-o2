@@ -144,7 +144,7 @@ export async function GET() {
         'Cache-Control': 'public, max-age=60' // Cache for 1 minute
       }
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching admin stats:', error);
     return NextResponse.json(
       {

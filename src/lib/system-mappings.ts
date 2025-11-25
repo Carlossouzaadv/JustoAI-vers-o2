@@ -6,6 +6,7 @@
 // (Projuris, Legal One, Astrea, CP-Pro, etc.)
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES
@@ -1136,4 +1137,4 @@ export class DataValidator {
   }
 }
 
-console.log(`${ICONS.SUCCESS} Sistema de mapeamentos carregado com ${SystemMappings.getSupportedSystems().length} sistemas suportados`);
+log.info({ msg: "Sistema de mapeamentos carregado com  sistemas suportados" });

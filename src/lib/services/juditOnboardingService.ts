@@ -7,6 +7,7 @@ import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
 import { recordOnboardingError } from '@/lib/utils/case-onboarding-helper';
 import { parseJuditResponse, JuditRequestResponse } from '@/lib/types/external-api';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPE GUARDS AND LOGGING UTILITIES
@@ -219,7 +220,7 @@ export async function performFullProcessRequest(
       numeroCnj: cnj,
       duration,
     };
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -252,7 +253,7 @@ export async function performFullProcessRequest(
         }
       }
     } catch (dbError) {
-      console.error('[OnboardingError] Erro ao registrar erro no banco:', dbError);
+      logError(dbError, "OnboardingError Erro ao registrar erro no banco:", { component: "refactored" });
     }
 
     // Record failure metrics
@@ -538,7 +539,7 @@ export async function listProcessRequests(cnj: string) {
 //     }
 //
 //     return 0;
-//   } catch (error) {
+//   } catch (_error) {
 //     juditLogger.warn({
 //       action: 'extract_document_count_failed',
 //       error: error instanceof Error ? error.message : 'Unknown error',
@@ -578,7 +579,7 @@ export async function listProcessRequests(cnj: string) {
 //     }
 //
 //     return 0;
-//   } catch (error) {
+//   } catch (_error) {
 //     juditLogger.warn({
 //       action: 'extract_movements_count_failed',
 //       error: error instanceof Error ? error.message : 'Unknown error',

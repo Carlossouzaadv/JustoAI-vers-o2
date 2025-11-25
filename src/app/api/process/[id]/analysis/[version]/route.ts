@@ -134,7 +134,7 @@ export const GET = withErrorHandler(async (
 
     return successResponse(responseData);
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao buscar análise:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',

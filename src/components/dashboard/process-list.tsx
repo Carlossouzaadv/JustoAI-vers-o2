@@ -45,7 +45,7 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
         const data = await response.json();
         setProcesses(data.processes || []);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar processos:', error);
     } finally {
       setLoading(false);

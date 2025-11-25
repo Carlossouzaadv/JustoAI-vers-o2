@@ -5,6 +5,7 @@
 // via Judit API, Codilo API e outras fontes
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES
@@ -202,8 +203,8 @@ export class ProcessApiClient {
           this.setCache(cacheKey, result.data);
           return result;
         }
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Erro na Judit API:`, error);
+      } catch (_error) {
+        logError(error, "${ICONS.ERROR} Erro na Judit API:", { component: "refactored" });
       }
     }
 

@@ -105,7 +105,7 @@ async function fetchJuditData(startDate: string, endDate: string) {
     const data = await response.json();
     console.log(`[JUDIT] Successfully received ${data.page_data?.length || 0} requests`);
     return data;
-  } catch (error) {
+  } catch (_error) {
     console.error(`[JUDIT] Fetch error:`, error);
 
     if (error instanceof TypeError) {
@@ -326,7 +326,7 @@ export async function GET() {
       data: report,
       cached: true // Data is served with Redis caching (24h TTL)
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching JUDIT consumption:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(

@@ -215,7 +215,7 @@ export default function UsageBanner({
         setAlerts(bannerAlerts);
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar dados de uso:', error);
       // Set default usage on error
       setUsage({
@@ -571,7 +571,7 @@ export function UsageHeader({ workspaceId, onShowDetails }: UsageHeaderProps) {
         if (data.success) {
           setHasWarnings(data.alerts.length > 0);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Erro ao verificar alertas:', error);
       } finally {
         setLoading(false);

@@ -243,7 +243,7 @@ export async function GET(
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Document Notes GET] Erro:`, error);
 
     captureApiError(error, {
@@ -297,7 +297,7 @@ export async function POST(
     try {
       const rawBody = await request.json();
       body = createDocumentNoteSchema.parse(rawBody);
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           { success: false, error: 'Validação inválida', details: error.flatten() },
@@ -381,7 +381,7 @@ export async function POST(
       { status: 201 }
     );
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Document Notes POST] Erro:`, error);
 
     captureApiError(error, {

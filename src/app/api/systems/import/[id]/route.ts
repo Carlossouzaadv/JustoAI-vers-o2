@@ -157,7 +157,7 @@ export async function GET(
 
     return apiResponse(response);
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao buscar status da importação:`, error);
 
     if (error instanceof ApiError) {
@@ -206,7 +206,7 @@ export async function POST(
         throw new ApiError('Ação não suportada', 400);
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao executar ação:`, error);
 
     if (error instanceof ApiError) {
@@ -311,7 +311,7 @@ export async function PUT(
       message: 'Configurações atualizadas com sucesso'
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao atualizar configurações:`, error);
 
     if (error instanceof ApiError) {
@@ -413,7 +413,7 @@ export async function DELETE(
       });
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao remover importação:`, error);
 
     if (error instanceof ApiError) {

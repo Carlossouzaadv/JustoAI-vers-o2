@@ -13,6 +13,7 @@
  */
 
 import { getRedisClient } from '@/lib/redis';
+import { log, logError } from '@/lib/services/logger';
 
 // Type guard for safe JSON parsing
 function isRecord(data: unknown): data is Record<string, unknown> {
@@ -32,7 +33,7 @@ function getAdminRedis() {
  */
 function handleRedisError(operation: string, error: unknown): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.warn(`[AdminCache] Redis ${operation} failed:`, errorMessage);
+  logError(errorMessage, "AdminCache Redis ${operation} failed:", { component: "refactored" });
   // Silently continue - caller will recompute if needed
 }
 
@@ -100,12 +101,12 @@ export async function withAdminCache<T>(
         if (isRecord(parsed) || Array.isArray(parsed) || typeof parsed === 'string' || typeof parsed === 'number') {
           return parsed as T;
         }
-      } catch (parseError) {
-        console.warn(`[AdminCache] JSON parse error for key ${key}:`, parseError);
+      } catch (_parseError) {
+        logError(parseError, "AdminCache JSON parse error for key ${key}:", { component: "refactored" });
         // Continue to recompute
       }
     }
-  } catch (error) {
+  } catch (_error) {
     handleRedisError(`GET ${key}`, error);
   }
 
@@ -116,7 +117,7 @@ export async function withAdminCache<T>(
   try {
     const serialized = JSON.stringify(result);
     await redis.setex(key, ttlSeconds, serialized);
-  } catch (error) {
+  } catch (_error) {
     handleRedisError(`SET ${key}`, error);
     // Still return the computed value even if cache write fails
   }
@@ -131,7 +132,7 @@ export async function clearAdminCache(key: string): Promise<void> {
   const redis = getAdminRedis();
   try {
     await redis.del(key);
-  } catch (error) {
+  } catch (_error) {
     handleRedisError(`DEL ${key}`, error);
   }
 }
@@ -150,7 +151,7 @@ export async function clearAdminCachePattern(pattern: string): Promise<void> {
         await redis.del(key);
       }
     }
-  } catch (error) {
+  } catch (_error) {
     handleRedisError(`KEYS/DEL ${pattern}`, error);
   }
 }
@@ -215,7 +216,7 @@ export async function getAdminCacheStats(): Promise<{
       totalKeys: keys.length,
       connected: true,
     };
-  } catch (error) {
+  } catch (_error) {
     handleRedisError('STATS', error);
     return {
       totalKeys: 0,

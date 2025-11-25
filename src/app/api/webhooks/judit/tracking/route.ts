@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
       processingTime
     }, { status: 200 });
 
-  } catch (error) {
+  } catch (_error) {
     const processingTime = Date.now() - startTime;
     logError(`${ICONS.ERROR} Webhook processing failed:`, '', { component: 'juditWebhookTracking' });
 
@@ -262,7 +262,7 @@ async function processWebhook(payload: JuditWebhookPayload): Promise<WebhookProc
 
     return result;
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Failed to process webhook:`, '', { component: 'juditWebhookTracking' });
     result.error = error instanceof Error ? error.message : 'Unknown error';
     result.processingTime = Date.now() - startTime;
@@ -339,7 +339,7 @@ async function processMovementEvent(
 
     log.info({ msg: `${ICONS.SUCCESS} Movement processed: ${movement.description}`, component: 'juditWebhookTracking' });
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Failed to process movement:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
@@ -360,7 +360,7 @@ async function processAttachmentEvent(
       // Store it in the process metadata for later retrieval
     }
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Failed to process attachment event:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
@@ -407,7 +407,7 @@ async function processStatusChangeEvent(
 
     log.info({ msg: `${ICONS.SUCCESS} Status updated: ${status.previous} -> ${status.current}`, component: 'juditWebhookTracking' });
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Failed to process status change:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
@@ -436,7 +436,7 @@ async function processUpdateEvent(
 
     log.info({ msg: `${ICONS.SUCCESS} General update processed: ${result.newMovements} movements, ${result.attachmentsProcessed} attachments`, component: 'juditWebhookTracking' });
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Failed to process general update:`, '', { component: 'juditWebhookTracking' });
     throw error;
   }
@@ -470,7 +470,7 @@ async function validateWebhookSignature(request: NextRequest, payload: JuditWebh
       Buffer.from(providedSignature, 'hex')
     );
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Signature validation failed:`, '', { component: 'juditWebhookTracking' });
     return false;
   }
@@ -599,7 +599,7 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
     }
 
     return alertsGenerated;
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Erro ao gerar alertas de movimentação:`, '', { component: 'juditWebhookTracking' });
     return 0;
   }
@@ -682,7 +682,7 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
     }
 
     return alertsGenerated;
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Erro ao gerar alertas de status:`, '', { component: 'juditWebhookTracking' });
     return 0;
   }

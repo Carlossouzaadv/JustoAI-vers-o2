@@ -100,7 +100,7 @@ export function ProcessTimeline({ processId, caseId }: ProcessTimelineProps) {
         console.warn('Erro ao carregar timeline:', response.status);
         setEvents([]);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar timeline:', error);
       setEvents([]);
     } finally {

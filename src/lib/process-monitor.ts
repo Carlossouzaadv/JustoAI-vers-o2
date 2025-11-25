@@ -6,6 +6,7 @@
 import prisma from './prisma';
 import { createProcessApiClient } from './process-apis';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES
@@ -122,7 +123,7 @@ export class ProcessMonitor {
       throw new Error('Já existe uma sessão de monitoramento em execução');
     }
 
-    console.log(`${ICONS.PROCESS} Iniciando sessão de monitoramento...`);
+    log.info({ msg: "Iniciando sessão de monitoramento..." });
 
     // Buscar processos que precisam ser sincronizados
     const processesToSync = await this.getProcessesForSync();
@@ -138,7 +139,7 @@ export class ProcessMonitor {
       status: 'RUNNING'
     };
 
-    console.log(`${ICONS.INFO} Encontrados ${processesToSync.length} processos para sincronizar`);
+    log.info({ msg: "Encontrados  processos para sincronizar" });
 
     const processesUpdated: string[] = [];
     let totalNewMovements = 0;
@@ -167,10 +168,10 @@ export class ProcessMonitor {
 
         // Log de progresso a cada 10 processos
         if (this.session.processed % 10 === 0) {
-          console.log(`${ICONS.PROCESS} Progresso: ${this.session.processed}/${this.session.totalProcesses} processos`);
+          log.info({ msg: "Progresso: / processos" });
         }
 
-      } catch (error) {
+      } catch (_error) {
         const errorDetails: MonitoringError = {
           processId: process.id,
           processNumber: process.processNumber,
@@ -182,7 +183,7 @@ export class ProcessMonitor {
         this.session.processed++;
         this.session.failed++;
 
-        console.error(`${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:`, error);
+        logError(error, "${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:", { component: "refactored" });
       }
 
       // Pequena pausa entre processos para não sobrecarregar APIs
@@ -218,7 +219,7 @@ export class ProcessMonitor {
   cancelCurrentSession(): void {
     if (this.session?.status === 'RUNNING') {
       this.cancelled = true;
-      console.log(`${ICONS.WARNING} Cancelando sessão de monitoramento...`);
+      log.info({ msg: "Cancelando sessão de monitoramento..." });
     }
   }
 
@@ -397,7 +398,7 @@ export class ProcessMonitor {
 
       return { newMovements: newMovementsCount, alertsGenerated };
 
-    } catch (error) {
+    } catch (_error) {
       // Atualizar log com erro
       await prisma.processSyncLog.update({
         where: { id: syncLog.id },
@@ -433,21 +434,21 @@ export class ProcessMonitorScheduler {
       this.stop();
     }
 
-    console.log(`${ICONS.INFO} Iniciando scheduler de monitoramento (intervalo: ${intervalMinutes} minutos)`);
+    log.info({ msg: "Iniciando scheduler de monitoramento (intervalo:  minutos)" });
 
     this.intervalId = setInterval(async () => {
       try {
-        console.log(`${ICONS.PROCESS} Executando monitoramento automático...`);
+        log.info({ msg: "Executando monitoramento automático..." });
         await this.monitor.startMonitoringSession();
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Erro no monitoramento automático:`, error);
+      } catch (_error) {
+        logError(error, "${ICONS.ERROR} Erro no monitoramento automático:", { component: "refactored" });
       }
     }, intervalMinutes * 60 * 1000);
 
     // Executar uma vez imediatamente
     setTimeout(() => {
       this.monitor.startMonitoringSession().catch(error => {
-        console.error(`${ICONS.ERROR} Erro no monitoramento inicial:`, error);
+        logError(error, "${ICONS.ERROR} Erro no monitoramento inicial:", { component: "refactored" });
       });
     }, 5000); // Aguardar 5 segundos para inicialização
   }
@@ -460,7 +461,7 @@ export class ProcessMonitorScheduler {
       clearInterval(this.intervalId);
       this.intervalId = null;
       this.monitor.cancelCurrentSession();
-      console.log(`${ICONS.INFO} Scheduler de monitoramento parado`);
+      log.info({ msg: "Scheduler de monitoramento parado" });
     }
   }
 

@@ -301,7 +301,7 @@ export async function POST(req: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro na geração de relatório:`, error);
 
     if (error instanceof z.ZodError) {
@@ -456,7 +456,7 @@ export async function PUT(req: NextRequest) {
       }))
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro no batch processing:`, error);
 
     if (error instanceof z.ZodError) {
@@ -601,7 +601,7 @@ export async function GET(_req: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao obter métricas:`, error);
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

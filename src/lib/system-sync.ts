@@ -7,6 +7,7 @@
 import prisma from './prisma';
 import { ICONS } from './icons';
 import type { SourceSystem } from './system-importer';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TYPES (Prisma não completamente gerado)
@@ -79,7 +80,7 @@ export class SystemSynchronizer {
    * Inicia sincronização manual de um sistema
    */
   async startManualSync(workspaceId: string, sourceSystem: string): Promise<SyncSession> {
-    console.log(`${ICONS.SYNC} Iniciando sincronização manual: ${sourceSystem}`);
+    log.info({ msg: "Iniciando sincronização manual:" });
 
     const session: SyncSession = {
       id: `sync_${Date.now()}`,
@@ -134,12 +135,12 @@ export class SystemSynchronizer {
 
       return session;
 
-    } catch (error) {
+    } catch (_error) {
       session.status = 'FAILED';
       session.finishedAt = new Date();
       session.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
 
-      console.error(`${ICONS.ERROR} Erro na sincronização:`, error);
+      logError(error, "${ICONS.ERROR} Erro na sincronização:", { component: "refactored" });
       return session;
     }
   }

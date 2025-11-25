@@ -86,7 +86,7 @@ export async function GET() {
         documentation: '/admin/docs/observability',
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching observability data:', error);
     return NextResponse.json(
       {

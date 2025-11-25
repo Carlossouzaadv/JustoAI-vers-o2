@@ -272,7 +272,7 @@ export async function POST(
           status: 'resolved',
           resolution: resolution.resolution,
         });
-      } catch (error) {
+      } catch (_error) {
         console.error(
           `${ICONS.ERROR} [Timeline Conflicts] Erro ao resolver ${resolution.eventId}:`,
           error
@@ -310,7 +310,7 @@ export async function POST(
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (_error) {
     console.error(
       `${ICONS.ERROR} [Timeline Conflicts] Erro geral:`,
       error

@@ -5,6 +5,7 @@
 // Gerencia conexões WebSocket para atualizações de progresso
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface WebSocketMessage {
   type:
@@ -104,7 +105,7 @@ export class WebSocketManager {
     }
 
     this.connections.delete(connectionId);
-    console.log(`${ICONS.INFO} Conexão SSE removida: ${connectionId}`);
+    log.info({ msg: "Conexão SSE removida:" });
   }
 
   /**
@@ -118,7 +119,7 @@ export class WebSocketManager {
     this.workspaceSubscriptions.get(workspaceId)!.add(connectionId);
     this.connectionWorkspaces.set(connectionId, workspaceId);
 
-    console.log(`${ICONS.SUCCESS} Conexão ${connectionId} subscrita ao workspace ${workspaceId}`);
+    log.info({ msg: "Conexão  subscrita ao workspace" });
   }
 
   /**
@@ -143,7 +144,7 @@ export class WebSocketManager {
     }
 
     this.batchSubscriptions.get(batchId)!.add(connectionId);
-    console.log(`${ICONS.SUCCESS} Conexão ${connectionId} subscrita ao batch ${batchId}`);
+    log.info({ msg: "Conexão  subscrita ao batch" });
   }
 
   /**
@@ -175,7 +176,7 @@ export class WebSocketManager {
       timestamp: Date.now()
     };
 
-    console.log(`${ICONS.PROCESS} Broadcasting progresso do batch ${batchId} para ${subscribers.size} conexões`);
+    log.info({ msg: "Broadcasting progresso do batch  para  conexões" });
 
     for (const connectionId of subscribers) {
       this.sendMessage(connectionId, message);
@@ -198,7 +199,7 @@ export class WebSocketManager {
       timestamp: Date.now()
     };
 
-    console.log(`${ICONS.SUCCESS} Broadcasting conclusão do batch ${batchId}`);
+    log.info({ msg: "Broadcasting conclusão do batch" });
 
     for (const connectionId of subscribers) {
       this.sendMessage(connectionId, message);
@@ -224,7 +225,7 @@ export class WebSocketManager {
       timestamp: Date.now()
     };
 
-    console.log(`${ICONS.ERROR} Broadcasting erro do batch ${batchId}`);
+    log.info({ msg: "Broadcasting erro do batch" });
 
     for (const connectionId of subscribers) {
       this.sendMessage(connectionId, message);
@@ -246,7 +247,7 @@ export class WebSocketManager {
       timestamp: Date.now()
     };
 
-    console.log(`${ICONS.PROCESS} Broadcasting para workspace ${workspaceId} (${subscribers.size} conexões): ${message.type}`);
+    log.info({ msg: "Broadcasting para workspace  ( conexões):" });
 
     for (const connectionId of subscribers) {
       this.sendMessage(connectionId, fullMessage);
@@ -295,7 +296,7 @@ export class WebSocketManager {
   private sendMessage(connectionId: string, message: WebSocketMessage): void {
     const connection = this.connections.get(connectionId);
     if (!connection) {
-      console.log(`${ICONS.WARNING} Conexão ${connectionId} não encontrada`);
+      log.info({ msg: "Conexão  não encontrada" });
       return;
     }
 
@@ -310,13 +311,13 @@ export class WebSocketManager {
         connection.write(sseData);
       } else {
         // Fallback: tentar enviar como json se não for SSE puro
-        console.log(`${ICONS.INFO} Conexão ${connectionId} não suporta escrita direta`);
+        log.info({ msg: "Conexão  não suporta escrita direta" });
       }
 
-      console.log(`${ICONS.SUCCESS} Mensagem SSE enviada para ${connectionId}: ${message.type}`);
+      log.info({ msg: "Mensagem SSE enviada para :" });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}:", { component: "refactored" });
       this.removeConnection(connectionId);
     }
   }
@@ -379,7 +380,7 @@ export class WebSocketManager {
     this.stopPingInterval();
     this.connections.clear();
     this.batchSubscriptions.clear();
-    console.log(`${ICONS.INFO} WebSocket Manager cleanup concluído`);
+    log.info({ msg: "WebSocket Manager cleanup concluído" });
   }
 }
 

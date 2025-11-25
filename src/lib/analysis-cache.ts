@@ -97,7 +97,7 @@ export class AnalysisCacheManager {
       let parsedData: AnalysisCacheEntry;
       try {
         parsedData = JSON.parse(data) as unknown as AnalysisCacheEntry;
-      } catch (parseError) {
+      } catch (_parseError) {
         logError(`${ICONS.ERROR} Failed to parse cache data:`, 'parseError', { component: 'analysisCache' });
         await this.redis.del(cacheKey);
         return {
@@ -141,7 +141,7 @@ export class AnalysisCacheManager {
         key: analysisKey
       };
 
-    } catch (error) {
+    } catch (_error) {
       // In graceful mode (Vercel web), Redis connection errors are expected and OK
       // Just log and continue without cache
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -193,7 +193,7 @@ export class AnalysisCacheManager {
       log.info({ msg: '${ICONS.SUCCESS} Análise salva no cache: ${analysisKey.substring(0, 16)}... (TTL: ${this.ANALYSIS_CACHE_TTL}s)', component: 'analysisCache' });
       return true;
 
-    } catch (error) {
+    } catch (_error) {
       // In graceful mode, it's OK if cache save fails - just log it
       const errorMsg = error instanceof Error ? error.message : String(error);
 
@@ -238,7 +238,7 @@ export class AnalysisCacheManager {
         ttl
       };
 
-    } catch (error) {
+    } catch (_error) {
       // In graceful mode, allow processing without lock
       const errorMsg = error instanceof Error ? error.message : String(error);
 
@@ -264,7 +264,7 @@ export class AnalysisCacheManager {
       const result = await this.redis.del(lockKey);
       log.info({ msg: '${ICONS.SUCCESS} Lock liberado: ${lockKey}', component: 'analysisCache' });
       return result > 0;
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao liberar lock:`, 'error', { component: 'analysisCache' });
       return false;
     }
@@ -281,7 +281,7 @@ export class AnalysisCacheManager {
 
       log.info({ msg: '${ICONS.SUCCESS} Texto extraído salvo no cache (TTL: ${this.TEXT_CACHE_TTL}s)', component: 'analysisCache' });
       return true;
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao cachear texto:`, 'error', { component: 'analysisCache' });
       return false;
     }
@@ -300,7 +300,7 @@ export class AnalysisCacheManager {
       }
 
       return text;
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao recuperar texto do cache:`, 'error', { component: 'analysisCache' });
       return null;
     }
@@ -327,7 +327,7 @@ export class AnalysisCacheManager {
       log.info({ msg: '${ICONS.SUCCESS} Limpeza concluída: ${cleanedCount} caches removidos', component: 'analysisCache' });
       return cleanedCount;
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro na limpeza de cache:`, 'error', { component: 'analysisCache' });
       return 0;
     }
@@ -374,7 +374,7 @@ export class AnalysisCacheManager {
           lock_ttl_minutes: this.LOCK_TTL / 60
         }
       };
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao obter estatísticas:`, 'error', { component: 'analysisCache' });
       return null;
     }
@@ -408,7 +408,7 @@ export class AnalysisCacheManager {
       } as unknown);
 
       return lastMovement?.date || null;
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao buscar última movimentação:`, 'error', { component: 'analysisCache' });
       return null;
     }
@@ -433,7 +433,7 @@ export class AnalysisCacheManager {
         .map((doc) => doc.textSha)
         .filter((hash): hash is string => Boolean(hash))
         .sort(); // Ordenar para consistência
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao buscar hashes de documentos:`, 'error', { component: 'analysisCache' });
       return [];
     }
@@ -470,7 +470,7 @@ export class AnalysisCacheManager {
               invalidatedCount++;
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // Ignorar erros de processamento individual
           console.debug(`${ICONS.WARNING} Error processing cache key ${key}:`, error);
         }
@@ -479,7 +479,7 @@ export class AnalysisCacheManager {
       if (invalidatedCount > 0) {
         log.info({ msg: '${ICONS.SUCCESS} Invalidated ${invalidatedCount} cache entries for process ${processId}', component: 'analysisCache' });
       }
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao invalidar cache:`, 'error', { component: 'analysisCache' });
     }
   }

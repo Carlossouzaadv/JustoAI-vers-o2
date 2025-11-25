@@ -281,7 +281,7 @@ async function processOnboardingJob(
 
       throw new Error(result.error || 'Onboarding falhou');
     }
-  } catch (error) {
+  } catch (_error) {
     operation.finish('failure', {
       error: error instanceof Error ? error.message : String(error),
     });
@@ -337,7 +337,7 @@ circuitBreakerService.on('circuit-opened', async () => {
       action: 'worker_paused',
       reason: 'circuit_breaker_quota_exceeded',
     });
-  } catch (error) {
+  } catch (_error) {
     workerLogger.error({
       action: 'worker_pause_error',
       error: error instanceof Error ? error.message : String(error),
@@ -358,7 +358,7 @@ circuitBreakerService.on('queue-resumed', async () => {
       action: 'worker_resumed',
       reason: 'circuit_breaker_recovered',
     });
-  } catch (error) {
+  } catch (_error) {
     workerLogger.error({
       action: 'worker_resume_error',
       error: error instanceof Error ? error.message : String(error),
@@ -477,7 +477,7 @@ async function gracefulShutdown(signal?: string) {
     // It will handle its own shutdown via SIGTERM/SIGINT handlers
 
     process.exit(0);
-  } catch (error) {
+  } catch (_error) {
     if (shutdownTimer) clearTimeout(shutdownTimer);
 
     workerLogger.error({

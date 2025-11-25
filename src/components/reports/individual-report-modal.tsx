@@ -107,7 +107,7 @@ export default function IndividualReportModal({
         const data = await response.json();
         setCacheInfo(data.cache);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao verificar cache:', error);
       setCacheInfo(null);
     }
@@ -180,7 +180,7 @@ export default function IndividualReportModal({
 
       await onGenerate(config);
       onClose();
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao gerar relatório:', error);
     } finally {
       setLoading(false);

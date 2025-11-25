@@ -1,3 +1,5 @@
+import { log, logError } from '@/lib/services/logger';
+
 /**
  * Timeline Unificada Inteligente - Configuração
  *
@@ -106,8 +108,8 @@ export const timelineConfig = getTimelineConfig();
 // Validar ao carregar
 try {
   validateTimelineConfig(timelineConfig);
-} catch (error) {
-  console.error('❌ Erro na configuração da Timeline:', error);
+} catch (_error) {
+  logError(error, "❌ Erro na configuração da Timeline:", { component: "refactored" });
   // Em produção, falhar rápido; em dev, apenas log
   if (process.env.NODE_ENV === 'production') {
     throw error;
@@ -118,23 +120,11 @@ try {
  * Debug: Exibir configuração atual (use apenas em desenvolvimento)
  */
 export function debugTimelineConfig(): void {
-  console.log('📊 Timeline Unificada - Configuração Atual:');
-  console.log(
-    `  ✓ Enrichment Threshold: ${timelineConfig.similarityThresholdEnrichment}`
-  );
-  console.log(
-    `  ✓ Related Threshold: ${timelineConfig.similarityThresholdRelated}`
-  );
-  console.log(
-    `  ✓ Date Proximity: ±${timelineConfig.dateProximityDays} dias`
-  );
-  console.log(
-    `  ✓ Enrichment Cost: ${timelineConfig.enrichmentCreditCost} crédito`
-  );
-  console.log(
-    `  ✓ Enrichment Model: ${timelineConfig.enrichmentModel}`
-  );
-  console.log(
-    `  ✓ Enrichment Timeout: ${timelineConfig.enrichmentTimeoutMs}ms`
-  );
+  log.info({ msg: "📊 Timeline Unificada - Configuração Atual:" });
+  log.info({ msg: "✓ Enrichment Threshold:" });
+  log.info({ msg: "✓ Related Threshold:" });
+  log.info({ msg: "✓ Date Proximity: ± dias" });
+  log.info({ msg: "✓ Enrichment Cost:  crédito" });
+  log.info({ msg: "✓ Enrichment Model:" });
+  log.info({ msg: "✓ Enrichment Timeout: ms" });
 }

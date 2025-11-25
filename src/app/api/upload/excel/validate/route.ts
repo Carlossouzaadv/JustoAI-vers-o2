@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
     try {
       rows = await ExcelParserSimple.parseToJson(buffer);
-    } catch (error) {
+    } catch (_error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       console.log(`${ICONS.ERROR} Erro no parsing:`, message);
 
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       },
       { status: validationResult.success ? 200 : 400 }
     );
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro na validação:`, error);
 
     return NextResponse.json(

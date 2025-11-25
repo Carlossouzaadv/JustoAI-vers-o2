@@ -122,7 +122,7 @@ export async function GET(
       headers
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Document Download] Erro:`, error);
 
     return NextResponse.json(

@@ -4,6 +4,7 @@
 // ================================================================
 
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPES
@@ -391,7 +392,7 @@ export async function extractPDFMetadata(
   fileName: string
 ): Promise<PDFMetadata> {
   try {
-    console.log(`${ICONS.EXTRACT} [PDF Metadata] Extraindo metadata de: ${fileName}`);
+    log.info({ msg: "[PDF Metadata] Extraindo metadata de:" });
 
     const metadata: PDFMetadata = {
       documentDate: extractPrimaryDocumentDate(text),
@@ -433,8 +434,8 @@ export async function extractPDFMetadata(
     });
 
     return metadata;
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [PDF Metadata] Erro ao extrair metadata:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} PDF Metadata Erro ao extrair metadata:", { component: "refactored" });
 
     // Retornar metadata mínima em caso de erro
     return {

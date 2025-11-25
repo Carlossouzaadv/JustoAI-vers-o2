@@ -61,7 +61,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     return successResponse(responseData)
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Failed to fetch credit balance:`, error)
     return errorResponse(
       error instanceof Error ? error.message : 'Failed to fetch credit balance',

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       message: 'Se o email existir na nossa base, você receberá um link de verificação'
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Error in resend verification:`, error);
 
     if (error instanceof z.ZodError) {

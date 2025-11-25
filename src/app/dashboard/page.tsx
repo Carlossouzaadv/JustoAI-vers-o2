@@ -225,7 +225,7 @@ export default function DashboardPage() {
           ongoingProcesses: []
         });
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar dados do dashboard:', error);
 
       // Set empty dashboard on error

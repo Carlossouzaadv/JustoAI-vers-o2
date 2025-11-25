@@ -15,6 +15,7 @@ import { getTimelineConfig } from '@/lib/config/timelineConfig';
 import { isJuditSource } from '@/lib/utils/timelineSourceUtils';
 import { getGeminiClient } from '@/lib/gemini-client';
 import { buildEnrichmentPrompt } from '@/lib/prompts/enrichTimelineEvent';
+import { log, logError } from '@/lib/services/logger';
 
 export interface TimelineMovement {
   date: Date;
@@ -335,8 +336,8 @@ export class TimelineEnricherService {
         tokensUsed: 100, // Estimativa
         cost: this.config.enrichmentCreditCost,
       };
-    } catch (error) {
-      console.error('❌ Erro ao enriquecer descrição:', error);
+    } catch (_error) {
+      logError(error, "❌ Erro ao enriquecer descrição:", { component: "refactored" });
       // Fallback: retornar descrição original
       throw error;
     }

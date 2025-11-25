@@ -924,7 +924,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (_error) {
     logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro no upload de PDF`, { component: 'documents-upload' });
 
     // Liberar lock se ainda estiver ativo
@@ -965,7 +965,7 @@ export async function PUT(request: NextRequest) {
       message: 'Documento anexado ao processo existente'
     });
 
-  } catch (error) {
+  } catch (_error) {
     logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro ao anexar documento`, { component: 'documents-upload' });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -1002,7 +1002,7 @@ export async function GET(request: NextRequest) {
       total: entries.length
     });
 
-  } catch (error) {
+  } catch (_error) {
     logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} Erro ao obter timeline`, { component: 'documents-upload' });
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -1061,7 +1061,7 @@ async function savePermanentFile(
     // If upload fails, fallback to temp storage
     log.warn({ msg: `${ICONS.WARNING} [Storage] Supabase upload failed, using temporary storage`, component: 'documents-upload' });
     return await saveFinalFile(buffer, fileName);
-  } catch (error) {
+  } catch (_error) {
     logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Storage] Error saving permanent file`, { component: 'documents-upload' });
     // Fallback to temporary storage
     return await saveFinalFile(buffer, fileName);

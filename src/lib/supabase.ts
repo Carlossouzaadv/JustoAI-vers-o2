@@ -16,7 +16,7 @@ export async function testSupabaseConnection() {
       throw error
     }
     return { success: true, message: 'Supabase connection successful!' }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       message: `Supabase connection failed: ${error}`

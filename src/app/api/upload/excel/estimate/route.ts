@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       confirmationMessage: generateConfirmationMessage(refinedEstimate)
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro na estimativa:`, error);
 
     return NextResponse.json({
@@ -142,7 +142,7 @@ async function checkExistingProcesses(
 
     return existing.map((p: MonitoredProcessSelect) => p.processNumber);
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao verificar processos existentes:`, error);
     return [];
   }

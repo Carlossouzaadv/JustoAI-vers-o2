@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       new URL('/dashboard', request.url),
       { status: 303 }
     )
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Callback error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
       new URL('/dashboard', request.url),
       { status: 303 }
     )
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Callback error:', error)
     return NextResponse.redirect(
       new URL('/login?error=server_error', request.url)

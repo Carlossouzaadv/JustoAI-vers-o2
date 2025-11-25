@@ -6,6 +6,7 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, Table, TableRow, T
 import { ICONS } from '@/lib/icons';
 import fs from 'fs/promises';
 import path from 'path';
+import { log, logError } from '@/lib/services/logger';
 
 // Interfaces para o template engine DOCX
 export interface DOCXTemplateOptions {
@@ -74,7 +75,7 @@ export class DOCXTemplateEngine {
     const startTime = Date.now();
 
     try {
-      console.log(`${ICONS.PROCESS} Generating DOCX: ${path.basename(outputPath)}`);
+      log.info({ msg: "Generating DOCX:" });
 
       const customization = options.customization || this.getDefaultCustomization();
 
@@ -139,7 +140,7 @@ export class DOCXTemplateEngine {
       const stats = await fs.stat(outputPath);
       const fileSize = stats.size;
 
-      console.log(`${ICONS.SUCCESS} DOCX generated successfully: ${fileSize} bytes`);
+      log.info({ msg: "DOCX generated successfully:  bytes" });
 
       return {
         success: true,
@@ -148,8 +149,8 @@ export class DOCXTemplateEngine {
         processingTime: Date.now() - startTime
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} DOCX generation failed:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} DOCX generation failed:", { component: "refactored" });
       return {
         success: false,
         filePath: '',

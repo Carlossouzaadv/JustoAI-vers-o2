@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Telemetry Alerts] Error:`, error);
 
     captureApiError(error, {

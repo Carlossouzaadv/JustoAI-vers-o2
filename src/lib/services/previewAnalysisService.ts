@@ -7,6 +7,7 @@
 import { getGeminiClient } from '@/lib/gemini-client';
 import { ModelTier } from '@/lib/ai-model-types';
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPES
@@ -71,7 +72,7 @@ export async function generatePreview(
   ];
 
   try {
-    console.log(`${ICONS.ROBOT} [Preview] Gerando preview para case ${caseId}...`);
+    log.info({ msg: "[Preview] Gerando preview para case ..." });
 
     // ============================================================
     // 1. PREPARAR TEXTO (Limitar para velocidade)
@@ -79,7 +80,7 @@ export async function generatePreview(
 
     const limitedText = cleanText.substring(0, MAX_TEXT_LENGTH);
 
-    console.log(`${ICONS.INFO} [Preview] Texto limitado: ${limitedText.length} chars (original: ${cleanText.length})`);
+    log.info({ msg: "[Preview] Texto limitado:  chars (original: )" });
 
     // ============================================================
     // 2. CONSTRUIR PROMPT ESTRITO
@@ -96,7 +97,7 @@ export async function generatePreview(
 
     for (const { tier, name } of modelStrategy) {
       try {
-        console.log(`${ICONS.SEARCH} [Preview] Tentativa com Gemini ${name}...`);
+        log.info({ msg: "[Preview] Tentativa com Gemini ..." });
 
         // Call Gemini API - returns unknown (JSON parsed)
         const responseData = await gemini.generateJsonContent(prompt, {
@@ -134,8 +135,8 @@ export async function generatePreview(
 
         const duration = Date.now() - startTime;
 
-        console.log(`${ICONS.SUCCESS} [Preview] Preview gerado com ${name} em ${duration}ms`);
-        console.log(`${ICONS.INFO} [Preview] Movimentos extraídos: ${preview.lastMovements.length}`);
+        log.info({ msg: "[Preview] Preview gerado com  em ms" });
+        log.info({ msg: "[Preview] Movimentos extraídos:" });
 
         return {
           success: true,
@@ -144,9 +145,9 @@ export async function generatePreview(
           duration
         };
 
-      } catch (error) {
+      } catch (_error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(`${ICONS.WARNING} [Preview] Falha com ${name}: ${lastError.message}`);
+        log.warn({ msg: "[Preview] Falha com :" });
 
         // Continuar para próximo modelo se não for a última tentativa
         if (tier === ModelTier.PRO) {
@@ -158,10 +159,10 @@ export async function generatePreview(
     // Se chegou aqui, todas as tentativas falharam
     throw lastError || new Error('Todas as tentativas de análise falharam');
 
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - startTime;
 
-    console.error(`${ICONS.ERROR} [Preview] Erro ao gerar preview após todas as tentativas:`, error);
+    logError(error, "${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:", { component: "refactored" });
 
     return {
       success: false,

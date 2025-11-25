@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Telemetry Usage] Error:`, error);
 
     // userId is safely available here (either set in try or undefined)

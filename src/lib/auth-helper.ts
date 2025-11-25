@@ -7,6 +7,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { log, logError } from '@/lib/services/logger';
 
 /**
  * Get authenticated user from Supabase (for API routes)
@@ -41,8 +42,8 @@ export async function getAuthenticatedUser(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     return user;
-  } catch (error) {
-    console.error('Auth error in getAuthenticatedUser:', error);
+  } catch (_error) {
+    logError(error, "Auth error in getAuthenticatedUser:", { component: "refactored" });
     return null;
   }
 }
@@ -85,8 +86,8 @@ export async function getServerUser() {
     } = await supabase.auth.getUser();
 
     return user;
-  } catch (error) {
-    console.error('Auth error in getServerUser:', error);
+  } catch (_error) {
+    logError(error, "Auth error in getServerUser:", { component: "refactored" });
     return null;
   }
 }

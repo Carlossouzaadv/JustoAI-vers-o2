@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { log, logError } from '@/lib/services/logger';
 
 // Prevent multiple instances of Prisma Client in development
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
@@ -13,16 +14,16 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 export async function connectPrisma() {
   try {
     await prisma.$connect()
-    console.log('✅ Connected to database')
-  } catch (error) {
-    console.error('❌ Failed to connect to database:', error)
+    log.info({ msg: "✅ Connected to database" })
+  } catch (_error) {
+    logError(error, "❌ Failed to connect to database:", { component: "refactored" })
     throw error
   }
 }
 
 export async function disconnectPrisma() {
   await prisma.$disconnect()
-  console.log('🔌 Disconnected from database')
+  log.info({ msg: "🔌 Disconnected from database" })
 }
 
 // Default export for compatibility

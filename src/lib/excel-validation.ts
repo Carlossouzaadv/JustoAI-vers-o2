@@ -93,7 +93,7 @@ export function validateExcelRow(
   try {
     const validated = excelRowSchema.parse(rowData);
     return { success: true, validatedData: validated };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       const firstError = error.issues[0];
       const field = String(firstError.path[0]);

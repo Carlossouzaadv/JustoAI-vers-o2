@@ -100,7 +100,7 @@ export default function SignupPage() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         window.location.href = '/dashboard';
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Signup error:', error);
       setAuthError('Erro inesperado. Tente novamente.');
     } finally {

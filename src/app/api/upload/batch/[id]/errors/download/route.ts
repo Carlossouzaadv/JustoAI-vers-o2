@@ -104,7 +104,7 @@ export async function GET(
           errorDetails = parsedErrors;
         }
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       console.warn(
         `${ICONS.WARNING} [Batch Errors Download] Erro ao fazer parse de erros JSON:`,
         parseError
@@ -144,7 +144,7 @@ export async function GET(
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Batch Errors Download] Erro:`, error);
 
     captureApiError(error, {

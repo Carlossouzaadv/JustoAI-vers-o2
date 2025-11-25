@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString(),
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('[API] Error fetching costs:', error);
 
     return NextResponse.json(

@@ -122,7 +122,7 @@ export async function POST(
       { status: 200 }
     );
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Regenerate Summary] Erro:`, error);
 
     return NextResponse.json(

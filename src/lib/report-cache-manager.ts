@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { createHash } from 'crypto';
 import { ICONS } from '@/lib/icons';
 import { ReportType, AudienceType } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // Type Guard para Validação Segura de Configuração de Cache
@@ -115,7 +116,7 @@ export class ReportCacheManager {
    * Invalida cache quando detectada nova movimentação
    */
   async invalidateOnMovement(processId: string, movementDate: Date): Promise<CacheInvalidationResult> {
-    console.log(`${ICONS.PROCESS} Invalidando cache para processo ${processId} - nova movimentação em ${movementDate.toISOString()}`);
+    log.info({ msg: "Invalidando cache para processo  - nova movimentação em" });
 
     try {
       // Encontrar todas as entradas de cache que incluem este processo
@@ -146,7 +147,7 @@ export class ReportCacheManager {
           invalidated++;
           entry.processIds.forEach((id: string) => affectedProcessIds.add(id));
 
-          console.log(`${ICONS.SUCCESS} Cache invalidado: ${entry.cacheKey}`);
+          log.info({ msg: "Cache invalidado:" });
         }
       }
 
@@ -156,11 +157,11 @@ export class ReportCacheManager {
         reason: `Nova movimentação no processo ${processId}`
       };
 
-      console.log(`${ICONS.SUCCESS} Invalidação concluída: ${invalidated} entradas removidas`);
+      log.info({ msg: "Invalidação concluída:  entradas removidas" });
       return result;
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na invalidação de cache:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na invalidação de cache:", { component: "refactored" });
       throw error;
     }
   }
@@ -172,7 +173,7 @@ export class ReportCacheManager {
     processId: string;
     date: Date;
   }>): Promise<CacheInvalidationResult> {
-    console.log(`${ICONS.PROCESS} Invalidação em massa: ${movements.length} movimentações`);
+    log.info({ msg: "Invalidação em massa:  movimentações" });
 
     const affectedProcessIds = new Set<string>();
     let totalInvalidated = 0;
@@ -229,7 +230,7 @@ export class ReportCacheManager {
       reason: `Invalidação em massa de ${movements.length} movimentações`
     };
 
-    console.log(`${ICONS.SUCCESS} Invalidação em massa concluída: ${totalInvalidated} entradas removidas`);
+    log.info({ msg: "Invalidação em massa concluída:  entradas removidas" });
     return result;
   }
 
@@ -237,7 +238,7 @@ export class ReportCacheManager {
    * Invalida cache por workspace (admin action)
    */
   async invalidateByWorkspace(workspaceId: string, reason: string = 'Invalidação manual'): Promise<CacheInvalidationResult> {
-    console.log(`${ICONS.PROCESS} Invalidando todo cache do workspace ${workspaceId}`);
+    log.info({ msg: "Invalidando todo cache do workspace" });
 
     const deletedEntries: WorkspaceCacheEntry[] = await prisma.reportCache.findMany({
       where: { workspaceId },
@@ -268,7 +269,7 @@ export class ReportCacheManager {
     orphaned: number;
     errors: number;
   }> {
-    console.log(`${ICONS.PROCESS} Iniciando limpeza automática de cache`);
+    log.info({ msg: "Iniciando limpeza automática de cache" });
 
     let expired = 0;
     let orphaned = 0;
@@ -299,10 +300,10 @@ export class ReportCacheManager {
         orphaned = orphanedResult.count;
       }
 
-      console.log(`${ICONS.SUCCESS} Limpeza concluída: ${expired} expiradas, ${orphaned} órfãs`);
+      log.info({ msg: "Limpeza concluída:  expiradas,  órfãs" });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na limpeza de cache:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na limpeza de cache:", { component: "refactored" });
       errors++;
     }
 
@@ -321,7 +322,7 @@ export class ReportCacheManager {
     skipped: number;
     errors: number;
   }> {
-    console.log(`${ICONS.PROCESS} Pré-aquecendo cache para ${reportConfigs.length} configurações`);
+    log.info({ msg: "Pré-aquecendo cache para  configurações" });
 
     let warmed = 0;
     let skipped = 0;
@@ -350,13 +351,13 @@ export class ReportCacheManager {
         await this.generateCacheEntry(workspaceId, config);
         warmed++;
 
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Erro no pré-aquecimento:`, error);
+      } catch (_error) {
+        logError(error, "${ICONS.ERROR} Erro no pré-aquecimento:", { component: "refactored" });
         errors++;
       }
     }
 
-    console.log(`${ICONS.SUCCESS} Pré-aquecimento concluído: ${warmed} gerados, ${skipped} existentes, ${errors} erros`);
+    log.info({ msg: "Pré-aquecimento concluído:  gerados,  existentes,  erros" });
     return { warmed, skipped, errors };
   }
 
@@ -414,7 +415,7 @@ export class ReportCacheManager {
     // Para implementação futura - invalidar cache por categorias
     // Ex: "client:123", "case-type:CIVIL", etc.
 
-    console.log(`${ICONS.PROCESS} Invalidação por tags: ${tags.join(', ')}`);
+    log.info({ msg: "Invalidação por tags:" });
 
     // Placeholder implementation
     const result: CacheInvalidationResult = {
@@ -437,7 +438,7 @@ export class ReportCacheManager {
     }>;
     totalInvalidated: number;
   }> {
-    console.log(`${ICONS.PROCESS} Executando invalidação inteligente para workspace ${workspaceId}`);
+    log.info({ msg: "Executando invalidação inteligente para workspace" });
 
     const patterns = [];
     let totalInvalidated = 0;
@@ -464,7 +465,7 @@ export class ReportCacheManager {
     // Padrão 2: Cache de processos inativos
     // (implementar lógica específica conforme necessário)
 
-    console.log(`${ICONS.SUCCESS} Invalidação inteligente concluída: ${totalInvalidated} entradas`);
+    log.info({ msg: "Invalidação inteligente concluída:  entradas" });
 
     return {
       patterns,

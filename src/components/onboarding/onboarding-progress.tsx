@@ -252,7 +252,7 @@ export function OnboardingProgress({
           console.warn('Max polling attempts reached');
           setPollingActive(false);
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Polling error:', error);
         attempts++;
         if (attempts >= maxAttempts) setPollingActive(false);

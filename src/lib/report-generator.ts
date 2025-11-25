@@ -110,7 +110,7 @@ function convertReportSummaryToJsonSafe(summary: ReportSummary): object {
     }
 
     return jsonSafe;
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, 'error', { component: 'reportGenerator' });
     // Fallback: retornar objeto minimalista garantidamente JSON-safe
     return {
@@ -274,7 +274,7 @@ export class ReportGenerator {
         processingTime: Date.now() - startTime
       };
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro na geração do relatório:`, 'error', { component: 'reportGenerator' });
       return {
         success: false,
@@ -351,7 +351,7 @@ export class ReportGenerator {
         summary: cachedData
       };
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao verificar cache:`, 'error', { component: 'reportGenerator' });
       return { hit: false };
     }
@@ -585,7 +585,7 @@ export class ReportGenerator {
         summary,
         tokensUsed
       };
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao chamar Gemini API:`, 'error', { component: 'reportGenerator' });
 
       // Fallback para conteúdo mock em caso de erro
@@ -796,7 +796,7 @@ ${clientLanguage ?
       } else {
         throw new Error(result.error || 'Erro desconhecido ao gerar PDF');
       }
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao gerar PDF:`, 'error', { component: 'reportGenerator' });
       throw error;
     }
@@ -850,7 +850,7 @@ ${clientLanguage ?
       } else {
         throw new Error(result.error || 'Erro desconhecido ao gerar DOCX');
       }
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, 'error', { component: 'reportGenerator' });
       throw error;
     }
@@ -944,7 +944,7 @@ ${clientLanguage ?
 
       log.info({ msg: '${ICONS.SUCCESS} Cache salvo com chave: ${cacheKey}', component: 'reportGenerator' });
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Erro ao salvar cache:`, 'error', { component: 'reportGenerator' });
       // Não falhar por erro de cache
     }

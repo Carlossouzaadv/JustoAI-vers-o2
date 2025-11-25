@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ZodError, ZodSchema } from 'zod'
 import { getCurrentUser } from './auth'
 import { ICONS } from './icons'
+import { log, logError } from '@/lib/services/logger';
 
 // Standard API Response types
 export interface ApiResponse<T = unknown> {
@@ -67,7 +68,7 @@ export async function validateBody<T>(
     const body = await request.json()
     const data = schema.parse(body)
     return { data, error: null }
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof ZodError) {
       const formattedErrors = error.issues.map((err) => ({
         field: err.path.join('.'),
@@ -117,7 +118,7 @@ export function validateQuery<T>(
     const params = Object.fromEntries(searchParams.entries())
     const data = schema.parse(params)
     return { data, error: null }
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof ZodError) {
       const formattedErrors = error.issues.map((err) => ({
         field: err.path.join('.'),
@@ -161,7 +162,7 @@ export function validateQuery<T>(
 export async function requireAuth(_request: NextRequest) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
-    console.log('⚠️ Development mode: Bypassing API auth validation')
+    log.info({ msg: "⚠️ Development mode: Bypassing API auth validation" })
     return {
       user: {
         id: 'dev-user',
@@ -206,7 +207,7 @@ export async function requireAuth(_request: NextRequest) {
 export async function requireWorkspaceAccess(userId: string, workspaceId: string) {
   // Development mode - allow bypass
   if (process.env.NODE_ENV === 'development') {
-    console.log('⚠️ Development mode: Bypassing workspace access check')
+    log.info({ msg: "⚠️ Development mode: Bypassing workspace access check" })
     return { hasAccess: true, error: null }
   }
 
@@ -238,8 +239,8 @@ export function withErrorHandler(handler: RouteHandler): RouteHandler {
   const wrappedHandler = async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     try {
       return await handler(request, context)
-    } catch (error) {
-      console.error('API Error:', error)
+    } catch (_error) {
+      logError(error, "API Error:", { component: "refactored" })
 
       if (error instanceof Error) {
         return errorResponse(error.message, 500)

@@ -259,7 +259,7 @@ export async function GET() {
         total: Object.keys(health.checks).length,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error checking system status:', error);
     return NextResponse.json(
       {

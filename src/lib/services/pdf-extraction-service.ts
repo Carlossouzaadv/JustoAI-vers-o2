@@ -13,6 +13,7 @@
  */
 
 import { ICONS } from '../icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS - Padrão-Ouro
@@ -92,7 +93,7 @@ export class PDFExtractionService {
     const startTime = Date.now();
 
     if (!originalText || typeof originalText !== 'string') {
-      console.error(`${ICONS.ERROR} PDFExtractionService: originalText inválido`);
+      log.error({ msg: "PDFExtractionService: originalText inválido" });
       return this.createFailureResult(originalText || '');
     }
 
@@ -161,8 +162,8 @@ export class PDFExtractionService {
         processNumber,
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} PDFExtractionService erro:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} PDFExtractionService erro:", { component: "refactored" });
       return this.createFailureResult(originalText);
     }
   }

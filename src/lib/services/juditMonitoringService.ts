@@ -5,6 +5,7 @@
 
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -277,7 +278,7 @@ export async function setupProcessMonitoring(
       numeroCnj: cnj,
     };
 
-  } catch (error) {
+  } catch (_error) {
     const errorLogValue = getErrorLogValue(error);
     log.error(`Falha ao setup de monitoramento`, { cnj, error: errorLogValue });
 
@@ -332,7 +333,7 @@ export async function checkTrackingUpdates(
       movements: pageData,
     };
 
-  } catch (error) {
+  } catch (_error) {
     const errorLogValue = getErrorLogValue(error);
     log.error(`Erro ao verificar updates`, { trackingId, error: errorLogValue });
 
@@ -383,7 +384,7 @@ export async function stopProcessMonitoring(cnj: string): Promise<boolean> {
 
     return true;
 
-  } catch (error) {
+  } catch (_error) {
     const errorLogValue = getErrorLogValue(error);
     log.error(`Erro ao desativar monitoramento`, { cnj, error: errorLogValue });
     return false;
@@ -535,7 +536,7 @@ export async function updateProcessWithMovements(
       totalMovimentos: todosMovimentos.length,
     });
 
-  } catch (error) {
+  } catch (_error) {
     const errorLogValue = getErrorLogValue(error);
     log.error(`Erro ao atualizar processo com movimentos`, { processoId, error: errorLogValue });
     throw error;
@@ -748,7 +749,7 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
       };
     }
 
-  } catch (error) {
+  } catch (_error) {
     const errorLogValue = getErrorLogValue(error);
     log.error(`Erro na análise de anexos`, {
       cnj: processo.numeroCnj,

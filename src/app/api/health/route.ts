@@ -103,7 +103,7 @@ export async function GET(_request: NextRequest) {
     }
 
     return successResponse(response)
-  } catch (error) {
+  } catch (_error) {
     // Even on error, return 200 to keep service alive
     return successResponse({
       status: 'degraded',

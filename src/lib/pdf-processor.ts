@@ -7,6 +7,7 @@
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
 import { getErrorMessage, isPDFData, isRailwayPdfResponse, isPDFExtractionData } from './types/type-guards';
+import { log, logError } from '@/lib/services/logger';
 
 const ICONS = {
   SUCCESS: '✅',
@@ -33,7 +34,7 @@ function log(prefix: string, message: string, data?: Record<string, unknown>) {
   if (data) {
     console.log(`[${timestamp}] ${prefix} ${message}`, JSON.stringify(data, null, 2));
   } else if (process.env.NODE_ENV === 'development' || DEBUG || message.includes('Error')) {
-    console.log(`[${timestamp}] ${prefix} ${message}`);
+    log.info({ msg: "[]" });
   }
 }
 
@@ -43,7 +44,7 @@ function getPdfProcessorUrl(): string {
 
   // Log da URL (sem valores sensíveis)
   if (DEBUG) {
-    console.log(`${ICONS.INFO} PDF_PROCESSOR_URL configurada como: ${url}`);
+    log.info({ msg: "PDF_PROCESSOR_URL configurada como:" });
   }
 
   return url;
@@ -95,7 +96,7 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promis
         }
 
         const errorMsg = `HTTP ${response.status}: ${errorDetails.substring(0, 200)}`;
-        console.error(`${ICONS.ERROR} PDF extraction failed: ${errorMsg}`);
+        log.error({ msg: "PDF extraction failed:" });
 
         // Log detalhado para debugging (mais conciso)
         log(`${ICONS.ERROR}`, `Railway error (${response.status})`, {
@@ -121,11 +122,11 @@ async function callRailwayPdfProcessor(buffer: Buffer, fileName: string): Promis
       clearTimeout(timeoutId);
       throw fetchError;
     }
-  } catch (error) {
+  } catch (_error) {
     const duration = Date.now() - startTime;
     const errorMsg = getErrorMessage(error);
 
-    console.error(`${ICONS.ERROR} Railway error (${duration}ms): ${errorMsg}`);
+    log.error({ msg: "Railway error (ms):" });
 
     log(`${ICONS.ERROR}`, `Erro ao chamar Railway`, {
       error: errorMsg,
@@ -261,9 +262,9 @@ export class PDFProcessor {
         reductionPercentage: 0
       };
 
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`${ICONS.ERROR} Extraction error: ${errorMsg}`);
+      log.error({ msg: "Extraction error:" });
       throw new Error(`Extraction failed: ${errorMsg}`);
     }
   }
@@ -287,9 +288,9 @@ export class PDFProcessor {
       }
 
       return fullText;
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      console.error(`${ICONS.ERROR} Primary extraction failed: ${errorMsg}`);
+      log.error({ msg: "Primary extraction failed:" });
       return '';
     }
   }
@@ -299,11 +300,11 @@ export class PDFProcessor {
    */
   private async extractWithFallback(_buffer: Buffer): Promise<string> {
     try {
-      console.log('🔄 Tentando extração fallback...');
+      log.info({ msg: "🔄 Tentando extração fallback..." });
       // Implementação básica de fallback
       return '';
-    } catch (error) {
-      console.error('❌ Erro no método fallback:', error);
+    } catch (_error) {
+      logError(error, "❌ Erro no método fallback:", { component: "refactored" });
       return '';
     }
   }
@@ -387,7 +388,7 @@ export class PDFProcessor {
 
         return '';
       }
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
       log(`${ICONS.ERROR}`, `OCR extraction error: ${errorMsg}`);
       return '';
@@ -427,7 +428,7 @@ export class PDFProcessor {
         metadata
       };
 
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
       return {
         isValid: false,
@@ -460,7 +461,7 @@ export class PDFProcessor {
       // Tentativa básica de extração para detectar corrupção
       await this.extractWithPrimary(buffer);
       return { isCorrupt: false, severity: 'low' };
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = error instanceof Error ? error.message.toLowerCase() : '';
 
       if (errorMsg.includes('invalid') || errorMsg.includes('corrupt')) {
@@ -497,9 +498,9 @@ export class PDFProcessor {
         hasText: false, // Will be determined during actual extraction
         hasImages
       };
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      console.error('❌ Erro ao extrair metadados:', errorMsg);
+      logError(errorMsg, "❌ Erro ao extrair metadados:", { component: "refactored" });
       return {
         pages: 0,
         sizeMB: Math.round((buffer.length / (1024 * 1024)) * 100) / 100,
@@ -518,14 +519,14 @@ export class PDFProcessor {
       const usedMB = Math.round(usage.rss / 1024 / 1024);
 
       if (usedMB > 400) {
-        console.warn(`⚠️ HIGH MEMORY USAGE: ${usedMB}MB - ${context}`);
+        log.warn({ msg: "⚠️ HIGH MEMORY USAGE: MB -" });
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
-          console.log('🧹 Garbage collection forçado');
+          log.info({ msg: "🧹 Garbage collection forçado" });
         }
       } else {
-        console.log(`📊 Memory usage: ${usedMB}MB - ${context}`);
+        log.info({ msg: "📊 Memory usage: MB -" });
       }
     }
   }
@@ -658,7 +659,7 @@ export class PDFProcessor {
         processingMethod: 'railway-http-client'
       };
 
-    } catch (error) {
+    } catch (_error) {
       const totalTime = Date.now() - processStartTime;
       const errorMessage = getErrorMessage(error);
       const errorStack = error instanceof Error ? error.stack?.substring(0, 200) : undefined;
@@ -726,9 +727,9 @@ export class PDFProcessor {
       const datas = texto.match(/\d{2}\/\d{2}\/\d{4}/g);
       if (datas) info.datas_encontradas = [...new Set(datas)].slice(0, 5); // Únicas, primeiras 5
 
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      console.warn('⚠️ Erro ao extrair informações básicas:', errorMsg);
+      logError(errorMsg, "⚠️ Erro ao extrair informações básicas:", { component: "refactored" });
     }
 
     return info;
@@ -741,7 +742,7 @@ export class PDFProcessor {
     try {
       // Validate pdfData structure using type guard
       if (!isPDFData(pdfData)) {
-        console.warn('Invalid PDF data structure for image detection');
+        log.warn({ msg: "Invalid PDF data structure for image detection" });
         return false;
       }
 
@@ -771,9 +772,9 @@ export class PDFProcessor {
       }
 
       return hasImageMarkers;
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
-      console.error('Erro ao detectar imagens:', errorMsg);
+      logError(errorMsg, "Erro ao detectar imagens:", { component: "refactored" });
       return false;
     }
   }
@@ -862,8 +863,8 @@ export class PDFProcessor {
 
       return version;
 
-    } catch (error) {
-      console.error('Erro ao salvar versão da análise:', error);
+    } catch (_error) {
+      logError(error, "Erro ao salvar versão da análise:", { component: "refactored" });
       throw error;
     }
   }
@@ -992,7 +993,7 @@ export async function extractTextFromPDF(
     }
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     const errorMsg = getErrorMessage(error);
     log(`${ICONS.ERROR}`, `Erro na extração de PDF: ${errorMsg}`);
     throw error;

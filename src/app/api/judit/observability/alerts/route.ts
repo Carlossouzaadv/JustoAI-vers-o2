@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         total: alerts.length,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('[API] Error fetching alerts:', error);
 
     return NextResponse.json(
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 400 }
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('[API] Error managing alert:', error);
 
     return NextResponse.json(

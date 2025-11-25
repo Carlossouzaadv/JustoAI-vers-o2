@@ -219,7 +219,7 @@ class CircuitBreakerService extends EventEmitter {
         this.resumeQueue()
         return
       }
-    } catch (error) {
+    } catch (_error) {
       queueLogger.warn({
         action: 'recovery_failed',
         component: 'circuit-breaker',
@@ -259,7 +259,7 @@ class CircuitBreakerService extends EventEmitter {
         this.resumeQueue()
         return true
       }
-    } catch (error) {
+    } catch (_error) {
       queueLogger.error({
         action: 'manual_recovery_failed',
         component: 'circuit-breaker',

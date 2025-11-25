@@ -4,6 +4,7 @@
  */
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface SlackMessage {
   channel?: string;
@@ -36,7 +37,7 @@ export class SlackService {
     this.webhookUrl = process.env.SLACK_WEBHOOK_URL || '';
 
     if (!this.webhookUrl) {
-      console.warn(`${ICONS.WARNING} Slack webhook URL not configured - alerts will be simulated`);
+      log.warn({ msg: "Slack webhook URL not configured - alerts will be simulated" });
     }
   }
 
@@ -44,10 +45,10 @@ export class SlackService {
    * Send alert to Slack
    */
   async sendAlert(options: SlackAlertOptions): Promise<SlackResult> {
-    console.log(`${ICONS.ALERT} Enviando alerta para Slack: ${options.title}`);
+    log.info({ msg: "Enviando alerta para Slack:" });
 
     if (!this.webhookUrl) {
-      console.log(`${ICONS.WARNING} Simulando envio para Slack (webhook URL não configurada)`);
+      log.info({ msg: "Simulando envio para Slack (webhook URL não configurada)" });
       return { success: true, messageId: 'simulated-' + Date.now() };
     }
 
@@ -74,14 +75,14 @@ export class SlackService {
         throw new Error(`Slack API error: ${response.statusText} - ${errorText}`);
       }
 
-      console.log(`${ICONS.SUCCESS} Alerta enviado para Slack`);
+      log.info({ msg: "Alerta enviado para Slack" });
       return {
         success: true,
         messageId: Date.now().toString()
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao enviar alerta para Slack:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao enviar alerta para Slack:", { component: "refactored" });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -314,7 +315,7 @@ export class SlackService {
       });
 
       return { success: response.ok };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

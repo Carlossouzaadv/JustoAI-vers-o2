@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
     }
-  } catch (error) {
+  } catch (_error) {
     // Capture to Sentry with full context
     captureApiError(error, {
       endpoint: '/api/debug/sentry-test',
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     const postRequest = new NextRequest(request, { method: 'POST', body });
 
     return POST(postRequest);
-  } catch (error) {
+  } catch (_error) {
     captureApiError(error, {
       endpoint: '/api/debug/sentry-test',
       method: 'GET',

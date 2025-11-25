@@ -60,7 +60,7 @@ export function FloatingChat() {
 
       const data = await response.json();
       setSessionId(data.data.id);
-    } catch (error) {
+    } catch (_error) {
       console.error('Error creating chat session:', error);
     }
   };
@@ -137,7 +137,7 @@ export function FloatingChat() {
         }
         return updated;
       });
-    } catch (error) {
+    } catch (_error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, {
         text: 'Desculpe, houve um erro ao processar sua mensagem. Por favor, tente novamente.',

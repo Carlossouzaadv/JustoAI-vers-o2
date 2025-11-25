@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       bodyText = await request.text();
       log.info({ msg: `Body size: ${bodyText.length} bytes`, component: 'juditWebhookCallback' });
       webhook = JSON.parse(bodyText);
-    } catch (parseError) {
+    } catch (_parseError) {
       logError(parseError, 'Error parsing webhook JSON', { component: 'juditWebhookCallback' });
       return NextResponse.json(
         { error: 'JSON inválido', details: parseError instanceof Error ? parseError.message : 'desconhecido' },
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
               failed: attachmentResult.failed
             });
           }
-        } catch (attachmentError) {
+        } catch (_attachmentError) {
           logError(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar anexos:`, '', { component: 'juditWebhookCallback' });
           // Continuar mesmo se erro em anexos
         }
@@ -463,7 +463,7 @@ export async function POST(request: NextRequest) {
       event_type: eventType
     });
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} [JUDIT Webhook] Erro ao processar webhook:`, '', { component: 'juditWebhookCallback' });
 
     return NextResponse.json({
@@ -520,13 +520,13 @@ function verifyJuditWebhookSignature(request: NextRequest, body: string): boolea
 
       log.info({ msg: `${ICONS.SUCCESS} [JUDIT Webhook] Signature verified successfully`, component: 'judit-callback' });
       return true;
-    } catch (error) {
+    } catch (_error) {
       // timingSafeEqual throws if lengths don't match
       log.warn({ msg: `${ICONS.WARNING} [JUDIT Webhook] Signature length mismatch`, component: 'judit-callback' });
       return false;
     }
 
-  } catch (error) {
+  } catch (_error) {
     logError(`${ICONS.ERROR} [JUDIT Webhook] Error verifying signature:`, '', { component: 'judit-callback' });
     return false;
   }

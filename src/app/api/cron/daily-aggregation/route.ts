@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         errors: result.errors,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Cron] Aggregation failed:`, error);
 
     return NextResponse.json(
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
         errors: result.errors,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Cron] Aggregation failed:`, error);
 
     return NextResponse.json(

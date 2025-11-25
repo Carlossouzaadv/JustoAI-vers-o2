@@ -56,7 +56,7 @@ export default function QueueDashboard() {
       } else {
         setAccessGranted(false);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Access check failed:', error);
       setAccessGranted(false);
     }

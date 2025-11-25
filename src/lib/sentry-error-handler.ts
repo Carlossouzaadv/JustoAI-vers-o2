@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/nextjs';
 import { NextResponse } from 'next/server';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface ErrorContext {
   userId?: string;
@@ -53,7 +54,7 @@ export function captureApiError(
   });
 
   // Log to console as well
-  console.error(`${ICONS.ERROR} [Sentry] Error captured:`, error);
+  logError(error, "${ICONS.ERROR} Sentry Error captured:", { component: "refactored" });
 }
 
 /**
@@ -73,7 +74,7 @@ export function withErrorCapture(
 
     try {
       return await handler(request, context);
-    } catch (error) {
+    } catch (_error) {
       const duration = Date.now() - startTime;
 
       captureApiError(error, {
@@ -137,7 +138,7 @@ export function captureSentryMessage(
   }
 
   Sentry.captureMessage(message, level);
-  console.log(`${ICONS.INFO} [Sentry] Message captured: ${message}`);
+  log.info({ msg: "[Sentry] Message captured:" });
 }
 
 /**

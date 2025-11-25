@@ -5,6 +5,7 @@
 import { prisma } from '@/lib/prisma';
 import { Plan } from '@/lib/types/database';
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface QuotaLimits {
   reportsMonthlyLimit: number;
@@ -98,7 +99,7 @@ export class QuotaSystem {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Quota criada para workspace ${workspaceId}: ${limits.reportsMonthlyLimit} relatórios/mês`);
+      log.info({ msg: "Quota criada para workspace :  relatórios/mês" });
     }
 
     // Return the quota object with all necessary fields
@@ -182,7 +183,7 @@ export class QuotaSystem {
       }
     });
 
-    console.log(`${ICONS.SUCCESS} Quota consumida: ${reportCount} relatório(s) para workspace ${workspaceId}`);
+    log.info({ msg: "Quota consumida:  relatório(s) para workspace" });
   }
 
   /**
@@ -199,7 +200,7 @@ export class QuotaSystem {
       }
     });
 
-    console.log(`${ICONS.SUCCESS} Quota devolvida: ${reportCount} relatório(s) para workspace ${workspaceId}`);
+    log.info({ msg: "Quota devolvida:  relatório(s) para workspace" });
   }
 
   /**
@@ -224,7 +225,7 @@ export class QuotaSystem {
       }
     });
 
-    console.log(`${ICONS.SUCCESS} Override aplicado ao workspace ${workspaceId}: ${JSON.stringify(overrides)}`);
+    log.info({ msg: "Override aplicado ao workspace :" });
   }
 
   /**
@@ -253,7 +254,7 @@ export class QuotaSystem {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} Quota mensal resetada para workspace ${workspaceId}`);
+      log.info({ msg: "Quota mensal resetada para workspace" });
     }
   }
 
@@ -380,7 +381,7 @@ export class QuotaSystem {
       }
     });
 
-    console.log(`${ICONS.SUCCESS} Reset mensal: ${result.count} workspaces atualizados`);
+    log.info({ msg: "Reset mensal:  workspaces atualizados" });
     return result.count;
   }
 }

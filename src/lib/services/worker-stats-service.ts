@@ -196,7 +196,7 @@ class WorkerStatsServiceImpl {
         durationMs
       });
 
-    } catch (error) {
+    } catch (_error) {
       // CRÍTICO: Não deixar falha do registro afetar o job
       // Apenas logar o erro e continuar
       log.error({
@@ -287,7 +287,7 @@ class WorkerStatsServiceImpl {
         error: errorMessage
       });
 
-    } catch (error) {
+    } catch (_error) {
       // CRÍTICO: Não deixar falha do registro afetar o job
       // Apenas logar o erro e continuar
       log.error({
@@ -332,7 +332,7 @@ class WorkerStatsServiceImpl {
         successRate: records.length > 0 ? completed.length / records.length : 0,
         averageDurationMs: avgDuration
       };
-    } catch (error) {
+    } catch (_error) {
       log.error({
         msg: 'Erro ao recuperar estatísticas da fila',
         component: 'WorkerStatsService',

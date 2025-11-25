@@ -99,7 +99,7 @@ export default function UploadPage() {
   //           client: c.client?.name || 'Unknown'
   //         })));
   //       }
-  //     } catch (error) {
+  //     } catch (_error) {
   //       console.error('Erro ao carregar casos:', error);
   //       setAvailableCases([]);
   //     }
@@ -227,7 +227,7 @@ export default function UploadPage() {
           ));
         }
 
-      } catch (error) {
+      } catch (_error) {
         console.error('Erro ao fazer upload:', error);
         setFiles(prev => prev.map(f =>
           f.id === fileItem.id

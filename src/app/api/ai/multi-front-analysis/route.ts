@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(mockResponse);
 
-  } catch (error) {
+  } catch (_error) {
     console.error('Erro na análise multi-frentes:', error);
     return NextResponse.json(
       {

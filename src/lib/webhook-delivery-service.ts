@@ -6,6 +6,7 @@ import { createHmac } from 'crypto';
 import { ICONS } from '@/lib/icons';
 import { prisma } from '@/lib/prisma';
 import type { WebhookDeliveryStatus } from '@prisma/client';
+import { log, logError } from '@/lib/services/logger';
 
 interface WebhookDeliveryData {
   workspaceId: string;
@@ -109,7 +110,7 @@ export class WebhookDeliveryService {
           },
         });
       } catch (dbError) {
-        console.error(`${ICONS.ERROR} Failed to persist webhook to database:`, dbError);
+        logError(dbError, "${ICONS.ERROR} Failed to persist webhook to database:", { component: "refactored" });
         // Don't throw - we still want to return the log even if persistence fails
         // This ensures graceful degradation if database is temporarily unavailable
       }
@@ -131,7 +132,7 @@ export class WebhookDeliveryService {
 
       return log;
     } catch (err) {
-      console.error(`${ICONS.ERROR} Failed to log webhook delivery`, err);
+      logError(err, "${ICONS.ERROR} Failed to log webhook delivery", { component: "refactored" });
       throw err;
     }
   }
@@ -178,7 +179,7 @@ export class WebhookDeliveryService {
 
       return false;
     } catch (err) {
-      console.error(`${ICONS.ERROR} Error checking webhook duplicate`, err);
+      logError(err, "${ICONS.ERROR} Error checking webhook duplicate", { component: "refactored" });
       // Fail open: if we can't check for duplicates, allow the webhook through
       return false;
     }
@@ -192,7 +193,7 @@ export class WebhookDeliveryService {
     failed: number;
   }> {
     try {
-      console.log(`${ICONS.PROCESS} Processing pending webhook retries`);
+      log.info({ msg: "Processing pending webhook retries" });
 
       // Query database for pending retries that are ready
       const pending = await prisma.webhookDelivery.findMany({
@@ -209,9 +210,7 @@ export class WebhookDeliveryService {
         orderBy: { nextRetryAt: 'asc' },
       });
 
-      console.log(
-        `${ICONS.PROCESS} Found ${pending.length} webhooks ready for retry`
-      );
+      log.info({ msg: "Found  webhooks ready for retry" });
 
       let processedCount = 0;
       let failedCount = 0;
@@ -226,24 +225,19 @@ export class WebhookDeliveryService {
           });
           processedCount++;
         } catch (updateErr) {
-          console.error(
-            `${ICONS.ERROR} Failed to process webhook retry ${webhook.id}:`,
-            updateErr
-          );
+          logError(updateErr, "${ICONS.ERROR} Failed to process webhook retry ${webhook.id}:", { component: "refactored" });
           failedCount++;
         }
       }
 
-      console.log(
-        `${ICONS.SUCCESS} Processed ${processedCount} webhook retries (${failedCount} failed)`
-      );
+      log.info({ msg: "Processed  webhook retries ( failed)" });
 
       return {
         processed: processedCount,
         failed: failedCount,
       };
     } catch (err) {
-      console.error(`${ICONS.ERROR} Error processing pending retries`, err);
+      logError(err, "${ICONS.ERROR} Error processing pending retries", { component: "refactored" });
       return { processed: 0, failed: 1 };
     }
   }

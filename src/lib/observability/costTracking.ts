@@ -129,7 +129,7 @@ export async function trackJuditCost(input: CostTrackingInput): Promise<void> {
         },
       });
     }
-  } catch (error) {
+  } catch (_error) {
     costLogger.error({
       action: 'track_cost_failed',
       error: error instanceof Error ? error.message : String(error),
@@ -426,7 +426,7 @@ export async function createAlert(input: AlertInput): Promise<void> {
       title: input.title,
       message: input.message,
     });
-  } catch (error) {
+  } catch (_error) {
     costLogger.error({
       action: 'create_alert_failed',
       error: error instanceof Error ? error.message : String(error),

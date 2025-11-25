@@ -6,6 +6,7 @@
 import { AIModelRouter, ModelTier, UnifiedProcessSchema, ComplexityScore, ProcessingConfig } from './ai-model-router';
 import { getGeminiClient, GeminiClient } from './gemini-client';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface AnalysisRequest {
   text: string;
@@ -96,11 +97,11 @@ export class RealAnalysisService {
     const startTime = Date.now();
 
     try {
-      console.log(`${ICONS.PROCESS} Iniciando análise ${request.analysisType} - ${request.text.length} caracteres`);
+      log.info({ msg: "Iniciando análise  -  caracteres" });
 
       // 1. Analyze document complexity
       const complexity = this.router.analyzeComplexity(request.text, request.fileSizeMB || 0);
-      console.log(`${ICONS.INFO} Complexidade: ${complexity.totalScore} pontos → Modelo: ${complexity.recommendedTier}`);
+      log.info({ msg: "Complexidade:  pontos → Modelo:" });
 
       // 2. Check cache first
       const cacheResult = await this.checkCache(request, complexity);
@@ -122,13 +123,13 @@ export class RealAnalysisService {
       this.updateStats(request.analysisType, complexity.recommendedTier, Date.now() - startTime, false);
 
       const processingTime = Date.now() - startTime;
-      console.log(`${ICONS.SUCCESS} Análise concluída em ${processingTime}ms`);
+      log.info({ msg: "Análise concluída em ms" });
 
       return this.buildSuccessResponse(analysisResult, complexity, false, processingTime);
 
-    } catch (error) {
+    } catch (_error) {
       const processingTime = Date.now() - startTime;
-      console.error(`${ICONS.ERROR} Erro na análise:`, error);
+      logError(error, "${ICONS.ERROR} Erro na análise:", { component: "refactored" });
 
       this.updateStats(request.analysisType, ModelTier.BALANCED, processingTime, true);
 
@@ -165,7 +166,7 @@ export class RealAnalysisService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`${ICONS.PROCESS} Tentativa ${attempt}/${maxRetries} com modelo ${config.model}`);
+        log.info({ msg: "Tentativa / com modelo" });
 
         // Build the analysis prompt
         const prompt = this.buildAnalysisPrompt(request, config.promptTemplate);
@@ -180,26 +181,26 @@ export class RealAnalysisService {
         // Validate and enhance the response
         const validatedResult = this.validateAndEnhanceResult(geminiResponse as Record<string, unknown>, request, complexity);
 
-        console.log(`${ICONS.SUCCESS} Análise bem-sucedida na tentativa ${attempt}`);
+        log.info({ msg: "Análise bem-sucedida na tentativa" });
         return validatedResult;
 
-      } catch (error) {
+      } catch (_error) {
         // Narrow unknown to Error for type safety
         const err = error instanceof Error ? error : new Error(String(error));
         lastError = err;
-        console.error(`${ICONS.WARNING} Tentativa ${attempt} falhou:`, error);
+        logError(error, "${ICONS.WARNING} Tentativa ${attempt} falhou:", { component: "refactored" });
 
         // Check if we should retry
         if (attempt < maxRetries && this.shouldRetry(err)) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-          console.log(`${ICONS.INFO} Aguardando ${delay}ms antes da próxima tentativa...`);
+          log.info({ msg: "Aguardando ms antes da próxima tentativa..." });
           await this.sleep(delay);
           continue;
         }
 
         // Try fallback model on final attempt
         if (attempt === maxRetries && config.fallbackModel) {
-          console.log(`${ICONS.INFO} Tentando modelo de fallback: ${config.fallbackModel}`);
+          log.info({ msg: "Tentando modelo de fallback:" });
           config.model = config.fallbackModel;
           delete config.fallbackModel; // Prevent infinite fallback
         }
@@ -509,8 +510,8 @@ METADADOS ADICIONAIS:`;
         default:
           return null;
       }
-    } catch (error) {
-      console.error(`${ICONS.WARNING} Cache check failed:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.WARNING} Cache check failed:", { component: "refactored" });
       return null;
     }
   }
@@ -542,8 +543,8 @@ METADADOS ADICIONAIS:`;
           await cache.setReport(reportHash, result, cacheMetadata);
           break;
       }
-    } catch (error) {
-      console.error(`${ICONS.WARNING} Cache save failed:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.WARNING} Cache save failed:", { component: "refactored" });
     }
   }
 

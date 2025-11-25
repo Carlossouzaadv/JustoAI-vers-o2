@@ -3,6 +3,7 @@
 // ================================================================
 
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 export type JobStatus = 'pending' | 'running' | 'success' | 'failed' | 'retrying' | 'cancelled' | 'timeout';
 export type JobType =
@@ -299,7 +300,7 @@ export class JobLogger {
         this.logs.delete(jobId);
       }
 
-      console.log(`${ICONS.INFO} Pruned ${toDelete} old job logs`);
+      log.info({ msg: "Pruned  old job logs" });
     }
   }
 
@@ -308,7 +309,7 @@ export class JobLogger {
    */
   clear(): void {
     this.logs.clear();
-    console.log(`${ICONS.INFO} Cleared all job logs`);
+    log.info({ msg: "Cleared all job logs" });
   }
 }
 

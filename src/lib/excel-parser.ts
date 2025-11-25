@@ -6,6 +6,7 @@
 
 import { ICONS } from './icons';
 import { validateProcessNumber, normalizeProcessNumber } from './process-apis';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TYPE GUARDS E VALIDATORS (Mandato Inegociável)
@@ -178,8 +179,8 @@ export class ExcelProcessParser {
 
       return this.parseRawData(rawData, fileName);
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao processar Excel:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao processar Excel:", { component: "refactored" });
 
       return {
         success: false,

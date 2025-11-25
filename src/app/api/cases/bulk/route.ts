@@ -179,7 +179,7 @@ export async function PATCH(request: NextRequest) {
       updatedFields: updateKeys,
       eventsCreated: caseEvents.count
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('[Bulk Update API] Error:', error);
 
     if (error instanceof SyntaxError) {
@@ -319,7 +319,7 @@ export async function DELETE(request: NextRequest) {
       failed: caseIds.length - result.count,
       eventsCreated: caseEvents.count
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('[Bulk Delete API] Error:', error);
 
     if (error instanceof SyntaxError) {

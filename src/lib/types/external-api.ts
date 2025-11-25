@@ -250,7 +250,7 @@ export function parseJuditRequest(
   try {
     const parsed = JuditRequestPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -268,7 +268,7 @@ export function parsePaymentWebhook(
   try {
     const parsed = PaymentWebhookPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -286,7 +286,7 @@ export function parseStripeWebhook(
   try {
     const parsed = StripeWebhookSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -304,7 +304,7 @@ export function parseMercadoPagoWebhook(
   try {
     const parsed = MercadoPagoWebhookSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }
@@ -322,7 +322,7 @@ export function parseJuditResponse(
   try {
     const parsed = JuditRequestResponseSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (error) {
+  } catch (_error) {
     if (error instanceof z.ZodError) {
       return { success: false, error: formatZodError(error) };
     }

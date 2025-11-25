@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPES
@@ -334,7 +335,7 @@ async function generateConsolidatedSummaryWithAI(
 
     const prompt = generateConsolidationPrompt(documents, caseInfo);
 
-    console.log(`${ICONS.EXTRACT} [Summary Consolidator] Enviando prompt para Gemini (${prompt.length} chars, ${documents.length} docs)`);
+    log.info({ msg: "[Summary Consolidator] Enviando prompt para Gemini ( chars,  docs)" });
 
     try {
       const result = await model.generateContent({
@@ -359,7 +360,7 @@ async function generateConsolidatedSummaryWithAI(
         throw new Error('Resposta vazia do Gemini');
       }
 
-      console.log(`${ICONS.SUCCESS} [Summary Consolidator] Resposta recebida do Gemini: ${text.length} chars`);
+      log.info({ msg: "[Summary Consolidator] Resposta recebida do Gemini:  chars" });
       return text.trim();
     } catch (geminiError: unknown) {
       // Tratamento específico de erros da Gemini API
@@ -386,8 +387,8 @@ async function generateConsolidatedSummaryWithAI(
 
       throw geminiError;
     }
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Summary Consolidator] Erro ao chamar Gemini:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Summary Consolidator Erro ao chamar Gemini:", { component: "refactored" });
     throw error;
   }
 }
@@ -434,7 +435,7 @@ function generateFallbackSummary(documents: DocumentSummaryData[]): string {
  */
 export async function generateSummaryFromTimeline(caseId: string): Promise<string> {
   try {
-    console.log(`${ICONS.PROCESS} [Summary Consolidator] Gerando resumo a partir da timeline: ${caseId}`);
+    log.info({ msg: "[Summary Consolidator] Gerando resumo a partir da timeline:" });
 
     // Carregar informações do caso
     const caseInfo = await prisma.case.findUnique({
@@ -468,7 +469,7 @@ export async function generateSummaryFromTimeline(caseId: string): Promise<strin
     const documents = await loadCaseDocuments(caseId);
 
     if (documents.length === 0 && timelineEntries.length === 0) {
-      console.log(`${ICONS.INFO} [Summary Consolidator] Nenhum dado para gerar resumo`);
+      log.info({ msg: "[Summary Consolidator] Nenhum dado para gerar resumo" });
       return 'Nenhum documento ou evento processado disponível.';
     }
 
@@ -539,11 +540,11 @@ export async function generateSummaryFromTimeline(caseId: string): Promise<strin
 
     const consolidatedDescription = parts.join('\n\n') || 'Processo com dados em processamento.';
 
-    console.log(`${ICONS.SUCCESS} [Summary Consolidator] Resumo gerado a partir da timeline e documentos`);
+    log.info({ msg: "[Summary Consolidator] Resumo gerado a partir da timeline e documentos" });
     return consolidatedDescription;
 
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Summary Consolidator] Erro ao gerar resumo da timeline:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Summary Consolidator Erro ao gerar resumo da timeline:", { component: "refactored" });
     throw error;
   }
 }
@@ -554,7 +555,7 @@ export async function generateSummaryFromTimeline(caseId: string): Promise<strin
  */
 export async function consolidateCaseSummary(caseId: string): Promise<ConsolidatedCaseSummary> {
   try {
-    console.log(`${ICONS.PROCESS} [Summary Consolidator] Consolidando resumo do caso: ${caseId}`);
+    log.info({ msg: "[Summary Consolidator] Consolidando resumo do caso:" });
 
     // Carregar informações do caso
     const caseInfo = await prisma.case.findUnique({
@@ -577,7 +578,7 @@ export async function consolidateCaseSummary(caseId: string): Promise<Consolidat
     const documents = await loadCaseDocuments(caseId);
 
     if (documents.length === 0) {
-      console.log(`${ICONS.INFO} [Summary Consolidator] Nenhum documento encontrado para ${caseId}`);
+      log.info({ msg: "[Summary Consolidator] Nenhum documento encontrado para" });
       return {
         description: 'Nenhum documento disponível para gerar resumo.',
         lastUpdated: new Date(),
@@ -592,13 +593,11 @@ export async function consolidateCaseSummary(caseId: string): Promise<Consolidat
     let confidence = 0.5;
 
     try {
-      console.log(
-        `${ICONS.EXTRACT} [Summary Consolidator] Gerando resumo com IA para ${documents.length} documentos`
-      );
+      log.info({ msg: "[Summary Consolidator] Gerando resumo com IA para  documentos" });
       consolidatedDescription = await generateConsolidatedSummaryWithAI(documents, caseInfo);
       confidence = 0.85;
     } catch (aiError) {
-      console.warn(`${ICONS.WARNING} [Summary Consolidator] Falha na IA, usando fallback`, aiError);
+      logError(aiError, "${ICONS.WARNING} Summary Consolidator Falha na IA, usando fallback", { component: "refactored" });
       consolidatedDescription = generateFallbackSummary(documents);
       confidence = 0.6;
     }
@@ -620,8 +619,8 @@ export async function consolidateCaseSummary(caseId: string): Promise<Consolidat
     });
 
     return result;
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Summary Consolidator] Erro ao consolidar resumo:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Summary Consolidator Erro ao consolidar resumo:", { component: "refactored" });
     throw error;
   }
 }
@@ -645,11 +644,11 @@ export async function updateCaseSummaryDescription(caseId: string): Promise<stri
       },
     });
 
-    console.log(`${ICONS.SUCCESS} [Summary Consolidator] Descrição do caso atualizada`);
+    log.info({ msg: "[Summary Consolidator] Descrição do caso atualizada" });
 
     return updated.description || '';
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Summary Consolidator] Erro ao atualizar descrição:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Summary Consolidator Erro ao atualizar descrição:", { component: "refactored" });
     throw error;
   }
 }

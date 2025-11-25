@@ -49,7 +49,7 @@ export class ExcelParserSimple {
 
       // Retornar como array de unknown para validação posterior
       return rows as Array<Record<string, unknown>>;
-    } catch (error) {
+    } catch (_error) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
       throw new Error(`Erro ao parsear arquivo Excel: ${message}`);
     }

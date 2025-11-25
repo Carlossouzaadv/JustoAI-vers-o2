@@ -5,6 +5,7 @@
 import { prisma } from '@/lib/prisma';
 import { isInternalDivinityAdmin, isInternalAdmin } from '@/lib/permission-validator';
 import { CreditCategory, CreditTransactionType } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 export interface CreditBalance {
   reportCredits: number;
@@ -42,8 +43,8 @@ export async function getCredits(userEmail: string | undefined, workspaceId: str
       return { reportCredits: Number(created.reportCreditsBalance), fullCredits: Number(created.fullCreditsBalance), unlimited: false, divinityAdmin: false };
     }
     return { reportCredits: Number(credits.reportCreditsBalance), fullCredits: Number(credits.fullCreditsBalance), unlimited: false, divinityAdmin: false };
-  } catch (error) {
-    console.error('[CREDIT] Error:', error);
+  } catch (_error) {
+    logError(error, "CREDIT Error:", { component: "refactored" });
     throw new Error('Failed to fetch');
   }
 }

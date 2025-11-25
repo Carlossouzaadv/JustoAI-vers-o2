@@ -6,6 +6,7 @@
 import prisma from './prisma';
 import { ICONS } from './icons';
 import { addProcessAlertNotificationJob } from './queues';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES
@@ -140,7 +141,7 @@ export class ProcessAlertManager {
     for (const movement of movements) {
       // Validar movimento com type guard
       if (!isValidMovement(movement)) {
-        console.warn(`${ICONS.WARNING} Movimentação inválida recebida, pulando`);
+        log.warn({ msg: "Movimentação inválida recebida, pulando" });
         continue;
       }
 
@@ -164,8 +165,8 @@ export class ProcessAlertManager {
           // Enviar notificações
           await this.sendAlertNotifications(alert.id);
 
-        } catch (error) {
-          console.error(`${ICONS.ERROR} Erro ao criar alerta:`, error);
+        } catch (_error) {
+          logError(error, "${ICONS.ERROR} Erro ao criar alerta:", { component: "refactored" });
         }
       }
     }
@@ -313,19 +314,17 @@ export class ProcessAlertManager {
     });
 
     if (!alert || alert.recipients.length === 0) {
-      console.log(`${ICONS.WARNING} No recipients for alert: ${alertId}`);
+      log.info({ msg: "No recipients for alert:" });
       return;
     }
 
-    console.log(`${ICONS.MAIL} Enfileirando job de notificação para alerta: ${alert.title}`);
+    log.info({ msg: "Enfileirando job de notificação para alerta:" });
 
     try {
       // Enfileirar job de dispatch de notificação
       const job = await addProcessAlertNotificationJob(alertId);
 
-      console.log(
-        `${ICONS.SUCCESS} Alert notification job enqueued: jobId=${job.id}, alertId=${alertId}`
-      );
+      log.info({ msg: "Alert notification job enqueued: jobId=, alertId=" });
 
       // Job será processado de forma assíncrona pelo notification-worker
       // O worker cuidará de:
@@ -334,11 +333,8 @@ export class ProcessAlertManager {
       // - Reenviar com retry se necessário
       // - Atualizar status do alerta
 
-    } catch (error) {
-      console.error(
-        `${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:`,
-        error
-      );
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:", { component: "refactored" });
 
       // Se enfileiramento falhar, ainda assim marcar como tentado
       // (será reprocessado no próximo ciclo)
@@ -574,7 +570,7 @@ export class ProcessAlertManager {
       }
     });
 
-    console.log(`${ICONS.CLEAN} Alertas antigos removidos: ${result.count}`);
+    log.info({ msg: "Alertas antigos removidos:" });
     return result.count;
   }
 }

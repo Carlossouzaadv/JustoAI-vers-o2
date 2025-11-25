@@ -230,14 +230,14 @@ export const POST = withErrorHandler(async (
         message: `Análise iniciada usando ${attachedDocs.length} documento(s) anexado(s)`
       });
 
-    } catch (error) {
+    } catch (_error) {
       // Liberar lock em caso de erro
       // lockResult is guaranteed to have a valid token due to type guard above
       await analysisService.releaseAnalysisLock(lockResult.token);
       throw error;
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro na análise FAST:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',
@@ -317,7 +317,7 @@ export const GET = withErrorHandler(async (
       } : null
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao buscar status da análise FAST:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',

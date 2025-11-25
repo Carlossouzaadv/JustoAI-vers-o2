@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPES
@@ -109,7 +110,7 @@ function mapLocalOperationTypeToPrisma(
   const prismaValue = prismaMapping[operationType];
 
   if (!prismaValue) {
-    console.error(`Cannot map operation type: ${operationType}`);
+    log.error({ msg: "Cannot map operation type", operationType });
     throw new Error(`Cannot map operation type: ${operationType}`);
   }
 
@@ -155,16 +156,21 @@ export class JuditApiWrapper {
       });
 
       const duration = Date.now() - startTime;
-      console.log(
-        `${ICONS.SUCCESS} [JUDIT Tracking] ${metrics.operationType} tracked in ${duration}ms (Cost: R$ ${totalCost.toFixed(2)})`
-      );
+      log.info({
+        msg: "JUDIT operation tracked",
+        component: "juditApiWrapper",
+        operationType: metrics.operationType,
+        durationMs: duration,
+        cost: totalCost,
+        icon: ICONS.SUCCESS
+      });
 
       // Check if alert should be created
       if (!metrics.success && metrics.error) {
         await this.checkAndCreateAlert(metrics);
       }
     } catch (error) {
-      console.error(`${ICONS.ERROR} [JUDIT Tracking] Error tracking call:`, error);
+      logError(error, "Error tracking JUDIT call", { component: "juditApiWrapper", icon: ICONS.ERROR });
       // Don't throw - tracking failure shouldn't break the operation
     }
   }
@@ -199,13 +205,23 @@ export class JuditApiWrapper {
         // Type guard + narrowing: safely map to alertType and validate
         const alertTypeStr = this.mapErrorToAlertType(metrics.errorCode);
         if (!isValidJuditAlertType(alertTypeStr)) {
-          console.warn(`${ICONS.WARNING} [JUDIT Alert] Invalid alert type: ${alertTypeStr}, skipping alert creation`);
+          log.warn({
+            msg: "Invalid alert type, skipping alert creation",
+            component: "juditApiWrapper",
+            alertType: alertTypeStr,
+            icon: ICONS.WARNING
+          });
           return;
         }
 
         // Type guard + narrowing: validate severity before use
         if (!isValidAlertSeverity(severity)) {
-          console.warn(`${ICONS.WARNING} [JUDIT Alert] Invalid severity: ${severity}, skipping alert creation`);
+          log.warn({
+            msg: "Invalid severity, skipping alert creation",
+            component: "juditApiWrapper",
+            severity,
+            icon: ICONS.WARNING
+          });
           return;
         }
 
@@ -223,12 +239,15 @@ export class JuditApiWrapper {
           },
         });
 
-        console.log(
-          `${ICONS.WARNING} [JUDIT Alert] Created alert for ${metrics.errorCode}`
-        );
+        log.warn({
+          msg: "Created JUDIT alert",
+          component: "juditApiWrapper",
+          errorCode: metrics.errorCode,
+          icon: ICONS.WARNING
+        });
       }
     } catch (error) {
-      console.warn(`${ICONS.WARNING} [JUDIT Alert] Failed to create alert:`, error);
+      logError(error, "Failed to create JUDIT alert", { component: "juditApiWrapper", icon: ICONS.WARNING });
     }
   }
 
@@ -273,7 +292,7 @@ export class JuditApiWrapper {
 
     if (!apiKey) {
       const errorMsg = 'JUDIT_API_KEY not configured';
-      console.error(`${ICONS.ERROR} [JUDIT Search] ${errorMsg}`);
+      log.error({ msg: errorMsg, component: "juditApiWrapper", icon: ICONS.ERROR });
       return {
         success: false,
         error: errorMsg,
@@ -287,13 +306,13 @@ export class JuditApiWrapper {
     }
 
     try {
-      console.log(`${ICONS.PROCESS} [JUDIT Search] Starting search for CNJ: ${numeroCnj}`);
+      log.info({ msg: "Starting JUDIT search", component: "juditApiWrapper", numeroCnj, icon: ICONS.PROCESS });
 
       // Extract search type (lawsuit_cnj is default, but could be cpf, cnpj, oab, name)
       const searchType = 'lawsuit_cnj';
 
       // Step 1: Create search request (POST /requests)
-      console.log(`${ICONS.INFO} [JUDIT Search] Creating search request...`);
+      log.info({ msg: "Creating search request", component: "juditApiWrapper", icon: ICONS.INFO });
       const createResponse = await fetch(`${searchBaseUrl}/requests`, {
         method: 'POST',
         headers: {
@@ -325,10 +344,10 @@ export class JuditApiWrapper {
       }
 
       const juditRequestId = (createData as { request_id: string }).request_id;
-      console.log(`${ICONS.SUCCESS} [JUDIT Search] Request created: ${juditRequestId}`);
+      log.info({ msg: "JUDIT search request created", component: "juditApiWrapper", requestId: juditRequestId, icon: ICONS.SUCCESS });
 
       // Step 2: Poll for completion (GET /requests/{request_id})
-      console.log(`${ICONS.INFO} [JUDIT Search] Polling for search completion...`);
+      log.info({ msg: "Polling for search completion", component: "juditApiWrapper", icon: ICONS.INFO });
       const maxPolls = 30;
       let pollCount = 0;
       let searchStatus = 'pending';
@@ -361,7 +380,7 @@ export class JuditApiWrapper {
         searchStatus = (pollData as { status: string }).status;
 
         if (searchStatus === 'completed') {
-          console.log(`${ICONS.SUCCESS} [JUDIT Search] Search completed after ${pollCount + 1} polls`);
+          log.info({ msg: "JUDIT search completed", component: "juditApiWrapper", pollCount: pollCount + 1, icon: ICONS.SUCCESS });
           break;
         }
 
@@ -379,7 +398,7 @@ export class JuditApiWrapper {
       }
 
       // Step 3: Fetch results (GET /responses?request_id=...)
-      console.log(`${ICONS.INFO} [JUDIT Search] Fetching search results...`);
+      log.info({ msg: "Fetching search results", component: "juditApiWrapper", icon: ICONS.INFO });
       const resultsResponse = await fetch(`${searchBaseUrl}/responses?request_id=${juditRequestId}`, {
         method: 'GET',
         headers: {
@@ -441,7 +460,7 @@ export class JuditApiWrapper {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      console.error(`${ICONS.ERROR} [JUDIT Search] Error:`, errorMessage);
+      logError(error, "JUDIT search error", { component: "juditApiWrapper", icon: ICONS.ERROR });
 
       await this.trackCall({
         workspaceId,
@@ -489,7 +508,7 @@ export class JuditApiWrapper {
 
     if (!apiKey) {
       const errorMsg = 'JUDIT_API_KEY not configured';
-      console.error(`${ICONS.ERROR} [JUDIT Monitoring] ${errorMsg}`);
+      log.error({ msg: errorMsg, component: "juditApiWrapper", icon: ICONS.ERROR });
       return {
         success: false,
         error: errorMsg,
@@ -503,7 +522,7 @@ export class JuditApiWrapper {
     }
 
     try {
-      console.log(`${ICONS.SEARCH} [JUDIT Monitoring] Setting up monitoring for: ${numeroCnj}`);
+      log.info({ msg: "Setting up JUDIT monitoring", component: "juditApiWrapper", numeroCnj, icon: ICONS.SEARCH });
 
       // Default recurrence: daily (1 day interval)
       const recurrenceDays = options.recurrenceIntervalDays || 1;
@@ -525,7 +544,7 @@ export class JuditApiWrapper {
       }
 
       // Create monitoring (POST /tracking)
-      console.log(`${ICONS.INFO} [JUDIT Monitoring] Creating monitoring with ${recurrenceDays}-day recurrence...`);
+      log.info({ msg: "Creating monitoring", component: "juditApiWrapper", recurrenceDays, icon: ICONS.INFO });
       const monitoringResponse = await fetch(`${monitoringBaseUrl}/tracking`, {
         method: 'POST',
         headers: {
@@ -555,7 +574,7 @@ export class JuditApiWrapper {
       }
 
       const trackingId = (monitoringData as { tracking_id: string }).tracking_id;
-      console.log(`${ICONS.SUCCESS} [JUDIT Monitoring] Monitoring created: ${trackingId}`);
+      log.info({ msg: "JUDIT monitoring created", component: "juditApiWrapper", trackingId, icon: ICONS.SUCCESS });
 
       const durationMs = Date.now() - startTime;
 
@@ -590,7 +609,7 @@ export class JuditApiWrapper {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      console.error(`${ICONS.ERROR} [JUDIT Monitoring] Error:`, errorMessage);
+      logError(error, "JUDIT monitoring error", { component: "juditApiWrapper", icon: ICONS.ERROR });
 
       await this.trackCall({
         workspaceId,
@@ -636,7 +655,7 @@ export class JuditApiWrapper {
 
     if (!apiKey) {
       const errorMsg = 'JUDIT_API_KEY not configured';
-      console.error(`${ICONS.ERROR} [JUDIT Fetch] ${errorMsg}`);
+      log.error({ msg: errorMsg, component: "juditApiWrapper", icon: ICONS.ERROR });
       return {
         success: false,
         error: errorMsg,
@@ -651,7 +670,7 @@ export class JuditApiWrapper {
 
     if (!documentIds || documentIds.length === 0) {
       const errorMsg = 'No document IDs provided for fetch';
-      console.warn(`${ICONS.WARNING} [JUDIT Fetch] ${errorMsg}`);
+      log.warn({ msg: errorMsg, component: "juditApiWrapper", icon: ICONS.WARNING });
       return {
         success: false,
         error: errorMsg,
@@ -665,9 +684,13 @@ export class JuditApiWrapper {
     }
 
     try {
-      console.log(
-        `${ICONS.DOWNLOAD} [JUDIT Fetch] Fetching ${documentIds.length} documents for CNJ: ${numeroCnj}`
-      );
+      log.info({
+        msg: "Fetching JUDIT documents",
+        component: "juditApiWrapper",
+        documentCount: documentIds.length,
+        numeroCnj,
+        icon: ICONS.DOWNLOAD
+      });
 
       const documents: Array<{ id: string; downloadUrl?: string; error?: string }> = [];
       let successCount = 0;
@@ -675,7 +698,7 @@ export class JuditApiWrapper {
       // Fetch download URLs for each document
       for (const documentId of documentIds) {
         try {
-          console.log(`${ICONS.INFO} [JUDIT Fetch] Getting download URL for document: ${documentId}`);
+          log.info({ msg: "Getting download URL for document", component: "juditApiWrapper", documentId, icon: ICONS.INFO });
 
           // Step 1: Get download URL (GET /transfer-file/{id})
           const downloadResponse = await fetch(
@@ -708,10 +731,10 @@ export class JuditApiWrapper {
           }
 
           const downloadUrl = (downloadData as { download_url: string }).download_url;
-          console.log(`${ICONS.SUCCESS} [JUDIT Fetch] Got download URL for ${documentId}`);
+          log.info({ msg: "Got download URL for document", component: "juditApiWrapper", documentId, icon: ICONS.SUCCESS });
 
           // Step 2: Update status to "downloaded" (PATCH /transfer-file/{id})
-          console.log(`${ICONS.INFO} [JUDIT Fetch] Updating document status to downloaded: ${documentId}`);
+          log.info({ msg: "Updating document status to downloaded", component: "juditApiWrapper", documentId, icon: ICONS.INFO });
           const statusResponse = await fetch(
             `${fileTransferBaseUrl}/transfer-file/${documentId}`,
             {
@@ -728,9 +751,13 @@ export class JuditApiWrapper {
 
           if (!statusResponse.ok) {
             const errorBody = await statusResponse.text();
-            console.warn(
-              `${ICONS.WARNING} [JUDIT Fetch] Failed to update status: ${statusResponse.status} - ${errorBody}`
-            );
+            log.warn({
+              msg: "Failed to update document status",
+              component: "juditApiWrapper",
+              statusCode: statusResponse.status,
+              errorBody,
+              icon: ICONS.WARNING
+            });
             // Don't throw - status update is non-critical
           }
 
@@ -741,7 +768,7 @@ export class JuditApiWrapper {
           successCount++;
         } catch (docError) {
           const errorMsg = docError instanceof Error ? docError.message : 'Unknown error';
-          console.error(`${ICONS.ERROR} [JUDIT Fetch] Failed to fetch document ${documentId}:`, errorMsg);
+          logError(docError, `Failed to fetch document ${documentId}`, { component: "juditApiWrapper", documentId, icon: ICONS.ERROR });
           documents.push({
             id: documentId,
             error: errorMsg,
@@ -788,7 +815,7 @@ export class JuditApiWrapper {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      console.error(`${ICONS.ERROR} [JUDIT Fetch] Error:`, errorMessage);
+      logError(error, "JUDIT fetch error", { component: "juditApiWrapper", icon: ICONS.ERROR });
 
       await this.trackCall({
         workspaceId,
@@ -855,7 +882,7 @@ export class JuditApiWrapper {
         callsCount: costs.length,
       };
     } catch (error) {
-      console.error(`${ICONS.ERROR} [JUDIT Costs] Error getting month costs:`, error);
+      logError(error, "Error getting JUDIT month costs", { component: "juditApiWrapper", workspaceId, icon: ICONS.ERROR });
       return {
         total: 0,
         byOperation: {},
@@ -879,7 +906,7 @@ export class JuditApiWrapper {
         },
       });
     } catch (error) {
-      console.error(`${ICONS.ERROR} [JUDIT Alerts] Error getting alerts:`, error);
+      logError(error, "Error getting JUDIT alerts", { component: "juditApiWrapper", workspaceId, icon: ICONS.ERROR });
       return [];
     }
   }

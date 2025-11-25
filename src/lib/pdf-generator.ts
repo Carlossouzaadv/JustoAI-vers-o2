@@ -6,6 +6,7 @@
 import puppeteer, { Browser, Page, LaunchOptions } from 'puppeteer';
 import { promises as fs } from 'fs';
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 import {
   generateReportTemplate,
   ReportType,
@@ -112,7 +113,7 @@ export class PDFGenerator {
 
   async initialize(): Promise<void> {
     try {
-      console.log(`${ICONS.PROCESS} Inicializando Puppeteer para geração de PDF...`);
+      log.info({ msg: "Inicializando Puppeteer para geração de PDF..." });
 
       this.browser = await puppeteer.launch(this.puppeteerOptions);
 
@@ -143,10 +144,10 @@ export class PDFGenerator {
         this.pagePool.push(page);
       }
 
-      console.log(`${ICONS.SUCCESS} Puppeteer inicializado com ${this.maxConcurrentPages} páginas simultâneas`);
+      log.info({ msg: "Puppeteer inicializado com  páginas simultâneas" });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao inicializar Puppeteer:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao inicializar Puppeteer:", { component: "refactored" });
       throw error;
     }
   }
@@ -156,7 +157,7 @@ export class PDFGenerator {
       await this.browser.close();
       this.browser = null;
       this.pagePool = [];
-      console.log(`${ICONS.CLEAN} Puppeteer finalizado`);
+      log.info({ msg: "Puppeteer finalizado" });
     }
   }
 
@@ -221,12 +222,12 @@ export class PDFGenerator {
       });
 
       const generationTime = Date.now() - startTime;
-      console.log(`${ICONS.SUCCESS} PDF gerado em ${generationTime}ms (${Math.round(pdfBuffer.length / 1024)}KB)`);
+      log.info({ msg: "PDF gerado em ms (KB)" });
 
       return Buffer.from(pdfBuffer);
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na geração de PDF:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na geração de PDF:", { component: "refactored" });
       throw error;
     } finally {
       // Retornar página ao pool
@@ -245,7 +246,7 @@ export class PDFGenerator {
     const startTime = Date.now();
     const results: BatchGenerationResult[] = [];
 
-    console.log(`${ICONS.PROCESS} Iniciando batch de ${jobs.length} relatórios...`);
+    log.info({ msg: "Iniciando batch de  relatórios..." });
 
     if (!this.browser) {
       await this.initialize();
@@ -261,7 +262,7 @@ export class PDFGenerator {
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      console.log(`${ICONS.INFO} Processando lote ${i + 1}/${batches.length} (${batch.length} relatórios)`);
+      log.info({ msg: "Processando lote / ( relatórios)" });
 
       // Processar lote em paralelo
       const batchPromises = batch.map(async (job) => {
@@ -294,8 +295,8 @@ export class PDFGenerator {
 
           return result;
 
-        } catch (error) {
-          console.error(`${ICONS.ERROR} Erro no job ${job.id}:`, error);
+        } catch (_error) {
+          logError(error, "${ICONS.ERROR} Erro no job ${job.id}:", { component: "refactored" });
           failed++;
 
           return {
@@ -332,8 +333,8 @@ export class PDFGenerator {
       throughput
     };
 
-    console.log(`${ICONS.SUCCESS} Batch concluído: ${successful}/${jobs.length} sucessos em ${totalTime}ms`);
-    console.log(`${ICONS.INFO} Throughput: ${Math.round(throughput)} relatórios/min`);
+    log.info({ msg: "Batch concluído: / sucessos em ms" });
+    log.info({ msg: "Throughput:  relatórios/min" });
 
     return { results, stats };
   }
@@ -470,7 +471,7 @@ export class PDFGenerator {
 
   clearTemplateCache(): void {
     this.templateCache.clear();
-    console.log(`${ICONS.CLEAN} Cache de templates limpo`);
+    log.info({ msg: "Cache de templates limpo" });
   }
 }
 

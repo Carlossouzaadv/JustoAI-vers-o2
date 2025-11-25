@@ -193,7 +193,7 @@ export async function GET(req: NextRequest) {
         sort,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     const errorMessage = getErrorMessage(error);
     console.error('Error fetching errors:', errorMessage);
     return NextResponse.json(

@@ -10,6 +10,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { ICONS } from '@/lib/icons';
+import { log, logError } from '@/lib/services/logger';
 
 // Lazy-loaded Supabase client (initialized only when needed, not at module import time)
 // This prevents build failures in environments where env vars aren't available yet
@@ -42,7 +43,7 @@ function getSupabaseClient(): ReturnType<typeof createClient> {
     }
   });
 
-  console.log(`${ICONS.SUCCESS} [Storage] Supabase client initialized`);
+  log.info({ msg: "[Storage] Supabase client initialized" });
   return supabaseClient;
 }
 
@@ -90,7 +91,7 @@ export async function uploadToStorage(
       });
 
     if (error) {
-      console.error(`${ICONS.ERROR} [Storage] Upload failed:`, error);
+      logError(error, "${ICONS.ERROR} Storage Upload failed:", { component: "refactored" });
 
       // If file exists, get its URL anyway
       if (error.message?.includes('duplicate')) {
@@ -112,7 +113,7 @@ export async function uploadToStorage(
     // Get public URL
     const publicUrl = getPublicUrl(bucket, filePath);
 
-    console.log(`${ICONS.SUCCESS} [Storage] File uploaded: ${filePath}`);
+    log.info({ msg: "[Storage] File uploaded:" });
 
     return {
       success: true,
@@ -120,9 +121,9 @@ export async function uploadToStorage(
       storagePath: data.path,
       bucketName: bucket
     };
-  } catch (error) {
+  } catch (_error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`${ICONS.ERROR} [Storage] Upload error:`, errorMsg);
+    logError(errorMsg, "${ICONS.ERROR} Storage Upload error:", { component: "refactored" });
     return {
       success: false,
       error: errorMsg
@@ -250,14 +251,14 @@ export async function deleteFromStorage(
       .remove([filePath]);
 
     if (error) {
-      console.error(`${ICONS.ERROR} [Storage] Delete failed:`, error);
+      logError(error, "${ICONS.ERROR} Storage Delete failed:", { component: "refactored" });
       return false;
     }
 
-    console.log(`${ICONS.SUCCESS} [Storage] File deleted: ${filePath}`);
+    log.info({ msg: "[Storage] File deleted:" });
     return true;
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Storage] Delete error:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Storage Delete error:", { component: "refactored" });
     return false;
   }
 }
@@ -275,13 +276,13 @@ export async function listStorageFiles(
       .list(folderPath);
 
     if (error) {
-      console.error(`${ICONS.ERROR} [Storage] List failed:`, error);
+      logError(error, "${ICONS.ERROR} Storage List failed:", { component: "refactored" });
       return [];
     }
 
     return data || [];
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Storage] List error:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Storage List error:", { component: "refactored" });
     return [];
   }
 }
@@ -296,21 +297,21 @@ async function ensureBucketExists(bucketName: string): Promise<boolean> {
     const { data: buckets, error: listError } = await getSupabaseClient().storage.listBuckets();
 
     if (listError) {
-      console.warn(`${ICONS.WARNING} [Storage] Could not list buckets:`, listError);
+      logError(listError, "${ICONS.WARNING} Storage Could not list buckets:", { component: "refactored" });
       return false;
     }
 
     const bucketExists = buckets?.some(b => b.name === bucketName);
 
     if (!bucketExists) {
-      console.warn(`${ICONS.WARNING} [Storage] Bucket '${bucketName}' does not exist`);
-      console.warn(`${ICONS.INFO} Please create this bucket in Supabase dashboard: https://app.supabase.com`);
+      log.warn({ msg: "[Storage] Bucket '' does not exist" });
+      log.warn({ msg: "Please create this bucket in Supabase dashboard: https://app.supabase.com" });
       return false;
     }
 
     return true;
-  } catch (error) {
-    console.warn(`${ICONS.WARNING} [Storage] Bucket check error:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.WARNING} Storage Bucket check error:", { component: "refactored" });
     return false;
   }
 }
@@ -328,13 +329,13 @@ export async function downloadFromStorage(
       .download(filePath);
 
     if (error) {
-      console.error(`${ICONS.ERROR} [Storage] Download failed:`, error);
+      logError(error, "${ICONS.ERROR} Storage Download failed:", { component: "refactored" });
       return null;
     }
 
     return Buffer.from(await data.arrayBuffer());
-  } catch (error) {
-    console.error(`${ICONS.ERROR} [Storage] Download error:`, error);
+  } catch (_error) {
+    logError(error, "${ICONS.ERROR} Storage Download error:", { component: "refactored" });
     return null;
   }
 }

@@ -10,6 +10,7 @@ import { ICONS } from '@/lib/icons';
 import { sendReportReady } from '@/lib/notification-service';
 import { getWebSocketManager } from '@/lib/websocket-manager';
 import { ReportType, AudienceType, OutputFormat } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 export interface ScheduleConfig {
   windowStart: string;    // "23:00"
@@ -114,7 +115,7 @@ export class ReportScheduler {
     errors: number;
     distributions: DistributionResult[];
   }> {
-    console.log(`${ICONS.PROCESS} Iniciando scheduler diário de relatórios`);
+    log.info({ msg: "Iniciando scheduler diário de relatórios" });
 
     const today = new Date();
     const tomorrow = new Date(today);
@@ -122,7 +123,7 @@ export class ReportScheduler {
 
     // Buscar agendamentos para hoje
     const schedules = await this.findSchedulesToRun(today);
-    console.log(`${ICONS.INFO} Encontrados ${schedules.length} agendamentos para processar`);
+    log.info({ msg: "Encontrados  agendamentos para processar" });
 
     const distributions: DistributionResult[] = [];
     let processed = 0;
@@ -138,7 +139,7 @@ export class ReportScheduler {
         );
 
         if (!quotaValidation.allowed) {
-          console.log(`${ICONS.WARNING} Quota excedida para workspace ${schedule.workspaceId}: ${quotaValidation.error}`);
+          log.info({ msg: "Quota excedida para workspace :" });
 
           // Criar execução com status de erro
           await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation.error || 'Quota excedida');
@@ -204,15 +205,15 @@ export class ReportScheduler {
         scheduled++;
         processed++;
 
-        console.log(`${ICONS.SUCCESS} Agendado relatório ${execution.id} para ${assignedTime.toLocaleTimeString()}`);
+        log.info({ msg: "Agendado relatório  para" });
 
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:`, error);
+      } catch (_error) {
+        logError(error, "${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:", { component: "refactored" });
         errors++;
       }
     }
 
-    console.log(`${ICONS.SUCCESS} Scheduler concluído: ${scheduled} agendados, ${errors} erros`);
+    log.info({ msg: "Scheduler concluído:  agendados,  erros" });
 
     return {
       processed,
@@ -252,7 +253,7 @@ export class ReportScheduler {
       take: this.config.maxConcurrent
     });
 
-    console.log(`${ICONS.PROCESS} Executando ${executions.length} relatórios na janela atual`);
+    log.info({ msg: "Executando  relatórios na janela atual" });
 
     let executed = 0;
     let failed = 0;
@@ -264,8 +265,8 @@ export class ReportScheduler {
         await this.executeReport(execution.id);
         executed++;
         executionIds.push(execution.id);
-      } catch (error) {
-        console.error(`${ICONS.ERROR} Falha na execução ${execution.id}:`, error);
+      } catch (_error) {
+        logError(error, "${ICONS.ERROR} Falha na execução ${execution.id}:", { component: "refactored" });
         failed++;
 
         // Reverter quota se falhou
@@ -275,7 +276,7 @@ export class ReportScheduler {
 
     await Promise.all(promises);
 
-    console.log(`${ICONS.SUCCESS} Janela executada: ${executed} sucessos, ${failed} falhas`);
+    log.info({ msg: "Janela executada:  sucessos,  falhas" });
 
     return {
       executed,
@@ -365,9 +366,9 @@ export class ReportScheduler {
         expiresAt: undefined
       });
 
-      console.log(`${ICONS.SUCCESS} Relatório ${executionId} concluído com sucesso`);
+      log.info({ msg: "Relatório  concluído com sucesso" });
 
-    } catch (error) {
+    } catch (_error) {
       // Marcar como falhou
       await prisma.reportExecution.update({
         where: { id: executionId },
@@ -518,7 +519,7 @@ export class ReportScheduler {
       });
 
       if (!schedule || !recipients || recipients.length === 0) {
-        console.warn(`${ICONS.WARNING} [Report] Sem destinatários ou agendamento para notificação`);
+        log.warn({ msg: "[Report] Sem destinatários ou agendamento para notificação" });
         return;
       }
 
@@ -551,9 +552,9 @@ export class ReportScheduler {
         }
       });
 
-      console.log(`${ICONS.SUCCESS} [Report] Notificação enviada para: ${recipients.join(', ')}`);
-    } catch (error) {
-      console.error(`${ICONS.ERROR} [Report] Erro ao enviar notificação:`, error);
+      log.info({ msg: "[Report] Notificação enviada para:" });
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Report Erro ao enviar notificação:", { component: "refactored" });
       // Não lançar erro para não quebrar o fluxo de execução
     }
   }
@@ -576,7 +577,7 @@ export class ReportScheduler {
       }
     });
 
-    console.log(`${ICONS.SUCCESS} Limpeza concluída: ${result.count} execuções removidas`);
+    log.info({ msg: "Limpeza concluída:  execuções removidas" });
     return result.count;
   }
 

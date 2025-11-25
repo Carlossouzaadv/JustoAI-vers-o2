@@ -169,7 +169,7 @@ export class GeminiClient {
                       }
                     }
                   }
-                } catch (parseError) {
+                } catch (_parseError) {
                   logError(parseError, 'Failed to parse Gemini stream chunk', { component: 'gemini-client' });
                 }
               }
@@ -205,14 +205,14 @@ export class GeminiClient {
                   }
                 }
               }
-            } catch (parseError) {
+            } catch (_parseError) {
               logError(parseError, 'Failed to parse final Gemini stream chunk', { component: 'gemini-client' });
             }
           }
         } finally {
           reader.releaseLock();
         }
-      } catch (error) {
+      } catch (_error) {
         logError(error, 'Gemini stream error', { component: 'gemini-client' });
         throw error;
       }
@@ -321,7 +321,7 @@ export class GeminiClient {
         timestamp: new Date().toISOString()
       };
 
-    } catch (error) {
+    } catch (_error) {
       logError(error, 'Gemini API error', { component: 'gemini-client' });
 
       if (error instanceof Error && error.message.includes('rate limit')) {
@@ -355,7 +355,7 @@ IMPORTANT: Return your response in valid JSON format only. Do not include unknow
     try {
       const jsonContent = this.extractJsonFromResponse(response.content);
       return JSON.parse(jsonContent);
-    } catch (error) {
+    } catch (_error) {
       const errorMsg = getErrorMessage(error);
       logError(error, 'Failed to parse JSON response from Gemini', { component: 'gemini-client', errorMsg, contentLength: response.content?.length });
       throw new Error('Failed to parse JSON response from Gemini API');

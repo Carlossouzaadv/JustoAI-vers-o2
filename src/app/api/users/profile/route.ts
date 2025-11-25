@@ -91,7 +91,7 @@ export async function PUT(request: NextRequest) {
       },
       'Profile updated successfully'
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('Error updating user profile:', error);
     return errorResponse('Failed to update profile', 500);
   }
@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
       },
       'Profile retrieved successfully'
     );
-  } catch (error) {
+  } catch (_error) {
     console.error('Error fetching user profile:', error);
     return errorResponse('Failed to fetch profile', 500);
   }

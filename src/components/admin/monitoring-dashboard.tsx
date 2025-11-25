@@ -218,7 +218,7 @@ export default function MonitoringDashboard() {
       } else {
         console.error('Status inválido recebido:', data.data);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar status:', error);
     } finally {
       setLoading(false);
@@ -234,7 +234,7 @@ export default function MonitoringDashboard() {
       if (data.status === 'success') {
         setRecoveryActions(data.availableActions);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar ações:', error);
     }
   };
@@ -259,7 +259,7 @@ export default function MonitoringDashboard() {
       } else {
         console.error('Erro na ação:', data.error);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao executar ação:', error);
     } finally {
       setExecuting(null);

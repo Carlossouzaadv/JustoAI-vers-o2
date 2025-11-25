@@ -6,6 +6,7 @@
 import prisma from './prisma';
 import { ICONS } from './icons';
 import type { SystemImport, SystemImportWhereInput } from '@/lib/types/database';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES
@@ -160,7 +161,7 @@ export class ImportReportGenerator {
    * Gera relatório de comparação entre sistemas
    */
   async generateComparisonReport(workspaceId: string): Promise<ImportReport> {
-    console.log(`${ICONS.COMPARE} Gerando relatório de comparação de sistemas`);
+    log.info({ msg: "Gerando relatório de comparação de sistemas" });
 
     const imports = await this.fetchImports(workspaceId);
     const systemStats = await this.generateSystemComparison(imports);
@@ -760,4 +761,4 @@ export function createReportGenerator(): ImportReportGenerator {
   return new ImportReportGenerator();
 }
 
-console.log(`${ICONS.SUCCESS} Sistema de relatórios carregado`);
+log.info({ msg: "Sistema de relatórios carregado" });

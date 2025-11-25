@@ -124,7 +124,7 @@ export async function GET(
       success: true,
       data: responseData,
     });
-  } catch (error) {
+  } catch (_error) {
     console.error('Error accessing shared client link:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

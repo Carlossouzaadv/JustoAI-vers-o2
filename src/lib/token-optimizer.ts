@@ -7,6 +7,7 @@
 import { PDFProcessor, ExtractionResult } from './pdf-processor';
 import { TextCleaner, CleaningResult } from './text-cleaner';
 import { AIModelRouter, ComplexityScore, ModelTier, ProcessingConfig, ModelCosts } from './ai-model-router';
+import { log, logError } from '@/lib/services/logger';
 
 export interface OptimizationResult {
   // Resultados do processamento
@@ -63,10 +64,10 @@ export class TokenOptimizer {
     const startTime = Date.now();
 
     try {
-      console.log('🚀 Iniciando pipeline de otimização completo...');
+      log.info({ msg: "🚀 Iniciando pipeline de otimização completo..." });
 
       // ETAPA 1: Validação robusta do PDF
-      console.log('📋 Validando PDF...');
+      log.info({ msg: "📋 Validando PDF..." });
       const validation = await this.pdfProcessor.validatePDF(buffer, filename, options.userPlan);
 
       if (!validation.isValid) {
@@ -78,37 +79,37 @@ export class TokenOptimizer {
       }
 
       // ETAPA 2: Extração em cascata
-      console.log('🔍 Extraindo texto em cascata...');
+      log.info({ msg: "🔍 Extraindo texto em cascata..." });
       const extractionResult = await this.pdfProcessor.extractText(buffer);
 
       if (!extractionResult.success) {
         throw new Error('Falha na extração de texto do PDF');
       }
 
-      console.log(`✅ Texto extraído: ${extractionResult.text.length} caracteres`);
+      log.info({ msg: "✅ Texto extraído:  caracteres" });
 
       // ETAPA 3: Limpeza inteligente de texto
-      console.log('🧹 Aplicando limpeza inteligente...');
+      log.info({ msg: "🧹 Aplicando limpeza inteligente..." });
       const cleaningData = this.textCleaner.cleanLegalDocument(extractionResult.text);
       const cleaningResult: CleaningResult = {
         originalText: extractionResult.text,
         ...cleaningData
       };
 
-      console.log(`🎯 Texto limpo: ${cleaningResult.reductionPercentage}% de redução`);
+      log.info({ msg: "🎯 Texto limpo: % de redução" });
 
       // ETAPA 4: Extração do número do processo
-      console.log('🔍 Extraindo número do processo...');
+      log.info({ msg: "🔍 Extraindo número do processo..." });
       const extractedProcessNumber = this.textCleaner.extractProcessNumber(extractionResult.text);
 
       if (extractedProcessNumber) {
-        console.log(`📋 Número do processo identificado: ${extractedProcessNumber}`);
+        log.info({ msg: "📋 Número do processo identificado:" });
       } else {
-        console.log('⚠️ Número do processo não identificado no documento');
+        log.info({ msg: "⚠️ Número do processo não identificado no documento" });
       }
 
       // ETAPA 5: Análise de complexidade
-      console.log('🧮 Analisando complexidade...');
+      log.info({ msg: "🧮 Analisando complexidade..." });
       const complexityAnalysis = this.modelRouter.analyzeComplexity(
         cleaningResult.cleanedText,
         validation.metadata.sizeMB
@@ -145,13 +146,13 @@ export class TokenOptimizer {
         qualityScore: this.calculateQualityScore(extractionResult, cleaningResult, complexityAnalysis)
       };
 
-      console.log('🎉 Pipeline de otimização concluído!');
-      console.log(`📊 Economia: ${result.savingsPercentage}% | Confiança: ${(result.confidence * 100).toFixed(1)}%`);
+      log.info({ msg: "🎉 Pipeline de otimização concluído!" });
+      log.info({ msg: "📊 Economia: % | Confiança: %" });
 
       return result;
 
-    } catch (error) {
-      console.error('❌ Erro no pipeline de otimização:', error);
+    } catch (_error) {
+      logError(error, "❌ Erro no pipeline de otimização:", { component: "refactored" });
       throw error;
     }
   }
@@ -169,7 +170,7 @@ export class TokenOptimizer {
     savingsReport: unknown;
   }> {
 
-    console.log('🤖 Iniciando processamento com IA otimizada...');
+    log.info({ msg: "🤖 Iniciando processamento com IA otimizada..." });
 
     const { cleanedText } = optimizationResult.cleaningResult;
     const { complexityAnalysis } = optimizationResult;
@@ -189,7 +190,7 @@ export class TokenOptimizer {
       inputTokens
     );
 
-    console.log(`💰 Economia final: ${savingsReport.savingsPercentage}% vs modelo mais caro`);
+    log.info({ msg: "💰 Economia final: % vs modelo mais caro" });
 
     return {
       result: aiResult.result,

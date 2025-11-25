@@ -10,6 +10,7 @@ import type { Request as ExpressRequest, Response as ExpressResponse } from 'exp
 import { notificationQueue as getNotificationQueue } from './queues';
 import { validateBullBoardAccess } from './bull-board-auth';
 import getRedisClient from './redis';
+import { log, logError } from '@/lib/services/logger';
 
 // Keep as function reference to enable lazy loading at runtime (not at build time)
 // Note: Other queues (sync, reports, cache cleanup, document processing) have been disabled for cost optimization
@@ -136,8 +137,8 @@ function ensureBullBoardInitialized() {
     try {
       initializeBullBoard();
     } catch (_error) {
-      console.warn('[BULL-BOARD] Warning: Bull Board could not be initialized (Redis may not be available)');
-      console.warn('[BULL-BOARD] This is expected during build phase. Queues will be available at runtime.');
+      log.warn({ msg: "[BULL-BOARD] Warning: Bull Board could not be initialized (Redis may not be available)" });
+      log.warn({ msg: "[BULL-BOARD] This is expected during build phase. Queues will be available at runtime." });
       // Provide no-op functions so code doesn't crash
       addQueue = () => {};
       removeQueue = () => {};
@@ -161,7 +162,7 @@ export async function bullBoardAuthMiddleware(
   try {
     // Type guard to ensure we have valid Express Request/Response
     if (!isExpressRequest(req) || !isExpressResponse(res)) {
-      console.error('Invalid request or response object');
+      log.error({ msg: "Invalid request or response object" });
       if (isExpressResponse(res)) {
         void res.status(500).json({ error: 'Invalid request context' });
       }
@@ -170,7 +171,7 @@ export async function bullBoardAuthMiddleware(
 
     // Type guard for next function
     if (typeof next !== 'function') {
-      console.error('Invalid next function');
+      log.error({ msg: "Invalid next function" });
       void res.status(500).json({ error: 'Invalid middleware chain' });
       return;
     }
@@ -185,7 +186,7 @@ export async function bullBoardAuthMiddleware(
       }
       // Se não houver token válido, permitir sem autenticação em dev (para debugging)
       // mas log de warning
-      console.warn('⚠️ Bull Board accessed without proper token in development');
+      log.warn({ msg: "⚠️ Bull Board accessed without proper token in development" });
       next();
       return;
     }
@@ -194,9 +195,7 @@ export async function bullBoardAuthMiddleware(
     const validation = await validateBullBoardAccess(req);
 
     if (!validation.authorized) {
-      console.warn(
-        `🔒 Bull Board access denied: ${validation.reason} (User: ${validation.userId}, Email: ${validation.email})`
-      );
+      log.warn({ msg: "🔒 Bull Board access denied:  (User: , Email: )" });
       void res.status(403).json({
         error: 'Admin access required',
         reason: validation.reason,
@@ -218,14 +217,12 @@ export async function bullBoardAuthMiddleware(
     // Use intersection type for safe assignment
     (req as ExpressRequest & Record<string, unknown>).bullBoardUser = bullBoardUser;
 
-    console.log(
-      `✅ Bull Board access granted for user ${validation.userId} (${validation.email}) - Role: ${validation.role}`
-    );
+    log.info({ msg: "✅ Bull Board access granted for user  () - Role:" });
 
     next();
     return;
-  } catch (error) {
-    console.error('🔴 Error validating Bull Board access:', error);
+  } catch (_error) {
+    logError(error, "🔴 Error validating Bull Board access:", { component: "refactored" });
 
     // Type guard for error response
     if (isExpressResponse(res)) {
@@ -300,8 +297,8 @@ export async function getBullBoardStats() {
               lastActivity: lastActivity?.toISOString() || null,
             }
           };
-        } catch (error) {
-          console.error(`Error getting stats for queue ${name}:`, error);
+        } catch (_error) {
+          logError(error, "Error getting stats for queue ${name}:", { component: "refactored" });
           return {
             name,
             status: 'error',
@@ -327,8 +324,8 @@ export async function getBullBoardStats() {
         totalFailed: stats.reduce((sum, q) => sum + (q.counts?.failed || 0), 0),
       }
     };
-  } catch (error) {
-    console.error('Error collecting Bull Board stats:', error);
+  } catch (_error) {
+    logError(error, "Error collecting Bull Board stats:", { component: "refactored" });
     return {
       error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
@@ -358,9 +355,9 @@ export async function pauseAllQueues() {
   await Promise.all(queues.map(async (queue) => {
     try {
       await queue.pause();
-      console.log(`✅ Queue ${queue.name} paused`);
-    } catch (error) {
-      console.error(`❌ Failed to pause queue ${queue.name}:`, error);
+      log.info({ msg: "✅ Queue  paused" });
+    } catch (_error) {
+      logError(error, "❌ Failed to pause queue ${queue.name}:", { component: "refactored" });
     }
   }));
 }
@@ -375,9 +372,9 @@ export async function resumeAllQueues() {
   await Promise.all(queues.map(async (queue) => {
     try {
       await queue.resume();
-      console.log(`✅ Queue ${queue.name} resumed`);
-    } catch (error) {
-      console.error(`❌ Failed to resume queue ${queue.name}:`, error);
+      log.info({ msg: "✅ Queue  resumed" });
+    } catch (_error) {
+      logError(error, "❌ Failed to resume queue ${queue.name}:", { component: "refactored" });
     }
   }));
 }
@@ -397,9 +394,9 @@ export async function cleanAllQueues() {
     try {
       await queue.clean(0, 'completed');
       await queue.clean(0, 'failed');
-      console.log(`✅ Queue ${queue.name} cleaned`);
-    } catch (error) {
-      console.error(`❌ Failed to clean queue ${queue.name}:`, error);
+      log.info({ msg: "✅ Queue  cleaned" });
+    } catch (_error) {
+      logError(error, "❌ Failed to clean queue ${queue.name}:", { component: "refactored" });
     }
   }));
 }
@@ -426,14 +423,14 @@ export async function retryFailedJobs(queueName?: string) {
           try {
             await job.retry();
             retriedCount++;
-          } catch (error) {
-            console.error(`Failed to retry job ${job.id}:`, error);
+          } catch (_error) {
+            logError(error, "Failed to retry job ${job.id}:", { component: "refactored" });
           }
         }
 
         return { queueName: queue.name, retriedCount };
-      } catch (error) {
-        console.error(`Error retrying jobs for queue ${queue.name}:`, error);
+      } catch (_error) {
+        logError(error, "Error retrying jobs for queue ${queue.name}:", { component: "refactored" });
         return { queueName: queue.name, retriedCount: 0, error };
       }
     })
@@ -484,7 +481,7 @@ export async function systemHealthCheck() {
         redis: redisHealth,
       }
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -530,7 +527,7 @@ async function checkRedisHealth() {
       memoryUsage: memoryMatch ? memoryMatch[1].trim() : 'unknown',
       status: 'healthy'
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       connected: false,
       status: 'unhealthy',

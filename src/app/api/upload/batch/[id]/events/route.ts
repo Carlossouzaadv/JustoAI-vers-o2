@@ -135,7 +135,7 @@ export async function GET(
               clearInterval(interval);
             }
 
-          } catch (error) {
+          } catch (_error) {
             console.error(`${ICONS.ERROR} Erro no SSE polling:`, error);
 
             const errorEvent = {
@@ -172,7 +172,7 @@ export async function GET(
 
     return new NextResponse(readable, { headers });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao configurar SSE:`, error);
 
     return NextResponse.json(

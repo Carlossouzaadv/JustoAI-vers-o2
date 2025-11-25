@@ -1,3 +1,5 @@
+import { log, logError } from '@/lib/services/logger';
+
 // ================================================================
 // JUDIT SERVICE - Base HTTP Client
 // ================================================================
@@ -345,7 +347,7 @@ export async function sendRequest<T = Record<string, unknown>>(
       statusCode: response.status,
     };
 
-  } catch (error) {
+  } catch (_error) {
     clearTimeout(timeoutId);
 
     // Handle timeout

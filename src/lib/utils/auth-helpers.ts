@@ -1,3 +1,5 @@
+import { log, logError } from '@/lib/services/logger';
+
 
 /**
  * Pure Auth Helper Functions
@@ -13,8 +15,8 @@ export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
   try {
     return localStorage.getItem('auth_token') || null;
-  } catch (error) {
-    console.error('Failed to read token from localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to read token from localStorage:", { component: "refactored" });
     return null;
   }
 }
@@ -27,8 +29,8 @@ export function setStoredToken(token: string): boolean {
   try {
     localStorage.setItem('auth_token', token);
     return true;
-  } catch (error) {
-    console.error('Failed to save token to localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to save token to localStorage:", { component: "refactored" });
     return false;
   }
 }
@@ -43,8 +45,8 @@ export function clearStoredToken(): boolean {
     localStorage.removeItem('user_data');
     localStorage.removeItem('workspace_id');
     return true;
-  } catch (error) {
-    console.error('Failed to clear token from localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to clear token from localStorage:", { component: "refactored" });
     return false;
   }
 }
@@ -57,8 +59,8 @@ export function getStoredUser() {
   try {
     const userData = localStorage.getItem('user_data');
     return userData ? JSON.parse(userData) : null;
-  } catch (error) {
-    console.error('Failed to read user data from localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to read user data from localStorage:", { component: "refactored" });
     return null;
   }
 }
@@ -71,8 +73,8 @@ export function setStoredUser(user: unknown): boolean {
   try {
     localStorage.setItem('user_data', JSON.stringify(user));
     return true;
-  } catch (error) {
-    console.error('Failed to save user data to localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to save user data to localStorage:", { component: "refactored" });
     return false;
   }
 }
@@ -84,8 +86,8 @@ export function getStoredWorkspaceId(): string | null {
   if (typeof window === 'undefined') return null;
   try {
     return localStorage.getItem('workspace_id') || null;
-  } catch (error) {
-    console.error('Failed to read workspace ID from localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to read workspace ID from localStorage:", { component: "refactored" });
     return null;
   }
 }
@@ -98,8 +100,8 @@ export function setStoredWorkspaceId(workspaceId: string): boolean {
   try {
     localStorage.setItem('workspace_id', workspaceId);
     return true;
-  } catch (error) {
-    console.error('Failed to save workspace ID to localStorage:', error);
+  } catch (_error) {
+    logError(error, "Failed to save workspace ID to localStorage:", { component: "refactored" });
     return false;
   }
 }
@@ -113,8 +115,8 @@ export function clearAllAuthData(): boolean {
     const keys = ['auth_token', 'user_data', 'workspace_id'];
     keys.forEach(key => localStorage.removeItem(key));
     return true;
-  } catch (error) {
-    console.error('Failed to clear auth data:', error);
+  } catch (_error) {
+    logError(error, "Failed to clear auth data:", { component: "refactored" });
     return false;
   }
 }

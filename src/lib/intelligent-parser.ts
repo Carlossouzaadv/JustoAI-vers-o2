@@ -5,6 +5,7 @@
 // para importação de dados de sistemas como Projuris, Legal One, Astrea, CP-Pro
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES
@@ -159,7 +160,7 @@ export class IntelligentParser {
    * Análise completa de arquivo CSV/Excel
    */
   async parseFile(buffer: Buffer, fileName: string): Promise<IntelligentParseResult> {
-    console.log(`${ICONS.PROCESS} Iniciando análise inteligente: ${fileName}`);
+    log.info({ msg: "Iniciando análise inteligente:" });
 
     try {
       // 1. Análise básica do arquivo
@@ -201,11 +202,11 @@ export class IntelligentParser {
         fileAnalysis
       };
 
-      console.log(`${ICONS.SUCCESS} Análise concluída: ${result.detectedSystem} (${Math.round(result.confidence * 100)}%)`);
+      log.info({ msg: "Análise concluída:  (%)" });
       return result;
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na análise:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na análise:", { component: "refactored" });
 
       return {
         success: false,
@@ -392,7 +393,7 @@ export class IntelligentParser {
     Object.entries(fieldGroups).forEach(([category, fields]) => {
       // Safely narrow category to valid FieldMapping key using type guard
       if (!isValidFieldMappingKey(category)) {
-        console.warn(`${ICONS.WARNING} Invalid field mapping category: ${category}`);
+        log.warn({ msg: "Invalid field mapping category:" });
         return;
       }
 

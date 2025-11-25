@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro no endpoint de relatórios individuais:`, error);
 
     // Liberar hold de créditos se foi criado
@@ -436,7 +436,7 @@ async function checkReportCache(
       expiresAt: cached.expiresAt.toISOString()
     };
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} Erro ao verificar cache:`, error);
     return { hit: false };
   }

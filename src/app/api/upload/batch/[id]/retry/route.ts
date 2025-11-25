@@ -109,7 +109,7 @@ export async function POST(
     // Validate with schema for stricter validation if needed
     try {
       retryRequestSchema.parse(body);
-    } catch (error) {
+    } catch (_error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           { success: false, error: 'Validação inválida', details: error.flatten() },
@@ -187,7 +187,7 @@ export async function POST(
           errorDetails = parsedErrors;
         }
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       console.warn(
         `${ICONS.WARNING} [Batch Retry] Erro ao fazer parse de erros JSON:`,
         parseError
@@ -288,7 +288,7 @@ export async function POST(
       },
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Batch Retry] Erro:`, error);
 
     captureApiError(error, {
@@ -397,7 +397,7 @@ export async function GET(
           }
         }
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       console.warn(`${ICONS.WARNING} [Batch Retry Status] Erro ao fazer parse:`, parseError);
     }
 
@@ -414,7 +414,7 @@ export async function GET(
       retryStats,
     });
 
-  } catch (error) {
+  } catch (_error) {
     console.error(`${ICONS.ERROR} [Batch Retry Status] Erro:`, error);
 
     captureApiError(error, {

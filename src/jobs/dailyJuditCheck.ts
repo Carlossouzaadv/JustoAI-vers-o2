@@ -233,7 +233,7 @@ export async function runDailyJuditCheck(): Promise<BatchResult> {
 
     return result;
 
-  } catch (error) {
+  } catch (_error) {
     log.error('Erro crítico na verificação diária', error);
 
     return {
@@ -461,7 +461,7 @@ async function checkSingleProcess(
       requiresAttachmentCheck: analysisResult.shouldFetchAttachments,
     };
 
-  } catch (error) {
+  } catch (_error) {
     // Retry logic
     if (retryCount < CRON_CONFIG.MAX_RETRIES_PER_PROCESS) {
       log.warn(`Tentando novamente (${retryCount + 1}/${CRON_CONFIG.MAX_RETRIES_PER_PROCESS})`, {
@@ -564,7 +564,7 @@ export async function executeDailyCheck() {
 
     return result;
 
-  } catch (error) {
+  } catch (_error) {
     log.error('Erro crítico na execução do cron job', error);
     throw error;
   }

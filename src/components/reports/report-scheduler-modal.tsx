@@ -188,7 +188,7 @@ export default function ReportSchedulerModal({
       if (data.success) {
         setQuotaStatus(data.quotaStatus);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar quota:', error);
     }
   }, [workspaceId]);
@@ -202,7 +202,7 @@ export default function ReportSchedulerModal({
       if (data.success) {
         setCreditBalance(data.data.balance);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar créditos:', error);
     }
   }, [workspaceId]);
@@ -296,7 +296,7 @@ export default function ReportSchedulerModal({
         console.error('Erro no agendamento:', data.error);
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao agendar:', error);
     } finally {
       setLoading(false);

@@ -10,6 +10,7 @@ import { createIntelligentParser, IntelligentParseResult } from './intelligent-p
 import { SystemMappings, DataTransformer, DataValidator } from './system-mappings';
 import { ICONS } from './icons';
 import crypto from 'crypto';
+import { log, logError } from '@/lib/services/logger';
 
 // Type guard imports for runtime validation
 import {
@@ -217,7 +218,7 @@ export class SystemImporter {
     fileName: string,
     options: Partial<ImportOptions> = {}
   ): Promise<ImportSession> {
-    console.log(`${ICONS.PROCESS} Iniciando importação: ${fileName}`);
+    log.info({ msg: "Iniciando importação:" });
 
     // Configurações padrão
     const importOptions: ImportOptions = {
@@ -303,7 +304,7 @@ export class SystemImporter {
 
     try {
       // Fase 1: Análise inteligente do arquivo
-      console.log(`${ICONS.SEARCH} Analisando estrutura do arquivo...`);
+      log.info({ msg: "Analisando estrutura do arquivo..." });
       const parseResult = await this.parser.parseFile(buffer, fileName);
 
       if (!parseResult.success) {
@@ -347,7 +348,7 @@ export class SystemImporter {
 
       // Fase 2: Importação dos dados
       if (!importOptions.validateOnly) {
-        console.log(`${ICONS.PROCESS} Iniciando importação de dados...`);
+        log.info({ msg: "Iniciando importação de dados..." });
         await this.importData(parseResult, importOptions);
       }
 
@@ -390,8 +391,8 @@ export class SystemImporter {
 
       return this.session;
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro na importação:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro na importação:", { component: "refactored" });
 
       this.session.status = 'FAILED';
       this.session.finishedAt = new Date();
@@ -416,7 +417,7 @@ export class SystemImporter {
   cancelImport(): void {
     if (this.session?.status === 'IMPORTING') {
       this.cancelled = true;
-      console.log(`${ICONS.WARNING} Cancelando importação...`);
+      log.info({ msg: "Cancelando importação..." });
     }
   }
 
@@ -472,7 +473,7 @@ export class SystemImporter {
     for (const category of strategy.order) {
       if (this.cancelled) break;
 
-      console.log(`${ICONS.PROCESS} Importando categoria: ${category}`);
+      log.info({ msg: "Importando categoria:" });
 
       // ================================================================
       // TYPE-SAFE NARROWING: SystemColumnMapping[] -> ColumnMapping[]
@@ -538,7 +539,7 @@ export class SystemImporter {
 
       await this.processBatch(category, batchRows, categoryMappings, systemMapping, options);
 
-      console.log(`${ICONS.INFO} Processado batch ${batchIndex + 1}/${totalBatches} da categoria ${category}`);
+      log.info({ msg: "Processado batch / da categoria" });
     }
   }
 
@@ -560,7 +561,7 @@ export class SystemImporter {
       try {
         await this.processRow(category, row, lineNumber, categoryMappings, systemMapping, options);
         this.session.successfulRows++;
-      } catch (error) {
+      } catch (_error) {
         this.session.failedRows++;
         this.session.errors.push({
           type: 'DATABASE_ERROR',
@@ -627,7 +628,7 @@ export class SystemImporter {
             transformedValue = transformed;
             this.session!.summary.transformationsApplied++;
           } else {
-            console.warn(`Transformação resultou em tipo inválido: ${typeof transformed}`);
+            log.warn({ msg: "Transformação resultou em tipo inválido:" });
           }
         });
 
@@ -888,7 +889,7 @@ export class SystemImporter {
     // Verificar que todos os campos fornecidos são permitidos
     for (const key of Object.keys(data)) {
       if (!allowedFields.has(key)) {
-        console.warn(`Campo não reconhecido em updateImportRecord: ${key}`);
+        log.warn({ msg: "Campo não reconhecido em updateImportRecord:" });
       }
     }
 
@@ -1050,4 +1051,4 @@ export async function getImportStatistics(workspaceId: string) {
   };
 }
 
-console.log(`${ICONS.SUCCESS} Sistema de importação carregado`);
+log.info({ msg: "Sistema de importação carregado" });

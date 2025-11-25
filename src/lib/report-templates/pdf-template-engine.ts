@@ -6,6 +6,7 @@ import puppeteer, { Browser, PDFOptions } from 'puppeteer';
 import { ICONS } from '@/lib/icons';
 import path from 'path';
 import fs from 'fs/promises';
+import { log, logError } from '@/lib/services/logger';
 
 // Interfaces para o template engine
 export interface PDFTemplateOptions {
@@ -64,9 +65,9 @@ export class PDFTemplateEngine {
           '--disable-gpu'
         ]
       });
-      console.log(`${ICONS.SUCCESS} PDF Template Engine initialized`);
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to initialize PDF engine:`, error);
+      log.info({ msg: "PDF Template Engine initialized" });
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to initialize PDF engine:", { component: "refactored" });
       throw error;
     }
   }
@@ -86,7 +87,7 @@ export class PDFTemplateEngine {
         await this.initialize();
       }
 
-      console.log(`${ICONS.PROCESS} Generating PDF: ${path.basename(outputPath)}`);
+      log.info({ msg: "Generating PDF:" });
 
       // Criar página
       const page = await this.browser!.newPage();
@@ -135,7 +136,7 @@ export class PDFTemplateEngine {
       // Estimar número de páginas (aproximação)
       const pageCount = Math.max(1, Math.ceil(fileSize / 50000)); // ~50KB por página
 
-      console.log(`${ICONS.SUCCESS} PDF generated successfully: ${fileSize} bytes, ~${pageCount} pages`);
+      log.info({ msg: "PDF generated successfully:  bytes, ~ pages" });
 
       return {
         success: true,
@@ -145,8 +146,8 @@ export class PDFTemplateEngine {
         processingTime: Date.now() - startTime
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} PDF generation failed:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} PDF generation failed:", { component: "refactored" });
       return {
         success: false,
         filePath: '',
@@ -684,7 +685,7 @@ export class PDFTemplateEngine {
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
-      console.log(`${ICONS.SUCCESS} PDF Template Engine closed`);
+      log.info({ msg: "PDF Template Engine closed" });
     }
   }
 }

@@ -4,6 +4,7 @@
 // Implementa controle de taxa para API Judit com retry inteligente
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface RateLimiterOptions {
   maxTokens: number; // Máximo de tokens no bucket
@@ -50,11 +51,11 @@ export class TokenBucketRateLimiter {
 
     if (this.tokens >= tokens) {
       this.tokens -= tokens;
-      console.log(`${ICONS.SUCCESS} Token consumido. Restantes: ${this.tokens}/${this.maxTokens}`);
+      log.info({ msg: "Token consumido. Restantes: /" });
       return true;
     }
 
-    console.log(`${ICONS.WARNING} Rate limit atingido. Tokens disponíveis: ${this.tokens}, necessários: ${tokens}`);
+    log.info({ msg: "Rate limit atingido. Tokens disponíveis: , necessários:" });
     return false;
   }
 
@@ -124,11 +125,11 @@ export class ExponentialBackoffRetry {
 
     for (let attempt = 1; attempt <= this.options.maxAttempts; attempt++) {
       try {
-        console.log(`${ICONS.PROCESS} ${context} - Tentativa ${attempt}/${this.options.maxAttempts}`);
+        log.info({ msg: "- Tentativa /" });
 
         const result = await fn();
 
-        console.log(`${ICONS.SUCCESS} ${context} - Sucesso na tentativa ${attempt}`);
+        log.info({ msg: "- Sucesso na tentativa" });
         return {
           success: true,
           data: result,
@@ -136,22 +137,22 @@ export class ExponentialBackoffRetry {
           totalDelay
         };
 
-      } catch (error) {
+      } catch (_error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.log(`${ICONS.WARNING} ${context} - Falha na tentativa ${attempt}: ${lastError.message}`);
+        log.info({ msg: "- Falha na tentativa :" });
 
         // Se não é a última tentativa, esperar antes de tentar novamente
         if (attempt < this.options.maxAttempts) {
           const delay = this.calculateDelay(attempt);
           totalDelay += delay;
 
-          console.log(`${ICONS.PROCESS} Aguardando ${delay}ms antes da próxima tentativa...`);
+          log.info({ msg: "Aguardando ms antes da próxima tentativa..." });
           await this.sleep(delay);
         }
       }
     }
 
-    console.log(`${ICONS.ERROR} ${context} - Todas as tentativas falharam`);
+    log.info({ msg: "- Todas as tentativas falharam" });
     return {
       success: false,
       error: lastError?.message || 'Erro desconhecido',
@@ -210,7 +211,7 @@ export class RateLimitedApiClient {
       const waitTime = this.rateLimiter.getWaitTime(tokens);
 
       if (waitTime > 0) {
-        console.log(`${ICONS.PROCESS} Rate limit: aguardando ${waitTime}ms para ${context}`);
+        log.info({ msg: "Rate limit: aguardando ms para" });
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }

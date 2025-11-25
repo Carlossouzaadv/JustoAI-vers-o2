@@ -4,6 +4,7 @@
 // Sistema específico para atingir meta de throughput de 20+ relatórios/minuto
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================
 // TYPE GUARDS PARA PUPPETEER
@@ -182,7 +183,7 @@ export class PerformanceOptimizer {
     this.config = { ...PERFORMANCE_PROFILES[profile] };
     this.setupPerformanceMonitoring();
 
-    console.log(`${ICONS.ROCKET} Performance Optimizer iniciado (perfil: ${profile})`);
+    log.info({ msg: "Performance Optimizer iniciado (perfil: )" });
   }
 
   // ================================
@@ -258,7 +259,7 @@ export class PerformanceOptimizer {
       interceptRequests: (page: unknown) => {
         // Valida se page é uma Page do Puppeteer
         if (!isPage(page)) {
-          console.warn('AVISO: page não é uma Page do Puppeteer válida');
+          log.warn({ msg: "AVISO: page não é uma Page do Puppeteer válida" });
           return;
         }
 
@@ -267,7 +268,7 @@ export class PerformanceOptimizer {
         page.on('request', (request: unknown) => {
           // Valida se request é um Request do Puppeteer
           if (!isRequest(request)) {
-            console.warn('AVISO: request não é um Request do Puppeteer válido');
+            log.warn({ msg: "AVISO: request não é um Request do Puppeteer válido" });
             return;
           }
 
@@ -387,7 +388,7 @@ export class PerformanceOptimizer {
 
       // Force GC se memória muito alta
       if (currentMB > this.config.maxMemoryUsageMB * 0.9) {
-        console.warn(`${ICONS.WARNING} Memória alta (${currentMB}MB), forçando GC...`);
+        log.warn({ msg: "Memória alta (MB), forçando GC..." });
         this.performGarbageCollection();
       }
     }, 10000);
@@ -406,10 +407,10 @@ export class PerformanceOptimizer {
         this.lastGcTime = now;
 
         const memUsage = process.memoryUsage();
-        console.log(`${ICONS.CLEAN} GC executado: ${Math.round(memUsage.heapUsed / 1024 / 1024)}MB heap`);
+        log.info({ msg: "GC executado: MB heap" });
       }
-    } catch (error) {
-      console.warn(`${ICONS.WARNING} Erro no GC:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.WARNING} Erro no GC:", { component: "refactored" });
     }
   }
 
@@ -535,7 +536,7 @@ export class PerformanceOptimizer {
     // GC final
     this.performGarbageCollection();
 
-    console.log(`${ICONS.SUCCESS} Performance Optimizer finalizado`);
+    log.info({ msg: "Performance Optimizer finalizado" });
   }
 
   // ================================

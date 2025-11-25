@@ -4,6 +4,7 @@
 // Centralized email service using Resend API for all email communications
 
 import { ICONS } from './icons';
+import { log, logError } from '@/lib/services/logger';
 
 export interface EmailTemplate {
   subject: string;
@@ -100,7 +101,7 @@ export class EmailService {
     this.fromEmail = process.env.FROM_EMAIL || 'contato@justoai.com.br';
 
     if (!this.apiKey) {
-      console.warn(`${ICONS.WARNING} Resend API key not configured - emails will be simulated`);
+      log.warn({ msg: "Resend API key not configured - emails will be simulated" });
     }
   }
 
@@ -108,10 +109,10 @@ export class EmailService {
    * Send email notification using predefined templates
    */
   async sendNotification(notification: EmailNotification): Promise<EmailResult> {
-    console.log(`${ICONS.MAIL} Enviando notificação por email...`);
+    log.info({ msg: "Enviando notificação por email..." });
 
     if (!this.apiKey) {
-      console.log(`${ICONS.WARNING} Simulando envio de email (API key não configurada)`);
+      log.info({ msg: "Simulando envio de email (API key não configurada)" });
       return { success: true, messageId: 'simulated-' + Date.now(), provider: 'resend' };
     }
 
@@ -146,7 +147,7 @@ export class EmailService {
       }
 
       const result = await response.json();
-      console.log(`${ICONS.SUCCESS} Email enviado com sucesso: ${result.id}`);
+      log.info({ msg: "Email enviado com sucesso:" });
 
       return {
         success: true,
@@ -154,8 +155,8 @@ export class EmailService {
         provider: 'resend'
       };
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Erro ao enviar email:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Erro ao enviar email:", { component: "refactored" });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -826,7 +827,7 @@ export class EmailService {
       });
 
       return { success: response.ok };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

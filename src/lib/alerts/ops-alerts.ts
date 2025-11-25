@@ -236,7 +236,7 @@ export class OpsAlerts {
         await this.evaluateRule(rule, context);
       }
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to check workspace alerts:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -258,7 +258,7 @@ export class OpsAlerts {
       // Verificar alertas agregados
       await this.checkAggregatedAlerts();
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to check global alerts:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -290,7 +290,7 @@ export class OpsAlerts {
 
       await this.sendAlert(alert as AlertEvent);
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to send manual alert:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -398,7 +398,7 @@ export class OpsAlerts {
       // Salvar no banco
       await this.saveAlertEvent(alert);
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to evaluate rule ${rule.id}:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -485,7 +485,7 @@ export class OpsAlerts {
 
       log.info({ msg: `${ICONS.SUCCESS} Slack alert sent successfully`, component: 'opsAlerts' });
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to send Slack alert:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -515,7 +515,7 @@ export class OpsAlerts {
         logError(`${ICONS.ERROR} Falha ao enviar email alert: ${result.error}`, 'Error occurred', { component: 'opsAlerts' });
       }
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to send email alert:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -548,7 +548,7 @@ export class OpsAlerts {
         component: 'opsAlerts'
       });
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to send Sentry alert:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -558,7 +558,7 @@ export class OpsAlerts {
       // TODO: Implementar webhook genérico
       log.info({ msg: `${ICONS.ALERT} Webhook alert (simulated)`, component: 'opsAlerts' });
 
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to send webhook alert:`, 'error', { component: 'opsAlerts' });
     }
   }
@@ -721,7 +721,7 @@ export class OpsAlerts {
           }
         }
       });
-    } catch (error) {
+    } catch (_error) {
       logError(`${ICONS.ERROR} Failed to save alert event:`, 'error', { component: 'opsAlerts' });
     }
   }

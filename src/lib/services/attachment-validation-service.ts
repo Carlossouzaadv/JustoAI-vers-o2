@@ -11,6 +11,7 @@
 
 import { ICONS } from '@/lib/icons';
 import { PDFDocument } from 'pdf-lib';
+import { log, logError } from '@/lib/services/logger';
 import {
   ValidationFailureReason,
   ValidationResult,
@@ -82,9 +83,7 @@ export async function validateAttachment(
   const startTime = Date.now();
 
   try {
-    console.log(
-      `${ICONS.CHECK} [AttachmentValidation] Iniciando validação: ${filename} (${buffer.length} bytes)`
-    );
+    log.info({ msg: "[AttachmentValidation] Iniciando validação:  ( bytes)" });
 
     // ================================================================
     // CHECK 1: ZERO-BYTE
@@ -92,9 +91,7 @@ export async function validateAttachment(
 
     const zeroByteCheck = checkZeroByte(buffer);
     if (!zeroByteCheck.isValid) {
-      console.warn(
-        `${ICONS.WARNING} [AttachmentValidation] ❌ ZERO-BYTE: ${filename}`
-      );
+      log.warn({ msg: "[AttachmentValidation] ❌ ZERO-BYTE:" });
       return zeroByteCheck;
     }
 
@@ -104,9 +101,7 @@ export async function validateAttachment(
 
     const magicNumberCheck = checkMagicNumber(buffer, fileType);
     if (!magicNumberCheck.isValid) {
-      console.warn(
-        `${ICONS.WARNING} [AttachmentValidation] ❌ INVALID_TYPE: ${filename}`
-      );
+      log.warn({ msg: "[AttachmentValidation] ❌ INVALID_TYPE:" });
       return magicNumberCheck;
     }
 
@@ -117,9 +112,7 @@ export async function validateAttachment(
     if (fileType === 'pdf') {
       const pdfCheck = await checkPdfIntegrity(buffer, filename);
       if (!pdfCheck.isValid) {
-        console.warn(
-          `${ICONS.WARNING} [AttachmentValidation] ❌ ${pdfCheck.reason}: ${filename}`
-        );
+        log.warn({ msg: "[AttachmentValidation] ❌ :" });
         return pdfCheck;
       }
     }
@@ -134,19 +127,14 @@ export async function validateAttachment(
     };
 
     const elapsedMs = Date.now() - startTime;
-    console.log(
-      `${ICONS.SUCCESS} [AttachmentValidation] ✅ VÁLIDO: ${filename} (${elapsedMs}ms)`
-    );
+    log.info({ msg: "[AttachmentValidation] ✅ VÁLIDO:  (ms)" });
 
     return result;
 
-  } catch (error) {
+  } catch (_error) {
     // Erro inesperado durante validação
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(
-      `${ICONS.ERROR} [AttachmentValidation] Erro inesperado:`,
-      errorMsg
-    );
+    logError(errorMsg, "${ICONS.ERROR} AttachmentValidation Erro inesperado:", { component: "refactored" });
 
     return {
       isValid: false,
@@ -249,7 +237,7 @@ async function checkPdfIntegrity(
 
       pdfDoc = await Promise.race([loadPromise, timeoutPromise]);
 
-    } catch (error) {
+    } catch (_error) {
       // Se o erro for "timeout" ou "parse error" → CORRUPTED
       if (isPdfLoadError(error)) {
         return {
@@ -289,7 +277,7 @@ async function checkPdfIntegrity(
     // ✅ PDF válido, não corrompido, não protegido
     return { isValid: true, checkedAt: new Date() };
 
-  } catch (error) {
+  } catch (_error) {
     // Erro inesperado
     const errorMsg = error instanceof Error ? error.message : String(error);
     return {

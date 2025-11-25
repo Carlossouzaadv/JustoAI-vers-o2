@@ -5,6 +5,7 @@
 
 import { prisma } from '../prisma';
 import { ICONS } from '../icons';
+import { log, logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -161,8 +162,8 @@ export class UsageTracker {
         success: options.success
       });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to track Judit call:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to track Judit call:", { component: "refactored" });
     }
   }
 
@@ -206,8 +207,8 @@ export class UsageTracker {
         success: options.success
       });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to track IA call:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to track IA call:", { component: "refactored" });
     }
   }
 
@@ -253,8 +254,8 @@ export class UsageTracker {
         success: options.success
       });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to track report generation:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to track report generation:", { component: "refactored" });
     }
   }
 
@@ -304,8 +305,8 @@ export class UsageTracker {
         reason: options.reason
       });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to track credit consumption:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to track credit consumption:", { component: "refactored" });
     }
   }
 
@@ -355,8 +356,8 @@ export class UsageTracker {
         source: options.source
       });
 
-    } catch (error) {
-      console.error(`${ICONS.ERROR} Failed to track credit purchase:`, error);
+    } catch (_error) {
+      logError(error, "${ICONS.ERROR} Failed to track credit purchase:", { component: "refactored" });
     }
   }
 

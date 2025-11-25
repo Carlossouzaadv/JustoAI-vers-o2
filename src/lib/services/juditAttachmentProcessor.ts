@@ -161,7 +161,7 @@ export async function processJuditAttachments(
 
     return result;
 
-  } catch (error) {
+  } catch (_error) {
     logError(error, 'General error in attachment processing', {
       component: 'juditAttachmentProcessor',
       caseId: caseId,
@@ -250,7 +250,7 @@ function extractAttachmentsFromJuditResponse(juditResponse: unknown): JuditAttac
       }
     }
 
-  } catch (error) {
+  } catch (_error) {
     logError(error, 'Error extracting attachments from JUDIT response', {
       component: 'extractAttachmentsFromJuditResponse',
     });
@@ -445,7 +445,7 @@ async function downloadAndProcessAttachment(
             caseId: caseId,
           });
         }
-      } catch (error) {
+      } catch (_error) {
         log.warn({
           msg: 'Failed to extract text from PDF',
           component: 'downloadAndProcessAttachment',
@@ -517,7 +517,7 @@ async function downloadAndProcessAttachment(
       hasExtractedText: !!extractedText,
     });
 
-  } catch (error) {
+  } catch (_error) {
     result.failed++;
     const errorMsg = `Erro em ${attachment.name}: ${error instanceof Error ? error.message : 'Desconhecido'}`;
     result.errors.push(errorMsg);
@@ -660,7 +660,7 @@ async function createAttachmentValidationFailureTimeline(
       attachmentName: attachment.name,
       validationReason: reason,
     });
-  } catch (error) {
+  } catch (_error) {
     // Se falhar criar timeline, logar mas não falhar o job
     logError(error, 'Failed to create validation failure timeline entry', {
       component: 'createAttachmentValidationFailureTimeline',

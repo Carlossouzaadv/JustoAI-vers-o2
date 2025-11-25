@@ -3,6 +3,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { log, logError } from '@/lib/services/logger';
 
 export interface TrialStatus {
   isActive: boolean;
@@ -126,10 +127,10 @@ export async function downgradeExpiredTrial(workspaceId: string) {
       }
     });
 
-    console.log(`[TRIAL] Downgraded expired trial workspace: ${workspaceId}`);
+    log.info({ msg: "[TRIAL] Downgraded expired trial workspace:" });
     return true;
-  } catch (error) {
-    console.error(`[TRIAL] Error downgrading trial ${workspaceId}:`, error);
+  } catch (_error) {
+    logError(error, "TRIAL Error downgrading trial ${workspaceId}:", { component: "refactored" });
     return false;
   }
 }
@@ -151,10 +152,10 @@ export async function convertTrialToPaidPlan(
       }
     });
 
-    console.log(`[TRIAL] Converted trial workspace ${workspaceId} to ${newPlan} plan`);
+    log.info({ msg: "[TRIAL] Converted trial workspace  to  plan" });
     return true;
-  } catch (error) {
-    console.error(`[TRIAL] Error converting trial ${workspaceId}:`, error);
+  } catch (_error) {
+    logError(error, "TRIAL Error converting trial ${workspaceId}:", { component: "refactored" });
     return false;
   }
 }

@@ -136,7 +136,7 @@ export default function QuotaModal({ isOpen, onClose, quotaData, onActionSelect 
         try {
           await onActionSelect(action);
           onClose();
-        } catch (error) {
+        } catch (_error) {
           console.error('Erro ao executar ação:', error);
         } finally {
           setLoading(false);

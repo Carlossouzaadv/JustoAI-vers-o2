@@ -89,7 +89,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
         console.log('🚀 Service Worker ativo');
       }
 
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Erro ao registrar Service Worker:', error);
     }
   };
@@ -121,7 +121,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
       const stats = await statsPromise;
       setCacheStats(stats);
 
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Erro ao obter estatísticas do cache:', error);
     }
   };
@@ -149,7 +149,7 @@ export function useServiceWorker(): UseServiceWorkerReturn {
 
       await clearPromise;
 
-    } catch (error) {
+    } catch (_error) {
       console.error('❌ Erro ao limpar cache:', error);
       throw error;
     }

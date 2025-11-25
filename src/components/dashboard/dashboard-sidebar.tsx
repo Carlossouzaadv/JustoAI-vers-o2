@@ -99,7 +99,7 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
         console.error('Failed to load clients:', response.status);
         setClients([]);
       }
-    } catch (error) {
+    } catch (_error) {
       console.error('Erro ao carregar clientes:', error);
       setClients([]);
     } finally {

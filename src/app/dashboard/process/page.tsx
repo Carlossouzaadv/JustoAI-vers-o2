@@ -87,7 +87,7 @@ export default function ProcessPage() {
           console.error('Failed to load cases:', response.status);
           setCases([]); // Empty list on error
         }
-      } catch (error) {
+      } catch (_error) {
         console.error('Error loading cases:', error);
         setCases([]); // Empty list on error
       } finally {
