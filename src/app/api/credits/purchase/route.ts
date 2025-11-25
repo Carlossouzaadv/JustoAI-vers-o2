@@ -1,9 +1,10 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils'
 import { getCreditManager } from '@/lib/credit-system'
 import { PlanService, type CreditPackConfig } from '@/lib/services/planService'
 import { ICONS } from '@/lib/icons'
+import { checkRateLimitWithConfig, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rate-limit-middleware'
 
 type PaymentMethod = 'STRIPE' | 'PIX' | 'BOLETO';
 
@@ -46,6 +47,15 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   // Type-safe narrowing
   const validatedData = data as PurchaseRequest
   const { workspaceId, packId, paymentMethod, sourceDescription } = validatedData
+
+  // Rate limiting: 5 purchases per minute per workspace
+  const isRateLimited = await checkRateLimitWithConfig(workspaceId, RATE_LIMIT_CONFIGS.PAYMENT)
+  if (isRateLimited) {
+    return errorResponse(
+      'Too many purchase requests. Please wait before trying again.',
+      429
+    )
+  }
 
   console.log(`${ICONS.PROCESS} Processing credit purchase: ${packId} for workspace ${workspaceId}`)
 

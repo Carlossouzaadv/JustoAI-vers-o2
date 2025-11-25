@@ -4,6 +4,7 @@ import { successResponse, errorResponse, validateBody, requireAuth, withErrorHan
 import { getCreditManager } from '@/lib/credit-system'
 import { PlanService } from '@/lib/services/planService'
 import { ICONS } from '@/lib/icons'
+import { checkRateLimitWithConfig, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rate-limit-middleware'
 
 // Consumption request validation schema
 const consumeSchema = z.object({
@@ -30,6 +31,15 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   // Validate that at least one credit type is being consumed
   if (reportCredits === 0 && fullCredits === 0) {
     return errorResponse('Must consume at least one credit', 400)
+  }
+
+  // Rate limiting: 20 consumption requests per minute per workspace
+  const isRateLimited = await checkRateLimitWithConfig(workspaceId, RATE_LIMIT_CONFIGS.CREDIT_CONSUMPTION)
+  if (isRateLimited) {
+    return errorResponse(
+      'Too many credit consumption requests. Please wait before trying again.',
+      429
+    )
   }
 
   console.log(`${ICONS.PROCESS} Processing credit consumption: ${reportCredits} report + ${fullCredits} full credits for workspace ${workspaceId}`)

@@ -138,7 +138,7 @@ export class ExponentialBackoffRetry {
         };
 
       } catch (_error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+        lastError = _error instanceof Error ? _error : new Error(String(_error));
         log.info({ msg: "- Falha na tentativa :" });
 
         // Se não é a última tentativa, esperar antes de tentar novamente
