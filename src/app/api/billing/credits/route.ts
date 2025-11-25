@@ -37,69 +37,9 @@ interface PaymentWebhookPayload {
   [key: string]: unknown;
 }
 
-// Note: TransactionData is currently unused but needed if getCreditTransactions is uncommented
-// interface TransactionData {
-//   id: string;
-//   type: string;
-//   amount: {
-//     toString(): string;
-//   };
-//   metadata: unknown;
-//   createdAt: {
-//     toISOString(): string;
-//   };
-// }
-
 // ================================================================
 // TYPE GUARDS (Mandato Inegociável)
 // ================================================================
-
-// Note: isTransaction is currently unused but needed if getCreditTransactions is uncommented
-// function isTransaction(data: unknown): data is {
-//   id: string;
-//   type: string;
-//   amount: {
-//     toString(): string;
-//   };
-//   metadata: unknown;
-//   createdAt: {
-//     toISOString(): string;
-//   };
-// } {
-//   return (
-//     typeof data === 'object' &&
-//     data !== null &&
-//     'id' in data &&
-//     'type' in data &&
-//     'amount' in data &&
-//     'createdAt' in data
-//   );
-// }
-
-// Note: isMetadataWithReason is currently unused but needed if getCreditTransactions is uncommented
-// function isMetadataWithReason(data: unknown): data is { reason?: string } {
-//   return typeof data === 'object' && data !== null;
-// }
-
-// Note: isQuotaStatus is currently unused but needed if generateRecommendations is uncommented
-// function isQuotaStatus(data: unknown): data is QuotaStatus {
-//   return (
-//     typeof data === 'object' &&
-//     data !== null &&
-//     'quotaStatus' in data &&
-//     typeof (data as QuotaStatus).quotaStatus === 'string'
-//   );
-// }
-
-// Note: isCreditBalance is currently unused but needed if generateRecommendations is uncommented
-// function isCreditBalance(data: unknown): data is { balance: number } {
-//   return (
-//     typeof data === 'object' &&
-//     data !== null &&
-//     'balance' in data &&
-//     typeof (data as CreditBalance).balance === 'number'
-//   );
-// }
 
 function isPaymentWebhookPayload(data: unknown): data is PaymentWebhookPayload {
   return typeof data === 'object' && data !== null;
@@ -247,55 +187,6 @@ async function getCreditPackagesEndpoint(): Promise<NextResponse> {
   });
 }
 
-// Note: getCreditTransactions is currently unused but may be needed in future
-// IMPORTANT: If you uncomment this function, also uncomment the prisma import at the top
-// async function getCreditTransactions(workspaceId: string): Promise<NextResponse> {
-//   try {
-//     const transactions = await prisma.creditTransaction.findMany({
-//       where: { workspaceId },
-//       orderBy: { createdAt: 'desc' },
-//       take: 50
-//     });
-
-//     const formattedTransactions: CreditTransaction[] = transactions
-//       .filter(isTransaction)
-//       .map((t: TransactionData) => {
-//         const metadata = t.metadata as unknown;
-//         const reason = isMetadataWithReason(metadata)
-//           ? metadata.reason || 'Transação de crédito'
-//           : 'Transação de crédito';
-
-//         // Cast metadata safely - it's JsonValue from Prisma, convert to Record<string, unknown>
-//         const safeMetadata = typeof metadata === 'object' && metadata !== null
-//           ? (metadata as Record<string, unknown>)
-//           : undefined;
-
-//         return {
-//           id: t.id,
-//           type: (t.type as 'debit' | 'credit'),
-//           amount: parseFloat(t.amount.toString()),
-//           reason,
-//           createdAt: t.createdAt.toISOString(),
-//           metadata: safeMetadata
-//         };
-//       });
-
-//     return NextResponse.json({
-//       success: true,
-//       data: {
-//         transactions: formattedTransactions
-//       }
-//     });
-
-//   } catch (_error) {
-//     console.error(`${ICONS.ERROR} Failed to get credit transactions:`, error);
-//     return NextResponse.json(
-//       { error: 'Erro ao buscar transações' },
-//       { status: 500 }
-//     );
-//   }
-// }
-
 async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
   try {
     // Usar serviço de créditos
@@ -322,7 +213,7 @@ async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
     });
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Failed to get credit dashboard:`, error);
+    console.error(`${ICONS.ERROR} Failed to get credit dashboard:`, _error);
     // Return graceful default on error
     return NextResponse.json({
       success: true,
@@ -577,41 +468,6 @@ async function simulatePaymentProcessing(
   }
 }
 
-// Note: generateRecommendations is currently unused but may be needed in future
-// function generateRecommendations(
-//   balance: unknown,
-//   quotaStatus: unknown
-// ): string[] {
-//   const recommendations: string[] = [];
-
-//   // Validate quotaStatus using type guard
-//   if (isQuotaStatus(quotaStatus)) {
-//     if (quotaStatus.quotaStatus === 'hard_blocked') {
-//       recommendations.push('🚨 Compre créditos agora para continuar gerando relatórios');
-//     } else if (quotaStatus.quotaStatus === 'soft_warning') {
-//       recommendations.push('⚠️ Considere comprar créditos extras para evitar interrupções');
-//     }
-
-//     // Check percentage only if it exists and is a number
-//     if (typeof quotaStatus.percentage === 'number' && quotaStatus.percentage > 70) {
-//       recommendations.push('📈 Use o agendamento noturno para economizar créditos');
-//     }
-//   }
-
-//   // Validate balance using type guard
-//   if (isCreditBalance(balance)) {
-//     if (balance.balance < 5) {
-//       recommendations.push('💡 Saldo baixo - recomendamos comprar o pacote de 20 relatórios');
-//     }
-//   }
-
-//   if (recommendations.length === 0) {
-//     recommendations.push('✅ Tudo certo! Você tem créditos suficientes');
-//   }
-
-//   return recommendations;
-// }
-
 // ================================================================
 // ENDPOINT DE WEBHOOK PARA PAGAMENTOS (FUTURO)
 // ================================================================
@@ -633,7 +489,7 @@ export async function PUT(request: NextRequest) {
     }
 
   } catch (_error) {
-    console.error(`${ICONS.ERROR} Credit API PUT error:`, error);
+    console.error(`${ICONS.ERROR} Credit API PUT error:`, _error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
