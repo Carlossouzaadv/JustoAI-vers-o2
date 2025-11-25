@@ -218,7 +218,7 @@ export async function POST(
         const refundResult = await creditManager.refundCredits(
           debitTransactionIds,
           `Análise falhou: Erro na API Gemini`,
-          { originalCaseId: caseId, error: String(geminiError) }
+          { originalCaseId: caseId, userId, error: String(geminiError) }
         );
 
         if (refundResult.success) {
@@ -348,7 +348,7 @@ export async function POST(
         const refundResult = await creditManager.refundCredits(
           debitTransactionIds,
           `Erro inesperado durante análise`,
-          { error: String(error) }
+          { userId, error: String(error) }
         );
 
         if (!refundResult.success) {
