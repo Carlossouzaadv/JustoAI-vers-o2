@@ -1,6 +1,6 @@
 # JustoAI V2 - Development Roadmap
 
-Last Updated: 2025-11-25 | Branch: `main` | Commits: 6 (5 ahead of origin/main)
+Last Updated: 2025-11-25 | Branch: `main` | Commits: 9 (8 ahead of origin/main)
 
 ---
 
@@ -28,7 +28,7 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 6 (5 ahead of origin/main)
 
 ## SPRINT 1: Core Features Implementation 🔄 IN PROGRESS
 
-**Status**: 🔄 9/16 completed (56%) | Next task: Document processing pipeline
+**Status**: 🔄 11/16 completed (69%) | Next task: Complete client sharing API endpoints
 
 ### Backend - Real API Integrations
 
@@ -73,19 +73,26 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 6 (5 ahead of origin/main)
   - Crypto-based signature validation for secure authentication
   - Commits: `14bb4d5` (Stripe), `df01c3e` (JUDIT callback)
 
-- ⏳ **Document processing** (📍 `src/services/juditService.ts`)
+- ✅ **Document processing** (📍 `src/app/api/documents/upload/route.ts`)
   - Complete end-to-end document processing pipeline
   - Integration with PDF extraction and JUDIT API
+  - Fixed timeline merge result integration (TODO #1)
+  - Commit: `b75a05a`
 
 ### Frontend - Real Data Integration
 
-- ⏳ **User plan/usage integration** (📍 `apps/web/src/context/AuthContext.tsx`)
-  - Connect userPlan and usage metrics from Auth context
-  - Real-time credit balance updates
+- ✅ **User plan/usage integration** (📍 `src/contexts/auth-context.tsx`)
+  - Added workspace plan and credits to AuthContext
+  - Enhanced `/api/users/current` to return real plan and credits data
+  - Implemented real quota-status endpoint with database queries
+  - Commits: `e3f06cb`, `f4b8cb6`
 
-- ⏳ **Client sharing feature** (📍 `apps/web/src/pages/dashboard/sharing`)
-  - API endpoint for share link generation
-  - Real shareable URLs with access control
+- 🔄 **Client sharing feature** (📍 `prisma/schema.prisma`)
+  - ✅ Database models: ClientShareLink, CaseShareLink (with secure tokens)
+  - ✅ Proper indexes for performance and security
+  - ⏳ API endpoint for share link generation
+  - ⏳ Real shareable URLs with access control
+  - Commit: `936ff9a`
 
 - ⏳ **AI chat integration** (📍 `apps/web/src/components/chat/ChatInterface.tsx`)
   - Remove hardcoded chat responses
@@ -212,11 +219,11 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 6 (5 ahead of origin/main)
 | Sprint | Status | Progress | Key Focus |
 |--------|--------|----------|-----------|
 | **SPRINT 0** | ✅ Complete | 5/5 (100%) | Build integrity & type safety |
-| **SPRINT 1** | 🔄 Active | 9/16 (56%) | Real API integrations |
+| **SPRINT 1** | 🔄 Active | 11/16 (69%) | Real API integrations |
 | **SPRINT 2** | ⏳ Planned | 0/11 (0%) | Code quality & maintainability |
 | **SPRINT 3** | ⏳ Planned | 0/11 (0%) | Testing & production readiness |
 
-**Total Progress**: 14/43 tasks (33%) ✅ Completed
+**Total Progress**: 16/43 tasks (37%) ✅ Completed
 
 ---
 
@@ -241,10 +248,13 @@ Required env vars:
 ## Recent Commits
 
 ```
+936ff9a feat(sharing): add ClientShareLink and CaseShareLink models to Prisma schema
+f4b8cb6 feat(quota): implement real quota status endpoint with actual data
+e3f06cb feat(auth): add user plan and credits to context
+b75a05a fix(documents): resolve 3 TODO comments in document processing
 df01c3e feat(webhooks): implement JUDIT callback webhook signature validation
 0d07d8c docs(sprints): update progress to 8/16 (Excel file saving and template generation complete)
 74f26f5 feat(excel): implement real file saving and template generation
 f9bf797 docs(sprints): restore SPRINTS.md and update progress to 7/16 (webhook persistence complete)
 b5ad741 fix(types): resolve Next.js 15 route handler type checking issue
-02ddaaf docs(sprints): mark webhook persistence as completed (7/16 tasks)
 ```
