@@ -46,6 +46,7 @@ model Workspace {
   reportCache              ReportCache[]
   reportTemplates          ReportTemplate[]
   userNotificationSettings UserNotificationSettings[]
+  chatSessions             ChatSession[]              @relation("ChatSessions")
 
   @@map("workspaces")
 }
@@ -75,6 +76,7 @@ model User {
   caseShareLinks                  CaseShareLink[]            @relation("CaseShareLinkCreatedBy")
   workspaces                      UserWorkspace[]
   notificationSettings            UserNotificationSettings[]
+  chatSessions                    ChatSession[]              @relation("ChatSessions")
 
   @@map("users")
 }
@@ -1676,6 +1678,50 @@ model CaseShareLink {
   @@index([expiresAt])
   @@index([createdById])
   @@map("case_share_links")
+}
+
+// ================================================================
+// AI CHAT SYSTEM
+// ================================================================
+
+model ChatSession {
+  id          String         @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String?
+  contextType String?        // "general", "case-specific", etc
+  contextId   String?        // Reference to case/document if case-specific
+  status      String         @default("active") // active, archived, deleted
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  workspace Workspace      @relation("ChatSessions", fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User           @relation("ChatSessions", fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([workspaceId, userId])
+  @@index([workspaceId, updatedAt])
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id          String   @id @default(cuid())
+  sessionId   String
+  role        String   // "user" or "assistant"
+  content     String   @db.Text
+  tokens      Int?     // Token count for cost tracking
+  cost        Decimal? @db.Decimal(10, 4)
+  modelUsed   String?  // e.g. "gemini-2.5-flash"
+  metadata    Json?    // Store any additional data
+  createdAt   DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([role])
+  @@map("chat_messages")
 }
 
 // ================================================================

@@ -1,20 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ICONS } from '@/lib/icons';
+import { useAuth } from '@/contexts/auth-context';
+
+interface Message {
+  id?: string;
+  text: string;
+  isBot: boolean;
+  timestamp: Date;
+  isStreaming?: boolean;
+}
 
 export function FloatingChat() {
+  const { user, currentWorkspace } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      text: 'Olá! Sou o assistente virtual da JustoAI. Como posso ajudar você a usar a plataforma hoje?',
-      isBot: true,
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const quickQuestions = [
     'Como criar minha conta?',
@@ -24,11 +30,46 @@ export function FloatingChat() {
     'Como importar dados do Excel?'
   ];
 
-  const handleSendMessage = (message: string) => {
-    if (!message.trim()) return;
+  // Initialize chat session
+  useEffect(() => {
+    if (isOpen && !sessionId && user?.id) {
+      createChatSession();
+    }
+  }, [isOpen, sessionId, user?.id]);
 
-    // Adicionar mensagem do usuário
-    const userMessage = {
+  const createChatSession = async () => {
+    try {
+      const workspaceId = currentWorkspace?.workspaceId || '';
+
+      const response = await fetch('/api/chat/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({
+          title: 'Floating Chat',
+          contextType: 'general',
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to create chat session');
+        return;
+      }
+
+      const data = await response.json();
+      setSessionId(data.data.id);
+    } catch (error) {
+      console.error('Error creating chat session:', error);
+    }
+  };
+
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim() || !sessionId || isLoading) return;
+
+    // Add user message
+    const userMessage: Message = {
       text: message,
       isBot: false,
       timestamp: new Date()
@@ -36,42 +77,76 @@ export function FloatingChat() {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    setIsLoading(true);
 
-    // Simular resposta do bot (aqui você integraria com API real)
-    setTimeout(() => {
-      const botResponse = getBotResponse(message);
+    try {
+      const workspaceId = currentWorkspace?.workspaceId || '';
+
+      // Send message to API
+      const response = await fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-workspace-id': workspaceId,
+        },
+        body: JSON.stringify({
+          sessionId,
+          content: message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
+      // Stream response
+      const botMessage: Message = {
+        text: '',
+        isBot: true,
+        timestamp: new Date(),
+        isStreaming: true,
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        setMessages(prev => {
+          const updated = [...prev];
+          const lastMessage = updated[updated.length - 1];
+          if (lastMessage && lastMessage.isBot) {
+            lastMessage.text += chunk;
+          }
+          return updated;
+        });
+      }
+
+      // Mark streaming as complete
+      setMessages(prev => {
+        const updated = [...prev];
+        const lastMessage = updated[updated.length - 1];
+        if (lastMessage && lastMessage.isBot) {
+          lastMessage.isStreaming = false;
+        }
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
       setMessages(prev => [...prev, {
-        text: botResponse,
+        text: 'Desculpe, houve um erro ao processar sua mensagem. Por favor, tente novamente.',
         isBot: true,
         timestamp: new Date()
       }]);
-    }, 1000);
-  };
-
-  const getBotResponse = (message: string): string => {
-    const lowerMessage = message.toLowerCase();
-
-    if (lowerMessage.includes('conta') || lowerMessage.includes('cadastro')) {
-      return "Para criar sua conta, clique em 'Teste 7 dias grátis' na página inicial. Você precisará apenas do seu email e não é necessário cartão de crédito.";
+    } finally {
+      setIsLoading(false);
     }
-
-    if (lowerMessage.includes('upload') || lowerMessage.includes('processo')) {
-      return "Para fazer upload de processos, acesse seu dashboard e clique em 'Upload de Processos'. Suportamos arquivos PDF e imagens (JPG, PNG).";
-    }
-
-    if (lowerMessage.includes('relatório') || lowerMessage.includes('relatorio')) {
-      return "Para configurar relatórios automáticos, vá em 'Relatórios' no dashboard e configure a frequência (semanal, quinzenal ou mensal) e o template desejado.";
-    }
-
-    if (lowerMessage.includes('formato') || lowerMessage.includes('arquivo')) {
-      return 'Suportamos arquivos PDF, imagens (JPG, PNG) para upload de processos e planilhas Excel/CSV para importação de dados.';
-    }
-
-    if (lowerMessage.includes('excel') || lowerMessage.includes('csv') || lowerMessage.includes('importar')) {
-      return "Para importar dados do Excel/CSV, prepare uma planilha com as colunas: número do processo, cliente, status e data. Use a seção 'Integrações' no dashboard.";
-    }
-
-    return 'Obrigado pela pergunta! Para respostas mais detalhadas, recomendo verificar nossa Central de Ajuda ou entrar em contato com nosso suporte em suporte@justoai.com.br';
   };
 
   return (
@@ -123,13 +198,14 @@ export function FloatingChat() {
                     }`}
                   >
                     {message.text}
+                    {message.isStreaming && <span className="animate-pulse">▋</span>}
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Quick Questions */}
-            {messages.length === 1 && (
+            {messages.length === 0 && !isLoading && sessionId && (
               <div className="px-4 pb-2">
                 <p className="text-xs text-gray-500 mb-2">Perguntas frequentes:</p>
                 <div className="space-y-1">
@@ -157,14 +233,16 @@ export function FloatingChat() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
                   placeholder="Digite sua pergunta..."
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-accent-500"
+                  disabled={isLoading || !sessionId}
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-accent-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <Button
                   size="sm"
                   onClick={() => handleSendMessage(inputValue)}
-                  className="bg-accent-500 hover:bg-accent-600"
+                  disabled={isLoading || !sessionId}
+                  className="bg-accent-500 hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="text-sm">{ICONS.ARROW_RIGHT}</span>
+                  <span className="text-sm">{isLoading ? '⏳' : ICONS.ARROW_RIGHT}</span>
                 </Button>
               </div>
             </div>
