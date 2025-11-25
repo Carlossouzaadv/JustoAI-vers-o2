@@ -313,20 +313,55 @@ export async function DELETE(
     const documentName = document.name;
 
     // ============================================================
-    // 4. NULL OUT FOREIGN KEY REFERENCES (cascading cleanup)
+    // 4. CLEANUP TIMELINE ENTRIES
     // ============================================================
+    // ProcessTimelineEntry has linkedDocumentIds as JSON array
+    // Remove this document ID from all timeline entries that reference it
 
-    // Note: Supabase Storage deletion is delegated to a background job
-    // to avoid blocking the API response. The file cleanup will happen
-    // asynchronously after the database record is deleted.
+    const timelineEntries = await prisma.processTimelineEntry.findMany({
+      where: {
+        caseId,
+        linkedDocumentIds: {
+          hasSome: [documentId],
+        },
+      },
+    });
 
-    // Note: Document cleanup will cascade via the database relationship
-    // ProcessTimelineEntry's linkedDocuments relation will be automatically handled
-    // by the database constraints defined in the schema
+    for (const entry of timelineEntries) {
+      const linkedDocumentIds = Array.isArray(entry.linkedDocumentIds)
+        ? entry.linkedDocumentIds.filter((id: string) => id !== documentId)
+        : [];
+
+      await prisma.processTimelineEntry.update({
+        where: { id: entry.id },
+        data: { linkedDocumentIds },
+      });
+    }
+
+    // ============================================================
+    // 5. CLEANUP DUPLICATE DOCUMENTS
+    // ============================================================
+    // If this document is the original, set originalDocumentId to null for duplicates
+    // If this is a duplicate, no action needed (onDelete cascade handles it)
+
+    if (document.id === document.originalDocumentId) {
+      // This is the original document, nullify duplicates' reference
+      await prisma.caseDocument.updateMany({
+        where: {
+          originalDocumentId: documentId,
+          caseId,
+        },
+        data: {
+          originalDocumentId: null,
+          isDuplicate: false,
+        },
+      });
+    }
 
     // ============================================================
     // 6. DELETE DOCUMENT RECORD
     // ============================================================
+    // Cascade deletion will handle ImportedDataItem records
 
     await prisma.caseDocument.delete({
       where: { id: documentId },

@@ -12,6 +12,7 @@ import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
 import { systemHealthCheck } from '@/lib/bull-board';
 import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
+import { prisma } from '@/lib/prisma';
 
 interface HealthCheck {
   name: string;
@@ -63,8 +64,8 @@ async function performHealthCheck(): Promise<SystemHealth> {
   // Check PostgreSQL (via Prisma connectivity)
   try {
     const postgresStart = Date.now();
-    // TODO: Add actual database health check
-    // const dbHealth = await prisma.$queryRaw`SELECT 1`;
+    // Real database health check: query a simple SELECT 1
+    await prisma.$queryRaw`SELECT 1`;
     checks.postgres = {
       name: 'PostgreSQL Database',
       status: 'healthy',

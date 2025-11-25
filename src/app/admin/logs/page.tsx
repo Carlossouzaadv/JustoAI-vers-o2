@@ -31,62 +31,19 @@ export default function LogsPage() {
   // UI State
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Mock logs - will be replaced by real API data from OPÇÃO C
-  const mockLogs: LogEntry[] = useMemo(() => [
-    {
-      id: '1',
-      timestamp: new Date(Date.now() - 5000).toISOString(),
-      level: 'INFO',
-      service: 'api/documents',
-      message: 'Document analysis started',
-      metadata: { documentId: 'doc-123', userId: 'user-456' }
-    },
-    {
-      id: '2',
-      timestamp: new Date(Date.now() - 15000).toISOString(),
-      level: 'WARN',
-      service: 'api/process',
-      message: 'High latency detected',
-      metadata: { duration: 2500, threshold: 2000 }
-    },
-    {
-      id: '3',
-      timestamp: new Date(Date.now() - 25000).toISOString(),
-      level: 'ERROR',
-      service: 'api/judit',
-      message: 'JUDIT API timeout',
-      metadata: { endpoint: '/search', timeout: 5000 },
-      stackTrace: 'Error: Request timeout at JUDIT.search()'
-    },
-    {
-      id: '4',
-      timestamp: new Date(Date.now() - 35000).toISOString(),
-      level: 'INFO',
-      service: 'cron/aggregation',
-      message: 'Daily aggregation completed',
-      metadata: { workspacesProcessed: 15, alertsCreated: 3 }
-    },
-    {
-      id: '5',
-      timestamp: new Date(Date.now() - 45000).toISOString(),
-      level: 'DEBUG',
-      service: 'auth',
-      message: 'User authenticated',
-      metadata: { userId: 'user-789', provider: 'supabase' }
-    }
-  ], []);
-
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        // TODO: Replace with real API endpoint when OPÇÃO C is done
-        // const response = await fetch('/api/admin/logs');
-        // if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        // const result = await response.json();
-        // setLogs(result.logs || mockLogs);
+        const response = await fetch('/api/admin/logs');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
 
-        // For now, use mock data
-        setLogs(mockLogs);
+        // Type-safe narrowing for the response
+        if (typeof result === 'object' && result !== null && 'logs' in result && Array.isArray(result.logs)) {
+          setLogs(result.logs);
+        } else {
+          setError('Invalid response format from logs API');
+        }
         setLastUpdate(new Date());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch logs');
@@ -102,7 +59,7 @@ export default function LogsPage() {
       const interval = setInterval(fetchLogs, 5000);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, mockLogs]);
+  }, [autoRefresh]);
 
   const downloadLogs = () => {
     const logsJson = JSON.stringify(filteredLogs, null, 2);
@@ -370,7 +327,6 @@ export default function LogsPage() {
           <li>• Clique na seta &quot; para expandir detalhes do log (metadados, stack traces)</li>
           <li>• Use os filtros para encontrar logs específicos por nível, serviço ou mensagem</li>
           <li>• Download em JSON para análise externa ou backup</li>
-          <li>Note: Dados de demonstração. APIs reais serão conectadas em breve.</li>
         </ul>
       </div>
     </div>

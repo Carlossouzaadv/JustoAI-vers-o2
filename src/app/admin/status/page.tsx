@@ -25,81 +25,24 @@ export default function StatusPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Mock health checks - will be replaced by real API from OPÇÃO C
-  const mockHealth: SystemHealth = useMemo(() => ({
-    overall: 'healthy',
-    timestamp: new Date().toISOString(),
-    checks: {
-      api: {
-        name: 'API Server',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 45,
-        message: 'Next.js API running normally',
-      },
-      postgres: {
-        name: 'PostgreSQL Database',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 12,
-        message: 'Database connection OK',
-      },
-      redis: {
-        name: 'Redis Cache',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 8,
-        message: 'Cache server operational',
-      },
-      auth: {
-        name: 'Supabase Auth',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 120,
-        message: 'Authentication service available',
-      },
-      queues: {
-        name: 'Bull Queues',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 25,
-        message: 'All queues operational',
-      },
-      sentry: {
-        name: 'Sentry Monitoring',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 200,
-        message: 'Error tracking active',
-      },
-      judit: {
-        name: 'JUDIT API',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 350,
-        message: 'External API responding normally',
-      },
-      storage: {
-        name: 'Supabase Storage',
-        status: 'healthy',
-        lastCheck: new Date(Date.now() - 5000).toISOString(),
-        responseTime: 180,
-        message: 'File storage service operational',
-      },
-    },
-  }), []);
-
   useEffect(() => {
     const fetchHealth = async () => {
       try {
-        // TODO: Replace with real API endpoint when OPÇÃO C is done
-        // const response = await fetch('/api/admin/status');
-        // if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        // const result = await response.json();
-        // setHealth(result.health || mockHealth);
+        const response = await fetch('/api/admin/status');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
 
-        // For now, use mock data
-        setHealth(mockHealth);
+        // Type-safe narrowing for the response
+        if (typeof result === 'object' && result !== null && 'health' in result && typeof result.health === 'object') {
+          const resultHealth = result.health as unknown;
+          if (resultHealth && typeof resultHealth === 'object' && 'checks' in resultHealth && 'overall' in resultHealth) {
+            setHealth(resultHealth as SystemHealth);
+          } else {
+            setError('Invalid health data format');
+          }
+        } else {
+          setError('Invalid response format from status API');
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch health data');
       } finally {
@@ -108,13 +51,26 @@ export default function StatusPage() {
     };
 
     fetchHealth();
-  }, [mockHealth]);
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // TODO: Replace with real API call
-      setHealth(mockHealth);
+      const response = await fetch('/api/admin/status');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+
+      // Type-safe narrowing for the response
+      if (typeof result === 'object' && result !== null && 'health' in result && typeof result.health === 'object') {
+        const resultHealth = result.health as unknown;
+        if (resultHealth && typeof resultHealth === 'object' && 'checks' in resultHealth && 'overall' in resultHealth) {
+          setHealth(resultHealth as SystemHealth);
+        } else {
+          setError('Invalid health data format');
+        }
+      } else {
+        setError('Invalid response format from status API');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh');
     } finally {
@@ -347,7 +303,6 @@ export default function StatusPage() {
           <li>• O status geral é determinado pelo componente mais crítico</li>
           <li>• Tempo de resposta mostra latência do último check</li>
           <li>• Recomendações aparecem quando há problemas detectados</li>
-          <li>Note: Dados de demonstração. APIs reais serão conectadas em breve.</li>
         </ul>
       </div>
     </div>

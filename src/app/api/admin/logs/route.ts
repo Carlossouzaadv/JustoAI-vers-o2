@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
+import { prisma } from '@/lib/prisma';
 
 interface LogEntry {
   id: string;
@@ -16,6 +17,13 @@ interface LogEntry {
   message: string;
   metadata?: Record<string, unknown>;
   stackTrace?: string;
+}
+
+/**
+ * Type guard to safely narrow unknown to Record<string, unknown>
+ */
+function isMetadataRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -55,74 +63,44 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
     const search = searchParams.get('search') || '';
 
-    // 4. TODO: Fetch logs from actual logging service
-    // For now, return mock data that demonstrates the structure
-    const mockLogs: LogEntry[] = [
-      {
-        id: '1',
-        timestamp: new Date(Date.now() - 5000).toISOString(),
-        level: 'INFO',
-        service: 'api/documents',
-        message: 'Document analysis started',
-        metadata: { documentId: 'doc-123', userId: 'user-456' }
-      },
-      {
-        id: '2',
-        timestamp: new Date(Date.now() - 15000).toISOString(),
-        level: 'WARN',
-        service: 'api/process',
-        message: 'High latency detected',
-        metadata: { duration: 2500, threshold: 2000 }
-      },
-      {
-        id: '3',
-        timestamp: new Date(Date.now() - 25000).toISOString(),
-        level: 'ERROR',
-        service: 'api/judit',
-        message: 'JUDIT API timeout',
-        metadata: { endpoint: '/search', timeout: 5000 },
-        stackTrace: 'Error: Request timeout at JUDIT.search()'
-      },
-      {
-        id: '4',
-        timestamp: new Date(Date.now() - 35000).toISOString(),
-        level: 'INFO',
-        service: 'cron/aggregation',
-        message: 'Daily aggregation completed',
-        metadata: { workspacesProcessed: 15, alertsCreated: 3 }
-      },
-      {
-        id: '5',
-        timestamp: new Date(Date.now() - 45000).toISOString(),
-        level: 'DEBUG',
-        service: 'auth',
-        message: 'User authenticated',
-        metadata: { userId: 'user-789', provider: 'supabase' }
-      }
-    ];
-
-    // 5. Filter logs
-    let filteredLogs = mockLogs;
+    // 4. Fetch logs from database (GlobalLog table)
+    const where: Record<string, unknown> = {};
 
     if (level !== 'all') {
-      filteredLogs = filteredLogs.filter((log) => log.level === level);
+      where.level = level;
     }
 
     if (service !== 'all') {
-      filteredLogs = filteredLogs.filter((log) => log.service === service);
+      where.category = service;
     }
 
     if (search) {
-      filteredLogs = filteredLogs.filter((log) =>
-        log.message.toLowerCase().includes(search.toLowerCase())
-      );
+      where.message = {
+        contains: search,
+        mode: 'insensitive',
+      };
     }
 
-    // 6. Paginate results
-    const total = filteredLogs.length;
-    const paginatedLogs = filteredLogs
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(offset, offset + limit);
+    // Fetch total count
+    const total = await prisma.globalLog.count({ where });
+
+    // Fetch paginated logs
+    const dbLogs = await prisma.globalLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: limit,
+    });
+
+    // Transform database logs to LogEntry format
+    const paginatedLogs: LogEntry[] = dbLogs.map((log) => ({
+      id: log.id,
+      timestamp: log.createdAt.toISOString(),
+      level: log.level as 'DEBUG' | 'INFO' | 'WARN' | 'ERROR',
+      service: log.category,
+      message: log.message,
+      metadata: isMetadataRecord(log.data) ? log.data : undefined,
+    }));
 
     return NextResponse.json({
       success: true,

@@ -274,18 +274,25 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
     setIsDeleting(true);
     try {
-      // TODO: Implementar API endpoint para deletar documento
-      // const response = await fetch(`/api/documents/${editingDocument.id}`, {
-      //   method: 'DELETE',
-      // });
+      const response = await fetch(`/api/documents/${editingDocument.id}`, {
+        method: 'DELETE',
+      });
 
-      // Por enquanto, apenas remover do estado local
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = typeof errorData === 'object' && errorData !== null && 'error' in errorData
+          ? String(errorData.error)
+          : 'Erro ao deletar documento';
+        throw new Error(errorMessage);
+      }
+
       setDocuments(documents.filter(doc => doc.id !== editingDocument.id));
-
       setEditingDocument(null);
+      alert('Documento deletado com sucesso');
     } catch (error) {
-      console.error('Erro ao deletar documento:', error);
-      alert('Erro ao deletar documento');
+      const message = error instanceof Error ? error.message : 'Erro desconhecido ao deletar documento';
+      console.error('Erro ao deletar documento:', message);
+      alert(`Erro ao deletar documento: ${message}`);
     } finally {
       setIsDeleting(false);
     }
