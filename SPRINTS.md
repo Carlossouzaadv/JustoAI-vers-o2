@@ -1,6 +1,6 @@
 # JustoAI V2 - Development Roadmap
 
-Last Updated: 2025-11-25 | Branch: `main` | Commits: 19 (18 ahead of origin/main) | SPRINT 2 ⏳ IN PROGRESS (5/11)
+Last Updated: 2025-11-25 | Branch: `main` | Commits: 21 (20 ahead of origin/main) | SPRINT 2 ⏳ IN PROGRESS (6/11)
 
 ---
 
@@ -187,9 +187,14 @@ Last Updated: 2025-11-25 | Branch: `main` | Commits: 19 (18 ahead of origin/main
   - Complete .env.example
   - Startup validation
 
-- ⏳ **Fix CRON_SECRET validation**
-  - Remove dev-mode bypasses
-  - Enforce on all environments
+- ✅ **Fix CRON_SECRET validation** (Commit: `0da6f2a`)
+  - Removed insecure fallbacks to 'development-secret' and 'development-only'
+  - Enforce CRON_SECRET requirement in production
+  - Return 401 Unauthorized if CRON_SECRET not configured
+  - Clear error logging for missing CRON_SECRET
+  - Fixed endpoints:
+    * `/api/cron/daily-aggregation`
+    * `/api/cron/trial-reminders`
 
 - ⏳ **Verify user.id in rollback operations**
   - Ensure all rollback operations have proper user context
