@@ -452,7 +452,7 @@ export async function PUT(req: NextRequest) {
         success: result.success,
         generation_time: result.generationTime,
         file_size_kb: result.fileSize ? Math.round(result.fileSize / 1024) : undefined,
-        error: result.error
+        error: result._error
       }))
     });
 
