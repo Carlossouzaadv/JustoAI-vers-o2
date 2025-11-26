@@ -221,19 +221,19 @@ export class BatchStatusService {
 
     const obj = error as Record<string, unknown>;
 
-    // Type guard: deve ter field e error
+    // Type guard: deve ter field e _error
     if (
       !('field' in obj) ||
       typeof obj.field !== 'string' ||
       !('_error' in obj) ||
-      typeof obj.error !== 'string'
+      typeof obj._error !== 'string'
     ) {
       return null;
     }
 
     return {
       field: obj.field,
-      _error: obj.error,
+      _error: obj._error,
       row: typeof obj.row === 'number' ? obj.row : undefined,
       retryCount: typeof obj.retryCount === 'number' ? obj.retryCount : undefined,
     };
