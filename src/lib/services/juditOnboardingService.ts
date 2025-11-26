@@ -271,7 +271,7 @@ export async function performFullProcessRequest(
     });
 
     // Send alert for error
-    await alertApiError(_error as Error, {
+    await alertApiError(new Error(errorMessage), {
       endpoint: '/requests',
       method: 'POST',
       numeroCnj: cnj,
