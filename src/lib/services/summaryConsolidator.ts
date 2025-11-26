@@ -389,7 +389,7 @@ async function generateConsolidatedSummaryWithAI(
     }
   } catch (error) {
     logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao chamar Gemini:', { component: 'refactored' });
-    throw _error;
+    throw error;
   }
 }
 
