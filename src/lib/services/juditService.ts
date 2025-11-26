@@ -445,7 +445,7 @@ export async function createOnboarding(
     juditLogger.error(JSON.stringify({
       action: 'create_onboarding_failed',
       cnj,
-      _error: response.error,
+      _error: response._error,
     }));
   }
 
