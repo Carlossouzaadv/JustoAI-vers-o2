@@ -84,10 +84,10 @@ export class CSVExportService {
       lines.push('## Erros Encontrados');
       lines.push('Campo,Erro,Ocorrências,Linha');
       for (const _error of batchStatus.topErrors) {
-        const key = `${_error.field}: ${_error.error}`;
+        const key = `${_error.field}: ${_error._error}`;
         const count = batchStatus.errorSummary[key] || 0;
         lines.push(
-          `${this.escapeCsvValue(_error.field)},${this.escapeCsvValue(_error.error)},${count},${
+          `${this.escapeCsvValue(_error.field)},${this.escapeCsvValue(_error._error)},${count},${
             _error.row || ''
           }`
         );
