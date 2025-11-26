@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: result.error || 'Falha ao configurar monitoramento',
+          error: result._error || 'Falha ao configurar monitoramento',
         },
         { status: 500 }
       );
