@@ -573,7 +573,7 @@ export async function testConnection(): Promise<{
     success: response.success,
     configured: true,
     reachable: response.success,
-    _error: response.error,
+    _error: response._error,
   };
 }
 
