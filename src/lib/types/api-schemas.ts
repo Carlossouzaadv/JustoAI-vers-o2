@@ -550,10 +550,10 @@ export function parseProcessUpload(
     const parsed = ProcessUploadPayloadSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
-    if (_error instanceof z.ZodError) {
-      return { success: false, _error: formatZodError(_error) };
+    if (error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(error) };
     }
-    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
     return { success: false, _error: message };
   }
 }
