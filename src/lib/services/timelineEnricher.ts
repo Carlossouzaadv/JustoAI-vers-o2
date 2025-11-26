@@ -339,7 +339,7 @@ export class TimelineEnricherService {
     } catch (error) {
       logError(error, '❌ Erro ao enriquecer descrição:', { component: 'refactored' });
       // Fallback: retornar descrição original
-      throw _error;
+      throw error;
     }
   }
 
