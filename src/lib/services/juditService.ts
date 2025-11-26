@@ -374,15 +374,15 @@ export async function sendRequest<T = Record<string, unknown>>(
 
     // Handle other errors
     const duration = operation.finish('failure', {
-      _error: _error instanceof Error ? _error.message : String(_error),
+      _error: error instanceof Error ? error.message : String(error),
     });
 
     juditLogger.error(JSON.stringify({
       action: 'send_request_error',
       endpoint,
       method,
-      _error: _error instanceof Error ? _error.message : String(_error),
-      error_stack: _error instanceof Error ? _error.stack : undefined,
+      _error: error instanceof Error ? error.message : String(error),
+      error_stack: error instanceof Error ? error.stack : undefined,
       duration_ms: duration,
     }));
 
