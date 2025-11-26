@@ -91,8 +91,8 @@ async function processRollbackJob(job: Job<RollbackJobPayload>) {
       data: { status: 'ROLLING_BACK' },
     });
     console.log(`📝 [Rollback Worker] Status updated to ROLLING_BACK (current: ${updatedImport.status})`);
-  } catch (_error) {
-    const errorMessage = _error instanceof Error ? _error.message : String(_error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`🔴 [Rollback Worker] Failed to update SystemImport status: ${errorMessage}`);
     throw new Error(`Failed to update SystemImport status: ${errorMessage}`);
   }
@@ -115,8 +115,8 @@ async function processRollbackJob(job: Job<RollbackJobPayload>) {
       },
     });
     console.log(`📋 [Rollback Worker] Found ${importedItems.length} items to rollback`);
-  } catch (_error) {
-    const errorMessage = _error instanceof Error ? _error.message : String(_error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`🔴 [Rollback Worker] Failed to fetch imported items: ${errorMessage}`);
     throw new Error(`Failed to fetch imported items: ${errorMessage}`);
   }
@@ -192,10 +192,10 @@ async function processRollbackJob(job: Job<RollbackJobPayload>) {
     console.log(
       `✅ [Rollback Worker] Atomic rollback completed successfully (transaction results: ${result.length} operations)`
     );
-  } catch (_error) {
-    const errorMessage = _error instanceof Error ? _error.message : String(_error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`🔴 [Rollback Worker] Atomic transaction failed: ${errorMessage}`);
-    console.error(`🔴 [Rollback Worker] Stack:`, _error);
+    console.error(`🔴 [Rollback Worker] Stack:`, error);
     throw new Error(`Atomic rollback transaction failed: ${errorMessage}`);
   }
 
@@ -215,11 +215,11 @@ rollbackQueueInstance.process('rollback', async (job) => {
   try {
     await processRollbackJob(job);
     return { success: true, systemImportId: job.data.systemImportId };
-  } catch (_error) {
-    const errorMessage = _error instanceof Error ? _error.message : String(_error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`🔴 [Rollback Worker] Job failed: ${errorMessage}`);
     // Re-throw to trigger BullMQ retry mechanism
-    throw _error;
+    throw error;
   }
 });
 
@@ -230,14 +230,14 @@ rollbackQueueInstance.on('completed', (job) => {
 
 // Job failure event
 rollbackQueueInstance.on('failed', (job, error) => {
-  const errorMessage = _error instanceof Error ? error.message : String(_error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
   console.error(`🔴 [Rollback Worker] Job ${job.id} failed: ${errorMessage}`);
   console.error(`🔴 Attempt ${job.attemptsMade} of ${job.opts.attempts}`);
 });
 
 // Job error event (unhandled exception in processor)
 rollbackQueueInstance.on('error', (error) => {
-  const errorMessage = _error instanceof Error ? error.message : String(_error);
+  const errorMessage = error instanceof Error ? error.message : String(error);
   console.error(`🔴 [Rollback Worker] Queue error: ${errorMessage}`);
 });
 

@@ -82,11 +82,11 @@ class AnalyticsServiceImpl {
         stage: 'initialize'
       });
     } catch (error) {
-      log._error({
+      log.error({
         msg: 'Erro ao inicializar PostHog',
         component: 'AnalyticsService',
         stage: 'initialize',
-        _error: _error instanceof Error ? _error.message : String(_error)
+        error: error instanceof Error ? error.message : String(_error)
       });
     }
   }
@@ -159,12 +159,12 @@ class AnalyticsServiceImpl {
       await this.posthog.shutdown();
 
     } catch (error) {
-      log._error({
+      log.error({
         msg: 'Erro ao rastrear evento',
         component: 'AnalyticsService',
         event,
         userId,
-        _error: _error instanceof Error ? _error.message : String(_error)
+        error: error instanceof Error ? error.message : String(_error)
       });
       // NÃO relançar - falha de analytics não deve quebrar a aplicação
     }
@@ -213,11 +213,11 @@ class AnalyticsServiceImpl {
       await this.posthog.shutdown();
 
     } catch (error) {
-      log._error({
+      log.error({
         msg: 'Erro ao identificar usuário',
         component: 'AnalyticsService',
         userId,
-        _error: _error instanceof Error ? _error.message : String(_error)
+        error: error instanceof Error ? error.message : String(_error)
       });
     }
   }

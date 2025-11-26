@@ -22,12 +22,12 @@ import { WorkerJobStatus } from '@prisma/client';
 /**
  * Valida se um valor é um erro conhecido
  */
-function getErrorMessage(_error: unknown): string {
-  if (_error instanceof Error) {
-    return _error.message;
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
   }
-  if (typeof _error === 'string') {
-    return _error;
+  if (typeof error === 'string') {
+    return error;
   }
   return 'Unknown _error';
 }
@@ -204,7 +204,7 @@ class WorkerStatsServiceImpl {
         component: 'WorkerStatsService',
         jobId,
         queueName,
-        _error: getErrorMessage(_error)
+        _error: getErrorMessage(error)
       });
     }
   }
@@ -222,8 +222,8 @@ class WorkerStatsServiceImpl {
 
     try {
       // Extrair detalhes do erro com type guards
-      const errorMessage = getErrorMessage(_error);
-      const errorStack = getErrorStack(_error);
+      const errorMessage = getErrorMessage(error);
+      const errorStack = getErrorStack(error);
 
       // Validar metadata com type guard
       let validatedMetadata: JobMetadata = {};
@@ -270,7 +270,7 @@ class WorkerStatsServiceImpl {
           errorDetails: {
             message: errorMessage,
             stack: errorStack,
-            code: _error instanceof Error && 'code' in _error ? (_error as Record<string, unknown>).code ?? null : null
+            code: error instanceof Error && 'code' in error ? (error as Record<string, unknown>).code ?? null : null
           },
           metadata: validatedMetadata,
           retryCount
@@ -287,7 +287,7 @@ class WorkerStatsServiceImpl {
         _error: errorMessage
       });
 
-    } catch (error) {
+    } catch (catchError) {
       // CRÍTICO: Não deixar falha do registro afetar o job
       // Apenas logar o erro e continuar
       log._error({
@@ -295,7 +295,7 @@ class WorkerStatsServiceImpl {
         component: 'WorkerStatsService',
         jobId,
         queueName,
-        _error: getErrorMessage(_error)
+        _error: getErrorMessage(catchError)
       });
     }
   }
@@ -337,7 +337,7 @@ class WorkerStatsServiceImpl {
         msg: 'Erro ao recuperar estatísticas da fila',
         component: 'WorkerStatsService',
         queueName,
-        _error: getErrorMessage(_error)
+        _error: getErrorMessage(error)
       });
 
       return {

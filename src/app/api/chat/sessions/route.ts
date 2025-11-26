@@ -47,14 +47,14 @@ export async function POST(request: NextRequest) {
       data: session,
     });
   } catch (error) {
-    if (_error instanceof z.ZodError) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request', issues: _error.issues },
+        { error: 'Invalid request', issues: error.issues },
         { status: 400 }
       );
     }
 
-    console.error('Error creating chat session:', _error);
+    console.error('Error creating chat session:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
       total: sessions.length,
     });
   } catch (error) {
-    console.error('Error listing chat sessions:', _error);
+    console.error('Error listing chat sessions:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -218,7 +218,7 @@ export interface LogoUploadResult {
   width?: number;
   height?: number;
   fileSize?: number;
-  _error?: string;
+  error?: string;
 }
 
 // ================================
@@ -312,8 +312,8 @@ export class ReportCustomizationManager {
       return profile as CustomizationProfile;
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro ao criar perfil:', { component: 'refactored' });
-      throw _error;
+      logError(error, '${ICONS.ERROR} Erro ao criar perfil:', { component: 'refactored' });
+      throw error;
     }
   }
 
@@ -394,8 +394,8 @@ export class ReportCustomizationManager {
       return profile as CustomizationProfile;
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro ao atualizar perfil:', { component: 'refactored' });
-      throw _error;
+      logError(error, '${ICONS.ERROR} Erro ao atualizar perfil:', { component: 'refactored' });
+      throw error;
     }
   }
 
@@ -428,8 +428,8 @@ export class ReportCustomizationManager {
       log.info({ msg: 'Perfil removido:' });
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro ao remover perfil:', { component: 'refactored' });
-      throw _error;
+      logError(error, '${ICONS.ERROR} Erro ao remover perfil:', { component: 'refactored' });
+      throw error;
     }
   }
 
@@ -452,7 +452,7 @@ export class ReportCustomizationManager {
       if (!['image/jpeg', 'image/png', 'image/svg+xml'].includes(mimeType)) {
         return {
           success: false,
-          _error: 'Formato de imagem não suportado. Use JPEG, PNG ou SVG.'
+          error: 'Formato de imagem não suportado. Use JPEG, PNG ou SVG.'
         };
       }
 
@@ -460,7 +460,7 @@ export class ReportCustomizationManager {
       if (logoFile.length > 2 * 1024 * 1024) {
         return {
           success: false,
-          _error: 'Arquivo muito grande. Máximo 2MB.'
+          error: 'Arquivo muito grande. Máximo 2MB.'
         };
       }
 
@@ -492,10 +492,10 @@ export class ReportCustomizationManager {
       };
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro no upload de logo:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro no upload de logo:', { component: 'refactored' });
       return {
         success: false,
-        _error: _error instanceof Error ? _error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     }
   }

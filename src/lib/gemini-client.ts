@@ -170,7 +170,7 @@ export class GeminiClient {
                     }
                   }
                 } catch (_parseError) {
-                  logError(parseError, 'Failed to parse Gemini stream chunk', { component: 'gemini-client' });
+                  logError(_parseError, 'Failed to parse Gemini stream chunk', { component: 'gemini-client' });
                 }
               }
             }
@@ -206,7 +206,7 @@ export class GeminiClient {
                 }
               }
             } catch (_parseError) {
-              logError(parseError, 'Failed to parse final Gemini stream chunk', { component: 'gemini-client' });
+              logError(_parseError, 'Failed to parse final Gemini stream chunk', { component: 'gemini-client' });
             }
           }
         } finally {

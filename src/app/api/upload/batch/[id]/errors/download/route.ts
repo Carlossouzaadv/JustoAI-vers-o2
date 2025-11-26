@@ -107,7 +107,7 @@ export async function GET(
     } catch (_parseError) {
       console.warn(
         `${ICONS.WARNING} [Batch Errors Download] Erro ao fazer parse de erros JSON:`,
-        parseError
+        _parseError
       );
     }
 

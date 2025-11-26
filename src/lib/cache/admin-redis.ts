@@ -102,7 +102,7 @@ export async function withAdminCache<T>(
           return parsed as T;
         }
       } catch (_parseError) {
-        logError(parseError, 'AdminCache JSON parse error for key ${key}:', { component: 'refactored' });
+        logError(_parseError, 'AdminCache JSON parse error for key ${key}:', { component: 'refactored' });
         // Continue to recompute
       }
     }

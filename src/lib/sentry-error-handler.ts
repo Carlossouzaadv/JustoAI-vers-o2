@@ -25,26 +25,26 @@ export interface ErrorContext {
  * This should be called in all API route catch blocks
  */
 export function captureApiError(
-  _error: unknown,
+  error: unknown,
   context?: ErrorContext
 ): void {
-  if (!_error) return;
+  if (!error) return;
 
   // Set Sentry context before capturing
   if (context) {
     Sentry.setContext('api_error', context);
   }
 
-  // Determine _error level
-  let level: 'fatal' | '_error' | 'warning' = '_error';
-  if (_error instanceof Error) {
-    if (_error.message?.includes('timeout') || _error.message?.includes('TIMEOUT')) {
+  // Determine error level
+  let level: 'fatal' | 'error' | 'warning' = 'error';
+  if (error instanceof Error) {
+    if (error.message?.includes('timeout') || error.message?.includes('TIMEOUT')) {
       level = 'warning';
     }
   }
 
   // Capture the exception
-  Sentry.captureException(_error, {
+  Sentry.captureException(error, {
     level,
     tags: {
       type: 'api_error',
@@ -54,7 +54,7 @@ export function captureApiError(
   });
 
   // Log to console as well
-  logError(_error, '${ICONS.ERROR} Sentry Error captured:', { component: 'refactored' });
+  logError(error, `${ICONS.ERROR} Sentry Error captured:`, { component: 'refactored' });
 }
 
 /**
@@ -77,18 +77,18 @@ export function withErrorCapture(
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      captureApiError(_error, {
+      captureApiError(error, {
         endpoint,
         method,
         duration,
         timestamp: new Date().toISOString(),
       });
 
-      // Return _error response
+      // Return error response
       return NextResponse.json(
         {
           success: false,
-          _error: _error instanceof Error ? _error.message : 'Internal server _error',
+          error: error instanceof Error ? error.message : 'Internal server error',
         },
         { status: 500 }
       );
@@ -125,12 +125,12 @@ export function clearSentryContext(): void {
 }
 
 /**
- * Capture a message to Sentry (for non-_error events)
+ * Capture a message to Sentry (for non-error events)
  * Usage: captureSentryMessage('User triggered action X', 'info', { actionId: '123' })
  */
 export function captureSentryMessage(
   message: string,
-  level: 'fatal' | '_error' | 'warning' | 'info' | 'debug' = 'info',
+  level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info',
   context?: Record<string, unknown>
 ): void {
   if (context) {

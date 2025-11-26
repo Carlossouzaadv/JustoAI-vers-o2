@@ -22,7 +22,7 @@ export interface RetryOptions {
 export interface ApiCallResult<T> {
   success: boolean;
   data?: T;
-  _error?: string;
+  error?: string;
   attempt: number;
   totalDelay: number;
 }
@@ -138,7 +138,7 @@ export class ExponentialBackoffRetry {
         };
 
       } catch (error) {
-        lastError = _error instanceof Error ? _error : new Error(String(_error));
+        lastError = error instanceof Error ? error : new Error(String(error));
         log.info({ msg: '- Falha na tentativa :' });
 
         // Se não é a última tentativa, esperar antes de tentar novamente
@@ -155,7 +155,7 @@ export class ExponentialBackoffRetry {
     log.info({ msg: '- Todas as tentativas falharam' });
     return {
       success: false,
-      _error: lastError?.message || 'Erro desconhecido',
+      error: lastError?.message || 'Erro desconhecido',
       attempt: this.options.maxAttempts,
       totalDelay
     };

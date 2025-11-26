@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
     let parseResult;
     try {
       parseResult = await parser.parseExcelBuffer(buffer, file.name);
-    } catch (_parseError) {
+    } catch (parseError) {
       console.error(`${ICONS.ERROR} Erro ao fazer parse Excel:`, getErrorMessage(parseError));
       throw new ApiError(
         'Erro ao processar arquivo Excel. Verifique o formato.',

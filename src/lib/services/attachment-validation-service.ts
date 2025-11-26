@@ -40,12 +40,12 @@ const MIN_VALID_PDF_SIZE = 100; // Mínimo 100 bytes para PDF válido
 /**
  * Type Guard: Verifica se o erro é um erro de PDF corrompido/não-parseável
  */
-function isPdfLoadError(_error: unknown): _error is Error {
-  if (!(_error instanceof Error)) {
+function isPdfLoadError(error: unknown): error is Error {
+  if (!(error instanceof Error)) {
     return false;
   }
 
-  const message = _error.message.toLowerCase();
+  const message = error.message.toLowerCase();
   return (
     message.includes('pdf') ||
     message.includes('corrupt') ||
@@ -133,7 +133,7 @@ export async function validateAttachment(
 
   } catch (error) {
     // Erro inesperado durante validação
-    const errorMsg = _error instanceof Error ? _error.message : String(_error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
     logError(errorMsg, '${ICONS.ERROR} AttachmentValidation Erro inesperado:', { component: 'refactored' });
 
     return {
@@ -239,16 +239,16 @@ async function checkPdfIntegrity(
 
     } catch (error) {
       // Se o erro for "timeout" ou "parse _error" → CORRUPTED
-      if (isPdfLoadError(_error)) {
+      if (isPdfLoadError(error)) {
         return {
           isValid: false,
           reason: 'CORRUPTED',
-          details: `PDF corrompido: ${_error instanceof Error ? _error.message : String(_error)}`,
+          details: `PDF corrompido: ${error instanceof Error ? error.message : String(error)}`,
           checkedAt: new Date(),
         };
       }
       // Se for outro erro → re-throw para catcher externo
-      throw _error;
+      throw error;
     }
 
     // Se pdfDoc não foi carregado → erro
@@ -279,7 +279,7 @@ async function checkPdfIntegrity(
 
   } catch (error) {
     // Erro inesperado
-    const errorMsg = _error instanceof Error ? _error.message : String(_error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
     return {
       isValid: false,
       reason: 'CORRUPTED',

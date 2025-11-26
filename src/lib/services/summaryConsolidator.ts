@@ -364,24 +364,24 @@ async function generateConsolidatedSummaryWithAI(
       return text.trim();
     } catch (geminiError: unknown) {
       // Tratamento específico de erros da Gemini API
-      const _error = geminiError as Record<string, unknown>;
-      console._error(`${ICONS.ERROR} [Summary Consolidator] Erro específico do Gemini:`, {
-        _error: geminiError,
-        message: _error?.message,
-        status: _error?.status,
-        code: _error?.code
+      const error = geminiError as Record<string, unknown>;
+      console.error(`${ICONS.ERROR} [Summary Consolidator] Erro específico do Gemini:`, {
+        error: geminiError,
+        message: error?.message,
+        status: error?.status,
+        code: error?.code
       });
 
       // Se é erro de quota ou rate limit, mencionar isto
-      if (_error?.status === 429 || (_error?.message as string)?.includes('rate limit')) {
+      if (error?.status === 429 || (error?.message as string)?.includes('rate limit')) {
         throw new Error('Limite de requisições da API Gemini atingido. Tente novamente em alguns minutos.');
       }
 
-      if (_error?.status === 403 || (_error?.message as string)?.includes('permission denied')) {
+      if (error?.status === 403 || (error?.message as string)?.includes('permission denied')) {
         throw new Error('Permissão negada na API Gemini. Verifique a configuração da chave.');
       }
 
-      if ((_error?.message as string)?.includes('INVALID_ARGUMENT')) {
+      if ((error?.message as string)?.includes('INVALID_ARGUMENT')) {
         throw new Error('Erro na configuração do prompt ou parâmetros da Gemini API.');
       }
 

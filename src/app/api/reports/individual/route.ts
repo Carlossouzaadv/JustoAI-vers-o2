@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: false,
-            error: reportResult.error || 'Erro na geração do relatório'
+            error: reportResult._error || 'Erro na geração do relatório'
           }, { status: 500 });
         }
 

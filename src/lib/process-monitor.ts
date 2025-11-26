@@ -175,7 +175,7 @@ export class ProcessMonitor {
         const errorDetails: MonitoringError = {
           processId: process.id,
           processNumber: process.processNumber,
-          _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
+          _error: error instanceof Error ? error.message : 'Erro desconhecido',
           timestamp: new Date()
         };
 
@@ -183,7 +183,7 @@ export class ProcessMonitor {
         this.session.processed++;
         this.session.failed++;
 
-        logError(_error, '${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:', { component: 'refactored' });
+        logError(error, '${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:', { component: 'refactored' });
       }
 
       // Pequena pausa entre processos para não sobrecarregar APIs
@@ -405,11 +405,11 @@ export class ProcessMonitor {
         data: {
           status: 'FAILED',
           finishedAt: new Date(),
-          errors: [_error instanceof Error ? _error.message : 'Erro desconhecido']
+          errors: [error instanceof Error ? error.message : 'Erro desconhecido']
         }
       });
 
-      throw _error;
+      throw error;
     }
   }
 
@@ -441,14 +441,14 @@ export class ProcessMonitorScheduler {
         log.info({ msg: 'Executando monitoramento automático...' });
         await this.monitor.startMonitoringSession();
       } catch (error) {
-        logError(_error, '${ICONS.ERROR} Erro no monitoramento automático:', { component: 'refactored' });
+        logError(error, '${ICONS.ERROR} Erro no monitoramento automático:', { component: 'refactored' });
       }
     }, intervalMinutes * 60 * 1000);
 
     // Executar uma vez imediatamente
     setTimeout(() => {
-      this.monitor.startMonitoringSession().catch(_error => {
-        logError(_error, '${ICONS.ERROR} Erro no monitoramento inicial:', { component: 'refactored' });
+      this.monitor.startMonitoringSession().catch(error => {
+        logError(error, '${ICONS.ERROR} Erro no monitoramento inicial:', { component: 'refactored' });
       });
     }, 5000); // Aguardar 5 segundos para inicialização
   }

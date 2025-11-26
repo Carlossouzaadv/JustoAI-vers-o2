@@ -84,7 +84,7 @@ function createBetterStackTransport(token: string) {
               }
               cb();
             } catch (err) {
-              console._error('[BetterStackTransport] Error:', err);
+              console.error('[BetterStackTransport] Error:', err);
               cb();
             }
           }
@@ -116,13 +116,13 @@ function createBetterStackTransport(token: string) {
                 },
                 (res) => {
                   if (res.statusCode >= 400) {
-                    console._error('[BetterStackTransport] HTTP _error:', res.statusCode);
+                    console.error('[BetterStackTransport] HTTP error:', res.statusCode);
                   }
                 }
               );
 
-              req.on('_error', (err) => {
-                console._error('[BetterStackTransport] Request _error:', err.message);
+              req.on('error', (err) => {
+                console.error('[BetterStackTransport] Request error:', err.message);
               });
 
               req.end(body);
@@ -234,17 +234,17 @@ log.info({
  * Ensures _error details are always captured properly
  */
 export function logError(
-  _error: unknown,
+  error: unknown,
   message: string,
   context?: Record<string, unknown>
 ): void {
-  if (_error instanceof Error) {
+  if (error instanceof Error) {
     log._error(
       {
         msg: message,
-        errorMessage: _error.message,
-        errorStack: _error.stack,
-        errorName: _error.name,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorName: error.name,
         ...context,
       },
       message
@@ -253,7 +253,7 @@ export function logError(
     log._error(
       {
         msg: message,
-        _error: String(_error),
+        _error: String(error),
         ...context,
       },
       message
@@ -278,8 +278,8 @@ export function createContextLogger(context: LogContext) {
     warn: (msg: string, data?: Record<string, unknown>) => {
       log.warn({ msg, ...context, ...data });
     },
-    _error: (_error: unknown, msg: string, data?: Record<string, unknown>) => {
-      logError(_error, msg, { ...context, ...data });
+    _error: (error: unknown, msg: string, data?: Record<string, unknown>) => {
+      logError(error, msg, { ...context, ...data });
     },
   };
 }

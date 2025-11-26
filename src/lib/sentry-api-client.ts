@@ -1,6 +1,6 @@
 /**
  * Sentry API Client
- * Fetches _error data, performance metrics, and health status from Sentry
+ * Fetches error data, performance metrics, and health status from Sentry
  */
 
 import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
@@ -83,7 +83,7 @@ export async function getSentryErrors(
     });
 
     if (!response.ok) {
-      log.warn({ msg: 'Sentry API _error:' });
+      log.warn({ msg: 'Sentry API error:' });
       return [];
     }
 
@@ -96,7 +96,7 @@ export async function getSentryErrors(
 
     return events.map((event: Record<string, unknown>): SentryError => ({
       id: typeof event.groupID === 'string' ? event.groupID : (typeof event.id === 'string' ? event.id : 'unknown'),
-      title: typeof event.title === 'string' ? event.title : (typeof event.message === 'string' ? event.message : 'Unknown _error'),
+      title: typeof event.title === 'string' ? event.title : (typeof event.message === 'string' ? event.message : 'Unknown error'),
       culprit: typeof event.culprit === 'string' ? event.culprit : 'Unknown',
       level: (event.level === 'fatal' || event.level === '_error' || event.level === 'warning' || event.level === 'info' || event.level === 'debug') ? event.level : '_error',
       count: typeof event.count === 'number' ? event.count : 1,
@@ -123,7 +123,7 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
     });
 
     if (!response.ok) {
-      log.warn({ msg: 'Sentry stats API _error:' });
+      log.warn({ msg: 'Sentry stats API error:' });
       return getDefaultStats();
     }
 

@@ -31,14 +31,14 @@ export async function GET(
       data: session,
     });
   } catch (error) {
-    if (_error instanceof Error && _error.message === 'Chat session not found') {
+    if (error instanceof Error && error.message === 'Chat session not found') {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
       );
     }
 
-    console.error('Error fetching chat session:', _error);
+    console.error('Error fetching chat session:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -78,21 +78,21 @@ export async function PATCH(
       data: session,
     });
   } catch (error) {
-    if (_error instanceof z.ZodError) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request', issues: _error.issues },
+        { error: 'Invalid request', issues: error.issues },
         { status: 400 }
       );
     }
 
-    if (_error instanceof Error && _error.message === 'Chat session not found') {
+    if (error instanceof Error && error.message === 'Chat session not found') {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
       );
     }
 
-    console.error('Error updating chat session:', _error);
+    console.error('Error updating chat session:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -124,14 +124,14 @@ export async function DELETE(
       data: session,
     });
   } catch (error) {
-    if (_error instanceof Error && _error.message === 'Chat session not found') {
+    if (error instanceof Error && error.message === 'Chat session not found') {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
       );
     }
 
-    console.error('Error deleting chat session:', _error);
+    console.error('Error deleting chat session:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -92,11 +92,11 @@ export async function POST(req: NextRequest) {
     const result = await analysisService.analyze(analysisRequest);
 
     if (!result.success) {
-      console.error(`${ICONS.ERROR} Análise falhou: ${result.error}`);
+      console.error(`${ICONS.ERROR} Análise falhou: ${result._error}`);
       return NextResponse.json(
         {
           success: false,
-          error: result.error || 'Falha na análise',
+          error: result._error || 'Falha na análise',
           metadata: result.metadata
         },
         { status: 500 }
@@ -276,13 +276,13 @@ export async function DELETE() {
     const adminCheck = await requireWorkspaceAdmin(user.id, workspace.id);
     if (!adminCheck.authorized) {
       console.warn(
-        `${ICONS.SHIELD} Acesso negado: ${adminCheck.error}`
+        `${ICONS.SHIELD} Acesso negado: ${adminCheck._error}`
       );
       return NextResponse.json(
         {
           success: false,
           error: 'Acesso negado. Apenas admins podem limpar o cache.',
-          details: adminCheck.error
+          details: adminCheck._error
         },
         { status: 403 }
       );

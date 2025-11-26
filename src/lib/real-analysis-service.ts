@@ -1,7 +1,7 @@
 // ================================================================
 // REAL ANALYSIS SERVICE - Production Gemini Integration
 // ================================================================
-// Complete analysis service using real Gemini API with _error handling and rate limiting
+// Complete analysis service using real Gemini API with error handling and rate limiting
 
 import { AIModelRouter, ModelTier, UnifiedProcessSchema, ComplexityScore, ProcessingConfig } from './ai-model-router';
 import { getGeminiClient, GeminiClient } from './gemini-client';
@@ -32,7 +32,7 @@ export interface GeminiResponse {
 export interface AnalysisResponse {
   success: boolean;
   data?: UnifiedProcessSchema;
-  _error?: string;
+  error?: string;
   metadata: {
     modelUsed: string;
     analysisType: string;
@@ -129,16 +129,16 @@ export class RealAnalysisService {
 
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      logError(_error, '${ICONS.ERROR} Erro na análise:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro na análise:', { component: 'refactored' });
 
       this.updateStats(request.analysisType, ModelTier.BALANCED, processingTime, true);
 
       // Narrow unknown to Error for type safety
-      const err = _error instanceof Error ? _error : new Error(String(_error));
+      const err = error instanceof Error ? error : new Error(String(error));
 
       return {
         success: false,
-        _error: this.formatError(err),
+        error: this.formatError(err),
         metadata: {
           modelUsed: 'unknown',
           analysisType: request.analysisType,
@@ -186,9 +186,9 @@ export class RealAnalysisService {
 
       } catch (error) {
         // Narrow unknown to Error for type safety
-        const err = _error instanceof Error ? _error : new Error(String(_error));
+        const err = error instanceof Error ? error : new Error(String(error));
         lastError = err;
-        logError(_error, '${ICONS.WARNING} Tentativa ${attempt} falhou:', { component: 'refactored' });
+        logError(error, '${ICONS.WARNING} Tentativa ${attempt} falhou:', { component: 'refactored' });
 
         // Check if we should retry
         if (attempt < maxRetries && this.shouldRetry(err)) {
@@ -511,7 +511,7 @@ METADADOS ADICIONAIS:`;
           return null;
       }
     } catch (error) {
-      logError(_error, '${ICONS.WARNING} Cache check failed:', { component: 'refactored' });
+      logError(error, '${ICONS.WARNING} Cache check failed:', { component: 'refactored' });
       return null;
     }
   }
@@ -544,7 +544,7 @@ METADADOS ADICIONAIS:`;
           break;
       }
     } catch (error) {
-      logError(_error, '${ICONS.WARNING} Cache save failed:', { component: 'refactored' });
+      logError(error, '${ICONS.WARNING} Cache save failed:', { component: 'refactored' });
     }
   }
 
@@ -624,9 +624,9 @@ METADADOS ADICIONAIS:`;
   }
 
   /**
-   * Check if _error is retryable
+   * Check if error is retryable
    */
-  private shouldRetry(_error: Error): boolean {
+  private shouldRetry(error: Error): boolean {
     const retryableErrors = [
       'rate limit',
       'timeout',
@@ -639,20 +639,20 @@ METADADOS ADICIONAIS:`;
       '504'
     ];
 
-    const errorMessage = _error.message?.toLowerCase() || '';
+    const errorMessage = error.message?.toLowerCase() || '';
     return retryableErrors.some(keyword => errorMessage.includes(keyword));
   }
 
   /**
-   * Format _error for response
+   * Format error for response
    */
-  private formatError(_error: Error): string {
-    if ('code' in _error && '_error' in _error) {
-      const errorObj = _error as Record<string, unknown>;
-      return `Gemini API Error (${errorObj.code}): ${errorObj._error}`;
+  private formatError(error: Error): string {
+    if ('code' in error && 'error' in error) {
+      const errorObj = error as Record<string, unknown>;
+      return `Gemini API Error (${errorObj.code}): ${errorObj.error}`;
     }
 
-    return _error.message;
+    return error.message;
   }
 
   /**

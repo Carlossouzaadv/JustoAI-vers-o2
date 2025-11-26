@@ -65,11 +65,11 @@ class CircuitBreakerService extends EventEmitter {
    * Detect if _error is Upstash quota exceeded
    * Uses safe _error extraction with type narrowing
    */
-  isQuotaExceededError(_error: unknown): boolean {
-    if (!_error) return false
+  isQuotaExceededError(error: unknown): boolean {
+    if (!error) return false
 
     // Use safe _error message extraction helper (Padrão-Ouro)
-    const errorStr = getErrorMessage(_error)
+    const errorStr = getErrorMessage(error)
     return (
       errorStr.includes('ERR max requests limit exceeded') ||
       errorStr.includes('max_requests_limit') ||
@@ -81,7 +81,7 @@ class CircuitBreakerService extends EventEmitter {
    * Trigger circuit breaker when quota is detected
    * Uses safe _error extraction with type narrowing
    */
-  triggerQuotaExceeded(_error: unknown) {
+  triggerQuotaExceeded(error: unknown) {
     if (this.state === CircuitBreakerState.OPEN) {
       // Already open, don't spam logs
       return
@@ -89,10 +89,10 @@ class CircuitBreakerService extends EventEmitter {
 
     this.lastQuotaErrorTime = new Date()
     // Use safe _error message extraction helper (Padrão-Ouro)
-    this.config.errorMessage = getErrorMessage(_error)
+    this.config.errorMessage = getErrorMessage(error)
     this.config.lastErrorTime = new Date()
 
-    queueLogger._error({
+    queueLogger.error({
       action: 'upstash_quota_exceeded',
       component: 'circuit-breaker',
       message: this.config.errorMessage,
@@ -224,11 +224,11 @@ class CircuitBreakerService extends EventEmitter {
         action: 'recovery_failed',
         component: 'circuit-breaker',
         attemptNumber: this.retryAttemptCount,
-        _error: String(_error),
+        _error: String(error),
       })
 
       // Check if still quota error
-      if (this.isQuotaExceededError(_error)) {
+      if (this.isQuotaExceededError(error)) {
         // Stay in HALF_OPEN and reschedule
         this.state = CircuitBreakerState.OPEN
         this.scheduleRetry()
@@ -260,14 +260,14 @@ class CircuitBreakerService extends EventEmitter {
         return true
       }
     } catch (error) {
-      queueLogger._error({
+      queueLogger.error({
         action: 'manual_recovery_failed',
         component: 'circuit-breaker',
-        _error: String(_error),
+        _error: String(error),
       })
 
       // If still quota _error, open circuit
-      if (this.isQuotaExceededError(_error)) {
+      if (this.isQuotaExceededError(error)) {
         this.state = CircuitBreakerState.OPEN
         return false
       }

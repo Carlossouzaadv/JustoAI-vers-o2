@@ -204,7 +204,7 @@ export class BatchStatusService {
         return (errorSummary[keyB] || 0) - (errorSummary[keyA] || 0);
       });
     } catch (error) {
-      logError(_error, 'Erro ao processar erros do batch:', { component: 'refactored' });
+      logError(error, 'Erro ao processar erros do batch:', { component: 'refactored' });
     }
 
     return { errorSummary, topErrors };
@@ -213,13 +213,13 @@ export class BatchStatusService {
   /**
    * Valida e extrai erro individual (type-safe)
    */
-  private static parseBatchError(_error: unknown): BatchErrorDetail | null {
+  private static parseBatchError(error: unknown): BatchErrorDetail | null {
     // Type guard: deve ser objeto
-    if (typeof _error !== 'object' || _error === null) {
+    if (typeof error !== 'object' || error === null) {
       return null;
     }
 
-    const obj = _error as Record<string, unknown>;
+    const obj = error as Record<string, unknown>;
 
     // Type guard: deve ter field e error
     if (

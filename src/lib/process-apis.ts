@@ -32,7 +32,7 @@ export interface ProcessApiResponse {
   success: boolean;
   source: 'JUDIT_API';
   data?: ProcessData;
-  _error?: string;
+  error?: string;
   cached?: boolean;
 }
 
@@ -204,7 +204,7 @@ export class ProcessApiClient {
           return result;
         }
       } catch (error) {
-        logError(_error, '${ICONS.ERROR} Erro na Judit API:', { component: 'refactored' });
+        logError(error, '${ICONS.ERROR} Erro na Judit API:', { component: 'refactored' });
       }
     }
 
@@ -213,7 +213,7 @@ export class ProcessApiClient {
     return {
       success: false,
       source: 'JUDIT_API',
-      _error: 'Nenhuma API disponível ou processo não encontrado'
+      error: 'Nenhuma API disponível ou processo não encontrado'
     };
   }
 

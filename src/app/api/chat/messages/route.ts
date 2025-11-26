@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
             }
             controller.close();
           } catch (error) {
-            controller.error(_error);
+            controller.error(error);
           }
         },
       }),
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    if (_error instanceof z.ZodError) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request', issues: _error.issues },
+        { error: 'Invalid request', issues: error.issues },
         { status: 400 }
       );
     }
 
-    console.error('Error in chat endpoint:', _error);
+    console.error('Error in chat endpoint:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -50,7 +50,7 @@ interface LogMessage {
 
 interface Logger {
   info: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
-  _error: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
+  error: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
   warn: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
   debug: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
 }
@@ -76,9 +76,9 @@ const juditLogger: Logger = {
     const [msg, logData] = normalizeLogArgs(msgOrData, data);
     console.log(`[JUDIT]`, msg, logData || '');
   },
-  _error: (msgOrData: string | LogMessage, data?: LogMessage) => {
+  error: (msgOrData: string | LogMessage, data?: LogMessage) => {
     const [msg, logData] = normalizeLogArgs(msgOrData, data);
-    console._error(`[JUDIT-ERROR]`, msg, logData || '');
+    console.error(`[JUDIT-ERROR]`, msg, logData || '');
   },
   warn: (msgOrData: string | LogMessage, data?: LogMessage) => {
     const [msg, logData] = normalizeLogArgs(msgOrData, data);
@@ -232,7 +232,7 @@ export async function sendRequest<T = Record<string, unknown>>(
 
   // Validate API key is present
   if (!config.apiKey) {
-    juditLogger._error(JSON.stringify({
+    juditLogger.error(JSON.stringify({
       action: 'send_request_failed',
       endpoint,
       method,
@@ -313,7 +313,7 @@ export async function sendRequest<T = Record<string, unknown>>(
         status_text: response.statusText,
       });
 
-      juditLogger._error(JSON.stringify({
+      juditLogger.error(JSON.stringify({
         action: 'send_request_error',
         endpoint,
         method,
@@ -357,7 +357,7 @@ export async function sendRequest<T = Record<string, unknown>>(
         timeout_ms: timeout,
       });
 
-      juditLogger._error(JSON.stringify({
+      juditLogger.error(JSON.stringify({
         action: 'send_request_timeout',
         endpoint,
         method,
@@ -377,7 +377,7 @@ export async function sendRequest<T = Record<string, unknown>>(
       _error: _error instanceof Error ? _error.message : String(_error),
     });
 
-    juditLogger._error(JSON.stringify({
+    juditLogger.error(JSON.stringify({
       action: 'send_request_error',
       endpoint,
       method,
@@ -442,7 +442,7 @@ export async function createOnboarding(
       status: response.data.status,
     }));
   } else {
-    juditLogger._error(JSON.stringify({
+    juditLogger.error(JSON.stringify({
       action: 'create_onboarding_failed',
       cnj,
       _error: response._error,

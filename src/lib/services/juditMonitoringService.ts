@@ -102,8 +102,8 @@ const log = {
   info: (message: string, data?: LogData) => {
     console.log(`[JUDIT MONITORING] ${message}`, data || '');
   },
-  _error: (message: string, _error?: LogData) => {
-    console._error(`[JUDIT MONITORING ERROR] ${message}`, _error || '');
+  error: (message: string, error?: LogData) => {
+    console.error(`[JUDIT MONITORING ERROR] ${message}`, error || '');
   },
   warn: (message: string, data?: LogData) => {
     console.warn(`[JUDIT MONITORING WARN] ${message}`, data || '');
@@ -157,15 +157,15 @@ function serializeProcessoData(data: ProcessoData): Record<string, string | unkn
 /**
  * Safe _error extraction from unknown _error type
  */
-function getErrorLogValue(_error: unknown): string | number | boolean | object | null {
-  if (_error instanceof Error) {
-    return _error.message;
+function getErrorLogValue(error: unknown): string | number | boolean | object | null {
+  if (error instanceof Error) {
+    return error.message;
   }
-  if (typeof _error === 'string') {
-    return _error;
+  if (typeof error === 'string') {
+    return error;
   }
-  if (typeof _error === 'object' && _error !== null) {
-    return _error;
+  if (typeof error === 'object' && error !== null) {
+    return error;
   }
   return 'Unknown _error';
 }
@@ -279,14 +279,14 @@ export async function setupProcessMonitoring(
     };
 
   } catch (error) {
-    const errorLogValue = getErrorLogValue(_error);
+    const errorLogValue = getErrorLogValue(error);
     log._error(`Falha ao setup de monitoramento`, { cnj, _error: errorLogValue });
 
     return {
       success: false,
       processoId: '',
       numeroCnj: cnj,
-      _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
+      _error: error instanceof Error ? error.message : 'Erro desconhecido',
     };
   }
 }
@@ -334,14 +334,14 @@ export async function checkTrackingUpdates(
     };
 
   } catch (error) {
-    const errorLogValue = getErrorLogValue(_error);
+    const errorLogValue = getErrorLogValue(error);
     log._error(`Erro ao verificar updates`, { trackingId, _error: errorLogValue });
 
     return {
       trackingId,
       hasNewMovements: false,
       movementsCount: 0,
-      _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
+      _error: error instanceof Error ? error.message : 'Erro desconhecido',
     };
   }
 }
@@ -385,7 +385,7 @@ export async function stopProcessMonitoring(cnj: string): Promise<boolean> {
     return true;
 
   } catch (error) {
-    const errorLogValue = getErrorLogValue(_error);
+    const errorLogValue = getErrorLogValue(error);
     log._error(`Erro ao desativar monitoramento`, { cnj, _error: errorLogValue });
     return false;
   }
@@ -537,9 +537,9 @@ export async function updateProcessWithMovements(
     });
 
   } catch (error) {
-    const errorLogValue = getErrorLogValue(_error);
+    const errorLogValue = getErrorLogValue(error);
     log._error(`Erro ao atualizar processo com movimentos`, { processoId, _error: errorLogValue });
-    throw _error;
+    throw error;
   }
 }
 
@@ -750,7 +750,7 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
     }
 
   } catch (error) {
-    const errorLogValue = getErrorLogValue(_error);
+    const errorLogValue = getErrorLogValue(error);
     log._error(`Erro na análise de anexos`, {
       cnj: processo.numeroCnj,
       _error: errorLogValue,
@@ -760,7 +760,7 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
       shouldFetchAttachments: false,
       matchedKeywords: [],
       matchedMovements: [],
-      _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
+      _error: error instanceof Error ? error.message : 'Erro desconhecido',
     };
   }
 }

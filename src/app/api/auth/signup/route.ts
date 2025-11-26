@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
       );
       console.log('✅ Welcome email sent to', email);
     } catch (error) {
-      console.warn('Could not send welcome email:', _error);
+      console.warn('Could not send welcome email:', error);
     }
 
     return NextResponse.json(

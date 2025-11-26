@@ -18,7 +18,7 @@ import { AlertTriangle } from 'lucide-react';
 
 interface BatchErrorDetail {
   field: string;
-  error: string;
+  _error: string;
   row?: number;
   retryCount?: number;
 }
@@ -70,7 +70,7 @@ export function BatchErrorsTable({
           </TableHeader>
           <TableBody>
             {errors.map((error, idx) => {
-              const key = `${error.field}: ${error.error}`;
+              const key = `${error.field}: ${error._error}`;
               const count = errorSummary[key] || 0;
 
               return (
@@ -79,7 +79,7 @@ export function BatchErrorsTable({
                     {error.field}
                   </TableCell>
                   <TableCell className="text-sm text-gray-700">
-                    {error.error}
+                    {error._error}
                   </TableCell>
                   <TableCell className="text-right">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">

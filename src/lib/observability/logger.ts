@@ -110,7 +110,7 @@ export function logOperationStart(
     finish: (result?: 'success' | 'failure', additionalData?: Record<string, unknown>) => {
       const duration = Date.now() - startTime;
 
-      const logLevel = result === 'failure' ? '_error' : 'info';
+      const logLevel = result === 'failure' ? 'error' : 'info';
 
       loggerInstance[logLevel]({
         operation,
@@ -143,7 +143,7 @@ export function logError(
         error_message: String(_error),
       };
 
-  loggerInstance._error({
+  loggerInstance.error({
     ...errorInfo,
     ...context,
   });

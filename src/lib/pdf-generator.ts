@@ -147,8 +147,8 @@ export class PDFGenerator {
       log.info({ msg: 'Puppeteer inicializado com  páginas simultâneas' });
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro ao inicializar Puppeteer:', { component: 'refactored' });
-      throw _error;
+      logError(error, `${ICONS.ERROR} Erro ao inicializar Puppeteer:`, { component: 'refactored' });
+      throw error;
     }
   }
 
@@ -227,8 +227,8 @@ export class PDFGenerator {
       return Buffer.from(pdfBuffer);
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro na geração de PDF:', { component: 'refactored' });
-      throw _error;
+      logError(error, `${ICONS.ERROR} Erro na geração de PDF:`, { component: 'refactored' });
+      throw error;
     } finally {
       // Retornar página ao pool
       this.pagePool.push(page);
@@ -296,13 +296,13 @@ export class PDFGenerator {
           return result;
 
         } catch (error) {
-          logError(_error, '${ICONS.ERROR} Erro no job ${job.id}:', { component: 'refactored' });
+          logError(error, `${ICONS.ERROR} Erro no job ${job.id}:`, { component: 'refactored' });
           failed++;
 
           return {
             jobId: job.id,
             success: false,
-            _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
+            _error: error instanceof Error ? error.message : 'Erro desconhecido',
             generationTime: Date.now() - jobStartTime
           } as BatchGenerationResult;
         }

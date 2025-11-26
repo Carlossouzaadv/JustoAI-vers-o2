@@ -38,7 +38,7 @@ function formatLogMessage(data: LogMessage | string): string {
 
 interface Logger {
   info: (_data: LogMessage | string) => void;
-  _error: (_data: LogMessage | string) => void;
+  error: (_data: LogMessage | string) => void;
   warn: (_data: LogMessage | string) => void;
   debug: (_data: LogMessage | string) => void;
 }
@@ -50,7 +50,7 @@ interface OperationTracker {
 // Observability stubs - inline to avoid external dependencies that may not be in container
 const juditLogger: Logger = {
   info: (data: LogMessage | string) => console.log(`[JUDIT]`, formatLogMessage(data)),
-  _error: (data: LogMessage | string) => console._error(`[JUDIT-ERROR]`, formatLogMessage(data)),
+  error: (data: LogMessage | string) => console.error(`[JUDIT-ERROR]`, formatLogMessage(data)),
   warn: (data: LogMessage | string) => console.warn(`[JUDIT-WARN]`, formatLogMessage(data)),
   debug: (data: LogMessage | string) => console.debug(`[JUDIT-DEBUG]`, formatLogMessage(data)),
 };
@@ -82,7 +82,7 @@ const juditMetrics = {
   },
 };
 const trackJuditCost = (data: LogMessage) => console.log(`[COST]`, formatLogMessage(data));
-const alertApiError = (_error: unknown, context?: LogMessage) => console._error(`[ALERT-API-ERROR]`, _error, context ? formatLogMessage(context) : '');
+const alertApiError = (error: unknown, context?: LogMessage) => console.error(`[ALERT-API-ERROR]`, error, context ? formatLogMessage(context) : '');
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -224,7 +224,7 @@ export async function performFullProcessRequest(
     const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    juditLogger._error({
+    juditLogger.error({
       action: 'onboarding_failed',
       cnj,
       _error: errorMessage,
@@ -410,7 +410,7 @@ async function initiateRequest(
   if (!validationResult.success) {
     // Se a API JUDIT mudar o contrato ou a resposta vier corrompida,
     // capturamos aqui antes que o erro se espalhe
-    juditLogger._error({
+    juditLogger.error({
       action: 'judit_response_validation_failed',
       _error: validationResult._error,
       rawResponse: JSON.stringify(rawResponse),

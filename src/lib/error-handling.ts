@@ -1,5 +1,3 @@
-import { log, logError } from '@/lib/services/logger';
-
 /**
  * Error Handling Utilities
  * Provides type-safe error handling and message extraction

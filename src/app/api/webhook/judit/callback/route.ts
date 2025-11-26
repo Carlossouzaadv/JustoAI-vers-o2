@@ -132,9 +132,9 @@ export async function POST(request: NextRequest) {
       log.info({ msg: `Body size: ${bodyText.length} bytes`, component: 'juditWebhookCallback' });
       webhook = JSON.parse(bodyText);
     } catch (_parseError) {
-      logError(parseError, 'Error parsing webhook JSON', { component: 'juditWebhookCallback' });
+      logError(_parseError, 'Error parsing webhook JSON', { component: 'juditWebhookCallback' });
       return NextResponse.json(
-        { error: 'JSON inválido', details: parseError instanceof Error ? parseError.message : 'desconhecido' },
+        { error: 'JSON inválido', details: _parseError instanceof Error ? _parseError.message : 'desconhecido' },
         { status: 400 }
       );
     }

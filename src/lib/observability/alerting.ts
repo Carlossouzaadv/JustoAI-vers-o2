@@ -117,11 +117,11 @@ async function notifyChannels(alert: AlertOptions): Promise<void> {
   const channels = getEnabledChannels();
 
   const notifications = channels.map((channel) =>
-    channel.send(alert).catch((_error) => {
-      alertLogger._error({
+    channel.send(alert).catch((error) => {
+      alertLogger.error({
         action: 'notification_failed',
         channel: channel.name,
-        _error: _error instanceof Error ? _error.message : String(_error),
+        error: error instanceof Error ? error.message : String(error),
       });
     })
   );

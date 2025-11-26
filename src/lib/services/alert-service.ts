@@ -36,14 +36,14 @@ const { SLACK_ALERT_WEBHOOK_URL, NODE_ENV } = process.env;
  * Extract _error message from unknown _error type
  * Handles Error objects, strings, and arbitrary data
  */
-function getErrorMessage(_error: unknown): string {
-  if (_error instanceof Error) {
-    return _error.message;
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
   }
-  if (typeof _error === 'string') {
-    return _error;
+  if (typeof error === 'string') {
+    return error;
   }
-  return String(_error);
+  return String(error);
 }
 
 /**
@@ -78,7 +78,7 @@ function buildSlackPayload(
 ): Record<string, unknown> {
   // Extract structured fields from context
   const component = typeof context.component === 'string' ? context.component : 'unknown';
-  const _error = context._error ? getErrorMessage(context._error) : 'No _error details';
+  const error = context._error ? getErrorMessage(context._error) : 'No _error details';
   const caseId = typeof context.caseId === 'string' ? context.caseId : undefined;
   const debitTransactionIds = isStringArray(context.debitTransactionIds)
     ? context.debitTransactionIds
@@ -141,7 +141,7 @@ function buildSlackPayload(
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Error:*\n\`\`\`${_error}\`\`\``,
+          text: `*Error:*\n\`\`\`${error}\`\`\``,
         },
       },
       ...(Object.keys(additionalContext).length > 0
@@ -199,7 +199,7 @@ async function sendToSlack(payload: Record<string, unknown>): Promise<void> {
       });
 
       if (!response.ok) {
-        log._error(
+        log.error(
           {
             msg: 'AlertService: Slack webhook returned non-OK status',
             statusCode: response.status,
@@ -211,7 +211,7 @@ async function sendToSlack(payload: Record<string, unknown>): Promise<void> {
       }
     } catch (fetchError) {
       // Log _error but don't throw (graceful degradation)
-      log._error(
+      log.error(
         fetchError,
         'AlertService: Failed to send Slack alert',
         { component: 'alertService' }
@@ -257,7 +257,7 @@ export const alert = {
 
     // 1. Log to Better Stack (via LoggerService)
     // This ensures we have the full context in Better Stack + Vercel logs
-    log._error(
+    log.error(
       {
         msg: message,
         level: 'fatal',

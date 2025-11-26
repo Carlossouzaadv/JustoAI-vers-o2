@@ -130,9 +130,9 @@ export async function trackJuditCost(input: CostTrackingInput): Promise<void> {
       });
     }
   } catch (error) {
-    costLogger._error({
+    costLogger.error({
       action: 'track_cost_failed',
-      _error: _error instanceof Error ? _error.message : String(_error),
+      error: error instanceof Error ? error.message : String(error),
       input,
     });
   }
@@ -427,9 +427,9 @@ export async function createAlert(input: AlertInput): Promise<void> {
       message: input.message,
     });
   } catch (error) {
-    costLogger._error({
+    costLogger.error({
       action: 'create_alert_failed',
-      _error: _error instanceof Error ? _error.message : String(_error),
+      error: error instanceof Error ? error.message : String(error),
     });
   }
 }

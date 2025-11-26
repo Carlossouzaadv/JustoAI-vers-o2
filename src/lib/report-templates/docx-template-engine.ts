@@ -39,7 +39,7 @@ export interface DOCXGenerationResult {
   filePath: string;
   fileSize: number;
   processingTime: number;
-  _error?: string;
+  error?: string;
 }
 
 export interface ProcessData {
@@ -156,7 +156,7 @@ export class DOCXTemplateEngine {
         filePath: '',
         fileSize: 0,
         processingTime: Date.now() - startTime,
-        _error: _error instanceof Error ? _error.message : 'Unknown _error'
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

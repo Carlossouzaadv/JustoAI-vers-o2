@@ -49,7 +49,7 @@ interface ReportExecutionWithSchedule {
   tokensUsed: number | null;
   cacheHit: boolean | null;
   cacheKey: string | null;
-  _error: string | null;
+  error: string | null;
   retryCount: number;
   schedule: {
     id: string;
@@ -376,12 +376,12 @@ export class ReportScheduler {
           status: 'FAILED',
           completedAt: new Date(),
           duration: Date.now() - execution.startedAt.getTime(),
-          _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
           retryCount: { increment: 1 }
         }
       });
 
-      throw _error;
+      throw error;
     }
   }
 
@@ -491,13 +491,13 @@ export class ReportScheduler {
   /**
    * Cria execução de falha por quota
    */
-  private async createFailedExecution(scheduleId: string, workspaceId: string, _error: string): Promise<void> {
+  private async createFailedExecution(scheduleId: string, workspaceId: string, error: string): Promise<void> {
     await prisma.reportExecution.create({
       data: {
         workspaceId,
         scheduleId,
         status: 'FAILED',
-        _error,
+        error,
         quotaConsumed: 0,
         startedAt: new Date(),
         completedAt: new Date()

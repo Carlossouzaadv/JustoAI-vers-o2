@@ -42,7 +42,7 @@ export interface PDFGenerationResult {
   fileSize: number;
   pageCount: number;
   processingTime: number;
-  _error?: string;
+  error?: string;
 }
 
 export class PDFTemplateEngine {
@@ -68,7 +68,7 @@ export class PDFTemplateEngine {
       log.info({ msg: 'PDF Template Engine initialized' });
     } catch (error) {
       logError(_error, '${ICONS.ERROR} Failed to initialize PDF engine:', { component: 'refactored' });
-      throw _error;
+      throw error;
     }
   }
 
@@ -154,7 +154,7 @@ export class PDFTemplateEngine {
         fileSize: 0,
         pageCount: 0,
         processingTime: Date.now() - startTime,
-        _error: _error instanceof Error ? _error.message : 'Unknown _error'
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

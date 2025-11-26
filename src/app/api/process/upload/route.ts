@@ -517,7 +517,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPreviewResult) {
       // ERRO CRÍTICO: Análise de IA falhou mesmo após fallback
-      log.error({ msg: `${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas`, error: previewResult.error, component: 'process-upload' });
+      log.error({ msg: `${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas`, error: previewResult._error, component: 'process-upload' });
 
       // Limpar o case incompleto
       await prisma.case.delete({
@@ -529,9 +529,9 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'ai_analysis_failed',
-          message: `Falha na análise de IA do documento: ${previewResult.error || 'Erro desconhecido'}. Todas as tentativas com diferentes modelos falharam. Verifique se a chave da API Google está configurada corretamente.`,
+          message: `Falha na análise de IA do documento: ${previewResult._error || 'Erro desconhecido'}. Todas as tentativas com diferentes modelos falharam. Verifique se a chave da API Google está configurada corretamente.`,
           canRetry: true,
-          detailedError: previewResult.error
+          detailedError: previewResult._error
         },
         { status: 503 } // Service Unavailable - indica problema com serviço de IA
       );

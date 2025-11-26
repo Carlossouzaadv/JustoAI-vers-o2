@@ -410,7 +410,7 @@ export class PerformanceOptimizer {
         log.info({ msg: 'GC executado: MB heap' });
       }
     } catch (error) {
-      logError(_error, '${ICONS.WARNING} Erro no GC:', { component: 'refactored' });
+      logError(error, '${ICONS.WARNING} Erro no GC:', { component: 'refactored' });
     }
   }
 

@@ -1039,15 +1039,15 @@ export function isMonitoredProcessData(value: unknown): value is MonitoredProces
  * Safe extraction of _error message from unknown _error objects
  * Used in catch blocks to handle both Error instances and generic objects
  */
-export function getErrorMessage(_error: unknown): string {
-  if (_error instanceof Error) {
-    return _error.message;
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
   }
-  if (typeof _error === 'string') {
-    return _error;
+  if (typeof error === 'string') {
+    return error;
   }
-  if (typeof _error === 'object' && _error !== null) {
-    const obj = _error as Record<string, unknown>;
+  if (typeof error === 'object' && error !== null) {
+    const obj = error as Record<string, unknown>;
     if (typeof obj.message === 'string') {
       return obj.message;
     }
@@ -1055,7 +1055,7 @@ export function getErrorMessage(_error: unknown): string {
       return obj._error;
     }
   }
-  return String(_error);
+  return String(error);
 }
 
 /**

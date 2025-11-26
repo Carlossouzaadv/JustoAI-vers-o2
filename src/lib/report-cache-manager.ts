@@ -161,8 +161,8 @@ export class ReportCacheManager {
       return result;
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro na invalidação de cache:', { component: 'refactored' });
-      throw _error;
+      logError(error, '${ICONS.ERROR} Erro na invalidação de cache:', { component: 'refactored' });
+      throw error;
     }
   }
 
@@ -303,7 +303,7 @@ export class ReportCacheManager {
       log.info({ msg: 'Limpeza concluída:  expiradas,  órfãs' });
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro na limpeza de cache:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro na limpeza de cache:', { component: 'refactored' });
       errors++;
     }
 
@@ -352,7 +352,7 @@ export class ReportCacheManager {
         warmed++;
 
       } catch (error) {
-        logError(_error, '${ICONS.ERROR} Erro no pré-aquecimento:', { component: 'refactored' });
+        logError(error, '${ICONS.ERROR} Erro no pré-aquecimento:', { component: 'refactored' });
         errors++;
       }
     }

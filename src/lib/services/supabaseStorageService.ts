@@ -27,7 +27,7 @@ function getSupabaseClient(): ReturnType<typeof createClient> {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    console._error(
+    console.error(
       `${ICONS.ERROR} [Storage] Missing Supabase credentials\n` +
       `Required: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY\n` +
       `Storage operations will fail until environment variables are configured`

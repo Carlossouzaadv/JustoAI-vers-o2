@@ -166,7 +166,7 @@ export class ProcessAlertManager {
           await this.sendAlertNotifications(alert.id);
 
         } catch (error) {
-          logError(_error, '${ICONS.ERROR} Erro ao criar alerta:', { component: 'refactored' });
+          logError(error, '${ICONS.ERROR} Erro ao criar alerta:', { component: 'refactored' });
         }
       }
     }
@@ -334,7 +334,7 @@ export class ProcessAlertManager {
       // - Atualizar status do alerta
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro ao enfileirar job de notificação para alerta ${alertId}:', { component: 'refactored' });
 
       // Se enfileiramento falhar, ainda assim marcar como tentado
       // (será reprocessado no próximo ciclo)

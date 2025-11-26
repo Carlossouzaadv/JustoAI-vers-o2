@@ -244,10 +244,10 @@ export function validatePaginationMiddleware() {
       req.pagination = params;
       next();
     } catch (error) {
-      if (_error instanceof z.ZodError) {
+      if (error instanceof z.ZodError) {
         return res.status(400).json({
           _error: 'Invalid pagination parameters',
-          details: _error.issues,
+          details: error.issues,
         });
       }
 

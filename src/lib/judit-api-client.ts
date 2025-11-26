@@ -752,7 +752,7 @@ export class JuditApiClient {
           // Se JSON falhar, ler como texto
           // Neste ponto, o stream pode estar parcialmente consumido
           // Então fazemos um fallback para texto bruto
-          responseText = `[JSON Parse Error: ${parseError instanceof Error ? parseError.message : 'Unknown'}]`;
+          responseText = `[JSON Parse Error: ${_parseError instanceof Error ? _parseError.message : 'Unknown'}]`;
           throw new Error(responseText);
         }
 

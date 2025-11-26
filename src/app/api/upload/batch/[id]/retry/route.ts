@@ -190,7 +190,7 @@ export async function POST(
     } catch (_parseError) {
       console.warn(
         `${ICONS.WARNING} [Batch Retry] Erro ao fazer parse de erros JSON:`,
-        parseError
+        _parseError
       );
     }
 
@@ -398,7 +398,7 @@ export async function GET(
         }
       }
     } catch (_parseError) {
-      console.warn(`${ICONS.WARNING} [Batch Retry Status] Erro ao fazer parse:`, parseError);
+      console.warn(`${ICONS.WARNING} [Batch Retry Status] Erro ao fazer parse:`, _parseError);
     }
 
     return NextResponse.json({

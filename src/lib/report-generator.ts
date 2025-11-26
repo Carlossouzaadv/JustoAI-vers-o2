@@ -115,7 +115,7 @@ function convertReportSummaryToJsonSafe(summary: ReportSummary): object {
     // Fallback: retornar objeto minimalista garantidamente JSON-safe
     return {
       totalProcesses: summary.totalProcesses,
-      _error: 'Falha ao serializar summary completo'
+      error: 'Falha ao serializar summary completo'
     };
   }
 }
@@ -137,7 +137,7 @@ export interface ReportSummary {
   audienceType?: string;
   generatedAt?: string;
   model?: string;
-  _error?: string;
+  error?: string;
   [key: string]: unknown;
 }
 
@@ -150,7 +150,7 @@ export interface ReportGenerationResult {
   cacheHit: boolean;
   cacheKey?: string;
   processingTime: number;
-  _error?: string;
+  error?: string;
 }
 
 export interface ProcessData {
@@ -286,7 +286,7 @@ export class ReportGenerator {
         tokensUsed: 0,
         cacheHit: false,
         processingTime: Date.now() - startTime,
-        _error: _error instanceof Error ? _error.message : 'Erro desconhecido'
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     }
   }
@@ -553,7 +553,7 @@ export class ReportGenerator {
             contentLength: mockContent.length,
             audienceType,
             generatedAt: new Date().toISOString(),
-            _error: 'Gemini result validation failed'
+            error: 'Gemini result validation failed'
           },
           tokensUsed: Math.floor(mockContent.length / 4)
         };
@@ -597,7 +597,7 @@ export class ReportGenerator {
         contentLength: mockContent.length,
         audienceType,
         generatedAt: new Date().toISOString(),
-        _error: 'Fallback para conteúdo mock devido a erro na API'
+        error: 'Fallback para conteúdo mock devido a erro na API'
       };
 
       return {
@@ -798,7 +798,7 @@ ${clientLanguage ?
       }
     } catch (error) {
       logError(`${ICONS.ERROR} Erro ao gerar PDF:`, '_error', { component: 'reportGenerator' });
-      throw _error;
+      throw error;
     }
   }
 
@@ -852,7 +852,7 @@ ${clientLanguage ?
       }
     } catch (error) {
       logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, '_error', { component: 'reportGenerator' });
-      throw _error;
+      throw error;
     }
   }
 

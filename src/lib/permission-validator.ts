@@ -73,7 +73,7 @@ export async function isWorkspaceAdmin(
 
     return !!userWorkspace;
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Error checking admin status:', { component: 'refactored' });
+    logError(error, `${ICONS.ERROR} Error checking admin status:`, { component: 'refactored' });
     return false;
   }
 }
@@ -114,7 +114,7 @@ export async function getUserWorkspaceRole(
     // Step 3: Now userWorkspace.role is type WorkspaceRole - no casting needed!
     return userWorkspace.role;
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Error getting user role:', { component: 'refactored' });
+    logError(error, `${ICONS.ERROR} Error getting user role:`, { component: 'refactored' });
     return null;
   }
 }
@@ -190,7 +190,7 @@ export async function validateUserRole(
       userId
     };
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Error validating user role:', { component: 'refactored' });
+    logError(error, `${ICONS.ERROR} Error validating user role:`, { component: 'refactored' });
     return {
       isAuthorized: false,
       workspaceId,
@@ -273,7 +273,7 @@ export async function getUserWorkspaceAccess(
 
     return access;
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Error getting user workspace access:', { component: 'refactored' });
+    logError(error, `${ICONS.ERROR} Error getting user workspace access:`, { component: 'refactored' });
     return [];
   }
 }
