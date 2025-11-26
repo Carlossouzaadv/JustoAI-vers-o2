@@ -96,7 +96,7 @@ export interface ProcessRequestResult {
   requestId: string;
   numeroCnj: string;
   dadosCompletos?: Record<string, unknown>;
-  _error?: string;
+  error?: string;
   attemptCount?: number;
   duration?: number;
 }
@@ -227,7 +227,7 @@ export async function performFullProcessRequest(
     juditLogger.error({
       action: 'onboarding_failed',
       cnj,
-      _error: errorMessage,
+      error: errorMessage,
       error_stack: error instanceof Error ? error.stack : undefined,
       duration_ms: duration,
     });
@@ -279,7 +279,7 @@ export async function performFullProcessRequest(
     });
 
     operation.finish('failure', {
-      _error: errorMessage,
+      error: errorMessage,
     });
 
     return {
@@ -287,7 +287,7 @@ export async function performFullProcessRequest(
       processoId,
       requestId,
       numeroCnj: cnj,
-      _error: errorMessage,
+      error: errorMessage,
       duration,
     };
   }
@@ -412,10 +412,10 @@ async function initiateRequest(
     // capturamos aqui antes que o erro se espalhe
     juditLogger.error({
       action: 'judit_response_validation_failed',
-      _error: validationResult._error,
+      error: validationResult.error,
       rawResponse: JSON.stringify(rawResponse),
     });
-    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult._error}`);
+    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult.error}`);
   }
 
   // A partir desta linha, 'response' é 100% type-safe

@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const duration = Date.now() - startTime;
 
     // Check if signature was invalid (will be indicated in error handling)
-    if (!result.success && result._error?.includes('Assinatura')) {
+    if (!result.success && result.error?.includes('Assinatura')) {
       console.error(
         `${ICONS.ERROR} Invalid webhook signature from ${provider}`
       );
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
       Sentry.setContext('payment_webhook_error', {
         provider,
-        error: result._error,
+        error: result.error,
         transactionId: result.transactionId,
         timestamp: new Date().toISOString(),
         duration,
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: result._error,
+          error: result.error,
           transactionId: result.transactionId,
           shouldRetry: result.shouldRetry || false,
         },

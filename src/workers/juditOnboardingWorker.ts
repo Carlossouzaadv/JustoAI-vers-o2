@@ -267,19 +267,19 @@ async function processOnboardingJob(
       };
     } else {
       operation.finish('failure', {
-        error: result._error,
+        error: result.error,
       });
 
       workerLogger.error({
         action: 'job_failed',
         job_id: job.id,
         cnj,
-        error: result._error,
+        error: result.error,
         attempt: job.attemptsMade + 1,
         max_attempts: job.opts.attempts || 3,
       });
 
-      throw new Error(result._error || 'Onboarding falhou');
+      throw new Error(result.error || 'Onboarding falhou');
     }
   } catch (error) {
     operation.finish('failure', {

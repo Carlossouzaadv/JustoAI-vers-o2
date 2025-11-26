@@ -544,11 +544,11 @@ async function handlePaymentWebhook(payload: unknown): Promise<NextResponse> {
         creditsAdded: result.creditsAdded
       });
     } else {
-      console.error(`${ICONS.ERROR} Falha no processamento do webhook:`, result._error);
+      console.error(`${ICONS.ERROR} Falha no processamento do webhook:`, result.error);
 
       return NextResponse.json(
         {
-          error: result._error,
+          error: result.error,
           shouldRetry: result.shouldRetry
         },
         { status: result.shouldRetry ? 500 : 400 }

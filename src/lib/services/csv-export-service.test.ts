@@ -43,8 +43,8 @@ describe('CSVExportService', () => {
       'phone: Invalid phone': 2,
     },
     topErrors: [
-      { field: 'email', _error: 'Invalid format', row: 5 },
-      { field: 'phone', _error: 'Invalid phone', row: 10 },
+      { field: 'email', error: 'Invalid format', row: 5 },
+      { field: 'phone', error: 'Invalid phone', row: 10 },
     ],
     createdAt: '2025-11-16T10:00:00.000Z',
     updatedAt: '2025-11-16T10:05:00.000Z',
@@ -80,12 +80,12 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'nome',
-            _error: 'Invalid format, contains comma',
+            error: 'Invalid format, contains comma',
             row: 5,
           },
           {
             field: 'email',
-            _error: 'Already "registered"',
+            error: 'Already "registered"',
             row: 6,
           },
         ],
@@ -108,7 +108,7 @@ describe('CSVExportService', () => {
       const noRowBatchStatus: BatchStatus_Response = {
         ...mockBatchStatus,
         topErrors: [
-          { field: 'email', _error: 'Invalid format' },
+          { field: 'email', error: 'Invalid format' },
         ],
         errorSummary: {
           'email: Invalid format': 1,
@@ -265,7 +265,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'name',
-            _error: 'Contains, comma, characters',
+            error: 'Contains, comma, characters',
           },
         ],
         errorSummary: {
@@ -284,7 +284,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'text',
-            _error: 'Already "used" in system',
+            error: 'Already "used" in system',
           },
         ],
         errorSummary: {
@@ -306,7 +306,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'description',
-            _error: 'Line 1\nLine 2\nLine 3',
+            error: 'Line 1\nLine 2\nLine 3',
           },
         ],
         errorSummary: {
@@ -378,7 +378,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'field_name',
-            _error: longValue,
+            error: longValue,
           },
         ],
         errorSummary: {
@@ -398,7 +398,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'email',
-            _error: 'Invalid',
+            error: 'Invalid',
             row: undefined,
           },
         ],

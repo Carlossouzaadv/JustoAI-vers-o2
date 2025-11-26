@@ -227,35 +227,35 @@ export type WebhookDeliveryPayload = z.infer<typeof WebhookDeliveryPayloadSchema
 /**
  * Format ZodError into readable message
  */
-function formatZodError(_error: z.ZodError<unknown>): string {
-  if ('issues' in _error && Array.isArray(_error.issues)) {
-    return _error.issues
+function formatZodError(error: z.ZodError<unknown>): string {
+  if ('issues' in error && Array.isArray(error.issues)) {
+    return error.issues
       .map(issue => {
         const path = 'path' in issue ? (issue.path as (string | number)[]).join('.') : 'root';
-        const message = 'message' in issue ? (issue.message as string) : 'Validation _error';
+        const message = 'message' in issue ? (issue.message as string) : 'Validation error';
         return `${path || 'root'}: ${message}`;
       })
       .join('; ');
   }
-  return 'Validation _error';
+  return 'Validation error';
 }
 
 /**
  * Safely parse and validate JUDIT request payload
- * Returns Either-like structure for _error handling
+ * Returns Either-like structure for error handling
  */
 export function parseJuditRequest(
   data: unknown
-): { success: true; data: JuditRequestPayload } | { success: false; _error: string } {
+): { success: true; data: JuditRequestPayload } | { success: false; error: string } {
   try {
     const parsed = JuditRequestPayloadSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
-    if (_error instanceof z.ZodError) {
-      return { success: false, _error: formatZodError(_error) };
+    if (error instanceof z.ZodError) {
+      return { success: false, error: formatZodError(error) };
     }
-    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
-    return { success: false, _error: message };
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
+    return { success: false, error: message };
   }
 }
 
@@ -264,16 +264,16 @@ export function parseJuditRequest(
  */
 export function parsePaymentWebhook(
   data: unknown
-): { success: true; data: PaymentWebhookPayload } | { success: false; _error: string } {
+): { success: true; data: PaymentWebhookPayload } | { success: false; error: string } {
   try {
     const parsed = PaymentWebhookPayloadSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
-    if (_error instanceof z.ZodError) {
-      return { success: false, _error: formatZodError(_error) };
+    if (error instanceof z.ZodError) {
+      return { success: false, error: formatZodError(error) };
     }
-    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
-    return { success: false, _error: message };
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
+    return { success: false, error: message };
   }
 }
 
@@ -282,16 +282,16 @@ export function parsePaymentWebhook(
  */
 export function parseStripeWebhook(
   data: unknown
-): { success: true; data: StripeWebhook } | { success: false; _error: string } {
+): { success: true; data: StripeWebhook } | { success: false; error: string } {
   try {
     const parsed = StripeWebhookSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
-    if (_error instanceof z.ZodError) {
-      return { success: false, _error: formatZodError(_error) };
+    if (error instanceof z.ZodError) {
+      return { success: false, error: formatZodError(error) };
     }
-    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
-    return { success: false, _error: message };
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
+    return { success: false, error: message };
   }
 }
 
@@ -300,16 +300,16 @@ export function parseStripeWebhook(
  */
 export function parseMercadoPagoWebhook(
   data: unknown
-): { success: true; data: MercadoPagoWebhook } | { success: false; _error: string } {
+): { success: true; data: MercadoPagoWebhook } | { success: false; error: string } {
   try {
     const parsed = MercadoPagoWebhookSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
-    if (_error instanceof z.ZodError) {
-      return { success: false, _error: formatZodError(_error) };
+    if (error instanceof z.ZodError) {
+      return { success: false, error: formatZodError(error) };
     }
-    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
-    return { success: false, _error: message };
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
+    return { success: false, error: message };
   }
 }
 
@@ -318,15 +318,15 @@ export function parseMercadoPagoWebhook(
  */
 export function parseJuditResponse(
   data: unknown
-): { success: true; data: JuditRequestResponse } | { success: false; _error: string } {
+): { success: true; data: JuditRequestResponse } | { success: false; error: string } {
   try {
     const parsed = JuditRequestResponseSchema.parse(data);
     return { success: true, data: parsed };
   } catch (error) {
-    if (_error instanceof z.ZodError) {
-      return { success: false, _error: formatZodError(_error) };
+    if (error instanceof z.ZodError) {
+      return { success: false, error: formatZodError(error) };
     }
-    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
-    return { success: false, _error: message };
+    const message = error instanceof Error ? error.message : 'Unknown validation error';
+    return { success: false, error: message };
   }
 }

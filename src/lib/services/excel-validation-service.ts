@@ -19,7 +19,7 @@ export interface ValidationErrorDetail {
   row: number;
   column: string;
   value: unknown;
-  _error: string;
+  error: string;
 }
 
 export interface ValidationResponse {
@@ -103,7 +103,7 @@ export class ExcelValidationService {
             row: rowNumber,
             column: columnName,
             value: cellValue,
-            _error: issue.message,
+            error: issue.message,
           });
         }
       }

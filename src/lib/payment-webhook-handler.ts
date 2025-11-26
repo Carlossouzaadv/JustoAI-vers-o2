@@ -25,7 +25,7 @@ export interface PaymentProcessingResult {
   success: boolean;
   transactionId: string;
   creditsAdded?: number;
-  _error?: string;
+  error?: string;
   shouldRetry?: boolean;
 }
 
@@ -77,7 +77,7 @@ export class PaymentWebhookHandler {
       return {
         success: false,
         transactionId: 'unknown',
-        _error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
         shouldRetry: true
       };
     }
@@ -315,7 +315,7 @@ export class PaymentWebhookHandler {
         return {
           success: false,
           transactionId: payload.transactionId,
-          _error: 'Original transaction not found'
+          error: 'Original transaction not found'
         };
       }
 
@@ -412,7 +412,7 @@ export class PaymentWebhookHandler {
     const validationResult = parseStripeWebhook(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid Stripe webhook payload: ${validationResult._error}`);
+      throw new Error(`Invalid Stripe webhook payload: ${validationResult.error}`);
     }
 
     const data: StripeWebhook = validationResult.data;
@@ -449,7 +449,7 @@ export class PaymentWebhookHandler {
     const validationResult = parseMercadoPagoWebhook(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid MercadoPago webhook payload: ${validationResult._error}`);
+      throw new Error(`Invalid MercadoPago webhook payload: ${validationResult.error}`);
     }
 
     const data: MercadoPagoWebhook = validationResult.data;
