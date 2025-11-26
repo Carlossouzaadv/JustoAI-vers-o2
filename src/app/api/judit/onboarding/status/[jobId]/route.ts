@@ -65,7 +65,7 @@ export async function GET(
           operationType: JuditOperationType.MONITORING,
           durationMs,
           success: jobStatus.status === 'completed',
-          error: jobStatus._error,
+          error: jobStatus.error,
           requestId: jobId,
           metadata: {
             eventType: 'onboarding.completed',
@@ -84,7 +84,7 @@ export async function GET(
         statusDescription: statusMap[jobStatus.status],
         progress: jobStatus.progress || 0,
         result: jobStatus.result,
-        error: jobStatus._error,
+        error: jobStatus.error,
         isComplete: jobStatus.status === 'completed',
         isFailed: jobStatus.status === 'failed',
       },

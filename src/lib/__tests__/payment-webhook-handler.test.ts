@@ -139,7 +139,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result._error).toContain('Assinatura do webhook inválida');
+      expect(result.error).toContain('Assinatura do webhook inválida');
       expect(Sentry.captureMessage).toHaveBeenCalledWith(
         expect.stringContaining('Invalid webhook signature'),
         'warning'
@@ -197,7 +197,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result._error).toContain('Assinatura do webhook inválida');
+      expect(result.error).toContain('Assinatura do webhook inválida');
     });
 
     it('should handle unknown provider gracefully', async () => {
@@ -222,7 +222,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       // Should accept but not have verified
-      expect(result._error).not.toContain(
+      expect(result.error).not.toContain(
         'Assinatura do webhook inválida'
       );
     });
@@ -244,7 +244,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result._error).toContain('Invalid JSON');
+      expect(result.error).toContain('Invalid JSON');
     });
 
     it('should handle missing required fields gracefully', async () => {
@@ -428,7 +428,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result._error).toBeDefined();
+      expect(result.error).toBeDefined();
       expect(typeof result.shouldRetry).toBe('boolean');
     });
 
@@ -484,7 +484,7 @@ describe('PaymentWebhookHandler', () => {
       expect(result.transactionId).toBeDefined();
       expect(typeof result.transactionId).toBe('string');
       // transactionId should be set if parsing succeeded
-      if (result._error === undefined) {
+      if (result.error === undefined) {
         expect(result.transactionId).not.toBe('unknown');
       }
     });
@@ -718,9 +718,9 @@ describe('PaymentWebhookHandler', () => {
         );
 
       // Error messages should not contain sensitive data
-      if (result._error) {
-        expect(result._error).not.toContain('secretToken');
-        expect(result._error).not.toContain('creditCard');
+      if (result.error) {
+        expect(result.error).not.toContain('secretToken');
+        expect(result.error).not.toContain('creditCard');
       }
     });
   });

@@ -192,15 +192,15 @@ export class BatchStatusService {
           topErrors.push(errorDetail);
 
           // Aggregate summary
-          const key = `${errorDetail.field}: ${errorDetail._error}`;
+          const key = `${errorDetail.field}: ${errorDetail.error}`;
           errorSummary[key] = (errorSummary[key] || 0) + 1;
         }
       }
 
       // Sort by frequency
       topErrors.sort((a, b) => {
-        const keyA = `${a.field}: ${a._error}`;
-        const keyB = `${b.field}: ${b._error}`;
+        const keyA = `${a.field}: ${a.error}`;
+        const keyB = `${b.field}: ${b.error}`;
         return (errorSummary[keyB] || 0) - (errorSummary[keyA] || 0);
       });
     } catch (error) {
@@ -226,14 +226,14 @@ export class BatchStatusService {
       !('field' in obj) ||
       typeof obj.field !== 'string' ||
       !('_error' in obj) ||
-      typeof obj._error !== 'string'
+      typeof obj.error !== 'string'
     ) {
       return null;
     }
 
     return {
       field: obj.field,
-      _error: obj._error,
+      _error: obj.error,
       row: typeof obj.row === 'number' ? obj.row : undefined,
       retryCount: typeof obj.retryCount === 'number' ? obj.retryCount : undefined,
     };

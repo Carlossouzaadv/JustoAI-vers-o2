@@ -51,7 +51,7 @@ export async function recordOnboardingError(
     });
 
     if (!currentCase) {
-      log._error({ msg: '[OnboardingError] Caso não encontrado:' });
+      log.error({ msg: '[OnboardingError] Caso não encontrado:' });
       return;
     }
 
@@ -171,7 +171,7 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
     }
 
     if (!caseData.detectedCnj) {
-      log._error({ msg: '[OnboardingError] CNJ não detectado para caso' });
+      log.error({ msg: '[OnboardingError] CNJ não detectado para caso' });
       return false;
     }
 

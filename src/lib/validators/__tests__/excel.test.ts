@@ -186,7 +186,7 @@ describe('ExcelRowSchema - Validação de Linhas Excel', () => {
       const result = ExcelRowSchema.safeParse(invalidRow);
       expect(result.success).toBe(false);
       if (!result.success) {
-        const processError = result._error.issues.find((i) =>
+        const processError = result.error.issues.find((i) =>
           i.path.includes('Número de Processo')
         );
         expect(processError).toBeDefined();
@@ -205,7 +205,7 @@ describe('ExcelRowSchema - Validação de Linhas Excel', () => {
       const result = ExcelRowSchema.safeParse(invalidRow);
       expect(result.success).toBe(false);
       if (!result.success) {
-        const emailError = result._error.issues.find((i) =>
+        const emailError = result.error.issues.find((i) =>
           i.path.includes('Email')
         );
         expect(emailError).toBeDefined();
@@ -222,7 +222,7 @@ describe('ExcelRowSchema - Validação de Linhas Excel', () => {
       const result = ExcelRowSchema.safeParse(invalidRow);
       expect(result.success).toBe(false);
       if (!result.success) {
-        const tribunalError = result._error.issues.find((i) =>
+        const tribunalError = result.error.issues.find((i) =>
           i.path.includes('Tribunal')
         );
         expect(tribunalError).toBeDefined();

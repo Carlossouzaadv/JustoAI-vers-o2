@@ -452,7 +452,7 @@ export async function PUT(req: NextRequest) {
         success: result.success,
         generation_time: result.generationTime,
         file_size_kb: result.fileSize ? Math.round(result.fileSize / 1024) : undefined,
-        error: result._error
+        error: result.error
       }))
     });
 
@@ -570,7 +570,7 @@ async function handleBatchGeneration(
       success: r.success,
       generation_time: r.generationTime,
       file_size_kb: r.fileSize ? Math.round(r.fileSize / 1024) : undefined,
-      error: r._error
+      error: r.error
     }))
   });
 }

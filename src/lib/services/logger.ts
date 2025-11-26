@@ -14,7 +14,7 @@
  *
  * log.info({ msg: "User login", userId: user.id, context: { ... } });
  * log.warn({ msg: "Rate limit approaching", remaining: 5 });
- * log._error(error, "Failed to process attachment", { caseId, attachmentId });
+ * log.error(error, "Failed to process attachment", { caseId, attachmentId });
  */
 
 import pino from 'pino';
@@ -209,7 +209,7 @@ if (NODE_ENV === 'production') {
  * });
  *
  * // Error log (always pass _error as first argument)
- * log._error(error, "Failed to download attachment", {
+ * log.error(error, "Failed to download attachment", {
  *   component: "juditAttachmentProcessor",
  *   attachmentId: attachment.id,
  *   caseId: caseId
@@ -239,7 +239,7 @@ export function logError(
   context?: Record<string, unknown>
 ): void {
   if (error instanceof Error) {
-    log._error(
+    log.error(
       {
         msg: message,
         errorMessage: error.message,
@@ -250,7 +250,7 @@ export function logError(
       message
     );
   } else {
-    log._error(
+    log.error(
       {
         msg: message,
         _error: String(error),

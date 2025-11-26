@@ -81,7 +81,7 @@ export class NotificationService {
         if (slackResult.success) {
           success = true;
         } else {
-          errors.push(`Slack failed: ${slackResult._error}`);
+          errors.push(`Slack failed: ${slackResult.error}`);
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';

@@ -6,7 +6,7 @@
 //
 // Usage:
 //   const result = CreateProcessPayloadSchema.safeParse(rawBody);
-//   if (!result.success) return NextResponse.json({ errors: result._error.flatten() }, { status: 400 });
+//   if (!result.success) return NextResponse.json({ errors: result.error.flatten() }, { status: 400 });
 //   const data = result.data; // 100% type-safe
 //
 // Pattern: Always use safeParse() to handle validation failures gracefully.

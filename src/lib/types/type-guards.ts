@@ -561,7 +561,7 @@ export function isSystemImportValidation(value: unknown): value is SystemImportV
         return false;
       }
       const err = _error as Record<string, unknown>;
-      if (typeof err._error !== 'string') {
+      if (typeof err.error !== 'string') {
         return false;
       }
     }
@@ -1051,8 +1051,8 @@ export function getErrorMessage(error: unknown): string {
     if (typeof obj.message === 'string') {
       return obj.message;
     }
-    if (typeof obj._error === 'string') {
-      return obj._error;
+    if (typeof obj.error === 'string') {
+      return obj.error;
     }
   }
   return String(error);
@@ -1069,12 +1069,12 @@ export function isGeminiErrorResponse(value: unknown): value is Record<string, u
   const obj = value as Record<string, unknown>;
 
   // Gemini API returns errors in either { _error: { message, details } } or { _error: string } format
-  if (obj._error !== undefined) {
-    if (typeof obj._error === 'string') {
+  if (obj.error !== undefined) {
+    if (typeof obj.error === 'string') {
       return true;
     }
-    if (typeof obj._error === 'object' && obj._error !== null) {
-      const err = obj._error as Record<string, unknown>;
+    if (typeof obj.error === 'object' && obj.error !== null) {
+      const err = obj.error as Record<string, unknown>;
       // _error.message is optional but if present should be string
       if (err.message !== undefined && typeof err.message !== 'string') {
         return false;

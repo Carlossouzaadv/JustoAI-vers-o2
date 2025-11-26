@@ -144,11 +144,11 @@ export async function POST(request: NextRequest) {
     );
 
     if (!uploadResult.success) {
-      console.error(`${ICONS.ERROR} Failed to upload file to storage:`, uploadResult._error);
+      console.error(`${ICONS.ERROR} Failed to upload file to storage:`, uploadResult.error);
       return NextResponse.json({
         success: false,
         error: 'Erro ao salvar arquivo',
-        details: uploadResult._error
+        details: uploadResult.error
       }, { status: 500 });
     }
 

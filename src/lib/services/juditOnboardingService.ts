@@ -412,10 +412,10 @@ async function initiateRequest(
     // capturamos aqui antes que o erro se espalhe
     juditLogger.error({
       action: 'judit_response_validation_failed',
-      _error: validationResult._error,
+      _error: validationResult.error,
       rawResponse: JSON.stringify(rawResponse),
     });
-    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult._error}`);
+    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult.error}`);
   }
 
   // A partir desta linha, 'response' é 100% type-safe

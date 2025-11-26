@@ -93,7 +93,7 @@ export class PDFExtractionService {
     const startTime = Date.now();
 
     if (!originalText || typeof originalText !== 'string') {
-      log._error({ msg: 'PDFExtractionService: originalText inválido' });
+      log.error({ msg: 'PDFExtractionService: originalText inválido' });
       return this.createFailureResult(originalText || '');
     }
 

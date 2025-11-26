@@ -280,7 +280,7 @@ export async function setupProcessMonitoring(
 
   } catch (error) {
     const errorLogValue = getErrorLogValue(error);
-    log._error(`Falha ao setup de monitoramento`, { cnj, _error: errorLogValue });
+    log.error(`Falha ao setup de monitoramento`, { cnj, _error: errorLogValue });
 
     return {
       success: false,
@@ -335,7 +335,7 @@ export async function checkTrackingUpdates(
 
   } catch (error) {
     const errorLogValue = getErrorLogValue(error);
-    log._error(`Erro ao verificar updates`, { trackingId, _error: errorLogValue });
+    log.error(`Erro ao verificar updates`, { trackingId, _error: errorLogValue });
 
     return {
       trackingId,
@@ -386,7 +386,7 @@ export async function stopProcessMonitoring(cnj: string): Promise<boolean> {
 
   } catch (error) {
     const errorLogValue = getErrorLogValue(error);
-    log._error(`Erro ao desativar monitoramento`, { cnj, _error: errorLogValue });
+    log.error(`Erro ao desativar monitoramento`, { cnj, _error: errorLogValue });
     return false;
   }
 }
@@ -538,7 +538,7 @@ export async function updateProcessWithMovements(
 
   } catch (error) {
     const errorLogValue = getErrorLogValue(error);
-    log._error(`Erro ao atualizar processo com movimentos`, { processoId, _error: errorLogValue });
+    log.error(`Erro ao atualizar processo com movimentos`, { processoId, _error: errorLogValue });
     throw error;
   }
 }
@@ -736,22 +736,22 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
       };
 
     } else {
-      log._error(`Falha ao buscar anexos`, {
+      log.error(`Falha ao buscar anexos`, {
         cnj: processo.numeroCnj,
-        _error: searchResult._error,
+        _error: searchResult.error,
       });
 
       return {
         shouldFetchAttachments: true,
         matchedKeywords,
         matchedMovements,
-        _error: searchResult._error,
+        _error: searchResult.error,
       };
     }
 
   } catch (error) {
     const errorLogValue = getErrorLogValue(error);
-    log._error(`Erro na análise de anexos`, {
+    log.error(`Erro na análise de anexos`, {
       cnj: processo.numeroCnj,
       _error: errorLogValue,
     });

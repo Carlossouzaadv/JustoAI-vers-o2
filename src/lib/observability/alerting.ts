@@ -406,7 +406,7 @@ export async function alertMonitoringFailed(context: {
     type: 'MONITORING_FAILED',
     severity: AlertSeverity.MEDIUM,
     title: 'Monitoring Check Failed',
-    message: `Failed to check monitoring for ${context.numeroCnj}: ${context._error}`,
+    message: `Failed to check monitoring for ${context.numeroCnj}: ${context.error}`,
     numeroCnj: context.numeroCnj,
     trackingId: context.trackingId,
     metadata: context,

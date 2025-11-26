@@ -248,7 +248,7 @@ describe('CreditManager', () => {
       // Should fail at balance validation, before transaction
       expect(result.success).toBe(false);
       // May return _error about insufficient balance or generic error
-      expect(result._error).toBeDefined();
+      expect(result.error).toBeDefined();
     });
 
     it('should validate full credits sufficiency', async () => {
@@ -280,7 +280,7 @@ describe('CreditManager', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result._error).toBeDefined();
+      expect(result.error).toBeDefined();
     });
   });
 
@@ -301,7 +301,7 @@ describe('CreditManager', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result._error).toContain('Erro interno');
+      expect(result.error).toContain('Erro interno');
       // Verify that no actual update occurred
       expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
@@ -425,7 +425,7 @@ describe('CreditManager', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result._error).toContain('Nenhuma transação de débito válida');
+      expect(result.error).toContain('Nenhuma transação de débito válida');
     });
 
     it('should fail when debits are from different workspaces', async () => {
@@ -465,7 +465,7 @@ describe('CreditManager', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result._error).toContain('múltiplos workspaces');
+      expect(result.error).toContain('múltiplos workspaces');
     });
   });
 

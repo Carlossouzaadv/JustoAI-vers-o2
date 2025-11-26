@@ -794,7 +794,7 @@ ${clientLanguage ?
       if (result.success) {
         log.info({ msg: '${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)', component: 'reportGenerator' });
       } else {
-        throw new Error(result._error || 'Erro desconhecido ao gerar PDF');
+        throw new Error(result.error || 'Erro desconhecido ao gerar PDF');
       }
     } catch (error) {
       logError(`${ICONS.ERROR} Erro ao gerar PDF:`, '_error', { component: 'reportGenerator' });
@@ -848,7 +848,7 @@ ${clientLanguage ?
       if (result.success) {
         log.info({ msg: '${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)', component: 'reportGenerator' });
       } else {
-        throw new Error(result._error || 'Erro desconhecido ao gerar DOCX');
+        throw new Error(result.error || 'Erro desconhecido ao gerar DOCX');
       }
     } catch (error) {
       logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, '_error', { component: 'reportGenerator' });

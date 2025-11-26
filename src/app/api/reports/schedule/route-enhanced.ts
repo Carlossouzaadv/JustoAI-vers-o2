@@ -72,7 +72,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     if (!quotaValidation.allowed) {
       // Narrowing seguro: validar que _error existe antes de usar
-      const errorMessage = quotaValidation._error || 'Validação de quota falhou';
+      const errorMessage = quotaValidation.error || 'Validação de quota falhou';
       return NextResponse.json(
         {
           success: false,

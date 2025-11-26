@@ -301,7 +301,7 @@ export async function GET() {
     const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
     if (!adminCheck.authorized) {
       return NextResponse.json(
-        { error: adminCheck._error },
+        { error: adminCheck.error },
         { status: 403 }
       );
     }

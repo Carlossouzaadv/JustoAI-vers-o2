@@ -199,7 +199,7 @@ class WorkerStatsServiceImpl {
     } catch (error) {
       // CRÍTICO: Não deixar falha do registro afetar o job
       // Apenas logar o erro e continuar
-      log._error({
+      log.error({
         msg: 'Erro ao registrar sucesso do worker job',
         component: 'WorkerStatsService',
         jobId,
@@ -290,7 +290,7 @@ class WorkerStatsServiceImpl {
     } catch (catchError) {
       // CRÍTICO: Não deixar falha do registro afetar o job
       // Apenas logar o erro e continuar
-      log._error({
+      log.error({
         msg: 'Erro ao registrar falha do worker job',
         component: 'WorkerStatsService',
         jobId,
@@ -333,7 +333,7 @@ class WorkerStatsServiceImpl {
         averageDurationMs: avgDuration
       };
     } catch (error) {
-      log._error({
+      log.error({
         msg: 'Erro ao recuperar estatísticas da fila',
         component: 'WorkerStatsService',
         queueName,

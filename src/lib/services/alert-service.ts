@@ -78,7 +78,7 @@ function buildSlackPayload(
 ): Record<string, unknown> {
   // Extract structured fields from context
   const component = typeof context.component === 'string' ? context.component : 'unknown';
-  const error = context._error ? getErrorMessage(context._error) : 'No _error details';
+  const error = context.error ? getErrorMessage(context.error) : 'No _error details';
   const caseId = typeof context.caseId === 'string' ? context.caseId : undefined;
   const debitTransactionIds = isStringArray(context.debitTransactionIds)
     ? context.debitTransactionIds

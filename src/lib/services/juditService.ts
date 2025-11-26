@@ -445,7 +445,7 @@ export async function createOnboarding(
     juditLogger.error(JSON.stringify({
       action: 'create_onboarding_failed',
       cnj,
-      _error: response._error,
+      _error: response.error,
     }));
   }
 
@@ -573,7 +573,7 @@ export async function testConnection(): Promise<{
     success: response.success,
     configured: true,
     reachable: response.success,
-    _error: response._error,
+    _error: response.error,
   };
 }
 

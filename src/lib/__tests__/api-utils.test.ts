@@ -71,7 +71,7 @@ describe('API Utils', () => {
 
       expect(response.status).toBe(400)
       if (isErrorResponse(json)) {
-        expect(json._error).toBe(message)
+        expect(json.error).toBe(message)
       }
     })
 

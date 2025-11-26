@@ -95,7 +95,7 @@ export class ExcelValidationService {
         // Linha inválida - extrair detalhes de CADA erro
         // (não apenas o primeiro, como faria .parse())
         invalidRowNumbers.add(rowNumber);
-        for (const issue of result._error.issues) {
+        for (const issue of result.error.issues) {
           const columnName = String(issue.path[0] ?? 'unknown');
           const cellValue = this.extractCellValue(rowData, columnName);
 
@@ -185,7 +185,7 @@ export class ExcelValidationService {
       return { success: true, data: result.data };
     }
 
-    return { success: false, errors: result._error };
+    return { success: false, errors: result.error };
   }
 
   /**
