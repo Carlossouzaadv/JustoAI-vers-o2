@@ -172,7 +172,7 @@ async function monitorJobProgress(jobId: string): Promise<void> {
       // Job failed
       if (status.status === 'failed') {
         log('\n❌ Job failed!');
-        log('Error:', status.error);
+        log('Error:', status._error);
         return;
       }
 
