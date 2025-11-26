@@ -276,13 +276,13 @@ export async function DELETE() {
     const adminCheck = await requireWorkspaceAdmin(user.id, workspace.id);
     if (!adminCheck.authorized) {
       console.warn(
-        `${ICONS.SHIELD} Acesso negado: ${adminCheck.error}`
+        `${ICONS.SHIELD} Acesso negado: ${adminCheck._error}`
       );
       return NextResponse.json(
         {
           success: false,
           error: 'Acesso negado. Apenas admins podem limpar o cache.',
-          details: adminCheck.error
+          details: adminCheck._error
         },
         { status: 403 }
       );

@@ -133,7 +133,7 @@ export async function GET() {
     const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
     if (!adminCheck.authorized) {
       return NextResponse.json(
-        { error: adminCheck.error },
+        { error: adminCheck._error },
         { status: 403 }
       );
     }
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     const adminCheck = await requireAdminAccess(user.email, user.id, workspace?.id);
     if (!adminCheck.authorized) {
       return NextResponse.json(
-        { error: adminCheck.error },
+        { error: adminCheck._error },
         { status: 403 }
       );
     }
