@@ -102,7 +102,7 @@ export async function recordOnboardingError(
       retryCount,
       newStatus
     });
-  } catch (error) {
+  } catch (_error) {
     logError(_error, 'OnboardingError Erro ao registrar falha de onboarding:', { component: 'refactored' });
   }
 }
@@ -144,7 +144,7 @@ export async function getUnassignedReason(caseId: string): Promise<{
       status: isCaseStatus(caseData.status) ? caseData.status : CaseStatus.ACTIVE,
       canRetry: false
     };
-  } catch (error) {
+  } catch (_error) {
     logError(_error, 'OnboardingError Erro ao buscar motivo:', { component: 'refactored' });
     return null;
   }
@@ -195,7 +195,7 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
 
     log.info({ msg: '[OnboardingError] Retry iniciado para caso  (CNJ: )' });
     return true;
-  } catch (error) {
+  } catch (_error) {
     logError(_error, 'OnboardingError Erro ao fazer retry:', { component: 'refactored' });
     return false;
   }

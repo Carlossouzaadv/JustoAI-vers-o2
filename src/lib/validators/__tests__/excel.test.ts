@@ -4,7 +4,7 @@
 // Validação rigorosa do ExcelRowSchema com cases críticos
 
 import { describe, it, expect } from '@jest/globals';
-import { ExcelRowSchema, type ExcelRow } from '../excel';
+import { ExcelRowSchema } from '../excel';
 
 describe('ExcelRowSchema - Validação de Linhas Excel', () => {
   // ===== CASOS DE SUCESSO =====

@@ -27,7 +27,7 @@ export function createPrismaMock(): DeepMockProxy<PrismaClient> {
  */
 export function setupTransactionMock(
   mockPrisma: DeepMockProxy<PrismaClient>,
-  callback?: (tx: Prisma.TransactionClient) => Promise<unknown>
+  _callback?: (_tx: Prisma.TransactionClient) => Promise<unknown>
 ): void {
   mockPrisma.$transaction.mockImplementation(async (fn: unknown) => {
     // Type guard: ensure fn is a function

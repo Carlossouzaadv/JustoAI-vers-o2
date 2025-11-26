@@ -13,15 +13,13 @@ import { DeepMockProxy } from 'jest-mock-extended';
 import {
   CreditManager,
   CreditDebitResult,
-  CreditRefundResult,
-  CreditBalance,
+  CreditRefundResult
 } from '../credit-system';
 import {
   createPrismaMock,
   setupTransactionMock,
   setupAggregateMock,
   createMockWorkspaceCredits,
-  createMockCreditAllocation,
   createMockCreditTransaction,
   resetPrismaMocks,
 } from './mocks/prisma-mock.helpers';

@@ -7,7 +7,7 @@
 
 import { TimelineSource } from '@/lib/types/database';
 import React from 'react';
-import { log, logError } from '@/lib/services/logger';
+import { log } from '@/lib/services/logger';
 import {
   FileText,
   Scale,
@@ -243,7 +243,7 @@ export function sortSourcesByPriority(sources: TimelineSource[]): TimelineSource
 export function debugSourcesConfig(): void {
   console.group('📊 Timeline Sources Configuration');
 
-  Object.values(TimelineSource).forEach((source) => {
+  Object.values(TimelineSource).forEach((_source) => {
     log.info({ msg: '\n' });
     log.info({ msg: 'Priority: /10' });
     log.info({ msg: 'Badge:' });

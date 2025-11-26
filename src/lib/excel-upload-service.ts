@@ -250,11 +250,11 @@ export class ExcelUploadService {
         preview
       };
 
-    } catch (error) {
-      logError(error, '${ICONS.ERROR} Erro no parsing:', { component: 'refactored' });
+    } catch (_error) {
+      logError(_error, '${ICONS.ERROR} Erro no parsing:', { component: 'refactored' });
       return {
         success: false,
-        errors: [error instanceof Error ? error.message : 'Erro desconhecido no parsing']
+        errors: [_error instanceof Error ? _error.message : 'Erro desconhecido no parsing']
       };
     }
   }
@@ -378,14 +378,14 @@ export class ExcelUploadService {
 
       log.info({ msg: 'Batch  concluído: / sucessos' });
 
-    } catch (error) {
-      logError(error, '${ICONS.ERROR} Erro no processamento do batch ${batchId}:', { component: 'refactored' });
+    } catch (_error) {
+      logError(_error, '${ICONS.ERROR} Erro no processamento do batch ${batchId}:', { component: 'refactored' });
 
       await prisma.processBatchUpload.update({
         where: { id: batchId },
         data: {
           status: 'FAILED',
-          errors: JSON.stringify([error instanceof Error ? error.message : 'Erro desconhecido'])
+          errors: JSON.stringify([_error instanceof Error ? _error.message : 'Erro desconhecido'])
         }
       });
     }
@@ -494,14 +494,14 @@ export class ExcelUploadService {
         };
       }
 
-    } catch (error) {
-      logError(error, '${ICONS.ERROR} Erro ao processar linha ${row.linha}:', { component: 'refactored' });
+    } catch (_error) {
+      logError(_error, '${ICONS.ERROR} Erro ao processar linha ${row.linha}:', { component: 'refactored' });
 
       return {
         lineNumber: row.linha,
         processNumber: row.numeroProcesso,
         status: 'failed',
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: _error instanceof Error ? _error.message : 'Erro desconhecido',
         enriched: false
       };
     }
@@ -590,7 +590,7 @@ export class ExcelUploadService {
         error: result.error
       };
 
-    } catch (error) {
+    } catch (_error) {
       // Falha - registrar telemetria
       const responseTime = Date.now() - startTime;
       telemetryData = {
@@ -598,15 +598,15 @@ export class ExcelUploadService {
         success: false,
         responseTimeMs: responseTime,
         errorCode: 'API_ERROR',
-        errorMessage: error instanceof Error ? error.message : 'Erro desconhecido',
-        rateLimitHit: error instanceof Error && error.message.includes('rate limit')
+        errorMessage: _error instanceof Error ? _error.message : 'Erro desconhecido',
+        rateLimitHit: _error instanceof Error && _error.message.includes('rate limit')
       };
 
       await this.logJuditTelemetry(telemetryData, prisma);
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro na chamada à API Judit'
+        error: _error instanceof Error ? _error.message : 'Erro na chamada à API Judit'
       };
     }
   }
@@ -838,8 +838,8 @@ export class ExcelUploadService {
           rateLimitHit: data.rateLimitHit || false
         }
       });
-    } catch (error) {
-      logError(error, '${ICONS.ERROR} Erro ao registrar telemetria Judit:', { component: 'refactored' });
+    } catch (_error) {
+      logError(_error, '${ICONS.ERROR} Erro ao registrar telemetria Judit:', { component: 'refactored' });
     }
   }
 
@@ -915,8 +915,8 @@ export class ExcelUploadService {
         data: this.transformJuditResponse(data)
       };
 
-    } catch (error) {
-      logError(error, '${ICONS.ERROR} Erro na API Judit para ${numeroProcesso}:', { component: 'refactored' });
+    } catch (_error) {
+      logError(_error, '${ICONS.ERROR} Erro na API Judit para ${numeroProcesso}:', { component: 'refactored' });
 
       // Fallback para simulação em caso de erro
       log.info({ msg: 'Usando simulação como fallback' });
@@ -1050,8 +1050,8 @@ export class ExcelUploadService {
         assunto: assunto,
         data_distribuicao: dataDistribuicao
       };
-    } catch (error) {
-      logError(error, 'Erro ao transformar resposta da Judit:', { component: 'refactored' });
+    } catch (_error) {
+      logError(_error, 'Erro ao transformar resposta da Judit:', { component: 'refactored' });
       // Retornar dados mínimos em caso de erro
       return {
         numero_processo: '',

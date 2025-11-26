@@ -44,7 +44,7 @@ jest.mock('@/lib/webhook-signature-verifiers', () => ({
     if (provider === 'stripe') {
       return (
         headers: Record<string, string>,
-        body: string
+        _body: string
       ): boolean => {
         // Simulate signature verification
         const signature = headers['stripe-signature'];
@@ -55,7 +55,7 @@ jest.mock('@/lib/webhook-signature-verifiers', () => ({
     if (provider === 'mercadopago') {
       return (
         headers: Record<string, string>,
-        body: string
+        _body: string
       ): boolean => {
         const authHeader = headers.authorization;
         return authHeader === 'Bearer valid-mercadopago-token';
@@ -77,12 +77,12 @@ jest.mock('@sentry/nextjs', () => ({
 
 describe('PaymentWebhookHandler', () => {
   let handler: PaymentWebhookHandler;
-  let mockPrisma: DeepMockProxy<PrismaClient>;
+  let _mockPrisma: DeepMockProxy<PrismaClient>;
 
   beforeEach(() => {
     // Reset all mocks before each test
     jest.clearAllMocks();
-    mockPrisma = mockDeep<PrismaClient>();
+    _mockPrisma = mockDeep<PrismaClient>();
     handler = new PaymentWebhookHandler();
   });
 
@@ -104,12 +104,11 @@ describe('PaymentWebhookHandler', () => {
         },
       };
 
-      const result: PaymentProcessingResult =
-        await handler.processWebhook(
-          'stripe',
-          validHeaders,
-          JSON.stringify(payload)
-        );
+      await handler.processWebhook(
+        'stripe',
+        validHeaders,
+        JSON.stringify(payload)
+      );
 
       // Should proceed with processing (even if other parts fail)
       // The key is that it didn't reject due to invalid signature
@@ -164,12 +163,11 @@ describe('PaymentWebhookHandler', () => {
         },
       };
 
-      const result: PaymentProcessingResult =
-        await handler.processWebhook(
-          'mercadopago',
-          validHeaders,
-          JSON.stringify(payload)
-        );
+      await handler.processWebhook(
+        'mercadopago',
+        validHeaders,
+        JSON.stringify(payload)
+      );
 
       // Should not have Sentry _error about signature
       expect(Sentry.captureMessage).not.toHaveBeenCalledWith(

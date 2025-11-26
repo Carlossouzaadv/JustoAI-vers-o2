@@ -316,7 +316,7 @@ export class WebSocketManager {
 
       log.info({ msg: 'Mensagem SSE enviada para :' });
 
-    } catch (error) {
+    } catch (_error) {
       logError(_error, '${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}:', { component: 'refactored' });
       this.removeConnection(connectionId);
     }

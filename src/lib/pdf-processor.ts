@@ -44,7 +44,7 @@ function getPdfProcessorUrl(): string {
 
   // Log da URL (sem valores sensíveis)
   if (DEBUG) {
-    log.info({ msg: 'PDF_PROCESSOR_URL configurada como:' });
+    log(ICONS.INFO, 'PDF_PROCESSOR_URL configurada como:');
   }
 
   return url;
@@ -264,7 +264,7 @@ export class PDFProcessor {
 
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      log.error({ msg: 'Extraction error:' });
+      log(ICONS.ERROR, 'Extraction error:', { error: errorMsg });
       throw new Error(`Extraction failed: ${errorMsg}`);
     }
   }
@@ -290,7 +290,7 @@ export class PDFProcessor {
       return fullText;
     } catch (error) {
       const errorMsg = getErrorMessage(error);
-      log.error({ msg: 'Primary extraction failed:' });
+      log(ICONS.ERROR, 'Primary extraction failed:', { error: errorMsg });
       return '';
     }
   }
@@ -300,7 +300,7 @@ export class PDFProcessor {
    */
   private async extractWithFallback(_buffer: Buffer): Promise<string> {
     try {
-      log.info({ msg: '🔄 Tentando extração fallback...' });
+      log(ICONS.PROCESS, '🔄 Tentando extração fallback...');
       // Implementação básica de fallback
       return '';
     } catch (error) {
@@ -519,14 +519,14 @@ export class PDFProcessor {
       const usedMB = Math.round(usage.rss / 1024 / 1024);
 
       if (usedMB > 400) {
-        log.warn({ msg: '⚠️ HIGH MEMORY USAGE: MB -' });
+        log(ICONS.WARNING, '⚠️ HIGH MEMORY USAGE:', { mb: usedMB });
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
-          log.info({ msg: '🧹 Garbage collection forçado' });
+          log(ICONS.INFO, '🧹 Garbage collection forçado');
         }
       } else {
-        log.info({ msg: '📊 Memory usage: MB -' });
+        log(ICONS.INFO, '📊 Memory usage:', { mb: usedMB });
       }
     }
   }
@@ -742,7 +742,7 @@ export class PDFProcessor {
     try {
       // Validate pdfData structure using type guard
       if (!isPDFData(pdfData)) {
-        log.warn({ msg: 'Invalid PDF data structure for image detection' });
+        log(ICONS.WARNING, 'Invalid PDF data structure for image detection');
         return false;
       }
 
