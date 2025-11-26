@@ -565,7 +565,7 @@ export class SystemImporter {
         this.session.failedRows++;
         this.session.errors.push({
           type: 'DATABASE_ERROR',
-          message: _error instanceof Error ? _error.message : 'Erro desconhecido',
+          message: error instanceof Error ? error.message : 'Erro desconhecido',
           line: lineNumber
         });
       }
