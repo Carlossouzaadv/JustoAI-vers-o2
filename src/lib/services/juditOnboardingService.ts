@@ -222,13 +222,13 @@ export async function performFullProcessRequest(
     };
   } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMessage = _error instanceof Error ? _error.message : 'Unknown _error';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     juditLogger._error({
       action: 'onboarding_failed',
       cnj,
       _error: errorMessage,
-      error_stack: _error instanceof Error ? _error.stack : undefined,
+      error_stack: error instanceof Error ? error.stack : undefined,
       duration_ms: duration,
     });
 

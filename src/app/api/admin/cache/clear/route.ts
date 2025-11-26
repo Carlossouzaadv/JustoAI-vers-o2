@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
         );
     }
   } catch (error) {
-    const errorMessage = _error instanceof Error ? _error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Cache management error:', errorMessage);
 
     return NextResponse.json(
@@ -219,7 +219,7 @@ export async function GET() {
       }
     });
   } catch (error) {
-    const errorMessage = _error instanceof Error ? _error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         success: false,

@@ -76,7 +76,7 @@ export async function POST(
       const authResult = await validateAuthAndGetUser();
       user = authResult.user;
     } catch (error) {
-      console.warn('⚠️  [Rollback API] Authentication failed:', _error instanceof Error ? _error.message : String(_error));
+      console.warn('⚠️  [Rollback API] Authentication failed:', error instanceof Error ? error.message : String(error));
       return NextResponse.json(
         { success: false, message: 'Authentication failed' },
         { status: 401 }
@@ -104,7 +104,7 @@ export async function POST(
         },
       });
     } catch (error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`❌ [Rollback API] Database error fetching import: ${errorMessage}`);
       return NextResponse.json(
         { success: false, message: 'Database error' },
@@ -131,7 +131,7 @@ export async function POST(
         select: { role: true },
       });
     } catch (error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`❌ [Rollback API] Database error checking workspace access: ${errorMessage}`);
       return NextResponse.json(
         { success: false, message: 'Authorization check failed' },
@@ -176,7 +176,7 @@ export async function POST(
         { status: 202 } // 202 Accepted - job is queued
       );
     } catch (error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`❌ [Rollback API] Failed to queue rollback job: ${errorMessage}`);
       return NextResponse.json(
         { success: false, message: 'Failed to queue rollback job' },
@@ -184,9 +184,9 @@ export async function POST(
       );
     }
   } catch (error) {
-    const errorMessage = _error instanceof Error ? _error.message : String(_error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(`🔴 [Rollback API] Unhandled error: ${errorMessage}`);
-    console.error('Stack:', _error);
+    console.error('Stack:', error);
 
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
