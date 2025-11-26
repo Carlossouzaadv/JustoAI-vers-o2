@@ -91,7 +91,7 @@ async function sendContactEmail(
         messageId: `fallback-${Date.now()}`,
       };
     }
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao enviar email:`, error);
     return {
       success: false,
@@ -194,7 +194,7 @@ export async function POST(req: NextRequest) {
     let body: unknown;
     try {
       body = await req.json();
-    } catch (_error) {
+    } catch (error) {
       return NextResponse.json(
         { success: false, error: 'Corpo da requisição inválido' },
         { status: 400 }
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
       } else {
         formData = contactFormSchema.parse(body);
       }
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           {
@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no formulário de contato:`, error);
 
     captureApiError(error, {

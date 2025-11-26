@@ -84,7 +84,7 @@ export async function GET() {
 
     return NextResponse.json(results);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no teste Gemini:`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString()
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no teste de análise:`, error);
     const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -177,7 +177,7 @@ async function testModel(geminiClient: unknown, model: ModelTier) {
       token_usage: response.usage
     };
 
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,
@@ -220,7 +220,7 @@ Retorne APENAS o JSON, sem nenhum texto adicional.`;
       response: jsonResponse
     };
 
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return {
       success: false,

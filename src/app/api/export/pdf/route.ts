@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro na exportação PDF:`, error);
 
     if (error instanceof z.ZodError) {

@@ -109,7 +109,7 @@ export async function POST(
     // Validate with schema for stricter validation if needed
     try {
       retryRequestSchema.parse(body);
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           { success: false, error: 'Validação inválida', details: error.flatten() },
@@ -288,7 +288,7 @@ export async function POST(
       },
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Batch Retry] Erro:`, error);
 
     captureApiError(error, {
@@ -414,7 +414,7 @@ export async function GET(
       retryStats,
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Batch Retry Status] Erro:`, error);
 
     captureApiError(error, {

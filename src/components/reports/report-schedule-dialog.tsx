@@ -167,7 +167,7 @@ export function ReportScheduleDialog({
       await onSchedule(scheduleData);
       setOpen(false);
       form.reset();
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao agendar relatório:', error);
     } finally {
       setLoading(false);

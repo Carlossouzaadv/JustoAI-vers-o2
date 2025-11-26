@@ -139,7 +139,7 @@ export function DeepAnalysisModal({
         needed: creditsNeeded,
         sufficient: creditsNeeded <= 5
       });
-    } catch (_error) {
+    } catch (error) {
       console.error('Error estimating credits:', error);
     }
   }, [analysisType, useExistingFiles, selectedExistingFiles.length, uploadedFiles.length]);
@@ -152,7 +152,7 @@ export function DeepAnalysisModal({
       if (data.success) {
         setCacheStatus(data.cacheStatus);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error checking cache status:', error);
     }
   }, [processId, workspaceId]);
@@ -168,7 +168,7 @@ export function DeepAnalysisModal({
       } else {
         await runFullAnalysis();
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Analysis failed:', error);
       setError(error instanceof Error ? error.message : 'Erro na análise');
     } finally {

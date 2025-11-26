@@ -286,7 +286,7 @@ async function GET(request: NextRequest) {
       data: analyticsData
     }, 'Analytics data retrieved successfully')
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting analytics data:', error)
     return errorResponse('Failed to get analytics data', 500)
   }

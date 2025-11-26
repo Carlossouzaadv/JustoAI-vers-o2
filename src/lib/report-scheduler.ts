@@ -49,7 +49,7 @@ interface ReportExecutionWithSchedule {
   tokensUsed: number | null;
   cacheHit: boolean | null;
   cacheKey: string | null;
-  error: string | null;
+  _error: string | null;
   retryCount: number;
   schedule: {
     id: string;
@@ -142,7 +142,7 @@ export class ReportScheduler {
           log.info({ msg: 'Quota excedida para workspace :' });
 
           // Criar execução com status de erro
-          await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation.error || 'Quota excedida');
+          await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation._error || 'Quota excedida');
           errors++;
           continue;
         }
@@ -207,8 +207,8 @@ export class ReportScheduler {
 
         log.info({ msg: 'Agendado relatório  para' });
 
-      } catch (_error) {
-        logError(error, '${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:', { component: 'refactored' });
+      } catch (error) {
+        logError(_error, '${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:', { component: 'refactored' });
         errors++;
       }
     }
@@ -265,8 +265,8 @@ export class ReportScheduler {
         await this.executeReport(execution.id);
         executed++;
         executionIds.push(execution.id);
-      } catch (_error) {
-        logError(error, '${ICONS.ERROR} Falha na execução ${execution.id}:', { component: 'refactored' });
+      } catch (error) {
+        logError(_error, '${ICONS.ERROR} Falha na execução ${execution.id}:', { component: 'refactored' });
         failed++;
 
         // Reverter quota se falhou
@@ -368,7 +368,7 @@ export class ReportScheduler {
 
       log.info({ msg: 'Relatório  concluído com sucesso' });
 
-    } catch (_error) {
+    } catch (error) {
       // Marcar como falhou
       await prisma.reportExecution.update({
         where: { id: executionId },
@@ -376,12 +376,12 @@ export class ReportScheduler {
           status: 'FAILED',
           completedAt: new Date(),
           duration: Date.now() - execution.startedAt.getTime(),
-          error: error instanceof Error ? error.message : 'Erro desconhecido',
+          _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
           retryCount: { increment: 1 }
         }
       });
 
-      throw error;
+      throw _error;
     }
   }
 
@@ -491,13 +491,13 @@ export class ReportScheduler {
   /**
    * Cria execução de falha por quota
    */
-  private async createFailedExecution(scheduleId: string, workspaceId: string, error: string): Promise<void> {
+  private async createFailedExecution(scheduleId: string, workspaceId: string, _error: string): Promise<void> {
     await prisma.reportExecution.create({
       data: {
         workspaceId,
         scheduleId,
         status: 'FAILED',
-        error,
+        _error,
         quotaConsumed: 0,
         startedAt: new Date(),
         completedAt: new Date()
@@ -553,8 +553,8 @@ export class ReportScheduler {
       });
 
       log.info({ msg: '[Report] Notificação enviada para:' });
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Report Erro ao enviar notificação:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Report Erro ao enviar notificação:', { component: 'refactored' });
       // Não lançar erro para não quebrar o fluxo de execução
     }
   }

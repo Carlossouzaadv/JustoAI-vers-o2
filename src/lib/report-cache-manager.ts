@@ -160,9 +160,9 @@ export class ReportCacheManager {
       log.info({ msg: 'Invalidação concluída:  entradas removidas' });
       return result;
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro na invalidação de cache:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro na invalidação de cache:', { component: 'refactored' });
+      throw _error;
     }
   }
 
@@ -302,8 +302,8 @@ export class ReportCacheManager {
 
       log.info({ msg: 'Limpeza concluída:  expiradas,  órfãs' });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro na limpeza de cache:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro na limpeza de cache:', { component: 'refactored' });
       errors++;
     }
 
@@ -351,8 +351,8 @@ export class ReportCacheManager {
         await this.generateCacheEntry(workspaceId, config);
         warmed++;
 
-      } catch (_error) {
-        logError(error, '${ICONS.ERROR} Erro no pré-aquecimento:', { component: 'refactored' });
+      } catch (error) {
+        logError(_error, '${ICONS.ERROR} Erro no pré-aquecimento:', { component: 'refactored' });
         errors++;
       }
     }

@@ -73,8 +73,8 @@ export function verifyStripeSignature(headers: Record<string, string>, body: str
 
     return isValid;
 
-  } catch (_error) {
-    logError(`${ICONS.ERROR} Error verifying Stripe signature:`, 'error', { component: 'webhookSignatureVerifiers' });
+  } catch (error) {
+    logError(`${ICONS.ERROR} Error verifying Stripe signature:`, '_error', { component: 'webhookSignatureVerifiers' });
     return false;
   }
 }
@@ -141,8 +141,8 @@ export function verifyMercadoPagoSignature(headers: Record<string, string>, body
 
     return isValid;
 
-  } catch (_error) {
-    logError(`${ICONS.ERROR} Error verifying MercadoPago signature:`, 'error', { component: 'webhookSignatureVerifiers' });
+  } catch (error) {
+    logError(`${ICONS.ERROR} Error verifying MercadoPago signature:`, '_error', { component: 'webhookSignatureVerifiers' });
     return false;
   }
 }
@@ -185,8 +185,8 @@ export function verifyPagSeguroSignature(headers: Record<string, string>, body: 
 
     return isValid;
 
-  } catch (_error) {
-    logError(`${ICONS.ERROR} Error verifying PagSeguro signature:`, 'error', { component: 'webhookSignatureVerifiers' });
+  } catch (error) {
+    logError(`${ICONS.ERROR} Error verifying PagSeguro signature:`, '_error', { component: 'webhookSignatureVerifiers' });
     return false;
   }
 }
@@ -228,8 +228,8 @@ export function verifyPixSignature(headers: Record<string, string>, body: string
 
     return isValid;
 
-  } catch (_error) {
-    logError(`${ICONS.ERROR} Error verifying Pix signature:`, 'error', { component: 'webhookSignatureVerifiers' });
+  } catch (error) {
+    logError(`${ICONS.ERROR} Error verifying Pix signature:`, '_error', { component: 'webhookSignatureVerifiers' });
     return false;
   }
 }
@@ -253,8 +253,8 @@ export function verifyGenericHmacSignature(
       .digest('hex');
 
     return computedSignature === providedSignature;
-  } catch (_error) {
-    logError(`${ICONS.ERROR} Error in generic HMAC verification:`, 'error', { component: 'webhookSignatureVerifiers' });
+  } catch (error) {
+    logError(`${ICONS.ERROR} Error in generic HMAC verification:`, '_error', { component: 'webhookSignatureVerifiers' });
     return false;
   }
 }

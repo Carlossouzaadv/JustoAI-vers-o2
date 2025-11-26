@@ -159,7 +159,7 @@ export async function POST(
         { status: 500 }
       );
     }
-  } catch (_error) {
+  } catch (error) {
     console.error('[OnboardingRetry API] Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

@@ -140,7 +140,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Assinatura do webhook inválida');
+      expect(result._error).toContain('Assinatura do webhook inválida');
       expect(Sentry.captureMessage).toHaveBeenCalledWith(
         expect.stringContaining('Invalid webhook signature'),
         'warning'
@@ -171,7 +171,7 @@ describe('PaymentWebhookHandler', () => {
           JSON.stringify(payload)
         );
 
-      // Should not have Sentry error about signature
+      // Should not have Sentry _error about signature
       expect(Sentry.captureMessage).not.toHaveBeenCalledWith(
         expect.stringContaining('Invalid webhook signature')
       );
@@ -199,7 +199,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Assinatura do webhook inválida');
+      expect(result._error).toContain('Assinatura do webhook inválida');
     });
 
     it('should handle unknown provider gracefully', async () => {
@@ -224,7 +224,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       // Should accept but not have verified
-      expect(result.error).not.toContain(
+      expect(result._error).not.toContain(
         'Assinatura do webhook inválida'
       );
     });
@@ -246,7 +246,7 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Invalid JSON');
+      expect(result._error).toContain('Invalid JSON');
     });
 
     it('should handle missing required fields gracefully', async () => {
@@ -266,7 +266,7 @@ describe('PaymentWebhookHandler', () => {
           JSON.stringify(incompletePayload)
         );
 
-      // Should not crash, but may return error or default behavior
+      // Should not crash, but may return _error or default behavior
       expect(result).toBeDefined();
       expect(typeof result.success).toBe('boolean');
     });
@@ -414,7 +414,7 @@ describe('PaymentWebhookHandler', () => {
   });
 
   describe('Error Handling & Logging', () => {
-    it('should return retry flag on error', async () => {
+    it('should return retry flag on _error', async () => {
       const validHeaders: Record<string, string> = {
         'stripe-signature': 'valid-stripe-signature',
       };
@@ -430,11 +430,11 @@ describe('PaymentWebhookHandler', () => {
         );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      expect(result._error).toBeDefined();
       expect(typeof result.shouldRetry).toBe('boolean');
     });
 
-    it('should capture signature verification error in Sentry', async () => {
+    it('should capture signature verification _error in Sentry', async () => {
       const invalidHeaders: Record<string, string> = {
         'stripe-signature': 'invalid-signature',
         'user-agent': 'stripe-test-agent',
@@ -462,7 +462,7 @@ describe('PaymentWebhookHandler', () => {
       expect(Sentry.getCurrentScope).toHaveBeenCalled();
     });
 
-    it('should include transactionId in result even on error', async () => {
+    it('should include transactionId in result even on _error', async () => {
       const validHeaders: Record<string, string> = {
         'stripe-signature': 'valid-stripe-signature',
       };
@@ -486,7 +486,7 @@ describe('PaymentWebhookHandler', () => {
       expect(result.transactionId).toBeDefined();
       expect(typeof result.transactionId).toBe('string');
       // transactionId should be set if parsing succeeded
-      if (result.error === undefined) {
+      if (result._error === undefined) {
         expect(result.transactionId).not.toBe('unknown');
       }
     });
@@ -694,7 +694,7 @@ describe('PaymentWebhookHandler', () => {
       expect(result.success).toBe(false);
     });
 
-    it('should not expose sensitive data in error messages', async () => {
+    it('should not expose sensitive data in _error messages', async () => {
       const validHeaders: Record<string, string> = {
         'stripe-signature': 'valid-stripe-signature',
       };
@@ -720,9 +720,9 @@ describe('PaymentWebhookHandler', () => {
         );
 
       // Error messages should not contain sensitive data
-      if (result.error) {
-        expect(result.error).not.toContain('secretToken');
-        expect(result.error).not.toContain('creditCard');
+      if (result._error) {
+        expect(result._error).not.toContain('secretToken');
+        expect(result._error).not.toContain('creditCard');
       }
     });
   });

@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('[ADMIN BILLING] Error fetching workspaces:', error);
     return NextResponse.json(
       {

@@ -1,6 +1,6 @@
 /**
  * Sentry API Client
- * Fetches error data, performance metrics, and health status from Sentry
+ * Fetches _error data, performance metrics, and health status from Sentry
  */
 
 import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
@@ -10,7 +10,7 @@ export interface SentryError {
   id: string;
   title: string;
   culprit: string;
-  level: 'fatal' | 'error' | 'warning' | 'info' | 'debug';
+  level: 'fatal' | '_error' | 'warning' | 'info' | 'debug';
   count: number;
   userCount: number;
   firstSeen: string;
@@ -83,7 +83,7 @@ export async function getSentryErrors(
     });
 
     if (!response.ok) {
-      log.warn({ msg: 'Sentry API error:' });
+      log.warn({ msg: 'Sentry API _error:' });
       return [];
     }
 
@@ -96,17 +96,17 @@ export async function getSentryErrors(
 
     return events.map((event: Record<string, unknown>): SentryError => ({
       id: typeof event.groupID === 'string' ? event.groupID : (typeof event.id === 'string' ? event.id : 'unknown'),
-      title: typeof event.title === 'string' ? event.title : (typeof event.message === 'string' ? event.message : 'Unknown error'),
+      title: typeof event.title === 'string' ? event.title : (typeof event.message === 'string' ? event.message : 'Unknown _error'),
       culprit: typeof event.culprit === 'string' ? event.culprit : 'Unknown',
-      level: (event.level === 'fatal' || event.level === 'error' || event.level === 'warning' || event.level === 'info' || event.level === 'debug') ? event.level : 'error',
+      level: (event.level === 'fatal' || event.level === '_error' || event.level === 'warning' || event.level === 'info' || event.level === 'debug') ? event.level : '_error',
       count: typeof event.count === 'number' ? event.count : 1,
       userCount: typeof event.userCount === 'number' ? event.userCount : 0,
       firstSeen: typeof event.firstSeen === 'string' ? event.firstSeen : new Date().toISOString(),
       lastSeen: typeof event.lastSeen === 'string' ? event.lastSeen : new Date().toISOString(),
       platform: typeof event.platform === 'string' ? event.platform : 'node',
     }));
-  } catch (_error) {
-    logError(error, 'Error fetching Sentry errors:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'Error fetching Sentry errors:', { component: 'refactored' });
     return [];
   }
 }
@@ -123,7 +123,7 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
     });
 
     if (!response.ok) {
-      log.warn({ msg: 'Sentry stats API error:' });
+      log.warn({ msg: 'Sentry stats API _error:' });
       return getDefaultStats();
     }
 
@@ -167,8 +167,8 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
         p99: 1200,
       },
     };
-  } catch (_error) {
-    logError(error, 'Error fetching Sentry stats:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'Error fetching Sentry stats:', { component: 'refactored' });
     return getDefaultStats();
   }
 }
@@ -211,8 +211,8 @@ export async function getSentryReleases(limit: number = 5) {
       dateReleased: typeof release.dateReleased === 'string' ? release.dateReleased : undefined,
       newGroups: typeof release.newGroups === 'number' ? release.newGroups : 0,
     }));
-  } catch (_error) {
-    logError(error, 'Error fetching Sentry releases:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'Error fetching Sentry releases:', { component: 'refactored' });
     return [];
   }
 }
@@ -237,7 +237,7 @@ export async function getSentryHealth(): Promise<{
           : 'Taxa de erros crítica',
       lastUpdate: new Date().toISOString(),
     };
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'critical',
       message: 'Erro ao conectar com Sentry',

@@ -11,15 +11,15 @@ export { createClient }
 // Test connection function
 export async function testSupabaseConnection() {
   try {
-    const { error } = await supabase.from('test').select('*').limit(1)
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "table not found" which is expected
+    const { _error } = await supabase.from('test').select('*').limit(1)
+    if (_error && _error.code !== 'PGRST116') { // PGRST116 is "table not found" which is expected
       throw error
     }
     return { success: true, message: 'Supabase connection successful!' }
-  } catch (_error) {
+  } catch (error) {
     return {
       success: false,
-      message: `Supabase connection failed: ${error}`
+      message: `Supabase connection failed: ${_error}`
     }
   }
 }

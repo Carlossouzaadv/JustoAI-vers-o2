@@ -97,7 +97,7 @@ export async function GET() {
               reportHeld: 0,
             }
           };
-        } catch (_error) {
+        } catch (error) {
           console.error(`Error fetching workspace details for ${uw.workspaceId}:`, error);
           // Return minimal data if fetch fails
           return {
@@ -128,7 +128,7 @@ export async function GET() {
       workspaces: workspacesWithPlanAndCredits,
       createdAt: user.createdAt,
     });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching current user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

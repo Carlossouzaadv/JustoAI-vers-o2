@@ -110,12 +110,12 @@ function convertReportSummaryToJsonSafe(summary: ReportSummary): object {
     }
 
     return jsonSafe;
-  } catch (_error) {
-    logError(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, 'error', { component: 'reportGenerator' });
+  } catch (error) {
+    logError(`${ICONS.ERROR} Erro ao converter ReportSummary para JSON-safe:`, '_error', { component: 'reportGenerator' });
     // Fallback: retornar objeto minimalista garantidamente JSON-safe
     return {
       totalProcesses: summary.totalProcesses,
-      error: 'Falha ao serializar summary completo'
+      _error: 'Falha ao serializar summary completo'
     };
   }
 }
@@ -137,7 +137,7 @@ export interface ReportSummary {
   audienceType?: string;
   generatedAt?: string;
   model?: string;
-  error?: string;
+  _error?: string;
   [key: string]: unknown;
 }
 
@@ -150,7 +150,7 @@ export interface ReportGenerationResult {
   cacheHit: boolean;
   cacheKey?: string;
   processingTime: number;
-  error?: string;
+  _error?: string;
 }
 
 export interface ProcessData {
@@ -274,8 +274,8 @@ export class ReportGenerator {
         processingTime: Date.now() - startTime
       };
 
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro na geração do relatório:`, 'error', { component: 'reportGenerator' });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro na geração do relatório:`, '_error', { component: 'reportGenerator' });
       return {
         success: false,
         reportId: '',
@@ -286,7 +286,7 @@ export class ReportGenerator {
         tokensUsed: 0,
         cacheHit: false,
         processingTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        _error: _error instanceof Error ? _error.message : 'Erro desconhecido'
       };
     }
   }
@@ -351,8 +351,8 @@ export class ReportGenerator {
         summary: cachedData
       };
 
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro ao verificar cache:`, 'error', { component: 'reportGenerator' });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao verificar cache:`, '_error', { component: 'reportGenerator' });
       return { hit: false };
     }
   }
@@ -553,7 +553,7 @@ export class ReportGenerator {
             contentLength: mockContent.length,
             audienceType,
             generatedAt: new Date().toISOString(),
-            error: 'Gemini result validation failed'
+            _error: 'Gemini result validation failed'
           },
           tokensUsed: Math.floor(mockContent.length / 4)
         };
@@ -585,8 +585,8 @@ export class ReportGenerator {
         summary,
         tokensUsed
       };
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro ao chamar Gemini API:`, 'error', { component: 'reportGenerator' });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao chamar Gemini API:`, '_error', { component: 'reportGenerator' });
 
       // Fallback para conteúdo mock em caso de erro
       const mockContent = this.generateMockContent(payload, audienceType);
@@ -597,7 +597,7 @@ export class ReportGenerator {
         contentLength: mockContent.length,
         audienceType,
         generatedAt: new Date().toISOString(),
-        error: 'Fallback para conteúdo mock devido a erro na API'
+        _error: 'Fallback para conteúdo mock devido a erro na API'
       };
 
       return {
@@ -794,11 +794,11 @@ ${clientLanguage ?
       if (result.success) {
         log.info({ msg: '${ICONS.SUCCESS} PDF gerado com sucesso: ${filePath} (${result.fileSize} bytes, ${result.pageCount} páginas)', component: 'reportGenerator' });
       } else {
-        throw new Error(result.error || 'Erro desconhecido ao gerar PDF');
+        throw new Error(result._error || 'Erro desconhecido ao gerar PDF');
       }
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro ao gerar PDF:`, 'error', { component: 'reportGenerator' });
-      throw error;
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao gerar PDF:`, '_error', { component: 'reportGenerator' });
+      throw _error;
     }
   }
 
@@ -848,11 +848,11 @@ ${clientLanguage ?
       if (result.success) {
         log.info({ msg: '${ICONS.SUCCESS} DOCX gerado com sucesso: ${filePath} (${result.fileSize} bytes)', component: 'reportGenerator' });
       } else {
-        throw new Error(result.error || 'Erro desconhecido ao gerar DOCX');
+        throw new Error(result._error || 'Erro desconhecido ao gerar DOCX');
       }
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, 'error', { component: 'reportGenerator' });
-      throw error;
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao gerar DOCX:`, '_error', { component: 'reportGenerator' });
+      throw _error;
     }
   }
 
@@ -944,8 +944,8 @@ ${clientLanguage ?
 
       log.info({ msg: '${ICONS.SUCCESS} Cache salvo com chave: ${cacheKey}', component: 'reportGenerator' });
 
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro ao salvar cache:`, 'error', { component: 'reportGenerator' });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao salvar cache:`, '_error', { component: 'reportGenerator' });
       // Não falhar por erro de cache
     }
   }

@@ -67,14 +67,14 @@ export async function POST(request: NextRequest) {
             try {
               const cookieOpts = isCookieOptions(options) ? options : undefined;
               cookieStore.set(name, value, cookieOpts)
-            } catch (_error) {
+            } catch (error) {
               // Cookie setting might fail
             }
           },
           remove(name: string, _options: unknown) {
             try {
               cookieStore.delete(name)
-            } catch (_error) {
+            } catch (error) {
               // Cookie deletion might fail
             }
           },
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       new URL('/dashboard', request.url),
       { status: 303 }
     )
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Callback error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -152,14 +152,14 @@ export async function GET(request: NextRequest) {
             try {
               const cookieOpts = isCookieOptions(options) ? options : undefined;
               cookieStore.set(name, value, cookieOpts)
-            } catch (_error) {
+            } catch (error) {
               // Cookie setting might fail
             }
           },
           remove(name: string, _options: unknown) {
             try {
               cookieStore.delete(name)
-            } catch (_error) {
+            } catch (error) {
               // Cookie deletion might fail
             }
           },
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
       new URL('/dashboard', request.url),
       { status: 303 }
     )
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Callback error:', error)
     return NextResponse.redirect(
       new URL('/login?error=server_error', request.url)

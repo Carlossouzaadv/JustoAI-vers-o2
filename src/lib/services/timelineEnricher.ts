@@ -336,10 +336,10 @@ export class TimelineEnricherService {
         tokensUsed: 100, // Estimativa
         cost: this.config.enrichmentCreditCost,
       };
-    } catch (_error) {
-      logError(error, '❌ Erro ao enriquecer descrição:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '❌ Erro ao enriquecer descrição:', { component: 'refactored' });
       // Fallback: retornar descrição original
-      throw error;
+      throw _error;
     }
   }
 

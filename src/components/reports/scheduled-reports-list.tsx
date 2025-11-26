@@ -56,7 +56,7 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
         const data = await response.json();
         setSchedules(data.schedules || []);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao carregar agendamentos:', error);
     } finally {
       setLoading(false);
@@ -85,7 +85,7 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
           loadSchedules(); // Recarregar lista
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro na ação:', error);
     }
   };
@@ -101,7 +101,7 @@ export function ScheduledReportsList({ clientId }: ScheduledReportsListProps) {
       if (response.ok) {
         setSchedules(prev => prev.filter(s => s.id !== scheduleId));
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao excluir:', error);
     }
   };

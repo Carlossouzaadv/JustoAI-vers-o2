@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao listar alertas:`, error);
 
     if (error instanceof ApiError) {
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
       }
     }, { status: 201 });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao criar alerta:`, error);
 
     if (error instanceof ApiError) {
@@ -304,7 +304,7 @@ export async function PATCH(request: NextRequest) {
       message: `${updatedCount} alertas marcados como ${body.markAsRead ? 'lidos' : 'não lidos'}`
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao atualizar alertas:`, error);
 
     if (error instanceof ApiError) {
@@ -379,7 +379,7 @@ export async function DELETE(request: NextRequest) {
       message: `${deleted.count} alertas removidos`
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao remover alertas:`, error);
 
     if (error instanceof ApiError) {

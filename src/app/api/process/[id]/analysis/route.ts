@@ -235,7 +235,7 @@ export async function GET(
         };
       }),
     });
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar análises:`, error);
     return NextResponse.json(
       { error: 'Erro ao buscar análises' },
@@ -412,7 +412,7 @@ export async function POST(
       estimatedTime: level === 'FULL' ? '20-30 segundos' : '10-15 segundos'
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao gerar análise:`, error);
     return NextResponse.json(
       { error: 'Erro ao gerar análise', details: error instanceof Error ? error.message : 'Desconhecido' },
@@ -516,7 +516,7 @@ async function processAnalysisInBackground(
       `${ICONS.SUCCESS} Análise ${analysisVersionId} concluída em ${(processingTime / 1000).toFixed(1)}s`
     );
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao processar análise:`, error);
 
     // Marcar como erro no banco

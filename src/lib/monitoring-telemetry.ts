@@ -205,7 +205,7 @@ export class MonitoringTelemetry {
           monitoringStatus: 'ACTIVE'
         }
       });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Failed to get monitored processes count:', { component: 'refactored' });
       return 0;
     }

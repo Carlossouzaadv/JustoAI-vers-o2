@@ -27,7 +27,7 @@ function getSupabaseClient(): ReturnType<typeof createClient> {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    console.error(
+    console._error(
       `${ICONS.ERROR} [Storage] Missing Supabase credentials\n` +
       `Required: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY\n` +
       `Storage operations will fail until environment variables are configured`
@@ -59,7 +59,7 @@ export interface StorageUploadResult {
   success: boolean;
   url?: string; // Public URL
   storagePath?: string; // Path in storage (bucket/path/to/file)
-  error?: string;
+  _error?: string;
   bucketName?: string;
 }
 
@@ -83,18 +83,18 @@ export async function uploadToStorage(
     await ensureBucketExists(bucket);
 
     // Upload file
-    const { data, error } = await getSupabaseClient().storage
+    const { data, _error } = await getSupabaseClient().storage
       .from(bucket)
       .upload(filePath, fileBuffer, {
         contentType: mimeType,
         upsert: false // Fail if file already exists
       });
 
-    if (error) {
-      logError(error, '${ICONS.ERROR} Storage Upload failed:', { component: 'refactored' });
+    if (_error) {
+      logError(_error, '${ICONS.ERROR} Storage Upload failed:', { component: 'refactored' });
 
       // If file exists, get its URL anyway
-      if (error.message?.includes('duplicate')) {
+      if (_error.message?.includes('duplicate')) {
         const publicUrl = getPublicUrl(bucket, filePath);
         return {
           success: true,
@@ -106,7 +106,7 @@ export async function uploadToStorage(
 
       return {
         success: false,
-        error: `Failed to upload file: ${error.message}`
+        _error: `Failed to upload file: ${_error.message}`
       };
     }
 
@@ -121,12 +121,12 @@ export async function uploadToStorage(
       storagePath: data.path,
       bucketName: bucket
     };
-  } catch (_error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    logError(errorMsg, '${ICONS.ERROR} Storage Upload error:', { component: 'refactored' });
+  } catch (error) {
+    const errorMsg = _error instanceof Error ? _error.message : 'Unknown _error';
+    logError(errorMsg, '${ICONS.ERROR} Storage Upload _error:', { component: 'refactored' });
     return {
       success: false,
-      error: errorMsg
+      _error: errorMsg
     };
   }
 }
@@ -246,19 +246,19 @@ export async function deleteFromStorage(
   filePath: string
 ): Promise<boolean> {
   try {
-    const { error } = await getSupabaseClient().storage
+    const { _error } = await getSupabaseClient().storage
       .from(bucket)
       .remove([filePath]);
 
-    if (error) {
-      logError(error, '${ICONS.ERROR} Storage Delete failed:', { component: 'refactored' });
+    if (_error) {
+      logError(_error, '${ICONS.ERROR} Storage Delete failed:', { component: 'refactored' });
       return false;
     }
 
     log.info({ msg: '[Storage] File deleted:' });
     return true;
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Storage Delete error:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Storage Delete _error:', { component: 'refactored' });
     return false;
   }
 }
@@ -271,18 +271,18 @@ export async function listStorageFiles(
   folderPath: string
 ): Promise<Array<{ name: string; id: string; updated_at: string; metadata: Record<string, unknown> }>> {
   try {
-    const { data, error } = await getSupabaseClient().storage
+    const { data, _error } = await getSupabaseClient().storage
       .from(bucket)
       .list(folderPath);
 
-    if (error) {
-      logError(error, '${ICONS.ERROR} Storage List failed:', { component: 'refactored' });
+    if (_error) {
+      logError(_error, '${ICONS.ERROR} Storage List failed:', { component: 'refactored' });
       return [];
     }
 
     return data || [];
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Storage List error:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Storage List _error:', { component: 'refactored' });
     return [];
   }
 }
@@ -294,7 +294,7 @@ export async function listStorageFiles(
 async function ensureBucketExists(bucketName: string): Promise<boolean> {
   try {
     // Try to get bucket info
-    const { data: buckets, error: listError } = await getSupabaseClient().storage.listBuckets();
+    const { data: buckets, _error: listError } = await getSupabaseClient().storage.listBuckets();
 
     if (listError) {
       logError(listError, '${ICONS.WARNING} Storage Could not list buckets:', { component: 'refactored' });
@@ -310,8 +310,8 @@ async function ensureBucketExists(bucketName: string): Promise<boolean> {
     }
 
     return true;
-  } catch (_error) {
-    logError(error, '${ICONS.WARNING} Storage Bucket check error:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.WARNING} Storage Bucket check _error:', { component: 'refactored' });
     return false;
   }
 }
@@ -324,18 +324,18 @@ export async function downloadFromStorage(
   filePath: string
 ): Promise<Buffer | null> {
   try {
-    const { data, error } = await getSupabaseClient().storage
+    const { data, _error } = await getSupabaseClient().storage
       .from(bucket)
       .download(filePath);
 
-    if (error) {
-      logError(error, '${ICONS.ERROR} Storage Download failed:', { component: 'refactored' });
+    if (_error) {
+      logError(_error, '${ICONS.ERROR} Storage Download failed:', { component: 'refactored' });
       return null;
     }
 
     return Buffer.from(await data.arrayBuffer());
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Storage Download error:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Storage Download _error:', { component: 'refactored' });
     return null;
   }
 }

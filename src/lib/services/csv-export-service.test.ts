@@ -43,8 +43,8 @@ describe('CSVExportService', () => {
       'phone: Invalid phone': 2,
     },
     topErrors: [
-      { field: 'email', error: 'Invalid format', row: 5 },
-      { field: 'phone', error: 'Invalid phone', row: 10 },
+      { field: 'email', _error: 'Invalid format', row: 5 },
+      { field: 'phone', _error: 'Invalid phone', row: 10 },
     ],
     createdAt: '2025-11-16T10:00:00.000Z',
     updatedAt: '2025-11-16T10:05:00.000Z',
@@ -80,12 +80,12 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'nome',
-            error: 'Invalid format, contains comma',
+            _error: 'Invalid format, contains comma',
             row: 5,
           },
           {
             field: 'email',
-            error: 'Already "registered"',
+            _error: 'Already "registered"',
             row: 6,
           },
         ],
@@ -108,7 +108,7 @@ describe('CSVExportService', () => {
       const noRowBatchStatus: BatchStatus_Response = {
         ...mockBatchStatus,
         topErrors: [
-          { field: 'email', error: 'Invalid format' },
+          { field: 'email', _error: 'Invalid format' },
         ],
         errorSummary: {
           'email: Invalid format': 1,
@@ -265,7 +265,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'name',
-            error: 'Contains, comma, characters',
+            _error: 'Contains, comma, characters',
           },
         ],
         errorSummary: {
@@ -284,7 +284,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'text',
-            error: 'Already "used" in system',
+            _error: 'Already "used" in system',
           },
         ],
         errorSummary: {
@@ -294,7 +294,7 @@ describe('CSVExportService', () => {
 
       const csv = CSVExportService.exportBatchErrors(batchStatus);
 
-      // Check that the CSV contains the error text with quotes
+      // Check that the CSV contains the _error text with quotes
       expect(csv).toContain('Already');
       expect(csv).toContain('used');
       expect(csv).toContain('in system');
@@ -306,7 +306,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'description',
-            error: 'Line 1\nLine 2\nLine 3',
+            _error: 'Line 1\nLine 2\nLine 3',
           },
         ],
         errorSummary: {
@@ -378,7 +378,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'field_name',
-            error: longValue,
+            _error: longValue,
           },
         ],
         errorSummary: {
@@ -398,7 +398,7 @@ describe('CSVExportService', () => {
         topErrors: [
           {
             field: 'email',
-            error: 'Invalid',
+            _error: 'Invalid',
             row: undefined,
           },
         ],

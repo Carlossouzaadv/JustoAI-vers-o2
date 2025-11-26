@@ -227,7 +227,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       totalCount,
       `Retrieved ${paginatedActivities.length} activity items`
     )
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to fetch activity:`, error)
     return errorResponse(
       error instanceof Error ? error.message : 'Failed to fetch activity',

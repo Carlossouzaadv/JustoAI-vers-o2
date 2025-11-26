@@ -56,7 +56,7 @@ export function UnassignedProcessBadge({
     try {
       await onRetry();
       setPopoverOpen(false);
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao fazer retry:', error);
     } finally {
       setRetrying(false);

@@ -85,7 +85,7 @@ export async function DELETE(
       success: true,
       message: 'Share link revoked',
     });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error revoking client share link:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
@@ -167,7 +167,7 @@ export async function GET(
       success: true,
       data: shareLink,
     });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching client share link:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

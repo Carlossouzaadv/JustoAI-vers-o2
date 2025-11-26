@@ -267,7 +267,7 @@ class CircuitBreaker {
       const result = await operation();
       this.onSuccess();
       return result;
-    } catch (_error) {
+    } catch (error) {
       this.onFailure();
       throw error;
     }
@@ -600,7 +600,7 @@ export class JuditApiClient {
           await this.sleep(JUDIT_CONFIG.POLLING_INTERVAL_MS);
         }
 
-      } catch (_error) {
+      } catch (error) {
         logError(error, '${ICONS.ERROR} Polling attempt ${attempts + 1} failed:', { component: 'refactored' });
 
         // Registrar telemetria de erro
@@ -778,7 +778,7 @@ export class JuditApiClient {
         // Se chegou aqui, response.ok é true e temos o body parseado
         return responseBody;
 
-      } catch (_error) {
+      } catch (error) {
         clearTimeout(timeoutId);
 
         // Handle timeout
@@ -806,7 +806,7 @@ export class JuditApiClient {
     for (let attempt = 1; attempt <= JUDIT_CONFIG.MAX_RETRY_ATTEMPTS; attempt++) {
       try {
         return await operation(attempt);
-      } catch (_error) {
+      } catch (error) {
         lastError = error as Error;
 
         // Check if error is retryable
@@ -922,7 +922,7 @@ export class JuditApiClient {
           rateLimitHit: data.rateLimitHit
         }
       });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Failed to record telemetry:', { component: 'refactored' });
     }
   }

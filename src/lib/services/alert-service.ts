@@ -6,7 +6,7 @@
  * Encapsulates Slack webhook communication for real-time alerts.
  * - Sends FATAL-level errors to Slack immediately
  * - Dual action: Slack alert (immediate) + Better Stack log (context)
- * - Non-blocking, graceful error handling
+ * - Non-blocking, graceful _error handling
  * - Type-safe narrowing for all inputs
  *
  * USAGE:
@@ -14,7 +14,7 @@
  *
  * await alert.fatal("Reembolso de emergência falhou", {
  *   component: "fullAnalysisRoute",
- *   error: refundError,
+ *   _error: refundError,
  *   debitTransactionIds: [...],
  *   caseId: "case-123"
  * });
@@ -33,17 +33,17 @@ const { SLACK_ALERT_WEBHOOK_URL, NODE_ENV } = process.env;
 // ================================================================
 
 /**
- * Extract error message from unknown error type
+ * Extract _error message from unknown _error type
  * Handles Error objects, strings, and arbitrary data
  */
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+function getErrorMessage(_error: unknown): string {
+  if (_error instanceof Error) {
+    return _error.message;
   }
-  if (typeof error === 'string') {
-    return error;
+  if (typeof _error === 'string') {
+    return _error;
   }
-  return String(error);
+  return String(_error);
 }
 
 /**
@@ -78,7 +78,7 @@ function buildSlackPayload(
 ): Record<string, unknown> {
   // Extract structured fields from context
   const component = typeof context.component === 'string' ? context.component : 'unknown';
-  const error = context.error ? getErrorMessage(context.error) : 'No error details';
+  const _error = context._error ? getErrorMessage(context._error) : 'No _error details';
   const caseId = typeof context.caseId === 'string' ? context.caseId : undefined;
   const debitTransactionIds = isStringArray(context.debitTransactionIds)
     ? context.debitTransactionIds
@@ -88,7 +88,7 @@ function buildSlackPayload(
   const additionalContext: Record<string, string> = {};
   for (const [key, value] of Object.entries(context)) {
     if (
-      !['component', 'error', 'caseId', 'debitTransactionIds', 'stage'].includes(key)
+      !['component', '_error', 'caseId', 'debitTransactionIds', 'stage'].includes(key)
     ) {
       const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
       additionalContext[key] = stringValue;
@@ -141,7 +141,7 @@ function buildSlackPayload(
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Error:*\n\`\`\`${error}\`\`\``,
+          text: `*Error:*\n\`\`\`${_error}\`\`\``,
         },
       },
       ...(Object.keys(additionalContext).length > 0
@@ -199,7 +199,7 @@ async function sendToSlack(payload: Record<string, unknown>): Promise<void> {
       });
 
       if (!response.ok) {
-        log.error(
+        log._error(
           {
             msg: 'AlertService: Slack webhook returned non-OK status',
             statusCode: response.status,
@@ -210,8 +210,8 @@ async function sendToSlack(payload: Record<string, unknown>): Promise<void> {
         );
       }
     } catch (fetchError) {
-      // Log error but don't throw (graceful degradation)
-      log.error(
+      // Log _error but don't throw (graceful degradation)
+      log._error(
         fetchError,
         'AlertService: Failed to send Slack alert',
         { component: 'alertService' }
@@ -229,7 +229,7 @@ async function sendToSlack(payload: Record<string, unknown>): Promise<void> {
  * Sends critical alerts to Slack + logs to Better Stack
  *
  * @param message - Human-readable alert message
- * @param context - Structured context (component, error, caseId, etc.)
+ * @param context - Structured context (component, _error, caseId, etc.)
  */
 export const alert = {
   async fatal(
@@ -257,7 +257,7 @@ export const alert = {
 
     // 1. Log to Better Stack (via LoggerService)
     // This ensures we have the full context in Better Stack + Vercel logs
-    log.error(
+    log._error(
       {
         msg: message,
         level: 'fatal',

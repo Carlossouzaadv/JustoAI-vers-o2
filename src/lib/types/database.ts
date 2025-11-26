@@ -714,7 +714,7 @@ export interface CaseAnalysisVersionRecord {
   workspaceId: string;
   version: number;
   status: ProcessStatus;
-  error: string | null;
+  _error: string | null;
   createdAt: Date;
   updatedAt: Date;
   aiAnalysis: AiAnalysisData | null;
@@ -841,7 +841,7 @@ export interface ReportExecutionRecord {
   duration: number | null;
   tokensUsed: number;
   estimatedCost: Decimal | null;
-  error: string | null;
+  _error: string | null;
   retryCount: number;
   audienceType: AudienceType;
   outputFormats: OutputFormat[];
@@ -1323,11 +1323,11 @@ export interface PaginatedResponse<T> {
 }
 
 /**
- * Standard API error response
+ * Standard API _error response
  */
 export interface ApiErrorResponse {
   success: false;
-  error: string;
+  _error: string;
   code?: string;
   details?: unknown;
 }

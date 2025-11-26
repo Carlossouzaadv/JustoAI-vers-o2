@@ -205,7 +205,7 @@ export class IntelligentParser {
       log.info({ msg: 'Análise concluída:  (%)' });
       return result;
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro na análise:', { component: 'refactored' });
 
       return {

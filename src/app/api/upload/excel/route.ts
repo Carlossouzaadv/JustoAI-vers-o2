@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no upload de Excel:`, error);
 
     return NextResponse.json({
@@ -237,7 +237,7 @@ export async function GET() {
     console.log(`${ICONS.SUCCESS} Excel template delivered to user`);
     return response;
 
-  } catch (_error) {
+  } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     console.error(`${ICONS.ERROR} Failed to generate template:`, errorMsg);
 

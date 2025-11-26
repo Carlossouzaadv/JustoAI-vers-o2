@@ -49,7 +49,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
               type: 'boolean',
               example: false
             },
-            error: {
+            _error: {
               type: 'string',
               example: 'Mensagem de erro'
             },
@@ -378,7 +378,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
               },
               example: {
                 success: false,
-                error: 'Não autorizado',
+                _error: 'Não autorizado',
                 message: 'Token de autenticação inválido ou expirado',
                 statusCode: 401
               }
@@ -394,7 +394,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
               },
               example: {
                 success: false,
-                error: 'Acesso negado',
+                _error: 'Acesso negado',
                 message: 'Você não tem permissão para acessar este recurso',
                 statusCode: 403
               }
@@ -410,7 +410,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
               },
               example: {
                 success: false,
-                error: 'Não encontrado',
+                _error: 'Não encontrado',
                 message: 'O recurso solicitado não foi encontrado',
                 statusCode: 404
               }
@@ -426,7 +426,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
               },
               example: {
                 success: false,
-                error: 'Erro de validação',
+                _error: 'Erro de validação',
                 message: 'Os dados fornecidos são inválidos',
                 statusCode: 400
               }
@@ -442,7 +442,7 @@ const swaggerOptions: swaggerJsDoc.Options = {
               },
               example: {
                 success: false,
-                error: 'Erro interno',
+                _error: 'Erro interno',
                 message: 'Ocorreu um erro inesperado no servidor',
                 statusCode: 500
               }

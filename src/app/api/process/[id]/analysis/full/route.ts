@@ -332,7 +332,7 @@ export async function POST(
       message: 'Análise completa gerada com sucesso'
     });
 
-  } catch (_error) {
+  } catch (error) {
     const duration = Date.now() - startTime;
 
     // Se chegou aqui com debitTransactionIds, é um erro CRÍTICO (débito mas análise falhou)

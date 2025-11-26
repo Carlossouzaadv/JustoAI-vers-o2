@@ -161,14 +161,14 @@ export async function processJuditAttachments(
 
     return result;
 
-  } catch (_error) {
-    logError(error, 'General error in attachment processing', {
+  } catch (error) {
+    logError(_error, 'General _error in attachment processing', {
       component: 'juditAttachmentProcessor',
       caseId: caseId,
       processedCount: result.processed,
       failedCount: result.failed,
     });
-    result.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
+    result.errors.push(_error instanceof Error ? _error.message : 'Erro desconhecido');
     return result;
   }
 }
@@ -250,8 +250,8 @@ function extractAttachmentsFromJuditResponse(juditResponse: unknown): JuditAttac
       }
     }
 
-  } catch (_error) {
-    logError(error, 'Error extracting attachments from JUDIT response', {
+  } catch (error) {
+    logError(_error, 'Error extracting attachments from JUDIT response', {
       component: 'extractAttachmentsFromJuditResponse',
     });
   }
@@ -445,14 +445,14 @@ async function downloadAndProcessAttachment(
             caseId: caseId,
           });
         }
-      } catch (_error) {
+      } catch (error) {
         log.warn({
           msg: 'Failed to extract text from PDF',
           component: 'downloadAndProcessAttachment',
           attachmentName: attachment.name,
           attachmentId: attachment.attachment_id,
           caseId: caseId,
-          error: error instanceof Error ? error.message : String(error),
+          _error: _error instanceof Error ? _error.message : String(_error),
         });
       }
     }
@@ -517,11 +517,11 @@ async function downloadAndProcessAttachment(
       hasExtractedText: !!extractedText,
     });
 
-  } catch (_error) {
+  } catch (error) {
     result.failed++;
-    const errorMsg = `Erro em ${attachment.name}: ${error instanceof Error ? error.message : 'Desconhecido'}`;
+    const errorMsg = `Erro em ${attachment.name}: ${_error instanceof Error ? _error.message : 'Desconhecido'}`;
     result.errors.push(errorMsg);
-    logError(error, 'Error processing attachment', {
+    logError(_error, 'Error processing attachment', {
       component: 'downloadAndProcessAttachment',
       attachmentName: attachment.name,
       attachmentId: attachment.attachment_id,
@@ -660,9 +660,9 @@ async function createAttachmentValidationFailureTimeline(
       attachmentName: attachment.name,
       validationReason: reason,
     });
-  } catch (_error) {
+  } catch (error) {
     // Se falhar criar timeline, logar mas não falhar o job
-    logError(error, 'Failed to create validation failure timeline entry', {
+    logError(_error, 'Failed to create validation failure timeline entry', {
       component: 'createAttachmentValidationFailureTimeline',
       caseId: caseId,
       attachmentId: attachment.attachment_id,

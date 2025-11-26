@@ -204,7 +204,7 @@ export async function compressImage(
       format: config.format,
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       success: false,
       originalSize: 0,
@@ -247,7 +247,7 @@ export async function compressBatchImages(
     try {
       const result = await compressImage(inputPath, undefined, options);
       results.push(result);
-    } catch (_error) {
+    } catch (error) {
       results.push({
         success: false,
         originalSize: 0,
@@ -309,7 +309,7 @@ export async function optimizePDF(
       format: 'pdf',
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       success: false,
       originalSize: 0,
@@ -434,7 +434,7 @@ export function createCompressionMiddleware(options: CompressionOptions = {}) {
             // Replace file in request with enriched metadata
             Object.assign(file, fileWithMetadata);
           }
-        } catch (_error) {
+        } catch (error) {
           logError(error, 'Compression middleware error:', { component: 'refactored' });
           // Continuar sem falhar se compressão falhar
         }
@@ -487,7 +487,7 @@ function generateThumbnailPath(originalPath: string): string {
 async function ensureDirectory(dirPath: string): Promise<void> {
   try {
     await fs.mkdir(dirPath, { recursive: true });
-  } catch (_error) {
+  } catch (error) {
     // Ignore se diretório já existe
   }
 }
@@ -541,7 +541,7 @@ export async function saveToCompressionCache(inputPath: string, compressedPath: 
 
     const finalCachePath = path.join(cacheDir, cacheKey);
     await fs.copyFile(compressedPath, finalCachePath);
-  } catch (_error) {
+  } catch (error) {
     // Falha no cache não deve afetar operação principal
     logError(error, 'Failed to save to compression cache:', { component: 'refactored' });
   }

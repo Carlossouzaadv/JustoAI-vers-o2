@@ -42,7 +42,7 @@ export async function getAuthenticatedUser(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     return user;
-  } catch (_error) {
+  } catch (error) {
     logError(error, 'Auth error in getAuthenticatedUser:', { component: 'refactored' });
     return null;
   }
@@ -86,7 +86,7 @@ export async function getServerUser() {
     } = await supabase.auth.getUser();
 
     return user;
-  } catch (_error) {
+  } catch (error) {
     logError(error, 'Auth error in getServerUser:', { component: 'refactored' });
     return null;
   }

@@ -212,7 +212,7 @@ export class WebSocketManager {
   /**
    * Notifica erro no batch
    */
-  broadcastBatchError(batchId: string, error: string): void {
+  broadcastBatchError(batchId: string, _error: string): void {
     const subscribers = this.batchSubscriptions.get(batchId);
     if (!subscribers || subscribers.size === 0) {
       return;
@@ -221,7 +221,7 @@ export class WebSocketManager {
     const message: WebSocketMessage = {
       type: 'batch_error',
       batchId,
-      data: { error },
+      data: { _error },
       timestamp: Date.now()
     };
 
@@ -316,8 +316,8 @@ export class WebSocketManager {
 
       log.info({ msg: 'Mensagem SSE enviada para :' });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro ao enviar mensagem para ${connectionId}:', { component: 'refactored' });
       this.removeConnection(connectionId);
     }
   }

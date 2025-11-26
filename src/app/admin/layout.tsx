@@ -63,7 +63,7 @@ export default function AdminLayout({
       }
 
       setIsAuthenticated(true);
-    } catch (_error) {
+    } catch (error) {
       console.error('Auth check failed:', error);
       setIsAuthenticated(false);
       router.push('/login');

@@ -2,8 +2,8 @@
  * ================================================================
  * SENTRY ERROR HANDLER
  * ================================================================
- * Centralized error capturing and context setting for Sentry
- * Used across all API routes to ensure consistent error tracking
+ * Centralized _error capturing and context setting for Sentry
+ * Used across all API routes to ensure consistent _error tracking
  */
 
 import * as Sentry from '@sentry/nextjs';
@@ -21,30 +21,30 @@ export interface ErrorContext {
 }
 
 /**
- * Capture error to Sentry with full context
+ * Capture _error to Sentry with full context
  * This should be called in all API route catch blocks
  */
 export function captureApiError(
-  error: unknown,
+  _error: unknown,
   context?: ErrorContext
 ): void {
-  if (!error) return;
+  if (!_error) return;
 
   // Set Sentry context before capturing
   if (context) {
     Sentry.setContext('api_error', context);
   }
 
-  // Determine error level
-  let level: 'fatal' | 'error' | 'warning' = 'error';
-  if (error instanceof Error) {
-    if (error.message?.includes('timeout') || error.message?.includes('TIMEOUT')) {
+  // Determine _error level
+  let level: 'fatal' | '_error' | 'warning' = '_error';
+  if (_error instanceof Error) {
+    if (_error.message?.includes('timeout') || _error.message?.includes('TIMEOUT')) {
       level = 'warning';
     }
   }
 
   // Capture the exception
-  Sentry.captureException(error, {
+  Sentry.captureException(_error, {
     level,
     tags: {
       type: 'api_error',
@@ -54,11 +54,11 @@ export function captureApiError(
   });
 
   // Log to console as well
-  logError(error, '${ICONS.ERROR} Sentry Error captured:', { component: 'refactored' });
+  logError(_error, '${ICONS.ERROR} Sentry Error captured:', { component: 'refactored' });
 }
 
 /**
- * Wrapper for API route handlers with automatic error capturing
+ * Wrapper for API route handlers with automatic _error capturing
  * Usage:
  *   export const POST = withErrorCapture(async (request) => {
  *     // handler code
@@ -74,21 +74,21 @@ export function withErrorCapture(
 
     try {
       return await handler(request, context);
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
 
-      captureApiError(error, {
+      captureApiError(_error, {
         endpoint,
         method,
         duration,
         timestamp: new Date().toISOString(),
       });
 
-      // Return error response
+      // Return _error response
       return NextResponse.json(
         {
           success: false,
-          error: error instanceof Error ? error.message : 'Internal server error',
+          _error: _error instanceof Error ? _error.message : 'Internal server _error',
         },
         { status: 500 }
       );
@@ -125,12 +125,12 @@ export function clearSentryContext(): void {
 }
 
 /**
- * Capture a message to Sentry (for non-error events)
+ * Capture a message to Sentry (for non-_error events)
  * Usage: captureSentryMessage('User triggered action X', 'info', { actionId: '123' })
  */
 export function captureSentryMessage(
   message: string,
-  level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info',
+  level: 'fatal' | '_error' | 'warning' | 'info' | 'debug' = 'info',
   context?: Record<string, unknown>
 ): void {
   if (context) {

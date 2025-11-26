@@ -26,7 +26,7 @@ export interface MonitoringSession {
 export interface MonitoringError {
   processId: string;
   processNumber: string;
-  error: string;
+  _error: string;
   timestamp: Date;
 }
 
@@ -171,11 +171,11 @@ export class ProcessMonitor {
           log.info({ msg: 'Progresso: / processos' });
         }
 
-      } catch (_error) {
+      } catch (error) {
         const errorDetails: MonitoringError = {
           processId: process.id,
           processNumber: process.processNumber,
-          error: error instanceof Error ? error.message : 'Erro desconhecido',
+          _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
           timestamp: new Date()
         };
 
@@ -183,7 +183,7 @@ export class ProcessMonitor {
         this.session.processed++;
         this.session.failed++;
 
-        logError(error, '${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:', { component: 'refactored' });
+        logError(_error, '${ICONS.ERROR} Erro ao sincronizar processo ${process.processNumber}:', { component: 'refactored' });
       }
 
       // Pequena pausa entre processos para não sobrecarregar APIs
@@ -398,18 +398,18 @@ export class ProcessMonitor {
 
       return { newMovements: newMovementsCount, alertsGenerated };
 
-    } catch (_error) {
+    } catch (error) {
       // Atualizar log com erro
       await prisma.processSyncLog.update({
         where: { id: syncLog.id },
         data: {
           status: 'FAILED',
           finishedAt: new Date(),
-          errors: [error instanceof Error ? error.message : 'Erro desconhecido']
+          errors: [_error instanceof Error ? _error.message : 'Erro desconhecido']
         }
       });
 
-      throw error;
+      throw _error;
     }
   }
 
@@ -440,15 +440,15 @@ export class ProcessMonitorScheduler {
       try {
         log.info({ msg: 'Executando monitoramento automático...' });
         await this.monitor.startMonitoringSession();
-      } catch (_error) {
-        logError(error, '${ICONS.ERROR} Erro no monitoramento automático:', { component: 'refactored' });
+      } catch (error) {
+        logError(_error, '${ICONS.ERROR} Erro no monitoramento automático:', { component: 'refactored' });
       }
     }, intervalMinutes * 60 * 1000);
 
     // Executar uma vez imediatamente
     setTimeout(() => {
-      this.monitor.startMonitoringSession().catch(error => {
-        logError(error, '${ICONS.ERROR} Erro no monitoramento inicial:', { component: 'refactored' });
+      this.monitor.startMonitoringSession().catch(_error => {
+        logError(_error, '${ICONS.ERROR} Erro no monitoramento inicial:', { component: 'refactored' });
       });
     }, 5000); // Aguardar 5 segundos para inicialização
   }

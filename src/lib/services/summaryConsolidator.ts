@@ -364,32 +364,32 @@ async function generateConsolidatedSummaryWithAI(
       return text.trim();
     } catch (geminiError: unknown) {
       // Tratamento específico de erros da Gemini API
-      const error = geminiError as Record<string, unknown>;
-      console.error(`${ICONS.ERROR} [Summary Consolidator] Erro específico do Gemini:`, {
-        error: geminiError,
-        message: error?.message,
-        status: error?.status,
-        code: error?.code
+      const _error = geminiError as Record<string, unknown>;
+      console._error(`${ICONS.ERROR} [Summary Consolidator] Erro específico do Gemini:`, {
+        _error: geminiError,
+        message: _error?.message,
+        status: _error?.status,
+        code: _error?.code
       });
 
       // Se é erro de quota ou rate limit, mencionar isto
-      if (error?.status === 429 || (error?.message as string)?.includes('rate limit')) {
+      if (_error?.status === 429 || (_error?.message as string)?.includes('rate limit')) {
         throw new Error('Limite de requisições da API Gemini atingido. Tente novamente em alguns minutos.');
       }
 
-      if (error?.status === 403 || (error?.message as string)?.includes('permission denied')) {
+      if (_error?.status === 403 || (_error?.message as string)?.includes('permission denied')) {
         throw new Error('Permissão negada na API Gemini. Verifique a configuração da chave.');
       }
 
-      if ((error?.message as string)?.includes('INVALID_ARGUMENT')) {
+      if ((_error?.message as string)?.includes('INVALID_ARGUMENT')) {
         throw new Error('Erro na configuração do prompt ou parâmetros da Gemini API.');
       }
 
       throw geminiError;
     }
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao chamar Gemini:', { component: 'refactored' });
-    throw error;
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao chamar Gemini:', { component: 'refactored' });
+    throw _error;
   }
 }
 
@@ -543,9 +543,9 @@ export async function generateSummaryFromTimeline(caseId: string): Promise<strin
     log.info({ msg: '[Summary Consolidator] Resumo gerado a partir da timeline e documentos' });
     return consolidatedDescription;
 
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao gerar resumo da timeline:', { component: 'refactored' });
-    throw error;
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao gerar resumo da timeline:', { component: 'refactored' });
+    throw _error;
   }
 }
 
@@ -619,9 +619,9 @@ export async function consolidateCaseSummary(caseId: string): Promise<Consolidat
     });
 
     return result;
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao consolidar resumo:', { component: 'refactored' });
-    throw error;
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao consolidar resumo:', { component: 'refactored' });
+    throw _error;
   }
 }
 
@@ -647,8 +647,8 @@ export async function updateCaseSummaryDescription(caseId: string): Promise<stri
     log.info({ msg: '[Summary Consolidator] Descrição do caso atualizada' });
 
     return updated.description || '';
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao atualizar descrição:', { component: 'refactored' });
-    throw error;
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao atualizar descrição:', { component: 'refactored' });
+    throw _error;
   }
 }

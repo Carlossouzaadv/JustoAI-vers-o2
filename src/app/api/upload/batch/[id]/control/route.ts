@@ -101,7 +101,7 @@ export async function POST(
       timestamp: new Date().toISOString()
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no controle do batch:`, error);
 
     return NextResponse.json(
@@ -218,7 +218,7 @@ async function executeControlAction(
 
     return { success: true, newStatus };
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao executar ação ${action}:`, error);
     return {
       success: false,

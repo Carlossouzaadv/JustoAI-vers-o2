@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
               controller.enqueue(new TextEncoder().encode(chunk));
             }
             controller.close();
-          } catch (_error) {
+          } catch (error) {
             controller.error(_error);
           }
         },
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         },
       }
     );
-  } catch (_error) {
+  } catch (error) {
     if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request', issues: _error.issues },

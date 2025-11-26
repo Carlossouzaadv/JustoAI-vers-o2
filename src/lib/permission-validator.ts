@@ -72,8 +72,8 @@ export async function isWorkspaceAdmin(
     });
 
     return !!userWorkspace;
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Error checking admin status:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Error checking admin status:', { component: 'refactored' });
     return false;
   }
 }
@@ -113,8 +113,8 @@ export async function getUserWorkspaceRole(
 
     // Step 3: Now userWorkspace.role is type WorkspaceRole - no casting needed!
     return userWorkspace.role;
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Error getting user role:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Error getting user role:', { component: 'refactored' });
     return null;
   }
 }
@@ -189,8 +189,8 @@ export async function validateUserRole(
       workspaceId,
       userId
     };
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Error validating user role:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Error validating user role:', { component: 'refactored' });
     return {
       isAuthorized: false,
       workspaceId,
@@ -202,19 +202,19 @@ export async function validateUserRole(
 
 /**
  * Middleware-style validator for API routes
- * Returns error response if not authorized
+ * Returns _error response if not authorized
  */
 export async function requireWorkspaceAdmin(
   userId: string,
   workspaceId: string
-): Promise<{ authorized: true } | { authorized: false; error: string }> {
+): Promise<{ authorized: true } | { authorized: false; _error: string }> {
   const check = await validateUserRole(userId, workspaceId, 'ADMIN');
 
   if (!check.isAuthorized) {
     log.warn({ msg: 'Admin access denied for user  on workspace :' });
     return {
       authorized: false,
-      error: check.denialReason || 'Unauthorized'
+      _error: check.denialReason || 'Unauthorized'
     };
   }
 
@@ -229,14 +229,14 @@ export async function requireWorkspaceRole(
   userId: string,
   workspaceId: string,
   requiredRoles: WorkspaceRole | WorkspaceRole[]
-): Promise<{ authorized: true; role: WorkspaceRole } | { authorized: false; error: string }> {
+): Promise<{ authorized: true; role: WorkspaceRole } | { authorized: false; _error: string }> {
   const check = await validateUserRole(userId, workspaceId, requiredRoles);
 
   if (!check.isAuthorized) {
     log.warn({ msg: 'Access denied for user  on workspace :' });
     return {
       authorized: false,
-      error: check.denialReason || 'Unauthorized'
+      _error: check.denialReason || 'Unauthorized'
     };
   }
 
@@ -272,8 +272,8 @@ export async function getUserWorkspaceAccess(
     }));
 
     return access;
-  } catch (_error) {
-    logError(error, '${ICONS.ERROR} Error getting user workspace access:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, '${ICONS.ERROR} Error getting user workspace access:', { component: 'refactored' });
     return [];
   }
 }
@@ -314,17 +314,17 @@ export async function validateAdminRequest(
  * @param email User email address
  * @param userId User ID
  * @param workspaceId Workspace ID
- * @returns { authorized: true } | { authorized: false; error: string }
+ * @returns { authorized: true } | { authorized: false; _error: string }
  */
 export async function requireAdminAccess(
   email: string | undefined,
   userId: string | undefined,
   workspaceId: string | undefined
-): Promise<{ authorized: true; isInternal: boolean } | { authorized: false; error: string }> {
+): Promise<{ authorized: true; isInternal: boolean } | { authorized: false; _error: string }> {
   if (!email || !userId) {
     return {
       authorized: false,
-      error: 'User not authenticated'
+      _error: 'User not authenticated'
     };
   }
 
@@ -341,7 +341,7 @@ export async function requireAdminAccess(
   if (!workspaceId) {
     return {
       authorized: false,
-      error: 'Workspace ID not provided'
+      _error: 'Workspace ID not provided'
     };
   }
 
@@ -351,7 +351,7 @@ export async function requireAdminAccess(
     log.warn({ msg: 'Admin access denied for user  () on workspace' });
     return {
       authorized: false,
-      error: 'Admin access required'
+      _error: 'Admin access required'
     };
   }
 

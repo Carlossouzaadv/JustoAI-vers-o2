@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
         note: 'Quota calculated based on monthly credit allocation. Counts actual report executions.',
       },
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting quota status:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

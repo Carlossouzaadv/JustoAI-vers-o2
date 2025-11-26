@@ -100,7 +100,7 @@ export default function SignupPage() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         window.location.href = '/dashboard';
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('❌ Signup error:', error);
       setAuthError('Erro inesperado. Tente novamente.');
     } finally {
@@ -125,7 +125,7 @@ export default function SignupPage() {
       if (error) {
         setAuthError(error.message);
       }
-    } catch (_error) {
+    } catch (error) {
       setAuthError('Erro ao conectar com Google. Tente novamente.');
     } finally {
       setIsLoading(false);

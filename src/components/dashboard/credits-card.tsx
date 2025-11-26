@@ -123,7 +123,7 @@ export default function CreditsCard({ workspaceId, className = '', onBuyCredits 
         });
       }
 
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
       // Set defaults on error
       setCredits({
@@ -444,7 +444,7 @@ export function CreditsWidget({ workspaceId, onBuyCredits }: CreditsWidgetProps)
             consumedCredits: 0
           });
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Erro ao carregar créditos:', error);
         // Set default on error
         setCredits({

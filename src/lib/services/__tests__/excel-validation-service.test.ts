@@ -118,7 +118,7 @@ describe('ExcelValidationService - Validação em Lote', () => {
       expect(result.statistics?.invalidRows).toBe(2);
     });
 
-    it('deve detalhar cada erro com row, column, value e error message', () => {
+    it('deve detalhar cada erro com row, column, value e _error message', () => {
       const rows = [
         {
           'Número de Processo': 'INVALID',
@@ -133,18 +133,18 @@ describe('ExcelValidationService - Validação em Lote', () => {
       const errors = result.errors!;
 
       // Verificar que há erros com toda a informação necessária
-      for (const error of errors) {
-        expect(error).toHaveProperty('row');
-        expect(error).toHaveProperty('column');
-        expect(error).toHaveProperty('value');
-        expect(error).toHaveProperty('error');
+      for (const _error of errors) {
+        expect(_error).toHaveProperty('row');
+        expect(_error).toHaveProperty('column');
+        expect(_error).toHaveProperty('value');
+        expect(_error).toHaveProperty('_error');
 
-        expect(typeof error.row).toBe('number');
-        expect(error.row).toBeGreaterThanOrEqual(2); // Começa em linha 2 (cabeçalho em 1)
-        expect(typeof error.column).toBe('string');
-        expect(error.column.length).toBeGreaterThan(0);
-        expect(typeof error.error).toBe('string');
-        expect(error.error.length).toBeGreaterThan(0);
+        expect(typeof _error.row).toBe('number');
+        expect(_error.row).toBeGreaterThanOrEqual(2); // Começa em linha 2 (cabeçalho em 1)
+        expect(typeof _error.column).toBe('string');
+        expect(_error.column.length).toBeGreaterThan(0);
+        expect(typeof _error.error).toBe('string');
+        expect(_error.error.length).toBeGreaterThan(0);
       }
     });
   });

@@ -29,7 +29,7 @@ export async function GET(
       },
       recentActivity: [],
     })
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting workspace summary:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

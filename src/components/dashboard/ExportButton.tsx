@@ -217,7 +217,7 @@ export function ExportButton({
       }
 
       console.log('PDF export initiated - user can print to PDF');
-    } catch (_error) {
+    } catch (error) {
       console.error('Error exporting to PDF:', error);
       alert('Erro ao exportar para PDF. Tente novamente.');
     }

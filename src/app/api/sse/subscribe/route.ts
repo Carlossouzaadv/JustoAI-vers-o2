@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
               const encoder = new TextEncoder();
               const encoded = encoder.encode(data);
               controller.enqueue(encoded);
-            } catch (_error) {
+            } catch (error) {
               console.error(`${ICONS.ERROR} Erro ao escrever no stream:`, error);
             }
           },
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
         'Access-Control-Allow-Headers': 'Content-Type'
       }
     });
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no endpoint SSE:`, error);
     return NextResponse.json(
       {

@@ -345,7 +345,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no upload:`, getErrorMessage(error));
 
     if (error instanceof ApiError) {
@@ -421,7 +421,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao processar GET:`, getErrorMessage(error));
 
     if (error instanceof ApiError) {
@@ -628,7 +628,7 @@ async function processValidRowsInBackground(
 
     console.log(`${ICONS.SUCCESS} Batch processado: ${successful} sucessos, ${failed} falhas`);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro crítico no processamento:`, getErrorMessage(error));
 
     const errorData = JSON.parse(JSON.stringify([{

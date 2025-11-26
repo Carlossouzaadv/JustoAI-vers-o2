@@ -188,7 +188,7 @@ export class QuotaEnforcement {
         message: `Você usou ${currentReports} de ${limit} relatórios este mês (${percentage.toFixed(1)}%)`
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Quota check failed:', { component: 'refactored' });
 
       // Em caso de erro, permitir (fail-open) mas logar
@@ -241,7 +241,7 @@ export class QuotaEnforcement {
         message: `Créditos suficientes: ${creditBalance.balance} disponíveis`
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Credit quota check failed:', { component: 'refactored' });
 
       return {
@@ -397,7 +397,7 @@ export class QuotaEnforcement {
         reportsTotal: quota.reportsUsedThisMonth,
         creditsConsumed: 0 // Can be calculated if needed
       };
-    } catch (_error) {
+    } catch (error) {
       logError(error, 'Error getting monthly usage:', { component: 'refactored' });
       return { reportsTotal: 0, creditsConsumed: 0 };
     }

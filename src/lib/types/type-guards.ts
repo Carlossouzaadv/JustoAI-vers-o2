@@ -556,12 +556,12 @@ export function isSystemImportValidation(value: unknown): value is SystemImportV
     if (!Array.isArray(obj.errors)) {
       return false;
     }
-    for (const error of obj.errors) {
-      if (typeof error !== 'object' || error === null) {
+    for (const _error of obj.errors) {
+      if (typeof _error !== 'object' || _error === null) {
         return false;
       }
-      const err = error as Record<string, unknown>;
-      if (typeof err.error !== 'string') {
+      const err = _error as Record<string, unknown>;
+      if (typeof err._error !== 'string') {
         return false;
       }
     }
@@ -1036,30 +1036,30 @@ export function isMonitoredProcessData(value: unknown): value is MonitoredProces
 // ================================================================
 
 /**
- * Safe extraction of error message from unknown error objects
+ * Safe extraction of _error message from unknown _error objects
  * Used in catch blocks to handle both Error instances and generic objects
  */
-export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+export function getErrorMessage(_error: unknown): string {
+  if (_error instanceof Error) {
+    return _error.message;
   }
-  if (typeof error === 'string') {
-    return error;
+  if (typeof _error === 'string') {
+    return _error;
   }
-  if (typeof error === 'object' && error !== null) {
-    const obj = error as Record<string, unknown>;
+  if (typeof _error === 'object' && _error !== null) {
+    const obj = _error as Record<string, unknown>;
     if (typeof obj.message === 'string') {
       return obj.message;
     }
-    if (typeof obj.error === 'string') {
-      return obj.error;
+    if (typeof obj._error === 'string') {
+      return obj._error;
     }
   }
-  return String(error);
+  return String(_error);
 }
 
 /**
- * Check if a value is a Gemini API error response structure
+ * Check if a value is a Gemini API _error response structure
  */
 export function isGeminiErrorResponse(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null) {
@@ -1068,18 +1068,18 @@ export function isGeminiErrorResponse(value: unknown): value is Record<string, u
 
   const obj = value as Record<string, unknown>;
 
-  // Gemini API returns errors in either { error: { message, details } } or { error: string } format
-  if (obj.error !== undefined) {
-    if (typeof obj.error === 'string') {
+  // Gemini API returns errors in either { _error: { message, details } } or { _error: string } format
+  if (obj._error !== undefined) {
+    if (typeof obj._error === 'string') {
       return true;
     }
-    if (typeof obj.error === 'object' && obj.error !== null) {
-      const err = obj.error as Record<string, unknown>;
-      // error.message is optional but if present should be string
+    if (typeof obj._error === 'object' && obj._error !== null) {
+      const err = obj._error as Record<string, unknown>;
+      // _error.message is optional but if present should be string
       if (err.message !== undefined && typeof err.message !== 'string') {
         return false;
       }
-      // error.details is optional but if present should be string
+      // _error.details is optional but if present should be string
       if (err.details !== undefined && typeof err.details !== 'string') {
         return false;
       }

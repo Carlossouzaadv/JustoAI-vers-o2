@@ -361,10 +361,10 @@ export class TimelineMergeService {
           });
 
         } catch (createError) {
-          // Narrow unknown to Error type for safety, with Prisma error code handling
+          // Narrow unknown to Error type for safety, with Prisma _error code handling
           const err = createError instanceof Error ? createError : new Error(String(createError));
 
-          // Check for Prisma unique constraint error (P2002) safely
+          // Check for Prisma unique constraint _error (P2002) safely
           const prismaErrorCode = 'code' in err && typeof (err as Record<string, unknown>).code === 'string'
             ? (err as Record<string, unknown>).code
             : null;
@@ -434,18 +434,18 @@ export class TimelineMergeService {
               // PROBLEMA: Não conseguiu recuperar a entrada mesmo com retries!
               // Isso é crítico - significa que o erro foi levantado mas a entrada não existe
               // após múltiplas tentativas. Pode indicar problema no banco de dados.
-              log.error({ msg: `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`, component: 'timelineMerge' });
+              log._error({ msg: `${ICONS.ERROR} CRÍTICO: Race condition mas entrada não encontrada após ${3} retries! caseId=${caseId}, hash=${contentHash}, event=${entry.eventType}`, component: 'timelineMerge' });
               duplicatesSkipped++;
             }
           } else {
             // Re-throw se for erro diferente
-            log.error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002)`, component: 'timelineMerge', code: prismaErrorCode, message: err.message });
+            log._error({ msg: `${ICONS.ERROR} Erro ao criar entrada (não é P2002)`, component: 'timelineMerge', code: prismaErrorCode, message: err.message });
             throw err;
           }
         }
 
-      } catch (_error) {
-        logError(`${ICONS.ERROR} Erro ao processar entrada:`, 'error', { component: 'timelineMerge' });
+      } catch (error) {
+        logError(`${ICONS.ERROR} Erro ao processar entrada:`, '_error', { component: 'timelineMerge' });
         // Continuar processamento mesmo com erro em uma entrada
       }
     }
@@ -618,8 +618,8 @@ export class TimelineMergeService {
 
       log.info({ msg: '${ICONS.SUCCESS} Extraídos ${entries.length} andamentos da análise IA', component: 'timelineMerge' });
 
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro na extração de timeline da IA:`, 'error', { component: 'timelineMerge' });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro na extração de timeline da IA:`, '_error', { component: 'timelineMerge' });
     }
 
     return entries;
@@ -642,8 +642,8 @@ export class TimelineMergeService {
           data: JSON.parse(JSON.stringify(details)) // Safe JSON serialization for Prisma
         }
       });
-    } catch (_error) {
-      logError(`${ICONS.ERROR} Erro ao registrar auditoria:`, 'error', { component: 'timelineMerge' });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Erro ao registrar auditoria:`, '_error', { component: 'timelineMerge' });
       // Silently fail - don't let audit logging block document upload
     }
   }

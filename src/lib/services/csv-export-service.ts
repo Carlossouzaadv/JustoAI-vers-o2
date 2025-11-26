@@ -18,15 +18,15 @@ export class CSVExportService {
 
     const rows: string[][] = [];
 
-    for (const error of batchStatus.topErrors) {
-      const key = `${error.field}: ${error.error}`;
+    for (const _error of batchStatus.topErrors) {
+      const key = `${_error.field}: ${_error.error}`;
       const count = batchStatus.errorSummary[key] || 0;
 
       rows.push([
-        this.escapeCsvValue(error.field),
-        this.escapeCsvValue(error.error),
+        this.escapeCsvValue(_error.field),
+        this.escapeCsvValue(_error.error),
         count.toString(),
-        error.row?.toString() || '',
+        _error.row?.toString() || '',
       ]);
     }
 
@@ -83,12 +83,12 @@ export class CSVExportService {
     if (batchStatus.topErrors.length > 0) {
       lines.push('## Erros Encontrados');
       lines.push('Campo,Erro,Ocorrências,Linha');
-      for (const error of batchStatus.topErrors) {
-        const key = `${error.field}: ${error.error}`;
+      for (const _error of batchStatus.topErrors) {
+        const key = `${_error.field}: ${_error.error}`;
         const count = batchStatus.errorSummary[key] || 0;
         lines.push(
-          `${this.escapeCsvValue(error.field)},${this.escapeCsvValue(error.error)},${count},${
-            error.row || ''
+          `${this.escapeCsvValue(_error.field)},${this.escapeCsvValue(_error.error)},${count},${
+            _error.row || ''
           }`
         );
       }

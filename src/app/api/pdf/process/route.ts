@@ -99,7 +99,7 @@ function executeWithTimeout(
       stderr: result.stderr || '',
       status: result.status,
     };
-  } catch (_error) {
+  } catch (error) {
     const duration = Date.now() - startTime;
     // Padrão-Ouro: Safe error extraction (ZERO 'as')
     const errorMsg = getErrorMessage(error);
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-  } catch (_error) {
+  } catch (error) {
     const totalTime = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;

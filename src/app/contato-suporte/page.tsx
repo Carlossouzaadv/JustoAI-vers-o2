@@ -46,7 +46,7 @@ export default function ContatoSuportePage() {
           : result.error || 'Erro ao enviar ticket';
         alert(`Erro: ${errorMsg}`);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao enviar formulário:', error);
       alert('Erro ao enviar ticket. Tente novamente.');
     }

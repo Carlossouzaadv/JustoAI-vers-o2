@@ -33,9 +33,9 @@ describe('BatchStatusService', () => {
         successful: 45,
         failed: 5,
         errors: [
-          { field: 'email', error: 'Invalid email format', row: 5 },
-          { field: 'email', error: 'Invalid email format', row: 10 },
-          { field: 'phone', error: 'Invalid phone format', row: 15 },
+          { field: 'email', _error: 'Invalid email format', row: 5 },
+          { field: 'email', _error: 'Invalid email format', row: 10 },
+          { field: 'phone', _error: 'Invalid phone format', row: 15 },
         ],
         createdAt: new Date('2025-11-16T10:00:00Z'),
         updatedAt: new Date('2025-11-16T10:05:00Z'),
@@ -80,7 +80,7 @@ describe('BatchStatusService', () => {
       });
     });
 
-    it('should throw error if batch not found', async () => {
+    it('should throw _error if batch not found', async () => {
       (prisma.processBatchUpload.findUnique as jest.Mock).mockResolvedValueOnce(null);
 
       await expect(BatchStatusService.getBatchStatus('non-existent')).rejects.toThrow(
@@ -124,7 +124,7 @@ describe('BatchStatusService', () => {
         processed: 100,
         successful: 95,
         failed: 5,
-        errors: [{ field: 'email', error: 'Invalid email', row: 10 }],
+        errors: [{ field: 'email', _error: 'Invalid email', row: 10 }],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -269,7 +269,7 @@ describe('BatchStatusService', () => {
     });
   });
 
-  describe('error processing', () => {
+  describe('_error processing', () => {
     it('should parse JSON errors correctly', async () => {
       const mockBatch = {
         id: 'batch-123',
@@ -282,9 +282,9 @@ describe('BatchStatusService', () => {
         successful: 8,
         failed: 2,
         errors: JSON.stringify([
-          { field: 'email', error: 'Invalid email', row: 1 },
-          { field: 'phone', error: 'Invalid phone', row: 2 },
-          { field: 'email', error: 'Invalid email', row: 3 },
+          { field: 'email', _error: 'Invalid email', row: 1 },
+          { field: 'phone', _error: 'Invalid phone', row: 2 },
+          { field: 'email', _error: 'Invalid email', row: 3 },
         ]),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -337,10 +337,10 @@ describe('BatchStatusService', () => {
         successful: 3,
         failed: 2,
         errors: JSON.stringify([
-          { field: 'email', error: 'Invalid email' },
-          { field: 'phone' }, // Missing error field
-          { error: 'No field' }, // Missing field
-          { field: 'name', error: 'Too long' },
+          { field: 'email', _error: 'Invalid email' },
+          { field: 'phone' }, // Missing _error field
+          { _error: 'No field' }, // Missing field
+          { field: 'name', _error: 'Too long' },
           null, // Invalid
         ]),
         createdAt: new Date(),

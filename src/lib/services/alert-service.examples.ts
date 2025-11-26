@@ -22,7 +22,7 @@ export async function exampleEmergencyRefundFailure() {
     component: 'fullAnalysisRoute',
     stage: 'emergencyRefundCatch',
     caseId,
-    error: refundError,
+    _error: refundError,
     debitTransactionIds,
     context: 'This is a critical financial issue requiring immediate investigation',
   });
@@ -30,7 +30,7 @@ export async function exampleEmergencyRefundFailure() {
 
 /**
  * SCENARIO 2: Gemini API Refund Failed
- * API call succeeded but refund after error failed
+ * API call succeeded but refund after _error failed
  */
 export async function exampleGeminiErrorRefund() {
   const caseId = 'case-67890';
@@ -41,14 +41,14 @@ export async function exampleGeminiErrorRefund() {
     component: 'fullAnalysisRoute',
     stage: 'geminiErrorRefund',
     caseId,
-    error: refundError,
+    _error: refundError,
     debitTransactionIds,
   });
 }
 
 /**
  * SCENARIO 3: Main Catch - Emergency Refund Failure
- * Unexpected error in analysis + refund also failed
+ * Unexpected _error in analysis + refund also failed
  */
 export async function exampleMainCatchEmergencyRefund() {
   const caseId = 'case-99999';
@@ -60,10 +60,10 @@ export async function exampleMainCatchEmergencyRefund() {
     component: 'fullAnalysisRoute',
     stage: 'mainCatchEmergencyRefund',
     caseId,
-    error: refundError,
+    _error: refundError,
     debitTransactionIds,
     originalError: String(originalError),
-    context: 'Unexpected error occurred and emergency refund attempt also failed',
+    context: 'Unexpected _error occurred and emergency refund attempt also failed',
   });
 }
 
@@ -119,7 +119,7 @@ export async function exampleMainCatchEmergencyRefund() {
  *
  * POINT 2 (Line ~347-355): Main catch block, emergency refund fails
  * ────────────────────────────────────────────────────────────────
- * } catch (_error) {
+ * } catch (error) {
  *   // ... if emergency refund fails:
  *   await alert.fatal("Reembolso de emergência falhou durante catch geral", {...});
  * }
@@ -136,7 +136,7 @@ export async function exampleMainCatchEmergencyRefund() {
  * ================================================================
  *
  * 1. DEVELOPER CALLS:
- *    await alert.fatal("Message", { component, error, context, ... })
+ *    await alert.fatal("Message", { component, _error, context, ... })
  *
  * 2. ALERT SERVICE:
  *    ├─ Log to Better Stack (via LoggerService)

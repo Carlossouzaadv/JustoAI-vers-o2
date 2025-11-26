@@ -35,7 +35,7 @@ export async function GET() {
       success: true,
       data: status,
     });
-  } catch (_error) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-  } catch (_error) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

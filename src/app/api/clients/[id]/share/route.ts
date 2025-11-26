@@ -118,7 +118,7 @@ export async function POST(
         createdAt: shareLink.createdAt,
       },
     });
-  } catch (_error) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request body', issues: error.issues },
@@ -203,7 +203,7 @@ export async function GET(
       data: shareLinks,
       total: shareLinks.length,
     });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching client share links:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

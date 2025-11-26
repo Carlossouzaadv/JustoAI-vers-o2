@@ -218,7 +218,7 @@ export interface LogoUploadResult {
   width?: number;
   height?: number;
   fileSize?: number;
-  error?: string;
+  _error?: string;
 }
 
 // ================================
@@ -311,9 +311,9 @@ export class ReportCustomizationManager {
       log.info({ msg: 'Perfil criado:' });
       return profile as CustomizationProfile;
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro ao criar perfil:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro ao criar perfil:', { component: 'refactored' });
+      throw _error;
     }
   }
 
@@ -393,9 +393,9 @@ export class ReportCustomizationManager {
       log.info({ msg: 'Perfil atualizado:' });
       return profile as CustomizationProfile;
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro ao atualizar perfil:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro ao atualizar perfil:', { component: 'refactored' });
+      throw _error;
     }
   }
 
@@ -427,9 +427,9 @@ export class ReportCustomizationManager {
 
       log.info({ msg: 'Perfil removido:' });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro ao remover perfil:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro ao remover perfil:', { component: 'refactored' });
+      throw _error;
     }
   }
 
@@ -452,7 +452,7 @@ export class ReportCustomizationManager {
       if (!['image/jpeg', 'image/png', 'image/svg+xml'].includes(mimeType)) {
         return {
           success: false,
-          error: 'Formato de imagem não suportado. Use JPEG, PNG ou SVG.'
+          _error: 'Formato de imagem não suportado. Use JPEG, PNG ou SVG.'
         };
       }
 
@@ -460,7 +460,7 @@ export class ReportCustomizationManager {
       if (logoFile.length > 2 * 1024 * 1024) {
         return {
           success: false,
-          error: 'Arquivo muito grande. Máximo 2MB.'
+          _error: 'Arquivo muito grande. Máximo 2MB.'
         };
       }
 
@@ -491,11 +491,11 @@ export class ReportCustomizationManager {
         fileSize: logoFile.length
       };
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro no upload de logo:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro no upload de logo:', { component: 'refactored' });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido'
+        _error: _error instanceof Error ? _error.message : 'Erro desconhecido'
       };
     }
   }

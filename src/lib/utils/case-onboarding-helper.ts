@@ -51,7 +51,7 @@ export async function recordOnboardingError(
     });
 
     if (!currentCase) {
-      log.error({ msg: '[OnboardingError] Caso não encontrado:' });
+      log._error({ msg: '[OnboardingError] Caso não encontrado:' });
       return;
     }
 
@@ -92,7 +92,7 @@ export async function recordOnboardingError(
         // Serialização segura: converte OnboardingMetadata para InputJsonValue
         // sem casting. JSON.parse(JSON.stringify()) garante compatibilidade
         metadata: JSON.parse(JSON.stringify(updatedMetadata))
-        // onboardingStatus remains unchanged - error is tracked in metadata
+        // onboardingStatus remains unchanged - _error is tracked in metadata
       }
     });
 
@@ -102,8 +102,8 @@ export async function recordOnboardingError(
       retryCount,
       newStatus
     });
-  } catch (_error) {
-    logError(error, 'OnboardingError Erro ao registrar falha de onboarding:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'OnboardingError Erro ao registrar falha de onboarding:', { component: 'refactored' });
   }
 }
 
@@ -144,8 +144,8 @@ export async function getUnassignedReason(caseId: string): Promise<{
       status: isCaseStatus(caseData.status) ? caseData.status : CaseStatus.ACTIVE,
       canRetry: false
     };
-  } catch (_error) {
-    logError(error, 'OnboardingError Erro ao buscar motivo:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'OnboardingError Erro ao buscar motivo:', { component: 'refactored' });
     return null;
   }
 }
@@ -171,7 +171,7 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
     }
 
     if (!caseData.detectedCnj) {
-      log.error({ msg: '[OnboardingError] CNJ não detectado para caso' });
+      log._error({ msg: '[OnboardingError] CNJ não detectado para caso' });
       return false;
     }
 
@@ -195,8 +195,8 @@ export async function retryOnboarding(caseId: string): Promise<boolean> {
 
     log.info({ msg: '[OnboardingError] Retry iniciado para caso  (CNJ: )' });
     return true;
-  } catch (_error) {
-    logError(error, 'OnboardingError Erro ao fazer retry:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'OnboardingError Erro ao fazer retry:', { component: 'refactored' });
     return false;
   }
 }

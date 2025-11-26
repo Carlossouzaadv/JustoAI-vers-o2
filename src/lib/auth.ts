@@ -116,7 +116,7 @@ export async function getCurrentUser() {
     }
 
     return dbUser
-  } catch (_error) {
+  } catch (error) {
     logError(error, 'Error getting current user:', { component: 'refactored' })
     return null
   }

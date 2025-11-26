@@ -54,7 +54,7 @@ describe('API Utils', () => {
   })
 
   describe('errorResponse', () => {
-    it('returns error response with default status (400)', async () => {
+    it('returns _error response with default status (400)', async () => {
       const message = 'Error occurred'
       const response = errorResponse(message)
       const json = await response.json() as unknown
@@ -65,45 +65,45 @@ describe('API Utils', () => {
           val !== null &&
           'success' in val &&
           (val as ApiResponse).success === false &&
-          'error' in val
+          '_error' in val
         )
       }
 
       expect(response.status).toBe(400)
       if (isErrorResponse(json)) {
-        expect(json.error).toBe(message)
+        expect(json._error).toBe(message)
       }
     })
 
-    it('returns error response with custom status', async () => {
-      const message = 'Server error'
+    it('returns _error response with custom status', async () => {
+      const message = 'Server _error'
       const response = errorResponse(message, 500)
 
       expect(response.status).toBe(500)
     })
 
-    it('returns error response with 401 status', async () => {
+    it('returns _error response with 401 status', async () => {
       const message = 'Não autorizado'
       const response = errorResponse(message, 401)
 
       expect(response.status).toBe(401)
     })
 
-    it('returns error response with 404 status', async () => {
+    it('returns _error response with 404 status', async () => {
       const message = 'Recurso não encontrado'
       const response = errorResponse(message, 404)
 
       expect(response.status).toBe(404)
     })
 
-    it('returns error response with 405 status', async () => {
+    it('returns _error response with 405 status', async () => {
       const message = 'Method not allowed'
       const response = errorResponse(message, 405)
 
       expect(response.status).toBe(405)
     })
 
-    it('returns error response with 422 status', async () => {
+    it('returns _error response with 422 status', async () => {
       const message = 'Validation failed'
       const response = errorResponse(message, 422)
 

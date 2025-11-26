@@ -84,7 +84,7 @@ export async function PATCH(
     try {
       const rawBody = await request.json();
       body = updateDocumentSchema.parse(rawBody);
-    } catch (_error) {
+    } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(
           { success: false, error: 'Validação inválida', details: error.flatten() },
@@ -213,7 +213,7 @@ export async function PATCH(
       },
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Document PATCH] Erro:`, error);
 
     // Type-safe error handling: narrow user type before using
@@ -401,7 +401,7 @@ export async function DELETE(
       deletedAt: new Date().toISOString(),
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Document DELETE] Erro:`, error);
 
     // Type-safe error handling: narrow user type before using

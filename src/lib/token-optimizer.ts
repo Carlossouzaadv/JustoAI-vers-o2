@@ -151,9 +151,9 @@ export class TokenOptimizer {
 
       return result;
 
-    } catch (_error) {
-      logError(error, '❌ Erro no pipeline de otimização:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '❌ Erro no pipeline de otimização:', { component: 'refactored' });
+      throw _error;
     }
   }
 

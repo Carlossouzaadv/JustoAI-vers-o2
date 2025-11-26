@@ -162,8 +162,8 @@ export class UsageTracker {
         success: options.success
       });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Failed to track Judit call:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Failed to track Judit call:', { component: 'refactored' });
     }
   }
 
@@ -207,8 +207,8 @@ export class UsageTracker {
         success: options.success
       });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Failed to track IA call:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Failed to track IA call:', { component: 'refactored' });
     }
   }
 
@@ -254,8 +254,8 @@ export class UsageTracker {
         success: options.success
       });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Failed to track report generation:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Failed to track report generation:', { component: 'refactored' });
     }
   }
 
@@ -305,8 +305,8 @@ export class UsageTracker {
         reason: options.reason
       });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Failed to track credit consumption:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Failed to track credit consumption:', { component: 'refactored' });
     }
   }
 
@@ -356,8 +356,8 @@ export class UsageTracker {
         source: options.source
       });
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Failed to track credit purchase:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Failed to track credit purchase:', { component: 'refactored' });
     }
   }
 

@@ -206,7 +206,7 @@ export class CreditManager {
         fullCreditsHeld
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao buscar saldo de créditos:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro ao consultar saldo de créditos');
     }
@@ -281,7 +281,7 @@ export class CreditManager {
         };
       });
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao debitar créditos:`, 'error', { component: 'creditSystem' });
       return {
         success: false,
@@ -309,7 +309,7 @@ export class CreditManager {
       // Use JSON serialization (safe, no casting) to ensure Prisma compatibility
       try {
         validatedMetadata = JSON.parse(JSON.stringify(metadata));
-      } catch (_error) {
+      } catch (error) {
         log.warn({ msg: '${ICONS.WARNING} Failed to serialize transaction metadata:`, error', component: 'creditSystem' });
         // Use undefined for invalid metadata
         validatedMetadata = undefined;
@@ -504,7 +504,7 @@ export class CreditManager {
               refundReason
             };
             validatedMetadata = JSON.parse(JSON.stringify(enrichedMetadata));
-          } catch (_error) {
+          } catch (error) {
             log.warn({
               msg: `${ICONS.WARNING} Falha ao serializar metadata de reembolso`,
               component: 'creditSystem'
@@ -562,7 +562,7 @@ export class CreditManager {
         };
       });
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao reembolsar créditos:`, 'error', { component: 'creditSystem' });
       return {
         success: false,
@@ -653,7 +653,7 @@ export class CreditManager {
 
       log.info({ msg: '${ICONS.SUCCESS} Créditos creditados com sucesso', component: 'creditSystem' });
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao creditar créditos:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro ao creditar créditos');
     }
@@ -706,7 +706,7 @@ export class CreditManager {
         holdId: hold.id
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao reservar créditos:`, 'error', { component: 'creditSystem' });
       return {
         success: false,
@@ -726,7 +726,7 @@ export class CreditManager {
 
       log.info({ msg: '${ICONS.SUCCESS} Reserva de créditos liberada: ${holdId}', component: 'creditSystem' });
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao liberar reserva:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro ao liberar reserva de créditos');
     }
@@ -766,7 +766,7 @@ export class CreditManager {
         };
       });
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao buscar breakdown:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro ao consultar breakdown de créditos');
     }
@@ -814,7 +814,7 @@ export class CreditManager {
 
       return credits;
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao inicializar créditos:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro ao inicializar créditos do workspace');
     }
@@ -867,7 +867,7 @@ export class CreditManager {
         }
       }
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro na alocação mensal:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro na alocação mensal de créditos');
     }
@@ -942,7 +942,7 @@ export class CreditManager {
 
       return result;
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro na limpeza de créditos:`, 'error', { component: 'creditSystem' });
       throw new Error('Erro na limpeza de créditos expirados');
     }

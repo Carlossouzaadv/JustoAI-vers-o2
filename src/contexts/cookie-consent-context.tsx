@@ -117,7 +117,7 @@ export const CookieConsentProvider: React.FC<CookieConsentProviderProps> = ({ ch
         if (savedConsent) {
           applyCookieSettings(savedConsent);
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Erro ao carregar configurações de cookies:', error);
         setIsLoading(false);
       }

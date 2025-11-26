@@ -81,7 +81,7 @@ export async function GET(
 
           controller.enqueue(new TextEncoder().encode(progressMessage));
 
-        } catch (_error) {
+        } catch (error) {
           console.error(`${ICONS.ERROR} Erro ao enviar progresso SSE:`, error);
           clearInterval(intervalId);
           cleanup();

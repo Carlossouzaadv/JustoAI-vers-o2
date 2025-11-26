@@ -99,7 +99,7 @@ export default function SettingsPage() {
           setWorkspace(data);
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading settings:', error);
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ export default function SettingsPage() {
       } else {
         setMessage('❌ Erro ao atualizar perfil');
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error updating profile:', error);
       setMessage('❌ Erro ao atualizar perfil');
     } finally {

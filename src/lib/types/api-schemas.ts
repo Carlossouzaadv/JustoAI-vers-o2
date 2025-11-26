@@ -6,7 +6,7 @@
 //
 // Usage:
 //   const result = CreateProcessPayloadSchema.safeParse(rawBody);
-//   if (!result.success) return NextResponse.json({ errors: result.error.flatten() }, { status: 400 });
+//   if (!result.success) return NextResponse.json({ errors: result._error.flatten() }, { status: 400 });
 //   const data = result.data; // 100% type-safe
 //
 // Pattern: Always use safeParse() to handle validation failures gracefully.
@@ -515,11 +515,11 @@ export type RouteCaseIdParam = z.infer<typeof RouteCaseIdParamSchema>;
 // ================================================================
 
 /**
- * Format ZodError into readable error message
+ * Format ZodError into readable _error message
  */
-function formatZodError(error: z.ZodError<unknown>): string {
-  if ('issues' in error && Array.isArray(error.issues)) {
-    return error.issues
+function formatZodError(_error: z.ZodError<unknown>): string {
+  if ('issues' in _error && Array.isArray(_error.issues)) {
+    return _error.issues
       .map(issue => {
         // Extract path safely (ZERO casting)
         const path =
@@ -531,13 +531,13 @@ function formatZodError(error: z.ZodError<unknown>): string {
         const message =
           'message' in issue && typeof issue.message === 'string'
             ? issue.message
-            : 'Validation error';
+            : 'Validation _error';
 
         return `${path || 'root'}: ${message}`;
       })
       .join('; ');
   }
-  return 'Validation error';
+  return 'Validation _error';
 }
 
 /**
@@ -545,16 +545,16 @@ function formatZodError(error: z.ZodError<unknown>): string {
  */
 export function parseProcessUpload(
   data: unknown
-): { success: true; data: ProcessUploadPayload } | { success: false; error: string } {
+): { success: true; data: ProcessUploadPayload } | { success: false; _error: string } {
   try {
     const parsed = ProcessUploadPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }
 
@@ -563,16 +563,16 @@ export function parseProcessUpload(
  */
 export function parseCreateAnalysis(
   data: unknown
-): { success: true; data: CreateAnalysisPayload } | { success: false; error: string } {
+): { success: true; data: CreateAnalysisPayload } | { success: false; _error: string } {
   try {
     const parsed = CreateAnalysisPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }
 
@@ -581,16 +581,16 @@ export function parseCreateAnalysis(
  */
 export function parseCasesListQuery(
   data: unknown
-): { success: true; data: CasesListQuery } | { success: false; error: string } {
+): { success: true; data: CasesListQuery } | { success: false; _error: string } {
   try {
     const parsed = CasesListQuerySchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }
 
@@ -599,16 +599,16 @@ export function parseCasesListQuery(
  */
 export function parseCreateCase(
   data: unknown
-): { success: true; data: CreateCasePayload } | { success: false; error: string } {
+): { success: true; data: CreateCasePayload } | { success: false; _error: string } {
   try {
     const parsed = CreateCasePayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }
 
@@ -617,16 +617,16 @@ export function parseCreateCase(
  */
 export function parseBulkUpdateCases(
   data: unknown
-): { success: true; data: BulkUpdateCasesPayload } | { success: false; error: string } {
+): { success: true; data: BulkUpdateCasesPayload } | { success: false; _error: string } {
   try {
     const parsed = BulkUpdateCasesPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }
 
@@ -635,16 +635,16 @@ export function parseBulkUpdateCases(
  */
 export function parseBulkDeleteCases(
   data: unknown
-): { success: true; data: BulkDeleteCasesPayload } | { success: false; error: string } {
+): { success: true; data: BulkDeleteCasesPayload } | { success: false; _error: string } {
   try {
     const parsed = BulkDeleteCasesPayloadSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }
 
@@ -653,15 +653,15 @@ export function parseBulkDeleteCases(
  */
 export function parseRouteIdParam(
   data: unknown
-): { success: true; data: RouteIdParam } | { success: false; error: string } {
+): { success: true; data: RouteIdParam } | { success: false; _error: string } {
   try {
     const parsed = RouteIdParamSchema.parse(data);
     return { success: true, data: parsed };
-  } catch (_error) {
-    if (error instanceof z.ZodError) {
-      return { success: false, error: formatZodError(error) };
+  } catch (error) {
+    if (_error instanceof z.ZodError) {
+      return { success: false, _error: formatZodError(_error) };
     }
-    const message = error instanceof Error ? error.message : 'Unknown validation error';
-    return { success: false, error: message };
+    const message = _error instanceof Error ? _error.message : 'Unknown validation _error';
+    return { success: false, _error: message };
   }
 }

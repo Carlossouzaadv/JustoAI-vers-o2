@@ -7,7 +7,7 @@ import { log, logError } from '@/lib/services/logger';
 //
 // RESPONSIBILITIES:
 // - Direct HTTP requests to JUDIT API endpoints
-// - Basic error handling and logging
+// - Basic _error handling and logging
 // - Configuration validation
 // - Document processing interface
 //
@@ -50,7 +50,7 @@ interface LogMessage {
 
 interface Logger {
   info: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
-  error: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
+  _error: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
   warn: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
   debug: (_msgOrData: string | LogMessage, _data?: LogMessage) => void;
 }
@@ -76,9 +76,9 @@ const juditLogger: Logger = {
     const [msg, logData] = normalizeLogArgs(msgOrData, data);
     console.log(`[JUDIT]`, msg, logData || '');
   },
-  error: (msgOrData: string | LogMessage, data?: LogMessage) => {
+  _error: (msgOrData: string | LogMessage, data?: LogMessage) => {
     const [msg, logData] = normalizeLogArgs(msgOrData, data);
-    console.error(`[JUDIT-ERROR]`, msg, logData || '');
+    console._error(`[JUDIT-ERROR]`, msg, logData || '');
   },
   warn: (msgOrData: string | LogMessage, data?: LogMessage) => {
     const [msg, logData] = normalizeLogArgs(msgOrData, data);
@@ -131,7 +131,7 @@ export interface RequestOptions {
 export interface JuditApiResponse<T = Record<string, unknown>> {
   success: boolean;
   data?: T;
-  error?: string;
+  _error?: string;
   statusCode?: number;
 }
 
@@ -173,7 +173,7 @@ export interface StatusResponse {
  * Get JUDIT API configuration with inline validation
  *
  * VALIDATION RULES:
- * - JUDIT_API_KEY: warn if missing (don't throw error)
+ * - JUDIT_API_KEY: warn if missing (don't throw _error)
  * - JUDIT_API_BASE_URL: use fallback if missing
  */
 function getJuditConfig(): JuditConfig {
@@ -232,16 +232,16 @@ export async function sendRequest<T = Record<string, unknown>>(
 
   // Validate API key is present
   if (!config.apiKey) {
-    juditLogger.error(JSON.stringify({
+    juditLogger._error(JSON.stringify({
       action: 'send_request_failed',
       endpoint,
       method,
-      error: 'JUDIT_API_KEY not configured',
+      _error: 'JUDIT_API_KEY not configured',
     }));
 
     return {
       success: false,
-      error: 'JUDIT_API_KEY not configured. Set JUDIT_API_KEY environment variable.',
+      _error: 'JUDIT_API_KEY not configured. Set JUDIT_API_KEY environment variable.',
       statusCode: 0,
     };
   }
@@ -313,7 +313,7 @@ export async function sendRequest<T = Record<string, unknown>>(
         status_text: response.statusText,
       });
 
-      juditLogger.error(JSON.stringify({
+      juditLogger._error(JSON.stringify({
         action: 'send_request_error',
         endpoint,
         method,
@@ -324,7 +324,7 @@ export async function sendRequest<T = Record<string, unknown>>(
 
       return {
         success: false,
-        error: `HTTP ${response.status}: ${response.statusText}`,
+        _error: `HTTP ${response.status}: ${response.statusText}`,
         statusCode: response.status,
         data,
       };
@@ -347,17 +347,17 @@ export async function sendRequest<T = Record<string, unknown>>(
       statusCode: response.status,
     };
 
-  } catch (_error) {
+  } catch (error) {
     clearTimeout(timeoutId);
 
     // Handle timeout
-    if (error instanceof Error && error.name === 'AbortError') {
+    if (_error instanceof Error && _error.name === 'AbortError') {
       const duration = operation.finish('failure', {
-        error: 'Request timeout',
+        _error: 'Request timeout',
         timeout_ms: timeout,
       });
 
-      juditLogger.error(JSON.stringify({
+      juditLogger._error(JSON.stringify({
         action: 'send_request_timeout',
         endpoint,
         method,
@@ -367,28 +367,28 @@ export async function sendRequest<T = Record<string, unknown>>(
 
       return {
         success: false,
-        error: `Request timeout after ${timeout}ms`,
+        _error: `Request timeout after ${timeout}ms`,
         statusCode: 0,
       };
     }
 
     // Handle other errors
     const duration = operation.finish('failure', {
-      error: error instanceof Error ? error.message : String(error),
+      _error: _error instanceof Error ? _error.message : String(_error),
     });
 
-    juditLogger.error(JSON.stringify({
+    juditLogger._error(JSON.stringify({
       action: 'send_request_error',
       endpoint,
       method,
-      error: error instanceof Error ? error.message : String(error),
-      error_stack: error instanceof Error ? error.stack : undefined,
+      _error: _error instanceof Error ? _error.message : String(_error),
+      error_stack: _error instanceof Error ? _error.stack : undefined,
       duration_ms: duration,
     }));
 
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      _error: _error instanceof Error ? _error.message : 'Unknown _error occurred',
       statusCode: 0,
     };
   }
@@ -442,10 +442,10 @@ export async function createOnboarding(
       status: response.data.status,
     }));
   } else {
-    juditLogger.error(JSON.stringify({
+    juditLogger._error(JSON.stringify({
       action: 'create_onboarding_failed',
       cnj,
-      error: response.error,
+      _error: response._error,
     }));
   }
 
@@ -513,7 +513,7 @@ export async function processDocument(
 
   return {
     success: false,
-    error: 'Document processing not yet implemented',
+    _error: 'Document processing not yet implemented',
   };
 }
 
@@ -551,7 +551,7 @@ export async function testConnection(): Promise<{
   success: boolean;
   configured: boolean;
   reachable: boolean;
-  error?: string;
+  _error?: string;
 }> {
   const configStatus = checkConfiguration();
 
@@ -560,7 +560,7 @@ export async function testConnection(): Promise<{
       success: false,
       configured: false,
       reachable: false,
-      error: 'JUDIT API not configured. Set JUDIT_API_KEY and JUDIT_API_BASE_URL.',
+      _error: 'JUDIT API not configured. Set JUDIT_API_KEY and JUDIT_API_BASE_URL.',
     };
   }
 
@@ -573,7 +573,7 @@ export async function testConnection(): Promise<{
     success: response.success,
     configured: true,
     reachable: response.success,
-    error: response.error,
+    _error: response._error,
   };
 }
 

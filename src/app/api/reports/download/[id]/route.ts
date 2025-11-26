@@ -138,7 +138,7 @@ export const GET = withErrorHandler(async (
       return errorResponse('Arquivo não encontrado no sistema', 404);
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no download:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',

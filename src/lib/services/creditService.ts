@@ -43,8 +43,8 @@ export async function getCredits(userEmail: string | undefined, workspaceId: str
       return { reportCredits: Number(created.reportCreditsBalance), fullCredits: Number(created.fullCreditsBalance), unlimited: false, divinityAdmin: false };
     }
     return { reportCredits: Number(credits.reportCreditsBalance), fullCredits: Number(credits.fullCreditsBalance), unlimited: false, divinityAdmin: false };
-  } catch (_error) {
-    logError(error, 'CREDIT Error:', { component: 'refactored' });
+  } catch (error) {
+    logError(_error, 'CREDIT Error:', { component: 'refactored' });
     throw new Error('Failed to fetch');
   }
 }
@@ -76,7 +76,7 @@ export async function debitCredits(userEmail: string | undefined, workspaceId: s
       data: { workspaceId, type: CreditTransactionType.DEBIT, creditCategory: category, amount: cost, reason }
     });
     return { success: true, newBalance: { reportCredits: Number(updated.reportCreditsBalance), fullCredits: Number(updated.fullCreditsBalance), unlimited: false, divinityAdmin: false } };
-  } catch (_error) {
+  } catch (error) {
     return { success: false, reason: 'Error debiting' };
   }
 }
@@ -92,7 +92,7 @@ export async function addCredits(workspaceId: string, cost: number, category: Cr
       data: { workspaceId, type: CreditTransactionType.CREDIT, creditCategory: category, amount: cost, reason }
     });
     return { success: true, newBalance: { reportCredits: Number(updated.reportCreditsBalance), fullCredits: Number(updated.fullCreditsBalance), unlimited: false, divinityAdmin: false } };
-  } catch (_error) {
+  } catch (error) {
     return { success: false, reason: 'Error adding' };
   }
 }

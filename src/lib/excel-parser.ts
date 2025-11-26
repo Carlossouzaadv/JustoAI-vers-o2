@@ -179,7 +179,7 @@ export class ExcelProcessParser {
 
       return this.parseRawData(rawData, fileName);
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro ao processar Excel:', { component: 'refactored' });
 
       return {

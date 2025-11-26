@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
               } else {
                 cookieStore.set(name, value)
               }
-            } catch (_error) {
+            } catch (error) {
               // Cookie setting might fail in middleware
             }
           },
           remove(name: string, _options: Record<string, unknown> | undefined) {
             try {
               cookieStore.delete(name)
-            } catch (_error) {
+            } catch (error) {
               // Cookie deletion might fail
             }
           },
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
         totalCredits
       );
       console.log('✅ Welcome email sent to', email);
-    } catch (_error) {
+    } catch (error) {
       console.warn('Could not send welcome email:', _error);
     }
 
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Signup error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

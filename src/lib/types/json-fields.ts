@@ -237,7 +237,7 @@ export interface SystemImportValidation {
   errors?: Array<{
     row?: number;
     field?: string;
-    error: string;
+    _error: string;
   }>;
   warnings?: Array<{
     row?: number;
@@ -356,7 +356,7 @@ export interface UploadBatchRowData {
 
 export interface UploadBatchRowErrorMessage {
   field?: string;
-  error: string;
+  _error: string;
   [key: string]: unknown;
 }
 
@@ -364,7 +364,7 @@ export interface UploadBatchEventPayload {
   eventType?: string;
   rowIndex?: number;
   data?: Record<string, unknown>;
-  error?: string;
+  _error?: string;
   [key: string]: unknown;
 }
 

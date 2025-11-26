@@ -134,7 +134,7 @@ export const GET = withErrorHandler(async (
 
     return successResponse(responseData);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar análise:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',
@@ -155,7 +155,7 @@ async function isLatestVersion(processId: string, versionNumber: number): Promis
     });
 
     return latest?.version === versionNumber;
-  } catch (_error) {
+  } catch (error) {
     return false;
   }
 }
@@ -173,7 +173,7 @@ async function hasNextVersion(processId: string, versionNumber: number): Promise
     });
 
     return !!next;
-  } catch (_error) {
+  } catch (error) {
     return false;
   }
 }

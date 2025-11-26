@@ -155,7 +155,7 @@ export class EmailService {
         provider: 'resend'
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro ao enviar email:', { component: 'refactored' });
       return {
         success: false,
@@ -827,7 +827,7 @@ export class EmailService {
       });
 
       return { success: response.ok };
-    } catch (_error) {
+    } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

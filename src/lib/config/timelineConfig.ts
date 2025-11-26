@@ -108,7 +108,7 @@ export const timelineConfig = getTimelineConfig();
 // Validar ao carregar
 try {
   validateTimelineConfig(timelineConfig);
-} catch (_error) {
+} catch (error) {
   logError(error, '❌ Erro na configuração da Timeline:', { component: 'refactored' });
   // Em produção, falhar rápido; em dev, apenas log
   if (process.env.NODE_ENV === 'production') {

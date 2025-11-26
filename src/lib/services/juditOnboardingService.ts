@@ -38,7 +38,7 @@ function formatLogMessage(data: LogMessage | string): string {
 
 interface Logger {
   info: (_data: LogMessage | string) => void;
-  error: (_data: LogMessage | string) => void;
+  _error: (_data: LogMessage | string) => void;
   warn: (_data: LogMessage | string) => void;
   debug: (_data: LogMessage | string) => void;
 }
@@ -50,7 +50,7 @@ interface OperationTracker {
 // Observability stubs - inline to avoid external dependencies that may not be in container
 const juditLogger: Logger = {
   info: (data: LogMessage | string) => console.log(`[JUDIT]`, formatLogMessage(data)),
-  error: (data: LogMessage | string) => console.error(`[JUDIT-ERROR]`, formatLogMessage(data)),
+  _error: (data: LogMessage | string) => console._error(`[JUDIT-ERROR]`, formatLogMessage(data)),
   warn: (data: LogMessage | string) => console.warn(`[JUDIT-WARN]`, formatLogMessage(data)),
   debug: (data: LogMessage | string) => console.debug(`[JUDIT-DEBUG]`, formatLogMessage(data)),
 };
@@ -82,7 +82,7 @@ const juditMetrics = {
   },
 };
 const trackJuditCost = (data: LogMessage) => console.log(`[COST]`, formatLogMessage(data));
-const alertApiError = (error: unknown, context?: LogMessage) => console.error(`[ALERT-API-ERROR]`, error, context ? formatLogMessage(context) : '');
+const alertApiError = (_error: unknown, context?: LogMessage) => console._error(`[ALERT-API-ERROR]`, _error, context ? formatLogMessage(context) : '');
 
 // ================================================================
 // TIPOS E INTERFACES
@@ -96,7 +96,7 @@ export interface ProcessRequestResult {
   requestId: string;
   numeroCnj: string;
   dadosCompletos?: Record<string, unknown>;
-  error?: string;
+  _error?: string;
   attemptCount?: number;
   duration?: number;
 }
@@ -220,15 +220,15 @@ export async function performFullProcessRequest(
       numeroCnj: cnj,
       duration,
     };
-  } catch (_error) {
+  } catch (error) {
     const duration = Date.now() - startTime;
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = _error instanceof Error ? _error.message : 'Unknown _error';
 
-    juditLogger.error({
+    juditLogger._error({
       action: 'onboarding_failed',
       cnj,
-      error: errorMessage,
-      error_stack: error instanceof Error ? error.stack : undefined,
+      _error: errorMessage,
+      error_stack: _error instanceof Error ? _error.stack : undefined,
       duration_ms: duration,
     });
 
@@ -271,7 +271,7 @@ export async function performFullProcessRequest(
     });
 
     // Send alert for error
-    await alertApiError(error as Error, {
+    await alertApiError(_error as Error, {
       endpoint: '/requests',
       method: 'POST',
       numeroCnj: cnj,
@@ -279,7 +279,7 @@ export async function performFullProcessRequest(
     });
 
     operation.finish('failure', {
-      error: errorMessage,
+      _error: errorMessage,
     });
 
     return {
@@ -287,7 +287,7 @@ export async function performFullProcessRequest(
       processoId,
       requestId,
       numeroCnj: cnj,
-      error: errorMessage,
+      _error: errorMessage,
       duration,
     };
   }
@@ -410,12 +410,12 @@ async function initiateRequest(
   if (!validationResult.success) {
     // Se a API JUDIT mudar o contrato ou a resposta vier corrompida,
     // capturamos aqui antes que o erro se espalhe
-    juditLogger.error({
+    juditLogger._error({
       action: 'judit_response_validation_failed',
-      error: validationResult.error,
+      _error: validationResult._error,
       rawResponse: JSON.stringify(rawResponse),
     });
-    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult.error}`);
+    throw new Error(`Resposta da API JUDIT inválida ou malformada: ${validationResult._error}`);
   }
 
   // A partir desta linha, 'response' é 100% type-safe
@@ -539,10 +539,10 @@ export async function listProcessRequests(cnj: string) {
 //     }
 //
 //     return 0;
-//   } catch (_error) {
+//   } catch (error) {
 //     juditLogger.warn({
 //       action: 'extract_document_count_failed',
-//       error: error instanceof Error ? error.message : 'Unknown error',
+//       _error: _error instanceof Error ? _error.message : 'Unknown _error',
 //     });
 //     return 0;
 //   }
@@ -579,10 +579,10 @@ export async function listProcessRequests(cnj: string) {
 //     }
 //
 //     return 0;
-//   } catch (_error) {
+//   } catch (error) {
 //     juditLogger.warn({
 //       action: 'extract_movements_count_failed',
-//       error: error instanceof Error ? error.message : 'Unknown error',
+//       _error: _error instanceof Error ? _error.message : 'Unknown _error',
 //     });
 //     return 0;
 //   }

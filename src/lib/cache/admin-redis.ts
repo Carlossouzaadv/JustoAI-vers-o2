@@ -106,7 +106,7 @@ export async function withAdminCache<T>(
         // Continue to recompute
       }
     }
-  } catch (_error) {
+  } catch (error) {
     handleRedisError(`GET ${key}`, error);
   }
 
@@ -117,7 +117,7 @@ export async function withAdminCache<T>(
   try {
     const serialized = JSON.stringify(result);
     await redis.setex(key, ttlSeconds, serialized);
-  } catch (_error) {
+  } catch (error) {
     handleRedisError(`SET ${key}`, error);
     // Still return the computed value even if cache write fails
   }
@@ -132,7 +132,7 @@ export async function clearAdminCache(key: string): Promise<void> {
   const redis = getAdminRedis();
   try {
     await redis.del(key);
-  } catch (_error) {
+  } catch (error) {
     handleRedisError(`DEL ${key}`, error);
   }
 }
@@ -151,7 +151,7 @@ export async function clearAdminCachePattern(pattern: string): Promise<void> {
         await redis.del(key);
       }
     }
-  } catch (_error) {
+  } catch (error) {
     handleRedisError(`KEYS/DEL ${pattern}`, error);
   }
 }
@@ -216,7 +216,7 @@ export async function getAdminCacheStats(): Promise<{
       totalKeys: keys.length,
       connected: true,
     };
-  } catch (_error) {
+  } catch (error) {
     handleRedisError('STATS', error);
     return {
       totalKeys: 0,

@@ -39,7 +39,7 @@ export interface DOCXGenerationResult {
   filePath: string;
   fileSize: number;
   processingTime: number;
-  error?: string;
+  _error?: string;
 }
 
 export interface ProcessData {
@@ -149,14 +149,14 @@ export class DOCXTemplateEngine {
         processingTime: Date.now() - startTime
       };
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} DOCX generation failed:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} DOCX generation failed:', { component: 'refactored' });
       return {
         success: false,
         filePath: '',
         fileSize: 0,
         processingTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        _error: _error instanceof Error ? _error.message : 'Unknown _error'
       };
     }
   }

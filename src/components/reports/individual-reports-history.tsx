@@ -108,7 +108,7 @@ export default function IndividualReportsHistory({ workspaceId }: IndividualRepo
         setSummary(data.summary);
         setHasMore(data.pagination.hasMore);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao carregar histórico:', error);
     } finally {
       setLoading(false);
@@ -151,7 +151,7 @@ export default function IndividualReportsHistory({ workspaceId }: IndividualRepo
         // Recarregar lista
         loadReports();
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao cancelar relatório:', error);
     }
   };

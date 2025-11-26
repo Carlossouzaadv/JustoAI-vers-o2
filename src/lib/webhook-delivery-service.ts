@@ -21,7 +21,7 @@ interface WebhookDeliveryLog {
   id: string;
   status: 'pending' | 'processing' | 'success' | 'failed' | 'retrying' | 'skipped';
   statusCode?: number;
-  error?: string;
+  _error?: string;
   retryCount: number;
   maxRetries: number;
   nextRetryAt?: Date;
@@ -64,7 +64,7 @@ export class WebhookDeliveryService {
   async logWebhookDelivery(
     data: WebhookDeliveryData,
     attempt: number = 0,
-    error?: string,
+    _error?: string,
     statusCode?: number
   ): Promise<WebhookDeliveryLog> {
     try {
@@ -76,7 +76,7 @@ export class WebhookDeliveryService {
         id: `webhook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         status,
         statusCode,
-        error,
+        _error,
         retryCount: attempt,
         maxRetries: this.MAX_RETRIES,
         lastAttemptAt: new Date(),
@@ -101,7 +101,7 @@ export class WebhookDeliveryService {
             signature: data.signature,
             status: statusToEnum(status),
             statusCode: statusCode || undefined,
-            error: error || undefined,
+            _error: _error || undefined,
             retryCount: attempt,
             maxRetries: this.MAX_RETRIES,
             lastAttemptAt: log.lastAttemptAt,
@@ -125,7 +125,7 @@ export class WebhookDeliveryService {
           status,
           attempt: `${attempt}/${this.MAX_RETRIES}`,
           statusCode,
-          error: error?.substring(0, 100),
+          _error: _error?.substring(0, 100),
           nextRetry: log.nextRetryAt?.toISOString(),
         }
       );

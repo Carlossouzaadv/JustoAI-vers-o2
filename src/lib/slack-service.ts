@@ -23,7 +23,7 @@ export interface SlackAlertOptions {
 export interface SlackResult {
   success: boolean;
   messageId?: string;
-  error?: string;
+  _error?: string;
 }
 
 /**
@@ -72,7 +72,7 @@ export class SlackService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Slack API error: ${response.statusText} - ${errorText}`);
+        throw new Error(`Slack API _error: ${response.statusText} - ${errorText}`);
       }
 
       log.info({ msg: 'Alerta enviado para Slack' });
@@ -82,21 +82,21 @@ export class SlackService {
       };
 
     } catch (error) {
-      logError(error, '${ICONS.ERROR} Erro ao enviar alerta para Slack:', { component: 'refactored' });
+      logError(_error, '${ICONS.ERROR} Erro ao enviar alerta para Slack:', { component: 'refactored' });
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        _error: _error instanceof Error ? _error.message : 'Unknown _error'
       };
     }
   }
 
   /**
-   * Send critical error alert
+   * Send critical _error alert
    */
   async sendCriticalAlert(
     title: string,
     description: string,
-    error?: Error,
+    _error?: Error,
     context?: Record<string, unknown>
   ): Promise<SlackResult> {
     return this.sendAlert({
@@ -104,8 +104,8 @@ export class SlackService {
       description,
       severity: 'critical',
       details: {
-        'Erro': error?.message || 'N/A',
-        'Stack': error?.stack?.split('\n')[0] || 'N/A',
+        'Erro': _error?.message || 'N/A',
+        'Stack': _error?.stack?.split('\n')[0] || 'N/A',
         'Timestamp': new Date().toISOString(),
         ...(context || {})
       }
@@ -135,13 +135,13 @@ export class SlackService {
    */
   async sendJobFailure(
     jobName: string,
-    error: Error,
+    _error: Error,
     results?: Record<string, unknown>
   ): Promise<SlackResult> {
     return this.sendCriticalAlert(
       `❌ Job Falhou: ${jobName}`,
       `Job '${jobName}' falhou durante execução`,
-      error,
+      _error,
       {
         'Timestamp': new Date().toISOString(),
         ...(results || {})
@@ -298,9 +298,9 @@ export class SlackService {
   /**
    * Test Slack connectivity
    */
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
+  async testConnection(): Promise<{ success: boolean; _error?: string }> {
     if (!this.webhookUrl) {
-      return { success: false, error: 'Webhook URL not configured' };
+      return { success: false, _error: 'Webhook URL not configured' };
     }
 
     try {
@@ -315,10 +315,10 @@ export class SlackService {
       });
 
       return { success: response.ok };
-    } catch (_error) {
+    } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        _error: _error instanceof Error ? _error.message : 'Unknown _error'
       };
     }
   }
@@ -355,10 +355,10 @@ export const sendSlackAlert = (
 export const sendSlackCriticalAlert = (
   title: string,
   description: string,
-  error?: Error,
+  _error?: Error,
   context?: Record<string, unknown>
 ) =>
-  getSlackService().sendCriticalAlert(title, description, error, context);
+  getSlackService().sendCriticalAlert(title, description, _error, context);
 
 export const sendSlackJobSuccess = (
   jobName: string,
@@ -368,7 +368,7 @@ export const sendSlackJobSuccess = (
 
 export const sendSlackJobFailure = (
   jobName: string,
-  error: Error,
+  _error: Error,
   results?: Record<string, unknown>
 ) =>
-  getSlackService().sendJobFailure(jobName, error, results);
+  getSlackService().sendJobFailure(jobName, _error, results);

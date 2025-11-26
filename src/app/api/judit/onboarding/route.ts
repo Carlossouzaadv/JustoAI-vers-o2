@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       { status: 202 } // 202 Accepted
     );
 
-  } catch (_error) {
+  } catch (error) {
     console.error('[API] Erro ao criar onboarding job:', error);
 
     return NextResponse.json(

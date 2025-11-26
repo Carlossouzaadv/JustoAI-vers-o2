@@ -156,7 +156,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       message: 'Agendamento criado com sucesso'
     }, { status: 201 });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao criar agendamento:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',
@@ -256,7 +256,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 
     return successResponse(responseData);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao listar agendamentos:`, error);
     return errorResponse(
       error instanceof Error ? error.message : 'Erro interno do servidor',

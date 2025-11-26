@@ -547,7 +547,7 @@ export async function GET(
       { status: 200 }
     );
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Unified Timeline] Erro:`, error);
 
     return NextResponse.json(

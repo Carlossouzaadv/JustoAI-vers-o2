@@ -42,7 +42,7 @@ export interface PDFGenerationResult {
   fileSize: number;
   pageCount: number;
   processingTime: number;
-  error?: string;
+  _error?: string;
 }
 
 export class PDFTemplateEngine {
@@ -66,9 +66,9 @@ export class PDFTemplateEngine {
         ]
       });
       log.info({ msg: 'PDF Template Engine initialized' });
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Failed to initialize PDF engine:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Failed to initialize PDF engine:', { component: 'refactored' });
+      throw _error;
     }
   }
 
@@ -146,15 +146,15 @@ export class PDFTemplateEngine {
         processingTime: Date.now() - startTime
       };
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} PDF generation failed:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} PDF generation failed:', { component: 'refactored' });
       return {
         success: false,
         filePath: '',
         fileSize: 0,
         pageCount: 0,
         processingTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        _error: _error instanceof Error ? _error.message : 'Unknown _error'
       };
     }
   }

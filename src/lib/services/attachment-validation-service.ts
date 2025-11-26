@@ -40,12 +40,12 @@ const MIN_VALID_PDF_SIZE = 100; // Mínimo 100 bytes para PDF válido
 /**
  * Type Guard: Verifica se o erro é um erro de PDF corrompido/não-parseável
  */
-function isPdfLoadError(error: unknown): error is Error {
-  if (!(error instanceof Error)) {
+function isPdfLoadError(_error: unknown): _error is Error {
+  if (!(_error instanceof Error)) {
     return false;
   }
 
-  const message = error.message.toLowerCase();
+  const message = _error.message.toLowerCase();
   return (
     message.includes('pdf') ||
     message.includes('corrupt') ||
@@ -131,9 +131,9 @@ export async function validateAttachment(
 
     return result;
 
-  } catch (_error) {
+  } catch (error) {
     // Erro inesperado durante validação
-    const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorMsg = _error instanceof Error ? _error.message : String(_error);
     logError(errorMsg, '${ICONS.ERROR} AttachmentValidation Erro inesperado:', { component: 'refactored' });
 
     return {
@@ -237,18 +237,18 @@ async function checkPdfIntegrity(
 
       pdfDoc = await Promise.race([loadPromise, timeoutPromise]);
 
-    } catch (_error) {
-      // Se o erro for "timeout" ou "parse error" → CORRUPTED
-      if (isPdfLoadError(error)) {
+    } catch (error) {
+      // Se o erro for "timeout" ou "parse _error" → CORRUPTED
+      if (isPdfLoadError(_error)) {
         return {
           isValid: false,
           reason: 'CORRUPTED',
-          details: `PDF corrompido: ${error instanceof Error ? error.message : String(error)}`,
+          details: `PDF corrompido: ${_error instanceof Error ? _error.message : String(_error)}`,
           checkedAt: new Date(),
         };
       }
       // Se for outro erro → re-throw para catcher externo
-      throw error;
+      throw _error;
     }
 
     // Se pdfDoc não foi carregado → erro
@@ -277,9 +277,9 @@ async function checkPdfIntegrity(
     // ✅ PDF válido, não corrompido, não protegido
     return { isValid: true, checkedAt: new Date() };
 
-  } catch (_error) {
+  } catch (error) {
     // Erro inesperado
-    const errorMsg = error instanceof Error ? error.message : String(error);
+    const errorMsg = _error instanceof Error ? _error.message : String(_error);
     return {
       isValid: false,
       reason: 'CORRUPTED',

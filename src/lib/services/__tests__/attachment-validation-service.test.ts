@@ -73,7 +73,7 @@ describe('AttachmentValidationService', () => {
       expect(result.checkedAt).toBeInstanceOf(Date);
     });
 
-    it('should include helpful error details', async () => {
+    it('should include helpful _error details', async () => {
       const emptyBuffer = Buffer.alloc(0);
       const result = await validateAttachment(
         emptyBuffer,
@@ -206,7 +206,7 @@ describe('AttachmentValidationService', () => {
       expect(result.reason).toBe('CORRUPTED');
     });
 
-    it('should report meaningful error for invalid PDF', async () => {
+    it('should report meaningful _error for invalid PDF', async () => {
       // Buffer maior com header PDF mas conteúdo inválido que pdf-lib não consegue parsear
       const corruptedPdf = Buffer.from(
         '%PDF-1.4\nINVALID_PDF_CONTENT_THAT_CANNOT_BE_PARSED_' + 'X'.repeat(200)
@@ -351,7 +351,7 @@ describe('AttachmentValidationService', () => {
       expect(result.checkedAt.getTime()).toBeLessThanOrEqual(afterTime.getTime());
     });
 
-    it('should handle unexpected error gracefully', async () => {
+    it('should handle unexpected _error gracefully', async () => {
       // Buffer que causará erro inesperado
       const malformedBuffer = Buffer.from([0xFF, 0xD8, 0xFF]); // JPEG header
 

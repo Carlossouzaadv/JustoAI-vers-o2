@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest) {
         'Cache-Control': 'no-store', // Sempre gerar novo template (pode ter atualizações)
       },
     });
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao gerar template:`, error);
 
     return NextResponse.json(

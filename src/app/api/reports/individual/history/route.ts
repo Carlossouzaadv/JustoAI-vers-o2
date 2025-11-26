@@ -432,7 +432,7 @@ export async function GET(request: NextRequest) {
       summary
     } as HistoryResponse);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar histórico de relatórios:`, error);
 
     return NextResponse.json({
@@ -514,7 +514,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Relatório cancelado com sucesso'
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao cancelar relatório:`, error);
 
     return NextResponse.json({

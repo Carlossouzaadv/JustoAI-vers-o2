@@ -25,7 +25,7 @@ export interface PaymentProcessingResult {
   success: boolean;
   transactionId: string;
   creditsAdded?: number;
-  error?: string;
+  _error?: string;
   shouldRetry?: boolean;
 }
 
@@ -72,12 +72,12 @@ export class PaymentWebhookHandler {
           };
       }
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao processar webhook:`, '', { component: 'paymentWebhookHandler' });
       return {
         success: false,
         transactionId: 'unknown',
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        _error: _error instanceof Error ? _error.message : 'Erro desconhecido',
         shouldRetry: true
       };
     }
@@ -193,9 +193,9 @@ export class PaymentWebhookHandler {
         creditsAdded: credits
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao processar pagamento bem-sucedido:`, '', { component: 'paymentWebhookHandler' });
-      throw error;
+      throw _error;
     }
   }
 
@@ -241,9 +241,9 @@ export class PaymentWebhookHandler {
         success: true,
         transactionId: payload.transactionId
       };
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao processar pagamento falhado:`, '', { component: 'paymentWebhookHandler' });
-      throw error;
+      throw _error;
     }
   }
 
@@ -286,9 +286,9 @@ export class PaymentWebhookHandler {
         success: true,
         transactionId: payload.transactionId
       };
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao processar pagamento pendente:`, '', { component: 'paymentWebhookHandler' });
-      throw error;
+      throw _error;
     }
   }
 
@@ -315,7 +315,7 @@ export class PaymentWebhookHandler {
         return {
           success: false,
           transactionId: payload.transactionId,
-          error: 'Original transaction not found'
+          _error: 'Original transaction not found'
         };
       }
 
@@ -363,9 +363,9 @@ export class PaymentWebhookHandler {
         success: true,
         transactionId: payload.transactionId
       };
-    } catch (_error) {
+    } catch (error) {
       logError(`${ICONS.ERROR} Erro ao processar reembolso:`, '', { component: 'paymentWebhookHandler' });
-      throw error;
+      throw _error;
     }
   }
 
@@ -378,8 +378,8 @@ export class PaymentWebhookHandler {
 
     try {
       rawData = JSON.parse(rawBody);
-    } catch (_error) {
-      throw new Error(`Invalid JSON in webhook body: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error) {
+      throw new Error(`Invalid JSON in webhook body: ${_error instanceof Error ? _error.message : 'Unknown _error'}`);
     }
 
     switch (provider.toLowerCase()) {
@@ -412,7 +412,7 @@ export class PaymentWebhookHandler {
     const validationResult = parseStripeWebhook(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid Stripe webhook payload: ${validationResult.error}`);
+      throw new Error(`Invalid Stripe webhook payload: ${validationResult._error}`);
     }
 
     const data: StripeWebhook = validationResult.data;
@@ -449,7 +449,7 @@ export class PaymentWebhookHandler {
     const validationResult = parseMercadoPagoWebhook(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid MercadoPago webhook payload: ${validationResult.error}`);
+      throw new Error(`Invalid MercadoPago webhook payload: ${validationResult._error}`);
     }
 
     const data: MercadoPagoWebhook = validationResult.data;
@@ -494,7 +494,7 @@ export class PaymentWebhookHandler {
     const validationResult = PagSeguroWebhookSchema.safeParse(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid PagSeguro webhook payload: ${validationResult.error.message}`);
+      throw new Error(`Invalid PagSeguro webhook payload: ${validationResult._error.message}`);
     }
 
     const data: PagSeguroWebhook = validationResult.data;
@@ -557,17 +557,17 @@ export class PaymentWebhookHandler {
 
       return isValid;
 
-    } catch (_error) {
-      console.error(`${ICONS.ERROR} Erro ao verificar assinatura do webhook:`, '', { component: 'paymentWebhookHandler' });
-      // Log error to Sentry
+    } catch (error) {
+      console._error(`${ICONS.ERROR} Erro ao verificar assinatura do webhook:`, '', { component: 'paymentWebhookHandler' });
+      // Log _error to Sentry
       Sentry.captureMessage(
         `Error verifying webhook signature for ${provider}`,
-        'error'
+        '_error'
       );
 
       Sentry.getCurrentScope().setContext('webhook_verification_error', {
         provider,
-        error: error instanceof Error ? error.message : String(error)
+        _error: _error instanceof Error ? _error.message : String(_error)
       });
 
       return false;

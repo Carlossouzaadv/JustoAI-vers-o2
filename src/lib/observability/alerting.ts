@@ -27,7 +27,7 @@ const ALERT_CONFIG = {
 
   // Thresholds
   RATE_LIMIT_THRESHOLD: 10, // Alert after 10 rate limits in 5 minutes
-  ERROR_RATE_THRESHOLD: 0.1, // Alert if error rate > 10%
+  ERROR_RATE_THRESHOLD: 0.1, // Alert if _error rate > 10%
   HIGH_COST_THRESHOLD: 50, // Alert if daily cost > R$50
 } as const;
 
@@ -117,11 +117,11 @@ async function notifyChannels(alert: AlertOptions): Promise<void> {
   const channels = getEnabledChannels();
 
   const notifications = channels.map((channel) =>
-    channel.send(alert).catch((error) => {
-      alertLogger.error({
+    channel.send(alert).catch((_error) => {
+      alertLogger._error({
         action: 'notification_failed',
         channel: channel.name,
-        error: error instanceof Error ? error.message : String(error),
+        _error: _error instanceof Error ? _error.message : String(_error),
       });
     })
   );
@@ -294,7 +294,7 @@ async function sendWebhookNotification(alert: AlertOptions): Promise<void> {
  * Alerta de erro na API
  */
 export async function alertApiError(
-  error: Error,
+  _error: Error,
   context: {
     endpoint: string;
     method: string;
@@ -307,7 +307,7 @@ export async function alertApiError(
     type: 'API_ERROR',
     severity: AlertSeverity.HIGH,
     title: 'JUDIT API Error',
-    message: `Error calling ${context.method} ${context.endpoint}: ${error.message}`,
+    message: `Error calling ${context.method} ${context.endpoint}: ${_error.message}`,
     errorCode: context.statusCode?.toString(),
     requestId: context.requestId,
     numeroCnj: context.numeroCnj,
@@ -315,8 +315,8 @@ export async function alertApiError(
       endpoint: context.endpoint,
       method: context.method,
       statusCode: context.statusCode,
-      errorMessage: error.message,
-      errorStack: error.stack,
+      errorMessage: _error.message,
+      errorStack: _error.stack,
     },
   });
 }
@@ -400,13 +400,13 @@ export async function alertAttachmentTrigger(context: {
 export async function alertMonitoringFailed(context: {
   numeroCnj: string;
   trackingId: string;
-  error: string;
+  _error: string;
 }): Promise<void> {
   await sendAlert({
     type: 'MONITORING_FAILED',
     severity: AlertSeverity.MEDIUM,
     title: 'Monitoring Check Failed',
-    message: `Failed to check monitoring for ${context.numeroCnj}: ${context.error}`,
+    message: `Failed to check monitoring for ${context.numeroCnj}: ${context._error}`,
     numeroCnj: context.numeroCnj,
     trackingId: context.trackingId,
     metadata: context,

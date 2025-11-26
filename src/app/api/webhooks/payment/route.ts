@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (_error) {
+  } catch (error) {
     const duration = Date.now() - startTime;
 
     console.error(`${ICONS.ERROR} Payment webhook error:`, error);

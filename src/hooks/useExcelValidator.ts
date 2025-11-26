@@ -154,7 +154,7 @@ export function useExcelValidator(): UseExcelValidatorReturn {
         }));
 
         return isValid;
-      } catch (_error) {
+      } catch (error) {
         const message = error instanceof Error ? error.message : 'Erro ao validar arquivo';
 
         setState((prev) => ({
@@ -240,7 +240,7 @@ export function useExcelValidator(): UseExcelValidatorReturn {
       }));
 
       return true;
-    } catch (_error) {
+    } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro ao enviar arquivo';
 
       setState((prev) => ({

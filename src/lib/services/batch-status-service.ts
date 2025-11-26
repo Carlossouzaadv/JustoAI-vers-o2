@@ -20,7 +20,7 @@ export enum BatchStatus {
 
 export interface BatchErrorDetail {
   field: string;
-  error: string;
+  _error: string;
   row?: number;
   retryCount?: number;
 }
@@ -192,19 +192,19 @@ export class BatchStatusService {
           topErrors.push(errorDetail);
 
           // Aggregate summary
-          const key = `${errorDetail.field}: ${errorDetail.error}`;
+          const key = `${errorDetail.field}: ${errorDetail._error}`;
           errorSummary[key] = (errorSummary[key] || 0) + 1;
         }
       }
 
       // Sort by frequency
       topErrors.sort((a, b) => {
-        const keyA = `${a.field}: ${a.error}`;
-        const keyB = `${b.field}: ${b.error}`;
+        const keyA = `${a.field}: ${a._error}`;
+        const keyB = `${b.field}: ${b._error}`;
         return (errorSummary[keyB] || 0) - (errorSummary[keyA] || 0);
       });
-    } catch (_error) {
-      logError(error, 'Erro ao processar erros do batch:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, 'Erro ao processar erros do batch:', { component: 'refactored' });
     }
 
     return { errorSummary, topErrors };
@@ -213,27 +213,27 @@ export class BatchStatusService {
   /**
    * Valida e extrai erro individual (type-safe)
    */
-  private static parseBatchError(error: unknown): BatchErrorDetail | null {
+  private static parseBatchError(_error: unknown): BatchErrorDetail | null {
     // Type guard: deve ser objeto
-    if (typeof error !== 'object' || error === null) {
+    if (typeof _error !== 'object' || _error === null) {
       return null;
     }
 
-    const obj = error as Record<string, unknown>;
+    const obj = _error as Record<string, unknown>;
 
     // Type guard: deve ter field e error
     if (
       !('field' in obj) ||
       typeof obj.field !== 'string' ||
-      !('error' in obj) ||
-      typeof obj.error !== 'string'
+      !('_error' in obj) ||
+      typeof obj._error !== 'string'
     ) {
       return null;
     }
 
     return {
       field: obj.field,
-      error: obj.error,
+      _error: obj._error,
       row: typeof obj.row === 'number' ? obj.row : undefined,
       retryCount: typeof obj.retryCount === 'number' ? obj.retryCount : undefined,
     };

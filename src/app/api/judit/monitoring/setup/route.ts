@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error('[API] Erro ao configurar monitoramento:', error);
 
     return NextResponse.json(

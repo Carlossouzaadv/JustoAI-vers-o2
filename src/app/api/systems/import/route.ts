@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
       throw new ApiError('Ação não suportada. Use action=analyze ou action=import', 400);
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no upload de sistema:`, error);
 
     if (error instanceof ApiError) {
@@ -289,7 +289,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar importações:`, error);
 
     if (error instanceof ApiError) {
@@ -372,7 +372,7 @@ export async function DELETE(request: NextRequest) {
       message: `${deleted.count} importações removidas`
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao remover importações:`, error);
 
     if (error instanceof ApiError) {
@@ -555,7 +555,7 @@ async function importInBackground(
       failed: session.failedRows
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro na importação em background:`, error);
     // Erro já foi registrado no banco pelo importer
   }

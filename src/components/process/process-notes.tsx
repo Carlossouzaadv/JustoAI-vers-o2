@@ -63,7 +63,7 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
         // Nenhuma nota disponível ainda
         setNotes([]);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao carregar notas:', error);
       setNotes([]);
     } finally {
@@ -164,7 +164,7 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
           setEditingNote({});
         }
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao excluir nota:', error);
     }
   };

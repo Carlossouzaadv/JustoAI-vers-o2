@@ -50,7 +50,7 @@ export async function GET() {
       },
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('[API] Erro ao buscar estatísticas da fila:', error);
 
     return NextResponse.json(

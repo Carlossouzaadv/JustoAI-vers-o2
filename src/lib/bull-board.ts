@@ -136,7 +136,7 @@ function ensureBullBoardInitialized() {
   if (!addQueue) {
     try {
       initializeBullBoard();
-    } catch (_error) {
+    } catch (error) {
       log.warn({ msg: '[BULL-BOARD] Warning: Bull Board could not be initialized (Redis may not be available)' });
       log.warn({ msg: '[BULL-BOARD] This is expected during build phase. Queues will be available at runtime.' });
       // Provide no-op functions so code doesn't crash
@@ -221,7 +221,7 @@ export async function bullBoardAuthMiddleware(
 
     next();
     return;
-  } catch (_error) {
+  } catch (error) {
     logError(error, '🔴 Error validating Bull Board access:', { component: 'refactored' });
 
     // Type guard for error response
@@ -297,7 +297,7 @@ export async function getBullBoardStats() {
               lastActivity: lastActivity?.toISOString() || null,
             }
           };
-        } catch (_error) {
+        } catch (error) {
           logError(error, 'Error getting stats for queue ${name}:', { component: 'refactored' });
           return {
             name,
@@ -324,7 +324,7 @@ export async function getBullBoardStats() {
         totalFailed: stats.reduce((sum, q) => sum + (q.counts?.failed || 0), 0),
       }
     };
-  } catch (_error) {
+  } catch (error) {
     logError(error, 'Error collecting Bull Board stats:', { component: 'refactored' });
     return {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -356,7 +356,7 @@ export async function pauseAllQueues() {
     try {
       await queue.pause();
       log.info({ msg: '✅ Queue  paused' });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '❌ Failed to pause queue ${queue.name}:', { component: 'refactored' });
     }
   }));
@@ -373,7 +373,7 @@ export async function resumeAllQueues() {
     try {
       await queue.resume();
       log.info({ msg: '✅ Queue  resumed' });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '❌ Failed to resume queue ${queue.name}:', { component: 'refactored' });
     }
   }));
@@ -395,7 +395,7 @@ export async function cleanAllQueues() {
       await queue.clean(0, 'completed');
       await queue.clean(0, 'failed');
       log.info({ msg: '✅ Queue  cleaned' });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '❌ Failed to clean queue ${queue.name}:', { component: 'refactored' });
     }
   }));
@@ -423,13 +423,13 @@ export async function retryFailedJobs(queueName?: string) {
           try {
             await job.retry();
             retriedCount++;
-          } catch (_error) {
+          } catch (error) {
             logError(error, 'Failed to retry job ${job.id}:', { component: 'refactored' });
           }
         }
 
         return { queueName: queue.name, retriedCount };
-      } catch (_error) {
+      } catch (error) {
         logError(error, 'Error retrying jobs for queue ${queue.name}:', { component: 'refactored' });
         return { queueName: queue.name, retriedCount: 0, error };
       }
@@ -481,7 +481,7 @@ export async function systemHealthCheck() {
         redis: redisHealth,
       }
     };
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'unhealthy',
       timestamp: new Date().toISOString(),
@@ -527,7 +527,7 @@ async function checkRedisHealth() {
       memoryUsage: memoryMatch ? memoryMatch[1].trim() : 'unknown',
       status: 'healthy'
     };
-  } catch (_error) {
+  } catch (error) {
     return {
       connected: false,
       status: 'unhealthy',

@@ -38,14 +38,14 @@ export async function POST(request: NextRequest) {
               } else {
                 cookieStore.set(name, value)
               }
-            } catch (_error) {
+            } catch (error) {
               console.error('Error setting cookie:', name, error)
             }
           },
           remove(name: string, _options: Record<string, unknown> | undefined) {
             try {
               cookieStore.delete(name)
-            } catch (_error) {
+            } catch (error) {
               console.error('Error removing cookie:', name, error)
             }
           },
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 }
     )
-  } catch (_error) {
+  } catch (error) {
     console.error('❌ Login endpoint error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

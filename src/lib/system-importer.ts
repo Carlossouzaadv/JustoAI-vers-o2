@@ -391,14 +391,14 @@ export class SystemImporter {
 
       return this.session;
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro na importação:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro na importação:', { component: 'refactored' });
 
       this.session.status = 'FAILED';
       this.session.finishedAt = new Date();
       this.session.errors.push({
         type: 'DATABASE_ERROR',
-        message: error instanceof Error ? error.message : 'Erro desconhecido'
+        message: _error instanceof Error ? _error.message : 'Erro desconhecido'
       });
 
       await this.updateImportRecord({
@@ -407,7 +407,7 @@ export class SystemImporter {
         errors: this.session.errors
       });
 
-      throw error;
+      throw _error;
     }
   }
 
@@ -561,11 +561,11 @@ export class SystemImporter {
       try {
         await this.processRow(category, row, lineNumber, categoryMappings, systemMapping, options);
         this.session.successfulRows++;
-      } catch (_error) {
+      } catch (error) {
         this.session.failedRows++;
         this.session.errors.push({
           type: 'DATABASE_ERROR',
-          message: error instanceof Error ? error.message : 'Erro desconhecido',
+          message: _error instanceof Error ? _error.message : 'Erro desconhecido',
           line: lineNumber
         });
       }

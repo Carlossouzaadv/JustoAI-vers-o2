@@ -135,7 +135,7 @@ export async function validateBullBoardAccess(
       isInternal: false,
       role: 'WORKSPACE_ADMIN'
     };
-  } catch (_error) {
+  } catch (error) {
     logError(error, '${ICONS.ERROR} Error validating Bull Board access:', { component: 'refactored' });
 
     return {
@@ -189,7 +189,7 @@ export async function validateBullBoardAccessNextJS(
       workspaceId,
       role: 'ADMIN'
     };
-  } catch (_error) {
+  } catch (error) {
     logError(error, '${ICONS.ERROR} Error validating Bull Board access (Next.js):', { component: 'refactored' });
 
     return {

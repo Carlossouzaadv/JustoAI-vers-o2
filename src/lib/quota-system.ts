@@ -24,7 +24,7 @@ export interface QuotaStatus {
 export interface QuotaValidationResult {
   allowed: boolean;
   quotaStatus: QuotaStatus;
-  error?: string;
+  _error?: string;
   recommendation?: string;
   upgradeOptions?: string[];
 }
@@ -137,7 +137,7 @@ export class QuotaSystem {
       return {
         allowed: false,
         quotaStatus: this.calculateQuotaStatus(quota.reportsUsedThisMonth, quota.reportsMonthlyLimit),
-        error: `Limite de processos excedido`,
+        _error: `Limite de processos excedido`,
         recommendation: `Máximo ${quota.reportProcessesLimit} processos por relatório no plano ${quota.plan}`,
         upgradeOptions: this.getUpgradeOptions(quota.plan)
       };
@@ -150,7 +150,7 @@ export class QuotaSystem {
       return {
         allowed: false,
         quotaStatus,
-        error: 'Limite mensal de relatórios atingido',
+        _error: 'Limite mensal de relatórios atingido',
         recommendation: `Você usou ${quotaStatus.used}/${quotaStatus.limit} relatórios este mês`,
         upgradeOptions: this.getUpgradeOptions(quota.plan)
       };

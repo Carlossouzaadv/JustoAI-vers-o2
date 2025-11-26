@@ -54,7 +54,7 @@ export async function getAlertCounts(workspaceId: string): Promise<{ unreadCount
       unreadCount,
       criticalCount
     };
-  } catch (_error) {
+  } catch (error) {
     logError(error, '${ICONS.ERROR} Erro ao contar alertas do workspace ${workspaceId}:', { component: 'refactored' });
     // Retornar zeros em caso de erro (fail-safe)
     return {
@@ -100,7 +100,7 @@ export async function broadcastAlertCountUpdate(workspaceId: string): Promise<vo
       `${counts.criticalCount} crítico${counts.criticalCount !== 1 ? 's' : ''}, ` +
       `${counts.unreadCount} não lido${counts.unreadCount !== 1 ? 's' : ''}`
     );
-  } catch (_error) {
+  } catch (error) {
     logError(error, '${ICONS.ERROR} Erro ao enviar atualização de alertas para ${workspaceId}:', { component: 'refactored' });
     // Não lançar erro (fail-safe)
   }

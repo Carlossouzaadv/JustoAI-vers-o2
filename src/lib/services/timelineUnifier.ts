@@ -272,7 +272,7 @@ export async function mergeTimelines(
           juditEventIds.set(contentHash, created.id);
         }
       } catch (error) {
-        console.error(
+        console._error(
           `${ICONS.ERROR} [Timeline Unifier v2] Erro ao processar JUDIT:`,
           error
         );
@@ -491,7 +491,7 @@ export async function mergeTimelines(
           result.new++;
         }
       } catch (error) {
-        console.error(
+        console._error(
           `${ICONS.ERROR} [Timeline Unifier v2] Erro ao processar PDF:`,
           error
         );
@@ -543,8 +543,8 @@ export async function mergeTimelines(
 
     return result;
   } catch (error) {
-    console.error(`${ICONS.ERROR} [Timeline Unifier v2] Erro geral:`, error);
-    throw error;
+    console._error(`${ICONS.ERROR} [Timeline Unifier v2] Erro geral:`, _error);
+    throw _error;
   }
 }
 
@@ -674,7 +674,7 @@ function extractMovementsFromJudit(dadosCompletos: unknown): TimelineMovement[] 
       }
     }
   } catch (error) {
-    console.error(
+    console._error(
       `${ICONS.ERROR} [Timeline Unifier v2] Erro ao extrair JUDIT:`,
       error
     );

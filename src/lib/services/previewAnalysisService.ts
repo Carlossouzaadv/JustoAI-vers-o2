@@ -34,7 +34,7 @@ export interface PreviewMovement {
 export interface PreviewAnalysisResult {
   success: boolean;
   preview?: PreviewSnapshot;
-  error?: string;
+  _error?: string;
   tokensUsed?: number;
   duration?: number;
 }
@@ -145,8 +145,8 @@ export async function generatePreview(
           duration
         };
 
-      } catch (_error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+      } catch (error) {
+        lastError = _error instanceof Error ? _error : new Error(String(_error));
         log.warn({ msg: '[Preview] Falha com :' });
 
         // Continuar para próximo modelo se não for a última tentativa
@@ -159,14 +159,14 @@ export async function generatePreview(
     // Se chegou aqui, todas as tentativas falharam
     throw lastError || new Error('Todas as tentativas de análise falharam');
 
-  } catch (_error) {
+  } catch (error) {
     const duration = Date.now() - startTime;
 
-    logError(error, '${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:', { component: 'refactored' });
+    logError(_error, '${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:', { component: 'refactored' });
 
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Erro desconhecido ao gerar preview',
+      _error: _error instanceof Error ? _error.message : 'Erro desconhecido ao gerar preview',
       duration
     };
   }

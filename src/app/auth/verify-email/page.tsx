@@ -45,7 +45,7 @@ export default function VerifyEmailPage() {
         setTimeout(() => {
           window.location.href = '/dashboard';
         }, 2000);
-      } catch (_error) {
+      } catch (error) {
         console.error('Error verifying email:', error);
         setStatus('error');
         setMessage('Erro ao verificar email. Por favor, tente novamente.');

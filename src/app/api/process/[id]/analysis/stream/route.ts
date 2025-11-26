@@ -224,7 +224,7 @@ export async function POST(
         Connection: 'keep-alive',
       },
     });
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao iniciar streaming:`, error);
     return NextResponse.json(
       {
@@ -347,7 +347,7 @@ async function streamAnalysisToWriter(
       chunksProcessed: chunkIndex,
       timestamp: new Date().toISOString(),
     });
-  } catch (_error) {
+  } catch (error) {
     const errorMsg =
       error instanceof Error ? error.message : 'Erro desconhecido';
     console.error(`${ICONS.ERROR} Erro no stream worker:`, errorMsg);
@@ -429,7 +429,7 @@ async function saveAnalysisResult(
     console.log(
       `${ICONS.SUCCESS} Análise salva: v${nextVersion} em streaming`
     );
-  } catch (_error) {
+  } catch (error) {
     console.error(
       `${ICONS.ERROR} Erro ao salvar resultado:`,
       error instanceof Error ? error.message : 'Desconhecido'

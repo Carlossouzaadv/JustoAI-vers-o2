@@ -409,8 +409,8 @@ export class PerformanceOptimizer {
         const memUsage = process.memoryUsage();
         log.info({ msg: 'GC executado: MB heap' });
       }
-    } catch (_error) {
-      logError(error, '${ICONS.WARNING} Erro no GC:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.WARNING} Erro no GC:', { component: 'refactored' });
     }
   }
 

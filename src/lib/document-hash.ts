@@ -109,7 +109,7 @@ export class DocumentHashManager {
       log.info({ msg: 'Documento é único no workspace' });
       return { isDuplicate: false };
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro na verificação de deduplicação:', { component: 'refactored' });
       // Em caso de erro, assumir que não é duplicata para não bloquear upload
       return { isDuplicate: false };

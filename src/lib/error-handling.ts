@@ -116,7 +116,7 @@ export async function safeExecute<T>(
   try {
     const data = await fn();
     return { success: true, data };
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = getErrorMessage(error);
     logError(context, error);
     return { success: false, error: errorMessage };

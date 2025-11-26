@@ -59,7 +59,7 @@ export class PlanService {
   }
 
   /**
-   * Get plan by ID with safe error handling
+   * Get plan by ID with safe _error handling
    * @returns Plan config or null if not found
    */
   static getPlanConfigSafe(planId: unknown): PlanConfig | null {

@@ -15,12 +15,12 @@ import { log, logError } from '@/lib/services/logger';
 /**
  * Literal type for queue events we actually use
  */
-type KnownQueueEvent = 'error' | 'active' | 'completed' | 'failed';
+type KnownQueueEvent = '_error' | 'active' | 'completed' | 'failed';
 
 /**
  * Set of known queue event names for validation
  */
-const KNOWN_QUEUE_EVENTS = new Set<string>(['error', 'active', 'completed', 'failed']);
+const KNOWN_QUEUE_EVENTS = new Set<string>(['_error', 'active', 'completed', 'failed']);
 
 /**
  * Type guard to validate event name is one we support
@@ -132,7 +132,7 @@ export interface JuditOnboardingJobResult {
   numeroCnj: string;
   duration: number;
   workspaceId?: string;
-  error?: string;
+  _error?: string;
 }
 
 // ================================================================
@@ -316,7 +316,7 @@ export async function getJobStatus(jobId: string): Promise<{
   status: 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown';
   progress?: number;
   result?: JuditOnboardingJobResult;
-  error?: string;
+  _error?: string;
 }> {
   const queue = getJuditQueue();
   const job = await queue.getJob(jobId);
@@ -332,19 +332,19 @@ export async function getJobStatus(jobId: string): Promise<{
   const progress = typeof job.progress === 'number' ? job.progress : undefined;
 
   let result: JuditOnboardingJobResult | undefined;
-  let error: string | undefined;
+  let _error: string | undefined;
 
   if (status === 'completed') {
     result = job.returnvalue;
   } else if (status === 'failed') {
-    error = job.failedReason;
+    _error = job.failedReason;
   }
 
   return {
     status,
     progress,
     result,
-    error,
+    _error,
   };
 }
 
@@ -463,15 +463,15 @@ function isEventEmitter(obj: unknown): obj is {
 }
 
 /**
- * Type-safe error handler for queue errors
+ * Type-safe _error handler for queue errors
  * Explicitly typed to avoid implicit any
  */
-const handleQueueError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack : undefined;
-  queueLogger.error({
+const handleQueueError = (_error: unknown): void => {
+  const message = _error instanceof Error ? _error.message : String(_error);
+  const stack = _error instanceof Error ? _error.stack : undefined;
+  queueLogger._error({
     action: 'queue_error',
-    error: message,
+    _error: message,
     error_stack: stack,
   });
 };
@@ -514,19 +514,19 @@ const handleCompletedJob = (job: unknown, result: unknown): void => {
  * Type-safe failed job handler
  * Explicitly typed to avoid implicit any
  */
-const handleFailedJob = (job: unknown, error: unknown): void => {
-  const message = error instanceof Error ? error.message : String(error);
-  const stack = error instanceof Error ? error.stack : undefined;
+const handleFailedJob = (job: unknown, _error: unknown): void => {
+  const message = _error instanceof Error ? _error.message : String(_error);
+  const stack = _error instanceof Error ? _error.stack : undefined;
   const jobId = isJob(job) && isJobData(job.data) ? job.id : undefined;
   const cnj = isJob(job) && isJobData(job.data) ? job.data.cnj : undefined;
   const attempts = isJob(job) ? job.attemptsMade : undefined;
   const maxAttempts = isJob(job) && job.opts?.attempts ? job.opts.attempts : 3;
 
-  queueLogger.error({
+  queueLogger._error({
     action: 'job_failed',
     job_id: jobId,
     cnj,
-    error: message,
+    _error: message,
     error_stack: stack,
     attempts_made: attempts,
     max_attempts: maxAttempts,
@@ -546,7 +546,7 @@ function attachQueueListener(
 ): void {
   // Type guard narrows eventName from string to KnownQueueEvent
   if (isKnownQueueEvent(eventName)) {
-    // After the guard, TypeScript knows eventName is one of: 'error' | 'active' | 'completed' | 'failed'
+    // After the guard, TypeScript knows eventName is one of: '_error' | 'active' | 'completed' | 'failed'
     // Safe to pass to queue.on() which expects KnownQueueEvent
     queue.on(eventName, handler);
   }
@@ -576,7 +576,7 @@ function setupEventListeners() {
   // This is 100% type-safe, no casting needed
 
   // Attach handlers with type-safe helper that uses type guard #2 (isKnownQueueEvent)
-  attachQueueListener(queue, 'error', handleQueueError);
+  attachQueueListener(queue, '_error', handleQueueError);
   attachQueueListener(queue, 'active', handleActiveJob);
   attachQueueListener(queue, 'completed', handleCompletedJob);
   attachQueueListener(queue, 'failed', handleFailedJob);
@@ -619,11 +619,11 @@ async function gracefulShutdown() {
 
     // Note: Redis connection is managed centrally by src/lib/redis.ts
     // It will handle its own shutdown via SIGTERM/SIGINT handlers
-  } catch (_error) {
-    queueLogger.error({
+  } catch (error) {
+    queueLogger._error({
       action: 'graceful_shutdown_error',
-      error: error instanceof Error ? error.message : String(error),
-      error_stack: error instanceof Error ? error.stack : undefined,
+      _error: _error instanceof Error ? _error.message : String(_error),
+      error_stack: _error instanceof Error ? _error.stack : undefined,
     });
   }
 }

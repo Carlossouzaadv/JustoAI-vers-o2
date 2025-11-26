@@ -68,7 +68,7 @@ export async function validateBody<T>(
     const body = await request.json()
     const data = schema.parse(body)
     return { data, error: null }
-  } catch (_error) {
+  } catch (error) {
     if (error instanceof ZodError) {
       const formattedErrors = error.issues.map((err) => ({
         field: err.path.join('.'),
@@ -118,7 +118,7 @@ export function validateQuery<T>(
     const params = Object.fromEntries(searchParams.entries())
     const data = schema.parse(params)
     return { data, error: null }
-  } catch (_error) {
+  } catch (error) {
     if (error instanceof ZodError) {
       const formattedErrors = error.issues.map((err) => ({
         field: err.path.join('.'),
@@ -239,7 +239,7 @@ export function withErrorHandler(handler: RouteHandler): RouteHandler {
   const wrappedHandler = async (request: NextRequest, context?: { params: Promise<Record<string, string>> }) => {
     try {
       return await handler(request, context)
-    } catch (_error) {
+    } catch (error) {
       logError(error, 'API Error:', { component: 'refactored' })
 
       if (error instanceof Error) {

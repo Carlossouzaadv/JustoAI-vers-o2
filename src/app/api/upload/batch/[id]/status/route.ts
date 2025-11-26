@@ -171,7 +171,7 @@ export async function GET(
 
     return NextResponse.json(response);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao consultar status do batch:`, error);
 
     return NextResponse.json({
@@ -235,7 +235,7 @@ export async function DELETE(
       message: 'Batch cancelado com sucesso'
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao cancelar batch:`, error);
 
     return NextResponse.json({

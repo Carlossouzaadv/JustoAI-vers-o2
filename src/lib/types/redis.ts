@@ -77,7 +77,7 @@ export interface ReportCacheEntry {
   generatedAt: number;
   expiresAt: number;
   fileUrl?: string;
-  error?: string;
+  _error?: string;
 }
 
 /**
@@ -147,7 +147,7 @@ export interface WebhookDeduplicationEntry {
   processedAt: number;
   expiresAt: number;
   status: 'PROCESSED' | 'PROCESSING' | 'FAILED';
-  error?: string;
+  _error?: string;
 }
 
 /**
@@ -175,7 +175,7 @@ export interface JobQueueEntry {
   status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
   payload: Record<string, unknown>;
   result?: Record<string, unknown>;
-  error?: string;
+  _error?: string;
   retryCount: number;
   maxRetries: number;
   createdAt: number;
@@ -293,7 +293,7 @@ export interface CacheSetOptions {
  */
 export interface CacheOperationResult {
   success: boolean;
-  error?: string;
+  _error?: string;
   operationTime?: number;
 }
 
@@ -419,7 +419,7 @@ export interface BatchOperationResult {
   totalOperations: number;
   successfulOperations: number;
   failedOperations: number;
-  errors?: Array<{ key: string; error: string }>;
+  errors?: Array<{ key: string; _error: string }>;
 }
 
 // ================================================================

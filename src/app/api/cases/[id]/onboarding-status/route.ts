@@ -68,7 +68,7 @@ export async function GET(
     const unassignedReason = await getUnassignedReason(caseId);
 
     return NextResponse.json(unassignedReason);
-  } catch (_error) {
+  } catch (error) {
     console.error('[OnboardingStatus API] Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

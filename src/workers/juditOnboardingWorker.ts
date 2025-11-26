@@ -25,9 +25,9 @@ const connection = getRedisConnection();
 
 // Prevent worker from starting if Redis is not available
 if (!connection) {
-  console.error('[JUDIT WORKER] ❌ FATAL: Redis connection not available');
-  console.error('[JUDIT WORKER] ❌ Workers cannot run without Redis');
-  console.error('[JUDIT WORKER] ❌ Please configure REDIS_URL environment variable');
+  console._error('[JUDIT WORKER] ❌ FATAL: Redis connection not available');
+  console._error('[JUDIT WORKER] ❌ Workers cannot run without Redis');
+  console._error('[JUDIT WORKER] ❌ Please configure REDIS_URL environment variable');
   process.exit(1);
 }
 
@@ -72,11 +72,11 @@ async function processOnboardingJob(
   // Check if circuit breaker is open (quota exceeded)
   if (circuitBreakerService.isQueuePaused()) {
     const status = circuitBreakerService.getStatus();
-    workerLogger.error({
+    workerLogger._error({
       action: 'job_blocked_circuit_open',
       job_id: job.id,
       cnj,
-      error: 'Upstash quota limit exceeded',
+      _error: 'Upstash quota limit exceeded',
       circuit_state: status.state,
       error_message: status.config.errorMessage,
       next_retry: status.nextRetryAttempt?.toISOString(),
@@ -93,11 +93,11 @@ async function processOnboardingJob(
   // Check if JUDIT is properly configured before processing
   const config = checkConfiguration();
   if (!config.configured) {
-    workerLogger.error({
+    workerLogger._error({
       action: 'job_blocked_no_config',
       job_id: job.id,
       cnj,
-      error: 'JUDIT API not configured',
+      _error: 'JUDIT API not configured',
       has_api_key: config.hasApiKey,
       has_base_url: config.hasBaseUrl,
     });
@@ -145,7 +145,7 @@ async function processOnboardingJob(
     try {
       result = await performFullProcessRequest(cnj, 'ONBOARDING');
     } catch (serviceError) {
-      // Check if error is from Upstash quota limit
+      // Check if _error is from Upstash quota limit
       const errorStr = String(serviceError instanceof Error ? serviceError.message : serviceError);
       if (
         errorStr.includes('ERR max requests limit exceeded') ||
@@ -160,7 +160,7 @@ async function processOnboardingJob(
         throw new Error(
           `Upstash quota exceeded. Circuit breaker activated. ` +
           `Auto-retry scheduled for ${status.nextRetryAttempt?.toISOString() || 'unknown'}. ` +
-          `Original error: ${errorStr}`
+          `Original _error: ${errorStr}`
         );
       }
 
@@ -237,11 +237,11 @@ async function processOnboardingJob(
           });
         }
       } catch (fase2Error) {
-        workerLogger.error({
+        workerLogger._error({
           action: 'fase2_error',
           job_id: job.id,
           cnj,
-          error: fase2Error instanceof Error ? fase2Error.message : String(fase2Error),
+          _error: fase2Error instanceof Error ? fase2Error.message : String(fase2Error),
           error_stack: fase2Error instanceof Error ? fase2Error.stack : undefined,
         });
       }
@@ -267,38 +267,38 @@ async function processOnboardingJob(
       };
     } else {
       operation.finish('failure', {
-        error: result.error,
+        _error: result._error,
       });
 
-      workerLogger.error({
+      workerLogger._error({
         action: 'job_failed',
         job_id: job.id,
         cnj,
-        error: result.error,
+        _error: result._error,
         attempt: job.attemptsMade + 1,
         max_attempts: job.opts.attempts || 3,
       });
 
-      throw new Error(result.error || 'Onboarding falhou');
+      throw new Error(result._error || 'Onboarding falhou');
     }
-  } catch (_error) {
+  } catch (error) {
     operation.finish('failure', {
-      error: error instanceof Error ? error.message : String(error),
+      _error: _error instanceof Error ? _error.message : String(_error),
     });
 
-    workerLogger.error({
+    workerLogger._error({
       action: 'job_error',
       job_id: job.id,
       cnj,
-      error: error instanceof Error ? error.message : String(error),
-      error_stack: error instanceof Error ? error.stack : undefined,
+      _error: _error instanceof Error ? _error.message : String(_error),
+      error_stack: _error instanceof Error ? _error.stack : undefined,
       attempt: job.attemptsMade + 1,
       max_attempts: job.opts.attempts || 3,
       will_retry: (job.attemptsMade + 1) < (job.opts.attempts || 3),
     });
 
     // Re-throw para que o BullMQ possa fazer retry
-    throw error;
+    throw _error;
   }
 }
 
@@ -337,10 +337,10 @@ circuitBreakerService.on('circuit-opened', async () => {
       action: 'worker_paused',
       reason: 'circuit_breaker_quota_exceeded',
     });
-  } catch (_error) {
-    workerLogger.error({
+  } catch (error) {
+    workerLogger._error({
       action: 'worker_pause_error',
-      error: error instanceof Error ? error.message : String(error),
+      _error: _error instanceof Error ? _error.message : String(_error),
     });
   }
 });
@@ -358,10 +358,10 @@ circuitBreakerService.on('queue-resumed', async () => {
       action: 'worker_resumed',
       reason: 'circuit_breaker_recovered',
     });
-  } catch (_error) {
-    workerLogger.error({
+  } catch (error) {
+    workerLogger._error({
       action: 'worker_resume_error',
-      error: error instanceof Error ? error.message : String(error),
+      _error: _error instanceof Error ? _error.message : String(_error),
     });
   }
 });
@@ -400,22 +400,22 @@ juditOnboardingWorker.on('completed', (job, result) => {
   });
 });
 
-juditOnboardingWorker.on('failed', (job, error) => {
+juditOnboardingWorker.on('failed', (job, _error) => {
   const isLastAttempt = job?.attemptsMade === (job?.opts?.attempts || 3);
 
-  workerLogger.error({
+  workerLogger._error({
     action: 'job_failed',
     job_id: job?.id,
     cnj: job?.data.cnj,
     attempts_made: job?.attemptsMade,
     max_attempts: job?.opts?.attempts || 3,
     is_last_attempt: isLastAttempt,
-    error: error.message,
-    error_stack: error.stack,
+    _error: _error.message,
+    error_stack: _error.stack,
   });
 
   if (isLastAttempt) {
-    workerLogger.error({
+    workerLogger._error({
       action: 'job_permanently_failed',
       job_id: job?.id,
       cnj: job?.data.cnj,
@@ -424,11 +424,11 @@ juditOnboardingWorker.on('failed', (job, error) => {
   }
 });
 
-juditOnboardingWorker.on('error', (error) => {
-  workerLogger.error({
+juditOnboardingWorker.on('_error', (_error) => {
+  workerLogger._error({
     action: 'worker_error',
-    error: error.message,
-    error_stack: error.stack,
+    _error: _error.message,
+    error_stack: _error.stack,
   });
 });
 
@@ -453,7 +453,7 @@ async function gracefulShutdown(signal?: string) {
   try {
     // Set a hard timeout to prevent hanging forever
     shutdownTimer = setTimeout(() => {
-      workerLogger.error({
+      workerLogger._error({
         action: 'graceful_shutdown_timeout',
         message: `Graceful shutdown timeout (${SHUTDOWN_TIMEOUT_MS}ms) - forcing exit`,
       });
@@ -477,13 +477,13 @@ async function gracefulShutdown(signal?: string) {
     // It will handle its own shutdown via SIGTERM/SIGINT handlers
 
     process.exit(0);
-  } catch (_error) {
+  } catch (error) {
     if (shutdownTimer) clearTimeout(shutdownTimer);
 
-    workerLogger.error({
+    workerLogger._error({
       action: 'graceful_shutdown_error',
-      error: error instanceof Error ? error.message : String(error),
-      error_stack: error instanceof Error ? error.stack : undefined,
+      _error: _error instanceof Error ? _error.message : String(_error),
+      error_stack: _error instanceof Error ? _error.stack : undefined,
     });
     process.exit(1);
   }

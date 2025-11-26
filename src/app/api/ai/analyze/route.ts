@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
       timestamp: result.metadata.timestamp
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro na análise IA:`, error);
 
     if (error instanceof z.ZodError) {
@@ -206,7 +206,7 @@ export async function GET() {
       const { getAiCache } = await import('@/lib/ai-cache-manager');
       const cache = getAiCache();
       cacheStats = await cache.getStats();
-    } catch (_error) {
+    } catch (error) {
       console.warn(`${ICONS.WARNING} Cache stats not available:`, error);
     }
 
@@ -251,7 +251,7 @@ export async function GET() {
       timestamp: new Date().toISOString()
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao obter estatísticas:`, error);
 
     return NextResponse.json(
@@ -301,7 +301,7 @@ export async function DELETE() {
       timestamp: new Date().toISOString()
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao limpar cache:`, error);
 
     return NextResponse.json(

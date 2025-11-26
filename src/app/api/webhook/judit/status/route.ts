@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       summary,
       details: juditRequests
     });
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Webhook Status]`, error);
     return NextResponse.json({
       success: false,

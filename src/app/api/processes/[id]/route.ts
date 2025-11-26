@@ -187,7 +187,7 @@ export async function GET(
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao buscar processo:`, error);
 
     if (error instanceof ApiError) {
@@ -286,7 +286,7 @@ export async function PUT(
       message: 'Processo atualizado com sucesso'
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao atualizar processo:`, error);
 
     if (error instanceof ApiError) {
@@ -351,7 +351,7 @@ export async function POST(
 
     throw new ApiError('Ação não suportada', 400);
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro na ação do processo:`, error);
 
     if (error instanceof ApiError) {
@@ -421,7 +421,7 @@ export async function DELETE(
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro ao remover processo:`, error);
 
     if (error instanceof ApiError) {

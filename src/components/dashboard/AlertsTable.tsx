@@ -51,7 +51,7 @@ export function AlertsTable({ alerts, onAlertResolved }: AlertsTableProps) {
     try {
       await resolveAlert.mutateAsync(alertId);
       onAlertResolved?.();
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to resolve alert:', error);
     }
   };
@@ -73,7 +73,7 @@ export function AlertsTable({ alerts, onAlertResolved }: AlertsTableProps) {
       );
       setSelectedAlerts(new Set());
       onAlertResolved?.();
-    } catch (_error) {
+    } catch (error) {
       console.error('Failed to bulk resolve alerts:', error);
     }
   };

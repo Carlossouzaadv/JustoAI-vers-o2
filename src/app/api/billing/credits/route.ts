@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
         return await getCreditDashboard(workspaceId);
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Credit API GET error:`, _error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         );
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Credit API POST error:`, _error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -159,7 +159,7 @@ async function getCreditBalance(workspaceId: string): Promise<NextResponse> {
       data: balance
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to get credit balance:`, _error);
     // Return default balance if service is unavailable
     return NextResponse.json({
@@ -212,7 +212,7 @@ async function getCreditDashboard(workspaceId: string): Promise<NextResponse> {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to get credit dashboard:`, _error);
     // Return graceful default on error
     return NextResponse.json({
@@ -322,7 +322,7 @@ async function purchaseCredits(request: CreditPurchaseRequest): Promise<NextResp
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Credit purchase failed:`, _error);
     return NextResponse.json(
       { error: 'Erro no processamento da compra' },
@@ -384,7 +384,7 @@ async function adminAddCredits(request: {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Admin credit addition failed:`, _error);
     return NextResponse.json(
       { error: 'Erro na adição de créditos' },
@@ -432,7 +432,7 @@ async function simulatePurchase(request: {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Purchase simulation failed:`, _error);
     return NextResponse.json(
       { error: 'Erro na simulação' },
@@ -488,7 +488,7 @@ export async function PUT(request: NextRequest) {
         );
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Credit API PUT error:`, _error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -555,7 +555,7 @@ async function handlePaymentWebhook(payload: unknown): Promise<NextResponse> {
       );
     }
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Payment webhook failed:`, _error);
     return NextResponse.json(
       { error: 'Erro interno no webhook' },

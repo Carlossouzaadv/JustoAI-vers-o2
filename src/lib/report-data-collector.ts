@@ -299,9 +299,9 @@ export class ReportDataCollector {
       log.info({ msg: 'Dados coletados em ms' });
       return { data, stats };
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} Erro na coleta de dados:', { component: 'refactored' });
-      throw error;
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} Erro na coleta de dados:', { component: 'refactored' });
+      throw _error;
     }
   }
 
@@ -522,8 +522,8 @@ export class ReportDataCollector {
         subject: subject?.trim(),
         financialInfo
       };
-    } catch (_error) {
-      logError(error, 'Erro ao analisar processData:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, 'Erro ao analisar processData:', { component: 'refactored' });
       return {};
     }
   }
@@ -593,8 +593,8 @@ export class ReportDataCollector {
       }
 
       return Object.keys(financial).length > 0 ? financial : undefined;
-    } catch (_error) {
-      logError(error, 'Erro ao extrair informações financeiras:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, 'Erro ao extrair informações financeiras:', { component: 'refactored' });
       return undefined;
     }
   }
@@ -630,8 +630,8 @@ export class ReportDataCollector {
       }
 
       return null;
-    } catch (_error) {
-      logError(error, 'Erro ao extrair prazo do padrão:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, 'Erro ao extrair prazo do padrão:', { component: 'refactored' });
       return null;
     }
   }
@@ -685,8 +685,8 @@ export class ReportDataCollector {
       }
 
       return undefined;
-    } catch (_error) {
-      logError(error, 'Erro ao calcular próximo prazo:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, 'Erro ao calcular próximo prazo:', { component: 'refactored' });
       return undefined;
     }
   }
@@ -726,8 +726,8 @@ export class ReportDataCollector {
       const insights = this.extractInsights(analysisText);
       return insights.slice(0, 5); // Máximo 5 insights
 
-    } catch (_error) {
-      logError(error, '${ICONS.WARNING} Erro ao gerar insights de IA:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.WARNING} Erro ao gerar insights de IA:', { component: 'refactored' });
 
       // Safely build fallback insights from summary data
       const fallbackInsights: string[] = [];

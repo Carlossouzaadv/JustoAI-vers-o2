@@ -250,7 +250,7 @@ export class ExcelUploadService {
         preview
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro no parsing:', { component: 'refactored' });
       return {
         success: false,
@@ -378,7 +378,7 @@ export class ExcelUploadService {
 
       log.info({ msg: 'Batch  concluído: / sucessos' });
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro no processamento do batch ${batchId}:', { component: 'refactored' });
 
       await prisma.processBatchUpload.update({
@@ -494,7 +494,7 @@ export class ExcelUploadService {
         };
       }
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro ao processar linha ${row.linha}:', { component: 'refactored' });
 
       return {
@@ -590,7 +590,7 @@ export class ExcelUploadService {
         error: result.error
       };
 
-    } catch (_error) {
+    } catch (error) {
       // Falha - registrar telemetria
       const responseTime = Date.now() - startTime;
       telemetryData = {
@@ -838,7 +838,7 @@ export class ExcelUploadService {
           rateLimitHit: data.rateLimitHit || false
         }
       });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro ao registrar telemetria Judit:', { component: 'refactored' });
     }
   }
@@ -915,7 +915,7 @@ export class ExcelUploadService {
         data: this.transformJuditResponse(data)
       };
 
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro na API Judit para ${numeroProcesso}:', { component: 'refactored' });
 
       // Fallback para simulação em caso de erro
@@ -1050,7 +1050,7 @@ export class ExcelUploadService {
         assunto: assunto,
         data_distribuicao: dataDistribuicao
       };
-    } catch (_error) {
+    } catch (error) {
       logError(error, 'Erro ao transformar resposta da Judit:', { component: 'refactored' });
       // Retornar dados mínimos em caso de erro
       return {

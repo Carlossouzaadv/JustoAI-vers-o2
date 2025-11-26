@@ -114,7 +114,7 @@ export async function checkRateLimit(
 
       return isRateLimited;
     }
-  } catch (_error) {
+  } catch (error) {
     log.warn({
       msg: 'Redis rate limiting failed, falling back to memory store',
       component: 'rateLimitMiddleware',
@@ -135,7 +135,7 @@ export async function resetRateLimit(key: string): Promise<void> {
     if (redis) {
       await redis.del(`rate-limit:${key}`);
     }
-  } catch (_error) {
+  } catch (error) {
     log.warn({
       msg: 'Failed to reset rate limit',
       error: _error instanceof Error ? _error.message : String(_error)
@@ -230,7 +230,7 @@ export async function getRateLimitStatus(
 
       return { remaining, resetTime };
     }
-  } catch (_error) {
+  } catch (error) {
     log.warn({
       msg: 'Failed to get rate limit status',
       error: _error instanceof Error ? _error.message : String(_error)

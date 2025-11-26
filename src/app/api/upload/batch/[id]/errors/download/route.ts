@@ -144,7 +144,7 @@ export async function GET(
       },
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} [Batch Errors Download] Erro:`, error);
 
     captureApiError(error, {

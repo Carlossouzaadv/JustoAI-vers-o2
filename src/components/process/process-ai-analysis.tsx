@@ -148,7 +148,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
         console.warn('Nenhuma análise encontrada via API, carregando dados vazios');
         setAnalyses([]);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao buscar análises:', error);
       setAnalyses([]);
     } finally {
@@ -169,7 +169,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
         setCreditsBalance(balance);
         console.log(`${ICONS.CREDIT} Créditos carregados: ${balance}`);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao carregar créditos:', error);
       setCreditsBalance(999); // Fallback
     }
@@ -232,7 +232,7 @@ export function ProcessAIAnalysis({ processId }: ProcessAIAnalysisProps) {
       } else {
         throw new Error('Erro ao gerar análise');
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro na geração:', error);
       alert('Erro ao gerar nova análise');
     } finally {

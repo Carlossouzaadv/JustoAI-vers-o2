@@ -206,7 +206,7 @@ export async function GET(request: Request) {
         'Cache-Control': 'public, max-age=30' // Cache for 30 seconds (real-time)
       }
     });
-  } catch (_error) {
+  } catch (error) {
     console.error('Error fetching admin alerts:', error);
     return NextResponse.json(
       {

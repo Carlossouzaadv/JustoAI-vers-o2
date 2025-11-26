@@ -243,16 +243,16 @@ export function validatePaginationMiddleware() {
       const params = parsePaginationQuery(req.query);
       req.pagination = params;
       next();
-    } catch (_error) {
-      if (error instanceof z.ZodError) {
+    } catch (error) {
+      if (_error instanceof z.ZodError) {
         return res.status(400).json({
-          error: 'Invalid pagination parameters',
-          details: error.issues,
+          _error: 'Invalid pagination parameters',
+          details: _error.issues,
         });
       }
 
       return res.status(400).json({
-        error: 'Invalid pagination parameters',
+        _error: 'Invalid pagination parameters',
       });
     }
   };

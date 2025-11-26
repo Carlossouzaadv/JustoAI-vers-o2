@@ -75,7 +75,7 @@ export async function POST(
     try {
       const authResult = await validateAuthAndGetUser();
       user = authResult.user;
-    } catch (_error) {
+    } catch (error) {
       console.warn('⚠️  [Rollback API] Authentication failed:', _error instanceof Error ? _error.message : String(_error));
       return NextResponse.json(
         { success: false, message: 'Authentication failed' },
@@ -103,7 +103,7 @@ export async function POST(
           fileName: true,
         },
       });
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = _error instanceof Error ? _error.message : String(_error);
       console.error(`❌ [Rollback API] Database error fetching import: ${errorMessage}`);
       return NextResponse.json(
@@ -130,7 +130,7 @@ export async function POST(
         },
         select: { role: true },
       });
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = _error instanceof Error ? _error.message : String(_error);
       console.error(`❌ [Rollback API] Database error checking workspace access: ${errorMessage}`);
       return NextResponse.json(
@@ -175,7 +175,7 @@ export async function POST(
         },
         { status: 202 } // 202 Accepted - job is queued
       );
-    } catch (_error) {
+    } catch (error) {
       const errorMessage = _error instanceof Error ? _error.message : String(_error);
       console.error(`❌ [Rollback API] Failed to queue rollback job: ${errorMessage}`);
       return NextResponse.json(
@@ -183,7 +183,7 @@ export async function POST(
         { status: 500 }
       );
     }
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = _error instanceof Error ? _error.message : String(_error);
     console.error(`🔴 [Rollback API] Unhandled error: ${errorMessage}`);
     console.error('Stack:', _error);

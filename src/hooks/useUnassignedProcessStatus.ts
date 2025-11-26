@@ -26,7 +26,7 @@ export function useUnassignedProcessStatus(caseId: string, status: string) {
         const data = await response.json();
         setUnassignedInfo(data);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao carregar status UNASSIGNED:', error);
     } finally {
       setIsLoading(false);
@@ -50,7 +50,7 @@ export function useUnassignedProcessStatus(caseId: string, status: string) {
         const error = await response.json();
         throw new Error(error.message || 'Erro ao fazer retry');
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao fazer retry:', error);
       throw error;
     } finally {

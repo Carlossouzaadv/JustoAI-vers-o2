@@ -27,7 +27,7 @@ export default function DocumentsUploadPageClient() {
             setWorkspaceId(result.data[0].id);
           }
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Erro ao carregar workspace:', error);
       } finally {
         setLoadingWorkspace(false);

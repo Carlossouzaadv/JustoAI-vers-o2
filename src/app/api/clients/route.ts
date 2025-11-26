@@ -425,7 +425,7 @@ async function POST(request: NextRequest) {
       client,
       `Client "${client.name}" created successfully`
     )
-  } catch (_error) {
+  } catch (error) {
     console.error('[POST /api/clients] Erro ao criar cliente no banco de dados:', {
       error: error instanceof Error ? error.message : String(error),
       input: { name: input.name, workspaceId: input.workspaceId }

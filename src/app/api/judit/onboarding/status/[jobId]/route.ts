@@ -90,7 +90,7 @@ export async function GET(
       },
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('[API] Erro ao buscar status do job:', error);
 
     return NextResponse.json(

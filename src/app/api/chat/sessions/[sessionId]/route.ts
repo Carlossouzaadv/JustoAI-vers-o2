@@ -30,7 +30,7 @@ export async function GET(
       success: true,
       data: session,
     });
-  } catch (_error) {
+  } catch (error) {
     if (_error instanceof Error && _error.message === 'Chat session not found') {
       return NextResponse.json(
         { error: 'Session not found' },
@@ -77,7 +77,7 @@ export async function PATCH(
       success: true,
       data: session,
     });
-  } catch (_error) {
+  } catch (error) {
     if (_error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid request', issues: _error.issues },
@@ -123,7 +123,7 @@ export async function DELETE(
       message: 'Session deleted',
       data: session,
     });
-  } catch (_error) {
+  } catch (error) {
     if (_error instanceof Error && _error.message === 'Chat session not found') {
       return NextResponse.json(
         { error: 'Session not found' },

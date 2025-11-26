@@ -62,7 +62,7 @@ export class NotificationService {
         } else {
           errors.push(`Email failed: ${emailResult.error}`);
         }
-      } catch (_error) {
+      } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         errors.push(`Email error: ${errorMsg}`);
       }
@@ -83,7 +83,7 @@ export class NotificationService {
         } else {
           errors.push(`Slack failed: ${slackResult.error}`);
         }
-      } catch (_error) {
+      } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         errors.push(`Slack error: ${errorMsg}`);
       }

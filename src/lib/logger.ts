@@ -534,7 +534,7 @@ function loggerHealthCheck() {
       level: logger.level,
       environment: LOG_CONFIG.environment,
     };
-  } catch (_error) {
+  } catch (error) {
     console.error('Logger health check failed:', error);
     return {
       status: 'unhealthy',

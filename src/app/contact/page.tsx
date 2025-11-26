@@ -45,7 +45,7 @@ export default function ContactPage() {
           : result.error || 'Erro ao enviar mensagem';
         alert(`Erro: ${errorMsg}`);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Erro ao enviar formulário:', error);
       alert('Erro ao enviar mensagem. Tente novamente.');
     }

@@ -135,12 +135,12 @@ export class SystemSynchronizer {
 
       return session;
 
-    } catch (_error) {
+    } catch (error) {
       session.status = 'FAILED';
       session.finishedAt = new Date();
-      session.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
+      session.errors.push(_error instanceof Error ? _error.message : 'Erro desconhecido');
 
-      logError(error, '${ICONS.ERROR} Erro na sincronização:', { component: 'refactored' });
+      logError(_error, '${ICONS.ERROR} Erro na sincronização:', { component: 'refactored' });
       return session;
     }
   }

@@ -102,13 +102,13 @@ export async function POST(
             } else {
               console.error(`${ICONS.ERROR} Erro ao iniciar análise automática`);
             }
-          } catch (_error) {
+          } catch (error) {
             console.error(`${ICONS.ERROR} Erro na análise automática:`, error);
           }
         }, 30000); // Aguardar 30s para download completar
 
         analysisScheduled = true;
-      } catch (_error) {
+      } catch (error) {
         console.error(`${ICONS.ERROR} Erro ao agendar análise:`, error);
       }
     }
@@ -125,7 +125,7 @@ export async function POST(
         (analysisLevel === 'FULL' ? '3-5 minutos após download' : '1-2 minutos após download') : null
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no auto-download:`, error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -203,7 +203,7 @@ async function initiateAutoSync(monitoredProcessId: string, _processId: string) 
       syncLogId: syncLog.id
     };
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Erro no sync automático:`, error);
     return {
       success: false,

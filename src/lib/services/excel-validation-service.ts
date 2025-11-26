@@ -19,7 +19,7 @@ export interface ValidationErrorDetail {
   row: number;
   column: string;
   value: unknown;
-  error: string;
+  _error: string;
 }
 
 export interface ValidationResponse {
@@ -85,7 +85,7 @@ export class ExcelValidationService {
       const rowData = rows[i];
 
       // Validar contra schema usando safeParse
-      // safeParse retorna { success: boolean, data?, error? }
+      // safeParse retorna { success: boolean, data?, _error? }
       const result = ExcelRowSchema.safeParse(rowData);
 
       if (result.success) {
@@ -95,7 +95,7 @@ export class ExcelValidationService {
         // Linha inválida - extrair detalhes de CADA erro
         // (não apenas o primeiro, como faria .parse())
         invalidRowNumbers.add(rowNumber);
-        for (const issue of result.error.issues) {
+        for (const issue of result._error.issues) {
           const columnName = String(issue.path[0] ?? 'unknown');
           const cellValue = this.extractCellValue(rowData, columnName);
 
@@ -103,7 +103,7 @@ export class ExcelValidationService {
             row: rowNumber,
             column: columnName,
             value: cellValue,
-            error: issue.message,
+            _error: issue.message,
           });
         }
       }
@@ -185,7 +185,7 @@ export class ExcelValidationService {
       return { success: true, data: result.data };
     }
 
-    return { success: false, errors: result.error };
+    return { success: false, errors: result._error };
   }
 
   /**

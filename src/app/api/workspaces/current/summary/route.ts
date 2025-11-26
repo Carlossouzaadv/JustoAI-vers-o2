@@ -140,7 +140,7 @@ async function GET(request: NextRequest) {
 
     return successResponse(summary, 'Workspace summary retrieved successfully')
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Error getting workspace summary:', error)
     return errorResponse('Failed to get workspace summary', 500)
   }

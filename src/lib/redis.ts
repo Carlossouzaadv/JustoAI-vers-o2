@@ -118,7 +118,7 @@ const getRedisConfig = (): RedisOptions => {
           // Stop retrying based on mode
           const maxAttempts = isStrictMode ? 10 : 10;
           if (times > maxAttempts) {
-            log.error({
+            log._error({
               msg: `Max retry attempts reached for Redis (${isStrictMode ? 'strict mode' : 'graceful mode'}), giving up`,
               component: 'redis',
               retries: times,
@@ -147,8 +147,8 @@ const getRedisConfig = (): RedisOptions => {
         enableOfflineQueue: true, // Queue commands if connection drops (was: isStrictMode ? false : true)
         enableReadyCheck: true, // Both modes: wait for READY state
       };
-    } catch (_error) {
-      logError(error, 'Failed to parse REDIS_URL', { component: 'redis' });
+    } catch (error) {
+      logError(_error, 'Failed to parse REDIS_URL', { component: 'redis' });
       throw new Error('Invalid REDIS_URL format');
     }
   }
@@ -175,7 +175,7 @@ const getRedisConfig = (): RedisOptions => {
       const maxAttempts = 10; // Increased from 5-10 to 10
 
       if (times > maxAttempts) {
-        log.error({
+        log._error({
           msg: `Max retry attempts reached for Redis (${isStrictMode ? 'strict' : 'graceful'} mode, legacy config)`,
           component: 'redis',
           retries: times,
@@ -351,44 +351,44 @@ export const getRedisClient = (): Redis | MockRedis => {
   let hasErrored = false;
   let fallbackToMock = false;
 
-  client.on('error', (error: Error) => {
+  client.on('_error', (_error: Error) => {
     // Check for Upstash quota exceeded error
-    const isQuotaExceededError = error.message?.includes('ERR max requests limit exceeded') ||
-      error.message?.includes('max_requests_limit') ||
-      error.message?.includes('quota');
+    const isQuotaExceededError = _error.message?.includes('ERR max requests limit exceeded') ||
+      _error.message?.includes('max_requests_limit') ||
+      _error.message?.includes('quota');
 
     // Check for max retries error
-    const isMaxRetriesError = error.message?.includes('max retries') ||
-      error.message?.includes('Reached the max') ||
-      error.message?.includes('Stream isn\'t writeable');
+    const isMaxRetriesError = _error.message?.includes('max retries') ||
+      _error.message?.includes('Reached the max') ||
+      _error.message?.includes('Stream isn\'t writeable');
 
     // Trigger circuit breaker if quota exceeded
     if (isQuotaExceededError) {
       const cb = getCircuitBreaker();
       if (cb && typeof cb.triggerQuotaExceeded === 'function') {
-        cb.triggerQuotaExceeded(error);
+        cb.triggerQuotaExceeded(_error);
       }
     }
 
-    const rawErrorCode = 'code' in error ? (error as { code?: unknown }).code : undefined;
+    const rawErrorCode = 'code' in _error ? (_error as { code?: unknown }).code : undefined;
     // Type narrowing: convert unknown to safe type
     const errorCode = typeof rawErrorCode === 'string' || typeof rawErrorCode === 'number' ? rawErrorCode : undefined;
 
     if (isQuotaExceededError || isMaxRetriesError) {
       log.warn({
-        msg: `Redis connection error: ${error.message}`,
+        msg: `Redis connection _error: ${_error.message}`,
         component: 'redis',
-        event: 'error',
-        error_message: error.message,
+        event: '_error',
+        error_message: _error.message,
         error_code: errorCode,
         is_max_retries: isMaxRetriesError,
         is_quota_exceeded: isQuotaExceededError,
         mode: isStrictMode ? 'STRICT' : 'GRACEFUL'
       });
     } else {
-      log.error(error, 'Redis connection error', {
+      log._error(error, 'Redis connection _error', {
         component: 'redis',
-        event: 'error',
+        event: '_error',
         error_code: errorCode,
         is_max_retries: isMaxRetriesError,
         is_quota_exceeded: isQuotaExceededError,
@@ -498,8 +498,8 @@ export const testRedisConnection = async (): Promise<boolean> => {
     const result = await client.ping();
     log.info({ msg: 'Redis connection test successful', component: 'redis', ping_result: result });
     return result === 'PONG';
-  } catch (_error) {
-    logError(error, 'Redis connection test failed', { component: 'redis' });
+  } catch (error) {
+    logError(_error, 'Redis connection test failed', { component: 'redis' });
     return false;
   }
 };
@@ -517,8 +517,8 @@ export const closeRedisConnection = async (): Promise<void> => {
     await redisClient.quit();
     redisClient = null;
     log.info({ msg: 'Redis connection closed successfully', component: 'redis' });
-  } catch (_error) {
-    logError(error, 'Error closing Redis connection', { component: 'redis' });
+  } catch (error) {
+    logError(_error, 'Error closing Redis connection', { component: 'redis' });
 
     // Force disconnect
     if (redisClient && 'disconnect' in redisClient) {

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('[ADMIN] Error adding credits:', error);
     return NextResponse.json(
       {

@@ -41,7 +41,7 @@ export function useAutosave<T>(
         setHasUnsavedChanges(false);
         lastDataRef.current = dataToSave;
       }
-    } catch (_error) {
+    } catch (error) {
       if (isMountedRef.current && onError) {
         onError(error instanceof Error ? error : new Error('Save failed'));
       }

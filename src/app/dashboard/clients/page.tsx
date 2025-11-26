@@ -73,7 +73,7 @@ export default function ClientsPage() {
         console.error('Failed to load clients:', response.status);
         setClients([]);
       }
-    } catch (_error) {
+    } catch (error) {
       console.error('Error loading clients:', error);
       setClients([]);
     } finally {

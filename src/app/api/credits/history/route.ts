@@ -169,7 +169,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       `Retrieved ${transactions.length} credit transactions`
     )
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to fetch credit history:`, error)
     return errorResponse(
       error instanceof Error ? error.message : 'Failed to fetch credit history',

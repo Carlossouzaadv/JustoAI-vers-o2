@@ -658,7 +658,7 @@ export async function POST(request: NextRequest) {
         log.info({ msg: `${ICONS.SUCCESS} [Upload] Job de onboarding da JUDIT adicionado à fila para o processo ${detectedCnj}. Job ID: ${jobId}`, component: 'process-upload' });
         log.info({ msg: `${ICONS.INFO} [Async Flow] JUDIT worker processará caso em background (workspaceId: ${workspaceId}, caseId: ${newCase.id})`, component: 'process-upload' });
 
-      } catch (_error) {
+      } catch (error) {
         logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Upload] Erro ao enfileirar JUDIT`, { component: 'process-upload' });
         // Não falhar o upload por causa disso
       }
@@ -695,7 +695,7 @@ export async function POST(request: NextRequest) {
       message: `Preview gerado com sucesso via ${modelValue}! Buscando histórico oficial e anexos (aguarde notificação).`
     }, { status: 200 });
 
-  } catch (_error) {
+  } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), `${ICONS.ERROR} [Upload] Erro geral`, { component: 'process-upload' });
 
     return NextResponse.json(

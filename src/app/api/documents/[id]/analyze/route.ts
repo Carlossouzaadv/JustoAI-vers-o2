@@ -351,7 +351,7 @@ export async function POST(
       }
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Erro na análise do documento:', error);
 
     return NextResponse.json(
@@ -446,7 +446,7 @@ export async function GET(
       latest_analysis: analyses[0] || null
     });
 
-  } catch (_error) {
+  } catch (error) {
     console.error('Erro ao buscar análises do documento:', error);
 
     return NextResponse.json(

@@ -112,7 +112,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       paymentMethod: paymentMethod || undefined
     })
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Credit purchase failed:`, error)
     return errorResponse(
       error instanceof Error ? error.message : 'Failed to process credit purchase',

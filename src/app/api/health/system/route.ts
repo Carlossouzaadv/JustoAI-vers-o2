@@ -41,7 +41,7 @@ async function checkDatabase(): Promise<ComponentHealth> {
       responseTimeMs,
       timestamp: new Date().toISOString(),
     };
-  } catch (_error) {
+  } catch (error) {
     const responseTimeMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -77,7 +77,7 @@ async function checkRedis(): Promise<ComponentHealth> {
       responseTimeMs,
       timestamp: new Date().toISOString(),
     };
-  } catch (_error) {
+  } catch (error) {
     const responseTimeMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -124,7 +124,7 @@ async function checkSupabase(): Promise<ComponentHealth> {
     } else {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-  } catch (_error) {
+  } catch (error) {
     const responseTimeMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -177,7 +177,7 @@ async function checkResendEmail(): Promise<ComponentHealth> {
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
-  } catch (_error) {
+  } catch (error) {
     const responseTimeMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -232,7 +232,7 @@ async function checkSlack(): Promise<ComponentHealth> {
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
-  } catch (_error) {
+  } catch (error) {
     const responseTimeMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -283,7 +283,7 @@ async function checkJuditApi(): Promise<ComponentHealth> {
     } else {
       throw new Error(`HTTP ${response.status}`);
     }
-  } catch (_error) {
+  } catch (error) {
     const responseTimeMs = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -365,7 +365,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         'Expires': '0',
       },
     });
-  } catch (_error) {
+  } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
     console.error(`${ICONS.ERROR} Health check failed: ${errorMsg}`);

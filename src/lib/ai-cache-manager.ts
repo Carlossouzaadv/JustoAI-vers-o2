@@ -145,7 +145,7 @@ export class AiCacheManager {
       // });
       // await this.redisClient.connect();
       log.info({ msg: 'Redis conectado (cache nível 2)', component: 'ai-cache' });
-    } catch (_error) {
+    } catch (error) {
       log.warn({ msg: 'Redis não disponível, usando apenas memória + PostgreSQL', component: 'ai-cache' });
       this.config.enable_redis = false;
     }
@@ -198,7 +198,7 @@ export class AiCacheManager {
           }
         }
         this.stats.redis_misses++;
-      } catch (_error) {
+      } catch (error) {
         logError(error, '${ICONS.WARNING} Erro no Redis:', { component: 'refactored' });
       }
     }
@@ -245,7 +245,7 @@ export class AiCacheManager {
           return data;
         }
       }
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro no cache PostgreSQL:', { component: 'refactored' });
     }
 
@@ -288,7 +288,7 @@ export class AiCacheManager {
           this.config.redis_ttl,
           serialized
         );
-      } catch (_error) {
+      } catch (error) {
         logError(error, '${ICONS.WARNING} Erro ao salvar no Redis:', { component: 'refactored' });
       }
     }
@@ -328,7 +328,7 @@ export class AiCacheManager {
       }
 
       log.info({ msg: 'Cache SAVED (todos os níveis):' });
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Erro ao salvar cache no PostgreSQL:', { component: 'refactored' });
     }
   }
@@ -465,7 +465,7 @@ export class AiCacheManager {
           }
         });
         log.info({ msg: 'Cache PostgreSQL limpo (entries expirados)' });
-      } catch (_error) {
+      } catch (error) {
         logError(error, '${ICONS.ERROR} Erro na limpeza do cache:', { component: 'refactored' });
       }
     }, 60 * 60 * 1000);
@@ -525,7 +525,7 @@ export class AiCacheManager {
     if (this.config.enable_redis && this.redisClient) {
       try {
         await this.redisClient.flushdb();
-      } catch (_error) {
+      } catch (error) {
         logError(error, '${ICONS.WARNING} Erro ao limpar Redis:', { component: 'refactored' });
       }
     }

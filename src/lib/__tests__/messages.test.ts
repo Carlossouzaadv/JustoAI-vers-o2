@@ -67,13 +67,13 @@ describe('Messages Library', () => {
   })
 
   describe('ERROR_MESSAGES', () => {
-    it('has correct general error messages', () => {
+    it('has correct general _error messages', () => {
       expect(ERROR_MESSAGES.network_error).toBeDefined()
       expect(ERROR_MESSAGES.server_error).toBeDefined()
       expect(ERROR_MESSAGES.permission_denied).toBeDefined()
     })
 
-    it('has correct upload error messages', () => {
+    it('has correct upload _error messages', () => {
       expect(ERROR_MESSAGES.file_too_large).toBe('Arquivo muito grande. Tamanho máximo: 10MB')
       expect(ERROR_MESSAGES.invalid_format).toBe('Formato de arquivo inválido')
       expect(ERROR_MESSAGES.upload_failed).toBe('Falha no upload. Tente novamente.')

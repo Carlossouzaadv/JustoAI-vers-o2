@@ -148,7 +148,7 @@ export async function GET() {
       data: systemStatus
     });
 
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = getErrorMessage(error);
     console.error(`${ICONS.ERROR} Failed to get admin status:`, errorMessage);
 
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
       result
     });
 
-  } catch (_error) {
+  } catch (error) {
     const errorMessage = getErrorMessage(error);
     console.error(`${ICONS.ERROR} Admin action failed:`, errorMessage);
 
@@ -337,7 +337,7 @@ async function checkJuditApiStatus(): Promise<ComponentStatus> {
       }
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'critical',
       lastCheck: new Date(),
@@ -374,7 +374,7 @@ async function checkMonitoringWorkerStatus(): Promise<ComponentStatus> {
       metrics: stats.queue
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'critical',
       lastCheck: new Date(),
@@ -408,7 +408,7 @@ async function checkDatabaseStatus(): Promise<ComponentStatus> {
       metrics: { responseTime }
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'critical',
       lastCheck: new Date(),
@@ -469,7 +469,7 @@ async function checkRedisStatus(): Promise<ComponentStatus> {
       metrics: { responseTime }
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'critical',
       lastCheck: new Date(),
@@ -517,7 +517,7 @@ async function checkWebhookStatus(): Promise<ComponentStatus> {
       }
     };
 
-  } catch (_error) {
+  } catch (error) {
     return {
       status: 'critical',
       lastCheck: new Date(),
@@ -614,7 +614,7 @@ async function restartMonitoringWorker(): Promise<unknown> {
       activeJobsCleared: activeJobs.length
     };
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to restart worker:`, error);
     throw error;
   }
@@ -651,7 +651,7 @@ async function clearMonitoringQueue(): Promise<unknown> {
       failedJobsCleared: failed.length
     };
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to clear queue:`, error);
     throw error;
   }
@@ -676,7 +676,7 @@ async function forceSyncWorkspace(workspaceId?: string, processId?: string): Pro
       processId
     };
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Failed to schedule force sync:`, error);
     throw error;
   }
@@ -755,7 +755,7 @@ async function emergencyStopMonitoring(): Promise<unknown> {
       timestamp: new Date()
     };
 
-  } catch (_error) {
+  } catch (error) {
     console.error(`${ICONS.ERROR} Emergency stop failed:`, error);
     throw error;
   }
@@ -779,7 +779,7 @@ async function performHealthCheck(): Promise<unknown> {
     await prisma.$queryRaw`SELECT 1`;
     checks.database = true;
     details.database = 'Connected successfully';
-  } catch (_error) {
+  } catch (error) {
     details.database = `Failed: ${getErrorMessage(error)}`;
   }
 
@@ -796,7 +796,7 @@ async function performHealthCheck(): Promise<unknown> {
     }
     checks.redis = isReady;
     details.redis = isReady ? 'Connected successfully' : 'Not ready';
-  } catch (_error) {
+  } catch (error) {
     details.redis = `Failed: ${getErrorMessage(error)}`;
   }
 
@@ -806,7 +806,7 @@ async function performHealthCheck(): Promise<unknown> {
     await juditClient.listTrackings();
     checks.juditApi = true;
     details.juditApi = 'API responding normally';
-  } catch (_error) {
+  } catch (error) {
     details.juditApi = `Failed: ${getErrorMessage(error)}`;
   }
 
@@ -816,7 +816,7 @@ async function performHealthCheck(): Promise<unknown> {
     const stats = await getMonitoringStats();
     checks.workers = stats.queue.active >= 0; // Worker is responding
     details.workers = `Queue stats retrieved: ${stats.queue.waiting} waiting, ${stats.queue.active} active`;
-  } catch (_error) {
+  } catch (error) {
     details.workers = `Failed: ${getErrorMessage(error)}`;
   }
 
@@ -825,7 +825,7 @@ async function performHealthCheck(): Promise<unknown> {
     const pendingCount = await prisma.webhookQueue.count({ where: { status: 'PENDING' } });
     checks.webhooks = true;
     details.webhooks = `${pendingCount} pending webhooks`;
-  } catch (_error) {
+  } catch (error) {
     details.webhooks = `Failed: ${getErrorMessage(error)}`;
   }
 

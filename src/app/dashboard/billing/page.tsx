@@ -109,7 +109,7 @@ export default function BillingPage() {
         } else {
           setHistory([]);
         }
-      } catch (_error) {
+      } catch (error) {
         console.error('Erro ao carregar dados de billing:', error);
         // Set default empty credits to avoid undefined errors
         setCredits({

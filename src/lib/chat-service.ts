@@ -230,7 +230,7 @@ export class ChatService {
           }
         }
       })();
-    } catch (_error) {
+    } catch (error) {
       // Clean up on error
       try {
         await prisma.chatMessage.delete({

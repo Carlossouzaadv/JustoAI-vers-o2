@@ -114,7 +114,7 @@ export class AggregationService {
           alertsCreated += newAlerts;
 
           log.info({ msg: '[Daily Aggregation] Processed workspace :  alerts created' });
-        } catch (_error) {
+        } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           errors.push(`Workspace ${workspace.id}: ${errorMsg}`);
           logError(error, '${ICONS.ERROR} Daily Aggregation Error processing workspace ${workspace.id}:', { component: 'refactored' });
@@ -133,7 +133,7 @@ export class AggregationService {
         duration,
         errors: errors.length > 0 ? errors : undefined,
       };
-    } catch (_error) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
 
@@ -358,7 +358,7 @@ export class AggregationService {
         });
         alertsCreated++;
       }
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Aggregation Error evaluating alerts for workspace ${workspaceId}:', { component: 'refactored' });
     }
 
@@ -408,7 +408,7 @@ export class AggregationService {
       }
 
       return false;
-    } catch (_error) {
+    } catch (error) {
       logError(error, '${ICONS.ERROR} Aggregation Error creating alert:', { component: 'refactored' });
       return false;
     }

@@ -7,14 +7,14 @@
  * - Encapsulates pino for local logging
  * - Environment-aware: production → HTTP to Better Stack, development → pretty
  * - Structured JSON logging for queryability
- * - Zero console.log/warn/error scattered throughout the code
+ * - Zero console.log/warn/_error scattered throughout the code
  *
  * USAGE:
  * import { log } from '@/lib/services/logger';
  *
  * log.info({ msg: "User login", userId: user.id, context: { ... } });
  * log.warn({ msg: "Rate limit approaching", remaining: 5 });
- * log.error(error, "Failed to process attachment", { caseId, attachmentId });
+ * log._error(error, "Failed to process attachment", { caseId, attachmentId });
  */
 
 import pino from 'pino';
@@ -33,7 +33,7 @@ const { NODE_ENV, LOGTAIL_SOURCE_TOKEN } = process.env;
 /**
  * Base pino configuration
  * Log level varies by environment:
- * - production: 'info' (see info, warn, error)
+ * - production: 'info' (see info, warn, _error)
  * - development: 'debug' (see everything for development)
  * - test: disabled (to prevent cluttering jest output)
  */
@@ -84,7 +84,7 @@ function createBetterStackTransport(token: string) {
               }
               cb();
             } catch (err) {
-              console.error('[BetterStackTransport] Error:', err);
+              console._error('[BetterStackTransport] Error:', err);
               cb();
             }
           }
@@ -116,13 +116,13 @@ function createBetterStackTransport(token: string) {
                 },
                 (res) => {
                   if (res.statusCode >= 400) {
-                    console.error('[BetterStackTransport] HTTP error:', res.statusCode);
+                    console._error('[BetterStackTransport] HTTP _error:', res.statusCode);
                   }
                 }
               );
 
-              req.on('error', (err) => {
-                console.error('[BetterStackTransport] Request error:', err.message);
+              req.on('_error', (err) => {
+                console._error('[BetterStackTransport] Request _error:', err.message);
               });
 
               req.end(body);
@@ -208,8 +208,8 @@ if (NODE_ENV === 'production') {
  *   reason: validationResult.reason
  * });
  *
- * // Error log (always pass error as first argument)
- * log.error(error, "Failed to download attachment", {
+ * // Error log (always pass _error as first argument)
+ * log._error(error, "Failed to download attachment", {
  *   component: "juditAttachmentProcessor",
  *   attachmentId: attachment.id,
  *   caseId: caseId
@@ -231,29 +231,29 @@ log.info({
 
 /**
  * Type-safe helper for logging errors
- * Ensures error details are always captured properly
+ * Ensures _error details are always captured properly
  */
 export function logError(
-  error: unknown,
+  _error: unknown,
   message: string,
   context?: Record<string, unknown>
 ): void {
-  if (error instanceof Error) {
-    log.error(
+  if (_error instanceof Error) {
+    log._error(
       {
         msg: message,
-        errorMessage: error.message,
-        errorStack: error.stack,
-        errorName: error.name,
+        errorMessage: _error.message,
+        errorStack: _error.stack,
+        errorName: _error.name,
         ...context,
       },
       message
     );
   } else {
-    log.error(
+    log._error(
       {
         msg: message,
-        error: String(error),
+        _error: String(_error),
         ...context,
       },
       message
@@ -278,8 +278,8 @@ export function createContextLogger(context: LogContext) {
     warn: (msg: string, data?: Record<string, unknown>) => {
       log.warn({ msg, ...context, ...data });
     },
-    error: (error: unknown, msg: string, data?: Record<string, unknown>) => {
-      logError(error, msg, { ...context, ...data });
+    _error: (_error: unknown, msg: string, data?: Record<string, unknown>) => {
+      logError(_error, msg, { ...context, ...data });
     },
   };
 }

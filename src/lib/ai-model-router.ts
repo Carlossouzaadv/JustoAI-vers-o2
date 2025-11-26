@@ -1015,7 +1015,7 @@ PROFUNDIDADE: Completa e estratégica`;
 
         break;
 
-      } catch (_error) {
+      } catch (error) {
         logError(`❌ Erro no modelo ${config.model}:`, 'error', { component: 'aiModelRouter' });
 
         if (config.fallbackModel && attempts === 0) {
@@ -1354,7 +1354,7 @@ PROFUNDIDADE: Completa e estratégica`;
       log.info({ msg: '${ICONS.SUCCESS} Análise ${analysisType} concluída com ${modelTier}', component: 'aiModelRouter' });
       return result;
 
-    } catch (_error) {
+    } catch (error) {
       const { ICONS } = await import('./icons');
       logError(`${ICONS.ERROR} Erro na análise com ${modelTier}:`, 'error', { component: 'aiModelRouter' });
 

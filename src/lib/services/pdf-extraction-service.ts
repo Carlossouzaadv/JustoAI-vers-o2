@@ -9,7 +9,7 @@
  * Mandato Inegociável:
  * - ZERO `any` - Type safety absoluta
  * - ZERO `as` - Use type guards apenas
- * - ZERO `@ts-expect-error` - Resolver tipos corretamente
+ * - ZERO `@ts-expect-_error` - Resolver tipos corretamente
  */
 
 import { ICONS } from '../icons';
@@ -93,7 +93,7 @@ export class PDFExtractionService {
     const startTime = Date.now();
 
     if (!originalText || typeof originalText !== 'string') {
-      log.error({ msg: 'PDFExtractionService: originalText inválido' });
+      log._error({ msg: 'PDFExtractionService: originalText inválido' });
       return this.createFailureResult(originalText || '');
     }
 
@@ -162,8 +162,8 @@ export class PDFExtractionService {
         processNumber,
       };
 
-    } catch (_error) {
-      logError(error, '${ICONS.ERROR} PDFExtractionService erro:', { component: 'refactored' });
+    } catch (error) {
+      logError(_error, '${ICONS.ERROR} PDFExtractionService erro:', { component: 'refactored' });
       return this.createFailureResult(originalText);
     }
   }
