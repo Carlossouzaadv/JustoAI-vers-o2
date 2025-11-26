@@ -351,7 +351,7 @@ export async function sendRequest<T = Record<string, unknown>>(
     clearTimeout(timeoutId);
 
     // Handle timeout
-    if (_error instanceof Error && _error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       const duration = operation.finish('failure', {
         _error: 'Request timeout',
         timeout_ms: timeout,
