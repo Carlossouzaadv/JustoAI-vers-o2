@@ -92,11 +92,11 @@ export async function POST(req: NextRequest) {
     const result = await analysisService.analyze(analysisRequest);
 
     if (!result.success) {
-      console.error(`${ICONS.ERROR} Análise falhou: ${result._error}`);
+      console.error(`${ICONS.ERROR} Análise falhou: ${result.error}`);
       return NextResponse.json(
         {
           success: false,
-          error: result._error || 'Falha na análise',
+          error: result.error || 'Falha na análise',
           metadata: result.metadata
         },
         { status: 500 }
