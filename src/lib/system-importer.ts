@@ -407,7 +407,7 @@ export class SystemImporter {
         errors: this.session.errors
       });
 
-      throw _error;
+      throw error;
     }
   }
 
