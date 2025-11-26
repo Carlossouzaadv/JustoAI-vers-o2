@@ -738,14 +738,14 @@ export async function analyzeMovementsAndFetchAttachmentsIfNeeded(
     } else {
       log.error(`Falha ao buscar anexos`, {
         cnj: processo.numeroCnj,
-        _error: searchResult.error,
+        _error: searchResult._error,
       });
 
       return {
         shouldFetchAttachments: true,
         matchedKeywords,
         matchedMovements,
-        _error: searchResult.error,
+        _error: searchResult._error,
       };
     }
 
