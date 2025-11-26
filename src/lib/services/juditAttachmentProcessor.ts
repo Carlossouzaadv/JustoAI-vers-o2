@@ -168,7 +168,7 @@ export async function processJuditAttachments(
       processedCount: result.processed,
       failedCount: result.failed,
     });
-    result.errors.push(_error instanceof Error ? _error.message : 'Erro desconhecido');
+    result.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
     return result;
   }
 }
