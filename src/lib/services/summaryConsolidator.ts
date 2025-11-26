@@ -545,7 +545,7 @@ export async function generateSummaryFromTimeline(caseId: string): Promise<strin
 
   } catch (error) {
     logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao gerar resumo da timeline:', { component: 'refactored' });
-    throw _error;
+    throw error;
   }
 }
 
@@ -621,7 +621,7 @@ export async function consolidateCaseSummary(caseId: string): Promise<Consolidat
     return result;
   } catch (error) {
     logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao consolidar resumo:', { component: 'refactored' });
-    throw _error;
+    throw error;
   }
 }
 
@@ -649,6 +649,6 @@ export async function updateCaseSummaryDescription(caseId: string): Promise<stri
     return updated.description || '';
   } catch (error) {
     logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao atualizar descrição:', { component: 'refactored' });
-    throw _error;
+    throw error;
   }
 }
