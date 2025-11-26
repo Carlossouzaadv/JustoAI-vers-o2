@@ -146,7 +146,7 @@ export async function generatePreview(
         };
 
       } catch (error) {
-        lastError = _error instanceof Error ? _error : new Error(String(_error));
+        lastError = error instanceof Error ? error : new Error(String(error));
         log.warn({ msg: '[Preview] Falha com :' });
 
         // Continuar para próximo modelo se não for a última tentativa
