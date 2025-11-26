@@ -166,7 +166,7 @@ export async function generatePreview(
 
     return {
       success: false,
-      _error: _error instanceof Error ? _error.message : 'Erro desconhecido ao gerar preview',
+      _error: error instanceof Error ? error.message : 'Erro desconhecido ao gerar preview',
       duration
     };
   }
