@@ -192,15 +192,15 @@ export class BatchStatusService {
           topErrors.push(errorDetail);
 
           // Aggregate summary
-          const key = `${errorDetail.field}: ${errorDetail.error}`;
+          const key = `${errorDetail.field}: ${errorDetail._error}`;
           errorSummary[key] = (errorSummary[key] || 0) + 1;
         }
       }
 
       // Sort by frequency
       topErrors.sort((a, b) => {
-        const keyA = `${a.field}: ${a.error}`;
-        const keyB = `${b.field}: ${b.error}`;
+        const keyA = `${a.field}: ${a._error}`;
+        const keyB = `${b.field}: ${b._error}`;
         return (errorSummary[keyB] || 0) - (errorSummary[keyA] || 0);
       });
     } catch (error) {

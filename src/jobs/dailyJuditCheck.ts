@@ -413,8 +413,8 @@ async function checkSingleProcess(
     // Verificar se há novos andamentos
     const updateResult = await checkTrackingUpdates(trackingId, lookbackTimestamp);
 
-    if (updateResult.error) {
-      throw new Error(updateResult.error);
+    if (updateResult._error) {
+      throw new Error(updateResult._error);
     }
 
     // Se não há novos movimentos, retornar sucesso

@@ -142,7 +142,7 @@ export class ReportScheduler {
           log.info({ msg: 'Quota excedida para workspace :' });
 
           // Criar execução com status de erro
-          await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation.error || 'Quota excedida');
+          await this.createFailedExecution(schedule.id, schedule.workspaceId, quotaValidation._error || 'Quota excedida');
           errors++;
           continue;
         }
