@@ -300,7 +300,7 @@ export class ReportDataCollector {
       return { data, stats };
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro na coleta de dados:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro na coleta de dados:', { component: 'refactored' });
       throw error;
     }
   }
