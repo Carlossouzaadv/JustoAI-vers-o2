@@ -7,7 +7,7 @@
 import { promises as fs } from 'fs';
 import { prisma } from './prisma';
 import { getErrorMessage, isPDFData, isRailwayPdfResponse, isPDFExtractionData } from './types/type-guards';
-import { log, logError } from '@/lib/services/logger';
+import { logError } from '@/lib/services/logger';
 
 const ICONS = {
   SUCCESS: '✅',
@@ -34,7 +34,7 @@ function log(prefix: string, message: string, data?: Record<string, unknown>) {
   if (data) {
     console.log(`[${timestamp}] ${prefix} ${message}`, JSON.stringify(data, null, 2));
   } else if (process.env.NODE_ENV === 'development' || DEBUG || message.includes('Error')) {
-    log.info({ msg: '[]' });
+    console.log(`[${timestamp}] ${prefix} ${message}`);
   }
 }
 
