@@ -163,7 +163,7 @@ export class PDFExtractionService {
       };
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} PDFExtractionService erro:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} PDFExtractionService erro:', { component: 'refactored' });
       return this.createFailureResult(originalText);
     }
   }

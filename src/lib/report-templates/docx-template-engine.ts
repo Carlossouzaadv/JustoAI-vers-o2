@@ -150,7 +150,7 @@ export class DOCXTemplateEngine {
       };
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} DOCX generation failed:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} DOCX generation failed:', { component: 'refactored' });
       return {
         success: false,
         filePath: '',

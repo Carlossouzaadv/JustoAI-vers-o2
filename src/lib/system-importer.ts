@@ -392,7 +392,7 @@ export class SystemImporter {
       return this.session;
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro na importação:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro na importação:', { component: 'refactored' });
 
       this.session.status = 'FAILED';
       this.session.finishedAt = new Date();

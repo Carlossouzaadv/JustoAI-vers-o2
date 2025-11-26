@@ -44,7 +44,7 @@ export async function getCredits(userEmail: string | undefined, workspaceId: str
     }
     return { reportCredits: Number(credits.reportCreditsBalance), fullCredits: Number(credits.fullCreditsBalance), unlimited: false, divinityAdmin: false };
   } catch (error) {
-    logError(_error, 'CREDIT Error:', { component: 'refactored' });
+    logError(error, 'CREDIT Error:', { component: 'refactored' });
     throw new Error('Failed to fetch');
   }
 }

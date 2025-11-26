@@ -67,7 +67,7 @@ export class PDFTemplateEngine {
       });
       log.info({ msg: 'PDF Template Engine initialized' });
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Failed to initialize PDF engine:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Failed to initialize PDF engine:', { component: 'refactored' });
       throw error;
     }
   }
@@ -147,7 +147,7 @@ export class PDFTemplateEngine {
       };
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} PDF generation failed:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} PDF generation failed:', { component: 'refactored' });
       return {
         success: false,
         filePath: '',

@@ -523,7 +523,7 @@ export class ReportDataCollector {
         financialInfo
       };
     } catch (error) {
-      logError(_error, 'Erro ao analisar processData:', { component: 'refactored' });
+      logError(error, 'Erro ao analisar processData:', { component: 'refactored' });
       return {};
     }
   }
@@ -594,7 +594,7 @@ export class ReportDataCollector {
 
       return Object.keys(financial).length > 0 ? financial : undefined;
     } catch (error) {
-      logError(_error, 'Erro ao extrair informações financeiras:', { component: 'refactored' });
+      logError(error, 'Erro ao extrair informações financeiras:', { component: 'refactored' });
       return undefined;
     }
   }
@@ -631,7 +631,7 @@ export class ReportDataCollector {
 
       return null;
     } catch (error) {
-      logError(_error, 'Erro ao extrair prazo do padrão:', { component: 'refactored' });
+      logError(error, 'Erro ao extrair prazo do padrão:', { component: 'refactored' });
       return null;
     }
   }
@@ -686,7 +686,7 @@ export class ReportDataCollector {
 
       return undefined;
     } catch (error) {
-      logError(_error, 'Erro ao calcular próximo prazo:', { component: 'refactored' });
+      logError(error, 'Erro ao calcular próximo prazo:', { component: 'refactored' });
       return undefined;
     }
   }
@@ -727,7 +727,7 @@ export class ReportDataCollector {
       return insights.slice(0, 5); // Máximo 5 insights
 
     } catch (error) {
-      logError(_error, '${ICONS.WARNING} Erro ao gerar insights de IA:', { component: 'refactored' });
+      logError(error, '${ICONS.WARNING} Erro ao gerar insights de IA:', { component: 'refactored' });
 
       // Safely build fallback insights from summary data
       const fallbackInsights: string[] = [];

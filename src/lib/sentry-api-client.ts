@@ -106,7 +106,7 @@ export async function getSentryErrors(
       platform: typeof event.platform === 'string' ? event.platform : 'node',
     }));
   } catch (error) {
-    logError(_error, 'Error fetching Sentry errors:', { component: 'refactored' });
+    logError(error, 'Error fetching Sentry errors:', { component: 'refactored' });
     return [];
   }
 }
@@ -168,7 +168,7 @@ async function _getSentryProjectStatsUncached(): Promise<SentryProjectStats> {
       },
     };
   } catch (error) {
-    logError(_error, 'Error fetching Sentry stats:', { component: 'refactored' });
+    logError(error, 'Error fetching Sentry stats:', { component: 'refactored' });
     return getDefaultStats();
   }
 }
@@ -212,7 +212,7 @@ export async function getSentryReleases(limit: number = 5) {
       newGroups: typeof release.newGroups === 'number' ? release.newGroups : 0,
     }));
   } catch (error) {
-    logError(_error, 'Error fetching Sentry releases:', { component: 'refactored' });
+    logError(error, 'Error fetching Sentry releases:', { component: 'refactored' });
     return [];
   }
 }

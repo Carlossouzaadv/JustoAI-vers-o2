@@ -208,7 +208,7 @@ export class ReportScheduler {
         log.info({ msg: 'Agendado relatório  para' });
 
       } catch (error) {
-        logError(_error, '${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:', { component: 'refactored' });
+        logError(error, '${ICONS.ERROR} Erro ao processar schedule ${schedule.id}:', { component: 'refactored' });
         errors++;
       }
     }
@@ -266,7 +266,7 @@ export class ReportScheduler {
         executed++;
         executionIds.push(execution.id);
       } catch (error) {
-        logError(_error, '${ICONS.ERROR} Falha na execução ${execution.id}:', { component: 'refactored' });
+        logError(error, '${ICONS.ERROR} Falha na execução ${execution.id}:', { component: 'refactored' });
         failed++;
 
         // Reverter quota se falhou
@@ -554,7 +554,7 @@ export class ReportScheduler {
 
       log.info({ msg: '[Report] Notificação enviada para:' });
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Report Erro ao enviar notificação:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Report Erro ao enviar notificação:', { component: 'refactored' });
       // Não lançar erro para não quebrar o fluxo de execução
     }
   }

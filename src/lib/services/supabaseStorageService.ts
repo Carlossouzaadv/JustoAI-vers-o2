@@ -91,7 +91,7 @@ export async function uploadToStorage(
       });
 
     if (_error) {
-      logError(_error, '${ICONS.ERROR} Storage Upload failed:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Storage Upload failed:', { component: 'refactored' });
 
       // If file exists, get its URL anyway
       if (_error.message?.includes('duplicate')) {
@@ -251,14 +251,14 @@ export async function deleteFromStorage(
       .remove([filePath]);
 
     if (_error) {
-      logError(_error, '${ICONS.ERROR} Storage Delete failed:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Storage Delete failed:', { component: 'refactored' });
       return false;
     }
 
     log.info({ msg: '[Storage] File deleted:' });
     return true;
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Storage Delete _error:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Storage Delete _error:', { component: 'refactored' });
     return false;
   }
 }
@@ -276,13 +276,13 @@ export async function listStorageFiles(
       .list(folderPath);
 
     if (_error) {
-      logError(_error, '${ICONS.ERROR} Storage List failed:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Storage List failed:', { component: 'refactored' });
       return [];
     }
 
     return data || [];
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Storage List _error:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Storage List _error:', { component: 'refactored' });
     return [];
   }
 }
@@ -311,7 +311,7 @@ async function ensureBucketExists(bucketName: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    logError(_error, '${ICONS.WARNING} Storage Bucket check _error:', { component: 'refactored' });
+    logError(error, '${ICONS.WARNING} Storage Bucket check _error:', { component: 'refactored' });
     return false;
   }
 }
@@ -329,13 +329,13 @@ export async function downloadFromStorage(
       .download(filePath);
 
     if (_error) {
-      logError(_error, '${ICONS.ERROR} Storage Download failed:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Storage Download failed:', { component: 'refactored' });
       return null;
     }
 
     return Buffer.from(await data.arrayBuffer());
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Storage Download _error:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Storage Download _error:', { component: 'refactored' });
     return null;
   }
 }

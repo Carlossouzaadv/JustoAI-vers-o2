@@ -82,7 +82,7 @@ export class SlackService {
       };
 
     } catch (error) {
-      logError(_error, '${ICONS.ERROR} Erro ao enviar alerta para Slack:', { component: 'refactored' });
+      logError(error, '${ICONS.ERROR} Erro ao enviar alerta para Slack:', { component: 'refactored' });
       return {
         success: false,
         _error: _error instanceof Error ? _error.message : 'Unknown _error'

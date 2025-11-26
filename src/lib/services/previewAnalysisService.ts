@@ -162,7 +162,7 @@ export async function generatePreview(
   } catch (error) {
     const duration = Date.now() - startTime;
 
-    logError(_error, '${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Preview Erro ao gerar preview após todas as tentativas:', { component: 'refactored' });
 
     return {
       success: false,

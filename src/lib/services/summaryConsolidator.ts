@@ -388,7 +388,7 @@ async function generateConsolidatedSummaryWithAI(
       throw geminiError;
     }
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao chamar Gemini:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao chamar Gemini:', { component: 'refactored' });
     throw _error;
   }
 }
@@ -544,7 +544,7 @@ export async function generateSummaryFromTimeline(caseId: string): Promise<strin
     return consolidatedDescription;
 
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao gerar resumo da timeline:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao gerar resumo da timeline:', { component: 'refactored' });
     throw _error;
   }
 }
@@ -620,7 +620,7 @@ export async function consolidateCaseSummary(caseId: string): Promise<Consolidat
 
     return result;
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao consolidar resumo:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao consolidar resumo:', { component: 'refactored' });
     throw _error;
   }
 }
@@ -648,7 +648,7 @@ export async function updateCaseSummaryDescription(caseId: string): Promise<stri
 
     return updated.description || '';
   } catch (error) {
-    logError(_error, '${ICONS.ERROR} Summary Consolidator Erro ao atualizar descrição:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Summary Consolidator Erro ao atualizar descrição:', { component: 'refactored' });
     throw _error;
   }
 }

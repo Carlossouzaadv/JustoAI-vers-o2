@@ -86,7 +86,7 @@ class AnalyticsServiceImpl {
         msg: 'Erro ao inicializar PostHog',
         component: 'AnalyticsService',
         stage: 'initialize',
-        error: error instanceof Error ? error.message : String(_error)
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -164,7 +164,7 @@ class AnalyticsServiceImpl {
         component: 'AnalyticsService',
         event,
         userId,
-        error: error instanceof Error ? error.message : String(_error)
+        error: error instanceof Error ? error.message : String(error)
       });
       // NÃO relançar - falha de analytics não deve quebrar a aplicação
     }
@@ -217,7 +217,7 @@ class AnalyticsServiceImpl {
         msg: 'Erro ao identificar usuário',
         component: 'AnalyticsService',
         userId,
-        error: error instanceof Error ? error.message : String(_error)
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
