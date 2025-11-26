@@ -83,18 +83,18 @@ export async function uploadToStorage(
     await ensureBucketExists(bucket);
 
     // Upload file
-    const { data, _error } = await getSupabaseClient().storage
+    const { data, error } = await getSupabaseClient().storage
       .from(bucket)
       .upload(filePath, fileBuffer, {
         contentType: mimeType,
         upsert: false // Fail if file already exists
       });
 
-    if (_error) {
+    if (error) {
       logError(error, '${ICONS.ERROR} Storage Upload failed:', { component: 'refactored' });
 
       // If file exists, get its URL anyway
-      if (_error.message?.includes('duplicate')) {
+      if (error.message?.includes('duplicate')) {
         const publicUrl = getPublicUrl(bucket, filePath);
         return {
           success: true,
@@ -106,7 +106,7 @@ export async function uploadToStorage(
 
       return {
         success: false,
-        _error: `Failed to upload file: ${_error.message}`
+        _error: `Failed to upload file: ${error.message}`
       };
     }
 
@@ -122,8 +122,8 @@ export async function uploadToStorage(
       bucketName: bucket
     };
   } catch (error) {
-    const errorMsg = _error instanceof Error ? _error.message : 'Unknown _error';
-    logError(errorMsg, '${ICONS.ERROR} Storage Upload _error:', { component: 'refactored' });
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    logError(errorMsg, '${ICONS.ERROR} Storage Upload error:', { component: 'refactored' });
     return {
       success: false,
       _error: errorMsg
@@ -246,11 +246,11 @@ export async function deleteFromStorage(
   filePath: string
 ): Promise<boolean> {
   try {
-    const { _error } = await getSupabaseClient().storage
+    const { error } = await getSupabaseClient().storage
       .from(bucket)
       .remove([filePath]);
 
-    if (_error) {
+    if (error) {
       logError(error, '${ICONS.ERROR} Storage Delete failed:', { component: 'refactored' });
       return false;
     }
@@ -258,7 +258,7 @@ export async function deleteFromStorage(
     log.info({ msg: '[Storage] File deleted:' });
     return true;
   } catch (error) {
-    logError(error, '${ICONS.ERROR} Storage Delete _error:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Storage Delete error:', { component: 'refactored' });
     return false;
   }
 }
@@ -271,18 +271,18 @@ export async function listStorageFiles(
   folderPath: string
 ): Promise<Array<{ name: string; id: string; updated_at: string; metadata: Record<string, unknown> }>> {
   try {
-    const { data, _error } = await getSupabaseClient().storage
+    const { data, error } = await getSupabaseClient().storage
       .from(bucket)
       .list(folderPath);
 
-    if (_error) {
+    if (error) {
       logError(error, '${ICONS.ERROR} Storage List failed:', { component: 'refactored' });
       return [];
     }
 
     return data || [];
   } catch (error) {
-    logError(error, '${ICONS.ERROR} Storage List _error:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Storage List error:', { component: 'refactored' });
     return [];
   }
 }
@@ -294,7 +294,7 @@ export async function listStorageFiles(
 async function ensureBucketExists(bucketName: string): Promise<boolean> {
   try {
     // Try to get bucket info
-    const { data: buckets, _error: listError } = await getSupabaseClient().storage.listBuckets();
+    const { data: buckets, error: listError } = await getSupabaseClient().storage.listBuckets();
 
     if (listError) {
       logError(listError, '${ICONS.WARNING} Storage Could not list buckets:', { component: 'refactored' });
@@ -324,18 +324,18 @@ export async function downloadFromStorage(
   filePath: string
 ): Promise<Buffer | null> {
   try {
-    const { data, _error } = await getSupabaseClient().storage
+    const { data, error } = await getSupabaseClient().storage
       .from(bucket)
       .download(filePath);
 
-    if (_error) {
+    if (error) {
       logError(error, '${ICONS.ERROR} Storage Download failed:', { component: 'refactored' });
       return null;
     }
 
     return Buffer.from(await data.arrayBuffer());
   } catch (error) {
-    logError(error, '${ICONS.ERROR} Storage Download _error:', { component: 'refactored' });
+    logError(error, '${ICONS.ERROR} Storage Download error:', { component: 'refactored' });
     return null;
   }
 }
