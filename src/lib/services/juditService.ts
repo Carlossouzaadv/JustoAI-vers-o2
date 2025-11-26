@@ -388,7 +388,7 @@ export async function sendRequest<T = Record<string, unknown>>(
 
     return {
       success: false,
-      _error: _error instanceof Error ? _error.message : 'Unknown _error occurred',
+      _error: error instanceof Error ? error.message : 'Unknown error occurred',
       statusCode: 0,
     };
   }
