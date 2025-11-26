@@ -222,8 +222,8 @@ class WorkerStatsServiceImpl {
 
     try {
       // Extrair detalhes do erro com type guards
-      const errorMessage = getErrorMessage(error);
-      const errorStack = getErrorStack(error);
+      const errorMessage = getErrorMessage(_error);
+      const errorStack = getErrorStack(_error);
 
       // Validar metadata com type guard
       let validatedMetadata: JobMetadata = {};
@@ -270,7 +270,7 @@ class WorkerStatsServiceImpl {
           errorDetails: {
             message: errorMessage,
             stack: errorStack,
-            code: error instanceof Error && 'code' in error ? (error as Record<string, unknown>).code ?? null : null
+            code: _error instanceof Error && 'code' in _error ? (_error as Record<string, unknown>).code ?? null : null
           },
           metadata: validatedMetadata,
           retryCount
