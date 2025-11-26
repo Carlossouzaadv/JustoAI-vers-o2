@@ -19,12 +19,12 @@ export class CSVExportService {
     const rows: string[][] = [];
 
     for (const _error of batchStatus.topErrors) {
-      const key = `${_error.field}: ${_error.error}`;
+      const key = `${_error.field}: ${_error._error}`;
       const count = batchStatus.errorSummary[key] || 0;
 
       rows.push([
         this.escapeCsvValue(_error.field),
-        this.escapeCsvValue(_error.error),
+        this.escapeCsvValue(_error._error),
         count.toString(),
         _error.row?.toString() || '',
       ]);
