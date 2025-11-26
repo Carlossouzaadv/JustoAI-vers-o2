@@ -318,7 +318,7 @@ export class SlackService {
     } catch (error) {
       return {
         success: false,
-        _error: _error instanceof Error ? _error.message : 'Unknown _error'
+        _error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
