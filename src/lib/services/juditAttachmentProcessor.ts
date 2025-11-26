@@ -452,7 +452,7 @@ async function downloadAndProcessAttachment(
           attachmentName: attachment.name,
           attachmentId: attachment.attachment_id,
           caseId: caseId,
-          _error: _error instanceof Error ? _error.message : String(_error),
+          _error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -519,7 +519,7 @@ async function downloadAndProcessAttachment(
 
   } catch (error) {
     result.failed++;
-    const errorMsg = `Erro em ${attachment.name}: ${_error instanceof Error ? _error.message : 'Desconhecido'}`;
+    const errorMsg = `Erro em ${attachment.name}: ${error instanceof Error ? error.message : 'Desconhecido'}`;
     result.errors.push(errorMsg);
     logError(error, 'Error processing attachment', {
       component: 'downloadAndProcessAttachment',
