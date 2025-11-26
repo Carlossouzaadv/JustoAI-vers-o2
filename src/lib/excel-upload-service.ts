@@ -587,7 +587,7 @@ export class ExcelUploadService {
       return {
         success: result.success,
         data: validatedData || undefined,
-        error: result._error
+        error: result.error
       };
 
     } catch (error) {
