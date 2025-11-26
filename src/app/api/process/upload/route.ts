@@ -517,7 +517,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPreviewResult) {
       // ERRO CRÍTICO: Análise de IA falhou mesmo após fallback
-      log.error({ msg: `${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas`, error: previewResult.error, component: 'process-upload' });
+      log.error({ msg: `${ICONS.ERROR} [Upload] Falha ao gerar preview após todas as tentativas`, error: previewResult._error, component: 'process-upload' });
 
       // Limpar o case incompleto
       await prisma.case.delete({
