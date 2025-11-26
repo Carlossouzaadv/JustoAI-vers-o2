@@ -529,9 +529,9 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: 'ai_analysis_failed',
-          message: `Falha na análise de IA do documento: ${previewResult.error || 'Erro desconhecido'}. Todas as tentativas com diferentes modelos falharam. Verifique se a chave da API Google está configurada corretamente.`,
+          message: `Falha na análise de IA do documento: ${previewResult._error || 'Erro desconhecido'}. Todas as tentativas com diferentes modelos falharam. Verifique se a chave da API Google está configurada corretamente.`,
           canRetry: true,
-          detailedError: previewResult.error
+          detailedError: previewResult._error
         },
         { status: 503 } // Service Unavailable - indica problema com serviço de IA
       );
