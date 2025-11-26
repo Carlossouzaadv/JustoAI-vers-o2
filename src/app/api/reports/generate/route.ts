@@ -570,7 +570,7 @@ async function handleBatchGeneration(
       success: r.success,
       generation_time: r.generationTime,
       file_size_kb: r.fileSize ? Math.round(r.fileSize / 1024) : undefined,
-      error: r.error
+      error: r._error
     }))
   });
 }
