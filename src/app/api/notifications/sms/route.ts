@@ -82,11 +82,13 @@ export async function POST(request: NextRequest) {
 
     const smsService = getSMSService()
 
+    const notificationPriority = priority as 'high' | 'normal' | 'low' | undefined
+
     const notification: SMSNotification = {
       to,
       template,
       data: data || {},
-      priority: priority as any,
+      priority: notificationPriority,
     }
 
     const result = await smsService.sendNotification(notification)

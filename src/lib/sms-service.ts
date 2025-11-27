@@ -103,6 +103,7 @@ export class SMSService {
 
       // If any succeeded, overall success
       const overallSuccess = results.some((r) => r.success)
+      const firstResult = results[0]
 
       log.info({
         msg: 'SMS notifications sent',
@@ -114,17 +115,17 @@ export class SMSService {
 
       return {
         success: overallSuccess,
-        messageId: results[0]?.messageId,
-        status: results[0]?.status,
+        messageId: firstResult?.messageId,
+        status: firstResult?.status,
         error: results.find((r) => !r.success)?.error,
         provider: 'twilio',
       }
-    } catch (error) {
-      logError(error, 'Error sending SMS notification', { component: 'smsService' })
+    } catch (_error) {
+      logError(_error, 'Error sending SMS notification', { component: 'smsService' })
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: _error instanceof Error ? _error.message : 'Unknown error',
         provider: 'twilio',
       }
     }
@@ -170,28 +171,32 @@ export class SMSService {
         }
       }
 
-      const data = await response.json()
+      const responseData = await response.json() as Record<string, unknown>
+      const messageSid = typeof responseData.sid === 'string' ? responseData.sid : ''
+      const messageStatus = typeof responseData.status === 'string'
+        ? (responseData.status as 'queued' | 'sending' | 'sent' | 'failed' | 'undelivered')
+        : 'sent'
 
       log.info({
         msg: 'SMS sent successfully',
         component: 'smsService',
-        messageId: data.sid,
+        messageId: messageSid,
         to,
-        status: data.status,
+        status: messageStatus,
       })
 
       return {
         success: true,
-        messageId: data.sid,
-        status: data.status as any,
+        messageId: messageSid,
+        status: messageStatus,
         provider: 'twilio',
       }
-    } catch (error) {
-      logError(error, 'Failed to send SMS via Twilio', { component: 'smsService' })
+    } catch (_error) {
+      logError(_error, 'Failed to send SMS via Twilio', { component: 'smsService' })
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: _error instanceof Error ? _error.message : 'Unknown error',
         status: 'failed',
         provider: 'twilio',
       }
@@ -207,11 +212,30 @@ export class SMSService {
   ): { body: string } {
     const maxLength = 160 // Standard SMS length
 
+    // Type-safe data extraction
+    function getString(obj: unknown, key: string, fallback = ''): string {
+      if (typeof obj === 'object' && obj !== null) {
+        const value = (obj as Record<string, unknown>)[key]
+        return typeof value === 'string' ? value : fallback
+      }
+      return fallback
+    }
+
+    function getNumber(obj: unknown, key: string, fallback = 0): number {
+      if (typeof obj === 'object' && obj !== null) {
+        const value = (obj as Record<string, unknown>)[key]
+        return typeof value === 'number' ? value : fallback
+      }
+      return fallback
+    }
+
     switch (templateType) {
       case 'process-alert': {
-        const processData = data as any
+        const processNumber = getString(data, 'processNumber', 'N/A')
+        const description = getString(data, 'description', '')
+        const urgency = getString(data, 'urgency', 'normal')
         return {
-          body: `JustoAI ALERTA: Processo ${processData?.processNumber}. ${processData?.description} [Urgência: ${processData?.urgency}]`.substring(
+          body: `JustoAI ALERTA: Processo ${processNumber}. ${description} [Urgência: ${urgency}]`.substring(
             0,
             maxLength
           ),
@@ -219,9 +243,9 @@ export class SMSService {
       }
 
       case 'report-ready': {
-        const reportData = data as any
+        const reportName = getString(data, 'reportName', 'seu relatório')
         return {
-          body: `JustoAI: Seu relatório "${reportData?.reportName}" está pronto para download.`.substring(
+          body: `JustoAI: Seu relatório "${reportName}" está pronto para download.`.substring(
             0,
             maxLength
           ),
@@ -229,9 +253,9 @@ export class SMSService {
       }
 
       case 'payment-success': {
-        const paymentData = data as any
+        const credits = getNumber(data, 'credits', 0)
         return {
-          body: `JustoAI: Pagamento confirmado! ${paymentData?.credits} créditos adicionados à sua conta.`.substring(
+          body: `JustoAI: Pagamento confirmado! ${credits} créditos adicionados à sua conta.`.substring(
             0,
             maxLength
           ),
@@ -239,9 +263,9 @@ export class SMSService {
       }
 
       case 'trial-warning': {
-        const trialData = data as any
+        const daysRemaining = getNumber(data, 'daysRemaining', 0)
         return {
-          body: `JustoAI: Seu período de teste expira em ${trialData?.daysRemaining} dia(s). Faça upgrade agora!`.substring(
+          body: `JustoAI: Seu período de teste expira em ${daysRemaining} dia(s). Faça upgrade agora!`.substring(
             0,
             maxLength
           ),
@@ -249,9 +273,11 @@ export class SMSService {
       }
 
       case 'batch-complete': {
-        const batchData = data as any
+        const batchName = getString(data, 'batchName', 'lote')
+        const successCount = getNumber(data, 'successCount', 0)
+        const totalCount = getNumber(data, 'totalCount', 0)
         return {
-          body: `JustoAI: Lote "${batchData?.batchName}" processado. ${batchData?.successCount}/${batchData?.totalCount} itens.`.substring(
+          body: `JustoAI: Lote "${batchName}" processado. ${successCount}/${totalCount} itens.`.substring(
             0,
             maxLength
           ),
@@ -259,9 +285,9 @@ export class SMSService {
       }
 
       case 'custom': {
-        const customData = data as any
+        const body = getString(data, 'body', 'Mensagem do JustoAI')
         return {
-          body: (customData?.body || 'Mensagem do JustoAI').substring(0, maxLength),
+          body: body.substring(0, maxLength),
         }
       }
 
@@ -292,24 +318,28 @@ export class SMSService {
         throw new Error(`Failed to get message status: ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const responseData = await response.json() as Record<string, unknown>
+      const messageSid = typeof responseData.sid === 'string' ? responseData.sid : messageId
+      const messageStatus = typeof responseData.status === 'string'
+        ? (responseData.status as 'queued' | 'sending' | 'sent' | 'failed' | 'undelivered')
+        : 'sent'
 
       return {
-        messageId: data.sid,
-        to: data.to,
-        status: data.status,
-        sentAt: data.date_sent ? new Date(data.date_sent) : undefined,
-        deliveredAt: data.date_updated ? new Date(data.date_updated) : undefined,
-        error: data.error_message,
+        messageId: messageSid,
+        to: typeof responseData.to === 'string' ? responseData.to : '',
+        status: messageStatus,
+        sentAt: typeof responseData.date_sent === 'string' ? new Date(responseData.date_sent) : undefined,
+        deliveredAt: typeof responseData.date_updated === 'string' ? new Date(responseData.date_updated) : undefined,
+        error: typeof responseData.error_message === 'string' ? responseData.error_message : undefined,
       }
-    } catch (error) {
-      logError(error, 'Failed to check SMS delivery status', { component: 'smsService' })
+    } catch (_error) {
+      logError(_error, 'Failed to check SMS delivery status', { component: 'smsService' })
 
       return {
         messageId,
         to: '',
         status: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: _error instanceof Error ? _error.message : 'Unknown error',
       }
     }
   }
@@ -374,15 +404,15 @@ export class SMSService {
 
       // Recursively retry
       return await this.retryFailedSMS(to, body, attempt + 1)
-    } catch (error) {
-      logError(error, `SMS retry failed (attempt ${attempt + 1}/${this.maxRetries})`, {
+    } catch (_error) {
+      logError(_error, `SMS retry failed (attempt ${attempt + 1}/${this.maxRetries})`, {
         component: 'smsService',
         to,
       })
 
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: _error instanceof Error ? _error.message : 'Unknown error',
         status: 'failed',
         provider: 'twilio',
       }

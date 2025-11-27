@@ -35,6 +35,15 @@ interface RateLimitEntry {
   resetTime: number
 }
 
+interface WebhookDeliveryInput {
+  workspaceId: string
+  webhookType: string
+  eventType: string
+  processNumber: string
+  payload: Record<string, unknown>
+  signature?: string
+}
+
 // Mock webhook delivery service
 class MockWebhookDeliveryService {
   private readonly MAX_RETRIES = 5
@@ -69,7 +78,7 @@ class MockWebhookDeliveryService {
   }
 
   async logWebhookDelivery(
-    data: any,
+    data: WebhookDeliveryInput,
     attempt: number = 0,
     error?: string,
     statusCode?: number
