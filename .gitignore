@@ -93,3 +93,17 @@ Thumbs.db
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Old analysis and build output files (development artifacts)
+*-analysis.txt
+*-output.txt
+*-output.log
+*.analysis
+type-check-*.txt
+
+# SWC compiler cache
+.swc/
+
+# IDE caches
+.eslintcache
+.stylelintcache
