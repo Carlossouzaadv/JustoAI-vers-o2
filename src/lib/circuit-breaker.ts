@@ -50,7 +50,7 @@ export class CircuitBreaker {
       failureWindow: config.failureWindow || 60000, // 1 minute
       halfOpenTimeout: config.halfOpenTimeout || 30000, // 30 seconds
       halfOpenRequests: config.halfOpenRequests || 3,
-      onStateChange: config.onStateChange,
+      onStateChange: config.onStateChange || (() => {}),
     }
   }
 

@@ -27,7 +27,7 @@ const smsSchema = z.object({
     'batch-complete',
     'custom',
   ]),
-  data: z.record(z.unknown()).optional(),
+  data: z.record(z.string(), z.unknown()).optional(),
   priority: z.enum(['high', 'normal', 'low']).optional(),
 })
 

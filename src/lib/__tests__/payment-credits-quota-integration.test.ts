@@ -181,7 +181,7 @@ describe('SPRINT 3: Payment → Credits → Quota Integration Tests', () => {
       const initialBalance = mockWorkspace.creditBalance
 
       // Simulate failed payment
-      const paymentStatus = 'failed'
+      const paymentStatus = 'failed' as const
       if (paymentStatus === 'success' && mockWorkspace) {
         mockWorkspace.creditBalance += 1000
       }
