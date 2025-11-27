@@ -5,7 +5,6 @@
 // Usado pelo dashboard e testes para acompanhar processamento
 
 import { prisma } from '@/lib/prisma';
-import { log, logError } from '@/lib/services/logger';
 
 // ===== TYPES =====
 
@@ -203,8 +202,8 @@ export class BatchStatusService {
         const keyB = `${b.field}: ${b.error}`;
         return (errorSummary[keyB] || 0) - (errorSummary[keyA] || 0);
       });
-    } catch (error) {
-      logError(error, 'Erro ao processar erros do batch:', { component: 'refactored' });
+    } catch (_error) {
+      // Continua com erro summary vazio
     }
 
     return { errorSummary, topErrors };

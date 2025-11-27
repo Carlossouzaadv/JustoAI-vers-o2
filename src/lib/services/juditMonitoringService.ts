@@ -5,7 +5,6 @@
 
 import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
-import { logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES

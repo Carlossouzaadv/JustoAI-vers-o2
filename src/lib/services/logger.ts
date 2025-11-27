@@ -56,6 +56,7 @@ const pinoOptions: pino.LoggerOptions = {
  * Custom transport for sending logs to Better Stack via HTTP
  * Implements non-blocking batching for serverless environments
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function createBetterStackTransport(token: string) {
   return pino.transport({
     target: new URL('file:///').href + 'data:text/javascript,' +

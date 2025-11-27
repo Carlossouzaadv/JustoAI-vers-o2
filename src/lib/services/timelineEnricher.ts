@@ -15,7 +15,7 @@ import { getTimelineConfig } from '@/lib/config/timelineConfig';
 import { isJuditSource } from '@/lib/utils/timelineSourceUtils';
 import { getGeminiClient } from '@/lib/gemini-client';
 import { buildEnrichmentPrompt } from '@/lib/prompts/enrichTimelineEvent';
-import { log, logError } from '@/lib/services/logger';
+import { logError } from '@/lib/services/logger';
 
 export interface TimelineMovement {
   date: Date;

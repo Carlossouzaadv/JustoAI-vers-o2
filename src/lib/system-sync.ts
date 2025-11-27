@@ -20,16 +20,6 @@ interface SystemImportFields {
   processedRows: number | null;
 }
 
-/**
- * Tipo mínimo para SystemSync com logs incluídos
- */
-interface SystemSyncFields {
-  sourceSystem: SourceSystem;
-  currentStatus: string;
-  lastSync: Date | null;
-  updatedAt: Date;
-}
-
 // ================================
 // TYPE GUARDS E VALIDAÇÃO DE ENUM
 // ================================

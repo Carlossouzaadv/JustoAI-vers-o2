@@ -11,7 +11,7 @@
 
 import { ICONS } from '@/lib/icons';
 import { PDFDocument } from 'pdf-lib';
-import { log, logError } from '@/lib/services/logger';
+import { logError } from '@/lib/services/logger';
 import {
   ValidationFailureReason,
   ValidationResult,
@@ -77,13 +77,13 @@ function isPdfLoadError(error: unknown): error is Error {
  */
 export async function validateAttachment(
   buffer: Buffer,
-  filename: string,
+  _filename: string,
   fileType: 'pdf' | 'doc' = 'pdf'
 ): Promise<ValidationResult> {
   const startTime = Date.now();
 
   try {
-    log.info({ msg: '[AttachmentValidation] Iniciando validação:  ( bytes)' });
+    // Validation starting - info logged below
 
     // ================================================================
     // CHECK 1: ZERO-BYTE
@@ -91,7 +91,6 @@ export async function validateAttachment(
 
     const zeroByteCheck = checkZeroByte(buffer);
     if (!zeroByteCheck.isValid) {
-      log.warn({ msg: '[AttachmentValidation] ❌ ZERO-BYTE:' });
       return zeroByteCheck;
     }
 
@@ -101,7 +100,6 @@ export async function validateAttachment(
 
     const magicNumberCheck = checkMagicNumber(buffer, fileType);
     if (!magicNumberCheck.isValid) {
-      log.warn({ msg: '[AttachmentValidation] ❌ INVALID_TYPE:' });
       return magicNumberCheck;
     }
 
@@ -110,9 +108,8 @@ export async function validateAttachment(
     // ================================================================
 
     if (fileType === 'pdf') {
-      const pdfCheck = await checkPdfIntegrity(buffer, filename);
+      const pdfCheck = await checkPdfIntegrity(buffer);
       if (!pdfCheck.isValid) {
-        log.warn({ msg: '[AttachmentValidation] ❌ :' });
         return pdfCheck;
       }
     }
@@ -126,8 +123,7 @@ export async function validateAttachment(
       checkedAt: new Date(),
     };
 
-    const elapsedMs = Date.now() - startTime;
-    log.info({ msg: '[AttachmentValidation] ✅ VÁLIDO:  (ms)' });
+    const _elapsedMs = Date.now() - startTime;
 
     return result;
 
@@ -205,8 +201,7 @@ function checkMagicNumber(buffer: Buffer, fileType: 'pdf' | 'doc'): ValidationRe
  * Usa pdf-lib com timeout
  */
 async function checkPdfIntegrity(
-  buffer: Buffer,
-  filename: string
+  buffer: Buffer
 ): Promise<ValidationResult> {
   try {
     // Validação de tamanho mínimo
@@ -300,7 +295,7 @@ async function checkPdfIntegrity(
  */
 export function getAttachmentMetadata(
   buffer: Buffer,
-  filename: string
+  _filename: string
 ): AttachmentMetadata {
   // Extract first 8 bytes as hex magic number
   const magicNumber = buffer

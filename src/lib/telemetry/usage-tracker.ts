@@ -5,7 +5,7 @@
 
 import { prisma } from '../prisma';
 import { ICONS } from '../icons';
-import { log, logError } from '@/lib/services/logger';
+import { logError } from '@/lib/services/logger';
 
 // ================================================================
 // TIPOS E INTERFACES

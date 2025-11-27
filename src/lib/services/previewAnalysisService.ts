@@ -60,7 +60,7 @@ const MAX_TEXT_LENGTH = 20000;
  */
 export async function generatePreview(
   cleanText: string,
-  caseId: string
+  _caseId: string
 ): Promise<PreviewAnalysisResult> {
   const startTime = Date.now();
 

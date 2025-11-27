@@ -180,11 +180,8 @@ describe('SPRINT 3: Payment → Credits → Quota Integration Tests', () => {
     it('should NOT allocate credits for failed payment', async () => {
       const initialBalance = mockWorkspace.creditBalance
 
-      // Simulate failed payment
-      const paymentStatus = 'failed' as const
-      if (paymentStatus === 'success' && mockWorkspace) {
-        mockWorkspace.creditBalance += 1000
-      }
+      // Simulate failed payment - no credits allocated
+      // (unlike successful payment, we don't increment the balance)
 
       expect(mockWorkspace.creditBalance).toBe(initialBalance)
     })

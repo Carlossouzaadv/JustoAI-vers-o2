@@ -134,7 +134,7 @@ export class SMSService {
   /**
    * Send single SMS message
    */
-  private async sendSMS(to: string, body: string, priority?: string): Promise<SMSResult> {
+  private async sendSMS(to: string, body: string, _priority?: string): Promise<SMSResult> {
     try {
       // Construct request to Twilio API
       const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64')

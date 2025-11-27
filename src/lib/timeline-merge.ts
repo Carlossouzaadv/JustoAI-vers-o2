@@ -444,8 +444,7 @@ export class TimelineMergeService {
           }
         }
 
-      } catch (error) {
-        logError(`${ICONS.ERROR} Erro ao processar entrada:`, '_error', { component: 'timelineMerge' });
+      } catch (_error) {
         // Continuar processamento mesmo com erro em uma entrada
       }
     }

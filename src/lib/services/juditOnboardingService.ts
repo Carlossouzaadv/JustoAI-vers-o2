@@ -7,7 +7,7 @@ import { getJuditApiClient } from '@/lib/judit-api-client';
 import { prisma } from '@/lib/prisma';
 import { recordOnboardingError } from '@/lib/utils/case-onboarding-helper';
 import { parseJuditResponse, JuditRequestResponse } from '@/lib/types/external-api';
-import { log, logError } from '@/lib/services/logger';
+import { logError } from '@/lib/services/logger';
 
 // ================================================================
 // TYPE GUARDS AND LOGGING UTILITIES

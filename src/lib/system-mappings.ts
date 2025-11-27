@@ -6,7 +6,7 @@
 // (Projuris, Legal One, Astrea, CP-Pro, etc.)
 
 import { ICONS } from './icons';
-import { log, logError } from '@/lib/services/logger';
+import { log } from '@/lib/services/logger';
 
 // ================================
 // TIPOS E INTERFACES

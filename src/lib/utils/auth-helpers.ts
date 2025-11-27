@@ -1,4 +1,4 @@
-import { log, logError } from '@/lib/services/logger';
+import { logError } from '@/lib/services/logger';
 
 
 /**
