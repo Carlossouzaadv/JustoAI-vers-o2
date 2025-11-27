@@ -137,7 +137,7 @@ describe('ExcelValidationService - Validação em Lote', () => {
         expect(_error).toHaveProperty('row');
         expect(_error).toHaveProperty('column');
         expect(_error).toHaveProperty('value');
-        expect(_error).toHaveProperty('_error');
+        expect(_error).toHaveProperty('error');
 
         expect(typeof _error.row).toBe('number');
         expect(_error.row).toBeGreaterThanOrEqual(2); // Começa em linha 2 (cabeçalho em 1)
