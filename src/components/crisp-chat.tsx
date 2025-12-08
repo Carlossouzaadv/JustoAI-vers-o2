@@ -89,11 +89,8 @@ export function CrispChat() {
     if (typeof window === 'undefined' || !window.$crisp) return;
 
     // Set theme colors to match JustoAI branding
-    window.$crisp.push(['set', 'chatbox:settings', {
-      color: '#0A2A5B', // JustoAI primary blue
-      position: 'br', // Bottom right
-      theme: 'light',
-    }]);
+    // Theme and position should be configured in the Crisp Dashboard
+    // to ensure consistency and avoid SDK errors.
 
     // Configure widget visibility
     window.$crisp.push(['set', 'session:data', {
