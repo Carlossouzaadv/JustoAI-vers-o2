@@ -146,8 +146,10 @@ export default function JuditDashboard() {
   const byOriginData = Object.entries(report.byOrigin).map(([name, value]) => ({
     name: name.toUpperCase(),
     value,
-    percentage: ((value / report.totalRequests) * 100).toFixed(1)
-  }));
+    percentage: report.totalRequests > 0
+      ? ((value / report.totalRequests) * 100).toFixed(1)
+      : '0.0'
+  })).filter(item => item.value > 0);
 
   const bySearchTypeData = Object.entries(report.bySearchType)
     .sort((a, b) => b[1] - a[1])
@@ -230,25 +232,31 @@ export default function JuditDashboard() {
           {/* By Origin */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold text-slate-900 mb-4">Por Origem</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={byOriginData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name} (${percentage}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {byOriginData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => value} />
-              </PieChart>
-            </ResponsiveContainer>
+            {byOriginData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={byOriginData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name} (${percentage}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {byOriginData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => value} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-slate-400">
+                Sem dados por origem
+              </div>
+            )}
           </div>
 
           {/* By Search Type */}

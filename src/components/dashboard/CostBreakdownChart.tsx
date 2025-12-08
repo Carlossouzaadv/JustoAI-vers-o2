@@ -50,12 +50,22 @@ function isValidTooltipProps(obj: unknown): obj is { payload: Record<string, unk
 
 export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
   // Format data for chart
-  const chartData = data.map((item) => ({
-    name: OPERATION_LABELS[item.operationType] || item.operationType,
-    value: item.totalCost,
-    count: item.count,
-    avgCost: item.avgCost,
-  }));
+  const chartData = data
+    .map((item) => ({
+      name: OPERATION_LABELS[item.operationType] || item.operationType,
+      value: item.totalCost || 0,
+      count: item.count || 0,
+      avgCost: item.avgCost || 0,
+    }))
+    .filter((item) => item.value > 0);
+
+  if (chartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[300px] bg-slate-50 rounded-lg text-slate-400">
+        Sem dados de custo para exibir
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={300}>
