@@ -21,9 +21,7 @@ const allowedHosts = [
 
 const nextConfig: NextConfig = {
   // ESLint config
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
+
 
   // TypeScript config
   typescript: {
