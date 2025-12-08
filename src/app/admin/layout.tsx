@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Observabilidade', href: '/admin/observability', icon: '🔍', description: 'Sentry + Performance' },
   { label: 'Filas', href: '/admin/queues', icon: '⚙️', description: 'Bull Queue Dashboard' },
   { label: 'Erros', href: '/admin/errors', icon: '⚠️', description: 'Erro tracking' },
-  { label: 'Logs', href: '/admin/logs', icon: '📝', description: 'Real-time logs' },
+  { label: 'Logs', href: '/admin/system-logs', icon: '📝', description: 'Real-time logs' },
   { label: 'Alertas', href: '/admin/alerts', icon: '🚨', description: 'System alerts' },
   { label: 'Status', href: '/admin/status', icon: '💚', description: 'Health checks' },
 ];
@@ -131,9 +131,8 @@ export default function AdminLayout({
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Navigation */}
         <aside
-          className={`${
-            sidebarOpen ? 'w-64' : 'w-20'
-          } bg-slate-800 border-r border-slate-700 transition-all duration-300 overflow-y-auto`}
+          className={`${sidebarOpen ? 'w-64' : 'w-20'
+            } bg-slate-800 border-r border-slate-700 transition-all duration-300 overflow-y-auto`}
         >
           <div className="p-4 space-y-2">
             {NAV_ITEMS.map((item) => {
@@ -144,11 +143,10 @@ export default function AdminLayout({
                 <div key={item.href} className="relative">
                   <a
                     href={item.href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                      isActive
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive
                         ? 'bg-blue-600 text-white shadow-lg'
                         : 'text-slate-300 hover:bg-slate-700'
-                    }`}
+                      }`}
                     title={item.description}
                   >
                     <span className="text-xl flex-shrink-0">{item.icon}</span>
