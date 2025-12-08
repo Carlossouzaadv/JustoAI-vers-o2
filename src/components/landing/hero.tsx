@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ICONS } from '@/lib/icons';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { ICONS } from '../../lib/icons';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -80,17 +80,17 @@ export function Hero() {
                 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-tight text-primary-800 mb-6"
               >
                 <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">
-                  Relatórios Automáticos que
+                  Economize 20 horas por semana
                 </span>
                 <br />
-                <span className="text-primary-800">Impressionam Seus Clientes</span>
+                <span className="text-primary-800">em relatórios executivos</span>
               </motion.h1>
 
               <motion.p
                 variants={itemVariants}
                 className="text-base sm:text-lg md:text-xl lg:text-2xl text-neutral-700 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0"
               >
-                Relatórios executivos automáticos na linguagem que seu cliente entende. Elimine <strong className="text-primary-800">20 horas semanais</strong> de trabalho manual e <strong className="text-accent-600">fidelize seus clientes</strong> com transparência total.
+                IA Gemini analisa seus processos (CNJ + Judit) e gera relatórios profissionais automaticamente. Seus clientes ficam sempre informados, <strong className="text-primary-800">você foca no estratégico.</strong>
               </motion.p>
 
               {/* CTA Section */}
@@ -104,7 +104,7 @@ export function Hero() {
                       size="lg"
                       className="w-full sm:w-auto bg-gradient-to-r from-accent-500 to-primary-800 hover:from-accent-600 hover:to-primary-900 text-white px-8 py-4 text-base lg:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 border-0 min-h-[48px] touch-manipulation"
                     >
-                      Começar Agora - Grátis
+                      Testar 7 Dias Grátis (sem cartão)
                       <span className="ml-2">→</span>
                     </Button>
                   </Link>
@@ -115,7 +115,7 @@ export function Hero() {
                       size="lg"
                       className="w-full sm:w-auto border-2 border-primary-300 text-primary-800 hover:bg-primary-50 px-8 py-4 text-base lg:text-lg font-semibold transition-all duration-200 min-h-[48px] touch-manipulation"
                     >
-                      Ver Demo
+                      Ver Como Funciona (3 min)
                       <span className="ml-2">▶</span>
                     </Button>
                   </Link>
@@ -135,15 +135,15 @@ export function Hero() {
               >
                 <div className="flex items-center">
                   <span className="text-accent-500 mr-2 text-base">✓</span>
-                  <span className="text-sm sm:text-base">Sem cartão de crédito</span>
+                  <span className="text-sm sm:text-base">10.000+ horas economizadas para advogados</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-accent-500 mr-2 text-base">✓</span>
-                  <span className="text-sm sm:text-base">Setup em 5 minutos</span>
+                  <span className="text-sm sm:text-base">Setup em 5 min</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-accent-500 mr-2 text-base">✓</span>
-                  <span className="text-sm sm:text-base">Cancele quando quiser</span>
+                  <span className="text-sm sm:text-base">500+ relatórios enviados hoje</span>
                 </div>
               </motion.div>
             </div>

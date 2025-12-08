@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ICONS } from '@/lib/icons';
+import { Card } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { ICONS } from '../../lib/icons';
 
 const features = [
   {
@@ -109,11 +109,10 @@ export function Features() {
               <Card className="p-8 h-full bg-gradient-to-br from-white to-neutral-50 border-neutral-200 hover:shadow-lg transition-all duration-300 group hover:border-primary-200">
                 <div className="flex items-center mb-6">
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl mr-4 ${
-                      feature.color === 'primary'
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl mr-4 ${feature.color === 'primary'
                         ? 'bg-gradient-to-br from-primary-600 to-primary-800'
                         : 'bg-gradient-to-br from-accent-500 to-accent-600'
-                    }`}
+                      }`}
                   >
                     {feature.icon}
                   </div>

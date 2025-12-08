@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ICONS } from '@/lib/icons';
-import BillingToggle from '@/components/pricing/billing-toggle';
+import { Button } from '../ui/button';
+import { Card } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { ICONS } from '../../lib/icons';
+import BillingToggle from '../pricing/billing-toggle';
 
 // Import pricing data
-import pricingData from '@/config/pricing.json';
+import pricingData from '../../config/pricing.json';
 
 // Type definition for pricing plan
 interface PricingPlan {
@@ -34,9 +34,9 @@ function isPricingPlan(plan: unknown): plan is PricingPlan {
     typeof (plan as Record<string, unknown>).name === 'string' &&
     typeof (plan as Record<string, unknown>).subtitle === 'string' &&
     (typeof (plan as Record<string, unknown>).price_monthly === 'number' ||
-     (plan as Record<string, unknown>).price_monthly === null) &&
+      (plan as Record<string, unknown>).price_monthly === null) &&
     (typeof (plan as Record<string, unknown>).price_annual === 'number' ||
-     (plan as Record<string, unknown>).price_annual === null) &&
+      (plan as Record<string, unknown>).price_annual === null) &&
     typeof (plan as Record<string, unknown>).trial_days === 'number' &&
     Array.isArray((plan as Record<string, unknown>).highlighted_features)
   );
@@ -164,11 +164,10 @@ export function Pricing() {
 
             return (
               <motion.div key={index} variants={itemVariants}>
-                <Card className={`p-8 h-full relative overflow-hidden transition-all duration-300 ${
-                  plan.popular
+                <Card className={`p-8 h-full relative overflow-hidden transition-all duration-300 ${plan.popular
                     ? 'border-2 border-accent-500 shadow-xl scale-105 bg-gradient-to-br from-white to-accent-50'
                     : 'border-neutral-200 hover:border-primary-200 hover:shadow-lg'
-                }`}>
+                  }`}>
                   {plan.popular && (
                     <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-20">
                       <Badge className="bg-gradient-to-r from-accent-500 to-accent-600 text-white px-4 py-2 shadow-lg border-0 text-sm font-semibold">
@@ -244,11 +243,10 @@ export function Pricing() {
 
                     <Link href="/pricing" className="block">
                       <Button
-                        className={`w-full py-3 text-lg font-semibold transition-all duration-200 ${
-                          plan.popular
+                        className={`w-full py-3 text-lg font-semibold transition-all duration-200 ${plan.popular
                             ? 'bg-accent-500 hover:bg-accent-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
                             : 'bg-primary-800 hover:bg-primary-700 text-white'
-                        }`}
+                          }`}
                       >
                         Ver Planos Completos
                         <span className="ml-2">
