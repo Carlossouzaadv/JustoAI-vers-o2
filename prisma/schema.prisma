@@ -1290,13 +1290,13 @@ enum EventRelationType {
 
 model WorkspaceCredits {
   id                       String    @id @default(cuid())
-  workspaceId              String    @unique
-  reportCreditsBalance     Decimal   @default(0) @db.Decimal(10, 2)
-  fullCreditsBalance       Decimal   @default(0) @db.Decimal(10, 2)
-  reportCreditsRolloverCap Decimal   @default(36) @db.Decimal(10, 2)
-  fullCreditsRolloverCap   Decimal   @default(50) @db.Decimal(10, 2)
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  workspaceId              String    @unique @map("workspace_id")
+  reportCreditsBalance     Decimal   @default(0) @map("report_credits_balance") @db.Decimal(10, 2)
+  fullCreditsBalance       Decimal   @default(0) @map("full_credits_balance") @db.Decimal(10, 2)
+  reportCreditsRolloverCap Decimal   @default(36) @map("report_credits_rollover_cap") @db.Decimal(10, 2)
+  fullCreditsRolloverCap   Decimal   @default(50) @map("full_credits_rollover_cap") @db.Decimal(10, 2)
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
   workspace                Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("workspace_credits")
@@ -1304,13 +1304,13 @@ model WorkspaceCredits {
 
 model CreditAllocation {
   id                String               @id @default(cuid())
-  workspaceId       String
+  workspaceId       String               @map("workspace_id")
   type              CreditAllocationType
   amount            Decimal              @db.Decimal(10, 2)
-  remainingAmount   Decimal              @db.Decimal(10, 2)
-  expiresAt         DateTime?
-  sourceDescription String?
-  createdAt         DateTime             @default(now())
+  remainingAmount   Decimal              @map("remaining_amount") @db.Decimal(10, 2)
+  expiresAt         DateTime?            @map("expires_at")
+  sourceDescription String?              @map("source_description")
+  createdAt         DateTime             @default(now()) @map("created_at")
   workspace         Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   transactions      CreditTransaction[]
 
@@ -1321,14 +1321,14 @@ model CreditAllocation {
 
 model CreditTransaction {
   id             String                @id @default(cuid())
-  workspaceId    String
-  allocationId   String?
+  workspaceId    String                @map("workspace_id")
+  allocationId   String?               @map("allocation_id")
   type           CreditTransactionType
-  creditCategory CreditCategory
+  creditCategory CreditCategory        @map("credit_category")
   amount         Decimal               @db.Decimal(10, 2)
   reason         String
   metadata       Json                  @default("{}")
-  createdAt      DateTime              @default(now())
+  createdAt      DateTime              @default(now()) @map("created_at")
   workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   allocation     CreditAllocation?     @relation(fields: [allocationId], references: [id], onDelete: SetNull)
 
@@ -1339,12 +1339,12 @@ model CreditTransaction {
 
 model ScheduledCreditHold {
   id                    String    @id @default(cuid())
-  workspaceId           String
-  reportId              String
-  reportCreditsReserved Decimal   @default(0) @db.Decimal(10, 2)
-  fullCreditsReserved   Decimal   @default(0) @db.Decimal(10, 2)
-  expiresAt             DateTime
-  createdAt             DateTime  @default(now())
+  workspaceId           String    @map("workspace_id")
+  reportId              String    @map("report_id")
+  reportCreditsReserved Decimal   @default(0) @map("report_credits_reserved") @db.Decimal(10, 2)
+  fullCreditsReserved   Decimal   @default(0) @map("full_credits_reserved") @db.Decimal(10, 2)
+  expiresAt             DateTime  @map("expires_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
   workspace             Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId])
@@ -1354,15 +1354,15 @@ model ScheduledCreditHold {
 
 model UsageEvent {
   id                String      @id @default(cuid())
-  workspaceId       String
-  eventType         String
-  resourceType      String
-  resourceId        String?
-  reportCreditsCost Decimal     @default(0) @db.Decimal(10, 2)
-  fullCreditsCost   Decimal     @default(0) @db.Decimal(10, 2)
+  workspaceId       String      @map("workspace_id")
+  eventType         String      @map("event_type")
+  resourceType      String      @map("resource_type")
+  resourceId        String?     @map("resource_id")
+  reportCreditsCost Decimal     @default(0) @map("report_credits_cost") @db.Decimal(10, 2)
+  fullCreditsCost   Decimal     @default(0) @map("full_credits_cost") @db.Decimal(10, 2)
   status            UsageStatus @default(COMPLETED)
   metadata          Json        @default("{}")
-  createdAt         DateTime    @default(now())
+  createdAt         DateTime    @default(now()) @map("created_at")
   workspace         Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([workspaceId, createdAt])
@@ -1372,23 +1372,23 @@ model UsageEvent {
 
 model PlanConfiguration {
   id                        String   @id @default(cuid())
-  planName                  String   @unique
-  monitorLimit              Int
-  reportCreditsMonth        Decimal  @db.Decimal(10, 2)
-  fullCreditsMonth          Decimal  @db.Decimal(10, 2)
-  firstMonthFullBonus       Decimal  @db.Decimal(10, 2)
-  firstMonthBonusExpiryDays Int      @default(90)
-  fullRolloverCap           Decimal  @db.Decimal(10, 2)
-  reportRolloverCap         Decimal  @db.Decimal(10, 2)
-  tier1Processes            Int      @default(5)
-  tier1CreditCost           Decimal  @default(0.25) @db.Decimal(10, 2)
-  tier2Processes            Int      @default(12)
-  tier2CreditCost           Decimal  @default(0.5) @db.Decimal(10, 2)
-  tier3Processes            Int      @default(25)
-  tier3CreditCost           Decimal  @default(1.0) @db.Decimal(10, 2)
-  fullCreditPerBatch        Int      @default(10)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  planName                  String   @unique @map("plan_name")
+  monitorLimit              Int      @map("monitor_limit")
+  reportCreditsMonth        Decimal  @map("report_credits_month") @db.Decimal(10, 2)
+  fullCreditsMonth          Decimal  @map("full_credits_month") @db.Decimal(10, 2)
+  firstMonthFullBonus       Decimal  @map("first_month_full_bonus") @db.Decimal(10, 2)
+  firstMonthBonusExpiryDays Int      @default(90) @map("first_month_bonus_expiry_days")
+  fullRolloverCap           Decimal  @map("full_rollover_cap") @db.Decimal(10, 2)
+  reportRolloverCap         Decimal  @map("report_rollover_cap") @db.Decimal(10, 2)
+  tier1Processes            Int      @default(5) @map("tier_1_processes")
+  tier1CreditCost           Decimal  @default(0.25) @map("tier_1_credit_cost") @db.Decimal(10, 2)
+  tier2Processes            Int      @default(12) @map("tier_2_processes")
+  tier2CreditCost           Decimal  @default(0.5) @map("tier_2_credit_cost") @db.Decimal(10, 2)
+  tier3Processes            Int      @default(25) @map("tier_3_processes")
+  tier3CreditCost           Decimal  @default(1.0) @map("tier_3_credit_cost") @db.Decimal(10, 2)
+  fullCreditPerBatch        Int      @default(10) @map("full_credit_per_batch")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
 
   @@map("plan_configurations")
 }
