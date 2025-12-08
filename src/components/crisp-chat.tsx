@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '../contexts/auth-context';
 import { usePathname } from 'next/navigation';
 
 declare global {
