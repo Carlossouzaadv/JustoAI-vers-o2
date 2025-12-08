@@ -145,7 +145,7 @@ export default function JuditDashboard() {
   // Prepare chart data
   const byOriginData = Object.entries(report.byOrigin).map(([name, value]) => ({
     name: name.toUpperCase(),
-    value,
+    value: Number(value),
     percentage: report.totalRequests > 0
       ? ((value / report.totalRequests) * 100).toFixed(1)
       : '0.0'

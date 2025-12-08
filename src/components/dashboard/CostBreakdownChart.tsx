@@ -53,9 +53,9 @@ export function CostBreakdownChart({ data }: CostBreakdownChartProps) {
   const chartData = data
     .map((item) => ({
       name: OPERATION_LABELS[item.operationType] || item.operationType,
-      value: item.totalCost || 0,
-      count: item.count || 0,
-      avgCost: item.avgCost || 0,
+      value: Number(item.totalCost) || 0,
+      count: Number(item.count) || 0,
+      avgCost: Number(item.avgCost) || 0,
     }))
     .filter((item) => item.value > 0);
 
