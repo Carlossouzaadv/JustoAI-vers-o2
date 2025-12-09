@@ -5,8 +5,8 @@
 // ================================================================
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
 import { Check, X, Star } from 'lucide-react';
 
 interface FeatureMatrixProps {
@@ -110,6 +110,12 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
                   </div>
                   <div className="absolute inset-0 bg-blue-50 rounded-lg -z-10"></div>
                 </th>
+                <th className="text-center py-4 px-4 w-1/4">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-sm font-medium text-gray-900">Enterprise</span>
+                    <span className="text-xs text-gray-500">Sob medida</span>
+                  </div>
+                </th>
               </tr>
             </thead>
 
@@ -146,6 +152,9 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
                       </td>
                       <td className="py-3 px-4 text-center bg-blue-25">
                         {renderFeatureValue(feature.performance || feature.professional, 'performance')}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {renderFeatureValue(feature.enterprise, 'enterprise')}
                       </td>
                     </tr>
                   ))}

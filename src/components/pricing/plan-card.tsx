@@ -5,9 +5,9 @@
 // ================================================================
 
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '../ui/card';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 import { Check, Star, ArrowRight } from 'lucide-react';
 
 export interface PlanCardProps {
@@ -21,7 +21,13 @@ export interface PlanCardProps {
     popular?: boolean;
     trial_days: number;
     highlighted_features: string[];
+
     contact_sales?: boolean;
+    visual?: {
+      borderColor: string;
+      borderWidth: string;
+      badge: string;
+    };
   };
   billingCycle: 'monthly' | 'annual';
   onSelectPlan: (_planId: string) => void;
@@ -75,11 +81,12 @@ export function PlanCard({
 
   return (
     <Card
-      className={`relative transition-all duration-300 hover:shadow-lg ${
-        plan.popular
+      className={`relative transition-all duration-300 hover:shadow-lg ${plan.visual
+        ? `${plan.visual.borderWidth} ${plan.visual.borderColor} shadow-lg scale-105`
+        : plan.popular
           ? 'ring-2 ring-blue-500 shadow-lg scale-105'
           : 'hover:scale-105'
-      } ${className}`}
+        } ${className}`}
     >
       {/* Popular badge */}
       {plan.popular && (
@@ -87,6 +94,16 @@ export function PlanCard({
           <Badge className="bg-blue-500 text-white px-4 py-1 flex items-center gap-1">
             <Star className="w-3 h-3" />
             Mais Popular
+          </Badge>
+        </div>
+      )}
+
+      {/* Enterprise / Custom badge */}
+      {plan.visual && plan.visual.badge && (
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+          <Badge className={`${plan.visual.badge} text-white px-4 py-1 flex items-center gap-1 border-0`}>
+            <Star className="w-3 h-3" />
+            Customizado
           </Badge>
         </div>
       )}
@@ -157,11 +174,12 @@ export function PlanCard({
         <div className="pt-4">
           <Button
             onClick={handlePlanSelection}
-            className={`w-full ${
-              plan.popular
+            className={`w-full ${plan.contact_sales
+              ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0'
+              : plan.popular
                 ? 'bg-blue-600 hover:bg-blue-700'
                 : 'bg-gray-900 hover:bg-gray-800'
-            }`}
+              }`}
             size="lg"
           >
             {plan.contact_sales ? (

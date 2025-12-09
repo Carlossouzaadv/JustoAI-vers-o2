@@ -49,6 +49,7 @@
       "id": "performance",
       "name": "Performance",
       "subtitle": "Para escritórios que precisam de mais poder e flexibilidade",
+      "badge": "Mais Popular",
       "price_monthly": 1197,
       "price_annual": 1017.45,
       "trial_days": 7,
@@ -73,99 +74,185 @@
         "csv_import": true,
         "template_type": "branded"
       }
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "subtitle": "Plano personalizado para suas necessidades",
+      "badge": "Customizado",
+      "tagline": "Para escritórios que pensam grande",
+      "price_monthly": null,
+      "price_annual": null,
+      "trial_days": 0,
+      "popular": false,
+      "custom_pricing": true,
+      "contact_sales": true,
+      "highlighted_features": [
+        "Processos, usuários e créditos ilimitados",
+        "Gerente de conta dedicado",
+        "Integração customizada (SAJ, Projuris)",
+        "API REST completa",
+        "SLA garantido (99.9% uptime)"
+      ],
+      "features": {
+        "processes": "Ilimitados",
+        "users": "Ilimitados",
+        "monthly_credits": "Ilimitados",
+        "support": "Dedicado",
+        "uniqueFeatures": [
+          "Processos, usuários e créditos ilimitados",
+          "Gerente de conta dedicado",
+          "Integração customizada (SAJ, Projuris, Themis)",
+          "API REST completa",
+          "SLA garantido (99.9% uptime)",
+          "Treinamento presencial da equipe",
+          "White-label opcional (sua marca)",
+          "Suporte prioritário 24/7",
+          "Consultoria estratégica mensal",
+          "Relatórios analíticos avançados"
+        ]
+      },
+      "visual": {
+        "borderColor": "border-purple-500",
+        "borderWidth": "border-2",
+        "badge": "bg-gradient-to-r from-purple-500 to-blue-600"
+      }
     }
   ],
   "features_matrix": {
     "categories": [
       {
         "name": "Monitoramento",
-      "features": [
-        {
-          "name": "Processos monitorados",
-          "gestao": "200",
-          "performance": "500"
-        },
-        {
-          "name": "Sincronização automática",
-          "gestao": true,
-          "performance": true
-        },
-        {
-          "name": "Alertas em tempo real",
-          "gestao": true,
-          "performance": true
-        }
-      ]
-    },
+        "features": [
+          {
+            "name": "Processos monitorados",
+            "gestao": "200",
+            "performance": "500",
+            "enterprise": "Ilimitado"
+          },
+          {
+            "name": "Sincronização automática",
+            "gestao": true,
+            "performance": true,
+            "enterprise": true
+          },
+          {
+            "name": "Alertas em tempo real",
+            "gestao": true,
+            "performance": true,
+            "enterprise": "Prioritário"
+          }
+        ]
+      },
       {
         "name": "Créditos",
-      "features": [
-        {
-          "name": "Créditos mensais",
-          "gestao": "10",
-          "performance": "30"
-        },
-        {
-          "name": "Créditos onboarding (30 dias)",
-          "gestao": "50",
-          "performance": "150"
-        },
-        {
-          "name": "Análise Completa (custo)",
-          "gestao": "1 crédito",
-          "performance": "1 crédito"
-        },
-        {
-          "name": "Relatórios (custo)",
-          "gestao": "1 crédito por ~50 processos",
-          "performance": "1 crédito por ~50 processos"
-        }
-      ]
-    },
+        "features": [
+          {
+            "name": "Créditos mensais",
+            "gestao": "10",
+            "performance": "30",
+            "enterprise": "Personalizado"
+          },
+          {
+            "name": "Créditos onboarding (30 dias)",
+            "gestao": "50",
+            "performance": "150",
+            "enterprise": "Personalizado"
+          },
+          {
+            "name": "Análise Completa (custo)",
+            "gestao": "1 crédito",
+            "performance": "1 crédito",
+            "enterprise": "Incluso"
+          },
+          {
+            "name": "Relatórios (custo)",
+            "gestao": "1 crédito por ~50 processos",
+            "performance": "1 crédito por ~50 processos",
+            "enterprise": "Incluso"
+          }
+        ]
+      },
       {
         "name": "Funcionalidades",
-      "features": [
-        {
-          "name": "Relatórios agendados e avulsos",
-          "gestao": "Ilimitado",
-          "performance": "Ilimitado"
-        },
-        {
-          "name": "Revalidação Estratégica da IA",
-          "gestao": true,
-          "performance": true
-        },
-        {
-          "name": "Importação via CSV/Excel",
-          "gestao": true,
-          "performance": true
-        },
-        {
-          "name": "Templates de Relatório",
-          "gestao": "Padrão JustoAI",
-          "performance": "Logo e Cores do Cliente"
-        }
-      ]
-    },
+        "features": [
+          {
+            "name": "Relatórios agendados e avulsos",
+            "gestao": "Ilimitado",
+            "performance": "Ilimitado",
+            "enterprise": "Ilimitado"
+          },
+          {
+            "name": "Revalidação Estratégica da IA",
+            "gestao": true,
+            "performance": true,
+            "enterprise": true
+          },
+          {
+            "name": "Importação via CSV/Excel",
+            "gestao": true,
+            "performance": true,
+            "enterprise": true
+          },
+          {
+            "name": "Templates de Relatório",
+            "gestao": "Padrão JustoAI",
+            "performance": "Logo e Cores do Cliente",
+            "enterprise": "Totalmente Customizável (White-label)"
+          },
+          {
+            "name": "API de Integração",
+            "gestao": false,
+            "performance": false,
+            "enterprise": true
+          },
+          {
+            "name": "SLA Garantido",
+            "gestao": false,
+            "performance": false,
+            "enterprise": "99.9% Uptime"
+          }
+        ]
+      },
       {
         "name": "Colaboração",
-      "features": [
-        {
-          "name": "Usuários incluídos",
-          "gestao": "3",
-          "performance": "10"
-        }
-      ]
-    },
+        "features": [
+          {
+            "name": "Usuários incluídos",
+            "gestao": "3",
+            "performance": "10",
+            "enterprise": "Ilimitado"
+          },
+          {
+            "name": "Gestão de permissões",
+            "gestao": "Básico",
+            "performance": "Avançado",
+            "enterprise": "Granular (RBAC)"
+          }
+        ]
+      },
       {
         "name": "Suporte",
-      "features": [
-        {
-          "name": "Canais de suporte",
-          "gestao": "Email, IA",
-          "performance": "Email, IA, WhatsApp"
-        }
-      ]
+        "features": [
+          {
+            "name": "Canais de suporte",
+            "gestao": "Email, IA",
+            "performance": "Email, IA, WhatsApp",
+            "enterprise": "Dedicado 24/7 (Email, Zap, Tel)"
+          },
+          {
+            "name": "Gerente de Conta (CSM)",
+            "gestao": false,
+            "performance": false,
+            "enterprise": true
+          },
+          {
+            "name": "Treinamento Presencial",
+            "gestao": false,
+            "performance": false,
+            "enterprise": "Opcional"
+          }
+        ]
       }
     ]
   },

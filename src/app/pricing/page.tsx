@@ -6,17 +6,18 @@
 
 import React, { useState, useEffect } from 'react';
 // import { Metadata } from 'next'; // Not needed for client components
-import BillingToggle from '@/components/pricing/billing-toggle';
-import PlanCard from '@/components/pricing/plan-card';
-import FeatureMatrix from '@/components/pricing/feature-matrix';
-import CreditsPacks from '@/components/pricing/credits-packs';
-import FaqPricing from '@/components/pricing/faq-pricing';
-import PlanModal from '@/components/pricing/plan-modal';
-import { Button } from '@/components/ui/button';
+import BillingToggle from '../../components/pricing/billing-toggle';
+import PlanCard from '../../components/pricing/plan-card';
+import FeatureMatrix from '../../components/pricing/feature-matrix';
+import CreditsPacks from '../../components/pricing/credits-packs';
+import FaqPricing from '../../components/pricing/faq-pricing';
+import PlanModal from '../../components/pricing/plan-modal';
+import EnterpriseModal from '../../components/modals/enterprise-modal';
+import { Button } from '../../components/ui/button';
 import { ArrowLeft, Star, Shield } from 'lucide-react';
 
 // Import pricing data
-import pricingData from '@/config/pricing.json';
+import pricingData from '../../config/pricing.json';
 
 // Type for the plan data from JSON
 type PlanData = typeof pricingData.plans[number];
@@ -41,6 +42,7 @@ export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
 
   // Set page metadata
   useEffect(() => {
@@ -94,7 +96,7 @@ export default function PricingPage() {
     }
 
     // Redirect to contact form or open modal
-    window.location.href = '/contact?plan=enterprise';
+    setShowEnterpriseModal(true);
   };
 
   const handleBuyCredits = (packId: string) => {
@@ -296,6 +298,12 @@ export default function PricingPage() {
           onContactSales={handleContactSales}
         />
       )}
+
+      {/* Enterprise Modal */}
+      <EnterpriseModal
+        isOpen={showEnterpriseModal}
+        onClose={() => setShowEnterpriseModal(false)}
+      />
     </div>
   );
 }
