@@ -72,6 +72,7 @@ const itemVariants = {
 
 export function Pricing() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
 
   // Safety check for data
   if (!pricingData || !pricingData.plans || !pricingData.copy) {
@@ -115,7 +116,7 @@ export function Pricing() {
     return formatPrice(monthlyEquivalent);
   };
 
-  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+
 
   return (
     <>
@@ -187,7 +188,7 @@ export function Pricing() {
                     }`}>
                     {plan.popular && (
                       <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 z-20">
-                        <Badge className={`${plan.visual?.badge || "bg-gradient-to-r from-accent-500 to-accent-600"} text-white px-4 py-2 shadow-lg border-0 text-sm font-semibold`}>
+                        <Badge className={`${plan.visual?.badge || 'bg-gradient-to-r from-accent-500 to-accent-600'} text-white px-4 py-2 shadow-lg border-0 text-sm font-semibold`}>
                           {plan.id === 'enterprise' ? '⭐ Customizado' : '⭐ Mais Popular'}
                         </Badge>
                       </div>
