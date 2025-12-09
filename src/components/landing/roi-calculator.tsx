@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Slider } from '../ui/slider';
 import { Button } from '../ui/button';
@@ -13,201 +13,253 @@ import {
 } from '../ui/select';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Clock, Rocket, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
 
 export function ROICalculator() {
     const [weeklyHours, setWeeklyHours] = useState(20);
     const [hourlyRate, setHourlyRate] = useState('400');
+    const [showConfetti, setShowConfetti] = useState(false);
 
-    const { annualSavings, annualHours, paybackMonths, weeklySavings } = useMemo(() => {
+    // Trigger animation when calculation changes significantly
+    useEffect(() => {
+        setShowConfetti(true);
+        const timer = setTimeout(() => setShowConfetti(false), 1000);
+        return () => clearTimeout(timer);
+    }, [weeklyHours, hourlyRate]);
+
+    const { annualSavings, annualHours, paybackDays, roiMultiplier } = useMemo(() => {
         const rate = parseInt(hourlyRate);
         const weeklySav = weeklyHours * rate;
         const annualSav = weeklySav * 52;
         const annualHrs = weeklyHours * 52;
 
-        // Monthly Plan Cost for "Gestão"
         const monthlyPlanCost = 497;
-        // Monthly Savings (approx 4.33 weeks per month)
-        const monthlySav = weeklySav * 4.33;
+        const annualPlanCost = monthlyPlanCost * 12;
 
-        // Avoid division by zero
-        const payback = monthlySav > 0 ? Math.ceil((monthlyPlanCost / monthlySav) * 30) : 0; // standardizing to days for better precision if needed, but keeping months as requested
+        // ROI Multiplier: (Total Savings - Total Cost) / Total Cost
+        // Simplified view: Total Savings / Total Cost ("64x ROI")
+        const multiplier = Math.floor(annualSav / annualPlanCost);
 
-        // Reverting to months logic but potentially fractional
-        const paybackInMonths = monthlySav > 0 ? monthlyPlanCost / monthlySav : 0;
-
-        // Formatting logical text for payback
-        const paybackText = paybackInMonths < 1
-            ? `${Math.ceil(paybackInMonths * 30)} dias`
-            : `${Math.ceil(paybackInMonths)} meses`;
+        const dailySav = weeklySav / 5; // approx work days
+        const paybackInDays = Math.ceil(monthlyPlanCost / (dailySav || 1));
 
         return {
             annualSavings: annualSav,
             annualHours: annualHrs,
-            paybackMonths: paybackText,
-            weeklySavings: weeklySav
+            paybackDays: paybackInDays,
+            roiMultiplier: multiplier
         };
     }, [weeklyHours, hourlyRate]);
 
     return (
-        <section className="bg-gradient-to-br from-primary-50 to-accent-50 py-20 overflow-hidden relative">
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-accent-100 rounded-full blur-3xl opacity-30 translate-x-1/2 -translate-y-1/2"></div>
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-100 rounded-full blur-3xl opacity-30 -translate-x-1/2 translate-y-1/2"></div>
+        <section className="bg-gradient-to-br from-primary-50 to-accent-50 py-24 overflow-hidden relative">
+            {/* Background Decorations */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-accent-100 rounded-full blur-3xl opacity-20 translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-20 -translate-x-1/2 translate-y-1/2"></div>
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                <div className="text-center mb-12">
-                    <Badge variant="secondary" className="mb-4 bg-white text-primary-700 border-primary-200 shadow-sm">
+                <div className="text-center mb-16">
+                    <Badge variant="secondary" className="mb-4 bg-accent-100 text-accent-700 hover:bg-accent-200 border-accent-200 shadow-sm">
                         Calculadora de ROI
                     </Badge>
-                    <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-primary-800 mb-6 transition-all">
-                        Calcule Quanto Você Vai Economizar
+                    <h2 className="font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-primary-800 mb-6">
+                        Advogados estão economizando até <br />
+                        <span className="bg-gradient-to-r from-accent-600 to-accent-500 bg-clip-text text-transparent">
+                            R$ 400K por ano
+                        </span>
                     </h2>
                     <p className="text-lg text-neutral-700 max-w-2xl mx-auto">
-                        Veja o impacto real do JustoAI no seu escritório. Simule seus ganhos abaixo.
+                        Calcule quanto <strong>seu escritório</strong> vai economizar automatizando a criação de relatórios processuais.
                     </p>
                 </div>
 
-                <div className="max-w-5xl mx-auto">
-                    <Card className="p-8 lg:p-10 bg-white/80 backdrop-blur-sm border-white/50 shadow-xl rounded-2xl">
-                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div className="max-w-6xl mx-auto">
+                    <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
-                            {/* Inputs Section */}
-                            <div className="space-y-8">
-                                {/* Hours Slider */}
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-sm font-semibold text-primary-800">
-                                            Horas gastas por semana em relatórios
+                        {/* Left Column: Inputs & Logic */}
+                        <div className="lg:col-span-5 space-y-8">
+                            <Card className="p-8 bg-white/80 backdrop-blur-sm border-white/50 shadow-xl rounded-2xl">
+                                <div className="space-y-8">
+                                    {/* Hours Slider */}
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <label className="text-sm font-bold text-primary-800 flex items-center gap-2">
+                                                <Clock className="w-4 h-4 text-accent-500" />
+                                                Horas/semana em relatórios
+                                            </label>
+                                            <span className="text-accent-700 font-bold bg-accent-50 px-4 py-1.5 rounded-full text-sm border border-accent-100">
+                                                {weeklyHours}h
+                                            </span>
+                                        </div>
+                                        <Slider
+                                            defaultValue={[20]}
+                                            max={60}
+                                            min={5}
+                                            step={1}
+                                            value={[weeklyHours]}
+                                            onValueChange={(value) => setWeeklyHours(value[0])}
+                                            className="py-4 cursor-pointer"
+                                        />
+                                        <div className="flex justify-between text-xs text-neutral-400 font-medium px-1">
+                                            <span>5h</span>
+                                            <span>Média (20h)</span>
+                                            <span>60h</span>
+                                        </div>
+                                    </div>
+
+                                    <hr className="border-neutral-100" />
+
+                                    {/* Hourly Rate Select */}
+                                    <div className="space-y-4">
+                                        <label className="text-sm font-bold text-primary-800 flex items-center gap-2">
+                                            <TrendingUp className="w-4 h-4 text-accent-500" />
+                                            Valor médio da sua hora
                                         </label>
-                                        <span className="text-accent-600 font-bold bg-accent-50 px-3 py-1 rounded-full text-sm">
-                                            {weeklyHours}h/semana
-                                        </span>
+                                        <Select value={hourlyRate} onValueChange={setHourlyRate}>
+                                            <SelectTrigger className="w-full h-14 text-base bg-white border-neutral-200 focus:ring-accent-500 rounded-xl">
+                                                <SelectValue placeholder="Selecione o valor" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="150">R$ 150/h (Júnior)</SelectItem>
+                                                <SelectItem value="250">R$ 250/h (Pleno)</SelectItem>
+                                                <SelectItem value="400">R$ 400/h (Sênior)</SelectItem>
+                                                <SelectItem value="800">R$ 800/h (Sócio)</SelectItem>
+                                                <SelectItem value="1500">R$ 1.500/h (Partner)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                    <Slider
-                                        defaultValue={[20]}
-                                        max={40}
-                                        min={5}
-                                        step={1}
-                                        value={[weeklyHours]}
-                                        onValueChange={(value) => setWeeklyHours(value[0])}
-                                        className="py-2"
-                                    />
-                                    <div className="flex justify-between text-xs text-neutral-500 px-1">
-                                        <span>5h</span>
-                                        <span>20h</span>
-                                        <span>40h</span>
-                                    </div>
-                                </div>
 
-                                {/* Hourly Rate Select */}
-                                <div className="space-y-4">
-                                    <label className="text-sm font-semibold text-primary-800 block">
-                                        Qual o valor médio da sua hora?
-                                    </label>
-                                    <Select value={hourlyRate} onValueChange={setHourlyRate}>
-                                        <SelectTrigger className="w-full h-12 text-base bg-white border-neutral-300 focus:ring-accent-500">
-                                            <SelectValue placeholder="Selecione o valor" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="200">R$ 200/h (Iniciante)</SelectItem>
-                                            <SelectItem value="400">R$ 400/h (Pleno)</SelectItem>
-                                            <SelectItem value="800">R$ 800/h (Sênior)</SelectItem>
-                                            <SelectItem value="1500">R$ 1.500/h (Sócio)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                    {/* Peer Comparison Section */}
+                                    <div className="bg-neutral-50 rounded-xl p-6 border border-neutral-200 mt-8">
+                                        <h4 className="text-sm font-semibold text-primary-900 mb-4 flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4 text-primary-500" />
+                                            Como você se compara?
+                                        </h4>
 
-                                {/* Info Note */}
-                                <div className="bg-primary-50 rounded-lg p-4 text-sm text-primary-800 flex gap-3 items-start">
-                                    <span className="text-lg">💡</span>
-                                    <p>
-                                        Consideramos que o JustoAI automatiza <strong>90% desse trabalho</strong>, permitindo que você foque em atividades billable ou estratégicas.
-                                    </p>
-                                </div>
-                            </div>
+                                        <div className="relative h-4 bg-neutral-200 rounded-full mb-2 overflow-visible">
+                                            {/* Average Marker */}
+                                            <div className="absolute top-0 bottom-0 left-1/3 w-1 bg-neutral-400 z-10 opacity-30"></div>
+                                            <div className="absolute -top-7 left-1/3 -translate-x-1/2 text-[10px] font-bold text-neutral-500 uppercase tracking-wide">
+                                                Média (20h)
+                                            </div>
 
-                            {/* Results Section */}
-                            <div className="bg-gradient-to-br from-primary-900 to-primary-800 rounded-xl p-8 text-white shadow-2xl relative overflow-hidden group">
-                                {/* Background glow animation */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-accent-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-accent-500/30 transition-all duration-700"></div>
-
-                                <h3 className="text-xl font-semibold mb-6 opacity-90 relative z-10">
-                                    Sua Economia Projetada
-                                </h3>
-
-                                <div className="space-y-6 relative z-10">
-                                    {/* Annual Savings */}
-                                    <div className="space-y-1">
-                                        <div className="text-sm text-primary-200">Economia Anual Estimada</div>
-                                        <AnimatePresence mode="wait">
+                                            {/* User Bar */}
                                             <motion.div
-                                                key={annualSavings}
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="text-4xl sm:text-5xl font-bold text-white tracking-tight"
-                                            >
-                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(annualSavings)}
-                                            </motion.div>
-                                        </AnimatePresence>
-                                        <div className="text-xs text-accent-300 font-medium">
-                                            + R$ {new Intl.NumberFormat('pt-BR', { style: 'decimal', maximumFractionDigits: 0 }).format(weeklySavings)} por semana
+                                                className="absolute top-0 bottom-0 left-0 bg-accent-500 rounded-full"
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${(weeklyHours / 60) * 100}%` }}
+                                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                                            />
                                         </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-primary-700/50">
-                                        {/* Hours Saved */}
-                                        <div>
-                                            <div className="text-sm text-primary-200 mb-1">Horas Recuperadas</div>
-                                            <AnimatePresence mode="wait">
-                                                <motion.div
-                                                    key={annualHours}
-                                                    initial={{ opacity: 0, scale: 0.9 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <span className="text-2xl font-bold hover:text-accent-300 transition-colors">
-                                                        {annualHours}h
-                                                    </span>
-                                                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-white/80">/ano</span>
-                                                </motion.div>
-                                            </AnimatePresence>
-                                        </div>
-
-                                        {/* Payback */}
-                                        <div>
-                                            <div className="text-sm text-primary-200 mb-1">Payback Estimado</div>
-                                            <AnimatePresence mode="wait">
-                                                <motion.div
-                                                    key={paybackMonths}
-                                                    initial={{ opacity: 0, scale: 0.9 }}
-                                                    animate={{ opacity: 1, scale: 1 }}
-                                                    transition={{ duration: 0.2 }}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <span className="text-2xl font-bold text-accent-400">
-                                                        {paybackMonths}
-                                                    </span>
-                                                </motion.div>
-                                            </AnimatePresence>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-6">
-                                        <Button className="w-full bg-accent-500 hover:bg-accent-600 text-white font-bold py-6 text-lg shadow-lg hover:shadow-accent-500/20 transition-all duration-300 transform hover:-translate-y-1">
-                                            Começar a Economizar Agora
-                                        </Button>
-                                        <p className="text-xs text-center text-primary-300 mt-3">
-                                            Baseado no plano Gestão (R$ 497/mês)
+                                        <p className="text-xs text-neutral-600 mt-3 leading-relaxed">
+                                            {weeklyHours > 20
+                                                ? <span className="text-amber-600 font-semibold">Cuidado: Você gasta {(weeklyHours - 20)}h a mais que a média.</span>
+                                                : <span className="text-green-600 font-semibold">Bom: Você está abaixo da média, mas ainda pode zerar isso.</span>
+                                            }
                                         </p>
                                     </div>
                                 </div>
-                            </div>
+                            </Card>
 
+                            {/* Methodology Note */}
+                            <div className="bg-white/50 border border-neutral-200 rounded-xl p-6">
+                                <h4 className="text-xs font-bold text-primary-900 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                    💡 Metodologia de Cálculo
+                                </h4>
+                                <ul className="text-xs text-neutral-600 space-y-2">
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-accent-500 font-bold">•</span>
+                                        <span><strong>Leitura de processos:</strong> De 2h para 5min (IA)</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-accent-500 font-bold">•</span>
+                                        <span><strong>Criação de relatórios:</strong> De 1h para Instantâneo</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <span className="text-accent-500 font-bold">•</span>
+                                        <span><strong>Envio aos clientes:</strong> De 30min para Automático</span>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-                    </Card>
+
+                        {/* Right Column: High Impact Result */}
+                        <div className="lg:col-span-7">
+                            <motion.div
+                                className="bg-gradient-to-br from-accent-600 to-accent-700 rounded-3xl p-8 sm:p-12 text-white shadow-2xl relative overflow-hidden h-full flex flex-col justify-between"
+                                animate={showConfetti ? { scale: [1, 1.02, 1] } : {}}
+                                transition={{ duration: 0.3 }}
+                            >
+                                {/* Results Header */}
+                                <div className="text-center relative z-10 mb-8">
+                                    <p className="text-accent-100 text-sm font-bold uppercase tracking-widest mb-4">
+                                        Sua Economia Projetada
+                                    </p>
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={annualSavings}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="font-display font-bold text-5xl sm:text-7xl mb-4"
+                                        >
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(annualSavings)}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                    <div className="inline-block bg-white/10 backdrop-blur-md rounded-lg px-4 py-2 text-accent-50 border border-white/10">
+                                        + R$ {new Intl.NumberFormat('pt-BR', { style: 'decimal', maximumFractionDigits: 0 }).format(annualSavings / 12)} por mês no caixa
+                                    </div>
+                                </div>
+
+                                {/* Breakdown Grid */}
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:bg-white/15 transition-colors">
+                                        <Clock className="w-8 h-8 text-accent-200 mb-3" />
+                                        <div className="text-3xl font-bold mb-1">{annualHours}h</div>
+                                        <div className="text-xs text-accent-100 uppercase font-semibold">Horas Recuperadas/ano</div>
+                                    </div>
+                                    <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10 hover:bg-white/15 transition-colors">
+                                        <TrendingUp className="w-8 h-8 text-green-300 mb-3" />
+                                        <div className="text-3xl font-bold mb-1 text-green-300">{roiMultiplier}x</div>
+                                        <div className="text-xs text-accent-100 uppercase font-semibold">Retorno sobre Investimento</div>
+                                    </div>
+                                </div>
+
+                                {/* Payback & CTA */}
+                                <div className="bg-primary-900/30 rounded-2xl p-6 border border-white/5 backdrop-blur-sm">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/30">
+                                                <Rocket className="w-6 h-6 text-green-400" />
+                                            </div>
+                                            <div>
+                                                <div className="text-sm text-accent-100">Payback estimado em</div>
+                                                <div className="text-xl font-bold text-white">
+                                                    Apenas {paybackDays} dia{paybackDays > 1 ? 's' : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <Link href="/signup" className="w-full sm:w-auto">
+                                            <Button className="w-full bg-white text-accent-700 hover:bg-neutral-100 font-bold py-6 px-8 text-lg shadow-lg hover:shadow-xl transition-all">
+                                                Testar Grátis por 7 Dias →
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                    <div className="flex items-center justify-center gap-4 mt-4 text-xs text-accent-200/80">
+                                        <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Sem cartão necessário</span>
+                                        <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Cancele quando quiser</span>
+                                    </div>
+                                </div>
+
+                                {/* Background Effects */}
+                                <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+                                    <div className="absolute -top-32 -right-32 w-80 h-80 bg-accent-400 rounded-full mix-blend-overlay filter blur-3xl opacity-30"></div>
+                                    <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-primary-500 rounded-full mix-blend-overlay filter blur-3xl opacity-30"></div>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </section>

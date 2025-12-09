@@ -1,0 +1,104 @@
+
+> justoai-v2@0.1.0 build
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\justoai-v2\package-lock.json
+
+   ▲ Next.js 15.5.7
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+     · clientTraceMetadata
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 49s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./components/ui/calendar.tsx
+1:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars' or 'no-unused-vars').
+
+./src/app/api/documents/upload/route.ts
+957:5  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/app/api/systems/import/route.ts
+119:5  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/app/batch/[id]/page.tsx
+57:6  Warning: React Hook useEffect has a missing dependency: 'fetchStatus'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+70:6  Warning: React Hook useEffect has missing dependencies: 'fetchStatus' and 'status'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/ai-assistant/floating-chat.tsx
+38:6  Warning: React Hook useEffect has a missing dependency: 'createChatSession'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/landing/faq.tsx
+232:51  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+232:65  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/components/quota/quota-modal.tsx
+115:3  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/components/ui/calendar.tsx
+1:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars' or 'no-unused-vars').
+
+./src/jobs/dailyJuditCheck.ts
+80:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/aggregation-service.ts
+29:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars').
+
+./src/lib/ai-model-types.ts
+7:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars').
+
+./src/lib/bull-board.ts
+63:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/compression.ts
+286:5  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/excel-template-generator.ts
+160:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./src/lib/excel-upload-service.ts
+519:5  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/judit-api-wrapper.ts
+14:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars').
+140:7  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/middleware/quota-enforcement.ts
+504:5  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/observability/alerting.ts
+441:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/payment-webhook-handler.ts
+133:7  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/queue/juditQueue.ts
+59:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars' or '@typescript-eslint/no-unused-vars').
+
+./src/lib/report-data-collector.ts
+156:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars' or 'no-unused-vars').
+
+./src/lib/services/juditMonitoringService.ts
+147:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars' or 'no-unused-vars').
+
+./src/lib/services/logger.ts
+59:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars').
+
+./src/lib/types/database.ts
+29:1  Warning: Unused eslint-disable directive (no problems were reported from 'no-unused-vars').
+568:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars').
+570:1  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars').
+
+./src/lib/types/type-guards.ts
+86:3  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars' or 'no-unused-vars').
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules

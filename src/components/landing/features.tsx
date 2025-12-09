@@ -3,49 +3,68 @@
 import { motion } from 'framer-motion';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { ICONS } from '../../lib/icons';
+import Link from 'next/link';
 
-const features = [
+interface Feature {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  benefit: string;
+  highlightBenefit?: string;
+  color: 'primary' | 'accent' | 'blue';
+  featured?: boolean;
+  badge?: string;
+}
+
+const features: Feature[] = [
   {
     icon: ICONS.BRAIN,
-    title: 'Análise Essencial',
-    description: 'Lê e analisa automaticamente seus processos, extraindo pontos-chave e resumos executivos em segundos.',
-    benefits: ['Análise instantânea', 'Economiza horas', 'Pontos estratégicos'],
-    color: 'primary',
+    title: 'Economize 20 horas por semana',
+    description: 'Nossa IA lê e analisa automaticamente cada andamento processual, extraindo pontos-chave e criando resumos executivos. Você nunca mais perde tempo com trabalho manual.',
+    benefit: '→ De 2 horas de leitura para 30 segundos',
+    highlightBenefit: 'Análise em 30s',
+    color: 'accent',
+    featured: true,
+    badge: 'Mais Popular',
   },
   {
     icon: ICONS.SHIELD,
-    title: 'Análise Estratégica',
-    description: 'Avaliação profunda com observações jurídicas e análise de riscos detalhada.',
-    benefits: ['Análise avançada', 'Pense estrategicamente', 'Gestão de riscos'],
-    color: 'accent',
+    title: 'Clientes informados automaticamente',
+    description: 'Configure uma vez e nossa IA envia relatórios executivos para seus clientes via WhatsApp ou Email sempre que houver novidade. Mantenha eles informados sem mover um dedo.',
+    benefit: '→ Zero chamadas de cobrança de status',
+    highlightBenefit: 'Envio 100% automático',
+    color: 'blue',
+    featured: true,
+    badge: 'Diferencial',
   },
   {
     icon: ICONS.CALENDAR,
-    title: 'Relatórios Automáticos',
-    description: 'Configure uma vez e receba relatórios executivos automaticamente no seu email.',
-    benefits: ['Em linguagem simples', 'Email automático', 'PDF profissional'],
+    title: 'Identifique riscos antes que eles aconteçam',
+    description: 'Avaliação profunda com observações jurídicas e análise de riscos detalhada para cada movimentação.',
+    benefit: '→ Antecipe estratégias em dias',
     color: 'primary',
   },
   {
     icon: ICONS.MONITOR,
     title: 'Monitoramento 24/7',
-    description: 'Acompanhe automaticamente movimentações processuais com alertas inteligentes.',
-    benefits: ['Integração jurídica', 'Alertas em tempo real', 'Sem trabalho manual'],
+    description: 'Acompanhe automaticamente movimentações processuais com alertas inteligentes em tempo real.',
+    benefit: '→ Você dorme, a IA monitora',
     color: 'accent',
   },
   {
     icon: ICONS.UPLOAD,
-    title: 'Integração Simplificada',
-    description: 'Migre seus dados em minutos, com trabalho mínimo. Totalmente compatível com Projuris, Legal One, Astrea e os principais sistemas do mercado.',
-    benefits: ['Migração em minutos', 'Trabalho mínimo', 'Compatível com Excel/CSV'],
+    title: 'Configure em 5 minutos',
+    description: 'Migre seus dados em minutos, com trabalho mínimo. Totalmente compatível com Projuris, Legal One, Astrea e outros.',
+    benefit: '→ Sem fidelidade, sem implantação cara',
     color: 'primary',
   },
   {
     icon: ICONS.CHART,
-    title: 'Dashboard Inteligente',
-    description: 'Visualize todos os seus processos organizados por cliente com status em tempo real.',
-    benefits: ['Visão hierárquica', 'Status visual', 'Timeline unificada'],
+    title: 'Veja toda sua carteira em um só lugar',
+    description: 'Dashboard inteligente que organiza todos os seus processos por cliente com status visual em tempo real.',
+    benefit: '→ Visão gerencial completa',
     color: 'accent',
   },
 ];
@@ -102,66 +121,102 @@ export function Features() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
           {features.map((feature, index) => (
-            <motion.div key={index} variants={itemVariants}>
-              <Card className="p-8 h-full bg-gradient-to-br from-white to-neutral-50 border-neutral-200 hover:shadow-lg transition-all duration-300 group hover:border-primary-200">
-                <div className="flex items-center mb-6">
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl mr-4 ${feature.color === 'primary'
-                        ? 'bg-gradient-to-br from-primary-600 to-primary-800'
-                        : 'bg-gradient-to-br from-accent-500 to-accent-600'
-                      }`}
-                  >
+            <motion.div
+              key={index}
+              variants={itemVariants}
+              className={`${feature.featured ? 'md:col-span-2 lg:col-span-1 row-span-2' : ''}`}
+            >
+              <Card className={`p-8 h-full transition-all duration-300 group hover:shadow-xl relative overflow-hidden border-2 
+                ${feature.featured && feature.color === 'accent' ? 'bg-gradient-to-br from-accent-50 to-white border-accent-200' : ''}
+                ${feature.featured && feature.color === 'blue' ? 'bg-gradient-to-br from-blue-50 to-white border-blue-200' : ''}
+                ${!feature.featured ? 'bg-white border-transparent hover:border-primary-100 shadow-sm' : ''}
+              `}>
+
+                {feature.badge && (
+                  <Badge className={`absolute top-4 right-4 ${feature.color === 'accent' ? 'bg-accent-500 hover:bg-accent-600' : 'bg-blue-600 hover:bg-blue-700'
+                    } text-white border-0`}>
+                    {feature.badge}
+                  </Badge>
+                )}
+
+                <div className="flex flex-col h-full">
+                  <div className={`mb-6 rounded-2xl flex items-center justify-center
+                    ${feature.featured ? 'w-16 h-16 text-3xl' : 'w-12 h-12 text-xl'}
+                    ${feature.color === 'primary' ? 'bg-primary-100 text-primary-600' : ''}
+                    ${feature.color === 'accent' ? 'bg-accent-100 text-accent-600' : ''}
+                    ${feature.color === 'blue' ? 'bg-blue-100 text-blue-600' : ''}
+                  `}>
                     {feature.icon}
                   </div>
-                  <h3 className="font-display font-semibold text-xl text-primary-800 group-hover:text-primary-700 transition-colors">
+
+                  <h3 className={`font-display font-bold text-primary-900 mb-3 group-hover:text-primary-700 transition-colors
+                    ${feature.featured ? 'text-2xl' : 'text-xl'}
+                  `}>
                     {feature.title}
                   </h3>
+
+                  <p className="text-neutral-600 mb-6 leading-relaxed flex-grow">
+                    {feature.description}
+                  </p>
+
+                  <div className={`text-sm font-semibold mt-auto pt-4 border-t
+                    ${feature.color === 'primary' ? 'text-primary-600 border-primary-100' : ''}
+                    ${feature.color === 'accent' ? 'text-accent-600 border-accent-100' : ''}
+                    ${feature.color === 'blue' ? 'text-blue-600 border-blue-100' : ''}
+                  `}>
+                    {feature.benefit}
+                  </div>
                 </div>
-
-                <p className="text-neutral-700 mb-6 leading-relaxed">
-                  {feature.description}
-                </p>
-
-                <div className="space-y-2">
-                  {feature.benefits.map((benefit, benefitIndex) => (
-                    <div key={benefitIndex} className="flex items-center text-sm text-neutral-600">
-                      <span className="text-accent-500 mr-2">{ICONS.CHECK}</span>
-                      {benefit}
-                    </div>
-                  ))}
-                </div>
-
               </Card>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* Stats Section */}
+        {/* CTA After Features */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-8"
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-16 sm:mt-24"
         >
-          {[
-            { value: '20h', label: 'Economizadas por semana' },
-            { value: '7 dias', label: 'Trial gratuito' },
-            { value: '5min', label: 'Para configurar' },
-            { value: '24/7', label: 'Monitoramento automático' },
-          ].map((stat, index) => (
-            <div key={index} className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary-800 mb-2">
-                {stat.value}
-              </div>
-              <div className="text-neutral-600 text-sm lg:text-base">
-                {stat.label}
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-accent-50 to-blue-50 border border-accent-100 p-8 sm:p-12 lg:p-16 text-center">
+            <div className="relative z-10 max-w-3xl mx-auto">
+              <h2 className="text-3xl sm:text-4xl font-bold text-primary-900 mb-4">
+                Pronto para economizar 20 horas por semana?
+              </h2>
+              <p className="text-lg text-neutral-600 mb-8 leading-relaxed">
+                Junte-se aos advogados que já automatizaram seus relatórios.
+                Configure em 5 minutos, teste grátis por 7 dias.
+              </p>
+
+              <div className="flex flex-col items-center gap-4">
+                <Link href="/signup">
+                  <Button size="lg" className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all">
+                    Testar Grátis Agora <span className="ml-2">→</span>
+                  </Button>
+                </Link>
+                <div className="flex items-center gap-4 text-sm text-neutral-500 font-medium">
+                  <span className="flex items-center">
+                    <span className="text-accent-500 mr-1">✓</span> Sem cartão de crédito
+                  </span>
+                  <span className="flex items-center">
+                    <span className="text-accent-500 mr-1">✓</span> Cancele quando quiser
+                  </span>
+                </div>
               </div>
             </div>
-          ))}
+
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-40 pointer-events-none">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-accent-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+              <div className="absolute top-0 left-0 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+              <div className="absolute -bottom-32 left-20 w-64 h-64 bg-primary-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

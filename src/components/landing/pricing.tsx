@@ -348,38 +348,44 @@ export function Pricing() {
             </div>
 
             {/* CTA to full pricing */}
-            <div className="mt-12 p-6 bg-gradient-to-r from-primary-50 to-accent-50 rounded-2xl border border-primary-200">
-              <div className="flex items-center justify-center mb-4">
-                <span className="text-2xl mr-3">{ICONS.INFO}</span>
-                <h4 className="font-display font-bold text-xl text-primary-800">
-                  Quer ver todos os detalhes?
-                </h4>
-              </div>
-              <p className="text-neutral-700 mb-4">
-                Compare funcionalidades, veja o que está incluído em cada plano e encontre a opção perfeita para seu escritório.
-              </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mt-16 text-center py-12 bg-neutral-50 rounded-2xl border border-neutral-200"
+          >
+            <div className="text-4xl mb-4 text-accent-500">📊</div>
+            <h3 className="font-display font-bold text-2xl text-primary-800 mb-3">
+              Ainda não decidiu qual plano escolher?
+            </h3>
+            <p className="text-neutral-700 mb-8 max-w-2xl mx-auto text-lg leading-relaxed">
+              Compare funcionalidades lado a lado e veja <strong>EXATAMENTE</strong> o que está incluído em cada plano.<br />
+              Sem surpresas, sem letras miúdas.
+            </p>
+
+            <div className="flex flex-col items-center gap-4">
               <Link href="/pricing">
-                <Button className="bg-accent-500 hover:bg-accent-600 text-white">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="border-2 border-accent-500 text-accent-600 hover:bg-accent-50 hover:text-accent-700 font-bold px-8 py-6 text-lg"
+                >
                   Ver Comparativo Completo
                   <span className="ml-2">{ICONS.ARROW_RIGHT}</span>
                 </Button>
               </Link>
+
+              <p className="text-sm text-neutral-500 mt-2">
+                Ou fale com nossa equipe: <a href="https://wa.me/5500000000000" className="text-accent-600 font-medium hover:underline">WhatsApp</a> ou <a href="mailto:contato@justoai.com.br" className="text-accent-600 font-medium hover:underline">contato@justoai.com.br</a>
+              </p>
             </div>
           </motion.div>
 
-          {/* Disclaimers */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-12 space-y-2 text-center text-sm text-neutral-500"
-          >
-            <p>{pricingData.copy.disclaimers.reports}</p>
-            <p>{pricingData.copy.disclaimers.taxes}</p>
-          </motion.div>
         </div>
-      </section>
+      </section >
     </>
   );
 }

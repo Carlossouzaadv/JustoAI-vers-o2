@@ -10,7 +10,7 @@ import * as path from 'path';
 import { createGunzip, createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import type { Request, Response, NextFunction } from 'express';
-import { log, logError } from '@/lib/services/logger';
+import { logError } from './services/logger';
 
 // === TIPOS E INTERFACES ===
 

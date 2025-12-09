@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { ICONS } from '../../lib/icons';
+
+import { Sparkles, Check, CreditCard, X, MapPin } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -69,28 +70,37 @@ export function Hero() {
             {/* Content */}
             <div className="text-center lg:text-left">
               <motion.div variants={itemVariants}>
-                <Badge variant="secondary" className="inline-flex items-center gap-2 mb-6 bg-accent-50 text-accent-700 border-accent-200">
-                  <span className="w-2 h-2 bg-accent-500 rounded-full animate-pulse"></span>
-                  Novo: Sistema de Relatórios Automáticos
+                <Badge variant="secondary" className="inline-flex items-center gap-2 mb-6 bg-gradient-to-r from-accent-400 to-accent-600 text-white border-0 shadow-md px-3 py-1">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Novo: Análise com nossa IA em 30 segundos</span>
                 </Badge>
               </motion.div>
 
               <motion.h1
                 variants={itemVariants}
-                className="font-display font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-tight text-primary-800 mb-6"
+                className="font-display font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight text-primary-800 mb-6"
               >
-                <span className="bg-gradient-to-r from-accent-500 to-accent-600 bg-clip-text text-transparent">
-                  Economize 20 horas por semana
+                Economize{' '}
+                <span className="relative whitespace-nowrap">
+                  <span className="relative z-10 bg-gradient-to-r from-accent-500 to-accent-700 bg-clip-text text-transparent">
+                    20 horas
+                  </span>
+                  <svg className="absolute -bottom-2 left-0 w-full h-3 text-accent-300 transform -rotate-1" viewBox="0 0 100 10" preserveAspectRatio="none">
+                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
+                  </svg>
                 </span>
                 <br />
-                <span className="text-primary-800">em relatórios executivos</span>
+                <span className="text-primary-800">por semana em relatórios executivos</span>
               </motion.h1>
 
               <motion.p
                 variants={itemVariants}
-                className="text-base sm:text-lg md:text-xl lg:text-2xl text-neutral-700 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0"
+                className="text-lg sm:text-xl text-neutral-700 mb-8 leading-relaxed max-w-2xl mx-auto lg:mx-0"
               >
-                IA Gemini analisa seus processos (CNJ + Judit) e gera relatórios profissionais automaticamente. Seus clientes ficam sempre informados, <strong className="text-primary-800">você foca no estratégico.</strong>
+                Pare de perder tempo com trabalho repetitivo. Nossa IA transforma andamentos processuais em relatórios executivos que seus clientes <em>realmente</em> entendem.
+                <span className="block mt-2 text-accent-600 font-semibold">
+                  Configure uma vez. Receba relatórios toda semana. Automaticamente.
+                </span>
               </motion.p>
 
               {/* CTA Section */}
@@ -98,7 +108,7 @@ export function Hero() {
                 variants={itemVariants}
                 className="mb-8 text-center lg:text-left"
               >
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-6">
                   <Link href="/signup">
                     <Button
                       size="lg"
@@ -121,31 +131,24 @@ export function Hero() {
                   </Link>
                 </div>
 
-                <p className="text-sm sm:text-base text-primary-700 font-medium mb-3">
-                  ⭐ Experimente gratuitamente por 7 dias
-                </p>
-                <p className="text-sm sm:text-base text-neutral-600 max-w-lg mx-auto lg:mx-0">
-                  Configure sua conta em 5 minutos e comece a gerar relatórios automáticos hoje mesmo.
-                </p>
+                {/* Trust Badges */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 text-sm text-neutral-600">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-accent-500" />
+                    <span>Teste grátis por 7 dias</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4 text-accent-500" />
+                    <span>Sem cartão de crédito</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <X className="w-4 h-4 text-accent-500" />
+                    <span>Cancele quando quiser</span>
+                  </div>
+                </div>
               </motion.div>
 
-              <motion.div
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-2 sm:space-y-0 sm:space-x-6 text-sm text-neutral-600"
-              >
-                <div className="flex items-center">
-                  <span className="text-accent-500 mr-2 text-base">✓</span>
-                  <span className="text-sm sm:text-base">10.000+ horas economizadas para advogados</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-accent-500 mr-2 text-base">✓</span>
-                  <span className="text-sm sm:text-base">Setup em 5 min</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-accent-500 mr-2 text-base">✓</span>
-                  <span className="text-sm sm:text-base">500+ relatórios enviados hoje</span>
-                </div>
-              </motion.div>
+
             </div>
 
             {/* Hero Image/Dashboard Preview */}
@@ -210,17 +213,41 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* Floating Stats */}
+              {/* Floating Tooltips */}
               <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1, duration: 0.5 }}
-                className="absolute -top-6 -left-6 bg-white rounded-xl shadow-lg border border-neutral-200 p-4"
+                className="absolute -top-6 -left-6 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2 animate-bounce-slow"
               >
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-accent-600">20h</div>
-                  <div className="text-sm text-neutral-600">economizadas/semana</div>
+                <div className="bg-accent-100 p-1.5 rounded-full">
+                  <Sparkles className="w-4 h-4 text-accent-600" />
                 </div>
+                <span className="text-sm font-semibold text-gray-800">20h economizadas</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1.5, duration: 0.5 }}
+                className="absolute top-1/2 -right-12 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2"
+              >
+                <div className="bg-green-100 p-1.5 rounded-full">
+                  <Check className="w-4 h-4 text-green-600" />
+                </div>
+                <span className="text-sm font-semibold text-gray-800">Status em tempo real</span>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2, duration: 0.5 }}
+                className="absolute -bottom-6 right-10 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2"
+              >
+                <div className="bg-blue-100 p-1.5 rounded-full">
+                  <MapPin className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="text-sm font-semibold text-gray-800">Enviado automaticamente</span>
               </motion.div>
 
             </motion.div>
@@ -232,7 +259,7 @@ export function Hero() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 2, duration: 0.5 }}
+        transition={{ delay: 2.5, duration: 0.5 }}
         className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
       >
         <motion.div

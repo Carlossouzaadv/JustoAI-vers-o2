@@ -1,0 +1,586 @@
+
+> justoai-v2@0.1.0 lint
+> next lint
+
+`next lint` is deprecated and will be removed in Next.js 16.
+For new projects, use create-next-app to choose your preferred linter.
+For existing projects, migrate to the ESLint CLI:
+npx @next/codemod@canary next-lint-to-eslint-cli .
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\carlo\Documents\PROJETO JUSTOAI\NOVA FASE\justoai-v2\package-lock.json
+
+
+./src/app/api/auth/callback/route.ts
+70:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+70:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+77:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+77:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+155:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+155:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+162:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+162:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/auth/signup/route.ts
+44:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+44:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+51:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+51:22  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/contact/route.ts
+197:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+197:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/health/route.ts
+64:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+64:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/health/system/route.ts
+249:16  Warning: 'checkJuditApi' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+249:16  Warning: 'checkJuditApi' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+304:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+304:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/judit/observability/alerts/route.ts
+84:15  Warning: 'GroupedAlertCount' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+84:15  Warning: 'GroupedAlertCount' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/process/[id]/analysis/full/route.ts
+11:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+11:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/process/[id]/analysis/[version]/route.ts
+158:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+158:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+176:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+176:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/sse/subscribe/route.ts
+49:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+49:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+87:22  Warning: 'e' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+87:22  Warning: 'e' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+126:20  Warning: 'e' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+126:20  Warning: 'e' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/upload/excel/validate/__tests__/route.test.ts
+7:32  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+7:32  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+7:44  Warning: 'jest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+7:44  Warning: 'jest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+13:11  Warning: 'MockNextRequest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+13:11  Warning: 'MockNextRequest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+345:13  Warning: 'trueFormats' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+345:13  Warning: 'trueFormats' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/activity/route.ts
+13:10  Warning: 'isUserWithWorkspace' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+13:10  Warning: 'isUserWithWorkspace' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/user/balance/route.ts
+14:10  Warning: 'isUserWithWorkspace' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+14:10  Warning: 'isUserWithWorkspace' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/webhook/judit/callback/route.ts
+523:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+523:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+529:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+529:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+536:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+536:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/webhook/judit/status/route.ts
+14:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+14:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/webhooks/judit/tracking/route.ts
+10:10  Warning: 'sendProcessAlert' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+10:10  Warning: 'sendProcessAlert' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+12:33  Warning: 'ProcessMovement' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+12:33  Warning: 'ProcessMovement' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+473:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+473:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+602:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+602:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+652:11  Warning: 'statusChangeDescription' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+652:11  Warning: 'statusChangeDescription' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+685:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+685:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/api/webhooks/payment/route.ts
+189:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+189:27  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/app/batch/[id]/batch.integration.test.tsx
+6:10  Warning: 'render' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+6:10  Warning: 'render' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+6:18  Warning: 'screen' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+6:18  Warning: 'screen' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+6:26  Warning: 'waitFor' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+6:26  Warning: 'waitFor' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+6:35  Warning: 'within' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+6:35  Warning: 'within' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/app/batch/[id]/page.tsx
+57:6  Warning: React Hook useEffect has a missing dependency: 'fetchStatus'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+70:6  Warning: React Hook useEffect has missing dependencies: 'fetchStatus' and 'status'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/signup/page.tsx
+128:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+128:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/metrics-and-recovery.tsx
+54:21  Warning: 'actionId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+54:39  Warning: 'parameters' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/admin/monitoring-dashboard.tsx
+187:10  Warning: 'selectedAction' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+187:10  Warning: 'selectedAction' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+187:26  Warning: 'setSelectedAction' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+187:26  Warning: 'setSelectedAction' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+188:10  Warning: 'actionParameters' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+188:10  Warning: 'actionParameters' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+188:28  Warning: 'setActionParameters' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+188:28  Warning: 'setActionParameters' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/components/admin/system-status-overview.tsx
+61:19  Warning: 'action' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/ai-assistant/floating-chat.tsx
+38:6  Warning: React Hook useEffect has a missing dependency: 'createChatSession'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/crisp-chat.tsx
+9:37  Warning: 'args' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/dashboard/activity-feed.tsx
+8:22  Warning: 'Loader' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+8:22  Warning: 'Loader' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+45:22  Warning: 'activity' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/dashboard/client-actions-button.tsx
+53:10  Warning: 'scheduleDialogOpen' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+53:10  Warning: 'scheduleDialogOpen' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/components/landing/case-studies.tsx
+13:19  Error: Strings must use singlequote.  quotes
+15:23  Error: Strings must use singlequote.  quotes
+16:26  Error: Strings must use singlequote.  quotes
+18:18  Error: Strings must use singlequote.  quotes
+19:16  Error: Strings must use singlequote.  quotes
+23:19  Error: Strings must use singlequote.  quotes
+25:23  Error: Strings must use singlequote.  quotes
+26:26  Error: Strings must use singlequote.  quotes
+28:18  Error: Strings must use singlequote.  quotes
+29:16  Error: Strings must use singlequote.  quotes
+33:19  Error: Strings must use singlequote.  quotes
+35:23  Error: Strings must use singlequote.  quotes
+36:26  Error: Strings must use singlequote.  quotes
+38:18  Error: Strings must use singlequote.  quotes
+39:16  Error: Strings must use singlequote.  quotes
+
+./src/components/landing/faq.tsx
+232:51  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+232:65  Error: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
+
+./src/components/landing/roi-calculator.tsx
+152:84  Error: Strings must use singlequote.  quotes
+
+./src/components/landing/social-proof-mini.tsx
+5:10  Warning: 'Card' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+5:10  Warning: 'Card' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+10:20  Error: Strings must use singlequote.  quotes
+11:20  Error: Strings must use singlequote.  quotes
+12:20  Error: Strings must use singlequote.  quotes
+15:20  Error: Strings must use singlequote.  quotes
+16:20  Error: Strings must use singlequote.  quotes
+17:20  Error: Strings must use singlequote.  quotes
+20:20  Error: Strings must use singlequote.  quotes
+21:20  Error: Strings must use singlequote.  quotes
+22:20  Error: Strings must use singlequote.  quotes
+25:20  Error: Strings must use singlequote.  quotes
+26:20  Error: Strings must use singlequote.  quotes
+27:20  Error: Strings must use singlequote.  quotes
+
+./src/components/landing/video-section.tsx
+15:44  Error: Strings must use singlequote.  quotes
+91:40  Error: Strings must use singlequote.  quotes
+92:46  Error: Strings must use singlequote.  quotes
+96:40  Error: Strings must use singlequote.  quotes
+97:46  Error: Strings must use singlequote.  quotes
+101:40  Error: Strings must use singlequote.  quotes
+102:46  Error: Strings must use singlequote.  quotes
+
+./src/components/onboarding/excel-upload-dialog.tsx
+43:18  Warning: 'open' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+45:22  Warning: 'batchId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/process/analysis-version-history.tsx
+51:21  Warning: 'version' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/process/document-edit-modal.tsx
+46:12  Warning: 'name' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+46:26  Warning: 'category' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+46:54  Warning: 'notes' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/process/document-list-grid.tsx
+32:20  Warning: 'doc' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+33:20  Warning: 'doc' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/process/document-upload-section.tsx
+17:18  Warning: 'files' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+18:20  Warning: 'filter' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+19:20  Warning: 'term' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/process/generate-analysis-modal.tsx
+22:18  Warning: 'open' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+23:24  Warning: 'level' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/components/process/process-ai-analysis.tsx
+61:10  Warning: 'sanitizeAnalysisData' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+61:10  Warning: 'sanitizeAnalysisData' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+94:10  Warning: 'feedback' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+94:10  Warning: 'feedback' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+94:20  Warning: 'setFeedback' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+94:20  Warning: 'setFeedback' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/components/process/process-documents.tsx
+76:10  Warning: 'isValidCategory' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+76:10  Warning: 'isValidCategory' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+102:10  Warning: 'isSaving' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+102:10  Warning: 'isSaving' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+103:10  Warning: 'isDeleting' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+103:10  Warning: 'isDeleting' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+295:9  Warning: 'categoryCounts' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+295:9  Warning: 'categoryCounts' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/hooks/useCreditLogic.ts
+33:27  Warning: 'processCount' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+39:30  Warning: 'planId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+49:29  Warning: 'processCount' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+57:30  Warning: 'planId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/hooks/useExcelValidator.ts
+71:14  Warning: 'file' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+71:26  Warning: 'workspaceId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/hooks/useSseAlerts.ts
+23:6  Warning: 'SSEAlert' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+23:6  Warning: 'SSEAlert' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/hooks/__tests__/useExcelValidator.test.ts
+7:27  Warning: 'waitFor' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+7:27  Warning: 'waitFor' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+289:15  Warning: 'result' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+289:15  Warning: 'result' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+298:13  Warning: 'errors' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+298:13  Warning: 'errors' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/jobs/scheduler.ts
+306:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+306:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/ai-cache-manager.ts
+148:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+148:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/ai-model-router.ts
+1091:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+1091:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+1134:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+1134:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+1201:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+1201:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+1257:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+1257:13  Warning: 'routingInfo' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+1432:5  Warning: 'workspaceId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+1432:5  Warning: 'workspaceId' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+1476:5  Warning: 'workspaceId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+1476:5  Warning: 'workspaceId' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/alerts/ops-alerts.ts
+239:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+239:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+261:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+261:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+293:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+293:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+401:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+401:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+488:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+488:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+518:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+518:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+551:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+551:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+556:34  Warning: 'alert' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+556:34  Warning: 'alert' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+561:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+561:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+724:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+724:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/analysis-cache.ts
+267:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+267:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+284:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+284:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+303:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+303:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+330:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+330:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+360:16  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+360:16  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+377:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+377:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+411:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+411:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+436:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+436:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+482:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+482:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/api-utils.ts
+236:22  Warning: 'request' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+236:44  Warning: 'context' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+328:12  Warning: 'status' is assigned a value but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/auth-helper.ts
+10:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+10:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/bull-board.ts
+139:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+139:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/cache/admin-redis.ts
+16:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+16:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/chat-service.ts
+5:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+5:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+5:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+5:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+148:11  Warning: 'userMessage' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+148:11  Warning: 'userMessage' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/circuit-breaker.ts
+13:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+13:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+25:20  Warning: 'newState' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/compression.ts
+490:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+490:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/credit-system.ts
+142:23  Warning: 'prisma' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+209:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+209:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+284:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+284:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+312:16  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+312:16  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+507:20  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+507:20  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+565:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+565:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+656:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+656:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+709:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+709:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+729:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+729:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+769:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+769:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+817:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+817:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+870:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+870:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+945:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+945:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/deep-analysis-service.ts
+9:71  Warning: 'AnalysisJob' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+9:71  Warning: 'AnalysisJob' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+329:13  Warning: 'numPages' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+329:13  Warning: 'numPages' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/document-hash.ts
+58:21  Warning: 'args' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/excel-parser.ts
+9:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+9:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/excel-template-generator.ts
+160:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./src/lib/gemini-client.ts
+493:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+493:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/import-reports.ts
+9:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+9:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/job-logger.ts
+6:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+6:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/judit-api-client.ts
+250:13  Warning: 'threshold' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+251:13  Warning: 'windowMs' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+252:13  Warning: 'openTimeMs' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+253:13  Warning: 'minRequests' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/monitoring-telemetry.ts
+8:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+8:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/observability/costTracking.ts
+9:26  Warning: 'AdminCacheKeys' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+9:26  Warning: 'AdminCacheKeys' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+58:11  Warning: 'JuditCostGroupByResult' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+58:11  Warning: 'JuditCostGroupByResult' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/payment-webhook-handler.ts
+185:16  Warning: 'emailError' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+185:16  Warning: 'emailError' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/pdf-generator.ts
+224:13  Warning: 'generationTime' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+224:13  Warning: 'generationTime' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/pdf-processor.ts
+516:18  Warning: 'context' is assigned a value but never used. Allowed unused args must match /^_/u.  no-unused-vars
+516:18  Warning: 'context' is assigned a value but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/performance-optimizer.ts
+409:15  Warning: 'memUsage' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+409:15  Warning: 'memUsage' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/process-alerts.ts
+325:13  Warning: 'job' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+325:13  Warning: 'job' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/process-apis.ts
+8:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+8:10  Warning: 'log' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/queue/juditQueue.ts
+9:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+9:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/queues.ts
+20:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+20:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/quota-system.ts
+8:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+8:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/rate-limiter.ts
+7:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+7:15  Warning: 'logError' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+121:5  Warning: 'context' is assigned a value but never used. Allowed unused args must match /^_/u.  no-unused-vars
+121:5  Warning: 'context' is assigned a value but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/redis.ts
+15:27  Warning: 'error' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+
+./src/lib/report-data-collector.ts
+98:11  Warning: 'ProcessWithRelations' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+98:11  Warning: 'ProcessWithRelations' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+659:15  Warning: 'description' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+659:15  Warning: 'description' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/report-generator.ts
+113:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+113:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+354:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+354:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+588:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+588:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+947:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+947:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/report-templates/docx-template-engine.ts
+8:8  Warning: 'path' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+8:8  Warning: 'path' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/report-templates/pdf-template-engine.ts
+7:8  Warning: 'path' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+7:8  Warning: 'path' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/sentry-api-client.ts
+240:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+240:12  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/services/attachment-validation-service.ts
+126:11  Warning: '_elapsedMs' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+126:11  Warning: '_elapsedMs' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/services/batch-status-service.test.ts
+5:43  Warning: 'BatchErrorDetail' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+5:43  Warning: 'BatchErrorDetail' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/services/batch-status-service.ts
+12:3  Warning: 'QUEUED' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+13:3  Warning: 'PROCESSING' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+14:3  Warning: 'COMPLETED' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+15:3  Warning: 'FAILED' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+16:3  Warning: 'PAUSED' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+17:3  Warning: 'CANCELLED' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+136:5  Warning: 'progress' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+136:5  Warning: 'progress' is defined but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/services/logger.ts
+60:10  Warning: 'createBetterStackTransport' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+
+./src/lib/services/__tests__/attachment-validation-service.test.ts
+14:10  Warning: 'ValidationFailureReason' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+14:10  Warning: 'ValidationFailureReason' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+14:35  Warning: 'ValidationResult' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+14:35  Warning: 'ValidationResult' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+26:16  Warning: 'createMinimalValidPdf' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+26:16  Warning: 'createMinimalValidPdf' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+45:10  Warning: 'createCorruptedPdfBuffer' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+45:10  Warning: 'createCorruptedPdfBuffer' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/timeline-merge.ts
+620:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+620:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+644:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  no-unused-vars
+644:14  Warning: 'error' is defined but never used. Allowed unused caught errors must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/__tests__/component-ui-integration.test.ts
+58:23  Warning: 'processId' is defined but never used. Allowed unused args must match /^_/u.  no-unused-vars
+351:13  Warning: 'analysis2' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+351:13  Warning: 'analysis2' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+400:13  Warning: 'analysis2' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+400:13  Warning: 'analysis2' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+661:13  Warning: 'batch' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+661:13  Warning: 'batch' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/__tests__/payment-credits-quota-integration.test.ts
+12:55  Warning: 'jest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+12:55  Warning: 'jest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/__tests__/payment-webhook-handler.test.ts
+80:7  Warning: '_mockPrisma' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+80:7  Warning: '_mockPrisma' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+./src/lib/__tests__/webhook-quota-service.test.ts
+11:55  Warning: 'jest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+11:55  Warning: 'jest' is defined but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+119:11  Warning: 'webhookTime' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+119:11  Warning: 'webhookTime' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+555:13  Warning: 'now' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  no-unused-vars
+555:13  Warning: 'now' is assigned a value but never used. Allowed unused vars must match /^(ICONS|EMOJIS|UI_TEXT|CLOSED|OPEN|HALF_OPEN|_|[A-Z][a-zA-Z]*(?:Data|Config|Input|Output|Response|Schema|Type|Props|State|Handler))$/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
