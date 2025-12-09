@@ -12,7 +12,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 import React from 'react';
-import { AlertBadge } from '@/components/ui/alert-badge';
+import { AlertBadge } from '../../components/ui/alert-badge';
 
 interface NavItem {
   label: string;
@@ -144,8 +144,8 @@ export default function AdminLayout({
                   <a
                     href={item.href}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'text-slate-300 hover:bg-slate-700'
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'text-slate-300 hover:bg-slate-700'
                       }`}
                     title={item.description}
                   >

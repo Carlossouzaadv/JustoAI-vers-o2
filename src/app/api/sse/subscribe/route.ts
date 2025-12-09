@@ -3,9 +3,9 @@
 // ================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { validateAuthAndGetUser } from '@/lib/auth';
-import { getWebSocketManager, generateConnectionId } from '@/lib/websocket-manager';
-import { ICONS } from '@/lib/icons';
+import { validateAuthAndGetUser } from '../../../../lib/auth';
+import { getWebSocketManager, generateConnectionId } from '../../../../lib/websocket-manager';
+import { ICONS } from '../../../../lib/icons';
 
 /**
  * Type Guard: Validates if an object has the write method needed for SSE
@@ -82,7 +82,11 @@ export async function GET(request: NextRequest) {
             }
           },
           end: () => {
-            controller.close();
+            try {
+              controller.close();
+            } catch (e) {
+              // Ignore close errors if already closed
+            }
           }
         };
 
@@ -108,11 +112,28 @@ export async function GET(request: NextRequest) {
         const sseData = `data: ${JSON.stringify(welcomeMessage)}\n\n`;
         controller.enqueue(encoder.encode(sseData));
 
+        // IMPLEMENTAÇÃO DE SAFETY TIMEOUT PARA VERCEL SERVERLESS
+        // Vercel Serverless Function (Node.js) tem limite de 10s (Hobbie) ou 60s (Pro).
+        // SSE precisa fechar graciosamente ANTES do limite para evitar "Task Timed Out".
+        // O cliente (EventSource) reconectará automaticamente.
+        const VERCEL_TIMEOUT_LIMIT = 50 * 1000; // 50 segundos (margem de segurança para 60s)
+
+        const timeoutId = setTimeout(() => {
+          console.log(`${ICONS.INFO} SSE: Fechando conexão preventivamente (Vercel Timeout Safety) - ${connectionId}`);
+          wsManager.removeConnection(connectionId);
+          try {
+            controller.close();
+          } catch (e) {
+            // Ignore error if already closed
+          }
+        }, VERCEL_TIMEOUT_LIMIT);
+
         // Cleanup ao desconectar
         // Type-safe access to close method using type guard
         if (hasCloseMethod(controller)) {
           const originalOnClose = controller.close.bind(controller);
           controller.close = () => {
+            clearTimeout(timeoutId); // Limpar timeout
             console.log(`${ICONS.INFO} SSE: Cliente desconectado - ${connectionId}`);
             wsManager.removeConnection(connectionId);
             originalOnClose();
@@ -134,7 +155,8 @@ export async function GET(request: NextRequest) {
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type'
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'X-Accel-Buffering': 'no' // Importante para Nginx/Vercel
       }
     });
   } catch (error) {

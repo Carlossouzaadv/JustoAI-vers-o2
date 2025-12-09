@@ -155,8 +155,10 @@ export default function JuditDashboard() {
     .sort((a, b) => b[1] - a[1])
     .map(([name, value]) => ({
       name: name.toUpperCase(),
-      value,
-      percentage: ((value / report.totalRequests) * 100).toFixed(1)
+      value: Number(value) || 0,
+      percentage: report.totalRequests > 0
+        ? ((Number(value) / report.totalRequests) * 100).toFixed(1)
+        : '0.0'
     }));
 
   const costBreakdownData = [

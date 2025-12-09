@@ -38,8 +38,8 @@ export function CostsChart({ data }: CostsChartProps) {
   // Format data for chart
   const chartData = data.map((item) => ({
     date: format(parseISO(item.date), 'dd/MM'),
-    cost: item.cost,
-    operations: item.operations,
+    cost: Number(item.cost) || 0,
+    operations: Number(item.operations) || 0,
     fullDate: item.date,
   }));
 

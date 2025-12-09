@@ -2,6 +2,7 @@ import { Navigation } from '../components/landing/navigation';
 import { Hero } from '../components/landing/hero';
 import { Features } from '../components/landing/features';
 import { HowItWorks } from '../components/landing/how-it-works';
+import { ROICalculator } from '../components/landing/roi-calculator';
 import { Pricing } from '../components/landing/pricing';
 import { Testimonials } from '../components/landing/testimonials';
 import { FAQ } from '../components/landing/faq';
@@ -15,8 +16,9 @@ export default function Home() {
       <Hero />
       <Features />
       <HowItWorks />
-      <Testimonials />
+      <ROICalculator />
       <Pricing />
+      <Testimonials />
       <FAQ />
       <FinalCTA />
       <Footer />

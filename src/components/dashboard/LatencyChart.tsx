@@ -30,12 +30,12 @@ interface LatencyChartProps {
 
 export function LatencyChart({ data }: LatencyChartProps) {
   const chartData = [
-    { name: 'Mínimo', value: data.min },
-    { name: 'P50', value: data.p50 || 0 },
-    { name: 'Média', value: data.avg },
-    { name: 'P95', value: data.p95 || 0 },
-    { name: 'P99', value: data.p99 || 0 },
-    { name: 'Máximo', value: data.max },
+    { name: 'Mínimo', value: Number(data.min) || 0 },
+    { name: 'P50', value: Number(data.p50) || 0 },
+    { name: 'Média', value: Number(data.avg) || 0 },
+    { name: 'P95', value: Number(data.p95) || 0 },
+    { name: 'P99', value: Number(data.p99) || 0 },
+    { name: 'Máximo', value: Number(data.max) || 0 },
   ];
 
   return (
