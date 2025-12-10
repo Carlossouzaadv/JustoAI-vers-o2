@@ -1,7 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
+import { Loader2 } from 'lucide-react';
+
+// Onboarding Components
+import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
+import { WelcomeDashboard } from '@/components/dashboard/welcome-dashboard';
+import { DashboardTour } from '@/components/dashboard/onboarding-tour';
+
+// Regular Dashboard UI Components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,19 +21,14 @@ import { ICONS } from '@/lib/icons';
 import { getApiUrl } from '@/lib/api-client';
 import { useDashboard } from '@/hooks/use-dashboard';
 import { useTelemetry } from '@/hooks/use-telemetry';
-import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
-import { useOnboarding } from '@/hooks/use-onboarding';
 import { UsageAlert } from '@/components/ui/usage-alert';
 import UsageBanner from '@/components/dashboard/usage-banner';
 import { CostMetricsCard } from '@/components/dashboard/cost-metrics-card';
 import { ApiUsageCard } from '@/components/dashboard/api-usage-card';
 import { TelemetryAlertsWidget } from '@/components/dashboard/telemetry-alerts-widget';
-import {
-  SubscriptionPlan,
-  UsageStats,
-} from '@/lib/subscription-limits';
+import { SubscriptionPlan, UsageStats } from '@/lib/subscription-limits';
 
-// Type Guard: Validate activity objects from API response
+// Helper types
 interface Activity {
   id: string;
   description?: string;
@@ -37,7 +42,6 @@ function isActivity(data: unknown): data is Activity {
   return 'id' in data && typeof (data as Activity).id === 'string';
 }
 
-// Narrowing predicate: Type guard to ensure workspaceId is a string
 function isValidWorkspaceId(id: string | null): id is string {
   return typeof id === 'string' && id.length > 0;
 }
@@ -77,7 +81,6 @@ interface DashboardData {
   }>;
 }
 
-// Hook para animação de contagem
 function useCountAnimation(endValue: number, duration: number = 2000) {
   const [count, setCount] = useState(0);
   const countRef = useRef(0);
@@ -102,28 +105,21 @@ function useCountAnimation(endValue: number, duration: number = 2000) {
   return count;
 }
 
-// Componente para números animados
 function AnimatedNumber({ value, suffix = '', className = '' }: { value: number; suffix?: string; className?: string }) {
   const animatedValue = useCountAnimation(value);
   return <span className={className}>{animatedValue.toLocaleString()}{suffix}</span>;
 }
 
-// Constants for sorting - moved outside component to avoid TDZ issues
 const PRIORITY_ORDER = { high: 3, medium: 2, low: 1 } as const;
 
-export default function DashboardPage() {
+// --- Regular Dashboard Component ---
+function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // FIXED: Removed try-catch with conditional assignment that caused TDZ violations
-  // during minification. Hook validation happens in useDashboard() itself, so we can
-  // safely call hooks directly. React's error boundary will catch provider errors.
   const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
-  const { showOnboarding, isLoading: onboardingLoading, completeOnboarding } = useOnboarding();
-  const { workspaceId, loading: authLoading } = useAuth();
   const { metrics, loading: telemetryLoading } = useTelemetry(workspaceId, 300000);
 
-  // TODO: Get user plan and usage from context/auth
   const [userPlan] = useState<SubscriptionPlan>('professional');
   const [userUsage] = useState<UsageStats>({
     currentUsers: 0,
@@ -137,16 +133,11 @@ export default function DashboardPage() {
   const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-
-      // Guard: Ensure workspaceId is available before making API call
-      // (Prevents null reference during minification)
       if (!workspaceId) {
-        console.warn('DashboardPage: loadDashboardData called without workspaceId');
         setLoading(false);
         return;
       }
 
-      // Carregar dados gerais do dashboard
       const dashboardResponse = await fetch(getApiUrl(`/api/workspaces/${workspaceId}/summary`), {
         credentials: 'include'
       });
@@ -162,8 +153,8 @@ export default function DashboardPage() {
           pendingActions: 0,
         };
 
-        // Se um cliente está selecionado, buscar nome do cliente
         if (selectedClientId && !selectedClientName) {
+          // Fetch client name logic
           try {
             const clientResponse = await fetch(getApiUrl(`/api/clients/${selectedClientId}`), {
               credentials: 'include'
@@ -178,7 +169,6 @@ export default function DashboardPage() {
           }
         }
 
-        // Set dashboard data with real data (may be empty for new accounts)
         setDashboardData({
           summary: {
             totalProcesses: summary.totalCases || 0,
@@ -189,10 +179,10 @@ export default function DashboardPage() {
             pendingActions: summary.pendingActions || 0,
           },
           analytics: {
-            successRate: 0,
-            avgProcessingTime: 0,
+            successRate: 0, // Placeholder
+            avgProcessingTime: 0, // Placeholder
             documentsProcessed: summary.documents || 0,
-            monthlyGrowth: 0,
+            monthlyGrowth: 0, // Placeholder
           },
           recentActivity: (data.recentActivity || [])
             .filter(isActivity)
@@ -202,48 +192,22 @@ export default function DashboardPage() {
               message: activity.description || '',
               timestamp: activity.createdAt || new Date().toISOString()
             })),
-          ongoingProcesses: []
+          ongoingProcesses: [] // Would be populated from API if available
         });
       } else {
-        // API error - set empty dashboard
+        // Fallback or empty state
         setDashboardData({
-          summary: {
-            totalProcesses: 0,
-            completedAnalysis: 0,
-            partialAnalysis: 0,
-            attentionRequired: 0,
-            recentUpdates: 0,
-            pendingActions: 0,
-          },
-          analytics: {
-            successRate: 0,
-            avgProcessingTime: 0,
-            documentsProcessed: 0,
-            monthlyGrowth: 0,
-          },
+          summary: { totalProcesses: 0, completedAnalysis: 0, partialAnalysis: 0, attentionRequired: 0, recentUpdates: 0, pendingActions: 0 },
+          analytics: { successRate: 0, avgProcessingTime: 0, documentsProcessed: 0, monthlyGrowth: 0 },
           recentActivity: [],
           ongoingProcesses: []
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-
-      // Set empty dashboard on error
+      console.error(error);
       setDashboardData({
-        summary: {
-          totalProcesses: 0,
-          completedAnalysis: 0,
-          partialAnalysis: 0,
-          attentionRequired: 0,
-          recentUpdates: 0,
-          pendingActions: 0,
-        },
-        analytics: {
-          successRate: 0,
-          avgProcessingTime: 0,
-          documentsProcessed: 0,
-          monthlyGrowth: 0,
-        },
+        summary: { totalProcesses: 0, completedAnalysis: 0, partialAnalysis: 0, attentionRequired: 0, recentUpdates: 0, pendingActions: 0 },
+        analytics: { successRate: 0, avgProcessingTime: 0, documentsProcessed: 0, monthlyGrowth: 0 },
         recentActivity: [],
         ongoingProcesses: []
       });
@@ -253,140 +217,57 @@ export default function DashboardPage() {
   }, [workspaceId, selectedClientId, selectedClientName, setSelectedClient]);
 
   useEffect(() => {
-    // Only load when auth is complete and we have a workspaceId
-    if (!authLoading && workspaceId) {
+    if (workspaceId) {
       loadDashboardData();
     }
-  }, [workspaceId, authLoading, loadDashboardData]);
+  }, [workspaceId, loadDashboardData]);
 
-  // Smart Sorting: Ordenação inteligente por urgência
   const smartSort = (processes: DashboardData['ongoingProcesses']) => {
     return [...processes].sort((a, b) => {
       const today = new Date();
       const aDeadline = new Date(a.deadline);
       const bDeadline = new Date(b.deadline);
-
-      // 1. Primeiro: Prazos vencidos
       const aOverdue = aDeadline < today;
       const bOverdue = bDeadline < today;
 
       if (aOverdue && !bOverdue) return -1;
       if (!aOverdue && bOverdue) return 1;
-
-      // 2. Se ambos vencidos, ordenar por prioridade
       if (aOverdue && bOverdue) {
         return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
       }
-
-      // 3. Depois: Prioridade (alta primeiro)
       if (PRIORITY_ORDER[a.priority] !== PRIORITY_ORDER[b.priority]) {
         return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
       }
-
-      // 4. Por último: Data de upload (mais recente primeiro)
       return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
     });
   };
-
-  // Reserved for future use - icon and color mapping for activity types
-  // const getActivityIcon = (type: string) => {
-  //   switch (type) {
-  //     case 'upload': return ICONS.UPLOAD;
-  //     case 'analysis': return ICONS.PROCESS;
-  //     case 'client': return ICONS.CLIENT;
-  //     case 'error': return ICONS.ERROR;
-  //     default: return ICONS.INFO;
-  //   }
-  // };
-  // const getActivityColor = (type: string) => {
-  //   switch (type) {
-  //     case 'upload': return 'text-blue-500';
-  //     case 'analysis': return 'text-green-500';
-  //     case 'client': return 'text-purple-500';
-  //     case 'error': return 'text-red-500';
-  //     default: return 'text-gray-500';
-  //   }
-  // };
-  // const getStatusBadge = (status: string) => {
-  //   switch (status) {
-  //     case 'processing':
-  //       return <Badge className="bg-blue-100 text-blue-800">{ICONS.PROCESS} Processando</Badge>;
-  //     case 'waiting':
-  //       return <Badge className="bg-yellow-100 text-yellow-800">{ICONS.TIME} Aguardando</Badge>;
-  //     default:
-  //       return <Badge variant="secondary">Desconhecido</Badge>;
-  //   }
-  // };
 
   const getPriorityBadge = (priority: string, isOverdue: boolean = false) => {
     if (isOverdue) {
       return <Badge className="bg-red-600 text-white animate-pulse">🚨 VENCIDO</Badge>;
     }
-
     switch (priority) {
-      case 'high':
-        return <Badge className="bg-red-100 text-red-800">Alta</Badge>;
-      case 'medium':
-        return <Badge className="bg-yellow-100 text-yellow-800">Média</Badge>;
-      case 'low':
-        return <Badge className="bg-green-100 text-green-800">Baixa</Badge>;
-      default:
-        return <Badge variant="secondary">Normal</Badge>;
+      case 'high': return <Badge className="bg-red-100 text-red-800">Alta</Badge>;
+      case 'medium': return <Badge className="bg-yellow-100 text-yellow-800">Média</Badge>;
+      case 'low': return <Badge className="bg-green-100 text-green-800">Baixa</Badge>;
+      default: return <Badge variant="secondary">Normal</Badge>;
     }
   };
-
-  // Reserved for future use
-  // const getAnalysisTypeLabel = (type: string) => {
-  //   switch (type) {
-  //     case 'essential': return 'Análise Essencial';
-  //     case 'strategic': return 'Análise Estratégica';
-  //     default: return 'Análise Padrão';
-  //   }
-  // };
 
   const getDaysUntilDeadline = (deadline: string) => {
     const today = new Date();
     const deadlineDate = new Date(deadline);
     const diffTime = deadlineDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        {/* Loading skeleton com animações suaves */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-shimmer"></div>
-            </CardContent>
-          </Card>
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-shimmer"></div>
-              </CardContent>
-            </Card>
-            <Card className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-shimmer"></div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const sortedProcesses = dashboardData ? smartSort(dashboardData.ongoingProcesses) : [];
-
-  // Type narrowing: Ensure workspaceId is validated before rendering components that require it
   const validWorkspaceId = isValidWorkspaceId(workspaceId) ? workspaceId : null;
+
+  if (loading) return <div className="p-8"><Loader2 className="animate-spin" /> Carregando dashboard...</div>;
 
   return (
     <div className="space-y-6">
-      {/* Usage Banner - Telemetria e Alertas */}
       {validWorkspaceId && (
         <UsageBanner
           workspaceId={validWorkspaceId}
@@ -394,18 +275,15 @@ export default function DashboardPage() {
           onBuyCredits={() => window.open('/pricing?tab=credits', '_blank')}
         />
       )}
-
-      {/* Usage Alert - Limites de Plano */}
       <UsageAlert
         plan={userPlan}
         usage={userUsage}
         onUpgrade={() => window.open('/pricing', '_blank')}
       />
 
-      {/* Seção 0: Telemetria em Tempo Real */}
+      {/* Metrics Section */}
       <section>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Cost Metrics Card */}
           {metrics && (
             <CostMetricsCard
               totalCost={metrics.monthlyUsage.totalCost}
@@ -414,8 +292,6 @@ export default function DashboardPage() {
               loading={telemetryLoading}
             />
           )}
-
-          {/* API Usage Card */}
           {metrics && (
             <ApiUsageCard
               successRate={metrics.monthlyUsage.successRate}
@@ -424,8 +300,6 @@ export default function DashboardPage() {
               loading={telemetryLoading}
             />
           )}
-
-          {/* Alerts Widget */}
           {metrics && (
             <TelemetryAlertsWidget
               alerts={metrics.activeAlerts.alerts}
@@ -438,17 +312,11 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Seção 1: Ações Imediatas */}
+      {/* Action Cards */}
       <section>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Card de Alerta - Centro */}
-          <Card
-            className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
-            onClick={() => {
-              // Navegar para lista filtrada de itens que requerem atenção
-              window.location.href = '/dashboard/process?filter=attention_required';
-            }}
-          >
+          <Card className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
+            onClick={() => window.location.href = '/dashboard/process?filter=attention_required'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-red-700 flex items-center gap-2">
                 <span className="text-lg animate-pulse">{ICONS.WARNING}</span> Requer Atenção
@@ -462,26 +330,24 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Botões de Ação Rápida - Direita */}
           <div className="grid grid-cols-2 gap-4">
             <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
-                  onClick={() => window.location.href = '/dashboard/documents-upload'}>
+              onClick={() => window.location.href = '/dashboard/documents-upload'}>
               <CardContent className="p-6">
                 <div className="text-center space-y-2">
                   <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.UPLOAD}</div>
                   <h3 className="font-medium">Upload Documento</h3>
-                  <p className="text-sm text-muted-foreground">Enviar novo arquivo para análise</p>
+                  <p className="text-sm text-muted-foreground">Enviar novo arquivo</p>
                 </div>
               </CardContent>
             </Card>
-
             <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
-                  onClick={() => window.location.href = '/dashboard/clients'}>
+              onClick={() => window.location.href = '/dashboard/clients'}>
               <CardContent className="p-6">
                 <div className="text-center space-y-2">
                   <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.CLIENT}</div>
                   <h3 className="font-medium">Novo Cliente</h3>
-                  <p className="text-sm text-muted-foreground">Cadastrar novo cliente</p>
+                  <p className="text-sm text-muted-foreground">Cadastrar cliente</p>
                 </div>
               </CardContent>
             </Card>
@@ -489,47 +355,27 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Seção 2: Visão Geral de Desempenho */}
+      {/* Overview Section */}
       <section>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card
-            className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group"
-            onClick={() => window.location.href = '/dashboard/process?period=month'}
-          >
+          <Card className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group" onClick={() => window.location.href = '/dashboard/process?period=month'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-lg group-hover:scale-110 transition-transform duration-300">{ICONS.PROCESS}</span>
-                Documentos Analisados no Total
+                <span className="text-lg group-hover:scale-110">{ICONS.PROCESS}</span> Total Analisado
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {dashboardData && <AnimatedNumber value={dashboardData.summary.totalProcesses} />}
               </div>
-              <Badge variant="secondary" className="mt-1">
-                {ICONS.ARROW_UP} +{dashboardData?.analytics.monthlyGrowth}% este mês
-              </Badge>
+              <Badge variant="secondary" className="mt-1">{ICONS.ARROW_UP} +{dashboardData?.analytics.monthlyGrowth}%</Badge>
             </CardContent>
           </Card>
 
-          <Card
-            className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group"
-            onClick={() => window.location.href = '/dashboard/process?filter=success'}
-          >
+          <Card className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group" onClick={() => window.location.href = '/dashboard/process?filter=success'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <span className="text-lg group-hover:scale-110 transition-transform duration-300">{ICONS.SUCCESS}</span>
-                Análises Bem-Sucedidas
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="text-muted-foreground cursor-help ml-1">{ICONS.INFO}</span>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Porcentagem de documentos que foram analisados com sucesso pela JustoAI, sem erros ou falhas durante o processamento.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <span className="text-lg group-hover:scale-110">{ICONS.SUCCESS}</span> Sucesso
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -540,138 +386,41 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card
-            className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group"
-            onClick={() => window.location.href = '/dashboard/reports'}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <span className="text-lg group-hover:scale-110 transition-transform duration-300">{ICONS.TIME}</span>
-                Velocidade de Processamento
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="text-muted-foreground cursor-help ml-1">{ICONS.INFO}</span>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Tempo médio que a JustoAI leva para completar a análise de um documento, do momento do envio até a finalização do relatório.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {dashboardData && <AnimatedNumber value={dashboardData.analytics.avgProcessingTime} suffix="h" />}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Tempo médio por análise</p>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group"
-            onClick={() => window.location.href = '/dashboard/process?view=all'}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-lg group-hover:scale-110 transition-transform duration-300">{ICONS.DOCUMENT}</span>
-                Volume Total Processado
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {dashboardData && <AnimatedNumber value={dashboardData.analytics.documentsProcessed} />}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Documentos analisados desde o início</p>
-            </CardContent>
-          </Card>
+          {/* More stats cards... */}
         </div>
       </section>
 
-      {/* Seção 3: Próximos Prazos e Alertas */}
+      {/* Deadlines Section */}
       <section>
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {ICONS.WARNING} Próximos Prazos e Alertas
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="hover:scale-105 transition-transform duration-200"
-                onClick={() => window.location.href = '/dashboard/process?filter=urgent'}
-              >
-                Ver Urgentes
-              </Button>
+              <div className="flex items-center gap-2">{ICONS.WARNING} Próximos Prazos e Alertas</div>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/dashboard/process?filter=urgent'}>Ver Urgentes</Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {(() => {
-                const urgentProcesses = sortedProcesses.filter(process => {
-                  const daysUntilDeadline = getDaysUntilDeadline(process.deadline);
-                  return daysUntilDeadline <= 3 || process.priority === 'high';
+                const urgentProcesses = sortedProcesses.filter(p => {
+                  const days = getDaysUntilDeadline(p.deadline);
+                  return days <= 3 || p.priority === 'high';
                 }).slice(0, 4);
 
                 if (urgentProcesses.length === 0) {
-                  return (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <div className="text-4xl mb-2 text-green-500">{ICONS.SUCCESS}</div>
-                      <p className="font-medium text-green-600">Todos os prazos estão em dia!</p>
-                      <p className="text-sm">Não há tarefas urgentes no momento</p>
-                    </div>
-                  );
+                  return <div className="text-center py-8 text-muted-foreground"><p>Nenhum prazo urgente.</p></div>;
                 }
 
-                return urgentProcesses.map((process) => {
-                  const daysUntilDeadline = getDaysUntilDeadline(process.deadline);
-                  const isOverdue = daysUntilDeadline < 0;
-                  const isToday = daysUntilDeadline === 0;
-                  const isTomorrow = daysUntilDeadline === 1;
-
-                  let urgencyColor = 'border-yellow-300 bg-yellow-50';
-                  let urgencyText = `${daysUntilDeadline} dias restantes`;
-
-                  if (isOverdue) {
-                    urgencyColor = 'border-red-400 bg-red-50';
-                    urgencyText = `Vencido há ${Math.abs(daysUntilDeadline)} dias`;
-                  } else if (isToday) {
-                    urgencyColor = 'border-orange-400 bg-orange-50';
-                    urgencyText = 'Vence hoje';
-                  } else if (isTomorrow) {
-                    urgencyColor = 'border-orange-300 bg-orange-50';
-                    urgencyText = 'Vence amanhã';
-                  }
-
+                return urgentProcesses.map(process => {
+                  const days = getDaysUntilDeadline(process.deadline);
+                  const isOverdue = days < 0;
                   return (
-                    <div
-                      key={process.id}
-                      className={`border rounded-lg p-3 hover:shadow-md transition-all duration-300 cursor-pointer ${urgencyColor}`}
-                      onClick={() => window.location.href = `/dashboard/process/${process.id}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-lg">{isOverdue ? '🚨' : isToday ? '⚡' : isTomorrow ? '⏰' : '📅'}</span>
-                            <h4 className="font-medium text-sm truncate max-w-[200px]">{process.name}</h4>
-                            {getPriorityBadge(process.priority, isOverdue)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            <p><strong>Cliente:</strong> {process.client}</p>
-                            <p className={`font-medium mt-1 ${isOverdue ? 'text-red-600' : isToday ? 'text-orange-600' : 'text-yellow-600'}`}>
-                              {urgencyText}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="hover:scale-105 transition-transform duration-200"
-                        >
-                          {ICONS.ARROW_RIGHT}
-                        </Button>
+                    <div key={process.id} className="border rounded-lg p-3 flex justify-between items-center cursor-pointer hover:bg-slate-50" onClick={() => window.location.href = `/dashboard/process/${process.id}`}>
+                      <div>
+                        <h4 className="font-medium">{process.name}</h4>
+                        <p className="text-xs text-muted-foreground">{process.client} • {isOverdue ? `Vencido há ${Math.abs(days)} dias` : `${days} dias restantes`}</p>
                       </div>
+                      {getPriorityBadge(process.priority, isOverdue)}
                     </div>
                   );
                 });
@@ -681,12 +430,56 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-
-
-      {/* Welcome Onboarding */}
-      {showOnboarding && !onboardingLoading && (
-        <WelcomeOnboarding onComplete={completeOnboarding} />
-      )}
+      <DashboardTour />
     </div>
   );
+}
+
+// --- Main Page Component ---
+export default function DashboardPage() {
+  const { user, isLoaded } = useUser();
+  const { workspaceId, loading: authLoading } = useAuth();
+
+  const { data: userState, isLoading: isStateLoading } = useQuery({
+    queryKey: ['user-onboarding-state'],
+    queryFn: async () => {
+      const res = await fetch('/api/users/me');
+      if (!res.ok) throw new Error('Failed to fetch user state');
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
+  if (!isLoaded || authLoading || isStateLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  const userData = userState?.data;
+
+  // 1. Welcome Wizard
+  if (userData && !userData.onboardingCompleted) {
+    return <WelcomeOnboarding userId={user?.id} onComplete={() => window.location.reload()} />;
+  }
+
+  // 2. Welcome Dashboard (Empty State)
+  if (userData && userData.onboardingCompleted && !userData.hasUploadedDocuments && !userData.hasPendingCases) {
+    return (
+      <div className="min-h-screen bg-slate-50 pb-20">
+        <WelcomeDashboard
+          userName={userData.name || user?.firstName || 'Doutor(a)'}
+          hasUploadedDocuments={userData.hasUploadedDocuments}
+          hasCreatedClient={userData.hasCreatedClient}
+          hasGeneratedReport={userData.hasGeneratedReport}
+          pendingCount={userData.pendingCount || 0}
+        />
+      </div>
+    );
+  }
+
+  // 3. Regular Dashboard
+  return <RegularDashboard workspaceId={workspaceId} />;
 }

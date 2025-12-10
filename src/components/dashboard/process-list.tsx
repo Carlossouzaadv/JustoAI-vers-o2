@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS, UI_TEXT } from '@/lib/icons';
+import { getClientDisplayName, getClientBadgeVariant } from '@/lib/utils/client-display';
+import { Badge } from '@/components/ui/badge';
 
 interface Process {
   id: string;
@@ -26,7 +28,7 @@ interface ProcessListProps {
   clientName?: string;
 }
 
-// Constants for sorting - moved outside component to avoid TDZ issues
+// Constants for sorting
 const STATUS_ORDER = { attention: 0, partial: 1, complete: 2 } as const;
 
 export function ProcessList({ clientId, clientName }: ProcessListProps) {
@@ -100,11 +102,9 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
       );
     })
     .sort((a, b) => {
-      // Ordenar por prioridade: attention > partial > complete
       if (a.status !== b.status) {
         return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
       }
-      // Depois por data de atualização (mais recente primeiro)
       return new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime();
     });
 
@@ -129,12 +129,24 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
     );
   }
 
+  const displayName = clientName ? getClientDisplayName(clientName) : '';
+  const isPending = clientName && displayName === 'Processos Pendentes';
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            {ICONS.PROCESS} Processos - {clientName}
+            {ICONS.PROCESS} {isPending ? '' : 'Processos - '}
+            {clientName && (
+              isPending ? (
+                <Badge variant="secondary" className="text-lg px-3 py-1 bg-amber-100 text-amber-800 border-amber-200">
+                  📂 {displayName}
+                </Badge>
+              ) : (
+                <span>{displayName}</span>
+              )
+            )}
           </CardTitle>
           <Button variant="outline" size="sm" onClick={loadProcesses}>
             {ICONS.SEARCH} Atualizar
@@ -151,7 +163,6 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
 
           <div className="flex gap-2">
             {Object.entries(statusCounts).map(([key, count]) => {
-              // Type guard to ensure key is a valid filter value
               const isValidFilter = (
                 k: string
               ): k is 'all' | 'complete' | 'partial' | 'attention' => {
@@ -170,8 +181,8 @@ export function ProcessList({ clientId, clientName }: ProcessListProps) {
                   onClick={() => setFilter(key)}
                 >
                   {key === 'all' ? 'Todos' :
-                   key === 'complete' ? ICONS.SUCCESS :
-                   key === 'partial' ? ICONS.WARNING : ICONS.ERROR
+                    key === 'complete' ? ICONS.SUCCESS :
+                      key === 'partial' ? ICONS.WARNING : ICONS.ERROR
                   } ({count})
                 </Button>
               );

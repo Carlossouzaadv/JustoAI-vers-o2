@@ -152,30 +152,6 @@ export async function getUserWorkspaceRole(userId: string, workspaceId: string) 
 
 // Additional auth functions for compatibility
 export async function validateAuth() {
-  // Development mode - allow bypass
-  if (process.env.NODE_ENV === 'development') {
-    log.info({ msg: '⚠️ Development mode: Bypassing auth validation' })
-    return {
-      user: {
-        id: 'dev-user',
-        email: 'dev@justoai.com',
-        name: 'Development User',
-        workspaces: [{
-          workspace: {
-            id: 'dev-workspace',
-            name: 'Development Workspace',
-            slug: 'dev'
-          }
-        }]
-      },
-      workspace: {
-        id: 'dev-workspace',
-        name: 'Development Workspace',
-        slug: 'dev'
-      }
-    }
-  }
-
   const user = await getCurrentUser()
   if (!user) {
     throw new Error('Unauthorized')

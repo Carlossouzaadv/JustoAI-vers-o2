@@ -334,7 +334,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const overallStatus: 'healthy' | 'degraded' | 'unhealthy' =
       unhealthyCount > 0 ? 'unhealthy' :
-      degradedCount > 0 ? 'degraded' : 'healthy';
+        degradedCount > 0 ? 'degraded' : 'healthy';
 
     const overallResponseTimeMs = Date.now() - overallStartTime;
 
@@ -351,11 +351,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       unhealthy: unhealthyCount,
       degraded: degradedCount,
       responseTimeMs: overallResponseTimeMs,
+      checks: unhealthyCount > 0 ? checks : undefined // Log details if unhealthy
     });
 
     // Return appropriate HTTP status
     const statusCode = overallStatus === 'healthy' ? 200 :
-                       overallStatus === 'degraded' ? 503 : 503;
+      overallStatus === 'degraded' ? 503 : 503;
 
     return NextResponse.json(response, {
       status: statusCode,

@@ -160,31 +160,6 @@ export function validateQuery<T>(
 
 // Auth middleware
 export async function requireAuth(_request: NextRequest) {
-  // Development mode - allow bypass
-  if (process.env.NODE_ENV === 'development') {
-    log.info({ msg: '⚠️ Development mode: Bypassing API auth validation' })
-    return {
-      user: {
-        id: 'dev-user',
-        email: 'dev@justoai.com',
-        name: 'Development User',
-        supabaseId: 'dev-supabase-id',
-        emailVerified: true,
-        lastLoginAt: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        workspaces: [{
-          workspace: {
-            id: 'dev-workspace',
-            name: 'Development Workspace',
-            slug: 'dev'
-          }
-        }]
-      },
-      error: null
-    }
-  }
-
   const user = await getCurrentUser()
 
   if (!user) {
@@ -205,12 +180,6 @@ export async function requireAuth(_request: NextRequest) {
 
 // Workspace access middleware
 export async function requireWorkspaceAccess(userId: string, workspaceId: string) {
-  // Development mode - allow bypass
-  if (process.env.NODE_ENV === 'development') {
-    log.info({ msg: '⚠️ Development mode: Bypassing workspace access check' })
-    return { hasAccess: true, error: null }
-  }
-
   // Import inside function to avoid circular dependency
   const { hasWorkspaceAccess } = await import('./auth')
 
