@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
@@ -437,7 +436,7 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
 
 // --- Main Page Component ---
 export default function DashboardPage() {
-  const { user, isLoaded } = useUser();
+  const { user, loading: isLoaded } = useAuth();
   const { workspaceId, loading: authLoading } = useAuth();
 
   const { data: userState, isLoading: isStateLoading } = useQuery({
