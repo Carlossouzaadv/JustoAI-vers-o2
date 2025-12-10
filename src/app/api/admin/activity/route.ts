@@ -140,7 +140,7 @@ export async function GET() {
         amount: decimalToString(tx.amount),
         reason: tx.reason
       },
-      createdAt: tx.createdAt.toISOString(),
+      createdAt: tx.createdAt ? tx.createdAt.toISOString() : new Date().toISOString(),
       relatedEntity: tx.workspace ? {
         id: tx.workspace.id,
         name: tx.workspace.name

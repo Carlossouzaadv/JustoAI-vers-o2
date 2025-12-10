@@ -129,30 +129,30 @@ export function WelcomeDashboard({
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.1 }}
                                         className={cn(
-                                            "group p-4 rounded-xl border transition-all duration-200",
+                                            'group p-4 rounded-xl border transition-all duration-200',
                                             step.completed
-                                                ? "bg-slate-50 border-slate-100 opacity-70 hover:opacity-100"
+                                                ? 'bg-slate-50 border-slate-100 opacity-70 hover:opacity-100'
                                                 : isNext
-                                                    ? "bg-white border-indigo-100 shadow-md ring-1 ring-indigo-50"
-                                                    : "bg-white border-slate-100 opacity-60"
+                                                    ? 'bg-white border-indigo-100 shadow-md ring-1 ring-indigo-50'
+                                                    : 'bg-white border-slate-100 opacity-60'
                                         )}
                                     >
                                         <div className="flex items-center gap-4">
                                             <div className={cn(
-                                                "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
+                                                'w-10 h-10 rounded-full flex items-center justify-center transition-colors',
                                                 step.completed
-                                                    ? "bg-green-100 text-green-600"
+                                                    ? 'bg-green-100 text-green-600'
                                                     : isNext
-                                                        ? "bg-indigo-100 text-indigo-600"
-                                                        : "bg-slate-100 text-slate-400"
+                                                        ? 'bg-indigo-100 text-indigo-600'
+                                                        : 'bg-slate-100 text-slate-400'
                                             )}>
                                                 {step.completed ? <Check size={20} /> : <step.icon size={20} />}
                                             </div>
 
                                             <div className="flex-1">
                                                 <h3 className={cn(
-                                                    "font-medium",
-                                                    step.completed ? "text-slate-700 decoration-slate-400" : "text-slate-900"
+                                                    'font-medium',
+                                                    step.completed ? 'text-slate-700 decoration-slate-400' : 'text-slate-900'
                                                 )}>
                                                     {step.label}
                                                 </h3>
@@ -161,10 +161,10 @@ export function WelcomeDashboard({
 
                                             <Button
                                                 size="sm"
-                                                variant={step.completed ? "ghost" : (isNext ? "default" : "outline")}
+                                                variant={step.completed ? 'ghost' : (isNext ? 'default' : 'outline')}
                                                 className={cn(
-                                                    step.completed && "text-green-600 hover:text-green-700",
-                                                    isNext && "bg-indigo-600 hover:bg-indigo-700 text-white"
+                                                    step.completed && 'text-green-600 hover:text-green-700',
+                                                    isNext && 'bg-indigo-600 hover:bg-indigo-700 text-white'
                                                 )}
                                                 onClick={() => {
                                                     if (step.completed) return;

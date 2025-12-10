@@ -116,7 +116,7 @@ export function WelcomeOnboarding({ userId, onComplete }: Props) {
     }
   };
 
-  const updateField = (field: keyof OnboardingData, value: any) => {
+  const updateField = (field: keyof OnboardingData, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -162,15 +162,15 @@ export function WelcomeOnboarding({ userId, onComplete }: Props) {
                   <div
                     key={step.id}
                     className={cn(
-                      "flex items-center gap-3 text-sm transition-colors duration-200",
-                      isActive ? "text-indigo-600 font-medium" : "text-slate-500",
-                      isCompleted && "text-green-600"
+                      'flex items-center gap-3 text-sm transition-colors duration-200',
+                      isActive ? 'text-indigo-600 font-medium' : 'text-slate-500',
+                      isCompleted && 'text-green-600'
                     )}
                   >
                     <div className={cn(
-                      "h-8 w-8 rounded-full flex items-center justify-center border transition-all",
-                      isActive ? "border-indigo-600 bg-indigo-50 text-indigo-600" : "border-slate-200",
-                      isCompleted ? "border-green-600 bg-green-50 text-green-600" : ""
+                      'h-8 w-8 rounded-full flex items-center justify-center border transition-all',
+                      isActive ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-200',
+                      isCompleted ? 'border-green-600 bg-green-50 text-green-600' : ''
                     )}>
                       {isCompleted ? <Check size={14} /> : <Icon size={14} />}
                     </div>
@@ -253,10 +253,10 @@ export function WelcomeOnboarding({ userId, onComplete }: Props) {
                               key={area}
                               onClick={() => toggleSelection('practiceAreas', area)}
                               className={cn(
-                                "px-3 py-1 rounded-full text-sm border transition-colors",
+                                'px-3 py-1 rounded-full text-sm border transition-colors',
                                 formData.practiceAreas.includes(area)
-                                  ? "bg-indigo-600 text-white border-indigo-600"
-                                  : "text-slate-600 border-slate-200 hover:border-indigo-300"
+                                  ? 'bg-indigo-600 text-white border-indigo-600'
+                                  : 'text-slate-600 border-slate-200 hover:border-indigo-300'
                               )}
                             >
                               {area}
@@ -281,17 +281,17 @@ export function WelcomeOnboarding({ userId, onComplete }: Props) {
                             key={goal}
                             onClick={() => toggleSelection('mainGoals', goal)}
                             className={cn(
-                              "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3",
+                              'p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3',
                               formData.mainGoals.includes(goal)
-                                ? "border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20"
-                                : "border-slate-200 hover:border-indigo-300"
+                                ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                                : 'border-slate-200 hover:border-indigo-300'
                             )}
                           >
                             <div className={cn(
-                              "w-5 h-5 rounded border flex items-center justify-center",
+                              'w-5 h-5 rounded border flex items-center justify-center',
                               formData.mainGoals.includes(goal)
-                                ? "bg-indigo-600 border-indigo-600"
-                                : "border-slate-300"
+                                ? 'bg-indigo-600 border-indigo-600'
+                                : 'border-slate-300'
                             )}>
                               {formData.mainGoals.includes(goal) && <Check size={12} className="text-white" />}
                             </div>
@@ -311,7 +311,7 @@ export function WelcomeOnboarding({ userId, onComplete }: Props) {
                 variant="ghost"
                 onClick={handleBack}
                 disabled={currentStep === 0}
-                className={currentStep === 0 ? "invisible" : ""}
+                className={currentStep === 0 ? 'invisible' : ''}
               >
                 Voltar
               </Button>

@@ -14,7 +14,7 @@ export function getClientDisplayName(name: string) {
     return name;
 }
 
-export function getClientBadgeVariant(name: string): "default" | "secondary" | "destructive" | "outline" {
+export function getClientBadgeVariant(name: string): 'default' | 'secondary' | 'destructive' | 'outline' {
     if (isPlaceholderClient(name)) {
         return 'secondary'; // Orange/Amber style usually handled by className, but badge variant 'secondary' is close
     }

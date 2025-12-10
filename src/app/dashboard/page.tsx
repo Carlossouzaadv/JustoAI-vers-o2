@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 // Onboarding Components
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
 import { WelcomeDashboard } from '@/components/dashboard/welcome-dashboard';
-import { DashboardTour } from '@/components/dashboard/onboarding-tour';
+import { DashboardOnboarding } from '@/components/dashboard/onboarding-tour';
 
 // Regular Dashboard UI Components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -429,7 +429,7 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
         </Card>
       </section>
 
-      <DashboardTour />
+      <DashboardOnboarding />
     </div>
   );
 }
