@@ -253,7 +253,7 @@ async function loadCaseDocuments(caseId: string): Promise<DocumentSummaryData[]>
     },
   });
 
-  return documents.map((doc: PrismaCaseDocument): DocumentSummaryData => {
+  return documents.map((doc): DocumentSummaryData => {
     // Use type guard to safely extract metadata from JsonValue
     const metadata = isValidMetadata(doc.metadata) ? doc.metadata : {};
 
@@ -261,8 +261,8 @@ async function loadCaseDocuments(caseId: string): Promise<DocumentSummaryData[]>
       id: doc.id,
       name: doc.name,
       originalName: doc.originalName,
-      type: doc.type,
-      sourceOrigin: doc.sourceOrigin,
+      type: doc.type as string,
+      sourceOrigin: doc.sourceOrigin || 'UPLOAD', // Default if missing
       metadata,
     };
 

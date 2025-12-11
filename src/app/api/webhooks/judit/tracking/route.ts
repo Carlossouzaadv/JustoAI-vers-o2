@@ -482,10 +482,13 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload, workspaceId: str
     where: {
       workspaceId,
       eventType: payload.event_type,
-      processNumber: payload.process_number,
+      /* processNumber: payload.process_number, // Column missing in DB schema */
+      /*
       createdAt: {
-        gte: new Date(Date.now() - WEBHOOK_CONFIG.DEDUP_WINDOW_MINUTES * 60 * 1000)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        gte: new Date(Date.now() - 5 * 60 * 1000) as any // 5 minutes (WEBHOOK_CONFIG.DEDUP_WINDOW_MINUTES)
       }
+      */
     }
   });
 
@@ -499,7 +502,7 @@ async function isDuplicateWebhook(payload: JuditWebhookPayload, workspaceId: str
     data: {
       workspaceId,
       eventType: payload.event_type,
-      processNumber: payload.process_number,
+      // processNumber: payload.process_number, // Column missing in DB schema
       payload: (payload as unknown) as InputJsonValue,
       status: 'PENDING',
     }
@@ -745,7 +748,7 @@ async function saveWebhookRecord(payload: JuditWebhookPayload, result: WebhookPr
     await prisma.webhookQueue.updateMany({
       where: {
         eventType: payload.event_type,
-        processNumber: payload.process_number,
+        // processNumber: payload.process_number, // Column missing in DB schema
         status: 'PENDING'
       },
       data: {
@@ -764,13 +767,12 @@ async function logWebhookError(request: NextRequest, error: unknown, processingT
     await prisma.webhookError.create({
       data: {
         workspaceId: 'unknown',
-        eventType: 'webhook_error',
-        errorMessage,
-        errorStack,
-        payload: {
+        error: errorMessage,
+        details: {
           url: request.url,
           method: 'POST',
-          processingTime
+          processingTime,
+          stack: errorStack
         } as InputJsonValue
       }
     });

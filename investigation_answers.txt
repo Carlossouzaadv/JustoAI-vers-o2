@@ -1,0 +1,77 @@
+JUSTOAI - RESPOSTAS DA INVESTIGAÇÃO
+Data: 11/12/2025
+Gerado por: Gemini
+
+===============================================================
+Q1: fullName vs name - Como está funcionando agora?
+===============================================================
+RESPOSTA:
+O banco e o schema oficial usam apenas `name`.
+O código (Front-end e API) usa `fullName` apenas como variável temporária ou em formulários, mas sempre mapeia para `name` antes de salvar.
+
+PROVAS DO CÓDIGO:
+1. `src/app/api/users/onboarding/route.ts`:
+   - Recebe `data.fullName` do request.
+   - Salva assim: `name: data.fullName`.
+   - OU SEJA: O código já faz o "de/para" internamente.
+
+2. `src/components/dashboard/welcome-onboarding.tsx`:
+   - O formulário usa `fullName` no estado local (`formData.fullName`).
+   - Mas envia para a API que converte para `name`.
+
+VEREDICTO:
+Não precisamos adicionar `fullName` ao banco. O campo correta é `name`.
+
+===============================================================
+Q2: User ↔ Case relationship - Uso no sistema
+===============================================================
+RESPOSTA:
+A) `createdCases` (@relation "CaseCreatedBy"): USADO.
+   - Usado na criação de casos: `createdById: user.id`.
+B) `assignedCases` (@relation "CaseAssignedTo"): POSSÍVEL USO FUTURO.
+   - Schema tem `assignedToId` e relação definida.
+C) `cases` (Sem nome): NÃO UTILIZADO EXPLICITAMENTE / CONFLITO.
+   - Esta relação terceira é redundante e perigosa porque o Prisma tenta adivinhar qual FK ela usa, e nós já temos duas FKs explícitas (`createdById` e `assignedToId`).
+
+VEREDICTO:
+Devemos remover a relação genérica `cases` do model `User` para evitar ambiguidade. Devemos manter apenas `createdCases` e `assignedCases`.
+
+===============================================================
+Q3: Client pertence a...
+===============================================================
+RESPOSTA:
+A) Workspace APENAS.
+
+PROVAS DO CÓDIGO:
+1. `src/app/api/clients/route.ts`:
+   - Cria cliente usando APENAS `workspaceId`.
+   - `const client = await prisma.client.create({ data: { workspaceId: input.workspaceId, ... } })`
+
+2. `src/app/api/documents/upload/route.ts`:
+   - Busca ou cria cliente usando APENAS `workspaceId`.
+   - `where: { workspaceId: verifiedWorkspaceId, name: CONFIG.UNASSIGNED_FOLDER }`
+
+VEREDICTO:
+O campo `userId` em `Client` parece ser um resquício ou erro recente. O sistema é Multi-Tenant baseado em Workspace. Clientes pertencem ao escritório (Workspace), não ao indivíduo (User).
+
+===============================================================
+Q4: Posso aplicar as migrations pendentes?
+===============================================================
+RESPOSTA: SIM (Com ressalvas leves)
+
+ANÁLISE DAS MIGRATIONS:
+1. `20251208_fix_credit_system_all_tables`:
+   - Cria tabelas novas (`workspace_available_credits`, `workspace_credit_breakdown`, etc).
+   - Dropa tabelas antigas de crédito que parecem não usadas.
+   - ⚠️ RISCO: Dropa tabelas. Se tiver dados de crédito antigos, podem ser perdidos. Mas parece ser refatoração necessária.
+
+2. `20251208_fix_user_auth_columns`:
+   - Adiciona colunas úteis (`image`, `onboardingCompleted`) na tabela `User`.
+   - ⚠️ Renomeia/Altera colunas de token.
+
+3. `20251208_fix_workspace_trial_column`:
+   - Adiciona `trialEndsAt` em `Workspace`.
+   - Seguro.
+
+VEREDICTO:
+Pode aplicar (`prisma migrate deploy`). Elas alinham o banco com o que o código espera (por exemplo, os campos de auth e crédito).

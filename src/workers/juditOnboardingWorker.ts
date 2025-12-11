@@ -195,12 +195,15 @@ async function processOnboardingJob(
 
         const processo = await prisma.processo.findFirst({
           where: { numeroCnj: cnj },
-          include: { case: true },
+          include: { cases: true },
         });
 
-        if (processo?.case) {
+        // Use the first associated case if available
+        const associatedCase = processo?.cases?.[0];
+
+        if (associatedCase) {
           const attachmentResult = await processJuditAttachments(
-            processo.case.id,
+            associatedCase.id,
             result.dadosCompletos
           );
 
@@ -212,7 +215,7 @@ async function processOnboardingJob(
             attachments_total: attachmentResult.total,
           });
 
-          const timelineResult = await mergeTimelines(processo.case.id);
+          const timelineResult = await mergeTimelines(associatedCase.id);
 
           workerLogger.info({
             action: 'fase2_timeline_done',
@@ -222,7 +225,7 @@ async function processOnboardingJob(
           });
 
           await prisma.case.update({
-            where: { id: processo.case.id },
+            where: { id: associatedCase.id },
             data: {
               onboardingStatus: 'enriched',
               enrichmentCompletedAt: new Date(),

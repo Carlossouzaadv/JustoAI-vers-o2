@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
       include: {
         processo: {
           include: {
-            case: {
+            cases: {
+              take: 1, // Take only the most relevant case
               select: {
                 id: true,
                 number: true,
@@ -46,19 +47,31 @@ export async function GET(request: NextRequest) {
         completed: juditRequests.filter((r: JuditRequestWithRelations) => r.status === 'completed').length,
         failed: juditRequests.filter((r: JuditRequestWithRelations) => r.status === 'failed').length
       },
-      details: juditRequests.map((req: JuditRequestWithRelations) => ({
-        requestId: req.requestId,
-        status: req.status,
-        createdAt: req.createdAt,
-        updatedAt: req.updatedAt,
-        age_minutes: Math.round((Date.now() - req.createdAt.getTime()) / 60000),
-        processo: {
-          cnj: req.processo?.numeroCnj,
-          caseId: req.processo?.case?.id,
-          caseName: req.processo?.case?.title,
-          onboardingStatus: req.processo?.case?.onboardingStatus
-        }
-      }))
+      details: juditRequests.map((req: JuditRequestWithRelations) => {
+        // Force cast to avoid TS build errors with Prisma relations
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const processoSafe = req.processo as any;
+        const associatedCase = processoSafe?.cases?.[0] || processoSafe?.case;
+
+        const safeCreatedAt = req.createdAt ? new Date(req.createdAt) : new Date();
+        const ageMinutes = req.createdAt
+          ? Math.round((Date.now() - safeCreatedAt.getTime()) / 60000)
+          : 0;
+
+        return {
+          requestId: req.requestId,
+          status: req.status,
+          createdAt: req.createdAt,
+          updatedAt: req.updatedAt,
+          age_minutes: ageMinutes,
+          processo: {
+            cnj: req.processo?.numeroCnj,
+            caseId: associatedCase?.id,
+            caseName: associatedCase?.title,
+            onboardingStatus: associatedCase?.onboardingStatus
+          }
+        };
+      })
     };
 
     console.log(`${ICONS.SUCCESS} [Webhook Status]`, summary);

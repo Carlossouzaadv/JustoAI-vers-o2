@@ -57,38 +57,40 @@ model Workspace {
 }
 
 model User {
-  id                              String            @id @default(cuid())
-  email                           String            @unique
+  id                              String          @id @default(cuid())
+  email                           String          @unique
   name                            String?
   avatar                          String?
-  role                            Role              @default(USER)
-  status                          Status            @default(ACTIVE)
+  image                           String?
+  role                            Role            @default(USER)
+  status                          Status          @default(ACTIVE)
   settings                        Json?
-  supabaseId                      String            @unique
-  emailVerified                   Boolean           @default(false)
-  createdAt                       DateTime          @default(now())
-  updatedAt                       DateTime          @updatedAt
+  supabaseId                      String          @unique
+  emailVerified                   Boolean         @default(false)
+  createdAt                       DateTime        @default(now())
+  updatedAt                       DateTime        @updatedAt
   lastLoginAt                     DateTime?
   phone                           String?
-  emailVerificationToken          String?           @db.VarChar(256)
+  emailVerificationToken          String?         @db.VarChar(256)
   emailVerificationTokenExpiresAt DateTime?
-  passwordResetToken              String?           @db.VarChar(256)
+  passwordResetToken              String?         @db.VarChar(256)
   passwordResetTokenExpiresAt     DateTime?
-  mainGoals                       String[]          @default([])
-  onboardingCompleted             Boolean           @default(false)
-  onboardingCompletedAt           DateTime?
-  practiceAreas                   String[]          @default([])
-  image                           String?
-  plan                            Plan?             @default(FREE)
-  subscriptionStatus              String?
   caseEvents                      CaseEvent[]
-  assignedCases                   Case[]            @relation("CaseAssignedTo")
-  createdCases                    Case[]            @relation("CaseCreatedBy")
-  chatSessions                    ChatSession[]     @relation("ChatSessions")
+  assignedCases                   Case[]          @relation("CaseAssignedTo")
+  createdCases                    Case[]          @relation("CaseCreatedBy")
+  chatSessions                    ChatSession[]   @relation("ChatSessions")
+  workspaces                      UserWorkspace[]
+  passwordReset                   PasswordReset?
   createdShareLinks               ClientShareLink[]
 
-  passwordReset                   PasswordReset?
-  workspaces                      UserWorkspace[]
+  // Onboarding fields
+  practiceAreas                   String[]        @default([])
+  mainGoals                       String[]        @default([])
+  onboardingCompleted             Boolean         @default(false)
+  onboardingCompletedAt           DateTime?
+  plan                            Plan?           @default(FREE)
+  subscriptionStatus              String?
+
 
   @@index([supabaseId], map: "idx_users_supabase_id")
   @@index([createdAt(sort: Desc)], map: "users_created_at_idx")
@@ -135,9 +137,10 @@ model Client {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   cases             Case[]
-  shareLinks        ClientShareLink[]
   workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   importedDataItems ImportedDataItem[] @relation("ImportedDataItemClient")
+  shareLinks        ClientShareLink[]
+
 
   @@index([createdAt(sort: Desc)], map: "clients_created_at_idx")
   @@index([email])
@@ -152,6 +155,7 @@ model Client {
 model Case {
   id                    String                   @id @default(cuid())
   workspaceId           String
+
   clientId              String
   number                String
   title                 String
@@ -172,6 +176,7 @@ model Case {
   createdAt             DateTime                 @default(now())
   updatedAt             DateTime                 @updatedAt
   processoId            String?
+  processo              Processo?                @relation(fields: [processoId], references: [id])
   previewSnapshot       Json?                    @map("preview_snapshot")
   detectedCnj           String?                  @map("detected_cnj") @db.VarChar(255)
   firstPageText         String?                  @map("first_page_text")
@@ -185,7 +190,6 @@ model Case {
   assignedTo            User?                    @relation("CaseAssignedTo", fields: [assignedToId], references: [id])
   client                Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   createdBy             User                     @relation("CaseCreatedBy", fields: [createdById], references: [id])
-  processo              Processo?                @relation(fields: [processoId], references: [id])
   workspace             Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   importedDataItems     ImportedDataItem[]       @relation("ImportedDataItemCase")
   juditRequests         JuditRequest[]           @relation("JuditRequestCase")
@@ -231,11 +235,11 @@ model CaseEvent {
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model CaseDocument {
-  id                 String                 @id @default(cuid())
+  id                 String             @id @default(cuid())
   caseId             String
   name               String
   originalName       String
-  type               DocumentType           @default(OTHER)
+  type               DocumentType       @default(OTHER)
   mimeType           String
   size               Int
   url                String
@@ -244,27 +248,27 @@ model CaseDocument {
   extractedText      String?
   summary            String?
   tags               String[]
-  processed          Boolean                @default(false)
-  ocrStatus          ProcessStatus          @default(PENDING)
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
+  processed          Boolean            @default(false)
+  ocrStatus          ProcessStatus      @default(PENDING)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
   textSha            String?
-  isDuplicate        Boolean                @default(false)
+  isDuplicate        Boolean            @default(false)
   originalDocumentId String?
   cleanText          String?
-  textExtractedAt    DateTime?              @db.Timestamp(6)
+  textExtractedAt    DateTime?          @db.Timestamp(6)
   analysisVersion    String?
-  analysisKey        String?                @db.VarChar(64)
+  analysisKey        String?            @db.VarChar(64)
   workerId           String?
   costEstimate       Float?
-  juditAttachmentUrl String?                @map("judit_attachment_url") @db.VarChar(500)
-  sourceOrigin       String?                @default("USER_UPLOAD") @map("source_origin") @db.VarChar(50)
-  documentDate       DateTime?              @map("document_date") @db.Timestamp(6)
+  juditAttachmentUrl String?            @map("judit_attachment_url") @db.VarChar(500)
+  sourceOrigin       String?            @default("USER_UPLOAD") @map("source_origin") @db.VarChar(50)
+  documentDate       DateTime?          @map("document_date") @db.Timestamp(6)
   metadata           Json?
-  case               Case                   @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  originalDocument   CaseDocument?          @relation("DocumentDuplicate", fields: [originalDocumentId], references: [id], onUpdate: NoAction)
-  duplicates         CaseDocument[]         @relation("DocumentDuplicate")
-  importedDataItems  ImportedDataItem[]     @relation("ImportedDataItemDocument")
+  case               Case               @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  originalDocument   CaseDocument?      @relation("DocumentDuplicate", fields: [originalDocumentId], references: [id], onUpdate: NoAction)
+  duplicates         CaseDocument[]     @relation("DocumentDuplicate")
+  importedDataItems  ImportedDataItem[] @relation("ImportedDataItemDocument")
   timelineEntries    ProcessTimelineEntry[] @relation("TimelineLinkedDocuments")
 
   @@index([textSha])
@@ -305,9 +309,9 @@ model CaseAnalysisVersion {
   processingTime Int           @default(0)
   workspaceId    String
   analysisKey    String?       @db.VarChar(64)
-  jobs           AnalysisJob[]
   case           Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
   workspace      Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jobs           AnalysisJob[]
 
   @@unique([caseId, version])
   @@index([analysisKey])
@@ -804,7 +808,7 @@ model GlobalLog {
 
   @@index([workspaceId, level])
   @@index([category, createdAt])
-  @@index([userId])
+
   @@map("global_logs")
 }
 
@@ -814,9 +818,9 @@ model Processo {
   dadosCompletos    Json?            @map("dados_completos")
   dataOnboarding    DateTime?        @default(now()) @map("data_onboarding") @db.Timestamp(6)
   ultimaAtualizacao DateTime?        @default(now()) @updatedAt @map("ultima_atualizacao") @db.Timestamp(6)
-  cases             Case[]
   monitoramento     JuditMonitoring?
   requisicoes       JuditRequest[]
+  cases             Case[]
 
   @@index([numeroCnj], map: "idx_numero_cnj")
   @@map("processos")
@@ -897,7 +901,7 @@ model CreditTransaction {
   amount         Decimal               @db.Decimal(10, 2)
   reason         String
   metadata       Json?                 @default("{}")
-  createdAt      DateTime              @default(now()) @map("created_at") @db.Timestamp(6)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamp(6)
   allocation     CreditAllocation?     @relation(fields: [allocationId], references: [id], onUpdate: NoAction)
   workspace      Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -972,23 +976,23 @@ model PlanConfiguration {
 }
 
 model UploadBatch {
-  id                String             @id @default(dbgenerated("(gen_random_uuid())::text"))
-  workspaceId       String             @map("workspace_id")
-  fileName          String             @map("file_name")
-  filePath          String?            @map("file_path")
-  fileSize          BigInt             @map("file_size")
-  status            UploadBatchStatus  @default(PROCESSING)
-  totalRows         Int                @default(0) @map("total_rows")
-  processed         Int                @default(0)
-  successful        Int                @default(0)
-  failed            Int                @default(0)
-  errors            Json?              @default("[]")
-  summary           Json?              @default("{}")
-  config            Json?              @default("{}")
-  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime?          @default(now()) @map("updated_at") @db.Timestamp(6)
-  juditTelemetry    JuditTelemetry[]
-  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String             @id @default(dbgenerated("(gen_random_uuid())::text"))
+  workspaceId      String             @map("workspace_id")
+  fileName         String             @map("file_name")
+  filePath         String?            @map("file_path")
+  fileSize         BigInt             @map("file_size")
+  status           UploadBatchStatus  @default(PROCESSING)
+  totalRows        Int                @default(0) @map("total_rows")
+  processed        Int                @default(0)
+  successful       Int                @default(0)
+  failed           Int                @default(0)
+  errors           Json?              @default("[]")
+  summary          Json?              @default("{}")
+  config           Json?              @default("{}")
+  createdAt        DateTime?          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime?          @default(now()) @map("updated_at") @db.Timestamp(6)
+  juditTelemetry   JuditTelemetry[]
+  workspace        Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   uploadBatchEvents UploadBatchEvent[]
   uploadBatchRows   UploadBatchRow[]
 
@@ -1017,12 +1021,12 @@ model UploadBatchRow {
 }
 
 model UploadBatchEvent {
-  id          String      @id @default(dbgenerated("(gen_random_uuid())::text"))
-  batchId     String      @map("batch_id")
-  eventType   String      @map("event_type")
-  payload     Json
-  createdAt   DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
-  uploadBatch UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id           String      @id @default(dbgenerated("(gen_random_uuid())::text"))
+  batchId      String      @map("batch_id")
+  eventType    String      @map("event_type")
+  payload      Json
+  createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
+  uploadBatch  UploadBatch @relation(fields: [batchId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([batchId, createdAt(sort: Desc)], map: "idx_upload_batch_events_batch")
   @@index([eventType, createdAt(sort: Desc)], map: "idx_upload_batch_events_type")
@@ -1045,8 +1049,8 @@ model JuditTelemetry {
   retry_count      Int?         @default(0)
   rate_limit_hit   Boolean?     @default(false)
   created_at       DateTime?    @default(now()) @db.Timestamp(6)
-  uploadBatch      UploadBatch? @relation(fields: [batchId], references: [id], onUpdate: NoAction)
-  workspace        Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  uploadBatch    UploadBatch? @relation(fields: [batchId], references: [id], onUpdate: NoAction)
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([batchId, created_at(sort: Desc)], map: "idx_judit_telemetry_batch")
   @@index([success, created_at(sort: Desc)], map: "idx_judit_telemetry_success")
@@ -1074,8 +1078,8 @@ model AnalysisJob {
   workerId        String?              @map("worker_id")
   retryCount      Int?                 @default(0) @map("retry_count")
   metadata        Json?                @default("{}")
-  analysisVersion CaseAnalysisVersion? @relation(fields: [resultVersionId], references: [id])
   workspaces      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  analysisVersion CaseAnalysisVersion? @relation(fields: [resultVersionId], references: [id])
 
   @@index([analysisKey], map: "idx_analysis_jobs_analysis_key")
   @@index([status, createdAt], map: "idx_analysis_jobs_status")
@@ -1339,125 +1343,6 @@ model workspaces_backup_ssot_migration {
   updatedAt   DateTime?
 
   @@ignore
-}
-
-model JuditAlert {
-  id          String         @id @default(cuid())
-  severity    AlertSeverity  @default(MEDIUM)
-  alertType   JuditAlertType @default(API_ERROR)
-  title       String
-  message     String
-  workspaceId String?
-  resolved    Boolean        @default(false)
-  resolvedAt  DateTime?
-  metadata    Json?
-  errorCode   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  numeroCnj   String?
-  requestId   String?
-  jobId       String?
-  trackingId  String?
-
-  @@index([resolved])
-  @@index([severity])
-  @@index([createdAt])
-  @@map("judit_alerts")
-}
-
-model WebhookQueue {
-  id          String             @id @default(cuid())
-  workspaceId String?
-  eventType   String?
-  payload     Json
-  status      WebhookQueueStatus @default(PENDING)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  processedAt DateTime?
-
-  @@index([status])
-  @@map("webhook_queues")
-}
-
-model WebhookError {
-  id          String   @id @default(cuid())
-  workspaceId String?
-  webhookId   String?
-  error       String
-  details     Json?
-  createdAt   DateTime @default(now())
-
-  @@index([createdAt])
-  @@map("webhook_errors")
-}
-
-model PasswordReset {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  token     String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@map("password_resets")
-}
-
-model ClientShareLink {
-  id             String    @id @default(cuid())
-  clientId       String
-  token          String    @unique
-  expiresAt      DateTime?
-  accessCount    Int       @default(0)
-  lastAccessedAt DateTime?
-  permissions    Json?
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  createdById    String?
-  tokenHash      String?   @unique
-  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  createdBy      User?     @relation(fields: [createdById], references: [id])
-
-  @@index([clientId])
-  @@index([token])
-  @@map("client_share_links")
-}
-
-model Document {
-  id        String   @id @default(cuid())
-
-  name      String
-  url       String
-  type      String?
-  size      Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@map("documents")
-}
-
-model JuditCostTracking {
-  id                 String   @id @default(cuid())
-  workspaceId        String?
-  operationType      String   @map("operation_type")
-  numeroCnj          String?  @map("numero_cnj")
-  searchCost         Decimal  @map("search_cost") @db.Decimal(10, 2)
-  attachmentsCost    Decimal  @map("attachments_cost") @db.Decimal(10, 2)
-  totalCost          Decimal  @map("total_cost") @db.Decimal(10, 2)
-  documentsRetrieved Int      @default(0) @map("documents_retrieved")
-  movementsCount     Int      @default(0) @map("movements_count")
-  apiCallsCount      Int      @default(1) @map("api_calls_count")
-  durationMs         Int?     @map("duration_ms")
-  requestId          String?  @map("request_id")
-  trackingId         String?  @map("tracking_id")
-  jobId              String?  @map("job_id")
-  status             String   @default("success")
-  errorMessage       String?  @map("error_message")
-  createdAt          DateTime @default(now()) @map("created_at")
-
-  @@index([workspaceId])
-  @@index([createdAt])
-  @@index([operationType])
-  @@map("judit_cost_tracking")
 }
 
 enum NotificationFrequency {
@@ -1919,20 +1804,134 @@ enum HealthStatus {
   UNKNOWN
 }
 
-model WorkerJobRecord {
-  jobId       String
-  queueName   String
-  status      WorkerJobStatus
-  startedAt   DateTime?
-  completedAt DateTime?
-  durationMs  Int?
-  resultSummary Json?
+model JuditAlert {
+  id          String          @id @default(cuid())
+  severity    AlertSeverity   @default(MEDIUM)
+  alertType   JuditAlertType  @default(API_ERROR)
+  title       String
+  message     String
+  workspaceId String?
+  resolved    Boolean         @default(false)
+  resolvedAt  DateTime?
   metadata    Json?
-  retryCount  Int?
-  errorDetails Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  errorCode   String?
+  numeroCnj   String?
+  requestId   String?
+  trackingId  String?
+  jobId       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  @@id([jobId, queueName])
-  @@map("worker_job_records")
+  @@index([resolved])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("judit_alerts")
+}
+
+model WebhookQueue {
+  id          String             @id @default(cuid())
+  workspaceId String?
+  eventType   String?
+  payload     Json
+  status      WebhookQueueStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  processedAt DateTime?
+
+  @@index([status])
+  @@map("webhook_queues")
+}
+
+model WebhookError {
+  id          String   @id @default(cuid())
+  workspaceId String?
+  webhookId   String?
+  error       String
+  details     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("webhook_errors")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("password_resets")
+}
+
+model ClientShareLink {
+  id             String    @id @default(cuid())
+  clientId       String
+  token          String    @unique
+  tokenHash      String?   @unique
+  expiresAt      DateTime?
+  accessCount    Int       @default(0)
+  lastAccessedAt DateTime?
+  permissions    Json?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  createdById    String?
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdBy      User?     @relation(fields: [createdById], references: [id])
+
+  @@index([clientId])
+  @@index([token])
+  @@map("client_share_links")
+}
+
+model Document {
+  id        String   @id @default(cuid())
+
+  name      String
+  url       String
+  type      String?
+  size      Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+
+  @@map("documents")
+}
+
+model Report {
+  id        String   @id @default(cuid())
+
+  createdAt DateTime @default(now())
+
+
+
+  @@map("reports")
+}
+
+model JuditCostTracking {
+  id                 String   @id @default(cuid())
+  workspaceId        String?
+  operationType      String   @map("operation_type") // Storing as string to correspond to TS type
+  numeroCnj          String?  @map("numero_cnj")
+  searchCost         Decimal  @map("search_cost") @db.Decimal(10, 2)
+  attachmentsCost    Decimal  @map("attachments_cost") @db.Decimal(10, 2)
+  totalCost          Decimal  @map("total_cost") @db.Decimal(10, 2)
+  documentsRetrieved Int      @default(0) @map("documents_retrieved")
+  movementsCount     Int      @default(0) @map("movements_count")
+  apiCallsCount      Int      @default(1) @map("api_calls_count")
+  durationMs         Int?     @map("duration_ms")
+  requestId          String?  @map("request_id")
+  trackingId         String?  @map("tracking_id")
+  jobId              String?  @map("job_id")
+  status             String   @default("success")
+  errorMessage       String?  @map("error_message")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([workspaceId])
+  @@index([createdAt])
+  @@index([operationType])
+  @@map("judit_cost_tracking")
 }

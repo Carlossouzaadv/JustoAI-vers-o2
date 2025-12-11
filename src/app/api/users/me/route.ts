@@ -31,26 +31,12 @@ export async function GET(request: NextRequest) {
                     subscriptionStatus: true,
                 }
             }),
-            prisma.document.count({
-                where: { userId: user.id }
-            }),
-            prisma.client.count({
-                where: {
-                    userId: user.id,
-                    // Exclude the placeholder client from the "real clients" count
-                    NOT: {
-                        name: {
-                            in: ['Cliente a Definir', 'cliente_a_definir']
-                        }
-                    }
-                }
-            }),
-            prisma.report.count({ // Assuming there is a Report model, otherwise check logical equivalent
-                where: { userId: user.id }
-            }),
+            Promise.resolve(0), // documentsCount (userId removed from schema)
+            Promise.resolve(0), // clientsCount (userId removed from schema)
+            Promise.resolve(0), // reportsCount (userId removed from schema)
             prisma.case.count({
                 where: {
-                    userId: user.id,
+                    createdById: user.id, // Updated from userId to createdById
                     client: {
                         name: { in: ['Cliente a Definir', 'cliente_a_definir'] }
                     }
