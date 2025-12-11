@@ -107,11 +107,11 @@ async function processRollbackJob(job: Job<RollbackJobPayload>) {
       },
       select: {
         id: true,
-        createdMonitoredProcessId: true,
-        createdCaseDocumentId: true,
-        createdProcessMovementId: true,
-        createdClientId: true,
-        createdCaseId: true,
+        monitoredProcessId: true,
+        documentId: true,
+        processMovementId: true,
+        clientId: true,
+        caseId: true,
       },
     });
     console.log(`📋 [Rollback Worker] Found ${importedItems.length} items to rollback`);
@@ -123,19 +123,19 @@ async function processRollbackJob(job: Job<RollbackJobPayload>) {
 
   // 4. COLLECT ENTITY IDs TO DELETE (Type-Safe)
   const monitoredProcessIds = collectNonNullIds(
-    importedItems.map((item) => item.createdMonitoredProcessId)
+    importedItems.map((item) => item.monitoredProcessId)
   );
   const caseDocumentIds = collectNonNullIds(
-    importedItems.map((item) => item.createdCaseDocumentId)
+    importedItems.map((item) => item.documentId)
   );
   const processMovementIds = collectNonNullIds(
-    importedItems.map((item) => item.createdProcessMovementId)
+    importedItems.map((item) => item.processMovementId)
   );
   const clientIds = collectNonNullIds(
-    importedItems.map((item) => item.createdClientId)
+    importedItems.map((item) => item.clientId)
   );
   const caseIds = collectNonNullIds(
-    importedItems.map((item) => item.createdCaseId)
+    importedItems.map((item) => item.caseId)
   );
 
   console.log(`🗑️  [Rollback Worker] Entities to delete:
@@ -172,11 +172,11 @@ async function processRollbackJob(job: Job<RollbackJobPayload>) {
         where: { systemImportId },
         data: {
           status: 'ROLLED_BACK',
-          createdMonitoredProcessId: null,
-          createdCaseDocumentId: null,
-          createdProcessMovementId: null,
-          createdClientId: null,
-          createdCaseId: null,
+          monitoredProcessId: null,
+          documentId: null,
+          processMovementId: null,
+          clientId: null,
+          caseId: null,
         },
       }),
       // Mark SystemImport as ROLLED_BACK

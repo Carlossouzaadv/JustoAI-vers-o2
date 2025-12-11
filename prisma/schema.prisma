@@ -9,6 +9,7 @@ datasource db {
 }
 
 model Workspace {
+  userNotificationSettings UserNotificationSettings[]
   id                     String                  @id @default(cuid())
   name                   String
   slug                   String                  @unique
@@ -57,6 +58,7 @@ model Workspace {
 }
 
 model User {
+  notificationSettings UserNotificationSettings[]
   id                              String            @id @default(cuid())
   email                           String            @unique
   name                            String?
@@ -433,6 +435,7 @@ model AiCache {
 }
 
 model MonitoredProcess {
+  importedItems    ImportedDataItem[] @relation("ImportedDataItemMonitoredProcess")
   id               String            @id @default(cuid())
   workspaceId      String
   caseId           String?
@@ -466,6 +469,7 @@ model MonitoredProcess {
 }
 
 model ProcessMovement {
+  importedItems      ImportedDataItem[] @relation("ImportedDataItemProcessMovement")
   id                 String           @id @default(cuid())
   monitoredProcessId String
   date               DateTime
@@ -623,6 +627,10 @@ model ImportedDataItem {
   client           Client?          @relation("ImportedDataItemClient", fields: [clientId], references: [id])
   document         CaseDocument?    @relation("ImportedDataItemDocument", fields: [documentId], references: [id])
   event            CaseEvent?       @relation(fields: [eventId], references: [id])
+  monitoredProcessId String?
+  monitoredProcess   MonitoredProcess? @relation("ImportedDataItemMonitoredProcess", fields: [monitoredProcessId], references: [id])
+  processMovementId  String?
+  processMovement    ProcessMovement? @relation("ImportedDataItemProcessMovement", fields: [processMovementId], references: [id])
   systemImport     SystemImport     @relation(fields: [systemImportId], references: [id], onDelete: Cascade)
 
   @@index([systemImportId], map: "imported_data_items_import_idx")
@@ -1935,4 +1943,33 @@ model WorkerJobRecord {
 
   @@id([jobId, queueName])
   @@map("worker_job_records")
+}
+
+
+
+model UserNotificationSettings {
+  id                     String  @id @default(cuid())
+  userId                 String
+  workspaceId            String?
+  emailEnabled           Boolean @default(true)
+  frequency              String  @default("IMMEDIATE")
+  processAlerts          Boolean @default(true)
+  billingAlerts          Boolean @default(true)
+  systemAlerts           Boolean @default(true)
+  deadlineAlerts         Boolean @default(true)
+  quietHoursEnabled      Boolean @default(false)
+  quietHoursStart        String?
+  quietHoursEnd          String?
+  quietHoursTimezone     String? @default("America/Sao_Paulo")
+  digestEnabled          Boolean @default(false)
+  digestTime             String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  user                   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace              Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("user_notification_settings")
 }

@@ -469,7 +469,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-slate-50 pb-20">
         <WelcomeDashboard
-          userName={userData.name || user?.firstName || 'Doutor(a)'}
+          userName={userData.name || user?.name || 'Doutor(a)'}
           hasUploadedDocuments={userData.hasUploadedDocuments}
           hasCreatedClient={userData.hasCreatedClient}
           hasGeneratedReport={userData.hasGeneratedReport}

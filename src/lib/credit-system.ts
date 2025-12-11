@@ -139,7 +139,7 @@ export const CREDIT_CONFIG = {
 } as const;
 
 export class CreditManager {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   /**
    * Calcula custo de report credit baseado no número de processos
@@ -173,7 +173,8 @@ export class CreditManager {
   async getCreditBalance(workspaceId: string): Promise<CreditBalance> {
     try {
       // Buscar créditos base
-      let credits: WorkspaceCreditsRecord | null = await this.prisma.workspaceCredits.findUnique({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let credits: WorkspaceCreditsRecord | null = await (this.prisma as any).workspaceCredits.findUnique({
         where: { workspaceId }
       });
 
