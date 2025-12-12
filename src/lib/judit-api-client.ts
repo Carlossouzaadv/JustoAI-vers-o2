@@ -251,7 +251,7 @@ class CircuitBreaker {
     private windowMs: number,
     private openTimeMs: number,
     private minRequests: number
-  ) {}
+  ) { }
 
   async execute<T>(operation: () => Promise<T>): Promise<T> {
     if (this.state === 'open') {
@@ -909,17 +909,17 @@ export class JuditApiClient {
         data: {
           workspaceId: data.workspaceId,
           batchId: data.batchId,
-          processNumber: data.processNumber,
+          process_number: data.processNumber,
           tribunal: data.tribunal,
           success: data.success,
-          responseTimeMs: data.responseTimeMs,
-          docsRetrieved: data.docsRetrieved,
-          movementsCount: data.movementsCount,
-          partiesCount: data.partiesCount,
-          errorCode: data.errorCode,
-          errorMessage: data.errorMessage,
-          retryCount: data.retryCount,
-          rateLimitHit: data.rateLimitHit
+          response_time_ms: data.responseTimeMs,
+          docs_retrieved: data.docsRetrieved,
+          movements_count: data.movementsCount,
+          parties_count: data.partiesCount,
+          error_code: data.errorCode,
+          error_message: data.errorMessage,
+          retry_count: data.retryCount,
+          rate_limit_hit: data.rateLimitHit
         }
       });
     } catch (error) {

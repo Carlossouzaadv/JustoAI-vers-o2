@@ -382,7 +382,7 @@ export class QuotaEnforcement {
     reportsTotal: number;
     creditsConsumed: number;
   }> {
-    try{
+    try {
       // Get quota info which has current usage
       const quota = await prisma.workspaceQuota.findUnique({
         where: { workspaceId }
@@ -394,7 +394,7 @@ export class QuotaEnforcement {
 
       // Use the tracked usage from the quota table
       return {
-        reportsTotal: quota.reportsUsedThisMonth,
+        reportsTotal: quota.reportsUsedThisMonth || 0,
         creditsConsumed: 0 // Can be calculated if needed
       };
     } catch (error) {

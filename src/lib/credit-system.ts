@@ -16,8 +16,8 @@ interface WorkspaceCreditsRecord {
   fullCreditsBalance: number | { toNumber(): number };
   reportCreditsRolloverCap: number | { toNumber(): number };
   fullCreditsRolloverCap: number | { toNumber(): number };
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
 }
 
 interface CreditAllocationRecord {
@@ -28,7 +28,7 @@ interface CreditAllocationRecord {
   remainingAmount: number | { toNumber(): number };
   expiresAt: Date | null;
   sourceDescription: string | null;
-  createdAt: Date;
+  createdAt: Date | null;
 }
 
 // Tipos principais

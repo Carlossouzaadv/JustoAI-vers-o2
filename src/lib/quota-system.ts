@@ -114,8 +114,8 @@ export class QuotaSystem {
       plan: quota.plan as Plan,
       reportsMonthlyLimit: quota.reportsMonthlyLimit,
       reportProcessesLimit: quota.reportProcessesLimit,
-      reportsUsedThisMonth: quota.reportsUsedThisMonth,
-      quotaResetDate: quota.quotaResetDate,
+      reportsUsedThisMonth: quota.reportsUsedThisMonth || 0,
+      quotaResetDate: quota.quotaResetDate || new Date(),
       overrideLimits: overrideLimitsValue
     };
   }
@@ -239,7 +239,7 @@ export class QuotaSystem {
     if (!quota) return;
 
     const now = new Date();
-    const lastReset = new Date(quota.quotaResetDate);
+    const lastReset = new Date(quota.quotaResetDate || new Date());
     const currentMonth = now.getMonth();
     const lastResetMonth = lastReset.getMonth();
 

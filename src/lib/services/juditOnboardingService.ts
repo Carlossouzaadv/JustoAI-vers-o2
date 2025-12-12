@@ -240,12 +240,12 @@ export async function performFullProcessRequest(
       if (processoId) {
         const processo = await prisma.processo.findUnique({
           where: { id: processoId },
-          select: { case: { select: { id: true } } }
+          select: { cases: { select: { id: true }, take: 1 } }
         });
 
-        if (processo?.case) {
+        if (processo?.cases?.[0]) {
           await recordOnboardingError(
-            processo.case.id,
+            processo.cases[0].id,
             'ENRICHMENT',
             errorMessage,
             'JUDIT_REQUEST_FAILED'

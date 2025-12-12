@@ -825,17 +825,17 @@ export class ExcelUploadService {
         data: {
           workspaceId: data.workspaceId,
           batchId: data.batchId,
-          processNumber: data.processNumber,
+          process_number: data.processNumber,
           tribunal: data.tribunal,
           success: data.success ?? false,
-          responseTimeMs: data.responseTimeMs,
-          docsRetrieved: data.docsRetrieved || 0,
-          movementsCount: data.movementsCount || 0,
-          partiesCount: data.partiesCount || 0,
-          errorCode: data.errorCode,
-          errorMessage: data.errorMessage,
-          retryCount: data.retryCount || 0,
-          rateLimitHit: data.rateLimitHit || false
+          response_time_ms: data.responseTimeMs,
+          docs_retrieved: data.docsRetrieved || 0,
+          movements_count: data.movementsCount || 0,
+          parties_count: data.partiesCount || 0,
+          error_code: data.errorCode,
+          error_message: data.errorMessage,
+          retry_count: data.retryCount || 0,
+          rate_limit_hit: data.rateLimitHit || false
         }
       });
     } catch (_error) {

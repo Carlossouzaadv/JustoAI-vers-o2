@@ -225,7 +225,7 @@ export class ReportScheduler {
         failed++;
 
         // Reverter quota se falhou
-        await this.quotaSystem.refundQuota(execution.workspaceId, execution.quotaConsumed);
+        await this.quotaSystem.refundQuota(execution.workspaceId, execution.quotaConsumed || 0);
       }
     });
 

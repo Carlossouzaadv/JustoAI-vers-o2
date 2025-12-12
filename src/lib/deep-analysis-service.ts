@@ -428,7 +428,7 @@ export class DeepAnalysisService {
     try {
       // Buscar no cache
       const cached = await prisma.analysisCache.findUnique({
-        where: { analysisKey }
+        where: { analysis_key: analysisKey }
       });
 
       if (!cached) {
@@ -436,7 +436,7 @@ export class DeepAnalysisService {
       }
 
       // Verificar se cache ainda é válido (não expirado)
-      if (cached.expiresAt && cached.expiresAt < new Date()) {
+      if (cached.expires_at && cached.expires_at < new Date()) {
         log.info({ msg: '${ICONS.WARNING} Cache expirado para key: ${analysisKey}', component: 'deepAnalysisService' });
         await this.invalidateCache(analysisKey);
         return null;
@@ -444,7 +444,7 @@ export class DeepAnalysisService {
 
       // Verificar se não houve movimentações após o cache
       const lastMovement = await this.getLastProcessMovement(processId);
-      if (lastMovement && cached.lastMovementDate && lastMovement > cached.lastMovementDate) {
+      if (lastMovement && cached.last_movement_date && lastMovement > cached.last_movement_date) {
         log.info({ msg: '${ICONS.WARNING} Cache invalidado por nova movimentação', component: 'deepAnalysisService' });
         await this.invalidateCache(analysisKey);
         return null;
@@ -469,10 +469,10 @@ export class DeepAnalysisService {
   async incrementCacheAccess(analysisKey: string): Promise<void> {
     try {
       await prisma.analysisCache.update({
-        where: { analysisKey },
+        where: { analysis_key: analysisKey },
         data: {
-          accessCount: { increment: 1 },
-          lastAccessedAt: new Date()
+          access_count: { increment: 1 },
+          last_accessed_at: new Date()
         }
       });
     } catch (error) {
@@ -486,7 +486,7 @@ export class DeepAnalysisService {
   async invalidateCache(analysisKey: string): Promise<void> {
     try {
       await prisma.analysisCache.delete({
-        where: { analysisKey }
+        where: { analysis_key: analysisKey }
       });
     } catch (error) {
       logError(error, `${ICONS.ERROR} Erro ao invalidar cache`, { component: 'deepAnalysisService' });

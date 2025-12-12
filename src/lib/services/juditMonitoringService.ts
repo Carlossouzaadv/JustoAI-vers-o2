@@ -421,7 +421,14 @@ export async function listActiveMonitorings(): Promise<(JuditMonitoring & { proc
     orderBy: { createdAt: 'asc' },
   });
 
-  return monitorings;
+  return monitorings.map(m => ({
+    ...m,
+    createdAt: m.createdAt || undefined,
+    processo: m.processo ? {
+      ...m.processo,
+      ultimaAtualizacao: m.processo.ultimaAtualizacao || undefined
+    } : undefined
+  }));
 }
 
 /**
@@ -435,7 +442,12 @@ export async function getMonitoringByCnj(cnj: string): Promise<JuditMonitoring |
     },
   });
 
-  return processo?.monitoramento || null;
+  if (!processo?.monitoramento) return null;
+
+  return {
+    ...processo.monitoramento,
+    createdAt: processo.monitoramento.createdAt || undefined
+  };
 }
 
 // ================================================================
