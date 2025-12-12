@@ -132,6 +132,22 @@ export default function LoginPage() {
           {authError && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">{authError}</p>
+              {(authError.toLowerCase().includes('not confirmed') ||
+                authError.toLowerCase().includes('não confirmado') ||
+                authError.toLowerCase().includes('email not verified')) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHelpEmail(email);
+                      setHelpMode('verify');
+                      setShowHelpModal(true);
+                    }}
+                    className="mt-2 text-sm font-medium text-red-800 underline hover:text-red-900 flex items-center"
+                  >
+                    Reenviar email de confirmação
+                    <span className="ml-1 text-xs">→</span>
+                  </button>
+                )}
             </div>
           )}
           <form className="space-y-6" onSubmit={handleSubmit}>
@@ -274,11 +290,10 @@ export default function LoginPage() {
                   setHelpMode('forgot');
                   setHelpMessage('');
                 }}
-                className={`flex-1 py-2 px-3 rounded font-medium text-sm transition-colors ${
-                  helpMode === 'forgot'
+                className={`flex-1 py-2 px-3 rounded font-medium text-sm transition-colors ${helpMode === 'forgot'
                     ? 'bg-accent-600 text-white'
                     : 'text-neutral-600 hover:text-neutral-900'
-                }`}
+                  }`}
               >
                 Esqueci Senha
               </button>
@@ -287,11 +302,10 @@ export default function LoginPage() {
                   setHelpMode('verify');
                   setHelpMessage('');
                 }}
-                className={`flex-1 py-2 px-3 rounded font-medium text-sm transition-colors ${
-                  helpMode === 'verify'
+                className={`flex-1 py-2 px-3 rounded font-medium text-sm transition-colors ${helpMode === 'verify'
                     ? 'bg-accent-600 text-white'
                     : 'text-neutral-600 hover:text-neutral-900'
-                }`}
+                  }`}
               >
                 Reenviar Email
               </button>
@@ -319,11 +333,10 @@ export default function LoginPage() {
 
               {helpMessage && (
                 <div
-                  className={`p-3 rounded-lg text-sm ${
-                    helpMessage.includes('sucesso')
+                  className={`p-3 rounded-lg text-sm ${helpMessage.includes('sucesso')
                       ? 'bg-green-50 text-green-800 border border-green-200'
                       : 'bg-amber-50 text-amber-800 border border-amber-200'
-                  }`}
+                    }`}
                 >
                   {helpMessage}
                 </div>
