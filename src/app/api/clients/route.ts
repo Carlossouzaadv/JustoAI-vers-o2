@@ -17,6 +17,8 @@ import {
   clientQuerySchema
 } from '@/lib/validations'
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Type guard: Validate ClientStatus enum value
  */
@@ -115,7 +117,14 @@ async function GET(request: NextRequest) {
   const { data: query, error: queryError } = validateQuery(request, clientQuerySchema)
   if (!query) return queryError!
 
-  const { page, limit, search, status, workspaceId, type} = query
+  const { page, limit, search, status, workspaceId, type } = query
+
+  console.log('📋 [API Clients] Request received', {
+    userId: user.id,
+    workspaceIdParam: workspaceId,
+    url: request.url,
+    timestamp: new Date().toISOString()
+  });
 
   // If workspaceId is provided, check access
   let workspaceIds: string[] = []
@@ -207,6 +216,11 @@ async function GET(request: NextRequest) {
 
   // Retornar todos os clientes (incluindo novos clientes sem casos)
   // Clientes novos aparecem na lista mesmo sem casos associados
+
+  console.log('📋 [API Clients] Returning clients', {
+    count: clients.length,
+    workspaceIds: [...new Set(clients.map(c => c.workspaceId))]
+  });
 
   return paginatedResponse(
     clients,
@@ -396,9 +410,9 @@ async function POST(request: NextRequest) {
     // Use JSON.parse(JSON.stringify(...)) to convert Record<string, unknown> to InputJsonValue
     const dataForCreate = input.metadata && isValidMetadata(input.metadata)
       ? {
-          ...createDataBase,
-          metadata: JSON.parse(JSON.stringify(input.metadata))
-        }
+        ...createDataBase,
+        metadata: JSON.parse(JSON.stringify(input.metadata))
+      }
       : createDataBase
 
     // Create client - TypeScript infers correct type from dataForCreate structure

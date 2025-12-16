@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS } from '@/lib/icons';
 import { getApiUrl } from '@/lib/api-client';
 import { ClientActionsButton } from './client-actions-button';
+import { useAuth } from '@/contexts/auth-context';
 
 interface Client {
   id: string;
@@ -59,20 +60,26 @@ function isApiClient(data: unknown): data is ApiClient {
 }
 
 export function DashboardSidebar({ selectedClientId, onClientSelect }: DashboardSidebarProps) {
+  const { workspaceId } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadClients();
-  }, []);
+  }, [workspaceId]);
 
   const loadClients = async () => {
     try {
       setLoading(true);
 
       // Call real API endpoint with absolute URL
-      const url = getApiUrl('/api/clients?limit=100');
+      if (!workspaceId) {
+        console.warn('No workspaceId available, skipping client load');
+        return;
+      }
+
+      const url = getApiUrl(`/api/clients?limit=100&workspaceId=${workspaceId}`);
       const response = await fetch(url, {
         credentials: 'include'
       });
@@ -170,20 +177,18 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
                         }, 200);
                       }}
                       isActive={selectedClientId === client.id}
-                      className={`w-full p-3 justify-start ${
-                        client.attentionRequired && client.attentionRequired > 0
+                      className={`w-full p-3 justify-start ${client.attentionRequired && client.attentionRequired > 0
                           ? 'text-red-600 bg-red-50 hover:bg-red-100'
                           : 'hover:bg-accent'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2 w-full">
                         {getClientStatusIcon(client)}
                         <div className="flex-1 min-w-0">
-                          <h4 className={`font-medium text-sm truncate ${
-                            client.attentionRequired && client.attentionRequired > 0
+                          <h4 className={`font-medium text-sm truncate ${client.attentionRequired && client.attentionRequired > 0
                               ? 'text-red-700'
                               : ''
-                          }`}>
+                            }`}>
                             {client.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">

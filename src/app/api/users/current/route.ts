@@ -2,6 +2,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Type guard to validate workspace structure
 function isWorkspaceWithDetails(workspace: unknown): workspace is {
   id: string;
