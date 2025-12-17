@@ -759,12 +759,14 @@ export async function POST(request: NextRequest) {
       log.info({ msg: `${ICONS.PROCESS} [Timeline] Iniciando unificação v2 com enriquecimento para case ${targetCaseId}`, component: 'documents-upload' });
       unificationResult = await mergeTimelines(targetCaseId, [document.id]);
 
-      log.info({ msg: `${ICONS.SUCCESS} [Timeline] Unificação v2 concluída:
+      log.info({
+        msg: `${ICONS.SUCCESS} [Timeline] Unificação v2 concluída:
         Novos: ${unificationResult.new}
         Duplicados: ${unificationResult.duplicates}
         Enriquecidos: ${unificationResult.enriched}
         Relacionados: ${unificationResult.related}
-        Conflitos: ${unificationResult.conflicts}`, component: 'documents-upload' });
+        Conflitos: ${unificationResult.conflicts}`, component: 'documents-upload'
+      });
     } catch (timelineError) {
       logError(timelineError instanceof Error ? timelineError : new Error(String(timelineError)), `${ICONS.WARNING} [Timeline] Erro na unificação v2 (não é crítico)`, { component: 'documents-upload' });
       // Não falhar o upload por causa disso - timeline é secundária
@@ -954,7 +956,7 @@ export async function PUT(request: NextRequest) {
     if (authError) return authError;
 
     const body = await request.json();
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+
     const { temporaryFilePath: _temporaryFilePath, targetCaseId: _targetCaseId, textSha: _textSha } = body as Record<string, unknown>;
 
     // TODO: Implementar lógica de anexar arquivo já processado a processo existente

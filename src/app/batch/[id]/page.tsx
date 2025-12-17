@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Loader2, Download, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -36,7 +36,7 @@ export default function BatchPage() {
   const [retryCount, setRetryCount] = useState(0);
 
   // Buscar status do batch
-  const fetchStatus = async () => {
+  const fetchStatus = useCallback(async () => {
     try {
       const batchStatus = await BatchStatusService.getBatchStatus(batchId);
       setStatus(batchStatus);
@@ -49,12 +49,12 @@ export default function BatchPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [batchId]);
 
   // Buscar status inicial
   useEffect(() => {
     fetchStatus();
-  }, [batchId]);
+  }, [batchId, fetchStatus]);
 
   // Polling para atualizar status durante processamento
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function BatchPage() {
     }, POLLING_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [status?.status, batchId]);
+  }, [status?.status, batchId, fetchStatus]);
 
   // Exportar erros como CSV
   const handleExportErrors = async () => {

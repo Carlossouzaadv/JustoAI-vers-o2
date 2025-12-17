@@ -116,7 +116,7 @@ const ImportRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+
     const { user: _user, workspace } = await validateAuth();
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'analyze';
