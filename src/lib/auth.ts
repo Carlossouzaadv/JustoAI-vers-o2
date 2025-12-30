@@ -59,6 +59,9 @@ export async function getCurrentUser() {
         workspaces: {
           include: {
             workspace: true
+          },
+          orderBy: {
+            createdAt: 'desc'
           }
         }
       }
