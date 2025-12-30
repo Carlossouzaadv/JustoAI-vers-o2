@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 // Onboarding Components
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
@@ -436,9 +437,8 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
 
 // --- Main Page Component ---
 export default function DashboardPage() {
-  const { user, loading: isLoaded } = useAuth();
-  const { workspaceId, loading: authLoading } = useAuth();
-
+  const { user, workspaceId, loading } = useAuth();
+  
   const { data: userState, isLoading: isStateLoading } = useQuery({
     queryKey: ['user-onboarding-state'],
     queryFn: async () => {
@@ -448,24 +448,59 @@ export default function DashboardPage() {
     },
     enabled: !!user,
   });
-
-  if (!isLoaded || authLoading || isStateLoading) {
+  
+  // Unified loading state
+  if (loading || isStateLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+          <p className="text-sm text-slate-600">Carregando dashboard...</p>
+        </div>
       </div>
     );
   }
-
+  
+  // Workspace undefined protection
+  if (user && !workspaceId) {
+    const userData = userState?.data;
+    
+    // Check if onboarding is needed
+    if (userData && !userData.onboardingCompleted) {
+      redirect('/onboarding');
+    } else {
+      // Completed onboarding but workspace failed to load
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+          <div className="text-center space-y-4">
+            <div className="text-red-600 text-lg font-semibold">
+              ⚠️ Erro ao carregar workspace
+            </div>
+            <p className="text-slate-600 text-sm">
+              Não foi possível carregar seus dados. Tente novamente.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              Recarregar página
+            </button>
+          </div>
+        </div>
+      );
+    }
+  }
+  
   const userData = userState?.data;
-
-  // 1. Welcome Wizard
+  
+  // 1. Welcome Wizard (Redundant but safe double-check)
   if (userData && !userData.onboardingCompleted) {
     return <WelcomeOnboarding userId={user?.id} onComplete={() => window.location.reload()} />;
   }
-
+  
   // 2. Welcome Dashboard (Empty State)
-  if (userData && userData.onboardingCompleted && !userData.hasUploadedDocuments && !userData.hasPendingCases) {
+  if (userData && userData.onboardingCompleted && 
+      (!userData.documentsCount || userData.documentsCount === 0)) {
     return (
       <div className="min-h-screen bg-slate-50 pb-20">
         <WelcomeDashboard
@@ -478,7 +513,7 @@ export default function DashboardPage() {
       </div>
     );
   }
-
+  
   // 3. Regular Dashboard
-  return <RegularDashboard workspaceId={workspaceId} />;
+  return <RegularDashboard workspaceId={workspaceId!} />;
 }
