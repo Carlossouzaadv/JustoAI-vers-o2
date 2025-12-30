@@ -74,12 +74,15 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
       setLoading(true);
 
       // Call real API endpoint with absolute URL
+      console.log('🔍 [Sidebar] workspaceId from useAuth:', workspaceId);
+
       if (!workspaceId) {
-        console.warn('No workspaceId available, skipping client load');
+        console.warn('❌ [Sidebar] No workspaceId available, skipping client load');
         return;
       }
 
       const url = getApiUrl(`/api/clients?limit=100&workspaceId=${workspaceId}`);
+      console.log('🔍 [Sidebar] Fetching URL:', url);
       const response = await fetch(url, {
         credentials: 'include'
       });

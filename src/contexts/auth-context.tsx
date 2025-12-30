@@ -80,7 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Set first workspace as default
           if (userData.workspaces && userData.workspaces.length > 0) {
+            console.log('🔍 Setting workspaceId from userData:', userData.workspaces);
             const firstWorkspaceId = userData.workspaces[0].workspaceId;
+            console.log('🔍 First workspace ID:', firstWorkspaceId);
             setWorkspaceId(firstWorkspaceId);
             setStoredWorkspaceId(firstWorkspaceId);
           } else {
