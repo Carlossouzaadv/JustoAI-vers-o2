@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -65,11 +65,7 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    loadClients();
-  }, [workspaceId]);
-
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -115,7 +111,11 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspaceId]);
+
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
 
   const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
