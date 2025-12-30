@@ -24,7 +24,7 @@ export async function PUT(request: NextRequest) {
                 name: data.fullName,
                 // role: data.role, // ❌ Don't update system role with job title (causes 500 if not Enum)
                 settings: {
-                    ...(user.settings as Record<string, any> || {}),
+                    ...(user.settings as Record<string, unknown> || {}),
                     jobTitle: data.role, // ✅ Store job title in settings
                 },
                 practiceAreas: data.practiceAreas || [],
