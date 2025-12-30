@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
 import { Loader2 } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 // Onboarding Components
 import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
@@ -114,6 +115,7 @@ const PRIORITY_ORDER = { high: 3, medium: 2, low: 1 } as const;
 
 // --- Regular Dashboard Component ---
 function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
+  console.log('🔍 [RegularDashboard] Rendering with workspaceId:', workspaceId);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -515,5 +517,9 @@ export default function DashboardPage() {
   }
   
   // 3. Regular Dashboard
-  return <RegularDashboard workspaceId={workspaceId!} />;
+  return (
+    <ErrorBoundary>
+      <RegularDashboard workspaceId={workspaceId!} />
+    </ErrorBoundary>
+  );
 }
