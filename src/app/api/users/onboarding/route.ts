@@ -22,7 +22,11 @@ export async function PUT(request: NextRequest) {
             where: { id: user.id },
             data: {
                 name: data.fullName,
-                role: data.role,
+                // role: data.role, // ❌ Don't update system role with job title (causes 500 if not Enum)
+                settings: {
+                    ...(user.settings as Record<string, any> || {}),
+                    jobTitle: data.role, // ✅ Store job title in settings
+                },
                 practiceAreas: data.practiceAreas || [],
                 mainGoals: data.mainGoals || [],
                 onboardingCompleted: true,
@@ -33,7 +37,14 @@ export async function PUT(request: NextRequest) {
         return successResponse(updatedUser, 'Onboarding data saved successfully');
 
     } catch (error) {
-        console.error('Onboarding API Error:', error);
-        return errorResponse('Internal Server Error', 500);
+        console.error('❌ Onboarding API Error:', error);
+        
+        // Detailed error logging
+        if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Stack:', error.stack);
+        }
+        
+        return errorResponse('Internal Server Error: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
     }
 }
