@@ -147,7 +147,7 @@ model Client {
   @@index([workspaceId, createdAt(sort: Desc)], map: "clients_workspace_created_idx")
   @@index([workspaceId], map: "clients_workspace_idx")
   @@index([workspaceId, name], map: "clients_workspace_name_idx")
-  @@index([workspaceId], map: "idx_clients_workspace_id")
+
   @@map("clients")
 }
 
@@ -206,7 +206,7 @@ model Case {
   @@index([workspaceId, priority, status], map: "cases_workspace_priority_status_idx")
   @@index([workspaceId, status], map: "cases_workspace_status_idx")
   @@index([onboardingStatus], map: "idx_cases_onboarding_status")
-  @@index([workspaceId], map: "idx_cases_workspace_id")
+
   @@map("cases")
 }
 
@@ -396,7 +396,7 @@ model ReportSchedule {
   workspace            Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@index([nextRun, enabled], map: "idx_report_schedules_next_run")
-  @@index([workspaceId], map: "idx_report_schedules_workspace_id")
+
   @@index([workspaceId, type], map: "idx_report_schedules_workspace_type")
   @@index([enabled], map: "report_schedules_active_idx")
   @@index([frequency])
@@ -459,7 +459,7 @@ model MonitoredProcess {
   syncLogs         ProcessSyncLog[]
 
   @@unique([workspaceId, processNumber])
-  @@index([workspaceId], map: "idx_monitored_processes_workspace_id")
+
   @@index([court])
   @@index([lastSync(sort: Desc)], map: "monitored_processes_last_sync_idx")
   @@index([processNumber], map: "monitored_processes_number_idx")
@@ -489,7 +489,7 @@ model ProcessMovement {
   alerts             ProcessAlert[]
   monitoredProcess   MonitoredProcess @relation(fields: [monitoredProcessId], references: [id], onDelete: Cascade)
 
-  @@index([monitoredProcessId, date(sort: Desc)], map: "idx_process_movements_monitored_process")
+
   @@index([date(sort: Desc)])
   @@index([monitoredProcessId, date(sort: Desc)], map: "process_movements_process_date_idx")
   @@index([monitoredProcessId, date(sort: Desc), type], map: "process_movements_process_date_type_idx")
@@ -892,7 +892,7 @@ model CreditAllocation {
 
   @@index([workspaceId, expiresAt, createdAt])
   @@index([expiresAt])
-  @@index([workspaceId, expiresAt, createdAt], map: "idx_credit_allocations_workspace_expiry")
+
   @@map("credit_allocations")
 }
 
@@ -911,9 +911,9 @@ model CreditTransaction {
 
   @@index([workspaceId, createdAt])
   @@index([allocationId])
-  @@index([allocationId], map: "idx_credit_transactions_allocation")
+
   @@index([workspaceId, createdAt(sort: Desc)], map: "idx_credit_transactions_workspace")
-  @@index([workspaceId, createdAt(sort: Desc)], map: "idx_credit_transactions_workspace_created")
+
   @@map("credit_transactions")
 }
 
@@ -929,8 +929,8 @@ model ScheduledCreditHold {
 
   @@index([workspaceId])
   @@index([expiresAt])
-  @@index([expiresAt], map: "idx_scheduled_credit_holds_expiry")
-  @@index([workspaceId], map: "idx_scheduled_credit_holds_workspace")
+
+
   @@map("scheduled_credit_holds")
 }
 
