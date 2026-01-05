@@ -501,7 +501,7 @@ export const RouteIdParamSchema = z.object({
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ||
         /^c[a-z0-9]{24}$/i.test(val);
     },
-    "ID inválido (deve ser UUID ou CUID)"
+    'ID inválido (deve ser UUID ou CUID)'
   ),
 });
 
@@ -518,7 +518,7 @@ export const RouteCaseIdParamSchema = z.object({
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ||
         /^c[a-z0-9]{24}$/i.test(val);
     },
-    "ID inválido (deve ser UUID ou CUID)"
+    'ID inválido (deve ser UUID ou CUID)'
   ),
 });
 

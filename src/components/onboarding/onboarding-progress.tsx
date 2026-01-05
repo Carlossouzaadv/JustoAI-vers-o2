@@ -100,6 +100,44 @@ function isJobStatusResult(data: unknown): data is JobStatusResult {
 
 const CACHE_KEY = 'onboarding-progress-state';
 
+/**
+ * Traduz erros técnicos para mensagens amigáveis
+ */
+function getFriendlyErrorMessage(error: any): string {
+  if (!error) return 'Erro desconhecido';
+
+  const errorString = typeof error === 'string' ? error : JSON.stringify(error);
+
+  // Erros de Autenticação / Usuário
+  if (errorString.includes('USER_NOT_FOUND') || errorString.includes('UNAUTHORIZED')) {
+    return 'Sua sessão expirou ou o usuário não foi encontrado. Tente fazer login novamente.';
+  }
+
+  // Erros do Judit / Tribunal
+  if (errorString.includes('TRIBUNAL_OFFLINE') || errorString.includes('UNAVAILABLE')) {
+    return 'O sistema do tribunal está temporariamente indisponível. Tente novamente mais tarde.';
+  }
+
+  if (errorString.includes('PROCESS_NOT_FOUND')) {
+    return 'Processo não encontrado no tribunal. Verifique se o número está correto.';
+  }
+
+  if (errorString.includes('TIMEOUT')) {
+    return 'A busca demorou muito para responder. O tribunal pode estar lento.';
+  }
+
+  // Fallback para mensagem limpa se for JSON
+  try {
+    const jsonError = JSON.parse(errorString);
+    if (jsonError.message) return jsonError.message;
+  } catch (e) {
+    // Não é JSON, usa a string original se for curta
+    if (errorString.length < 100) return errorString;
+  }
+
+  return 'Ocorreu um erro ao buscar os dados. Nossa equipe já foi notificada.';
+}
+
 export function OnboardingProgress({
   caseId,
   juditJobId,
@@ -206,45 +244,45 @@ export function OnboardingProgress({
         if (isJobStatus(jobData)) {
           setJobStatus(jobData);
 
-        // Atualizar phases baseado no status
-        setPhases(prev => {
-          const updated = { ...prev };
+          // Atualizar phases baseado no status
+          setPhases(prev => {
+            const updated = { ...prev };
 
-          if (jobData.status === 'active' || jobData.status === 'waiting') {
-            updated.ENRICHMENT.status = 'in_progress';
-            updated.ENRICHMENT.progress = Math.min(jobData.progress || 30, 90);
-            updated.ENRICHMENT.details = `${jobData.statusDescription || 'Processando'}...`;
-          } else if (jobData.status === 'completed') {
-            updated.ENRICHMENT.status = 'completed';
-            updated.ENRICHMENT.progress = 100;
-            updated.ENRICHMENT.details = 'Dados oficiais carregados!';
-            updated.ANALYSIS.status = 'pending';
-            setPollingActive(false);
+            if (jobData.status === 'active' || jobData.status === 'waiting') {
+              updated.ENRICHMENT.status = 'in_progress';
+              updated.ENRICHMENT.progress = Math.min(jobData.progress || 30, 90);
+              updated.ENRICHMENT.details = `${jobData.statusDescription || 'Processando'}...`;
+            } else if (jobData.status === 'completed') {
+              updated.ENRICHMENT.status = 'completed';
+              updated.ENRICHMENT.progress = 100;
+              updated.ENRICHMENT.details = 'Dados oficiais carregados!';
+              updated.ANALYSIS.status = 'pending';
+              setPollingActive(false);
 
-            // Disparar notificação
-            if (!enrichmentCompleted) {
-              setEnrichmentCompleted(true);
+              // Disparar notificação
+              if (!enrichmentCompleted) {
+                setEnrichmentCompleted(true);
+                showToast(
+                  'Enriquecimento Completo!',
+                  'Histórico oficial carregado. Clique em "Gerar Análise Estratégica" para continuar.',
+                  'success'
+                );
+                onPhaseComplete?.('ENRICHMENT');
+              }
+            } else if (jobData.status === 'failed') {
+              updated.ENRICHMENT.status = 'failed';
+              updated.ENRICHMENT.error = getFriendlyErrorMessage(jobData.error || 'Falha ao buscar dados do tribunal');
+              setPollingActive(false);
+
               showToast(
-                'Enriquecimento Completo!',
-                'Histórico oficial carregado. Clique em "Gerar Análise Estratégica" para continuar.',
-                'success'
+                'Erro no Enriquecimento',
+                'Não foi possível buscar os dados do tribunal. Você pode continuar com os dados do PDF.',
+                'error'
               );
-              onPhaseComplete?.('ENRICHMENT');
             }
-          } else if (jobData.status === 'failed') {
-            updated.ENRICHMENT.status = 'failed';
-            updated.ENRICHMENT.error = jobData.error || 'Falha ao buscar dados do tribunal';
-            setPollingActive(false);
 
-            showToast(
-              'Erro no Enriquecimento',
-              'Não foi possível buscar os dados do tribunal. Você pode continuar com os dados do PDF.',
-              'error'
-            );
-          }
-
-          return updated;
-        });
+            return updated;
+          });
         }
 
         attempts++;
@@ -317,13 +355,12 @@ export function OnboardingProgress({
             initial={{ opacity: 0, y: -20, x: 20 }}
             animate={{ opacity: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, y: -20, x: 20 }}
-            className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${
-              toast.type === 'success'
-                ? 'bg-green-50 border border-green-200 text-green-900'
-                : toast.type === 'error'
+            className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${toast.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-900'
+              : toast.type === 'error'
                 ? 'bg-red-50 border border-red-200 text-red-900'
                 : 'bg-blue-50 border border-blue-200 text-blue-900'
-            }`}
+              }`}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1">
