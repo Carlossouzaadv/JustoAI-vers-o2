@@ -112,10 +112,10 @@ export class RailwayClient {
             // Validation logic similar to original
             // Assuming result structure matches what we expect or reused type guard
             // Original code had some inline checks, here we assume result.data is the payload
-            const data = result.data as any; // Temporary any during refactor transition
+            const data = result.data as Record<string, unknown> | undefined;
 
-            if (data && (data.cleanedText || data.text)) {
-                return data.cleanedText || data.text;
+            if (data && (typeof data.cleanedText === 'string' || typeof data.text === 'string')) {
+                return (data.cleanedText as string) || (data.text as string);
             }
 
             return '';

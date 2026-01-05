@@ -224,7 +224,7 @@ export class UploadOrchestrator {
     }
 
     private async handleDuplicate(
-        dedup: { isDuplicate: boolean; originalDocumentId?: string; originalDocument?: any },
+        dedup: { isDuplicate: boolean; originalDocumentId?: string; originalDocument?: unknown },
         file: File,
         hash: { textSha: string },
         userId: string,
