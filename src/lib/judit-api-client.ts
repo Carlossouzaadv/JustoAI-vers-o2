@@ -933,10 +933,42 @@ export class JuditApiClient {
     return matches ? `TR${matches[1]}` : 'UNKNOWN';
   }
 
-  private async checkAttachmentPermission(_workspaceId: string): Promise<boolean> {
-    // TODO: Implementar verificação de permissão/créditos para attachments
-    // Por enquanto, sempre permitir
-    return true;
+  private async checkAttachmentPermission(workspaceId: string): Promise<boolean> {
+    try {
+      // Check workspace has quota for attachments
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: {
+          id: true,
+          plan: true,
+          status: true
+        }
+      });
+
+      if (!workspace || workspace.status !== 'ACTIVE') {
+        log.warn({ msg: 'Workspace not found or inactive for attachment permission check' });
+        return false;
+      }
+
+      // Enterprise and Premium plans have attachment access
+      const allowedPlans = ['enterprise', 'premium', 'pro'];
+      if (allowedPlans.includes(workspace.plan?.toLowerCase() || '')) {
+        return true;
+      }
+
+      // Basic plan: Check if workspace has extra credits for attachments
+      const credits = await prisma.workspaceCredits.findFirst({
+        where: { workspaceId },
+        select: { fullCreditsBalance: true }
+      });
+
+      // Allow if workspace has any full credits (which include attachments)
+      return credits ? Number(credits.fullCreditsBalance) > 0 : false;
+    } catch (error) {
+      logError(error, 'Failed to check attachment permission:', { component: 'judit-api-client' });
+      // Default to false for safety
+      return false;
+    }
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {

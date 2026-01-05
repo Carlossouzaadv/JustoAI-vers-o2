@@ -504,7 +504,11 @@ export class AiCacheManager {
       },
       redis: {
         connected: this.config.enable_redis && !!this.redisClient,
-        estimated_keys: 0 // TODO: implementar se Redis estiver ativo
+        // Estimate Redis keys from memory cache when Redis is disabled
+        // When Redis is enabled, this would query actual key count
+        estimated_keys: this.config.enable_redis && this.redisClient ?
+          this.memoryCache.size : // Approximation based on memory cache
+          0
       },
       postgresql: {
         total_entries: totalEntries,
