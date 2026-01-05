@@ -103,7 +103,7 @@ const CACHE_KEY = 'onboarding-progress-state';
 /**
  * Traduz erros técnicos para mensagens amigáveis
  */
-function getFriendlyErrorMessage(error: any): string {
+function getFriendlyErrorMessage(error: unknown): string {
   if (!error) return 'Erro desconhecido';
 
   const errorString = typeof error === 'string' ? error : JSON.stringify(error);
