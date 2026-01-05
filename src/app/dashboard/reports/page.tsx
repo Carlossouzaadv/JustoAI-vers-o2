@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -71,6 +72,7 @@ interface ReportExecution {
 }
 
 export default function ReportsPage() {
+  const { workspaceId, loading: authLoading } = useAuth();
   const [selectedTab, setSelectedTab] = useState('generate');
   const [reportSchedules, setReportSchedules] = useState<ReportSchedule[]>([]);
   const [reportExecutions, setReportExecutions] = useState<ReportExecution[]>([]);
@@ -79,46 +81,169 @@ export default function ReportsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar dados reais dos relatórios
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  // Função para buscar dados reais dos relatórios
+  const fetchReports = useCallback(async () => {
+    if (!workspaceId) return;
 
-        // DEFERRED: Implement API calls when backend endpoints are ready
-        // API needed: GET /api/reports/schedules, GET /api/reports/executions
-        // const schedulesRes = await fetch('/api/reports/schedules');
-        // const executionsRes = await fetch('/api/reports/executions');
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        // Por enquanto, dados vazios até API estar pronta
-        setReportSchedules([]);
-        setReportExecutions([]);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro desconhecido');
-        console.error('Erro ao carregar relatórios:', err);
-      } finally {
-        setIsLoading(false);
+      // Buscar agendamentos e histórico em paralelo
+      const [schedulesRes, historyRes] = await Promise.all([
+        fetch(`/api/reports/schedule?workspaceId=${workspaceId}`, {
+          credentials: 'include',
+        }),
+        fetch(`/api/reports/history?workspaceId=${workspaceId}&limit=50`, {
+          credentials: 'include',
+        }),
+      ]);
+
+      if (!schedulesRes.ok) {
+        throw new Error('Erro ao carregar agendamentos');
       }
+
+      if (!historyRes.ok) {
+        throw new Error('Erro ao carregar histórico');
+      }
+
+      const schedulesData = await schedulesRes.json();
+      const historyData = await historyRes.json();
+
+      // Mapear dados da API para o formato do frontend
+      if (schedulesData.success && schedulesData.data?.schedules) {
+        const mappedSchedules = schedulesData.data.schedules.map((s: Record<string, unknown>) => ({
+          id: s.id as string,
+          name: s.name as string,
+          type: mapApiTypeToFrontend(s.type as string),
+          frequency: mapApiFrequencyToFrontend(s.frequency as string),
+          enabled: s.enabled as boolean,
+          lastRun: s.lastRun ? String(s.lastRun) : undefined,
+          nextRun: String(s.nextRun),
+          recipients: (s.recipients as string[]) || [],
+          createdAt: String(s.createdAt),
+        }));
+        setReportSchedules(mappedSchedules);
+      }
+
+      if (historyData.success && historyData.data?.executions) {
+        const mappedExecutions = historyData.data.executions.map((e: Record<string, unknown>) => ({
+          id: e.id as string,
+          scheduleId: e.scheduleId as string | undefined,
+          reportType: mapApiTypeToFrontend(e.reportType as string),
+          status: mapApiStatusToFrontend(e.status as string),
+          startedAt: String(e.startedAt),
+          completedAt: e.completedAt ? String(e.completedAt) : undefined,
+          filePath: undefined,
+          fileSize: undefined,
+          tokensUsed: e.tokensUsed as number | undefined,
+          estimatedCost: e.quotaConsumed as number | undefined,
+        }));
+        setReportExecutions(mappedExecutions);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error('Erro ao carregar relatórios:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [workspaceId]);
+
+  // Mapear tipos da API para tipos do frontend
+  function mapApiTypeToFrontend(type: string): ReportSchedule['type'] {
+    const mapping: Record<string, ReportSchedule['type']> = {
+      'COMPLETO': 'CASE_SUMMARY',
+      'NOVIDADES': 'WEEKLY_UPDATE',
+      'complete': 'CASE_SUMMARY',
+      'updates': 'WEEKLY_UPDATE',
+      'executive': 'MONTHLY_SUMMARY',
+      'financial': 'CUSTOM',
     };
+    return mapping[type] || 'CUSTOM';
+  }
 
-    fetchReports();
-  }, []);
+  function mapApiFrequencyToFrontend(freq: string): ReportSchedule['frequency'] {
+    const mapping: Record<string, ReportSchedule['frequency']> = {
+      'WEEKLY': 'WEEKLY',
+      'BIWEEKLY': 'WEEKLY',
+      'MONTHLY': 'MONTHLY',
+      'DAILY': 'DAILY',
+    };
+    return mapping[freq] || 'WEEKLY';
+  }
 
-  const generateInstantReport = async (_type: string) => {
+  function mapApiStatusToFrontend(status: string): ReportExecution['status'] {
+    const mapping: Record<string, ReportExecution['status']> = {
+      'COMPLETED': 'COMPLETED',
+      'FAILED': 'FAILED',
+      'RUNNING': 'RUNNING',
+      'AGENDADO': 'RUNNING',
+      'CANCELLED': 'FAILED',
+    };
+    return mapping[status] || 'RUNNING';
+  }
+
+  // Carregar dados quando workspaceId estiver disponível
+  useEffect(() => {
+    if (!authLoading && workspaceId) {
+      fetchReports();
+    }
+  }, [authLoading, workspaceId, fetchReports]);
+
+  const generateInstantReport = async (type: string) => {
+    if (!workspaceId) {
+      setError('Workspace não identificado');
+      return;
+    }
+
     try {
       setIsGenerating(true);
       setError(null);
 
-      // DEFERRED: Implement API call when backend endpoint is ready
-      // API needed: POST /api/reports/generate
-      // const response = await fetch('/api/reports/generate', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ reportType: type })
-      // });
+      // Mapear tipo do frontend para API
+      const apiType = type === 'CASE_SUMMARY' ? 'complete'
+        : type === 'WEEKLY_UPDATE' ? 'updates'
+          : type === 'MONTHLY_SUMMARY' ? 'executive'
+            : 'complete';
 
-      throw new Error('Geração de relatórios ainda não implementada. Em breve estaremos adicionando essa funcionalidade.');
+      const response = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          report_type: apiType,
+          filters: {
+            workspace_id: workspaceId,
+          },
+          options: {
+            include_charts: true,
+            include_ai_insights: true,
+            include_financial_data: false,
+            days_for_updates: 7,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error((errorData as { error?: string }).error || 'Erro ao gerar relatório');
+      }
+
+      const result = await response.json();
+
+      // Adicionar nova execução à lista
+      if (result.success) {
+        const newExecution: ReportExecution = {
+          id: result.data?.id || Date.now().toString(),
+          reportType: mapApiTypeToFrontend(apiType),
+          status: 'RUNNING',
+          startedAt: new Date().toISOString(),
+        };
+        setReportExecutions(prev => [newExecution, ...prev]);
+
+        // Atualizar lista após alguns segundos
+        setTimeout(() => fetchReports(), 5000);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
       console.error('Erro ao gerar relatório:', err);
@@ -197,7 +322,11 @@ export default function ReportsPage() {
                 Configure um relatório para ser gerado automaticamente
               </DialogDescription>
             </DialogHeader>
-            <CreateScheduleForm onClose={() => setShowCreateDialog(false)} />
+            <CreateScheduleForm
+              onClose={() => setShowCreateDialog(false)}
+              workspaceId={workspaceId}
+              onSuccess={fetchReports}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -505,7 +634,11 @@ export default function ReportsPage() {
 }
 
 // Component for creating new report schedules
-function CreateScheduleForm({ onClose }: { onClose: () => void }) {
+function CreateScheduleForm({ onClose, workspaceId, onSuccess }: {
+  onClose: () => void;
+  workspaceId: string | null;
+  onSuccess?: () => void;
+}) {
   const [formData, setFormData] = useState<{
     name: string;
     type: ReportSchedule['type'];
@@ -519,13 +652,56 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
     recipients: [''],
     enabled: true
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // DEFERRED: Implement schedule creation when backend endpoint is ready
-    // API needed: POST /api/reports/schedules
-    console.log('Schedule creation attempt:', formData);
-    onClose();
+
+    if (!workspaceId) {
+      setSubmitError('Workspace não identificado');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Mapear tipos do frontend para API
+      const apiType = formData.type === 'CASE_SUMMARY' ? 'COMPLETO' : 'NOVIDADES';
+      const apiFrequency = formData.frequency === 'DAILY' ? 'WEEKLY'
+        : formData.frequency === 'MONTHLY' ? 'MONTHLY'
+          : 'WEEKLY';
+
+      const response = await fetch('/api/reports/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          workspaceId,
+          name: formData.name,
+          type: apiType,
+          frequency: apiFrequency,
+          processIds: [], // TODO: Add process selector UI
+          audienceType: 'USO_INTERNO',
+          outputFormats: ['PDF'],
+          recipients: formData.recipients.filter(r => r.trim()),
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error((errorData as { error?: string }).error || 'Erro ao criar agendamento');
+      }
+
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Erro desconhecido');
+      console.error('Erro ao criar agendamento:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
