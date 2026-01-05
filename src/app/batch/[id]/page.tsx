@@ -225,9 +225,13 @@ export default function BatchPage() {
 
         {status.canRetry && (
           <Button
-            onClick={() => {
-              // TODO: Implementar retry
-              console.log('Retry batch:', batchId);
+            onClick={async () => {
+              const result = await BatchStatusService.retryBatch(batchId);
+              if (result.success) {
+                fetchStatus(); // Refresh status
+              } else {
+                setError(result.message);
+              }
             }}
             variant="outline"
           >
@@ -236,9 +240,13 @@ export default function BatchPage() {
         )}
         {status.canCancel && (
           <Button
-            onClick={() => {
-              // TODO: Implementar cancel
-              console.log('Cancel batch:', batchId);
+            onClick={async () => {
+              const result = await BatchStatusService.cancelBatch(batchId);
+              if (result.success) {
+                fetchStatus(); // Refresh status
+              } else {
+                setError(result.message);
+              }
             }}
             variant="destructive"
           >

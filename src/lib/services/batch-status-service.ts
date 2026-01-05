@@ -297,4 +297,58 @@ export class BatchStatusService {
         : 0,
     };
   }
+
+  /**
+   * Retry a failed batch
+   * Client-side method that calls the API
+   */
+  static async retryBatch(batchId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`/api/upload/batch/${batchId}/retry`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = (errorData as { error?: string }).error || 'Erro ao reiniciar batch';
+        return { success: false, message: errorMessage };
+      }
+
+      return { success: true, message: 'Batch agendado para reprocessamento' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erro de conexão',
+      };
+    }
+  }
+
+  /**
+   * Cancel a running batch
+   * Client-side method that calls the API
+   */
+  static async cancelBatch(batchId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(`/api/upload/batch/${batchId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = (errorData as { error?: string }).error || 'Erro ao cancelar batch';
+        return { success: false, message: errorMessage };
+      }
+
+      return { success: true, message: 'Batch cancelado com sucesso' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Erro de conexão',
+      };
+    }
+  }
 }

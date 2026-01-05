@@ -86,18 +86,10 @@ export default function ReportsPage() {
         setIsLoading(true);
         setError(null);
 
-        // TODO: Implementar chamadas reais à API
+        // DEFERRED: Implement API calls when backend endpoints are ready
+        // API needed: GET /api/reports/schedules, GET /api/reports/executions
         // const schedulesRes = await fetch('/api/reports/schedules');
         // const executionsRes = await fetch('/api/reports/executions');
-        //
-        // if (!schedulesRes.ok || !executionsRes.ok) {
-        //   throw new Error('Erro ao carregar relatórios');
-        // }
-        //
-        // const schedules = await schedulesRes.json();
-        // const executions = await executionsRes.json();
-        // setReportSchedules(schedules);
-        // setReportExecutions(executions);
 
         // Por enquanto, dados vazios até API estar pronta
         setReportSchedules([]);
@@ -118,19 +110,13 @@ export default function ReportsPage() {
       setIsGenerating(true);
       setError(null);
 
-      // TODO: Implementar chamada real à API de geração
+      // DEFERRED: Implement API call when backend endpoint is ready
+      // API needed: POST /api/reports/generate
       // const response = await fetch('/api/reports/generate', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify({ reportType: type })
       // });
-      //
-      // if (!response.ok) {
-      //   throw new Error('Erro ao gerar relatório');
-      // }
-      //
-      // const execution = await response.json();
-      // setReportExecutions(prev => [execution, ...prev]);
 
       throw new Error('Geração de relatórios ainda não implementada. Em breve estaremos adicionando essa funcionalidade.');
     } catch (err) {
@@ -330,7 +316,7 @@ export default function ReportsPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => !isGenerating && generateInstantReport('CASE_SUMMARY')}>
+                  onClick={() => !isGenerating && generateInstantReport('CASE_SUMMARY')}>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                       <FileText className="w-6 h-6 text-blue-600" />
@@ -343,7 +329,7 @@ export default function ReportsPage() {
                 </Card>
 
                 <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => !isGenerating && generateInstantReport('WEEKLY_UPDATE')}>
+                  onClick={() => !isGenerating && generateInstantReport('WEEKLY_UPDATE')}>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-green-600" />
@@ -356,7 +342,7 @@ export default function ReportsPage() {
                 </Card>
 
                 <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer"
-                      onClick={() => !isGenerating && generateInstantReport('MONTHLY_SUMMARY')}>
+                  onClick={() => !isGenerating && generateInstantReport('MONTHLY_SUMMARY')}>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                       <Users className="w-6 h-6 text-purple-600" />
@@ -484,7 +470,7 @@ export default function ReportsPage() {
                         <TableCell>
                           <Badge variant="outline">
                             {schedule.frequency === 'DAILY' ? 'Diário' :
-                             schedule.frequency === 'WEEKLY' ? 'Semanal' : 'Mensal'}
+                              schedule.frequency === 'WEEKLY' ? 'Semanal' : 'Mensal'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -536,8 +522,9 @@ function CreateScheduleForm({ onClose }: { onClose: () => void }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement schedule creation API call
-    console.log('Creating schedule:', formData);
+    // DEFERRED: Implement schedule creation when backend endpoint is ready
+    // API needed: POST /api/reports/schedules
+    console.log('Schedule creation attempt:', formData);
     onClose();
   };
 
