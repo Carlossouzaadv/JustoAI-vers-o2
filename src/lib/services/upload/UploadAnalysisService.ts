@@ -66,7 +66,7 @@ export class UploadAnalysisService {
             throw new Error(`DOCUMENT_LOCKED:${lockResult.ttl}`);
         }
 
-        let lockKey = lockResult.lockKey;
+        const lockKey = lockResult.lockKey;
         let aiAnalysisResult: Record<string, unknown> | null = null;
 
         try {

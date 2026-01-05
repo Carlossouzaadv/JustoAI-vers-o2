@@ -76,10 +76,10 @@ export class UploadOrchestrator {
         // Using PDFProcessor directly (will be refactored in Phase 2)
         const pdfProcessor = new PDFProcessor();
         // Ignoring types here for legacy compatibility awaiting Phase 2 refactor
-        const extractionResultRaw: any = await pdfProcessor.processComplete({
+        const extractionResultRaw = await pdfProcessor.processComplete({
             pdf_path: tempPath,
             extract_fields: ['processo', 'data', 'partes', 'valor']
-        });
+        }) as unknown as Record<string, unknown>;
 
         // Normalize Result logic from original route
         // ... (This logic is still a bit complex, might need Phase 2 refactor of PDFProcessor to clean this up)
@@ -88,15 +88,15 @@ export class UploadOrchestrator {
         // This cleaning logic is now partially in ProcessIdentificationService, but we need text first
         // Refactoring Step: manual normalization logic replicated here for safety until PDFProcessor update
         const extractionData = extractionResultRaw as Record<string, unknown>;
-        const nestedData = extractionData.data as any;
+        const nestedData = (extractionData.data as Record<string, unknown>) || {};
 
         const normalizedExtraction = {
-            success: extractionResultRaw.success,
-            text: nestedData?.text || extractionResultRaw.text || '',
-            texto_original: nestedData?.texto_original || extractionResultRaw.texto_original,
-            texto_limpo: nestedData?.texto_limpo || extractionResultRaw.texto_limpo,
-            pageCount: nestedData?.pageCount ?? extractionResultRaw.pageCount,
-            error: nestedData?.error || extractionResultRaw.error
+            success: extractionResultRaw.success as boolean,
+            text: (nestedData?.text as string) || (extractionResultRaw.text as string) || '',
+            texto_original: (nestedData?.texto_original as string) || (extractionResultRaw.texto_original as string),
+            texto_limpo: (nestedData?.texto_limpo as string) || (extractionResultRaw.texto_limpo as string),
+            pageCount: (nestedData?.pageCount as number) ?? (extractionResultRaw.pageCount as number),
+            error: (nestedData?.error as string) || (extractionResultRaw.error as string)
         };
 
         const extractedText = normalizedExtraction.text || normalizedExtraction.texto_original || normalizedExtraction.texto_limpo || '';
@@ -144,8 +144,9 @@ export class UploadOrchestrator {
                 workspaceId,
                 file.size / (1024 * 1024)
             );
-        } catch (e: any) {
-            if (e.message?.startsWith('DOCUMENT_LOCKED')) {
+        } catch (e: unknown) {
+            const err = e as Error;
+            if (err.message?.startsWith('DOCUMENT_LOCKED')) {
                 return NextResponse.json({ error: 'Documento sendo processado. Tente novamente.' }, { status: 429 });
             }
             // Proceed without analysis on error
@@ -173,7 +174,7 @@ export class UploadOrchestrator {
                 analysisVersion: aiResult?.modelVersion || 'unknown',
                 analysisKey: aiResult?.analysisKey || undefined,
                 workerId: process.env.WORKER_ID || 'main',
-                costEstimate: (aiResult?.aiAnalysisResult?.cost as any)?.estimatedCost || 0,
+                costEstimate: (aiResult?.aiAnalysisResult?.cost as { estimatedCost?: number })?.estimatedCost || 0,
                 processed: true,
                 ocrStatus: 'COMPLETED'
             }
@@ -222,7 +223,13 @@ export class UploadOrchestrator {
         return path;
     }
 
-    private async handleDuplicate(dedup: any, file: File, hash: any, userId: string, wsId: string) {
+    private async handleDuplicate(
+        dedup: { isDuplicate: boolean; originalDocumentId?: string; originalDocument?: any },
+        file: File,
+        hash: { textSha: string },
+        userId: string,
+        wsId: string
+    ) {
         // Audit Event
         const timelineService = getTimelineMergeService();
         await timelineService.logAuditEvent('duplicate_upload', {
@@ -253,7 +260,7 @@ export class UploadOrchestrator {
         });
     }
 
-    private async saveAnalysisVersion(caseId: string, wsId: string, aiResult: any, docId: string) {
+    private async saveAnalysisVersion(caseId: string, wsId: string, aiResult: { modelVersion: string; analysisKey: string; aiAnalysisResult: unknown }, docId: string) {
         try {
             // Logic to find last version and create new one
             const last = await prisma.caseAnalysisVersion.findFirst({ where: { caseId }, orderBy: { version: 'desc' }, select: { version: true } });
