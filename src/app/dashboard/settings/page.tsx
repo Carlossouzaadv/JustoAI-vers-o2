@@ -67,25 +67,26 @@ export default function SettingsPage() {
       setLoading(true);
 
       // Load user profile
-      if (user && hasExtendedUserProperties(user)) {
-        // Padrão-Ouro: Narrowing SEGURO de propriedades opcionais (PASSO 4)
-        // PASSO 4: Narrowing SEGURO para phone/avatar
-        const phone = ('phone' in user && typeof user.phone === 'string') ? user.phone : null;
-        const avatar = ('avatar' in user && typeof user.avatar === 'string') ? user.avatar : null;
-        const createdAt = ('createdAt' in user && typeof user.createdAt === 'string') ? user.createdAt : '';
+      // Load user profile
+      if (user) {
+        // Padrão-Ouro: Narrowing SEGURO de propriedades opcionais
+        const phone = ('phone' in user && typeof (user as Record<string, unknown>).phone === 'string') ? (user as Record<string, unknown>).phone : null;
+        const avatar = ('avatar' in user && typeof (user as Record<string, unknown>).avatar === 'string') ? (user as Record<string, unknown>).avatar : null;
 
-        // PASSO 5: Usar os valores seguros
+        // createdAt comes from string in UserWithWorkspaces
+        const createdAt = user.createdAt || '';
+
         setProfile({
           id: user.id,
           email: user.email,
           name: user.name || null,
-          phone,
-          avatar,
+          phone: phone as string | null,
+          avatar: avatar as string | null,
           createdAt,
         });
         setProfileForm({
           name: user.name || '',
-          phone: phone || '',
+          phone: (phone as string) || '',
         });
       }
 
