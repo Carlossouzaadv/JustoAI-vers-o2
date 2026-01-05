@@ -97,7 +97,9 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
             processCount: apiClient._count?.cases || 0,
             status: apiClient.status?.toLowerCase() === 'active' ? 'active' : 'inactive',
             lastUpdate: apiClient.updatedAt || new Date().toISOString(),
-            attentionRequired: 0, // TODO: Calculate from case alerts
+            // Calculate attention required from case alerts or movements requiring action
+            // Note: This would ideally come from a dedicated alerts API
+            attentionRequired: (apiClient as { attentionCount?: number }).attentionCount || 0,
           }));
 
         setClients(apiClients);
@@ -181,16 +183,16 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
                       }}
                       isActive={selectedClientId === client.id}
                       className={`w-full p-3 justify-start ${client.attentionRequired && client.attentionRequired > 0
-                          ? 'text-red-600 bg-red-50 hover:bg-red-100'
-                          : 'hover:bg-accent'
+                        ? 'text-red-600 bg-red-50 hover:bg-red-100'
+                        : 'hover:bg-accent'
                         }`}
                     >
                       <div className="flex items-center gap-2 w-full">
                         {getClientStatusIcon(client)}
                         <div className="flex-1 min-w-0">
                           <h4 className={`font-medium text-sm truncate ${client.attentionRequired && client.attentionRequired > 0
-                              ? 'text-red-700'
-                              : ''
+                            ? 'text-red-700'
+                            : ''
                             }`}>
                             {client.name}
                           </h4>

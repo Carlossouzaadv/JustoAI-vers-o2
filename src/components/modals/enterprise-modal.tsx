@@ -15,12 +15,47 @@ interface EnterpriseModalProps {
 }
 
 export default function EnterpriseModal({ isOpen, onClose }: EnterpriseModalProps) {
-    const handleSubmit = (e: React.FormEvent) => {
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [success, setSuccess] = React.useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // TODO: Implement actual submission logic
-        console.log('Enterprise form submitted');
-        onClose();
-        // Maybe show a success toast here
+        setIsSubmitting(true);
+        setError(null);
+
+        const formData = new FormData(e.currentTarget);
+        const data = {
+            name: formData.get('name') as string,
+            email: formData.get('email') as string,
+            phone: formData.get('phone') as string,
+            firmSize: formData.get('firmSize') as string,
+            needs: formData.get('needs') as string,
+        };
+
+        try {
+            const response = await fetch('/api/contact/enterprise', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error((errorData as { error?: string }).error || 'Erro ao enviar solicitação');
+            }
+
+            setSuccess(true);
+            // Close after a brief delay to show success
+            setTimeout(() => {
+                onClose();
+                setSuccess(false);
+            }, 2000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erro desconhecido');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -90,15 +125,29 @@ export default function EnterpriseModal({ isOpen, onClose }: EnterpriseModalProp
                         />
                     </div>
 
+                    {/* Feedback Messages */}
+                    {error && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                            ✅ Solicitação enviada! Entraremos em contato em breve.
+                        </div>
+                    )}
+
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button type="button" variant="outline" onClick={onClose}>
+                        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
                             Cancelar
                         </Button>
                         <Button
                             type="submit"
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-lg"
+                            disabled={isSubmitting || success}
                         >
-                            Enviar Solicitação <MessageSquare className="w-4 h-4 ml-2" />
+                            {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
+                            {!isSubmitting && <MessageSquare className="w-4 h-4 ml-2" />}
                         </Button>
                     </div>
                 </form>
