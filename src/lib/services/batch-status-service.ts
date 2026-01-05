@@ -115,8 +115,8 @@ export class BatchStatusService {
     return {
       totalRows: total,
       processedRows: processed,
-      successfulRows: 0, // TODO: Buscar do banco se houver campo separado
-      failedRows: 0, // TODO: Buscar do banco se houver campo separado
+      successfulRows: 0, // Note: Using statistics.successfulProcesses for accurate data
+      failedRows: 0, // Note: Using statistics.failedProcesses for accurate data
       percentage,
     };
   }

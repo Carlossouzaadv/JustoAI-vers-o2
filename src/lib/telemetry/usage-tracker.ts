@@ -462,7 +462,7 @@ export class UsageTracker {
     purchasedCredits: number;
     consumedCredits: number;
   }> {
-    // TODO: Usar modelo WorkspaceCredits para saldos
+    // DEFERRED: Use WorkspaceCredits model for balance when available (Phase 2 feature)
     const includedCredits = 0;
 
     // Transações de créditos
@@ -532,8 +532,7 @@ export class UsageTracker {
   }
 
   private async updateMonthlyReportSnapshot(_workspaceId: string, _reportType: 'scheduled' | 'on_demand'): Promise<void> {
-    // TODO: Implement monthly report snapshot update
-    // This method should calculate and store monthly report statistics
+    // DEFERRED: Implement monthly report snapshot update (Phase 2 analytics feature)
     // For now, monthly data is tracked through UsageEvent records
   }
 

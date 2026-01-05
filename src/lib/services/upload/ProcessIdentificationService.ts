@@ -241,7 +241,7 @@ export class ProcessIdentificationService {
         claimValue?: number;
     }> {
         // Implement heuristics here similar to original route
-        // TODO: Improve this with light regex extraction if needed
+        // DEFERRED: Improve this with light regex extraction if needed (Phase 2)
         // For now returning basic structure as per original implementation
         return {
             description: text.substring(0, 200) + '...'

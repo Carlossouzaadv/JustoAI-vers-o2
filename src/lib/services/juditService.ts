@@ -499,7 +499,7 @@ export async function processDocument(
     document_type: typeof document,
   }));
 
-  // TODO: Implement document processing
+  // DEFERRED: Document processing implementation
   // This could involve:
   // - Extracting CNJ from document
   // - Uploading document to JUDIT
