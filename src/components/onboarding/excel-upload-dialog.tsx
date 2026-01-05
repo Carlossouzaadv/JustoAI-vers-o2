@@ -111,9 +111,7 @@ export function ExcelUploadDialog({
   const handleUpload = async () => {
     setDialogState('UPLOADING');
 
-    // Corrigir: passar workspaceId ao upload
-    // TODO: Atualizar hook para aceitar workspaceId no upload()
-    const success = await validator.upload();
+    const success = await validator.upload(workspaceId);
 
     if (success && validator.uploadResult) {
       setDialogState('UPLOAD_SUCCESS');
@@ -161,11 +159,10 @@ export function ExcelUploadDialog({
               {/* Dropzone */}
               <div
                 {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
-                  isDragActive
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${isDragActive
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-gray-300 hover:border-gray-400'
-                }`}
+                  }`}
               >
                 <input {...getInputProps()} />
                 <Upload className="w-12 h-12 mx-auto mb-3 text-gray-400" />

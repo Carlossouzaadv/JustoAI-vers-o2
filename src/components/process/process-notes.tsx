@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect , useCallback} from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutosave } from '@/hooks/use-autosave';
+import { useAuth } from '@/contexts/auth-context';
 import { ICONS } from '@/lib/icons';
 
 interface ProcessNote {
@@ -44,6 +45,7 @@ interface ProcessNotesProps {
 }
 
 export function ProcessNotes({ processId }: ProcessNotesProps) {
+  const { user } = useAuth();
   const [notes, setNotes] = useState<ProcessNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState<string | null>(null);
@@ -124,7 +126,7 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
       priority: 'medium',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      authorName: 'Usuário Atual', // TODO: pegar do contexto de autenticação
+      authorName: user?.name || 'Usuário',
       isPrivate: false,
       tags: []
     };
@@ -417,7 +419,7 @@ export function ProcessNotes({ processId }: ProcessNotesProps) {
                         <div className="flex items-center gap-2">
                           <Badge variant={getPriorityColor(note.priority)} className="text-xs">
                             {note.priority === 'high' ? 'Alta' :
-                             note.priority === 'medium' ? 'Média' : 'Baixa'}
+                              note.priority === 'medium' ? 'Média' : 'Baixa'}
                           </Badge>
                           <Button
                             onClick={() => startEditing(note)}

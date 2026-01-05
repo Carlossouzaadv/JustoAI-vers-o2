@@ -69,7 +69,7 @@ export interface ExcelValidatorState {
 export interface UseExcelValidatorReturn extends ExcelValidatorState {
   // Ações
   validate: (file: File, workspaceId: string) => Promise<boolean>;
-  upload: () => Promise<boolean>;
+  upload: (workspaceId: string) => Promise<boolean>;
   reset: () => void;
   downloadErrors: () => void; // Baixar CSV com erros
 }
@@ -175,7 +175,7 @@ export function useExcelValidator(): UseExcelValidatorReturn {
    * Envia arquivo validado para processamento
    * Deve ser chamado DEPOIS de validate() com sucesso
    */
-  const upload = useCallback(async (): Promise<boolean> => {
+  const upload = useCallback(async (workspaceId: string): Promise<boolean> => {
     if (!state.currentFile) {
       setState((prev) => ({
         ...prev,
@@ -202,8 +202,7 @@ export function useExcelValidator(): UseExcelValidatorReturn {
     try {
       const formData = new FormData();
       formData.append('file', state.currentFile);
-      // workspaceId foi usado na validação, mas não temos acesso aqui
-      // TODO: Passar workspaceId como parâmetro para upload()
+      formData.append('workspaceId', workspaceId);
 
       const response = await fetch('/api/upload/excel', {
         method: 'POST',

@@ -190,7 +190,7 @@ describe('useExcelValidator Hook', () => {
       // Chamar upload
       let uploadSuccess = false;
       await act(async () => {
-        uploadSuccess = await result.current.upload();
+        uploadSuccess = await result.current.upload('workspace-123');
       });
 
       expect(uploadSuccess).toBe(true);
@@ -202,7 +202,7 @@ describe('useExcelValidator Hook', () => {
 
       let uploadSuccess = false;
       await act(async () => {
-        uploadSuccess = await result.current.upload();
+        uploadSuccess = await result.current.upload('workspace-123');
       });
 
       expect(uploadSuccess).toBe(false);
@@ -234,7 +234,7 @@ describe('useExcelValidator Hook', () => {
 
       let uploadSuccess = false;
       await act(async () => {
-        uploadSuccess = await result.current.upload();
+        uploadSuccess = await result.current.upload('workspace-123');
       });
 
       expect(uploadSuccess).toBe(false);
@@ -360,7 +360,7 @@ describe('useExcelValidator Hook', () => {
 
       let uploadResult = false;
       await act(async () => {
-        uploadResult = await result.current.upload();
+        uploadResult = await result.current.upload('workspace-123');
       });
 
       expect(uploadResult).toBe(true);
