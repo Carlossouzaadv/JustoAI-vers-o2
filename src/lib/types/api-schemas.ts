@@ -495,7 +495,14 @@ export type ExcelUploadResponse = z.infer<typeof ExcelUploadResponseSchema>;
  * Used in /api/process/[id]/analysis and similar
  */
 export const RouteIdParamSchema = z.object({
-  id: UuidSchema,
+  id: z.string().refine(
+    (val) => {
+      // Aceita UUID ou CUID
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ||
+        /^c[a-z0-9]{24}$/i.test(val);
+    },
+    "ID inválido (deve ser UUID ou CUID)"
+  ),
 });
 
 export type RouteIdParam = z.infer<typeof RouteIdParamSchema>;
@@ -505,7 +512,14 @@ export type RouteIdParam = z.infer<typeof RouteIdParamSchema>;
  * Used in /api/cases/[caseId]
  */
 export const RouteCaseIdParamSchema = z.object({
-  caseId: UuidSchema,
+  caseId: z.string().refine(
+    (val) => {
+      // Aceita UUID ou CUID
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val) ||
+        /^c[a-z0-9]{24}$/i.test(val);
+    },
+    "ID inválido (deve ser UUID ou CUID)"
+  ),
 });
 
 export type RouteCaseIdParam = z.infer<typeof RouteCaseIdParamSchema>;
