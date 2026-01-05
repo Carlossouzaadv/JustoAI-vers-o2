@@ -335,6 +335,9 @@ export async function POST(request: NextRequest) {
       extract_fields: ['processo', 'data', 'partes', 'valor']
     });
 
+    // LOGS ADICIONADOS PARA DEBUG VERCEL PROD
+    console.log('🔍 [PDF Debug] Raw extraction result:', JSON.stringify(extractionResultRaw, null, 2));
+
     // Validar estrutura do resultado com type guard
     if (!isPdfExtractionResult(extractionResultRaw)) {
       log.error({ msg: `${ICONS.ERROR} Extração de PDF retornou estrutura inválida`, data: extractionResultRaw, component: 'documents-upload' });
@@ -344,7 +347,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const extractionResult = extractionResultRaw;
+    // CORREÇÃO: Robust parsing para lidar com diferentes formatos de resposta (Railway vs Local)
+    // Railway pode retornar { success: true, data: { text: "..." } } ou { text: "..." } direto
+    const extractionData = extractionResultRaw as Record<string, unknown>;
+    const nestedData = extractionData.data as PdfExtractionResult | undefined;
+
+    // Normalizar o resultado para um único objeto plano
+    const extractionResult: PdfExtractionResult = {
+      success: extractionResultRaw.success,
+      // Se tiver data.text usa ele, senão usa text da raiz
+      text: nestedData?.text || extractionResultRaw.text,
+      texto_original: nestedData?.texto_original || extractionResultRaw.texto_original,
+      texto_limpo: nestedData?.texto_limpo || extractionResultRaw.texto_limpo,
+      pageCount: nestedData?.pageCount ?? extractionResultRaw.pageCount,
+      error: nestedData?.error || extractionResultRaw.error
+    };
+
+    console.log('🔍 [PDF Debug] Normalized result:', {
+      success: extractionResult.success,
+      hasText: !!extractionResult.text,
+      textLength: extractionResult.text?.length
+    });
 
     // Verificar se houve sucesso, mas também aceitar resultados com extração parcial
     if (!extractionResult.success && (!extractionResult.texto_original && !extractionResult.texto_limpo)) {

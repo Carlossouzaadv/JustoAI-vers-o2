@@ -219,18 +219,20 @@ export function WelcomeDashboard({
                 <div className="space-y-6">
                     <Card className="p-5 bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg">
                         <div className="mb-4">
-                            <Sparkles className="w-8 h-8 opacity-80 mb-2" />
-                            <h3 className="font-bold text-lg">Dica Pro</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Sparkles className="w-5 h-5 text-yellow-300" />
+                                <h3 className="font-bold text-lg">Dica Pro</h3>
+                            </div>
                             <p className="text-indigo-100 text-sm mt-1">
-                                Use a busca semântica para encontrar jurisprudência relevante em segundos. Basta digitar sua tese.
+                                Gere relatórios profissionais em segundos! Nosso sistema analisa automaticamente seus processos e cria documentos prontos para uso.
                             </p>
                         </div>
                         <Button
                             size="sm"
                             className="w-full bg-white/10 hover:bg-white/20 border-0 text-white"
-                            onClick={() => toast.info('Funcionalidade disponível no menu Jurisprudência')}
+                            onClick={() => router.push('/dashboard/reports')}
                         >
-                            Saiba mais
+                            Criar relatório
                         </Button>
                     </Card>
 
