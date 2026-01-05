@@ -96,7 +96,7 @@ export default function SettingsPage() {
         });
         if (response.ok) {
           const data = await response.json();
-          setWorkspace(data);
+          setWorkspace(data.data);
         }
       }
     } catch (error) {

@@ -35,7 +35,7 @@ export function WelcomeDashboard({
             label: 'Analise seu primeiro processo',
             completed: hasUploadedDocuments || pendingCount > 0,
             icon: Upload,
-            action: () => router.push('/dashboard/documents/upload'),
+            action: () => router.push('/dashboard/documents-upload'),
             description: 'Faça upload de um PDF para análise automática.'
         },
         {
@@ -90,7 +90,7 @@ export function WelcomeDashboard({
                     </Button>
                     <Button
                         className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-lg shadow-indigo-200"
-                        onClick={() => router.push('/dashboard/documents/upload')}
+                        onClick={() => router.push('/dashboard/documents-upload')}
                     >
                         <Sparkles size={16} />
                         Novo Processo
