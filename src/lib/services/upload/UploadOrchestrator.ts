@@ -240,7 +240,7 @@ export class UploadOrchestrator {
 
         const dupDoc = await prisma.caseDocument.create({
             data: {
-                caseId: dedup.originalDocument!.caseId,
+                caseId: (dedup.originalDocument as { caseId: string }).caseId,
                 name: file.name,
                 originalName: file.name,
                 type: 'OTHER',
