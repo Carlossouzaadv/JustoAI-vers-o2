@@ -391,8 +391,11 @@ export async function DELETE(
       });
 
     } else {
-      // TODO: Implementar remoção dos dados importados
-      // Por segurança, por enquanto apenas remove o registro
+      // Remove imported data items first, then the import record
+      // This ensures referential integrity
+      await prisma.importedDataItem.deleteMany({
+        where: { systemImportId: (await params).id }
+      });
       await prisma.systemImport.delete({
         where: { id: (await params).id }
       });
@@ -641,7 +644,9 @@ async function handleRetryImport(systemImport: SystemImport, force: boolean) {
     }
   });
 
-  // TODO: Reiniciar processo de importação em background
+  // Note: Background restart trigger - in production, queue this job
+  // For now, status reset allows re-upload or manual trigger
+  console.log(`${ICONS.INFO} Import reset to ANALYZING status. Manual trigger or re-upload required.`);
 
   console.log(`${ICONS.PROCESS} Importação reiniciada:`, {
     id: systemImport.id,

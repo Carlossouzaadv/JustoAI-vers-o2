@@ -578,9 +578,26 @@ async function generateMovementAlerts(process: MonitoredProcessWithWorkspace, mo
 
     // Enviar alerta para cada usuário do workspace
     let alertsGenerated = 0;
-    // TODO: Implementar busca de usuários do workspace quando o modelo estiver disponível
-    // Placeholder for future implementation - keeping structure for when user notification is ready
-    alertsGenerated = 0;
+    // Query users via UserWorkspace relation
+    const workspaceUsers = await prisma.userWorkspace.findMany({
+      where: { workspaceId },
+      select: { userId: true }
+    });
+
+    for (const uw of workspaceUsers) {
+      try {
+        await sendProcessAlert(
+          uw.userId,
+          process.processNumber,
+          typeof movement.type === 'string' ? movement.type : 'Movimentação',
+          typeof movement.description === 'string' ? movement.description : 'Nova movimentação no processo',
+          urgency
+        );
+        alertsGenerated++;
+      } catch (alertError) {
+        logError(`${ICONS.WARNING} Failed to send movement alert:`, '', { component: 'juditWebhookTracking' });
+      }
+    }
 
     if (alertsGenerated > 0) {
       // Broadcaster em tempo real via SSE
@@ -661,9 +678,26 @@ ${status.reason ? `Motivo: ${status.reason}` : ''}
 
     // Enviar alerta para cada usuário
     let alertsGenerated = 0;
-    // TODO: Implementar busca de usuários do workspace quando o modelo estiver disponível
-    // Placeholder for future implementation
-    alertsGenerated = 0;
+    // Query users via UserWorkspace relation
+    const workspaceUsers = await prisma.userWorkspace.findMany({
+      where: { workspaceId },
+      select: { userId: true }
+    });
+
+    for (const uw of workspaceUsers) {
+      try {
+        await sendProcessAlert(
+          uw.userId,
+          process.processNumber,
+          `Mudança de Status: ${status.current}`,
+          statusChangeDescription,
+          urgency
+        );
+        alertsGenerated++;
+      } catch (alertError) {
+        logError(`${ICONS.WARNING} Failed to send status alert:`, '', { component: 'juditWebhookTracking' });
+      }
+    }
 
     if (alertsGenerated > 0 || true) {
       // Broadcaster em tempo real via SSE

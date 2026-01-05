@@ -112,31 +112,54 @@ export class MonitoringTelemetry {
   }
 
   // ================================================================
-  // RECORDING DE EVENTOS (DESABILITADO)
+  // RECORDING DE EVENTOS (VIA UsageEvent)
   // ================================================================
 
   async recordTelemetryEvent(event: Omit<TelemetryEvent, 'timestamp'>): Promise<void> {
-    // TODO: Implementar quando modelo de telemetria for criado
-    console.log(`${ICONS.TELEMETRY} Telemetry disabled - would record:`, {
-      type: event.type,
-      source: event.source,
-      workspace: event.workspaceId,
-      process: event.processNumber,
-      cost: event.cost,
-      success: event.success,
-      duration: event.duration
-    });
+    try {
+      await prisma.usageEvent.create({
+        data: {
+          workspaceId: event.workspaceId || '',
+          eventType: event.type,
+          resourceType: event.source,
+          metadata: {
+            processNumber: event.processNumber,
+            trackingId: event.trackingId,
+            cost: event.cost,
+            success: event.success,
+            duration: event.duration,
+            error: event.error,
+            ...event.metadata,
+          },
+        },
+      });
+      log.info({ msg: `${ICONS.TELEMETRY} Telemetry recorded: ${event.type}`, component: 'monitoring-telemetry' });
+    } catch (error) {
+      logError(error, `${ICONS.ERROR} Failed to record telemetry:`, { component: 'refactored' });
+    }
   }
 
   async recordCostEvent(cost: Omit<CostTracking, 'timestamp'>): Promise<void> {
-    // TODO: Implementar quando modelo de custo for criado
-    console.log(`${ICONS.COST} Cost tracking disabled - would record:`, {
-      workspaceId: cost.workspaceId,
-      service: cost.service,
-      operation: cost.operation,
-      cost: cost.cost,
-      currency: cost.currency
-    });
+    try {
+      await prisma.usageEvent.create({
+        data: {
+          workspaceId: cost.workspaceId,
+          eventType: 'cost_incurred',
+          resourceType: cost.service,
+          metadata: {
+            operation: cost.operation,
+            cost: cost.cost,
+            currency: cost.currency,
+            processCount: cost.processCount,
+            attachmentCount: cost.attachmentCount,
+            ...cost.metadata,
+          },
+        },
+      });
+      log.info({ msg: `${ICONS.COST} Cost recorded: ${cost.operation} - R$${cost.cost}`, component: 'monitoring-telemetry' });
+    } catch (error) {
+      logError(error, `${ICONS.ERROR} Failed to record cost:`, { component: 'refactored' });
+    }
   }
 
   // ================================================================

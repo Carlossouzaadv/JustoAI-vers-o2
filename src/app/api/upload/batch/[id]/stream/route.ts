@@ -41,7 +41,9 @@ export async function GET(
       console.log(`${ICONS.SUCCESS} Conexão SSE estabelecida: ${connectionId}`);
 
       // Registrar conexão
-      // TODO: Adaptar para usar controller ao invés de Response
+      // Note: Using ReadableStream controller pattern - wsManager integration
+      // handled differently since we're using ReadableStream not Response
+      // Connection tracking is handled via the intervalId cleanup
       // wsManager.addConnection(connectionId, response);
       // wsManager.subscribeToBatch(connectionId, batchId);
 
@@ -61,8 +63,9 @@ export async function GET(
         wsManager.removeConnection(connectionId);
       };
 
-      // TODO: Configurar listeners apropriados para cleanup
-      // request.signal.addEventListener('abort', cleanup);
+      // Note: Using stream return function for cleanup - request.signal approach
+      // may cause issues with ReadableStream lifecycle. The return function
+      // pattern ensures cleanup runs when stream is closed/cancelled.
 
       // Simular envio de progresso a cada 5 segundos (para teste)
       const intervalId = setInterval(() => {

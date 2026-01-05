@@ -125,8 +125,9 @@ export async function POST(
     try {
       userWorkspace = await prisma.userWorkspace.findFirst({
         where: {
-          workspace: { id: systemImport.workspaceId },
-          // TODO: In production, also verify user.id matches from Clerk
+          workspaceId: systemImport.workspaceId,
+          // Verify the authenticated user has access to this workspace
+          userId: user.id,
         },
         select: { role: true },
       });

@@ -746,8 +746,53 @@ export class OpsAlerts {
   }
 
   private async checkAggregatedAlerts(): Promise<void> {
-    // TODO: Implementar alertas agregados (ex: total de custos global)
-    log.info({ msg: `${ICONS.INFO} Checking aggregated alerts (placeholder)`, component: 'opsAlerts' });
+    try {
+      // Calculate global cost aggregations across all workspaces
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const dailyUsage = await prisma.usageEvent.groupBy({
+        by: ['workspaceId'],
+        where: {
+          eventType: { in: ['api_call', 'analysis', 'report'] },
+          createdAt: { gte: today },
+        },
+        _count: true,
+      });
+
+      const totalEvents = dailyUsage.reduce((sum, ws) => sum + ws._count, 0);
+      const activeWorkspaces = dailyUsage.length;
+
+      // Alert if global usage is unusually high
+      if (totalEvents > 10000) {
+        await this.sendAlert({
+          id: `global-high-usage-${Date.now()}`,
+          ruleId: 'global-high-usage',
+          severity: 'warning',
+          title: 'Alto Volume de Uso Global',
+          message: `${totalEvents} eventos processados hoje em ${activeWorkspaces} workspaces`,
+          context: {
+            billingEstimate: 0,
+            planPrice: 0,
+            quotaUsage: totalEvents,
+            quotaLimit: 10000,
+            hardBlockedEvents: 0,
+            timeframe: 'daily',
+          },
+          channels: ['slack', 'email'],
+          sentAt: new Date(),
+          acknowledged: false,
+          timestamp: new Date(),
+        });
+      }
+
+      log.info({
+        msg: `${ICONS.INFO} Aggregated alerts check: ${totalEvents} events in ${activeWorkspaces} workspaces`,
+        component: 'opsAlerts'
+      });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Failed to check aggregated alerts:`, 'error', { component: 'opsAlerts' });
+    }
   }
 
   private async saveAlertEvent(alert: AlertEvent): Promise<void> {
@@ -777,13 +822,88 @@ export class OpsAlerts {
   // ================================================================
 
   async acknowledgeAlert(alertId: string, userId: string): Promise<void> {
-    log.info({ msg: `${ICONS.CHECK} Alert acknowledged: ${alertId} by ${userId}`, component: 'opsAlerts' });
-    // TODO: Implementar sistema de acknowledgment
+    try {
+      // Find the alert event and mark as acknowledged
+      const alertEvent = await prisma.usageEvent.findFirst({
+        where: {
+          eventType: 'ops_alert_sent',
+          metadata: {
+            path: ['alertId'],
+            equals: alertId
+          }
+        }
+      });
+
+      if (alertEvent) {
+        await prisma.usageEvent.update({
+          where: { id: alertEvent.id },
+          data: {
+            metadata: {
+              ...(alertEvent.metadata as Record<string, unknown>),
+              acknowledged: true,
+              acknowledgedBy: userId,
+              acknowledgedAt: new Date().toISOString(),
+            }
+          }
+        });
+        log.info({ msg: `${ICONS.CHECK} Alert acknowledged: ${alertId} by ${userId}`, component: 'opsAlerts' });
+      } else {
+        log.warn({ msg: `${ICONS.WARNING} Alert not found: ${alertId}`, component: 'opsAlerts' });
+      }
+    } catch (error) {
+      logError(`${ICONS.ERROR} Failed to acknowledge alert:`, 'error', { component: 'opsAlerts' });
+    }
   }
 
-  async getActiveAlerts(_workspaceId?: string): Promise<AlertEvent[]> {
-    // TODO: Implementar busca de alertas ativos
-    return [];
+  async getActiveAlerts(workspaceId?: string): Promise<AlertEvent[]> {
+    try {
+      const oneDayAgo = new Date();
+      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+      const whereClause: Record<string, unknown> = {
+        eventType: 'ops_alert_sent',
+        createdAt: { gte: oneDayAgo },
+      };
+
+      if (workspaceId) {
+        whereClause.workspaceId = workspaceId;
+      }
+
+      const events = await prisma.usageEvent.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      });
+
+      return events.map(event => {
+        const metadata = event.metadata as Record<string, unknown>;
+        return {
+          id: metadata.alertId as string || event.id,
+          ruleId: metadata.ruleId as string || 'unknown',
+          workspaceId: event.workspaceId,
+          severity: metadata.severity as string || 'medium',
+          title: metadata.title as string || 'Unknown Alert',
+          message: metadata.message as string || '',
+          context: {
+            workspaceId: event.workspaceId,
+            billingEstimate: 0,
+            planPrice: 0,
+            quotaUsage: 0,
+            quotaLimit: 0,
+            hardBlockedEvents: 0,
+            timeframe: 'daily',
+          },
+          channels: (metadata.channels as string[]) || [],
+          sentAt: event.createdAt || new Date(),
+          acknowledged: metadata.acknowledged === true,
+          timestamp: event.createdAt || new Date(),
+          metadata: metadata,
+        };
+      });
+    } catch (error) {
+      logError(`${ICONS.ERROR} Failed to get active alerts:`, 'error', { component: 'opsAlerts' });
+      return [];
+    }
   }
 
   async updateAlertRule(ruleId: string, updates: Partial<AlertRule>): Promise<void> {
@@ -815,8 +935,12 @@ export async function runAlertCheck(): Promise<void> {
 
 /**
  * Setup de jobs periódicos de alertas
+ * Note: Requires external job scheduler (Bull, node-cron) in production
  */
 export async function setupAlertJobs(): Promise<void> {
-  // TODO: Integrar com sistema de jobs (Bull/cron)
-  log.info({ msg: `${ICONS.SUCCESS} Alert jobs setup completed`, component: 'opsAlerts' });
+  // For production, integrate with Bull queue or node-cron:
+  // import cron from 'node-cron';
+  // cron.schedule('*/30 * * * *', runAlertCheck); // Every 30 minutes
+
+  log.info({ msg: `${ICONS.SUCCESS} Alert jobs setup completed (manual trigger only)`, component: 'opsAlerts' });
 }
