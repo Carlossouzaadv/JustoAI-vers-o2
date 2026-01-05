@@ -639,27 +639,102 @@ function CreateScheduleForm({ onClose, workspaceId, onSuccess }: {
   workspaceId: string | null;
   onSuccess?: () => void;
 }) {
+  // Form state
   const [formData, setFormData] = useState<{
     name: string;
     type: ReportSchedule['type'];
     frequency: ReportSchedule['frequency'];
     recipients: string[];
     enabled: boolean;
+    selectionMode: 'client' | 'process';
+    selectedClientId: string | null;
+    selectedProcessIds: string[];
   }>({
     name: '',
     type: 'WEEKLY_UPDATE',
     frequency: 'WEEKLY',
     recipients: [''],
-    enabled: true
+    enabled: true,
+    selectionMode: 'client',
+    selectedClientId: null,
+    selectedProcessIds: [],
   });
+
+  // Data loading state
+  const [clients, setClients] = useState<{ id: string; name: string; processCount: number }[]>([]);
+  const [processes, setProcesses] = useState<{ id: string; processNumber: string; clientName?: string }[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Fetch clients and processes on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!workspaceId) return;
+
+      setIsLoadingData(true);
+      try {
+        const [clientsRes, processesRes] = await Promise.all([
+          fetch(`/api/clients?workspaceId=${workspaceId}&limit=100`, { credentials: 'include' }),
+          fetch(`/api/processes?workspaceId=${workspaceId}&limit=200`, { credentials: 'include' }),
+        ]);
+
+        if (clientsRes.ok) {
+          const clientsData = await clientsRes.json();
+          if (clientsData.success && clientsData.data) {
+            const mappedClients = (clientsData.data.items || clientsData.data).map((c: Record<string, unknown>) => ({
+              id: c.id as string,
+              name: c.name as string || c.displayName as string || 'Sem nome',
+              processCount: (c._count as { monitoredProcesses?: number })?.monitoredProcesses || 0,
+            }));
+            setClients(mappedClients);
+          }
+        }
+
+        if (processesRes.ok) {
+          const processesData = await processesRes.json();
+          if (processesData.success && processesData.data) {
+            const items = processesData.data.items || processesData.data;
+            const mappedProcesses = items.map((p: Record<string, unknown>) => ({
+              id: p.id as string,
+              processNumber: p.processNumber as string || p.numeroCnj as string || 'N/A',
+              clientName: p.clientName as string || undefined,
+            }));
+            setProcesses(mappedProcesses);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar dados:', err);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    fetchData();
+  }, [workspaceId]);
+
+  // Get process IDs based on selection mode
+  const getProcessIds = (): string[] => {
+    if (formData.selectionMode === 'client' && formData.selectedClientId) {
+      // Filter processes by client
+      return processes
+        .filter(p => p.clientName && clients.find(c => c.id === formData.selectedClientId)?.name === p.clientName)
+        .map(p => p.id);
+    }
+    return formData.selectedProcessIds;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!workspaceId) {
       setSubmitError('Workspace não identificado');
+      return;
+    }
+
+    const processIds = getProcessIds();
+    if (processIds.length === 0) {
+      setSubmitError('Selecione pelo menos um cliente ou processo');
       return;
     }
 
@@ -682,7 +757,7 @@ function CreateScheduleForm({ onClose, workspaceId, onSuccess }: {
           name: formData.name,
           type: apiType,
           frequency: apiFrequency,
-          processIds: [], // TODO: Add process selector UI
+          processIds,
           audienceType: 'USO_INTERNO',
           outputFormats: ['PDF'],
           recipients: formData.recipients.filter(r => r.trim()),
@@ -704,6 +779,16 @@ function CreateScheduleForm({ onClose, workspaceId, onSuccess }: {
     }
   };
 
+  // Toggle process selection
+  const toggleProcess = (processId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedProcessIds: prev.selectedProcessIds.includes(processId)
+        ? prev.selectedProcessIds.filter(id => id !== processId)
+        : [...prev.selectedProcessIds, processId]
+    }));
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -717,6 +802,102 @@ function CreateScheduleForm({ onClose, workspaceId, onSuccess }: {
           required
         />
       </div>
+
+      {/* Client/Process Selector */}
+      <div className="space-y-3 p-3 border rounded-lg bg-neutral-50">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium text-neutral-700">
+            Selecionar por *
+          </label>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant={formData.selectionMode === 'client' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFormData({ ...formData, selectionMode: 'client', selectedProcessIds: [] })}
+            >
+              <Users className="w-4 h-4 mr-1" />
+              Cliente
+            </Button>
+            <Button
+              type="button"
+              variant={formData.selectionMode === 'process' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFormData({ ...formData, selectionMode: 'process', selectedClientId: null })}
+            >
+              <FileText className="w-4 h-4 mr-1" />
+              Processos
+            </Button>
+          </div>
+        </div>
+
+        {isLoadingData ? (
+          <div className="text-sm text-neutral-500 py-2">Carregando dados...</div>
+        ) : formData.selectionMode === 'client' ? (
+          <div>
+            <Select
+              value={formData.selectedClientId || ''}
+              onValueChange={(value) => setFormData({ ...formData, selectedClientId: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um cliente" />
+              </SelectTrigger>
+              <SelectContent>
+                {clients.length === 0 ? (
+                  <SelectItem value="_empty" disabled>Nenhum cliente encontrado</SelectItem>
+                ) : (
+                  clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name} ({client.processCount} processos)
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {formData.selectedClientId && (
+              <p className="text-xs text-neutral-500 mt-1">
+                {getProcessIds().length} processo(s) serão incluídos no relatório
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="max-h-40 overflow-y-auto space-y-1">
+            {processes.length === 0 ? (
+              <p className="text-sm text-neutral-500">Nenhum processo encontrado</p>
+            ) : (
+              processes.map(process => (
+                <div key={process.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={process.id}
+                    checked={formData.selectedProcessIds.includes(process.id)}
+                    onCheckedChange={() => toggleProcess(process.id)}
+                  />
+                  <label htmlFor={process.id} className="text-sm cursor-pointer">
+                    {process.processNumber}
+                    {process.clientName && (
+                      <span className="text-neutral-500 ml-1">({process.clientName})</span>
+                    )}
+                  </label>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {formData.selectionMode === 'process' && formData.selectedProcessIds.length > 0 && (
+          <p className="text-xs text-neutral-500">
+            {formData.selectedProcessIds.length} processo(s) selecionado(s)
+          </p>
+        )}
+      </div>
+
+      {/* Error Message */}
+      {submitError && (
+        <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          <AlertCircle className="w-4 h-4 inline mr-1" />
+          {submitError}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
