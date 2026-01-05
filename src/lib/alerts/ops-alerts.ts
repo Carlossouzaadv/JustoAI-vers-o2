@@ -367,7 +367,8 @@ export class OpsAlerts {
         return; // Condição não atendida
       }
 
-      log.info({ msg: `${ICONS.WARNING} Alert rule triggered: ${rule.name}`,
+      log.info({
+        msg: `${ICONS.WARNING} Alert rule triggered: ${rule.name}`,
         workspace: context.workspaceId,
         severity: rule.severity,
         component: 'opsAlerts'
@@ -554,9 +555,54 @@ export class OpsAlerts {
   }
 
   private async sendWebhookAlert(alert: AlertEvent): Promise<void> {
+    const webhookUrl = process.env.OPS_ALERT_WEBHOOK_URL;
+    if (!webhookUrl) {
+      log.warn({ msg: `${ICONS.WARNING} OPS_ALERT_WEBHOOK_URL not configured`, component: 'opsAlerts' });
+      return;
+    }
+
     try {
-      // TODO: Implementar webhook genérico
-      log.info({ msg: `${ICONS.ALERT} Webhook alert (simulated)`, component: 'opsAlerts' });
+      const payload = {
+        timestamp: alert.sentAt.toISOString(),
+        event: 'ops_alert',
+        data: {
+          id: alert.id,
+          ruleId: alert.ruleId,
+          severity: alert.severity,
+          title: alert.title,
+          message: alert.message,
+          workspaceId: alert.workspaceId,
+          workspaceName: alert.context.workspaceName,
+          billingEstimate: alert.context.billingEstimate,
+          quotaUsage: `${alert.context.quotaUsage}/${alert.context.quotaLimit}`,
+          metadata: alert.metadata,
+        },
+      };
+
+      // Add HMAC signature if secret is configured
+      const webhookSecret = ALERT_CONFIG.WEBHOOK_SECRET;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+      if (webhookSecret) {
+        const crypto = await import('crypto');
+        const signature = crypto
+          .createHmac('sha256', webhookSecret)
+          .update(JSON.stringify(payload))
+          .digest('hex');
+        headers['X-Webhook-Signature'] = `sha256=${signature}`;
+      }
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook response: ${response.status} ${response.statusText}`);
+      }
+
+      log.info({ msg: `${ICONS.SUCCESS} Webhook alert sent successfully`, component: 'opsAlerts' });
 
     } catch (error) {
       logError(`${ICONS.ERROR} Failed to send webhook alert:`, 'error', { component: 'opsAlerts' });
@@ -623,7 +669,7 @@ export class OpsAlerts {
     if (!breakdown) return 'Breakdown não disponível';
 
     const sorted = Object.entries(breakdown)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 3);
 
     return sorted

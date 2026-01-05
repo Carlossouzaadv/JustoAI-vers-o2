@@ -167,25 +167,58 @@ function getEnabledChannels(): NotificationChannel[] {
 // ================================================================
 
 /**
- * Envia notificação por email
+ * Envia notificação por email usando Resend
  */
 async function sendEmailNotification(alert: AlertOptions): Promise<void> {
-  // TODO: Integrate with email service (SendGrid, AWS SES, etc.)
-  alertLogger.info({
-    action: 'email_notification',
-    to: ALERT_CONFIG.EMAIL_TO,
-    subject: `[${alert.severity}] ${alert.title}`,
-    alert_type: alert.type,
-  });
+  // Check if email is configured
+  if (ALERT_CONFIG.EMAIL_TO.length === 0) {
+    alertLogger.warn({
+      action: 'email_notification_skipped',
+      reason: 'No recipients configured',
+    });
+    return;
+  }
 
-  // Placeholder for actual email implementation
-  // Example with nodemailer:
-  // await transporter.sendMail({
-  //   from: ALERT_CONFIG.EMAIL_FROM,
-  //   to: ALERT_CONFIG.EMAIL_TO,
-  //   subject: `[${alert.severity}] ${alert.title}`,
-  //   html: formatEmailBody(alert),
-  // });
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    alertLogger.warn({
+      action: 'email_notification_skipped',
+      reason: 'RESEND_API_KEY not configured',
+    });
+    return;
+  }
+
+  try {
+    // Dynamic import Resend to avoid loading if not used
+    const { Resend } = await import('resend');
+    const resend = new Resend(resendApiKey);
+
+    const result = await resend.emails.send({
+      from: ALERT_CONFIG.EMAIL_FROM,
+      to: ALERT_CONFIG.EMAIL_TO,
+      subject: `[${alert.severity || 'MEDIUM'}] ${alert.title}`,
+      html: formatEmailBody(alert),
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    alertLogger.info({
+      action: 'email_notification_sent',
+      to: ALERT_CONFIG.EMAIL_TO,
+      subject: `[${alert.severity}] ${alert.title}`,
+      alert_type: alert.type,
+      email_id: result.data?.id,
+    });
+  } catch (error) {
+    alertLogger.error({
+      action: 'email_notification_failed',
+      error: error instanceof Error ? error.message : String(error),
+      alert_type: alert.type,
+    });
+    throw error;
+  }
 }
 
 /**
