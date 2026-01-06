@@ -74,7 +74,7 @@ describe('Messages Library', () => {
     })
 
     it('has correct upload _error messages', () => {
-      expect(ERROR_MESSAGES.file_too_large).toBe('Arquivo muito grande. Tamanho máximo: 10MB')
+      expect(ERROR_MESSAGES.file_too_large).toBe('Arquivo muito grande. Tamanho máximo: 100MB')
       expect(ERROR_MESSAGES.invalid_format).toBe('Formato de arquivo inválido')
       expect(ERROR_MESSAGES.upload_failed).toBe('Falha no upload. Tente novamente.')
     })
