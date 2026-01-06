@@ -178,14 +178,25 @@ export default function ProcessPage() {
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status.toUpperCase()) {
-      case 'ACTIVE': return 'Ativo';
-      case 'SUSPENDED': return 'Suspenso';
-      case 'CLOSED': return 'Fechado';
-      case 'ARCHIVED': return 'Arquivado';
-      case 'CANCELLED': return 'Cancelado';
-      default: return status;
-    }
+    const labels: Record<string, string> = {
+      'ACTIVE': 'Ativo',
+      'SUSPENDED': 'Suspenso',
+      'CLOSED': 'Encerrado',
+      'ARCHIVED': 'Arquivado',
+      'CANCELLED': 'Cancelado',
+      'UNASSIGNED': 'Não atribuído',
+    };
+    return labels[status.toUpperCase()] || status;
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      'LOW': 'Baixa',
+      'MEDIUM': 'Média',
+      'HIGH': 'Alta',
+      'URGENT': 'Urgente',
+    };
+    return labels[priority.toUpperCase()] || priority;
   };
 
   const getTypeLabel = (type: string) => {
@@ -278,9 +289,9 @@ export default function ProcessPage() {
                     <Dialog open={showClientModal} onOpenChange={setShowClientModal}>
                       <DialogTrigger asChild>
                         <Button
-                          variant="destructive"
+                          variant="ghost"
                           size="sm"
-                          className="flex items-center gap-1 h-7 text-white font-semibold"
+                          className="flex items-center gap-1 h-7 text-white font-semibold bg-blue-600 hover:bg-blue-700"
                           onClick={() => loadClients()}
                         >
                           {ICONS.WARNING} Cliente não atribuído
@@ -356,7 +367,7 @@ export default function ProcessPage() {
                   )}
 
                   <span className="flex items-center gap-1 text-muted-foreground">
-                    {ICONS.DOCUMENT} {getTypeLabel(caseInfo.type)}
+                    {ICONS.DOCUMENT} {getTypeLabel(caseInfo.type)} <Button variant="ghost" size="icon" className="h-4 w-4 ml-1" title="Editar tipo">{ICONS.EDIT}</Button>
                   </span>
                   <span className="flex items-center gap-1 text-muted-foreground">
                     {ICONS.FOLDER} {caseInfo.documentCount} documento(s)
@@ -370,7 +381,7 @@ export default function ProcessPage() {
                 {getStatusLabel(caseInfo.status)}
               </Badge>
               <Badge variant={getPriorityColor(caseInfo.priority)}>
-                {caseInfo.priority}
+                {getPriorityLabel(caseInfo.priority)}
               </Badge>
             </div>
           </div>

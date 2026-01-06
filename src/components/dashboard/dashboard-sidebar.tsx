@@ -198,7 +198,7 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
                           </h4>
                           <p className="text-xs text-muted-foreground">
                             {client.processCount} processo{client.processCount !== 1 ? 's' : ''}
-                            {client.attentionRequired && client.attentionRequired > 0 && (
+                            {(client.attentionRequired ?? 0) > 0 && (
                               <span className="text-red-600 ml-1">
                                 • {client.attentionRequired} atenção
                               </span>

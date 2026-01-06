@@ -33,7 +33,7 @@ export interface ProcessIdentificationResult {
 export class ProcessIdentificationService {
     private prisma: PrismaClient;
     private textCleaner: TextCleaner;
-    private readonly UNASSIGNED_FOLDER = 'clientes_a_definir';
+    private readonly UNASSIGNED_FOLDER = 'Clientes a definir';
 
     constructor(prisma: PrismaClient) {
         this.prisma = prisma;
