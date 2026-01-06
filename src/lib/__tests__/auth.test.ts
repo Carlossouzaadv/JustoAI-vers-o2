@@ -2,11 +2,11 @@
  * @jest-environment node
  * 
  * Auth Module Tests
- * Tests authentication functions: getCurrentUser, requireAuth
+ * Tests authentication functions: getCurrentUser
  * Uses mocked Supabase client and Prisma
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 // Mock next/headers before importing auth module
 jest.mock('next/headers', () => ({
@@ -31,18 +31,19 @@ jest.mock('@supabase/ssr', () => ({
 }));
 
 // Mock Prisma
-const mockPrisma = {
-    user: {
-        upsert: jest.fn(),
-        findUnique: jest.fn(),
-    },
-    workspace: {
-        create: jest.fn(),
-    },
-};
-
 jest.mock('@/lib/prisma', () => ({
-    prisma: mockPrisma,
+    prisma: {
+        user: {
+            upsert: jest.fn(),
+            findUnique: jest.fn(),
+        },
+        workspace: {
+            create: jest.fn(),
+        },
+        userWorkspace: {
+            findUnique: jest.fn(),
+        },
+    },
 }));
 
 // Mock logger
@@ -51,8 +52,11 @@ jest.mock('@/lib/services/logger', () => ({
     logError: jest.fn(),
 }));
 
+// Get typed mock
+const mockPrisma = jest.mocked(prisma);
+
 // Import after mocks are set up
-import { getCurrentUser, requireAuth } from '../auth';
+import { getCurrentUser, hasWorkspaceAccess, getUserWorkspaceRole, validateAuth } from '../auth';
 
 describe('Auth Module', () => {
     beforeEach(() => {
@@ -112,7 +116,8 @@ describe('Auth Module', () => {
                 error: null,
             });
 
-            mockPrisma.user.upsert.mockResolvedValue(mockDbUser);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mockPrisma.user.upsert.mockResolvedValue(mockDbUser as any);
 
             const result = await getCurrentUser();
 
@@ -146,6 +151,7 @@ describe('Auth Module', () => {
                 id: 'new-workspace-123',
                 name: "New User's Workspace",
                 slug: 'workspace-new-user',
+                users: [],
             };
 
             const mockDbUserWithWorkspace = {
@@ -158,9 +164,12 @@ describe('Auth Module', () => {
                 error: null,
             });
 
-            mockPrisma.user.upsert.mockResolvedValue(mockDbUserWithoutWorkspace);
-            mockPrisma.workspace.create.mockResolvedValue(mockNewWorkspace);
-            mockPrisma.user.findUnique.mockResolvedValue(mockDbUserWithWorkspace);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mockPrisma.user.upsert.mockResolvedValue(mockDbUserWithoutWorkspace as any);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mockPrisma.workspace.create.mockResolvedValue(mockNewWorkspace as any);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mockPrisma.user.findUnique.mockResolvedValue(mockDbUserWithWorkspace as any);
 
             const result = await getCurrentUser();
 
@@ -189,26 +198,79 @@ describe('Auth Module', () => {
         });
     });
 
-    describe('requireAuth', () => {
-        it('should return 401 when no user is authenticated', async () => {
+    describe('hasWorkspaceAccess', () => {
+        it('should return true when user has active workspace access', async () => {
+            mockPrisma.userWorkspace.findUnique.mockResolvedValue({
+                userId: 'user-123',
+                workspaceId: 'workspace-123',
+                status: 'ACTIVE',
+                role: 'MEMBER',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+
+            const result = await hasWorkspaceAccess('user-123', 'workspace-123');
+
+            expect(result).toBe(true);
+        });
+
+        it('should return false when user has no workspace access', async () => {
+            mockPrisma.userWorkspace.findUnique.mockResolvedValue(null);
+
+            const result = await hasWorkspaceAccess('user-123', 'workspace-123');
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when user workspace status is not active', async () => {
+            mockPrisma.userWorkspace.findUnique.mockResolvedValue({
+                userId: 'user-123',
+                workspaceId: 'workspace-123',
+                status: 'INACTIVE',
+                role: 'MEMBER',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+
+            const result = await hasWorkspaceAccess('user-123', 'workspace-123');
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('getUserWorkspaceRole', () => {
+        it('should return role when user has workspace access', async () => {
+            mockPrisma.userWorkspace.findUnique.mockResolvedValue({
+                userId: 'user-123',
+                workspaceId: 'workspace-123',
+                status: 'ACTIVE',
+                role: 'OWNER',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+
+            const result = await getUserWorkspaceRole('user-123', 'workspace-123');
+
+            expect(result).toBe('OWNER');
+        });
+
+        it('should return null when user has no workspace access', async () => {
+            mockPrisma.userWorkspace.findUnique.mockResolvedValue(null);
+
+            const result = await getUserWorkspaceRole('user-123', 'workspace-123');
+
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('validateAuth', () => {
+        it('should throw when no user session exists', async () => {
             mockSupabaseAuth.getUser.mockResolvedValue({
                 data: { user: null },
                 error: null,
             });
 
-            const handler = async () => {
-                return NextResponse.json({ data: 'protected' });
-            };
-
-            const mockRequest = new NextRequest('http://localhost:3000/api/test');
-            const result = await requireAuth(handler)(mockRequest);
-
-            expect(result.status).toBe(401);
-            const json = await result.json();
-            expect(json.error).toBeDefined();
+            await expect(validateAuth()).rejects.toThrow('Unauthorized');
         });
 
-        it('should call handler with user when authenticated', async () => {
+        it('should return user and workspace when authenticated', async () => {
             const mockSupabaseUser = {
                 id: 'supabase-user-123',
                 email: 'test@example.com',
@@ -237,66 +299,14 @@ describe('Auth Module', () => {
                 error: null,
             });
 
-            mockPrisma.user.upsert.mockResolvedValue(mockDbUser);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            mockPrisma.user.upsert.mockResolvedValue(mockDbUser as any);
 
-            const handler = jest.fn().mockResolvedValue(
-                NextResponse.json({ data: 'protected' })
-            );
+            const result = await validateAuth();
 
-            const mockRequest = new NextRequest('http://localhost:3000/api/test');
-            const result = await requireAuth(handler)(mockRequest);
-
-            expect(result.status).toBe(200);
-            expect(handler).toHaveBeenCalledWith(
-                mockRequest,
-                expect.objectContaining({
-                    id: 'db-user-123',
-                    email: 'test@example.com',
-                })
-            );
-        });
-
-        it('should pass workspace info to handler', async () => {
-            const mockSupabaseUser = {
-                id: 'supabase-user-123',
-                email: 'test@example.com',
-                email_confirmed_at: '2024-01-01T00:00:00Z',
-                user_metadata: {},
-            };
-
-            const mockDbUser = {
-                id: 'db-user-123',
-                email: 'test@example.com',
-                name: 'Test User',
-                supabaseId: 'supabase-user-123',
-                workspaces: [
-                    {
-                        workspace: {
-                            id: 'workspace-123',
-                            name: 'Test Workspace',
-                            slug: 'test-workspace',
-                        },
-                    },
-                ],
-            };
-
-            mockSupabaseAuth.getUser.mockResolvedValue({
-                data: { user: mockSupabaseUser },
-                error: null,
-            });
-
-            mockPrisma.user.upsert.mockResolvedValue(mockDbUser);
-
-            const handler = jest.fn().mockResolvedValue(
-                NextResponse.json({ data: 'protected' })
-            );
-
-            const mockRequest = new NextRequest('http://localhost:3000/api/test');
-            await requireAuth(handler)(mockRequest);
-
-            const calledUser = handler.mock.calls[0][1];
-            expect(calledUser.workspaces).toBeDefined();
-            expect(calledUser.workspaces[0].workspace.id).toBe('workspace-123');
+            expect(result.user).toBeDefined();
+            expect(result.user.email).toBe('test@example.com');
+            expect(result.workspace?.id).toBe('workspace-123');
         });
     });
 });
