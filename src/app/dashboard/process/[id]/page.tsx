@@ -14,7 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { ProcessSummary } from '@/components/process/process-summary';
 import { ProcessTimeline } from '@/components/process/process-timeline';
@@ -59,6 +61,7 @@ export default function ProcessPage() {
   const [showClientModal, setShowClientModal] = useState(false);
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([]);
+  const [isEditingType, setIsEditingType] = useState(false);
 
   const loadCaseData = useCallback(async (retryCount = 0, maxRetries = 3) => {
     try {
@@ -367,8 +370,58 @@ export default function ProcessPage() {
                   )}
 
                   <span className="flex items-center gap-1 text-muted-foreground">
-                    {ICONS.DOCUMENT} {getTypeLabel(caseInfo.type)} <Button variant="ghost" size="icon" className="h-4 w-4 ml-1" title="Editar tipo">{ICONS.EDIT}</Button>
+                    {ICONS.DOCUMENT} {getTypeLabel(caseInfo.type)}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 ml-1"
+                      title="Editar tipo"
+                      onClick={() => setIsEditingType(true)}
+                    >
+                      {ICONS.EDIT}
+                    </Button>
                   </span>
+
+                  {isEditingType && (
+                    <Dialog open={isEditingType} onOpenChange={setIsEditingType}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Editar Tipo do Processo</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Select
+                            defaultValue={caseInfo.type}
+                            onValueChange={(value: 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'TAX' | 'ADMINISTRATIVE') => {
+                              // In a real implementation we would call the API here
+                              const updatedCase = { ...caseInfo, type: value };
+                              setCaseInfo(updatedCase);
+                              console.log('Novo tipo selecionado:', value);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='CIVIL'>Cível</SelectItem>
+                              <SelectItem value='CRIMINAL'>Criminal</SelectItem>
+                              <SelectItem value='LABOR'>Trabalhista</SelectItem>
+                              <SelectItem value='TAX'>Fiscal/Tributário</SelectItem>
+                              <SelectItem value='ADMINISTRATIVE'>Administrativo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setIsEditingType(false)}>
+                              Cancelar
+                            </Button>
+                            <Button onClick={() => setIsEditingType(false)}>
+                              Salvar
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+
                   <span className="flex items-center gap-1 text-muted-foreground">
                     {ICONS.FOLDER} {caseInfo.documentCount} documento(s)
                   </span>

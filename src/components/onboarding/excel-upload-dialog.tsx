@@ -79,8 +79,8 @@ export function ExcelUploadDialog({
       }
 
       // Validar tamanho
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Arquivo muito grande (máximo 10MB)');
+      if (file.size > 100 * 1024 * 1024) {
+        alert('Arquivo muito grande (máximo 100MB)');
         return;
       }
 
@@ -160,8 +160,8 @@ export function ExcelUploadDialog({
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${isDragActive
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-300 hover:border-gray-400'
                   }`}
               >
                 <input {...getInputProps()} />

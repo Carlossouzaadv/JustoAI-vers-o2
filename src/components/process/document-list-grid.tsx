@@ -84,7 +84,7 @@ export function DocumentListGrid({
 
               <Badge variant={getStatusColor(document.status)} className="text-xs">
                 {document.status === 'completed' ? 'Concluído' :
-                 document.status === 'processing' ? 'Processando' : 'Erro'}
+                  document.status === 'processing' ? 'Processando' : 'Erro'}
               </Badge>
             </div>
 
@@ -102,7 +102,7 @@ export function DocumentListGrid({
                 <div className="space-y-1">
                   <p>Análise: {
                     document.analysisStatus === 'pending' ? 'Pendente' :
-                    document.analysisStatus === 'analyzing' ? 'Analisando...' : 'Erro'
+                      document.analysisStatus === 'analyzing' ? 'Analisando...' : 'Erro'
                   }</p>
                   {document.analysisProgress && (
                     <Progress value={document.analysisProgress} className="w-full h-1" />
@@ -121,12 +121,27 @@ export function DocumentListGrid({
             <div className="flex gap-2 mt-3">
               {document.url && document.status === 'completed' && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   className="flex-1"
                   onClick={() => onViewDocument(document)}
                 >
-                  Ver
+                  {ICONS.EYE} Ver
+                </Button>
+              )}
+              {document.url && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="Baixar documento"
+                  onClick={() => {
+                    const link = window.document.createElement('a');
+                    link.href = document.url || '';
+                    link.download = document.name;
+                    link.click();
+                  }}
+                >
+                  {ICONS.DOWNLOAD}
                 </Button>
               )}
               <Button

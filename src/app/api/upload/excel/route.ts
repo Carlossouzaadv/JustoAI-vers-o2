@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar tamanho (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > 100 * 1024 * 1024) {
       return NextResponse.json(
         {
           success: false,

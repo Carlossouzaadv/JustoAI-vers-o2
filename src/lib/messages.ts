@@ -115,7 +115,7 @@ export const UPLOAD_MESSAGES = {
   drag_drop_pdf: 'Arraste PDFs aqui ou clique para selecionar',
   drag_drop_excel: 'Arraste planilhas Excel aqui ou clique para selecionar',
   formats_pdf: 'Apenas arquivos PDF são aceitos',
-  formats_excel: 'Formatos aceitos: .xlsx, .xls - máximo 10MB',
+  formats_excel: 'Formatos aceitos: .xlsx, .xls - máximo 100MB',
 
   // Status de processamento
   uploading: 'Enviando',
@@ -192,7 +192,7 @@ export const ERROR_MESSAGES = {
   permission_denied: 'Você não tem permissão para realizar esta ação.',
 
   // Erros de upload
-  file_too_large: 'Arquivo muito grande. Tamanho máximo: 10MB',
+  file_too_large: 'Arquivo muito grande. Tamanho máximo: 100MB',
   invalid_format: 'Formato de arquivo inválido',
   upload_failed: 'Falha no upload. Tente novamente.',
 

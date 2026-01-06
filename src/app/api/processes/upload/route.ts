@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
     // PASSO 4: Validar tamanho do arquivo
     if (!isValidFileSize(file)) {
       throw new ApiError(
-        `Tamanho de arquivo inválido. Máximo: 10MB. Recebido: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+        `Tamanho de arquivo inválido. Máximo: 100MB. Recebido: ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
         400
       );
     }

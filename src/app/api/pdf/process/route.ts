@@ -64,7 +64,7 @@ function executeWithTimeout(
   try {
     const result = spawnSync(command, args, {
       encoding: 'utf-8',
-      maxBuffer: 10 * 1024 * 1024, // 10MB
+      maxBuffer: 100 * 1024 * 1024, // 100MB
       timeout: timeoutMs,
     });
 

@@ -29,6 +29,7 @@ export const ICONS = {
   ADD: '+',
   REMOVE: '-',
   SEARCH: '🔍',
+  EYE: '👁️',
 
   // Estados
   CIRCLE_FILLED: '●',
