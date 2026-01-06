@@ -28,7 +28,7 @@ export function addCorsHeaders(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Cache-Control'
   )
-  headers.set('Access-Control-Max-Age', '86400') // 24 horas
+  headers.set('Access-Control-Max-Age', '7200') // 2 horas (mais seguro para dados sensíveis)
 }
 
 /**
@@ -47,7 +47,7 @@ export function createPreflightResponse(origin: string | null | undefined): Resp
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Cache-Control'
   )
-  headers.set('Access-Control-Max-Age', '86400')
+  headers.set('Access-Control-Max-Age', '7200')
 
   return new Response(null, { status: 200, headers })
 }

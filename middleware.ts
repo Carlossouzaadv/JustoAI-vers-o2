@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { addCorsHeaders, createPreflightResponse, validateCorsOrigin } from '@/lib/cors'
 import { addSecurityHeaders } from '@/lib/security-headers'
@@ -31,7 +31,7 @@ export async function middleware(request: NextRequest) {
           const value = request.cookies.get(name)?.value
           return value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: CookieOptions) {
           // Set cookies on the response so they're sent back to client
           response.cookies.set({
             name,
@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
             ...options,
           })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: CookieOptions) {
           // Remove cookies from response
           response.cookies.set({
             name,

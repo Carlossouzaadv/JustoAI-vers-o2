@@ -69,7 +69,7 @@ export async function getCurrentUser() {
 
     // 🔧 FIX: Se não há workspaces, criar um padrão
     if (!dbUser.workspaces || dbUser.workspaces.length === 0) {
-      console.log('🔧 Creating default workspace for user:', dbUser.id)
+      log.info({ msg: '🔧 Creating default workspace for user', component: 'auth', userId: dbUser.id });
 
       try {
         const defaultWorkspace = await prisma.workspace.create({
