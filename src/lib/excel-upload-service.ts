@@ -516,7 +516,6 @@ export class ExcelUploadService {
     batchId: string,
     prisma: PrismaClient
   ): Promise<JuditApiResponse> {
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     const payload: JuditApiPayload = {
       numero_processo: row.numeroProcesso,
       tribunal: row.tribunal,

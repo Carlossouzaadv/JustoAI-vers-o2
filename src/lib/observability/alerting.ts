@@ -471,7 +471,6 @@ function getSeverityColor(severity: AlertSeverity | string): string {
 /**
  * Formata corpo do email
  */
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function formatEmailBody(alert: AlertOptions): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

@@ -153,7 +153,6 @@ function extractAnalysisTextFromResult(result: unknown): string {
 /**
  * Type guard to validate SummaryData structure (kept for future validation needs)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
 function isSummaryData(data: unknown): data is SummaryData {
   if (!isAIResult(data)) {
     return false;

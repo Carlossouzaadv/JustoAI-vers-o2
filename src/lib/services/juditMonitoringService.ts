@@ -144,7 +144,6 @@ function getMovementsArray(data: unknown): unknown[] {
  * Convert ProcessoData to JSON-serializable format for Prisma
  * This creates a plain object safe for Prisma JSON fields (kept for future serialization needs)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, no-unused-vars
 function serializeProcessoData(data: ProcessoData): Record<string, string | unknown[] | object | null | undefined> {
   return {
     ...data,

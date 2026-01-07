@@ -77,7 +77,6 @@ function isMonitoringComplete(data: unknown): data is {
 /**
  * Valida apenas que o objeto tem numeroCnj (para extração de texto)
  */
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function hasNumeroCnj(data: unknown): data is { numeroCnj: string } {
   return (
     typeof data === 'object' &&

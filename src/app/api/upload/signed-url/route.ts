@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
         if (!user) return authError!;
 
         const body = await request.json();
-        let { fileName, fileSize, mimeType, workspaceId, caseId } = body;
+        const { fileName, fileSize, mimeType, caseId } = body;
+        let { workspaceId } = body;
 
         // Resolve Workspace if missing or 'current'
         if (!workspaceId || workspaceId === 'current') {

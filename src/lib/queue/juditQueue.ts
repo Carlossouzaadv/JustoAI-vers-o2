@@ -56,7 +56,6 @@ function isCircuitBreakerService(data: unknown): data is {
 /**
  * Type guard for valid job states (kept for future validation needs)
  */
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function isValidJobState(state: unknown): state is 'waiting' | 'active' | 'completed' | 'failed' | 'delayed' | 'unknown' {
   const validStates = ['waiting', 'active', 'completed', 'failed', 'delayed', 'unknown'];
   return typeof state === 'string' && validStates.includes(state);

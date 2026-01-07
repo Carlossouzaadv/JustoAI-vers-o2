@@ -4,13 +4,11 @@
 // Pure type definitions for Model Tier and interfaces used by both
 // ai-model-router and gemini-client
 
-/* eslint-disable no-unused-vars */
 export enum ModelTier {
   LITE = 'gemini-2.5-flash-lite',   // Mais barato (95% economia)
   BALANCED = 'gemini-2.5-flash',    // Equilibrado
   PRO = 'gemini-2.5-pro'            // Maior qualidade
 }
-/* eslint-enable no-unused-vars */
 
 export interface ComplexityScore {
   totalScore: number;

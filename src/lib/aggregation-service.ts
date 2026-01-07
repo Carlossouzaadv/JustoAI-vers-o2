@@ -26,7 +26,6 @@ function isSuccessfulJuditCall(status: unknown): status is string {
 }
 
 // Valid JuditAlertType from schema (used as type constraint)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const VALID_JUDIT_ALERT_TYPES = [
   'API_ERROR',
   'RATE_LIMIT',

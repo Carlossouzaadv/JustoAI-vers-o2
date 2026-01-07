@@ -283,7 +283,6 @@ export async function optimizePDF(
     const originalSize = originalStats.size;
 
     // Configurações (for potential future use)
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     const config = {
       quality: options.quality || 'medium',
       dpi: options.dpi || COMPRESSION_CONFIG.PDF.DPI[options.quality || 'medium'],

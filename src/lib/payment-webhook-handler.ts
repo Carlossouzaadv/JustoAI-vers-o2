@@ -130,7 +130,6 @@ export class PaymentWebhookHandler {
       const credits = this.calculateCreditsFromAmount(payload.amount, payload.metadata?.planId);
 
       // Criar transação no banco
-      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
       const transaction = await prisma.creditTransaction.create({
         data: {
           id: randomUUID(),
@@ -412,7 +411,8 @@ export class PaymentWebhookHandler {
     const validationResult = parseStripeWebhook(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid Stripe webhook payload: ${validationResult.error}`);
+      const error = (validationResult as { error: string }).error;
+      throw new Error(`Invalid Stripe webhook payload: ${error}`);
     }
 
     const data: StripeWebhook = validationResult.data;
@@ -449,7 +449,8 @@ export class PaymentWebhookHandler {
     const validationResult = parseMercadoPagoWebhook(rawData);
 
     if (!validationResult.success) {
-      throw new Error(`Invalid MercadoPago webhook payload: ${validationResult.error}`);
+      const error = (validationResult as { error: string }).error;
+      throw new Error(`Invalid MercadoPago webhook payload: ${error}`);
     }
 
     const data: MercadoPagoWebhook = validationResult.data;

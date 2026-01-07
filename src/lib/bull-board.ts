@@ -60,7 +60,6 @@ interface BullBoardUserContext {
  * Type guard to check if data is a valid Bull Board user context
  * Currently unused but kept for future type validation needs
  */
-// eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
 function isBullBoardUserContext(data: unknown): data is BullBoardUserContext {
   if (typeof data !== 'object' || data === null) {
     return false;
@@ -140,10 +139,10 @@ function ensureBullBoardInitialized() {
       log.warn({ msg: '[BULL-BOARD] Warning: Bull Board could not be initialized (Redis may not be available)' });
       log.warn({ msg: '[BULL-BOARD] This is expected during build phase. Queues will be available at runtime.' });
       // Provide no-op functions so code doesn't crash
-      addQueue = () => {};
-      removeQueue = () => {};
-      setQueues = () => {};
-      replaceQueues = () => {};
+      addQueue = () => { };
+      removeQueue = () => { };
+      setQueues = () => { };
+      replaceQueues = () => { };
     }
   }
 }

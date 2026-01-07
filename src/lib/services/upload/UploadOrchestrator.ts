@@ -91,10 +91,11 @@ export class UploadOrchestrator {
                 data: processingResult.data
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Processing error:', error);
-            const status = error.status || 500;
-            return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status });
+            const status = (error as { status?: number }).status || 500;
+            const message = error instanceof Error ? error.message : 'Internal Server Error';
+            return NextResponse.json({ error: message }, { status });
         }
     }
 
@@ -140,7 +141,7 @@ export class UploadOrchestrator {
         workspaceId: string;
         caseId: string | null;
         preUploadedPath: string | null;
-    }): Promise<any> {
+    }): Promise<Record<string, unknown>> {
         const { file, user, workspaceId, caseId, preUploadedPath } = params;
         const buffer = file.buffer;
 

@@ -214,9 +214,10 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
         await loadDocuments();
         setUploadProgress(100);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no upload:', error);
-      alert(`Erro ao fazer upload: ${error.message || 'Erro desconhecido'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+      alert(`Erro ao fazer upload: ${errorMessage}`);
     } finally {
       setUploading(false);
       setUploadProgress(0);

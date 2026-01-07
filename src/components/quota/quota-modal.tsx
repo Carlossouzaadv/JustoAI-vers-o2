@@ -112,7 +112,6 @@ const ACTION_CONFIG = {
 // ================================================================
 
 export default function QuotaModal({ isOpen, onClose, quotaData, onActionSelect }: QuotaModalProps) {
-  // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
   const [loading, setLoading] = React.useState(false);
   const config = QUOTA_CONFIG[quotaData.quotaStatus];
   const Icon = config.icon;

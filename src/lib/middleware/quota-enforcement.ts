@@ -501,7 +501,6 @@ export class QuotaEnforcement {
     policy: QuotaPolicy | null;
   }> {
     const policy = await this.getWorkspaceQuotaPolicy(workspaceId);
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     const usage = await this.getCurrentMonthlyUsage(workspaceId);
     const credits = await usageTracker.getCreditBalance(workspaceId);
 
