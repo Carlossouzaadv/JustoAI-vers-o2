@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS } from '@/lib/icons';
@@ -157,34 +158,65 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
     try {
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('processId', processId);
-        formData.append('category', 'other'); // Default category
-
-        // Simular progresso de upload
-        const progressInterval = setInterval(() => {
-          setUploadProgress((prev) => Math.min(prev + 10, 90));
-        }, 200);
-
-        const response = await fetch('/api/documents/upload', {
+        // 1. Get Signed URL
+        const signedRes = await fetch('/api/upload/signed-url', {
           method: 'POST',
-          body: formData,
+          body: JSON.stringify({
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+            workspaceId: 'current',
+            caseId: processId
+          })
         });
 
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-
-        if (response.ok) {
-          const result = await response.json();
-          setDocuments(prev => [result.document, ...prev]);
-        } else {
-          throw new Error('Erro no upload');
+        if (!signedRes.ok) {
+          const err = await signedRes.json();
+          throw new Error(err.error || 'Failed to get upload URL');
         }
+
+        const { data: signedData } = await signedRes.json();
+
+        // 2. Direct Upload to Supabase
+        await axios.put(signedData.signedUrl, file, {
+          headers: {
+            'Content-Type': file.type
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percentCompleted = Math.round((progressEvent.loaded * 90) / progressEvent.total);
+              setUploadProgress(percentCompleted);
+            }
+          }
+        });
+
+        setUploadProgress(95);
+
+        // 3. Complete Processing
+        const completeRes = await fetch('/api/upload/complete', {
+          method: 'POST',
+          body: JSON.stringify({
+            filePath: signedData.filePath,
+            bucket: signedData.bucket,
+            workspaceId: 'current',
+            caseId: processId,
+            fileName: file.name,
+            fileSize: file.size
+          })
+        });
+
+        if (!completeRes.ok) {
+          const err = await completeRes.json();
+          throw new Error(err.error || 'Processing failed');
+        }
+
+        // Refresh list
+        await loadDocuments();
+        setUploadProgress(100);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no upload:', error);
-      alert('Erro ao fazer upload do arquivo');
+      alert(`Erro ao fazer upload: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setUploading(false);
       setUploadProgress(0);

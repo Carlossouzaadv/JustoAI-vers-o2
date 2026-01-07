@@ -340,6 +340,55 @@ export async function downloadFromStorage(
   }
 }
 
+/**
+ * Gera URL assinada para upload direto
+ */
+export async function getSignedUploadUrl(
+  bucket: string,
+  filePath: string,
+  expiresIn: number = 3600
+): Promise<string> {
+  try {
+    const { data, error } = await getSupabaseClient().storage
+      .from(bucket)
+      .createSignedUploadUrl(filePath, {
+        upsert: false,
+      });
+
+    if (error) {
+      console.error('[Storage] Error creating signed upload URL:', error);
+      throw new Error(`Failed to create signed URL: ${error.message}`);
+    }
+
+    return data.signedUrl;
+  } catch (error) {
+    console.error('[Storage] Error in getSignedUploadUrl:', error);
+    throw error;
+  }
+}
+
+/**
+ * Baixa arquivo do storage
+ */
+export async function downloadFile(bucket: string, filePath: string): Promise<Buffer> {
+  try {
+    const { data, error } = await getSupabaseClient().storage
+      .from(bucket)
+      .download(filePath);
+
+    if (error) {
+      throw new Error(`Failed to download file: ${error.message}`);
+    }
+
+    const arrayBuffer = await data.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+
+  } catch (error) {
+    console.error('[Storage] Error downloading file:', error);
+    throw error;
+  }
+}
+
 const supabaseStorageAPI = {
   uploadToStorage,
   uploadCaseDocument,
@@ -348,6 +397,8 @@ const supabaseStorageAPI = {
   deleteFromStorage,
   listStorageFiles,
   downloadFromStorage,
+  getSignedUploadUrl,
+  downloadFile,
   getPublicUrl,
   STORAGE_BUCKETS
 };
