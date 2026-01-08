@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { ICONS } from '../../lib/icons';
+import { InlineSvgIcon } from '../ui/custom-icon';
 import { VideoSection } from './video-section';
 import Link from 'next/link';
 
@@ -13,7 +13,7 @@ const steps = [
     number: '01',
     title: 'Conecte seus Dados',
     description: 'Importe processos do seu sistema atual ou adicione manualmente. A plataforma detecta automaticamente o formato e organiza tudo.',
-    icon: ICONS.UPLOAD,
+    icon: <InlineSvgIcon name="upload" size={32} />,
     time: '2 minutos',
     details: [
       'Upload de Excel/CSV',
@@ -27,7 +27,7 @@ const steps = [
     number: '02',
     title: 'Plataforma Analisa Automaticamente',
     description: 'Nossa plataforma lê, analisa e extrai insights estratégicos de cada processo, criando resumos executivos profissionais.',
-    icon: ICONS.BRAIN,
+    icon: <InlineSvgIcon name="ia" size={32} />,
     time: '30 segundos',
     details: [
       'Análise em tempo real',
@@ -41,7 +41,7 @@ const steps = [
     number: '03',
     title: 'Receba Relatórios Automáticos',
     description: 'Configure uma vez e receba relatórios executivos no seu email. Seus clientes ficam sempre informados sem trabalho manual.',
-    icon: ICONS.MAIL,
+    icon: <InlineSvgIcon name="documentos" size={32} />,
     time: 'Instantâneo',
     details: [
       'Agendamento flexível',
@@ -139,7 +139,7 @@ export function HowItWorks() {
                 <div className="flex items-center justify-center lg:justify-start mb-6">
 
                   <Badge className="bg-accent-100 text-accent-700 hover:bg-accent-100 border-0 text-sm px-3 py-1 flex items-center gap-1.5">
-                    {ICONS.CLOCK} {step.time}
+                    <InlineSvgIcon name="tempo" size={14} /> {step.time}
                   </Badge>
                 </div>
 
@@ -158,7 +158,7 @@ export function HowItWorks() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto lg:mx-0">
                   {step.details.map((detail, detailIndex) => (
                     <div key={detailIndex} className="flex items-center">
-                      <span className="text-accent-500 mr-3">{ICONS.CHECK}</span>
+                      <span className="text-accent-500 mr-3"><InlineSvgIcon name="success" size={14} /></span>
                       <span className="text-neutral-700">{detail}</span>
                     </div>
                   ))}
@@ -183,13 +183,13 @@ export function HowItWorks() {
                       <div className="space-y-4 pt-4">
                         <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border-2 border-dashed border-neutral-300">
                           <div className="flex items-center">
-                            <span className="text-2xl mr-3">{ICONS.DOCUMENT}</span>
+                            <span className="mr-3"><InlineSvgIcon name="documentos" size={24} /></span>
                             <div>
                               <div className="font-semibold text-sm">processos.xlsx</div>
                               <div className="text-xs text-neutral-500">1.2 MB</div>
                             </div>
                           </div>
-                          <div className="text-accent-500">{ICONS.UPLOAD}</div>
+                          <div className="text-accent-500"><InlineSvgIcon name="upload" size={20} /></div>
                         </div>
                         <div className="flex items-center justify-between px-2">
                           <span className="text-xs text-neutral-500">Mapeamento</span>
@@ -214,7 +214,7 @@ export function HowItWorks() {
                             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                             className="text-4xl text-accent-600"
                           >
-                            {ICONS.BRAIN}
+                            <InlineSvgIcon name="ia" size={40} className="text-accent-600" />
                           </motion.div>
                         </div>
                         {/* Simplified insights for this view */}
@@ -247,8 +247,8 @@ export function HowItWorks() {
                           </div>
                         </div>
                         <div className="text-center">
-                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-0">
-                            {ICONS.CHECK} Enviado
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-0 flex items-center gap-1 mx-auto">
+                            <InlineSvgIcon name="success" size={14} /> Enviado
                           </Badge>
                         </div>
                       </div>

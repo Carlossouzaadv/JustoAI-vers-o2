@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { ICONS } from '../../lib/icons';
+import { InlineSvgIcon } from '../ui/custom-icon';
 import Link from 'next/link';
 
 interface Feature {
@@ -20,7 +20,7 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    icon: ICONS.BRAIN,
+    icon: <InlineSvgIcon name="ia" size={32} />,
     title: 'Economize 20 horas por semana',
     description: 'Nossa IA lê e analisa automaticamente cada andamento processual, extraindo pontos-chave e criando resumos executivos. Você nunca mais perde tempo com trabalho manual.',
     benefit: '→ De 2 horas de leitura para 30 segundos',
@@ -30,7 +30,7 @@ const features: Feature[] = [
     badge: 'Mais Popular',
   },
   {
-    icon: ICONS.SHIELD,
+    icon: <InlineSvgIcon name="cliente" size={32} />,
     title: 'Clientes informados automaticamente',
     description: 'Configure uma vez e nossa IA envia relatórios executivos para seus clientes via WhatsApp ou Email sempre que houver novidade. Mantenha eles informados sem mover um dedo.',
     benefit: '→ Zero chamadas de cobrança de status',
@@ -40,28 +40,28 @@ const features: Feature[] = [
     badge: 'Diferencial',
   },
   {
-    icon: ICONS.CALENDAR,
+    icon: <InlineSvgIcon name="calendario" size={32} />,
     title: 'Identifique riscos antes que eles aconteçam',
     description: 'Avaliação profunda com observações jurídicas e análise de riscos detalhada para cada movimentação.',
     benefit: '→ Antecipe estratégias em dias',
     color: 'primary',
   },
   {
-    icon: ICONS.MONITOR,
+    icon: <InlineSvgIcon name="search" size={32} />,
     title: 'Monitoramento 24/7',
     description: 'Acompanhe automaticamente movimentações processuais com alertas inteligentes em tempo real.',
     benefit: '→ Você dorme, a IA monitora',
     color: 'accent',
   },
   {
-    icon: ICONS.UPLOAD,
+    icon: <InlineSvgIcon name="upload" size={32} />,
     title: 'Configure em 5 minutos',
     description: 'Migre seus dados em minutos, com trabalho mínimo. Totalmente compatível com Projuris, Legal One, Astrea e outros.',
     benefit: '→ Sem fidelidade, sem implantação cara',
     color: 'primary',
   },
   {
-    icon: ICONS.CHART,
+    icon: <InlineSvgIcon name="home" size={32} />,
     title: 'Veja toda sua carteira em um só lugar',
     description: 'Dashboard inteligente que organiza todos os seus processos por cliente com status visual em tempo real.',
     benefit: '→ Visão gerencial completa',

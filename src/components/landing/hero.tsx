@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-
-import { Sparkles, Check, CreditCard, X, MapPin } from 'lucide-react';
+import { InlineSvgIcon } from '../ui/custom-icon';
+import { CreditCard, X } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -71,7 +71,7 @@ export function Hero() {
             <div className="text-center lg:text-left">
               <motion.div variants={itemVariants}>
                 <Badge variant="secondary" className="inline-flex items-center gap-2 mb-6 bg-gradient-to-r from-accent-400 to-accent-600 text-white border-0 shadow-md px-3 py-1">
-                  <Sparkles className="w-4 h-4" />
+                  <InlineSvgIcon name="ia" size={16} />
                   <span>Novo: Análise com nossa IA em 30 segundos</span>
                 </Badge>
               </motion.div>
@@ -134,7 +134,7 @@ export function Hero() {
                 {/* Trust Badges */}
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 text-sm text-neutral-600">
                   <div className="flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-accent-500" />
+                    <InlineSvgIcon name="success" size={16} className="text-accent-500" />
                     <span>Teste grátis por 7 dias</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -221,7 +221,7 @@ export function Hero() {
                 className="absolute -top-6 -left-6 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2 animate-bounce-slow"
               >
                 <div className="bg-accent-100 p-1.5 rounded-full">
-                  <Sparkles className="w-4 h-4 text-accent-600" />
+                  <InlineSvgIcon name="ia" size={16} className="text-accent-600" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800">20h economizadas</span>
               </motion.div>
@@ -233,7 +233,7 @@ export function Hero() {
                 className="absolute top-1/2 -right-12 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2"
               >
                 <div className="bg-green-100 p-1.5 rounded-full">
-                  <Check className="w-4 h-4 text-green-600" />
+                  <InlineSvgIcon name="success" size={16} className="text-green-600" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800">Status em tempo real</span>
               </motion.div>
@@ -245,7 +245,7 @@ export function Hero() {
                 className="absolute -bottom-6 right-10 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2"
               >
                 <div className="bg-blue-100 p-1.5 rounded-full">
-                  <MapPin className="w-4 h-4 text-blue-600" />
+                  <InlineSvgIcon name="documentos" size={16} className="text-blue-600" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800">Enviado automaticamente</span>
               </motion.div>
