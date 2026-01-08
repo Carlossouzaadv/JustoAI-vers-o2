@@ -12,23 +12,20 @@ import { WelcomeOnboarding } from '@/components/dashboard/welcome-onboarding';
 import { WelcomeDashboard } from '@/components/dashboard/welcome-dashboard';
 import { DashboardOnboarding } from '@/components/dashboard/onboarding-tour';
 
-// Regular Dashboard UI Components
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ICONS } from '@/lib/icons';
-import { InlineSvgIcon } from '@/components/ui/custom-icon';
-import { getApiUrl } from '@/lib/api-client';
-import { useDashboard } from '@/hooks/use-dashboard';
-import { useTelemetry } from '@/hooks/use-telemetry';
+// Regular Dashboard UI Components (Command Center)
+import { GreetingHeader } from '@/components/dashboard/command-center/greeting-header';
+import { ActionGrid } from '@/components/dashboard/command-center/action-grid';
+import { DeadlineRadar, Process } from '@/components/dashboard/command-center/deadline-radar';
+import { PriorityInbox, PriorityItem } from '@/components/dashboard/command-center/priority-inbox';
 import { UsageAlert } from '@/components/ui/usage-alert';
 import UsageBanner from '@/components/dashboard/usage-banner';
 import { CostMetricsCard } from '@/components/dashboard/cost-metrics-card';
 import { ApiUsageCard } from '@/components/dashboard/api-usage-card';
 import { TelemetryAlertsWidget } from '@/components/dashboard/telemetry-alerts-widget';
 import { SubscriptionPlan, UsageStats } from '@/lib/subscription-limits';
+import { getApiUrl } from '@/lib/api-client';
+import { useDashboard } from '@/hooks/use-dashboard';
+import { useTelemetry } from '@/hooks/use-telemetry';
 
 // Helper types
 interface Activity {
@@ -114,11 +111,12 @@ function AnimatedNumber({ value, suffix = '', className = '' }: { value: number;
 
 const PRIORITY_ORDER = { high: 3, medium: 2, low: 1 } as const;
 
-// --- Regular Dashboard Component ---
+// --- Regular Dashboard Component (Command Center) ---
 function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
-  console.log('🔍 [RegularDashboard] Rendering with workspaceId:', workspaceId);
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [processes, setProcesses] = useState<Process[]>([]);
 
   const { selectedClientId, selectedClientName, setSelectedClient } = useDashboard();
   const { metrics, loading: telemetryLoading } = useTelemetry(workspaceId, 300000);
@@ -141,37 +139,21 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
         return;
       }
 
-      const dashboardResponse = await fetch(getApiUrl(`/api/workspaces/${workspaceId}/summary`), {
+      // 1. Fetch Summary
+      const summaryPromise = fetch(getApiUrl(`/api/workspaces/${workspaceId}/summary`), {
         credentials: 'include'
-      });
+      }).then(res => res.ok ? res.json() : null);
 
-      if (dashboardResponse.ok) {
-        const data = await dashboardResponse.json();
-        const summary = data.statistics || {
-          totalProcesses: 0,
-          completedAnalysis: 0,
-          partialAnalysis: 0,
-          attentionRequired: 0,
-          recentUpdates: 0,
-          pendingActions: 0,
-        };
+      // 2. Fetch Active Cases for Radar (fetching 50 active cases)
+      const casesPromise = fetch(getApiUrl(`/api/cases?workspaceId=${workspaceId}&status=ACTIVE&limit=50`), {
+        credentials: 'include'
+      }).then(res => res.ok ? res.json() : null);
 
-        if (selectedClientId && !selectedClientName) {
-          // Fetch client name logic
-          try {
-            const clientResponse = await fetch(getApiUrl(`/api/clients/${selectedClientId}`), {
-              credentials: 'include'
-            });
-            if (clientResponse.ok) {
-              const clientData = await clientResponse.json();
-              const clientName = clientData.client?.name || '';
-              setSelectedClient(selectedClientId, clientName);
-            }
-          } catch (clientError) {
-            console.error('Erro ao carregar nome do cliente:', clientError);
-          }
-        }
+      const [summaryData, casesData] = await Promise.all([summaryPromise, casesPromise]);
 
+      // Process Summary
+      if (summaryData) {
+        const summary = summaryData.statistics || {};
         setDashboardData({
           summary: {
             totalProcesses: summary.totalCases || 0,
@@ -182,42 +164,34 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
             pendingActions: summary.pendingActions || 0,
           },
           analytics: {
-            successRate: 0, // Placeholder
-            avgProcessingTime: 0, // Placeholder
+            successRate: 0,
+            avgProcessingTime: 0,
             documentsProcessed: summary.documents || 0,
-            monthlyGrowth: 0, // Placeholder
+            monthlyGrowth: 0,
           },
-          recentActivity: (data.recentActivity || [])
-            .filter(isActivity)
-            .map((activity: Activity) => ({
-              id: activity.id,
-              type: 'upload' as const,
-              message: activity.description || '',
-              timestamp: activity.createdAt || new Date().toISOString()
-            })),
-          ongoingProcesses: [] // Would be populated from API if available
-        });
-      } else {
-        // Fallback or empty state
-        setDashboardData({
-          summary: { totalProcesses: 0, completedAnalysis: 0, partialAnalysis: 0, attentionRequired: 0, recentUpdates: 0, pendingActions: 0 },
-          analytics: { successRate: 0, avgProcessingTime: 0, documentsProcessed: 0, monthlyGrowth: 0 },
           recentActivity: [],
           ongoingProcesses: []
         });
       }
+
+      // Process Cases for Radar
+      if (casesData && casesData.success && Array.isArray(casesData.data)) {
+        const mappedProcesses: Process[] = casesData.data.map((c: any) => ({
+          id: c.id,
+          name: c.title,
+          client: c.client?.name || 'Cliente Desconhecido',
+          deadline: c.expectedEndDate || new Date(Date.now() + 86400000 * 7).toISOString(), // Fallback to 7 days if no deadline
+          priority: (c.priority?.toLowerCase() || 'medium') as 'high' | 'medium' | 'low'
+        }));
+        setProcesses(mappedProcesses);
+      }
+
     } catch (error) {
-      console.error(error);
-      setDashboardData({
-        summary: { totalProcesses: 0, completedAnalysis: 0, partialAnalysis: 0, attentionRequired: 0, recentUpdates: 0, pendingActions: 0 },
-        analytics: { successRate: 0, avgProcessingTime: 0, documentsProcessed: 0, monthlyGrowth: 0 },
-        recentActivity: [],
-        ongoingProcesses: []
-      });
+      console.error('Error loading dashboard:', error);
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, selectedClientId, selectedClientName, setSelectedClient]);
+  }, [workspaceId]);
 
   useEffect(() => {
     if (workspaceId) {
@@ -225,227 +199,102 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
     }
   }, [workspaceId, loadDashboardData]);
 
-  const smartSort = (processes: DashboardData['ongoingProcesses']) => {
-    return [...processes].sort((a, b) => {
-      const today = new Date();
-      const aDeadline = new Date(a.deadline);
-      const bDeadline = new Date(b.deadline);
-      const aOverdue = aDeadline < today;
-      const bOverdue = bDeadline < today;
-
-      if (aOverdue && !bOverdue) return -1;
-      if (!aOverdue && bOverdue) return 1;
-      if (aOverdue && bOverdue) {
-        return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
-      }
-      if (PRIORITY_ORDER[a.priority] !== PRIORITY_ORDER[b.priority]) {
-        return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
-      }
-      return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
+  // Generate Priority Items
+  const priorityItems: PriorityItem[] = [];
+  if (dashboardData?.summary.attentionRequired) {
+    priorityItems.push({
+      id: 'atten-1',
+      type: 'error',
+      title: 'Processos Requerendo Atenção',
+      description: `${dashboardData.summary.attentionRequired} processos precisam de verificação manual ou corrigidos.`,
+      actionLabel: 'Resolver',
+      actionHref: '/dashboard/process?filter=attention_required'
     });
-  };
+  }
+  if (dashboardData?.summary.pendingActions) {
+    priorityItems.push({
+      id: 'pend-1',
+      type: 'pending',
+      title: 'Ações Pendentes',
+      description: `${dashboardData.summary.pendingActions} ações aguardam sua aprovação.`,
+      actionLabel: 'Ver Ações',
+      actionHref: '/dashboard/process?status=PENDING'
+    });
+  }
 
-  const getPriorityBadge = (priority: string, isOverdue: boolean = false) => {
-    if (isOverdue) {
-      return <Badge className="bg-red-600 text-white animate-pulse">🚨 VENCIDO</Badge>;
-    }
-    switch (priority) {
-      case 'high': return <Badge className="bg-red-100 text-red-800">Alta</Badge>;
-      case 'medium': return <Badge className="bg-yellow-100 text-yellow-800">Média</Badge>;
-      case 'low': return <Badge className="bg-green-100 text-green-800">Baixa</Badge>;
-      default: return <Badge variant="secondary">Normal</Badge>;
-    }
-  };
+  // Calculate Urgent Count from processes
+  const urgentCount = processes.filter(p => {
+    if (!p.deadline) return false;
+    const days = Math.ceil((new Date(p.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return days <= 3;
+  }).length;
 
-  const getDaysUntilDeadline = (deadline: string) => {
-    const today = new Date();
-    const deadlineDate = new Date(deadline);
-    const diffTime = deadlineDate.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  const sortedProcesses = dashboardData ? smartSort(dashboardData.ongoingProcesses) : [];
-  const validWorkspaceId = isValidWorkspaceId(workspaceId) ? workspaceId : null;
-
-  if (loading) return <div className="p-8"><Loader2 className="animate-spin" /> Carregando dashboard...</div>;
+  if (loading) return <div className="p-8"><Loader2 className="animate-spin text-primary-600" /> <span className="ml-2 text-slate-500">Carregando seu centro de comando...</span></div>;
 
   return (
-    <div className="space-y-6">
-      {validWorkspaceId && (
-        <UsageBanner
-          workspaceId={validWorkspaceId}
-          onUpgrade={() => window.open('/pricing', '_blank')}
-          onBuyCredits={() => window.open('/pricing?tab=credits', '_blank')}
-        />
-      )}
-      <UsageAlert
-        plan={userPlan}
-        usage={userUsage}
-        onUpgrade={() => window.open('/pricing', '_blank')}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {/* 1. Header & Status */}
+      <GreetingHeader
+        userName={user?.name || 'Doutor(a)'}
+        totalMonitored={dashboardData?.summary.totalProcesses || 0}
+        urgentCount={urgentCount}
       />
 
-      {/* Metrics Section */}
-      <section>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {metrics && (
-            <CostMetricsCard
-              totalCost={metrics.monthlyUsage.totalCost}
-              dailyAverage={metrics.monthlyUsage.dailyAverage}
-              trend={metrics.monthlyUsage.trend}
-              loading={telemetryLoading}
-            />
-          )}
-          {metrics && (
-            <ApiUsageCard
-              successRate={metrics.monthlyUsage.successRate}
-              avgResponseTime={metrics.monthlyUsage.avgResponseTime}
-              totalOperations={metrics.monthlyUsage.operations.reduce((sum, op) => sum + op.count, 0)}
-              loading={telemetryLoading}
-            />
-          )}
-          {metrics && (
-            <TelemetryAlertsWidget
-              alerts={metrics.activeAlerts.alerts}
-              totalCount={metrics.activeAlerts.total}
-              criticalCount={metrics.activeAlerts.critical}
-              highCount={metrics.activeAlerts.high}
-              loading={telemetryLoading}
-            />
-          )}
-        </div>
-      </section>
+      {/* 2. Priority Inbox (if items exist) */}
+      <div className="max-w-5xl">
+        <PriorityInbox items={priorityItems} />
+      </div>
 
-      {/* Action Cards */}
-      <section>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="border-red-200 bg-red-50 cursor-pointer hover:bg-red-100 hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300"
-            onClick={() => window.location.href = '/dashboard/process?filter=attention_required'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-red-700 flex items-center gap-2">
-                <InlineSvgIcon name="atencao" size="lg" className="text-red-600 animate-pulse" /> Requer Atenção
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-red-600 mb-1">
-                {dashboardData && <AnimatedNumber value={dashboardData.summary.attentionRequired} />}
-              </div>
-              <p className="text-sm text-red-600">Ações necessárias ou processos com erro</p>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
-              onClick={() => window.location.href = '/dashboard/documents-upload'}>
-              <CardContent className="p-6">
-                <div className="text-center space-y-2 flex flex-col items-center">
-                  <div className="group-hover:scale-110 transition-transform duration-300">
-                    <InlineSvgIcon name="upload" size={42} className="text-primary-600" />
-                  </div>
-                  <h3 className="font-medium">Upload Documento</h3>
-                  <p className="text-sm text-muted-foreground">Enviar novo arquivo</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
-              onClick={() => window.location.href = '/dashboard/clients'}>
-              <CardContent className="p-6">
-                <div className="text-center space-y-2 flex flex-col items-center">
-                  <div className="group-hover:scale-110 transition-transform duration-300">
-                    <InlineSvgIcon name="cliente" size={42} className="text-primary-600" />
-                  </div>
-                  <h3 className="font-medium">Novo Cliente</h3>
-                  <p className="text-sm text-muted-foreground">Cadastrar cliente</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Overview Section */}
-      <section>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group" onClick={() => window.location.href = '/dashboard/process?period=month'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="group-hover:scale-110 transition-transform">
-                  <InlineSvgIcon name="documentos" size="lg" className="text-primary-600" />
-                </div>
-                Total Analisado
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {dashboardData && <AnimatedNumber value={dashboardData.summary.totalProcesses} />}
-              </div>
-              <Badge variant="secondary" className="mt-1 flex w-fit items-center gap-1">
-                <ArrowUp className="h-3 w-3" /> +{dashboardData?.analytics.monthlyGrowth}%
-              </Badge>
-            </CardContent>
-          </Card>
-
-          <Card className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group" onClick={() => window.location.href = '/dashboard/process?filter=success'}>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="group-hover:scale-110 transition-transform">
-                  <InlineSvgIcon name="success" size="lg" className="text-green-600" />
-                </div>
-                Sucesso
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {dashboardData && <AnimatedNumber value={dashboardData.analytics.successRate} suffix="%" />}
-              </div>
-              <Progress value={dashboardData?.analytics.successRate} className="mt-2" />
-            </CardContent>
-          </Card>
-
-          {/* More stats cards... */}
-        </div>
-      </section>
-
-      {/* Deadlines Section */}
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <InlineSvgIcon name="atencao" size="md" className="text-yellow-500" /> Próximos Prazos e Alertas
-              </div>
-              <Button variant="outline" size="sm" onClick={() => window.location.href = '/dashboard/process?filter=urgent'}>Ver Urgentes</Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {(() => {
-                const urgentProcesses = sortedProcesses.filter(p => {
-                  const days = getDaysUntilDeadline(p.deadline);
-                  return days <= 3 || p.priority === 'high';
-                }).slice(0, 4);
-
-                if (urgentProcesses.length === 0) {
-                  return <div className="text-center py-8 text-muted-foreground"><p>Nenhum prazo urgente.</p></div>;
-                }
-
-                return urgentProcesses.map(process => {
-                  const days = getDaysUntilDeadline(process.deadline);
-                  const isOverdue = days < 0;
-                  return (
-                    <div key={process.id} className="border rounded-lg p-3 flex justify-between items-center cursor-pointer hover:bg-slate-50" onClick={() => window.location.href = `/dashboard/process/${process.id}`}>
-                      <div>
-                        <h4 className="font-medium">{process.name}</h4>
-                        <p className="text-xs text-muted-foreground">{process.client} • {isOverdue ? `Vencido há ${Math.abs(days)} dias` : `${days} dias restantes`}</p>
-                      </div>
-                      {getPriorityBadge(process.priority, isOverdue)}
-                    </div>
-                  );
-                });
-              })()}
+        {/* 3. Main Action Column (Left) */}
+        <div className="xl:col-span-2 space-y-8">
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-800">Ações Rápidas</h2>
             </div>
-          </CardContent>
-        </Card>
-      </section>
+            <ActionGrid />
+          </section>
+
+          <section>
+            {/* 4. Radar (Timeline) */}
+            <DeadlineRadar processes={processes} />
+          </section>
+        </div>
+
+        {/* 4. Metrics & Usage (Right Sidebar) */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-slate-800 mb-4">Saúde do Escritório</h2>
+          {metrics && (
+            <div className="space-y-4">
+              <TelemetryAlertsWidget
+                alerts={metrics.activeAlerts.alerts}
+                totalCount={metrics.activeAlerts.total}
+                criticalCount={metrics.activeAlerts.critical}
+                highCount={metrics.activeAlerts.high}
+                loading={telemetryLoading}
+              />
+              <CostMetricsCard
+                totalCost={metrics.monthlyUsage.totalCost}
+                dailyAverage={metrics.monthlyUsage.dailyAverage}
+                trend={metrics.monthlyUsage.trend}
+                loading={telemetryLoading}
+              />
+              <ApiUsageCard
+                successRate={metrics.monthlyUsage.successRate}
+                avgResponseTime={metrics.monthlyUsage.avgResponseTime}
+                totalOperations={metrics.monthlyUsage.operations.reduce((sum, op) => sum + op.count, 0)}
+                loading={telemetryLoading}
+              />
+            </div>
+          )}
+          <UsageAlert
+            plan={userPlan}
+            usage={userUsage}
+            onUpgrade={() => window.open('/pricing', '_blank')}
+          />
+        </div>
+      </div>
 
       <DashboardOnboarding />
     </div>
