@@ -175,8 +175,17 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
       }
 
       // Process Cases for Radar
+      // Process Cases for Radar
       if (casesData && casesData.success && Array.isArray(casesData.data)) {
-        const mappedProcesses: Process[] = casesData.data.map((c: any) => ({
+        interface CaseData {
+          id: string;
+          title: string;
+          client?: { name: string };
+          expectedEndDate?: string;
+          priority?: string;
+        }
+        const data = casesData.data as CaseData[];
+        const mappedProcesses: Process[] = data.map((c) => ({
           id: c.id,
           name: c.title,
           client: c.client?.name || 'Cliente Desconhecido',
