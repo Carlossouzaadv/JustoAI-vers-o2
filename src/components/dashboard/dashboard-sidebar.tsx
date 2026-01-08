@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ICONS } from '@/lib/icons';
+import { InlineSvgIcon } from '@/components/ui/custom-icon';
 import { getApiUrl } from '@/lib/api-client';
 import { ClientActionsButton } from './client-actions-button';
 import { useAuth } from '@/contexts/auth-context';
@@ -162,8 +163,9 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
 
       <SidebarContent>
         <div className="p-4">
-          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-            {ICONS.CLIENT} Clientes ({filteredClients.length})
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2 text-primary-800">
+            <InlineSvgIcon name="cliente" size="sm" className="text-primary-600" />
+            Clientes ({filteredClients.length})
           </h3>
 
           {loading ? (
