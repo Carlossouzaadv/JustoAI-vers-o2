@@ -84,7 +84,7 @@ export function CustomIcon({
  * This fetches and inlines the SVG for full CSS control
  */
 interface InlineSvgIconProps {
-    name: 'cliente' | 'documentos' | 'ia' | 'calendario' | 'creditos' | 'tempo' | 'upload' | 'atencao';
+    name: 'cliente' | 'documentos' | 'ia' | 'calendario' | 'creditos' | 'tempo' | 'upload' | 'atencao' | 'home' | 'settings' | 'success' | 'error' | 'search';
     size?: number | 'sm' | 'md' | 'lg' | 'xl';
     className?: string;
 }
@@ -180,6 +180,38 @@ export function InlineSvgIcon({ name, size = 'md', className }: InlineSvgIconPro
                 <path d="M32 8L56 52H8L32 8Z" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
                 <line x1="32" y1="24" x2="32" y2="38" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                 <circle cx="32" cy="46" r="2.5" fill="currentColor" />
+            </svg>
+        ),
+        home: (
+            <svg width={numericSize} height={numericSize} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+                <path d="M10 28L32 10L54 28V52C54 54.2 52.2 56 50 56H14C11.8 56 10 54.2 10 52V28Z"
+                    stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
+                <path d="M26 56V36H38V56" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
+            </svg>
+        ),
+        settings: (
+            <svg width={numericSize} height={numericSize} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+                <circle cx="32" cy="32" r="8" stroke="currentColor" strokeWidth="2.5" fill="none" />
+                <path d="M32 4V12M32 52V60M60 32H52M12 32H4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                <path d="M52 12L46 18M18 46L12 52M52 52L46 46M18 18L12 12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+            </svg>
+        ),
+        success: (
+            <svg width={numericSize} height={numericSize} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+                <circle cx="32" cy="32" r="24" stroke="currentColor" strokeWidth="2.5" fill="none" />
+                <path d="M20 32L28 40L44 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
+        error: (
+            <svg width={numericSize} height={numericSize} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+                <circle cx="32" cy="32" r="24" stroke="currentColor" strokeWidth="2.5" fill="none" />
+                <path d="M22 22L42 42M42 22L22 42" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+            </svg>
+        ),
+        search: (
+            <svg width={numericSize} height={numericSize} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+                <circle cx="28" cy="28" r="16" stroke="currentColor" strokeWidth="2.5" fill="none" />
+                <path d="M40 40L52 52" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
             </svg>
         ),
     };

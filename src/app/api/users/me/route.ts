@@ -33,12 +33,33 @@ export async function GET(request: NextRequest) {
                     subscriptionStatus: true,
                 }
             }),
-            Promise.resolve(0), // documentsCount (userId removed from schema)
-            Promise.resolve(0), // clientsCount (userId removed from schema)
-            Promise.resolve(0), // reportsCount (userId removed from schema)
+            // Count cases as "documents" for onboarding logic
+            prisma.case.count({
+                where: { createdById: user.id }
+            }),
+            // Count clients across all workspaces the user belongs to
+            prisma.client.count({
+                where: {
+                    workspace: {
+                        users: {
+                            some: { userId: user.id }
+                        }
+                    }
+                }
+            }),
+            // Count reports across all workspaces
+            prisma.reportExecution.count({
+                where: {
+                    workspace: {
+                        users: {
+                            some: { userId: user.id }
+                        }
+                    }
+                }
+            }),
             prisma.case.count({
                 where: {
-                    createdById: user.id, // Updated from userId to createdById
+                    createdById: user.id,
                     client: {
                         name: { in: ['Cliente a Definir', 'cliente_a_definir'] }
                     }

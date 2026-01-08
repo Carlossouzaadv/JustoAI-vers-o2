@@ -12,7 +12,7 @@ import { Settings } from 'lucide-react';
 interface NavItem {
   href: string;
   label: string;
-  iconName?: 'cliente' | 'documentos' | 'ia' | 'calendario' | 'creditos' | 'tempo' | 'upload' | 'atencao';
+  iconName?: 'cliente' | 'documentos' | 'ia' | 'calendario' | 'creditos' | 'tempo' | 'upload' | 'atencao' | 'home' | 'settings';
   isHome?: boolean;
 }
 
@@ -20,7 +20,7 @@ export function DashboardHeader() {
   const pathname = usePathname();
 
   const navItems: NavItem[] = [
-    { href: '/dashboard', label: 'Dashboard', isHome: true },
+    { href: '/dashboard', label: 'Dashboard', isHome: true, iconName: 'home' },
     { href: '/dashboard/clients', label: 'Clientes', iconName: 'cliente' },
     { href: '/dashboard/process', label: 'Processos', iconName: 'documentos' },
     { href: '/dashboard/documents-upload', label: 'Upload PDFs', iconName: 'upload' },
@@ -61,11 +61,7 @@ export function DashboardHeader() {
                     className="flex items-center gap-2 text-sm font-medium px-4 py-2"
                   >
                     {item.isHome ? (
-                      <svg width="20" height="20" viewBox="0 0 64 64" fill="none" className="text-current">
-                        <path d="M10 28L32 10L54 28V52C54 54.2 52.2 56 50 56H14C11.8 56 10 54.2 10 52V28Z"
-                          stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
-                        <path d="M26 56V36H38V56" stroke="currentColor" strokeWidth="2.5" fill="none" />
-                      </svg>
+                      <InlineSvgIcon name="home" size="md" />
                     ) : item.iconName ? (
                       <InlineSvgIcon name={item.iconName} size="md" />
                     ) : null}
@@ -81,7 +77,7 @@ export function DashboardHeader() {
         <div className="flex items-center gap-2">
           <Link href="/dashboard/settings">
             <Button variant="outline" size="default" className="flex items-center gap-2 px-4 py-2">
-              <Settings className="h-5 w-5" />
+              <InlineSvgIcon name="settings" size="md" />
               Configurações
             </Button>
           </Link>

@@ -388,7 +388,7 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="group-hover:scale-110 transition-transform">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
+                  <InlineSvgIcon name="success" size="lg" className="text-green-600" />
                 </div>
                 Sucesso
               </CardTitle>
@@ -411,7 +411,7 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" /> Próximos Prazos e Alertas
+                <InlineSvgIcon name="atencao" size="md" className="text-yellow-500" /> Próximos Prazos e Alertas
               </div>
               <Button variant="outline" size="sm" onClick={() => window.location.href = '/dashboard/process?filter=urgent'}>Ver Urgentes</Button>
             </CardTitle>
