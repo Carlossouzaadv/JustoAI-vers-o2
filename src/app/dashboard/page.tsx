@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/auth-context';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowUp, CheckCircle, AlertTriangle } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { ErrorBoundary } from '@/components/error-boundary';
 
@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ICONS } from '@/lib/icons';
+import { InlineSvgIcon } from '@/components/ui/custom-icon';
 import { getApiUrl } from '@/lib/api-client';
 import { useDashboard } from '@/hooks/use-dashboard';
 import { useTelemetry } from '@/hooks/use-telemetry';
@@ -321,7 +322,7 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
             onClick={() => window.location.href = '/dashboard/process?filter=attention_required'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-red-700 flex items-center gap-2">
-                <span className="text-lg animate-pulse">{ICONS.WARNING}</span> Requer Atenção
+                <InlineSvgIcon name="atencao" size="lg" className="text-red-600 animate-pulse" /> Requer Atenção
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -336,8 +337,10 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
             <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
               onClick={() => window.location.href = '/dashboard/documents-upload'}>
               <CardContent className="p-6">
-                <div className="text-center space-y-2">
-                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.UPLOAD}</div>
+                <div className="text-center space-y-2 flex flex-col items-center">
+                  <div className="group-hover:scale-110 transition-transform duration-300">
+                    <InlineSvgIcon name="upload" size={42} className="text-primary-600" />
+                  </div>
                   <h3 className="font-medium">Upload Documento</h3>
                   <p className="text-sm text-muted-foreground">Enviar novo arquivo</p>
                 </div>
@@ -346,8 +349,10 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
             <Card className="hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 cursor-pointer group"
               onClick={() => window.location.href = '/dashboard/clients'}>
               <CardContent className="p-6">
-                <div className="text-center space-y-2">
-                  <div className="text-3xl group-hover:scale-110 transition-transform duration-300">{ICONS.CLIENT}</div>
+                <div className="text-center space-y-2 flex flex-col items-center">
+                  <div className="group-hover:scale-110 transition-transform duration-300">
+                    <InlineSvgIcon name="cliente" size={42} className="text-primary-600" />
+                  </div>
                   <h3 className="font-medium">Novo Cliente</h3>
                   <p className="text-sm text-muted-foreground">Cadastrar cliente</p>
                 </div>
@@ -363,21 +368,29 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
           <Card className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group" onClick={() => window.location.href = '/dashboard/process?period=month'}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <span className="text-lg group-hover:scale-110">{ICONS.PROCESS}</span> Total Analisado
+                <div className="group-hover:scale-110 transition-transform">
+                  <InlineSvgIcon name="documentos" size="lg" className="text-primary-600" />
+                </div>
+                Total Analisado
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {dashboardData && <AnimatedNumber value={dashboardData.summary.totalProcesses} />}
               </div>
-              <Badge variant="secondary" className="mt-1">{ICONS.ARROW_UP} +{dashboardData?.analytics.monthlyGrowth}%</Badge>
+              <Badge variant="secondary" className="mt-1 flex w-fit items-center gap-1">
+                <ArrowUp className="h-3 w-3" /> +{dashboardData?.analytics.monthlyGrowth}%
+              </Badge>
             </CardContent>
           </Card>
 
           <Card className="cursor-pointer hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 group" onClick={() => window.location.href = '/dashboard/process?filter=success'}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <span className="text-lg group-hover:scale-110">{ICONS.SUCCESS}</span> Sucesso
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="group-hover:scale-110 transition-transform">
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                </div>
+                Sucesso
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -397,7 +410,9 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">{ICONS.WARNING} Próximos Prazos e Alertas</div>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-500" /> Próximos Prazos e Alertas
+              </div>
               <Button variant="outline" size="sm" onClick={() => window.location.href = '/dashboard/process?filter=urgent'}>Ver Urgentes</Button>
             </CardTitle>
           </CardHeader>
@@ -440,7 +455,7 @@ function RegularDashboard({ workspaceId }: { workspaceId: string | null }) {
 // --- Main Page Component ---
 export default function DashboardPage() {
   const { user, workspaceId, loading } = useAuth();
-  
+
   const { data: userState, isLoading: isStateLoading } = useQuery({
     queryKey: ['user-onboarding-state'],
     queryFn: async () => {
@@ -450,7 +465,7 @@ export default function DashboardPage() {
     },
     enabled: !!user,
   });
-  
+
   // Unified loading state
   if (loading || isStateLoading) {
     return (
@@ -462,11 +477,11 @@ export default function DashboardPage() {
       </div>
     );
   }
-  
+
   // Workspace undefined protection
   if (user && !workspaceId) {
     const userData = userState?.data;
-    
+
     // Check if onboarding is needed
     if (userData && !userData.onboardingCompleted) {
       redirect('/onboarding');
@@ -492,17 +507,17 @@ export default function DashboardPage() {
       );
     }
   }
-  
+
   const userData = userState?.data;
-  
+
   // 1. Welcome Wizard (Redundant but safe double-check)
   if (userData && !userData.onboardingCompleted) {
     return <WelcomeOnboarding userId={user?.id} onComplete={() => window.location.reload()} />;
   }
-  
+
   // 2. Welcome Dashboard (Empty State)
-  if (userData && userData.onboardingCompleted && 
-      (!userData.documentsCount || userData.documentsCount === 0)) {
+  if (userData && userData.onboardingCompleted &&
+    (!userData.documentsCount || userData.documentsCount === 0)) {
     return (
       <div className="min-h-screen bg-slate-50 pb-20">
         <WelcomeDashboard
@@ -515,7 +530,7 @@ export default function DashboardPage() {
       </div>
     );
   }
-  
+
   // 3. Regular Dashboard
   return (
     <ErrorBoundary>
