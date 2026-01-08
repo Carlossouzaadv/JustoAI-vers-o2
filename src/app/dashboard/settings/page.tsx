@@ -66,28 +66,49 @@ export default function SettingsPage() {
     try {
       setLoading(true);
 
-      // Load user profile
-      // Load user profile
-      if (user) {
-        // Padrão-Ouro: Narrowing SEGURO de propriedades opcionais
-        const phone = ('phone' in user && typeof (user as Record<string, unknown>).phone === 'string') ? (user as Record<string, unknown>).phone : null;
-        const avatar = ('avatar' in user && typeof (user as Record<string, unknown>).avatar === 'string') ? (user as Record<string, unknown>).avatar : null;
+      // Load user profile from API (fresh data, not stale context)
+      const profileResponse = await fetch('/api/users/profile', {
+        credentials: 'include',
+      });
 
-        // createdAt comes from string in UserWithWorkspaces
-        const createdAt = user.createdAt || '';
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        const userData = profileData.data;
 
-        setProfile({
-          id: user.id,
-          email: user.email,
-          name: user.name || null,
-          phone: phone as string | null,
-          avatar: avatar as string | null,
-          createdAt,
-        });
-        setProfileForm({
-          name: user.name || '',
-          phone: (phone as string) || '',
-        });
+        if (userData) {
+          setProfile({
+            id: userData.id,
+            email: userData.email,
+            name: userData.name || null,
+            phone: userData.phone || null,
+            avatar: userData.avatar || null,
+            createdAt: userData.createdAt || '',
+          });
+          setProfileForm({
+            name: userData.name || '',
+            phone: userData.phone || '',
+          });
+        }
+      } else {
+        // Fallback to context if API fails
+        if (user) {
+          const phone = ('phone' in user && typeof (user as Record<string, unknown>).phone === 'string') ? (user as Record<string, unknown>).phone : null;
+          const avatar = ('avatar' in user && typeof (user as Record<string, unknown>).avatar === 'string') ? (user as Record<string, unknown>).avatar : null;
+          const createdAt = user.createdAt || '';
+
+          setProfile({
+            id: user.id,
+            email: user.email,
+            name: user.name || null,
+            phone: phone as string | null,
+            avatar: avatar as string | null,
+            createdAt,
+          });
+          setProfileForm({
+            name: user.name || '',
+            phone: (phone as string) || '',
+          });
+        }
       }
 
       // Load workspace data
