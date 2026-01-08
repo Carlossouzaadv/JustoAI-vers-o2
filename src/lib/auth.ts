@@ -40,15 +40,18 @@ export async function getCurrentUser() {
     }
 
     // Sync user with our database
+    // NOTE: We do NOT update 'name' on existing users to preserve user-edited names
+    // The name is only set during user creation from Supabase metadata
     let dbUser = await prisma.user.upsert({
       where: { supabaseId: user.id },
       update: {
+        // Only sync email and login timestamp - do not overwrite name!
         email: user.email!,
-        name: user.user_metadata?.full_name || user.email!,
         emailVerified: !!user.email_confirmed_at,
         lastLoginAt: new Date(),
       },
       create: {
+        // Only set name on creation (from Supabase metadata or email)
         supabaseId: user.id,
         email: user.email!,
         name: user.user_metadata?.full_name || user.email!,
