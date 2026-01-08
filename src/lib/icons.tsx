@@ -1,5 +1,8 @@
 import {
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -21,5 +24,8 @@ export const ICONS = {
   SHIELD: <Shield className="h-4 w-4" />,
   INFO: <Info className="h-4 w-4" />,
   CREDIT_CARD: <CreditCard className="h-4 w-4" />,
-  FILE: <FileText className="h-4 w-4" />
+  FILE: <FileText className="h-4 w-4" />,
+  ARROW_LEFT: <ArrowLeft className="h-4 w-4" />,
+  ARROW_RIGHT: <ArrowRight className="h-4 w-4" />,
+  CHECK: <Check className="h-4 w-4" />
 };
