@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Sidebar,
   SidebarContent,
@@ -137,8 +138,14 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-2xl">{ICONS.PROCESS}</span>
+        <div className="flex items-center gap-3 mb-4">
+          <Image
+            src="/optimized/Justo_logo.webp"
+            alt="JustoAI Logo"
+            width={40}
+            height={40}
+            className="rounded-lg"
+          />
           <div>
             <h2 className="font-semibold text-lg">JustoAI</h2>
             <p className="text-xs text-muted-foreground">Dashboard v2</p>

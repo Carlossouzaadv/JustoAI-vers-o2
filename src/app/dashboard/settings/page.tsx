@@ -128,6 +128,15 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        // Update local profile state with response data
+        if (data.data) {
+          setProfile(prev => prev ? {
+            ...prev,
+            name: data.data.name || prev.name,
+            phone: data.data.phone || prev.phone,
+          } : prev);
+        }
         setMessage('✅ Perfil atualizado com sucesso!');
         setTimeout(() => setMessage(''), 3000);
       } else {
