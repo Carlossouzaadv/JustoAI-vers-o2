@@ -41,10 +41,10 @@ export async function POST(req: NextRequest) {
             cancel_url: `${process.env.NEXTAUTH_URL}/pricing?checkout=cancel`,
             metadata: {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                userId: (session.user as any).id,
+                userId: (session?.user as any).id,
                 planId: planId,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                workspaceId: (session.user as any).workspaceId || '', // Make sure we pass workspaceId if needed
+                workspaceId: (session?.user as any).workspaceId || '', // Make sure we pass workspaceId if needed
             },
             allow_promotion_codes: true,
         });

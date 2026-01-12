@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
         // For now, assuming `session.user.workspaceId` exists or we fetch the first one.
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const workspaceId = (session.user as any).workspaceId; // Adjust based on your session shape
+        const workspaceId = (session?.user as any).workspaceId; // Adjust based on your session shape
 
         if (!workspaceId) {
             return new NextResponse('Workspace ID required', { status: 400 });
