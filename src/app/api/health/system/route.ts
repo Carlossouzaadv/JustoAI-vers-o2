@@ -147,9 +147,9 @@ async function checkResendEmail(): Promise<ComponentHealth> {
       // Email is optional for some deployments
       return {
         name: 'resend',
-        status: 'degraded',
+        status: 'healthy',
         responseTimeMs: 0,
-        lastError: 'Email service not configured',
+        lastError: 'Email service not configured (Optional)',
         timestamp: new Date().toISOString(),
       };
     }
@@ -200,9 +200,9 @@ async function checkSlack(): Promise<ComponentHealth> {
       // Slack is optional
       return {
         name: 'slack',
-        status: 'degraded',
+        status: 'healthy',
         responseTimeMs: 0,
-        lastError: 'Slack webhook not configured',
+        lastError: 'Slack webhook not configured (Optional)',
         timestamp: new Date().toISOString(),
       };
     }
