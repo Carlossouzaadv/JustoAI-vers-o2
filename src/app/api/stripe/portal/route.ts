@@ -8,7 +8,8 @@ export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session?.user?.id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!(session?.user as any)?.id) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
@@ -19,7 +20,8 @@ export async function POST(req: NextRequest) {
         // So we need to know WHICH workspace the user is trying to manage.
         // For now, assuming `session.user.workspaceId` exists or we fetch the first one.
 
-        const workspaceId = session.user.workspaceId; // Adjust based on your session shape
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const workspaceId = (session.user as any).workspaceId; // Adjust based on your session shape
 
         if (!workspaceId) {
             return new NextResponse('Workspace ID required', { status: 400 });
