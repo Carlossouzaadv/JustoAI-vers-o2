@@ -64,7 +64,7 @@ export function FinalCTA() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Link href="/signup">
+            <Link href="/pricing">
               <Button
                 size="lg"
                 className="bg-accent-500 text-white hover:bg-accent-600 shadow-2xl font-bold text-lg px-8 py-6 w-full sm:w-auto transition-all duration-300 transform hover:scale-105"

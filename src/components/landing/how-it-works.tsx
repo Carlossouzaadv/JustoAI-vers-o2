@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { InlineSvgIcon } from '../ui/custom-icon';
 import { VideoSection } from './video-section';
+import { Brain } from 'lucide-react';
 import Link from 'next/link';
 
 const steps = [
@@ -27,7 +28,7 @@ const steps = [
     number: '02',
     title: 'Plataforma Analisa Automaticamente',
     description: 'Nossa plataforma lê, analisa e extrai insights estratégicos de cada processo, criando resumos executivos profissionais.',
-    icon: <InlineSvgIcon name="ia" size={32} />,
+    icon: <Brain size={32} />,
     time: '30 segundos',
     details: [
       'Análise em tempo real',
@@ -214,7 +215,7 @@ export function HowItWorks() {
                             transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                             className="text-4xl text-accent-600"
                           >
-                            <InlineSvgIcon name="ia" size={40} className="text-accent-600" />
+                            <Brain size={40} className="text-accent-600" />
                           </motion.div>
                         </div>
                         {/* Simplified insights for this view */}
@@ -279,7 +280,7 @@ export function HowItWorks() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                <Link href="/signup">
+                <Link href="/pricing">
                   <Button size="lg" className="w-full sm:w-auto bg-white text-accent-700 hover:bg-gray-50 hover:text-accent-800 font-bold px-8 py-6 text-lg shadow-lg">
                     Começar Agora (Grátis) <span className="ml-2">→</span>
                   </Button>

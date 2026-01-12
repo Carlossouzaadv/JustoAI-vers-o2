@@ -5,6 +5,7 @@ import { Card } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { InlineSvgIcon } from '../ui/custom-icon';
+import { Brain } from 'lucide-react';
 import Link from 'next/link';
 
 interface Feature {
@@ -20,7 +21,7 @@ interface Feature {
 
 const features: Feature[] = [
   {
-    icon: <InlineSvgIcon name="ia" size={32} />,
+    icon: <Brain size={32} />,
     title: 'Economize 20 horas por semana',
     description: 'Nossa IA lê e analisa automaticamente cada andamento processual, extraindo pontos-chave e criando resumos executivos. Você nunca mais perde tempo com trabalho manual.',
     benefit: '→ De 2 horas de leitura para 30 segundos',
@@ -127,9 +128,9 @@ export function Features() {
             <motion.div
               key={index}
               variants={itemVariants}
-              className={`${feature.featured ? 'md:col-span-2 lg:col-span-1 row-span-2' : ''}`}
+              className=""
             >
-              <Card className={`p-8 h-full transition-all duration-300 group hover:shadow-xl relative overflow-hidden border-2 
+              <Card className={`p-6 h-full transition-all duration-300 group hover:shadow-xl relative overflow-hidden border-2 
                 ${feature.featured && feature.color === 'accent' ? 'bg-gradient-to-br from-accent-50 to-white border-accent-200' : ''}
                 ${feature.featured && feature.color === 'blue' ? 'bg-gradient-to-br from-blue-50 to-white border-blue-200' : ''}
                 ${!feature.featured ? 'bg-white border-transparent hover:border-primary-100 shadow-sm' : ''}
@@ -194,7 +195,7 @@ export function Features() {
               </p>
 
               <div className="flex flex-col items-center gap-4">
-                <Link href="/signup">
+                <Link href="/pricing">
                   <Button size="lg" className="bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all">
                     Testar Grátis Agora <span className="ml-2">→</span>
                   </Button>

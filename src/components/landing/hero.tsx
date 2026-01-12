@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { InlineSvgIcon } from '../ui/custom-icon';
-import { CreditCard, X } from 'lucide-react';
+import { CreditCard, X, Brain } from 'lucide-react';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -71,7 +71,7 @@ export function Hero() {
             <div className="text-center lg:text-left">
               <motion.div variants={itemVariants}>
                 <Badge variant="secondary" className="inline-flex items-center gap-2 mb-6 bg-gradient-to-r from-accent-400 to-accent-600 text-white border-0 shadow-md px-3 py-1">
-                  <InlineSvgIcon name="ia" size={16} />
+                  <Brain size={16} />
                   <span>Novo: Análise com nossa IA em 30 segundos</span>
                 </Badge>
               </motion.div>
@@ -109,27 +109,28 @@ export function Hero() {
                 className="mb-8 text-center lg:text-left"
               >
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-6">
-                  <Link href="/pricing">
-
-                    <Button
-                      size="lg"
-                      className="w-full sm:w-auto bg-gradient-to-r from-accent-500 to-primary-800 hover:from-accent-600 hover:to-primary-900 text-white px-8 py-4 text-base lg:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 border-0 min-h-[48px] touch-manipulation"
-                    >
+                  <Button
+                    asChild
+                    size="lg"
+                    className="w-full sm:w-auto bg-gradient-to-r from-accent-500 to-primary-800 hover:from-accent-600 hover:to-primary-900 text-white px-8 py-4 text-base lg:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 border-0 min-h-[48px] touch-manipulation"
+                  >
+                    <Link href="/pricing">
                       Testar 7 Dias Grátis (sem cartão)
                       <span className="ml-2">→</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
 
-                  <Link href="#demo">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="w-full sm:w-auto border-2 border-primary-300 text-primary-800 hover:bg-primary-50 px-8 py-4 text-base lg:text-lg font-semibold transition-all duration-200 min-h-[48px] touch-manipulation"
-                    >
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="w-full sm:w-auto border-2 border-primary-300 text-primary-800 hover:bg-primary-50 px-8 py-4 text-base lg:text-lg font-semibold transition-all duration-200 min-h-[48px] touch-manipulation"
+                  >
+                    <Link href="#demo">
                       Ver Como Funciona (3 min)
                       <span className="ml-2">▶</span>
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </div>
 
                 {/* Trust Badges */}
@@ -222,7 +223,7 @@ export function Hero() {
                 className="absolute -top-6 -left-6 bg-white rounded-xl shadow-lg border border-neutral-200 p-3 flex items-center gap-2 animate-bounce-slow"
               >
                 <div className="bg-accent-100 p-1.5 rounded-full">
-                  <InlineSvgIcon name="ia" size={16} className="text-accent-600" />
+                  <Brain size={16} className="text-accent-600" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800">20h economizadas</span>
               </motion.div>
