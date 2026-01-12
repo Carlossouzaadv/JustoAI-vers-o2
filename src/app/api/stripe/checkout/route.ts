@@ -40,9 +40,9 @@ export async function POST(req: NextRequest) {
             success_url: `${process.env.NEXTAUTH_URL}/dashboard?checkout=success`,
             cancel_url: `${process.env.NEXTAUTH_URL}/pricing?checkout=cancel`,
             metadata: {
-                userId: session.user.id,
+                userId: (session.user as any).id,
                 planId: planId,
-                workspaceId: session.user.workspaceId || '', // Make sure we pass workspaceId if needed
+                workspaceId: (session.user as any).workspaceId || '', // Make sure we pass workspaceId if needed
             },
             allow_promotion_codes: true,
         });
