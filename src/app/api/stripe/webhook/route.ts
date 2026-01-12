@@ -15,8 +15,9 @@ export async function POST(req: NextRequest) {
             signature,
             process.env.STRIPE_WEBHOOK_SECRET!
         );
-    } catch (error: any) {
-        return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return new NextResponse(`Webhook Error: ${errorMessage}`, { status: 400 });
     }
 
     const session = event.data.object as Stripe.Checkout.Session;
@@ -47,8 +48,11 @@ export async function POST(req: NextRequest) {
 
     if (event.type === 'invoice.payment_succeeded') {
         // Explicitly casting to any to avoid strict type checks if version mismatch
-        const invoice = event.data.object as any;
-        const subscriptionId = invoice.subscription as string;
+        // Explicitly casting to any to avoid strict type checks if version mismatch
+        const invoice = event.data.object as Stripe.Invoice;
+        // Explicitly casting to any locally for subscription access to avoid version mismatch issues
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subscriptionId = (invoice as any).subscription as string;
 
         if (subscriptionId) {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
                     stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
                     status: 'ACTIVE',
                 }
-            }).catch(err => console.error("Error updating workspace for invoice payment", err));
+            }).catch(err => console.error('Error updating workspace for invoice payment', err));
         }
     }
 
