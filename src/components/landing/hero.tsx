@@ -109,7 +109,8 @@ export function Hero() {
                 className="mb-8 text-center lg:text-left"
               >
                 <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-6">
-                  <Link href="/signup">
+                  <Link href="/pricing">
+
                     <Button
                       size="lg"
                       className="w-full sm:w-auto bg-gradient-to-r from-accent-500 to-primary-800 hover:from-accent-600 hover:to-primary-900 text-white px-8 py-4 text-base lg:text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 border-0 min-h-[48px] touch-manipulation"

@@ -15,7 +15,8 @@ import PlanModal from '../../components/pricing/plan-modal';
 import EnterpriseModal from '../../components/modals/enterprise-modal';
 import { Button } from '../../components/ui/button';
 import { ArrowLeft, Star, Shield } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/auth-context';
+
 
 // Import pricing data
 import pricingData from '../../config/pricing.json';
@@ -69,7 +70,8 @@ export default function PricingPage() {
     }
   };
 
-  const { data: session } = useSession();
+  const { user } = useAuth();
+
 
   const handleStartTrial = async (planId: string) => {
     // Analytics tracking
@@ -86,7 +88,8 @@ export default function PricingPage() {
       });
     }
 
-    if (session) {
+    if (user) {
+
       try {
         const response = await fetch('/api/stripe/checkout', {
           method: 'POST',

@@ -73,8 +73,8 @@ export function Navigation() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-            ? 'bg-primary-900/98 backdrop-blur-lg border-b border-primary-800 shadow-lg'
-            : 'bg-primary-900/95 backdrop-blur-lg border-b border-primary-800'
+          ? 'bg-primary-900/98 backdrop-blur-lg border-b border-primary-800 shadow-lg'
+          : 'bg-primary-900/95 backdrop-blur-lg border-b border-primary-800'
           }`}
       >
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -119,7 +119,8 @@ export function Navigation() {
                   Entrar
                 </Button>
               </Link>
-              <Link href="/signup">
+              <Link href="/pricing">
+
                 <Button className="bg-gradient-to-r from-accent-500 to-primary-800 hover:from-accent-600 hover:to-primary-900 text-white px-4 lg:px-6 py-2 text-sm lg:text-base shadow-lg hover:shadow-xl transition-all duration-200 border-0 h-10 lg:h-11">
                   Testar Grátis
                   <span className="ml-2">→</span>
@@ -129,7 +130,8 @@ export function Navigation() {
 
             {/* Mobile CTA + Menu Button */}
             <div className="flex items-center space-x-2 sm:hidden">
-              <Link href="/signup">
+              <Link href="/pricing">
+
                 <Button size="sm" className="bg-gradient-to-r from-accent-500 to-primary-800 hover:from-accent-600 hover:to-primary-900 text-white px-3 py-1.5 text-sm shadow-lg transition-all duration-200 border-0">
                   Teste Grátis
                 </Button>
@@ -237,7 +239,8 @@ export function Navigation() {
                     </Button>
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/pricing"
+
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="block"
                   >
