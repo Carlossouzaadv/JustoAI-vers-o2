@@ -61,6 +61,8 @@ export interface PlanConfig {
   name: string;
   /** Monthly price in BRL centavos (to avoid floating point) */
   monthlyPriceCents: number;
+  /** Annual price in BRL centavos */
+  annualPriceCents: number;
   /** User limits */
   maxUsers: number;
   /** Monitored process limits */
@@ -71,6 +73,14 @@ export interface PlanConfig {
   monthlyCredits: number;
   /** Features available in this plan */
   features: PlanFeatures;
+  /** Stripe Configuration */
+  stripe: {
+    productId: string;
+    monthlyPriceId: string;
+    annualPriceId: string;
+    monthlyPaymentLink: string;
+    annualPaymentLink: string;
+  };
 }
 
 /**
@@ -83,6 +93,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     id: PLAN_IDS.GESTAO,
     name: 'Gestão',
     monthlyPriceCents: 49700, // R$ 497,00
+    annualPriceCents: 500000, // R$ 5.000,00
     maxUsers: 3,
     maxProcesses: 200,
     onboardingCredits: {
@@ -97,11 +108,19 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       reportTemplateType: 'standard',
       supportChannels: ['Email', 'IA'],
     },
+    stripe: {
+      productId: 'prod_TmL5OgnUvqG811',
+      monthlyPriceId: 'price_1SomOt2KI2MwKDrtMUiNr5Fv',
+      annualPriceId: 'price_1SomOt2KI2MwKDrt2fkJChRL',
+      monthlyPaymentLink: 'https://buy.stripe.com/7sYeV6aPxfj57DE2Ad5wI01',
+      annualPaymentLink: 'https://buy.stripe.com/6oU6oAbTBb2P7DEeiV5wI00',
+    },
   },
   [PLAN_IDS.PERFORMANCE]: {
     id: PLAN_IDS.PERFORMANCE,
     name: 'Performance',
     monthlyPriceCents: 119700, // R$ 1.197,00
+    annualPriceCents: 1200000, // R$ 12.000,00
     maxUsers: 10,
     maxProcesses: 500,
     onboardingCredits: {
@@ -115,6 +134,13 @@ export const PLANS: Record<PlanId, PlanConfig> = {
       csvImport: true,
       reportTemplateType: 'branded',
       supportChannels: ['Email', 'IA', 'WhatsApp'],
+    },
+    stripe: {
+      productId: '', // User did NOT provide Performance Product ID. Using placeholder.
+      monthlyPriceId: 'price_1SomPR2KI2MwKDrtDiUISFOf',
+      annualPriceId: 'price_1SomQ32KI2MwKDrtLHnjxNCZ',
+      monthlyPaymentLink: 'https://buy.stripe.com/14AaEQ0aT3Angaa5Mp5wI02',
+      annualPaymentLink: 'https://buy.stripe.com/cNi3co2j11sfgaa7Ux5wI03',
     },
   },
 };

@@ -15,6 +15,7 @@ import PlanModal from '../../components/pricing/plan-modal';
 import EnterpriseModal from '../../components/modals/enterprise-modal';
 import { Button } from '../../components/ui/button';
 import { ArrowLeft, Star, Shield } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 // Import pricing data
 import pricingData from '../../config/pricing.json';
@@ -68,7 +69,9 @@ export default function PricingPage() {
     }
   };
 
-  const handleStartTrial = (planId: string) => {
+  const { data: session } = useSession();
+
+  const handleStartTrial = async (planId: string) => {
     // Analytics tracking
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'begin_checkout', {
@@ -83,8 +86,34 @@ export default function PricingPage() {
       });
     }
 
-    // Redirect to checkout/signup
-    window.location.href = `/signup?plan=${planId}&billing=${billingCycle}`;
+    if (session) {
+      try {
+        const response = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            planId,
+            interval: billingCycle,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('Checkout failed');
+          // Optionally show error toast
+          return;
+        }
+
+        const data = await response.json();
+        window.location.href = data.url;
+      } catch (error) {
+        console.error('Error during checkout redirection:', error);
+      }
+    } else {
+      // Redirect to checkout/signup
+      window.location.href = `/signup?plan=${planId}&billing=${billingCycle}`;
+    }
   };
 
   const handleContactSales = () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CreditCard, TrendingUp, TrendingDown, DollarSign, Calendar, ArrowRight } from 'lucide-react';
+import { CreditCard, TrendingUp, TrendingDown, DollarSign, Calendar, ArrowRight, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -139,6 +139,27 @@ export default function BillingPage() {
 
   const creditStatus = credits ? credits.balance <= 0 ? 'critical' : credits.balance <= 100 ? 'warning' : 'healthy' : 'unknown';
 
+  const handleManageSubscription = async () => {
+    try {
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = data.url;
+      } else {
+        console.error('Failed to init portal session');
+        alert('Erro ao redirecionar para o portal (verifique se você tem um Customer ID no Stripe).');
+      }
+    } catch (error) {
+      console.error('Error redirecting to portal:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -148,12 +169,18 @@ export default function BillingPage() {
           <p className="text-neutral-600">Gerencie seus créditos, visualize uso e faça compras</p>
         </div>
 
-        <Link href="/pricing?tab=credits">
-          <Button className="gap-2">
-            <CreditCard className="w-4 h-4" />
-            Comprar Créditos
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleManageSubscription} className="gap-2">
+            <Settings className="w-4 h-4" />
+            Gerenciar Assinatura
           </Button>
-        </Link>
+          <Link href="/pricing?tab=credits">
+            <Button className="gap-2">
+              <CreditCard className="w-4 h-4" />
+              Comprar Créditos
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Main Credits Card */}
@@ -165,16 +192,14 @@ export default function BillingPage() {
             <p className="text-blue-700 mt-2">Créditos disponíveis para uso</p>
           </div>
 
-          <div className={`h-14 w-14 rounded-lg flex items-center justify-center ${
-            creditStatus === 'critical' ? 'bg-red-100' :
+          <div className={`h-14 w-14 rounded-lg flex items-center justify-center ${creditStatus === 'critical' ? 'bg-red-100' :
             creditStatus === 'warning' ? 'bg-yellow-100' :
-            'bg-green-100'
-          }`}>
-            <DollarSign className={`w-8 h-8 ${
-              creditStatus === 'critical' ? 'text-red-600' :
+              'bg-green-100'
+            }`}>
+            <DollarSign className={`w-8 h-8 ${creditStatus === 'critical' ? 'text-red-600' :
               creditStatus === 'warning' ? 'text-yellow-600' :
-              'text-green-600'
-            }`} />
+                'text-green-600'
+              }`} />
           </div>
         </div>
 
@@ -313,8 +338,8 @@ export default function BillingPage() {
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
                         {item.type === 'analysis' ? '📊 Análise' :
-                         item.type === 'report' ? '📄 Relatório' :
-                         '💬 Consulta'}
+                          item.type === 'report' ? '📄 Relatório' :
+                            '💬 Consulta'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right text-sm font-medium">

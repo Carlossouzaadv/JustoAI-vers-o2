@@ -189,7 +189,15 @@ export function PlanCard({
               </>
             ) : (
               <>
-                Assinar — {plan.name} {priceDisplay ? `(${priceDisplay.main})` : ''}
+                {plan.trial_days > 0 ? (
+                  <>
+                    Testar Grátis por {plan.trial_days} Dias
+                  </>
+                ) : (
+                  <>
+                    Assinar — {plan.name} {priceDisplay ? `(${priceDisplay.main})` : ''}
+                  </>
+                )}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </>
             )}

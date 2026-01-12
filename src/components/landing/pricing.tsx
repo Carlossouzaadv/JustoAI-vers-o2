@@ -277,7 +277,7 @@ export function Pricing() {
                               : 'bg-primary-800 hover:bg-primary-700 text-white'
                               }`}
                           >
-                            Ver Planos Completos
+                            {plan.trial_days > 0 ? `Testar Grátis por ${plan.trial_days} Dias` : 'Ver Planos Completos'}
                             <span className="ml-2">
                               {ICONS.ARROW_RIGHT}
                             </span>
