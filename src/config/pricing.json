@@ -11,7 +11,7 @@
     },
     "disclaimers": {
       "reports": "* Relatórios estão sujeitos a limites de fair-use conforme o plano contratado.",
-      "taxes": "** Valores não incluem impostos conforme legislação vigente.",
+      "taxes": "",
       "fifo": "*** Créditos expiram seguindo a regra FIFO (primeiro a entrar, primeiro a sair)."
     }
   },
@@ -128,7 +128,7 @@
             "name": "Processos monitorados",
             "gestao": "200",
             "performance": "500",
-            "enterprise": "Ilimitado"
+            "enterprise": "Ilimitado*"
           },
           {
             "name": "Sincronização automática",

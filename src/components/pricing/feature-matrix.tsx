@@ -36,8 +36,14 @@ export function FeatureMatrix({ featuresMatrix, className = '' }: FeatureMatrixP
       return <X className="w-4 h-4 text-gray-400 mx-auto" />;
     }
 
+    // Handle null/undefined values
+    if (value === null || value === undefined) {
+      return <span className="text-gray-400">—</span>;
+    }
+
     // Convert to string for further processing
     const stringValue = String(value);
+
 
     // Handle boolean-like string values
     if (stringValue === '✓' || stringValue.toLowerCase() === 'sim') {

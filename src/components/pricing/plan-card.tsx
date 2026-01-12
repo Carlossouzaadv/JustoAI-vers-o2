@@ -177,9 +177,10 @@ export function PlanCard({
             className={`w-full ${plan.contact_sales
               ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0'
               : plan.popular
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-gray-900 hover:bg-gray-800'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-gray-900 hover:bg-gray-800 text-white'
               }`}
+
             size="lg"
           >
             {plan.contact_sales ? (

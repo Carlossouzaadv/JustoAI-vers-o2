@@ -79,11 +79,10 @@ export function CreditsPacks({
         {creditPacks.map((pack) => (
           <Card
             key={pack.id}
-            className={`relative transition-all duration-300 hover:shadow-lg ${
-              pack.popular
+            className={`relative transition-all duration-300 hover:shadow-lg ${pack.popular
                 ? 'ring-2 ring-green-400 shadow-lg'
                 : 'hover:scale-105'
-            }`}
+              }`}
           >
             {/* Popular badge */}
             {pack.popular && (
@@ -145,11 +144,11 @@ export function CreditsPacks({
               {/* CTA Button */}
               <Button
                 onClick={() => onBuyPack(pack.id)}
-                className={`w-full ${
-                  pack.popular
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-gray-900 hover:bg-gray-800'
-                }`}
+                className={`w-full ${pack.popular
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-gray-900 hover:bg-gray-800 text-white'
+                  }`}
+
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Comprar Pacote

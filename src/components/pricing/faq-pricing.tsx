@@ -46,9 +46,8 @@ export function FaqPricing({ faqItems, className = '' }: FaqPricingProps) {
               >
                 <span className="font-medium">{item.question}</span>
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                    openIndex === index ? 'rotate-180' : ''
-                  }`}
+                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${openIndex === index ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
               {openIndex === index && (
@@ -73,10 +72,12 @@ export function FaqPricing({ faqItems, className = '' }: FaqPricingProps) {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a
-                href="mailto:vendas@justoai.com"
+                href="mailto:contato@justoai.com.br"
+
                 className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
               >
-                📧 vendas@justoai.com
+                📧 contato@justoai.com.br
+
               </a>
               <a
                 href="https://wa.me/5511999999999"

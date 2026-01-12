@@ -11,7 +11,6 @@ import PlanCard from '../../components/pricing/plan-card';
 import FeatureMatrix from '../../components/pricing/feature-matrix';
 import CreditsPacks from '../../components/pricing/credits-packs';
 import FaqPricing from '../../components/pricing/faq-pricing';
-import PlanModal from '../../components/pricing/plan-modal';
 import EnterpriseModal from '../../components/modals/enterprise-modal';
 import { Button } from '../../components/ui/button';
 import { ArrowLeft, Star, Shield } from 'lucide-react';
@@ -21,30 +20,12 @@ import { useAuth } from '@/contexts/auth-context';
 // Import pricing data
 import pricingData from '../../config/pricing.json';
 
-// Type for the plan data from JSON
-type PlanData = typeof pricingData.plans[number];
-
-// Type guard to validate plan matches PlanModal expectations
-function isPlanData(data: unknown): data is PlanData {
-  if (typeof data !== 'object' || data === null) {
-    return false;
-  }
-  const plan = data as Record<string, unknown>;
-  return (
-    typeof plan.id === 'string' &&
-    typeof plan.name === 'string' &&
-    typeof plan.subtitle === 'string' &&
-    'price_monthly' in plan &&
-    'price_annual' in plan &&
-    typeof plan.trial_days === 'number'
-  );
-}
 
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [showPlanModal, setShowPlanModal] = useState(false);
+
   const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+
 
   // Set page metadata
   useEffect(() => {
@@ -58,9 +39,6 @@ export default function PricingPage() {
   }, []);
 
   const handlePlanSelection = (planId: string) => {
-    setSelectedPlan(planId);
-    setShowPlanModal(true);
-
     // Analytics tracking
     if (typeof window !== 'undefined' && window.gtag) {
       window.gtag('event', 'select_plan', {
@@ -68,7 +46,15 @@ export default function PricingPage() {
         billing_cycle: billingCycle
       });
     }
+
+    if (planId === 'enterprise') {
+      setShowEnterpriseModal(true);
+    } else {
+      // Direct checkout/trial start without modal
+      handleStartTrial(planId);
+    }
   };
+
 
   const { user } = useAuth();
 
@@ -150,9 +136,7 @@ export default function PricingPage() {
     return billingCycle === 'monthly' ? plan.price_monthly : plan.price_annual;
   };
 
-  const selectedPlanData: PlanData | null = selectedPlan
-    ? (pricingData.plans.find(p => p.id === selectedPlan) ?? null)
-    : null;
+
 
   // Safety check for data
   if (!pricingData || !pricingData.plans || !pricingData.copy) {
@@ -290,46 +274,19 @@ export default function PricingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
-              onClick={() => handlePlanSelection('professional')}
-              size="lg"
-              className="bg-white text-blue-900 hover:bg-gray-100"
-            >
-              <Star className="w-4 h-4 mr-2" />
-              Começar com Professional
-            </Button>
-            <Button
               onClick={() => handleContactSales()}
               variant="outline"
               size="lg"
-              className="border-white text-white hover:bg-white hover:text-blue-900"
+              className="border-white text-white hover:bg-white hover:text-blue-900 transition-colors"
             >
               Falar com Vendas
             </Button>
+
           </div>
         </div>
       </section>
 
-      {/* Plan Modal */}
-      {isPlanData(selectedPlanData) && (
-        <PlanModal
-          isOpen={showPlanModal}
-          onClose={() => setShowPlanModal(false)}
-          plan={selectedPlanData}
-          billingCycle={billingCycle}
-          onStartTrial={handleStartTrial}
-          onContactSales={handleContactSales}
-        />
-      )}
-      {!selectedPlanData && (
-        <PlanModal
-          isOpen={showPlanModal}
-          onClose={() => setShowPlanModal(false)}
-          plan={null}
-          billingCycle={billingCycle}
-          onStartTrial={handleStartTrial}
-          onContactSales={handleContactSales}
-        />
-      )}
+
 
       {/* Enterprise Modal */}
       <EnterpriseModal
