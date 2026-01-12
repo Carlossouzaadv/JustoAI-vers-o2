@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Retrieve subscription details to get end date
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
         await prisma.workspace.update({
             where: { id: workspaceId },
@@ -55,7 +56,8 @@ export async function POST(req: NextRequest) {
         const subscriptionId = (invoice as any).subscription as string;
 
         if (subscriptionId) {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any;
 
             // Find workspace by subscription ID
             await prisma.workspace.update({
