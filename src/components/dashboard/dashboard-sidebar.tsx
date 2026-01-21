@@ -79,7 +79,7 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
         return;
       }
 
-      const url = getApiUrl(`/api/clients?limit=100&workspaceId=${workspaceId}`);
+      const url = getApiUrl(`/api/clients?limit=1000&workspaceId=${workspaceId}`);
       console.log('🔍 [Sidebar] Fetching URL:', url);
       const response = await fetch(url, {
         credentials: 'include'
@@ -119,6 +119,18 @@ export function DashboardSidebar({ selectedClientId, onClientSelect }: Dashboard
 
   useEffect(() => {
     loadClients();
+
+    // Listen for custom event to refresh data when changes occur elsewhere
+    const handleRefresh = () => {
+      console.log('🔄 [Sidebar] Refreshing data due to external change...');
+      loadClients();
+    };
+
+    window.addEventListener('refresh_sidebar_data', handleRefresh);
+
+    return () => {
+      window.removeEventListener('refresh_sidebar_data', handleRefresh);
+    };
   }, [loadClients]);
 
   const filteredClients = clients.filter(client =>

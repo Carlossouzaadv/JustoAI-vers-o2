@@ -150,6 +150,8 @@ export default function ProcessPage() {
         setCaseInfo(data.data);
         setShowClientModal(false);
         console.log(`${ICONS.SUCCESS} Cliente atualizado`);
+        // Trigger sidebar refresh
+        window.dispatchEvent(new CustomEvent('refresh_sidebar_data'));
       } else {
         console.error('Erro ao atualizar cliente');
       }
@@ -187,7 +189,7 @@ export default function ProcessPage() {
       'CLOSED': 'Encerrado',
       'ARCHIVED': 'Arquivado',
       'CANCELLED': 'Cancelado',
-      'UNASSIGNED': 'Não atribuído',
+      'UNASSIGNED': 'Status não definido',
     };
     return labels[status.toUpperCase()] || status;
   };
@@ -284,7 +286,9 @@ export default function ProcessPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="font-medium text-base">{caseInfo.title}</p>
+                {caseInfo.title && caseInfo.title !== caseInfo.number && caseInfo.title !== caseInfo.detectedCnj && (
+                  <p className="font-medium text-base">{caseInfo.title}</p>
+                )}
 
                 {/* Status do Cliente - com indicação visual se não atribuído */}
                 <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -431,10 +435,10 @@ export default function ProcessPage() {
 
             <div className="flex items-center gap-2">
               <Badge variant={getStatusColor(caseInfo.status)}>
-                {getStatusLabel(caseInfo.status)}
+                Status: {getStatusLabel(caseInfo.status)}
               </Badge>
               <Badge variant={getPriorityColor(caseInfo.priority)}>
-                {getPriorityLabel(caseInfo.priority)}
+                Prioridade: {getPriorityLabel(caseInfo.priority)}
               </Badge>
             </div>
           </div>

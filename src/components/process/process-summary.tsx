@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect , useCallback} from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAutosave } from '@/hooks/use-autosave';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ICONS } from '@/lib/icons';
 
 interface ProcessSummaryData {
@@ -166,6 +167,25 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
     }
   };
 
+  const getPriorityLabel = (priority: string) => {
+    const labels: Record<string, string> = {
+      'LOW': 'Baixa',
+      'MEDIUM': 'Média',
+      'HIGH': 'Alta',
+      'URGENT': 'Urgente',
+    };
+    return labels[priority] || priority;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      'active': 'Ativo',
+      'suspended': 'Suspenso',
+      'finished': 'Concluído',
+    };
+    return labels[status] || status;
+  };
+
   if (loading) {
     return (
       <Card>
@@ -223,12 +243,30 @@ export function ProcessSummary({ processId }: ProcessSummaryProps) {
           </div>
 
           <div className="flex gap-2">
-            <Badge variant={getStatusColor(data.status)}>
-              {data.status === 'active' ? 'Ativo' :
-               data.status === 'suspended' ? 'Suspenso' : 'Finalizado'}
-            </Badge>
+            <Select
+              value={data.status}
+              onValueChange={(value: 'active' | 'suspended' | 'finished') => {
+                updateField('status', value);
+                // Trigger sidebar refresh
+                window.dispatchEvent(new CustomEvent('refresh_sidebar_data'));
+              }}
+            >
+              <SelectTrigger className="h-8 w-[140px] bg-secondary/50 border-0">
+                <SelectValue>
+                  <Badge variant={getStatusColor(data.status)} className="mr-2">
+                    {getStatusLabel(data.status)}
+                  </Badge>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Ativo</SelectItem>
+                <SelectItem value="suspended">Suspenso</SelectItem>
+                <SelectItem value="finished">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Badge variant={getPriorityColor(data.priority)}>
-              {data.priority}
+              Prioridade: {getPriorityLabel(data.priority)}
             </Badge>
           </div>
         </div>
