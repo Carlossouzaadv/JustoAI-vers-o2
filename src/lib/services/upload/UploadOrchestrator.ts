@@ -407,6 +407,7 @@ export class UploadOrchestrator {
                 where: { id: caseId },
                 data: {
                     description: summary.substring(0, 3000), // Update description for UI
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     previewSnapshot: aiData as any, // Save full JSON for Timeline Unifier
                     metadata: {
                         // Merge existing metadata with new AI flag
