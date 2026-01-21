@@ -18,6 +18,7 @@ import { UploadAnalysisService } from './UploadAnalysisService';
 import { uploadCaseDocument, downloadFile } from '@/lib/services/supabaseStorageService';
 import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { getTimelineMergeService } from '@/lib/timeline-merge'; // For legacy audit event
+import { performFullProcessRequest } from '@/lib/services/juditOnboardingService';
 
 const prisma = new PrismaClient(); // Shared Prisma instance
 const CONFIG = {
@@ -256,13 +257,22 @@ export class UploadOrchestrator {
             }
         });
 
-        // 10. Save Analysis Version
+        // 10. Save Analysis Version & Update Case Preview (PHASE 1: PREVIEW LINK)
         if (aiResult && aiResult.aiAnalysisResult) {
             await this.saveAnalysisVersion(targetCaseId, workspaceId, aiResult, document.id);
+
+            // CRITICAL: Update Case with Preview Data
+            // This connects the "AI Brain" to the "UI Face"
+            await this.updateCaseWithPreview(targetCaseId, aiResult.aiAnalysisResult as Record<string, unknown>);
         }
 
         // 11. Timeline Merge (Async / Non-blocking)
+        // Now that we have the previewSnapshot saved, mergeTimelines will work!
         this.triggerTimelineMerge(targetCaseId, document.id);
+
+        // 12. Trigger Official Enrichment (PHASE 2: JUDIT)
+        // Runs in background, updates via webhook later
+        this.triggerJuditEnrichment(identification.extractedProcessNumber, workspaceId, targetCaseId);
 
         // 12. Return Success
         return {
@@ -384,5 +394,40 @@ export class UploadOrchestrator {
         } catch (e) {
             logError(e, 'Erro timeline merge', { component: 'Orchestrator' });
         }
+    }
+
+    private async updateCaseWithPreview(caseId: string, aiData: Record<string, unknown>) {
+        try {
+            const summary = (aiData.summary as string) || (aiData.resumo_executivo as string) || '';
+
+            // Map identifying data if available
+            // Note: aiData structure depends on the model output (UnifiedSchema)
+
+            await prisma.case.update({
+                where: { id: caseId },
+                data: {
+                    description: summary.substring(0, 3000), // Update description for UI
+                    previewSnapshot: aiData as any, // Save full JSON for Timeline Unifier
+                    metadata: {
+                        // Merge existing metadata with new AI flag
+                        upsert: {
+                            set: { aiPreviewReady: true }
+                        }
+                    }
+                }
+            });
+            log.info({ msg: `✅ Case ${caseId} updated with AI Preview data`, component: 'Orchestrator' });
+        } catch (e) {
+            logError(e, 'Error updating case preview', { component: 'Orchestrator' });
+        }
+    }
+
+    private async triggerJuditEnrichment(cnj: string | undefined, workspaceId: string, caseId: string) {
+        if (!cnj) return;
+
+        // Don't await this, let it run in background
+        performFullProcessRequest(cnj, 'ONBOARDING', workspaceId, caseId)
+            .then(res => log.info({ msg: `🚀 JUDIT triggered for ${cnj}`, data: res, component: 'Orchestrator' }))
+            .catch(err => logError(err, 'Failed to trigger JUDIT', { component: 'Orchestrator' }));
     }
 }

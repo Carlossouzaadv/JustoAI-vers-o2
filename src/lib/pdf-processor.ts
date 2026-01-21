@@ -166,10 +166,33 @@ export class PDFProcessor {
       }
 
       const railwayData = railwayDataRaw;
-      const texto_original = railwayData.originalText;
+      let texto_original = railwayData.originalText;
+      let processingMethod = 'railway-http-client';
+
+      // 2.1 OCR Fallback check
+      // If text is empty or too short, try OCR
+      if (!texto_original || texto_original.trim().length < this.MIN_TEXT_LENGTH) {
+        log.info({ msg: `${ICONS.SCAN} Primary extraction insufficient, trying OCR`, component: 'PDFProcessor' });
+        try {
+          const ocrText = await this.railwayClient.processOcr(fileBuffer, file_name);
+          if (ocrText && ocrText.length >= this.MIN_TEXT_LENGTH) {
+            texto_original = ocrText;
+            processingMethod = 'railway-ocr';
+            log.info({ msg: `${ICONS.SUCCESS} OCR extraction successful`, component: 'PDFProcessor' });
+          } else {
+            // If OCR also fails or returns empty/short text
+            if (!texto_original) texto_original = ''; // Ensure string
+            log.warn({ msg: `${ICONS.WARNING} OCR also produced insufficient text`, component: 'PDFProcessor' });
+          }
+        } catch (ocrError) {
+          logError(ocrError, 'OCR fallback failed', { component: 'PDFProcessor' });
+          // Fallback to whatever we had (or empty string)
+          if (!texto_original) texto_original = '';
+        }
+      }
 
       if (!texto_original || texto_original.trim().length === 0) {
-        throw new Error('PDF content empty');
+        throw new Error('PDF content empty (OCR failed)');
       }
 
       // 3. Normalize
