@@ -55,6 +55,7 @@ export async function middleware(request: NextRequest) {
   // Protected API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const origin = request.headers.get('origin')
+    console.log(`[Middleware Debug] ${request.method} ${request.nextUrl.pathname} | Origin: ${origin} | Env: ${process.env.NODE_ENV}`)
 
     // Handle preflight requests first
     if (request.method === 'OPTIONS') {
@@ -64,6 +65,7 @@ export async function middleware(request: NextRequest) {
     // Validar origem CORS
     const corsError = validateCorsOrigin(request)
     if (corsError) {
+      console.error(`[Middleware Block] CORS Validation Failed for Origin: ${origin}`)
       return corsError
     }
 
