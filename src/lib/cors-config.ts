@@ -21,6 +21,8 @@ export const corsConfig = {
       'https://www.justoai.com',
       'https://app.justoai.com',
       'https://admin.justoai.com',
+      'https://v2.justoai.com.br',
+      'https://www.v2.justoai.com.br',
       // Adicione outros domínios de produção conforme necessário
     ],
     credentials: true,
