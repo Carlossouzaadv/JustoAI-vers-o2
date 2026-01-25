@@ -389,7 +389,7 @@ export class UploadOrchestrator {
                     status: 'COMPLETED',
                     analysisType: 'complete', // Sempre "complete" agora
                     modelUsed: aiResult.modelVersion,
-                    analysisKey: aiResult.analysisKey,
+                    analysisKey: aiResult.analysisKey ? aiResult.analysisKey.substring(0, 64) : null, // Truncate to VarChar(64) limit
                     aiAnalysis: analysisJson, // String serializado - sem limite prático
                     confidence: 0.8,
                     metadata: {

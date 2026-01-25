@@ -138,14 +138,21 @@ export async function POST(request: NextRequest) {
         caseId,
       });
 
+      // Extract caseId from result.data (executeProcessing returns { message, data: { caseId, ... } })
+      let resultCaseId: unknown;
+      if (typeof result === 'object' && result !== null && 'data' in result) {
+        const resultData = (result as Record<string, unknown>).data;
+        if (typeof resultData === 'object' && resultData !== null && 'caseId' in resultData) {
+          resultCaseId = (resultData as Record<string, unknown>).caseId;
+        }
+      }
+
       console.log(`${ICONS.SUCCESS} Processing complete, result:`, {
-        caseId: result.caseId,
+        caseId: resultCaseId || caseId,
         hasAnalysis: typeof result === 'object' && 'analysis' in result,
       });
 
-      const finalCaseId = typeof result === 'object' && result !== null && 'caseId' in result
-        ? (result as Record<string, unknown>).caseId
-        : caseId;
+      const finalCaseId = typeof resultCaseId === 'string' ? resultCaseId : caseId;
 
       return NextResponse.json({
         success: true,
