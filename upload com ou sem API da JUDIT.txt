@@ -1,0 +1,242 @@
+● ✅ CONFIRMAÇÃO: O QUE FUNCIONA SEM JUDIT API KEY
+
+  Fluxo de Upload de Processo (Análise Detalhada)
+
+  Seu pipeline tem 8 passos principais. Aqui estão os que funcionam 100% sem JUDIT:
+
+  | Passo | Descrição                              | Depende de JUDIT? | Status     |
+  |-------|----------------------------------------|-------------------|------------|
+  | 1️⃣   | Upload PDF + validações                | ❌ NÃO             | ✅ FUNCIONA |
+  | 2️⃣   | Extração de texto do PDF               | ❌ NÃO             | ✅ FUNCIONA |
+  | 3️⃣   | Limpeza + normalização de texto        | ❌ NÃO             | ✅ FUNCIONA |
+  | 4️⃣   | Detecção de CNJ (regex)                | ❌ NÃO             | ✅ FUNCIONA |
+  | 5️⃣   | Criação de Case no BD                  | ❌ NÃO             | ✅ FUNCIONA |
+  | 6️⃣   | Upload para Supabase Storage           | ❌ NÃO             | ✅ FUNCIONA |
+  | 7️⃣   | 🤖 GEMINI PREVIEW (Phase 1)            | ❌ NÃO             | ✅ FUNCIONA |
+  | 8️⃣   | Merge Timeline + Attachments (Phase 2) | ✅ SIM             | ❌ PULÁVEL  |
+
+  ---
+  🎯 O QUE VOCÊ CONSEGUE FAZER AGORA:
+
+  Sem JUDIT, o upload retorna:
+
+  {
+    "success": true,
+    "caseId": "uuid",
+    "caseNumber": "0000000-00.0000.0.00.0000",
+    "status": "previewed",
+    "detectedCnj": "0000000-00.0000.0.00.0000",
+    "preview": {
+      "summary": "Resumo completo do processo...",
+      "parties": {
+        "author": "Nome da parte autora",
+        "defendant": "Nome da parte ré"
+      },
+      "subject": "Descrição do objeto do processo",
+      "claimValue": 50000.00,
+      "lastMovements": [
+        {
+          "type": "Sentença",
+          "date": "2025-01-15",
+          "description": "Descrição do movimento"
+        }
+      ],
+      "riskClassification": "MÉDIO",
+      "keyPoints": ["Ponto 1", "Ponto 2", "Ponto 3"],
+      "model": "gemini-2.5-flash"
+    },
+    "analysisModel": "gemini-2.5-flash",
+    "juditJobId": null,  // ← NULO sem JUDIT
+    "timing": {
+      "total": 8000,
+      "extraction": 1200,
+      "preview": 6800
+    },
+    "message": "Preview gerado com sucesso! (JUDIT skipped)"
+  }
+
+  ---
+  📋 INFORMAÇÕES EXTRAÍDAS PELO GEMINI (SEM JUDIT):
+
+  Baseado no código da preview analysis service e system prompts, o Gemini extrai:
+
+  Seção A: Identificação Básica
+
+  - ✅ Número do processo (detectado via regex)
+  - ✅ Tipo processual (Civil, Criminal, Trabalhista)
+  - ✅ Esfera (Federal/Estadual/Municipal)
+  - ✅ Órgão/Instância
+  - ✅ Comarca
+  - ✅ Vara
+  - ✅ Juiz responsável
+
+  Seção B: Partes Envolvidas
+
+  - ✅ Parte autora/principal (nome, documento, tipo)
+  - ✅ Parte ré/contrária (nome, documento, tipo)
+  - ✅ Qualificações
+
+  Seção C: Valores Financeiros
+
+  - ✅ Valor da causa
+  - ✅ Multas/juros
+  - ✅ Encargos legais
+  - ✅ Valor total atualizado
+
+  Seção D: Campos Especializados
+
+  - ✅ Execução fiscal (se aplicável)
+  - ✅ Ação civil/trabalhista/previdenciária/família
+
+  Seção E: Situação Processual
+
+  - ✅ Status atual
+  - ✅ Últimos movimentos (timeline do documento)
+  - ✅ Próximos passos esperados
+  - ✅ Prazos em aberto
+
+  Seção F: Análise Estratégica
+
+  - ✅ Classificação de risco (ALTO/MÉDIO/BAIXO)
+  - ✅ Tese central
+  - ✅ Oportunidades
+  - ✅ Recomendações práticas
+
+  ---
+  🔄 FLUXO SEM JUDIT (O que ocorre hoje):
+
+  1. User faz upload de PDF
+           ↓
+  2. Sistema extrai texto e limpa
+           ↓
+  3. Sistema detecta CNJ (regex)
+           ↓
+  4. Sistema cria Case no BD
+           ↓
+  5. Sistema upload arquivo para Supabase
+           ↓
+  6. 🤖 GEMINI FLASH analisa documento
+     ├─ Extrai partes
+     ├─ Extrai valores
+     ├─ Lê últimos movimentos
+     ├─ Gera resumo executivo
+     └─ Calcula risco
+           ↓
+  7. Sistema salva preview em Case.previewSnapshot
+           ↓
+  8. Sistema salva análise em CaseAnalysisVersion
+           ↓
+  ✅ RETORNA RESPOSTA COM PREVIEW COMPLETO
+           ↓
+  9. ⏭️  (OPCIONAL) Enfileira JUDIT para enriquecimento posterior
+
+  ---
+  🎛️ COMO SKIPPAR JUDIT NO UPLOAD:
+
+  No seu frontend, ao fazer o upload, adicione o flag:
+
+  // Frontend upload request
+  const formData = new FormData();
+  formData.append('file', pdfFile);
+  formData.append('workspaceId', workspaceId);
+  formData.append('clientId', clientId);
+  formData.append('skipEnrichment', 'true'); // ← SKIPA JUDIT
+
+  const response = await fetch('/api/process/upload', {
+    method: 'POST',
+    body: formData
+  });
+
+  Resultado: O processo será criado com onboardingStatus: 'previewed' (não 'enriching').
+
+  ---
+  📊 O QUE NÃO TERÁ (sem JUDIT):
+
+  | Recurso                       | Origem                   | Impacto                                           |        
+  |-------------------------------|--------------------------|---------------------------------------------------|        
+  | Anexos/Documentos Oficiais    | JUDIT API                | Não terá documentos adicionados pelo tribunal     |        
+  | Timeline Oficial Completa     | JUDIT API                | Terá apenas movimentos mencionados no PDF enviado |        
+  | Histórico Processual (Portal) | JUDIT API                | Não sincroniza com base de dados oficial          |        
+  | Auto-detecção de Tipo         | JUDIT (pode usar Gemini) | ✅ Gemini consegue detectar                        |       
+  | Monitoramento em Tempo Real   | JUDIT API                | Não monitora atualizações automáticas             |        
+
+  ---
+  ✨ PLANO PARA TESTE LIVE:
+
+  1️⃣ Teste Imediato (SEM QUALQUER MUDANÇA)
+
+  Seu código já suporta skipEnrichment=true na linha 637 do route:
+
+  if (!skipEnrichment) {
+    // Enfileira JUDIT
+  }
+  // Se skipEnrichment=true, isso é pulado!
+
+  2️⃣ Simule o Teste
+
+  # Via cURL ou Postman
+  curl -X POST http://localhost:3000/api/process/upload \
+    -F "file=@documento.pdf" \
+    -F "workspaceId=ws-123" \
+    -F "clientId=cl-123" \
+    -F "skipEnrichment=true"
+
+  3️⃣ Verifique a Resposta
+
+  - ✅ caseId criado
+  - ✅ preview com análise Gemini
+  - ✅ juditJobId: null (não enfileirado)
+  - ✅ onboardingStatus: "previewed" (não "enriching")
+
+  ---
+  🚀 RECOMENDAÇÕES PARA PRODUÇÃO:
+
+  Opção A: Modo "Preview-Only" (RECOMENDADO POR AGORA)
+
+  // In route handler
+  const skipEnrichment = !process.env.JUDIT_API_KEY || !isJuditEnabled;
+
+  // O upload funcionará normalmente
+  // Se JUDIT não estiver configurada, skip automaticamente
+
+  Opção B: Flag de Modo Manual
+
+  // Add env var
+  JUDIT_ENRICHMENT_ENABLED=false
+
+  // Usuários veem: "Preview pronto. Enriquecimento oficial com JUDIT será adicionado em breve."
+
+  Opção C: Fila de Retry (Melhor UX)
+
+  // Se JUDIT fica disponível depois:
+  // User pode clicar "Sincronizar com JUDIT" e dispara enrichment
+  // Reutiliza o mesmo Case, adiciona dados
+
+  ---
+  ✅ CONFIRMAÇÃO FINAL:
+
+  Você CONSEGUE fazer o teste live agora com:
+
+  1. ✅ Upload de PDF
+  2. ✅ Extração e limpeza de texto para "AI-friendly"
+  3. ✅ Envio para Gemini com system prompt
+  4. ✅ Retorno de resumo rápido
+  5. ✅ Preenchimento automático de:
+    - Partes envolvidas
+    - Valores financeiros
+    - Últimos movimentos (timeline do documento)
+    - Classificação de risco
+    - Tese central
+
+  Tudo funciona SEM a JUDIT API KEY. O que falta é apenas o enriquecimento com dados oficiais (attachments, timeline      
+  completa, monitoramento).
+
+  ---
+  📝 Próximos Passos (quando você me confirmar):
+
+  1. Você quer que eu ative o modo skipEnrichment por padrão?
+  2. Você quer adicionar uma UI/message ao usuário indicando "Análise preview gerada, enriquecimento oficial com JUDIT    
+   em breve"?
+  3. Você quer que eu crie um endpoint para reprocessar com JUDIT quando a API ficar disponível?
+
+  Pode fazer o teste live agora! Qual é o seu endereço de produção para eu validar?

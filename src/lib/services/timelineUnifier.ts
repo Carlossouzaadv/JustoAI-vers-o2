@@ -603,8 +603,9 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
           );
           parsedDate = new Date();
         }
-      } else if (mov.date instanceof Date) {
-        parsedDate = mov.date;
+      } else if (mov.date !== null && typeof mov.date === 'object' && mov.date instanceof Date) {
+        // Type narrowing: verificar se é object antes de usar instanceof
+        parsedDate = mov.date as Date;
       } else {
         // Fallback: usar data de hoje se não conseguir parsear
         console.warn(`${ICONS.WARNING} [Timeline] Tipo de data inesperado:`, typeof mov.date);
