@@ -200,7 +200,7 @@ async function main() {
       caseId: case1.id,
       version: 1,
       analysisType: 'RISK_ASSESSMENT',
-      aiAnalysis: {
+      aiAnalysis: JSON.stringify({
         riskLevel: 'LOW',
         successProbability: 0.85,
         recommendations: [
@@ -209,7 +209,7 @@ async function main() {
           'Valor dentro da capacidade de pagamento'
         ],
         timeEstimate: '6-8 meses'
-      },
+      }),
       modelUsed: 'gemini-1.5-flash',
       confidence: 0.85,
       processingTime: 1250,
