@@ -61,6 +61,9 @@ export async function getSignedUploadUrl(
 /**
  * Upload file directly to Supabase Storage using signed URL
  * No size limits - browser handles streaming to S3
+ *
+ * Important: Send file directly as binary, not FormData
+ * Supabase signed URLs expect the file content as the request body
  */
 export async function uploadFileToSupabase(
   file: File,
@@ -68,10 +71,6 @@ export async function uploadFileToSupabase(
   onProgress?: (progress: number) => void
 ): Promise<void> {
   console.log(`📤 [Upload Router] Uploading ${(file.size / 1024 / 1024).toFixed(2)}MB to Supabase`);
-
-  // Use FormData to match Supabase's expected format for signed URLs
-  const formData = new FormData();
-  formData.append('file', file);
 
   try {
     const xhr = new XMLHttpRequest();
@@ -104,7 +103,10 @@ export async function uploadFileToSupabase(
       });
 
       xhr.open('POST', signedUrl);
-      xhr.send(formData);
+      // Send file directly as binary body (not FormData)
+      // Supabase expects the raw file content
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.send(file);
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
