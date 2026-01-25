@@ -1,104 +1,189 @@
 /**
  * ================================================================
- * UPLOAD ROUTER - Smart routing for large files
+ * UPLOAD ROUTER - Direct Supabase Uploads (Scalable)
  * ================================================================
  *
- * Problem: Vercel Hobby has 4.5MB request limit
- * Solution: Route large files directly to Railway backend
+ * OPTION 3 IMPLEMENTATION (Hybrid Approach):
+ * 1. Browser gets signed URL from /api/storage/signed-url
+ * 2. Browser uploads directly to Supabase Storage (unlimited size)
+ * 3. Supabase webhook triggers Railway worker for processing
+ * 4. Worker uses UploadOrchestrator to process and update DB
  *
- * - Files < 4.5MB: Upload via Vercel (closer to user, can cache)
- * - Files >= 4.5MB: Upload directly to Railway (no Vercel limit)
+ * Benefits:
+ * - No size limits (Supabase supports unlimited file size)
+ * - No Vercel compute cost for file transfer
+ * - Scales to thousands of concurrent uploads
+ * - Faster uploads (direct to S3, not through proxies)
+ * - Webhook-driven async processing
  */
-
-const VERCEL_LIMIT = 4.5 * 1024 * 1024; // 4.5MB
-const RAILWAY_API_URL = process.env.NEXT_PUBLIC_API_URL || 'justoai-vers-o2-production.up.railway.app';
 
 /**
- * Determine upload endpoint based on file size
- * @param fileSize - Size in bytes
- * @param endpoint - 'documents' or 'process'
- * @returns URL to upload to
+ * Request signed URL from backend
+ * This authenticates the user before giving them upload permission
  */
-export function getUploadEndpoint(fileSize: number, endpoint: 'documents' | 'process' = 'documents'): {
-  url: string;
-  isDirect: boolean;
-  reason: string;
-} {
-  const isBig = fileSize >= VERCEL_LIMIT;
+export async function getSignedUploadUrl(
+  fileName: string,
+  workspaceId: string,
+  caseId: string,
+  bucket: 'case-documents' | 'case-attachments' | 'reports' = 'case-documents'
+): Promise<{
+  signedUrl: string;
+  filePath: string;
+  bucket: string;
+  caseId: string;
+  expiresIn: number;
+}> {
+  console.log(`📤 [Upload Router] Requesting signed URL for: ${fileName}`);
 
-  if (isBig) {
-    // Large files go directly to Railway (no Vercel limit)
-    return {
-      url: `https://${RAILWAY_API_URL}/api/${endpoint}/upload`,
-      isDirect: true,
-      reason: `File ${(fileSize / 1024 / 1024).toFixed(1)}MB exceeds Vercel limit (4.5MB), routing to Railway`,
-    };
-  } else {
-    // Small files use Vercel proxy (faster, can be cached)
-    return {
-      url: `/api/${endpoint}/upload`,
-      isDirect: false,
-      reason: `File ${(fileSize / 1024 / 1024).toFixed(1)}MB within Vercel limit, using proxy`,
-    };
+  const response = await fetch('/api/storage/signed-url', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include auth cookies
+    body: JSON.stringify({
+      fileName,
+      workspaceId,
+      caseId,
+      bucket,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`❌ [Upload Router] Signed URL request failed ${response.status}: ${errorText}`);
+    throw new Error(`Failed to get signed URL: ${response.status}`);
   }
+
+  return response.json();
 }
 
 /**
- * Upload file with automatic routing
- * Handles both Vercel proxy and Railway direct upload
+ * Upload file directly to Supabase Storage using signed URL
+ * No size limits - browser handles streaming to S3
  */
-export async function uploadFile(
+export async function uploadFileToSupabase(
   file: File,
-  endpoint: 'documents' | 'process' = 'documents',
+  signedUrl: string,
   onProgress?: (progress: number) => void
-): Promise<Response> {
-  const { url, isDirect, reason } = getUploadEndpoint(file.size, endpoint);
+): Promise<void> {
+  console.log(`📤 [Upload Router] Uploading ${(file.size / 1024 / 1024).toFixed(2)}MB to Supabase`);
 
-  console.log(`📤 [Upload Router] ${reason}`);
-  console.log(`📤 [Upload Router] Uploading to: ${url}`);
-
-  // Build FormData
+  // Use FormData to match Supabase's expected format for signed URLs
   const formData = new FormData();
   formData.append('file', file);
 
-  // Get auth token from localStorage (or however you store it)
-  const token = localStorage.getItem('auth_token') || '';
-  const cookie = document.cookie;
-
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['authorization'] = `Bearer ${token}`;
-  }
-
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-      headers, // Auth headers
-      credentials: 'include', // Include cookies
-    });
+    const xhr = new XMLHttpRequest();
 
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+    // Track progress
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          onProgress(percentComplete);
+        }
+      });
     }
 
-    return response;
+    // Upload
+    return new Promise((resolve, reject) => {
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          console.log(`✅ [Upload Router] File uploaded to Supabase`);
+          resolve();
+        } else {
+          console.error(`❌ [Upload Router] Upload failed: ${xhr.status}`);
+          reject(new Error(`Upload failed: ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        console.error(`❌ [Upload Router] Network error during upload`);
+        reject(new Error('Network error during upload'));
+      });
+
+      xhr.open('POST', signedUrl);
+      xhr.send(formData);
+    });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    console.error(`❌ [Upload Router] Upload failed: ${errorMsg}`);
+    console.error(`❌ [Upload Router] Upload error: ${errorMsg}`);
     throw error;
   }
 }
 
 /**
- * Check if using Railway directly or Vercel proxy
+ * Main upload function - orchestrates the full flow
  */
-export function isDirectUpload(fileSize: number): boolean {
-  return fileSize >= VERCEL_LIMIT;
+export async function uploadFile(
+  file: File,
+  workspaceId: string,
+  caseId: string,
+  bucket: 'case-documents' | 'case-attachments' | 'reports' = 'case-documents',
+  onProgress?: (progress: number) => void
+): Promise<{
+  filePath: string;
+  caseId: string;
+  bucket: string;
+  uploadedAt: string;
+  processing: boolean;
+}> {
+  console.log(`📤 [Upload Router] Starting upload: ${file.name}`);
+
+  // Step 1: Get signed URL (authenticates user, creates placeholder case if needed)
+  const { signedUrl, filePath, caseId: returnedCaseId } = await getSignedUploadUrl(
+    file.name,
+    workspaceId,
+    caseId,
+    bucket
+  );
+
+  // Step 2: Upload to Supabase (direct browser → S3)
+  await uploadFileToSupabase(file, signedUrl, onProgress);
+
+  console.log(`✅ [Upload Router] Upload complete: ${filePath}`);
+
+  // Step 3: Trigger processing via callback
+  console.log(`📤 [Upload Router] Triggering server-side processing`);
+
+  try {
+    const callbackResponse = await fetch('/api/process/upload-callback', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        filePath,
+        bucket,
+        workspaceId,
+      }),
+    });
+
+    if (!callbackResponse.ok) {
+      const errorText = await callbackResponse.text();
+      console.warn(`⚠️ [Upload Router] Callback returned ${callbackResponse.status}: ${errorText.substring(0, 100)}`);
+      // Don't throw - processing might still happen server-side
+    } else {
+      console.log(`✅ [Upload Router] Processing triggered successfully`);
+    }
+  } catch (callbackError) {
+    console.warn(`⚠️ [Upload Router] Callback error (processing will retry): ${callbackError}`);
+    // Don't throw - the file is safely in Supabase
+  }
+
+  return {
+    filePath,
+    caseId: returnedCaseId,
+    bucket,
+    uploadedAt: new Date().toISOString(),
+    processing: true,
+  };
 }
 
 /**
- * Get human-readable size
+ * Get human-readable file size
  */
 export function formatFileSize(bytes: number): string {
   const units = ['B', 'KB', 'MB', 'GB'];

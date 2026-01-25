@@ -178,6 +178,30 @@ export async function requireAuth(_request: NextRequest) {
   return { user, error: null }
 }
 
+// Inter-service auth middleware
+// Handles both direct requests (with cookies) and forwarded requests (with x-user-id header)
+export async function requireAuthOrForwarded(request: NextRequest) {
+  // Check if this is a forwarded request from Vercel (has x-user-id header)
+  const forwardedUserId = request.headers.get('x-user-id')
+
+  if (forwardedUserId) {
+    console.log(`${ICONS.SUCCESS} Request authenticated via x-user-id header: ${forwardedUserId}`)
+    // Return a minimal user object (just the ID, which is what we need)
+    return {
+      user: {
+        id: forwardedUserId,
+        email: null,
+        name: null,
+        profileImageUrl: null,
+      },
+      error: null,
+    }
+  }
+
+  // Fall back to standard auth (Clerk cookies)
+  return await requireAuth(request)
+}
+
 // Workspace access middleware
 export async function requireWorkspaceAccess(userId: string, workspaceId: string) {
   // Import inside function to avoid circular dependency
