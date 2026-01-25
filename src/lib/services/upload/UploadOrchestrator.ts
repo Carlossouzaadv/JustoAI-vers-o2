@@ -486,16 +486,17 @@ export class UploadOrchestrator {
     /**
      * Map Gemini-detected process type to Case enum
      * Converte tipos do UnifiedProcessSchema para CaseType enum
+     * PT-BR types → EN CaseType mapping
      */
-    private mapProcessTypeToEnum(tipoProcessual: string): 'CIVIL' | 'CRIMINAL' | 'TRABALHISTA' | 'FAMILIAR' | 'PREVIDENCIARIO' | 'FISCAL' | 'CONSUMIDOR' | 'OUTROS' {
+    private mapProcessTypeToEnum(tipoProcessual: string): 'CIVIL' | 'CRIMINAL' | 'LABOR' | 'FAMILY' | 'ADMINISTRATIVE' | 'TAX' | 'COMMERCIAL' | 'OTHER' {
         const upper = tipoProcessual.toUpperCase();
 
-        if (upper.includes('FISCAL') || upper.includes('EXECUÇÃO FISCAL')) return 'FISCAL';
-        if (upper.includes('TRABALHISTA') || upper.includes('RECURSO ORDINÁRIO TRABALHISTA')) return 'TRABALHISTA';
+        if (upper.includes('FISCAL') || upper.includes('EXECUÇÃO FISCAL')) return 'TAX';
+        if (upper.includes('TRABALHISTA') || upper.includes('RECURSO ORDINÁRIO TRABALHISTA')) return 'LABOR';
         if (upper.includes('CRIMINAL') || upper.includes('PENAL')) return 'CRIMINAL';
-        if (upper.includes('FAMILIAR') || upper.includes('FAMILIA')) return 'FAMILIAR';
-        if (upper.includes('PREVIDENCIÁRIO') || upper.includes('PREVIDENCIARIO')) return 'PREVIDENCIARIO';
-        if (upper.includes('CONSUMIDOR')) return 'CONSUMIDOR';
+        if (upper.includes('FAMILIAR') || upper.includes('FAMILIA')) return 'FAMILY';
+        if (upper.includes('PREVIDENCIÁRIO') || upper.includes('PREVIDENCIARIO')) return 'ADMINISTRATIVE';
+        if (upper.includes('CONSUMIDOR')) return 'COMMERCIAL';
         if (upper.includes('CIVIL')) return 'CIVIL';
         if (upper.includes('AGRAVO') || upper.includes('APELAÇÃO') || upper.includes('RECURSO')) return 'CIVIL'; // Recursal - civil
         if (upper.includes('AÇÃO') && upper.includes('PÚBLICA')) return 'CIVIL';

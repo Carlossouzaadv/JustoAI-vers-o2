@@ -603,13 +603,16 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
           );
           parsedDate = new Date();
         }
-      } else if (mov.date !== null && typeof mov.date === 'object' && mov.date instanceof Date) {
-        // Type narrowing: verificar se é object antes de usar instanceof
-        parsedDate = mov.date as Date;
       } else {
-        // Fallback: usar data de hoje se não conseguir parsear
-        console.warn(`${ICONS.WARNING} [Timeline] Tipo de data inesperado:`, typeof mov.date);
-        parsedDate = new Date();
+        // Para any outros tipos (Date, número, etc), tentar criar Date
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const testDate = new Date(mov.date as any);
+          parsedDate = isNaN(testDate.getTime()) ? new Date() : testDate;
+        } catch {
+          console.warn(`${ICONS.WARNING} [Timeline] Tipo de data inesperado:`, typeof mov.date);
+          parsedDate = new Date();
+        }
       }
 
       // ============================================================
