@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, Loader2, AlertTriangle } from 'lucide-react';
 import { OnboardingProgress } from './onboarding-progress';
 import { ICONS } from '@/lib/icons';
+import { getUploadEndpoint, formatFileSize } from '@/lib/services/upload-router';
 
 // Type Guards and Type Definitions
 interface UploadResultFile {
@@ -81,11 +82,20 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
     setUploadProgress(0);
 
     try {
+      // Smart routing: detect file size and route appropriately
+      const { url, isDirect, reason } = getUploadEndpoint(file.size, 'documents');
+      console.log(`📤 ${reason}`);
+
+      // Show user which route is being used
+      if (isDirect) {
+        setError(null); // Clear error area to show info
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('workspaceId', workspaceId);
 
-      const response = await fetch('/api/documents/upload', {
+      const response = await fetch(url, {
         method: 'POST',
         body: formData,
         credentials: 'include'

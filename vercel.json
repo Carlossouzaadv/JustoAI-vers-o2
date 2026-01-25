@@ -14,12 +14,6 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 60
     },
-    "src/app/api/documents/upload/route.ts": {
-      "maxDuration": 300
-    },
-    "src/app/api/process/upload/route.ts": {
-      "maxDuration": 300
-    },
     "src/app/api/judit/**/*.ts": {
       "maxDuration": 60
     },
