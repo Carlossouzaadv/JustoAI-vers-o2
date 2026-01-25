@@ -149,6 +149,8 @@ export async function uploadFile(
   // Step 3: Trigger processing via callback
   console.log(`📤 [Upload Router] Triggering server-side processing`);
 
+  let finalCaseId = returnedCaseId;
+
   try {
     const callbackResponse = await fetch('/api/process/upload-callback', {
       method: 'POST',
@@ -168,7 +170,19 @@ export async function uploadFile(
       console.warn(`⚠️ [Upload Router] Callback returned ${callbackResponse.status}: ${errorText.substring(0, 100)}`);
       // Don't throw - processing might still happen server-side
     } else {
-      console.log(`✅ [Upload Router] Processing triggered successfully`);
+      // Try to extract caseId from callback response
+      try {
+        const callbackData: unknown = await callbackResponse.json();
+        if (typeof callbackData === 'object' && callbackData !== null && 'caseId' in callbackData) {
+          const responseId = (callbackData as Record<string, unknown>).caseId;
+          if (typeof responseId === 'string') {
+            finalCaseId = responseId;
+            console.log(`✅ [Upload Router] Processing triggered, case: ${finalCaseId}`);
+          }
+        }
+      } catch {
+        console.log(`✅ [Upload Router] Processing triggered successfully`);
+      }
     }
   } catch (callbackError) {
     console.warn(`⚠️ [Upload Router] Callback error (processing will retry): ${callbackError}`);
@@ -177,7 +191,7 @@ export async function uploadFile(
 
   return {
     filePath,
-    caseId: returnedCaseId,
+    caseId: finalCaseId,
     bucket,
     uploadedAt: new Date().toISOString(),
     processing: true,

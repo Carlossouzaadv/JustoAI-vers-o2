@@ -101,14 +101,20 @@ export function UploadDialog({ open, onOpenChange, workspaceId, onUploadSuccess 
       );
 
       console.log(`✅ [Upload Dialog] Upload complete: ${uploadResult.filePath}`);
+      console.log(`✅ [Upload Dialog] Case ID: ${uploadResult.caseId}`);
 
-      // Wait for Supabase to complete the upload
-      // The webhook will trigger processing asynchronously
+      // Wait for processing to complete on backend
+      // The callback processes the file and creates/updates the case
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Redirect to workspace dashboard
-      // The webhook will create the case and it will appear in the list
-      window.location.href = `/dashboard/processes`;
+      // Redirect to the specific case page
+      // This way user sees the analysis immediately instead of generic list
+      if (uploadResult.caseId) {
+        window.location.href = `/dashboard/process/${uploadResult.caseId}?tab=analysis`;
+      } else {
+        // Fallback to process list if no caseId
+        window.location.href = `/dashboard/process`;
+      }
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
