@@ -6,9 +6,10 @@
 export const dynamic = 'force-dynamic';
 
 // Use Node.js runtime for larger file uploads
-// Vercel serverless has 4.5MB limit, Node.js supports larger files
+// Hobby plan: maxDuration max 300s, Pro: max 900s
+// TODO: Migrate this to Railway for unlimited timeout
 export const runtime = 'nodejs';
-export const maxDuration = 900; // 15 minutos máximo para processamento
+export const maxDuration = 300; // 5 minutos máximo (Vercel Hobby plan limit)
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';

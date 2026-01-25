@@ -12,20 +12,19 @@
 
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 60,
-      "memory": 1024
+      "maxDuration": 60
     },
     "src/app/api/documents/upload/route.ts": {
-      "maxDuration": 300,
-      "memory": 2048
+      "maxDuration": 300
+    },
+    "src/app/api/process/upload/route.ts": {
+      "maxDuration": 300
     },
     "src/app/api/judit/**/*.ts": {
-      "maxDuration": 60,
-      "memory": 2048
+      "maxDuration": 60
     },
     "src/app/api/bull-board/**/*.ts": {
-      "maxDuration": 30,
-      "memory": 512
+      "maxDuration": 30
     }
   },
 
