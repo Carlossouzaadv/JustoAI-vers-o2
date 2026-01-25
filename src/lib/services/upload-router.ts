@@ -102,10 +102,10 @@ export async function uploadFileToSupabase(
         reject(new Error('Network error during upload'));
       });
 
-      xhr.open('POST', signedUrl);
+      xhr.open('PUT', signedUrl);
       // Send file directly as binary body (not FormData)
-      // Supabase expects the raw file content
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      // Supabase expects the raw file content with PUT method
+      // Don't set Content-Type - let browser handle it
       xhr.send(file);
     });
   } catch (error) {
