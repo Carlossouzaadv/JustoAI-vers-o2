@@ -121,6 +121,13 @@ export async function POST(request: NextRequest) {
       // - Case creation or update
       // - Timeline event creation
 
+      console.log(`${ICONS.STREAM} Calling UploadOrchestrator.processUploadedFile with:`, {
+        filePath,
+        workspaceId,
+        userId: user.id,
+        caseId: caseId || 'auto-generate',
+      });
+
       const result = await orchestrator.processUploadedFile({
         filePath,
         bucket,
@@ -131,21 +138,30 @@ export async function POST(request: NextRequest) {
         caseId,
       });
 
-      console.log(`${ICONS.SUCCESS} Processing complete`);
+      console.log(`${ICONS.SUCCESS} Processing complete, result:`, {
+        caseId: result.caseId,
+        hasAnalysis: typeof result === 'object' && 'analysis' in result,
+      });
+
+      const finalCaseId = typeof result === 'object' && result !== null && 'caseId' in result
+        ? (result as Record<string, unknown>).caseId
+        : caseId;
 
       return NextResponse.json({
         success: true,
-        caseId: result.caseId || caseId,
+        caseId: finalCaseId || caseId,
         filePath,
         message: 'File processed successfully',
       });
     } catch (orchestratorError) {
-      console.error(`${ICONS.ERROR} Orchestrator error:`, orchestratorError);
+      const errorMsg = orchestratorError instanceof Error ? orchestratorError.message : String(orchestratorError);
+      console.error(`${ICONS.ERROR} Orchestrator error:`, errorMsg);
+      console.error(`${ICONS.ERROR} Stack:`, orchestratorError instanceof Error ? orchestratorError.stack : 'no stack');
 
       return NextResponse.json(
         {
           error: 'File processing failed',
-          details: orchestratorError instanceof Error ? orchestratorError.message : 'Unknown error',
+          details: errorMsg,
         },
         { status: 500 }
       );
