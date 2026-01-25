@@ -5,6 +5,11 @@
 
 export const dynamic = 'force-dynamic';
 
+// Use Node.js runtime for larger file uploads
+// Vercel serverless has 4.5MB limit, Node.js supports larger files
+export const runtime = 'nodejs';
+export const maxDuration = 900; // 15 minutos máximo para processamento
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
