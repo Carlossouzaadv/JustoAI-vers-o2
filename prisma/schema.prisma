@@ -303,7 +303,7 @@ model CaseAnalysisVersion {
   error          String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  aiAnalysis     Json?
+  aiAnalysis     String?                  @db.Text  // Análise completa com TODAS as seções A-H (sem truncamento). Postgres suporta até 4GB de TEXT. Nenhuma informação é perdida.
   analysisType   String        @default("GENERAL")
   confidence     Float         @default(0.85)
   costEstimate   Float         @default(0.0)

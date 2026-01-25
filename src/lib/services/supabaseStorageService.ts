@@ -368,6 +368,42 @@ export async function getSignedUploadUrl(
 }
 
 /**
+ * Gera URL assinada para download seguro
+ * Útil para arquivos em buckets privados ou com acesso restrito
+ *
+ * @param bucket - Bucket name
+ * @param filePath - File path in bucket
+ * @param expiresIn - Tempo em segundos até a URL expirar (default: 1 hora)
+ * @returns Signed URL para download seguro, ou null se falhar
+ */
+export async function getSignedDownloadUrl(
+  bucket: string,
+  filePath: string,
+  expiresIn: number = 3600
+): Promise<string | null> {
+  try {
+    const { data, error } = await getSupabaseClient().storage
+      .from(bucket)
+      .createSignedUrl(filePath, expiresIn);
+
+    if (error) {
+      logError(error, '${ICONS.ERROR} Erro ao gerar signed download URL:', { component: 'StorageService' });
+      return null;
+    }
+
+    log.info({
+      msg: `✅ Signed download URL gerada (expira em ${expiresIn}s)`,
+      component: 'StorageService'
+    });
+
+    return data.signedUrl;
+  } catch (error) {
+    logError(error, '${ICONS.ERROR} Erro em getSignedDownloadUrl:', { component: 'StorageService' });
+    return null;
+  }
+}
+
+/**
  * Baixa arquivo do storage
  */
 export async function downloadFile(bucket: string, filePath: string): Promise<Buffer> {
@@ -389,6 +425,35 @@ export async function downloadFile(bucket: string, filePath: string): Promise<Bu
   }
 }
 
+/**
+ * Obtém URL de acesso para um documento (pública ou assinada)
+ *
+ * RECOMENDAÇÃO: Para produção com buckets privados, use signed URLs
+ * Buckets públicos: retorna publicUrl
+ * Buckets privados: retorna signed URL com expiração de 24 horas
+ */
+export async function getDocumentAccessUrl(
+  bucket: string,
+  filePath: string,
+  isPrivate: boolean = false
+): Promise<string> {
+  // Se bucket é público, use URL pública (sem expiração)
+  if (!isPrivate) {
+    return getPublicUrl(bucket, filePath);
+  }
+
+  // Se bucket é privado, gere signed URL com expiração de 24 horas
+  const expiresIn = 24 * 60 * 60; // 24 hours
+  const signedUrl = await getSignedDownloadUrl(bucket, filePath, expiresIn);
+
+  if (!signedUrl) {
+    // Fallback: tente URL pública mesmo assim
+    return getPublicUrl(bucket, filePath);
+  }
+
+  return signedUrl;
+}
+
 const supabaseStorageAPI = {
   uploadToStorage,
   uploadCaseDocument,
@@ -398,8 +463,10 @@ const supabaseStorageAPI = {
   listStorageFiles,
   downloadFromStorage,
   getSignedUploadUrl,
+  getSignedDownloadUrl,
   downloadFile,
   getPublicUrl,
+  getDocumentAccessUrl,
   STORAGE_BUCKETS
 };
 

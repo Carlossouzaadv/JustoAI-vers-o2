@@ -373,18 +373,41 @@ export class UploadOrchestrator {
             const last = await prisma.caseAnalysisVersion.findFirst({ where: { caseId }, orderBy: { version: 'desc' }, select: { version: true } });
             const nextVer = (last?.version || 0) + 1;
 
+            // ============================================================
+            // SALVAR TUDO SEM PERDA: aiAnalysis é String (TEXT em Postgres)
+            // Suporta até 4GB - nenhuma informação é truncada
+            // ============================================================
+
+            // Serializar análise completa para string
+            const analysisJson = JSON.stringify(aiResult.aiAnalysisResult);
+
             await prisma.caseAnalysisVersion.create({
                 data: {
-                    caseId, workspaceId: wsId, version: nextVer, status: 'COMPLETED',
-                    analysisType: 'essential', modelUsed: aiResult.modelVersion,
+                    caseId,
+                    workspaceId: wsId,
+                    version: nextVer,
+                    status: 'COMPLETED',
+                    analysisType: 'complete', // Sempre "complete" agora
+                    modelUsed: aiResult.modelVersion,
                     analysisKey: aiResult.analysisKey,
-                    aiAnalysis: JSON.parse(JSON.stringify(aiResult.aiAnalysisResult)),
+                    aiAnalysis: analysisJson, // String serializado - sem limite prático
                     confidence: 0.8,
-                    metadata: { source: 'upload_gemini', documentId: docId }
+                    metadata: {
+                        source: 'upload_gemini',
+                        documentId: docId,
+                        serialized_at: new Date().toISOString(),
+                        size_bytes: analysisJson.length
+                    }
                 }
             });
+
+            log.info({
+                msg: `✅ Análise completa salva (${analysisJson.length} bytes)`,
+                component: 'Orchestrator'
+            });
         } catch (e) {
-            logError(e, 'Erro salvando analysis version', { component: 'Orchestrator' });
+            logError(e, '❌ Erro ao salvar análise versão', { component: 'Orchestrator' });
+            // Não falhar o upload - continuar mesmo sem analysis version
         }
     }
 
@@ -398,29 +421,86 @@ export class UploadOrchestrator {
 
     private async updateCaseWithPreview(caseId: string, aiData: Record<string, unknown>) {
         try {
-            const summary = (aiData.summary as string) || (aiData.resumo_executivo as string) || '';
+            // ============================================================
+            // MAPEAR DADOS DO GEMINI (UnifiedProcessSchema) PARA CASE FIELDS
+            // ============================================================
 
-            // Map identifying data if available
-            // Note: aiData structure depends on the model output (UnifiedSchema)
+            // 1. Resumo/Descrição
+            const summary = (aiData.summary as string) ||
+                          (aiData.resumo_executivo as string) ||
+                          (aiData.metadados_analise as Record<string, unknown>)?.observacoes_ia as string ||
+                          '';
 
+            // 2. Tipo de Processo
+            const identificacao = aiData.identificacao_basica as Record<string, unknown> || {};
+            const tipoProcessual = (identificacao.tipo_processual as string)?.toUpperCase() || 'CIVIL';
+            const caseType = this.mapProcessTypeToEnum(tipoProcessual);
+
+            // 3. Título melhorado - usar subject + assunto
+            const subject = (aiData.situacao_processual as Record<string, unknown>)?.fase_processual as string ||
+                          (identificacao.numero_processo as string) ||
+                          'Processo sem título';
+
+            const object = (aiData.identificacao_basica as Record<string, unknown>)?.numero_processo as string || '';
+            const title = `${tipoProcessual}: ${subject}`.substring(0, 255);
+
+            // 4. Valor da causa (Decimal)
+            const valores = aiData.valores_financeiros as Record<string, unknown> || {};
+            const claimValue = (valores.valor_total as number) ||
+                             (valores.valor_principal as number) ||
+                             null;
+
+            // 5. Atualizar Case com dados mapeados
             await prisma.case.update({
                 where: { id: caseId },
                 data: {
-                    description: summary.substring(0, 3000), // Update description for UI
+                    title, // Título agora com informação real
+                    type: caseType, // Tipo mapeado do Gemini
+                    description: summary.substring(0, 3000), // Descrição real do processo
+                    claimValue: claimValue ? parseFloat(String(claimValue)) : null, // Valor da causa
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     previewSnapshot: aiData as any, // Save full JSON for Timeline Unifier
                     metadata: {
                         // Merge existing metadata with new AI flag
                         upsert: {
-                            set: { aiPreviewReady: true }
+                            set: {
+                                aiPreviewReady: true,
+                                mappedfrom_gemini: true,
+                                gemini_object: object,
+                                gemini_tipoProcessual: tipoProcessual
+                            }
                         }
                     }
                 }
             });
-            log.info({ msg: `✅ Case ${caseId} updated with AI Preview data`, component: 'Orchestrator' });
+
+            log.info({
+                msg: `✅ Case ${caseId} atualizado com Preview (Tipo: ${caseType}, Valor: R$${claimValue})`,
+                component: 'Orchestrator'
+            });
         } catch (e) {
-            logError(e, 'Error updating case preview', { component: 'Orchestrator' });
+            logError(e, 'Erro ao atualizar case com preview', { component: 'Orchestrator' });
         }
+    }
+
+    /**
+     * Map Gemini-detected process type to Case enum
+     * Converte tipos do UnifiedProcessSchema para CaseType enum
+     */
+    private mapProcessTypeToEnum(tipoProcessual: string): 'CIVIL' | 'CRIMINAL' | 'TRABALHISTA' | 'FAMILIAR' | 'PREVIDENCIARIO' | 'FISCAL' | 'CONSUMIDOR' | 'OUTROS' {
+        const upper = tipoProcessual.toUpperCase();
+
+        if (upper.includes('FISCAL') || upper.includes('EXECUÇÃO FISCAL')) return 'FISCAL';
+        if (upper.includes('TRABALHISTA') || upper.includes('RECURSO ORDINÁRIO TRABALHISTA')) return 'TRABALHISTA';
+        if (upper.includes('CRIMINAL') || upper.includes('PENAL')) return 'CRIMINAL';
+        if (upper.includes('FAMILIAR') || upper.includes('FAMILIA')) return 'FAMILIAR';
+        if (upper.includes('PREVIDENCIÁRIO') || upper.includes('PREVIDENCIARIO')) return 'PREVIDENCIARIO';
+        if (upper.includes('CONSUMIDOR')) return 'CONSUMIDOR';
+        if (upper.includes('CIVIL')) return 'CIVIL';
+        if (upper.includes('AGRAVO') || upper.includes('APELAÇÃO') || upper.includes('RECURSO')) return 'CIVIL'; // Recursal - civil
+        if (upper.includes('AÇÃO') && upper.includes('PÚBLICA')) return 'CIVIL';
+
+        return 'CIVIL'; // Default fallback
     }
 
     private async triggerJuditEnrichment(cnj: string | undefined, workspaceId: string, caseId: string) {

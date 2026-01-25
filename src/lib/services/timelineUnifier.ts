@@ -555,6 +555,8 @@ export async function mergeTimelines(
 /**
  * Extrai movimentos do preview snapshot (Gemini Flash)
  * Usa Type Guard para validar estrutura de dados
+ *
+ * IMPORTANTE: Trata datas de forma robusta (Gemini pode retornar formatos variados)
  */
 function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement[] {
   const movements: TimelineMovement[] = [];
@@ -567,8 +569,54 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
   // Now previewSnapshot is safely typed as PreviewSnapshot
   for (const mov of previewSnapshot.lastMovements) {
     try {
+      // ============================================================
+      // ROBUST DATE PARSING - Gemini pode retornar formatos variados
+      // ============================================================
+
+      let parsedDate: Date;
+
+      if (typeof mov.date === 'string') {
+        // Try parsing com ISO, BR format, e fallbacks
+        const dateStr = mov.date.trim();
+
+        // ISO Format: "2025-01-15" ou "2025-01-15T10:30:00Z"
+        if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+          parsedDate = new Date(dateStr);
+        }
+        // BR Format: "15/01/2025" ou "15 de janeiro de 2025"
+        else if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) {
+          const [day, month, year] = dateStr.split('/');
+          parsedDate = new Date(`${year}-${month}-${day}`);
+        }
+        // Natural BR format: "15 de janeiro de 2025"
+        else if (/\d{1,2}\s+de\s+\w+\s+de\s+\d{4}/.test(dateStr)) {
+          parsedDate = new Date(dateStr);
+        }
+        else {
+          parsedDate = new Date(dateStr);
+        }
+
+        // Fallback: se ainda for inválida, usar hoje
+        if (isNaN(parsedDate.getTime())) {
+          console.warn(
+            `${ICONS.WARNING} [Timeline] Data inválida: "${mov.date}", usando data de hoje`
+          );
+          parsedDate = new Date();
+        }
+      } else if (mov.date instanceof Date) {
+        parsedDate = mov.date;
+      } else {
+        // Fallback: usar data de hoje se não conseguir parsear
+        console.warn(`${ICONS.WARNING} [Timeline] Tipo de data inesperado:`, typeof mov.date);
+        parsedDate = new Date();
+      }
+
+      // ============================================================
+      // ADICIONAR MOVIMENTO À LISTA
+      // ============================================================
+
       movements.push({
-        date: new Date(mov.date),
+        date: parsedDate,
         type: mov.type || 'Movimento',
         description: mov.description || '',
         source: TimelineSource.DOCUMENT_UPLOAD,
@@ -576,12 +624,13 @@ function extractMovementsFromPreview(previewSnapshot: unknown): TimelineMovement
         metadata: {
           extractedBy: 'preview',
           model: previewSnapshot.model,
+          originalDateStr: mov.date, // Guardar original para debug
         },
       });
-    } catch {
+    } catch (error) {
       console.warn(
-        `${ICONS.WARNING} [Timeline Unifier v2] Movimento inválido no preview:`,
-        mov
+        `${ICONS.WARNING} [Timeline Unifier v2] Erro ao processar movimento do preview:`,
+        { movimento: mov, erro: error }
       );
     }
   }
