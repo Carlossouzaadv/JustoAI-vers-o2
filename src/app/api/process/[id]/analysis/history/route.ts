@@ -10,6 +10,7 @@ import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import { CaseAnalysisVersion, AnalysisJob, ProcessStatus, JobStatus } from '@/lib/types/database';
+import { getAnalysisData } from '@/lib/services/analysis-parser';
 
 // ================================================================
 // TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
@@ -265,7 +266,7 @@ export const GET = withErrorHandler(async (
       // Incluir conteúdo completo se solicitado
       if (includeContent && current.status === 'COMPLETED') {
         versionData.content = {
-          summary: current.aiAnalysis,
+          summary: getAnalysisData(current.aiAnalysis),
           insights: current.extractedData
         };
       }

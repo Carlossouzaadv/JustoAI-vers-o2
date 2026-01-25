@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { ICONS } from '@/lib/icons';
 import { CaseAnalysisVersion } from '@/lib/types/database';
+import { parseAiAnalysis } from '@/lib/services/analysis-parser';
 
 const prisma = new PrismaClient();
 
@@ -161,8 +162,8 @@ function calculateVersionDiff(current: CaseAnalysisVersion, previous: CaseAnalys
       delta: (currentConfidence || 0) - (previousConfidence || 0)
     },
     content: calculateContentDiff(
-      'aiAnalysis' in current ? current.aiAnalysis : null,
-      'aiAnalysis' in previous ? previous.aiAnalysis : null
+      'aiAnalysis' in current ? parseAiAnalysis(current.aiAnalysis) : null,
+      'aiAnalysis' in previous ? parseAiAnalysis(previous.aiAnalysis) : null
     )
   };
 

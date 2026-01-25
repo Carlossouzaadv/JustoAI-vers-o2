@@ -11,6 +11,7 @@ import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { ICONS } from '@/lib/icons';
 import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 import { AnalysisType } from '@/lib/types/database';
+import { getAnalysisData } from '@/lib/services/analysis-parser';
 
 // ================================================================
 // TYPE GUARDS & HELPERS (Padrão-Ouro - Type Safety)
@@ -134,8 +135,8 @@ export const POST = withErrorHandler(async (
           },
         });
 
-        // Extract analysis data from aiAnalysis JSON
-        const analysisData = (cachedResult.aiAnalysis as Record<string, unknown>) || {};
+        // Extract analysis data from aiAnalysis STRING (now parsed safely)
+        const analysisData = getAnalysisData(cachedResult.aiAnalysis);
 
         return successResponse({
           analysisId: cachedResult.id,
@@ -291,8 +292,8 @@ export const GET = withErrorHandler(async (
       activeJob = await analysisService.getActiveJobByVersion(lastAnalysis.id);
     }
 
-    // Extract analysis data from aiAnalysis JSON
-    const analysisData = (lastAnalysis.aiAnalysis as Record<string, unknown>) || {};
+    // Extract analysis data from aiAnalysis STRING (now parsed safely)
+    const analysisData = getAnalysisData(lastAnalysis.aiAnalysis);
 
     return successResponse({
       hasAnalysis: true,

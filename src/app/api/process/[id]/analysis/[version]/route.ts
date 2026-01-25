@@ -10,6 +10,7 @@ import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { prisma } from '@/lib/prisma';
 import { ICONS } from '@/lib/icons';
 import { CaseAnalysisVersion } from '@/lib/types/database';
+import { parseAiAnalysis, getAnalysisData } from '@/lib/services/analysis-parser';
 
 export const GET = withErrorHandler(async (
   request: NextRequest,
@@ -96,7 +97,7 @@ export const GET = withErrorHandler(async (
           total: analysis.costEstimate
         },
         content: {
-          summary: analysis.aiAnalysis,
+          summary: getAnalysisData(analysis.aiAnalysis),
           insights: analysis.extractedData
         },
         confidenceScore: analysis.confidence,

@@ -55,6 +55,11 @@ const nextConfig: NextConfig = {
     },
   },
 
+  // API routes body size limit (aumentado para suportar uploads grandes)
+  api: {
+    bodySizeLimit: '100mb',
+  },
+
   // Basic webpack config to handle Node.js modules
   webpack: (config, { isServer }) => {
     // Exclude server-only modules from client bundle
