@@ -176,11 +176,28 @@ export async function GET(
     return NextResponse.json({
       success: true,
       analyses: analyses.map((a: AnalysisVersionFromQuery) => {
-        // --- VALIDAÇÃO DO OUTPUT (JSON) ---
-        // Validar o campo 'aiAnalysis' usando type-guard
-        if (!isAIAnalysisData(a.aiAnalysis)) {
-          // Se os dados no DB estiverem corrompidos ou em formato antigo,
-          // retorne um objeto seguro e logue o erro.
+        // --- PARSE AIANALYSIS STRING (agora é TEXT no DB, não mais JSON field) ---
+        let analysisData: AIAnalysisData | null = null;
+
+        if (typeof a.aiAnalysis === 'string') {
+          // aiAnalysis é armazenado como String (TEXT field)
+          // Parse JSON string para objeto
+          try {
+            const parsed = JSON.parse(a.aiAnalysis);
+            if (isAIAnalysisData(parsed)) {
+              analysisData = parsed;
+            }
+          } catch {
+            // JSON.parse falhou
+            console.warn(`Análise JSON inválida para o ID: ${a.id}`);
+          }
+        } else if (isAIAnalysisData(a.aiAnalysis)) {
+          // Compatibilidade com formato antigo (se ainda houver objeto direto)
+          analysisData = a.aiAnalysis;
+        }
+
+        // --- SE ANÁLISE NÃO FOR VALIDADA, RETORNAR ERRO SEGURO ---
+        if (!analysisData) {
           console.warn(`Dados de análise corrompidos para o ID: ${a.id}`);
           return {
             id: a.id,
@@ -200,8 +217,8 @@ export async function GET(
           };
         }
 
-        // A partir daqui, 'a.aiAnalysis' é 100% type-safe
-        const analysisData: AIAnalysisData = a.aiAnalysis;
+        // A partir daqui, 'analysisData' é 100% type-safe
+        // (verified by isAIAnalysisData check above)
 
         // --- CONSTRUÇÃO DA RESPOSTA SEGURA ---
         return {
