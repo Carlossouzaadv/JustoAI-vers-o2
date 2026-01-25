@@ -480,9 +480,10 @@ async function processAnalysisInBackground(
 
     // Devido a tipos restritivos do Prisma, fazer bypass tipo-seguro
     // Dados foram validados em runtime acima com isValidJson()
+    // aiAnalysis é String, não Json - serializar com JSON.stringify()
     const updateData: Record<string, unknown> = {
       status: 'COMPLETED',
-      aiAnalysis: analysisDataRaw,
+      aiAnalysis: JSON.stringify(analysisDataRaw),
       modelUsed: modelUsedFinal,
       confidence: level === 'FULL' ? 0.95 : 0.85,
       processingTime,

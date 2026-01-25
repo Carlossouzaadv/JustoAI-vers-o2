@@ -291,7 +291,7 @@ export async function POST(
         },
         version: nextVersion,
         status: 'COMPLETED',
-        aiAnalysis: analysisForDb,
+        aiAnalysis: JSON.stringify(analysisForDb),
         analysisType: 'FULL',
         confidence,
         modelUsed: 'gemini-2.5-pro',

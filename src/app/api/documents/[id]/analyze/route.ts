@@ -252,7 +252,7 @@ export async function POST(
         analysisType: 'PDF_UPLOAD',
         // JSON.parse(JSON.stringify()) ensures JSON-safety by removing non-serializable properties
         extractedData: pdfResult ? JSON.parse(JSON.stringify(pdfResult)) : undefined,
-        aiAnalysis: aiAnalysis ? JSON.parse(JSON.stringify(aiAnalysis)) : undefined,
+        aiAnalysis: aiAnalysis ? JSON.stringify(JSON.parse(JSON.stringify(aiAnalysis))) : undefined,
         modelUsed: routingInfo?.final_tier || 'gemini-2.5-flash',
         confidence: aiAnalysis ? 0.85 : 0.5, // Confiança menor se não houve análise IA
         processingTime: Date.now() - startTime,

@@ -802,13 +802,11 @@ export class DeepAnalysisService {
       }
 
       // Convert analysisResult to JSON-serializable format for Prisma
-      const analysisResultAsJson: InputJsonValue = JSON.parse(JSON.stringify(analysisResult));
-
-      // Salvar resultado da análise
+      // Salvar resultado da análise (aiAnalysis é String, não Json)
       await prisma.caseAnalysisVersion.update({
         where: { id: job.resultVersionId || '' },
         data: {
-          aiAnalysis: analysisResultAsJson,
+          aiAnalysis: JSON.stringify(analysisResult),
           status: JobStatus.COMPLETED,
           modelUsed: 'gemini-2.5-pro',
           processingTime: Date.now() - (job.startedAt?.getTime() || Date.now()),

@@ -615,7 +615,7 @@ export async function POST(request: NextRequest) {
           status: 'COMPLETED',
           analysisType: 'FAST',
           modelUsed: modelValue, // Already validated as string earlier
-          aiAnalysis: analysisData,
+          aiAnalysis: JSON.stringify(analysisData),
           confidence: 0.85,
           processingTime: previewDuration,
           metadata: analysisMetadata

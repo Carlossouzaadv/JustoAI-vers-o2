@@ -412,7 +412,7 @@ async function saveAnalysisResult(
         status: 'COMPLETED',
         analysisType: level === 'FULL' ? 'complete' : 'strategic',
         modelUsed,
-        aiAnalysis: safeJsonData,
+        aiAnalysis: JSON.stringify(safeJsonData),
         confidence: level === 'FULL' ? 0.95 : 0.85,
         processingTime,
         metadata: {
