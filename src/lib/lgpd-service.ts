@@ -257,8 +257,8 @@ export class LgpdService {
                 // Count entities to be deleted
                 let casesDeleted = 0;
                 let documentsDeleted = 0;
-                let chatSessionsDeleted = 0;
-                let notificationsDeleted = 0;
+                const chatSessionsDeleted = 0;
+                const notificationsDeleted = 0;
 
                 // 1. Delete chat sessions and messages
                 /*

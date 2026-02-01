@@ -157,4 +157,5 @@ export function getTemplateAsBase64(): string {
   return buffer.toString('base64');
 }
 
-export default { generateExcelTemplate, getTemplateAsBase64 };
+const excelTemplateGenerator = { generateExcelTemplate, getTemplateAsBase64 };
+export default excelTemplateGenerator;

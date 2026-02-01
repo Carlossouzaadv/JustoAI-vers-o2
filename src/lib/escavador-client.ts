@@ -83,7 +83,7 @@ export class EscavadorClient {
     documentosEspecificos?: 'INICIAIS' | 'TODOS';
     sendCallback?: boolean;
   }): Promise<AtualizacaoResponse> {
-    const body: any = {
+    const body: Record<string, unknown> = {
       autos: options?.buscarAutos ? 1 : 0,
       utilizar_certificado: options?.usarCertificado ? 1 : 0,
       certificado_id: this.config.certificadoId
