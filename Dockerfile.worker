@@ -1,7 +1,7 @@
 # ========================================
 # JustoAI V2 - Worker Dockerfile
 # ========================================
-# Optimized for JUDIT Onboarding Worker
+# Optimized for Sync Worker
 # Handles graceful shutdown with proper signal forwarding
 #
 # Build: docker build -f Dockerfile.worker -t justoai-worker .
@@ -40,6 +40,7 @@ COPY --from=builder /app/package.json ./
 
 # Copy source code (needed for workers)
 COPY --from=builder /app/src ./src
+COPY --from=builder /app/workers ./workers
 COPY --from=builder /app/prisma ./prisma
 
 # Set environment
@@ -52,7 +53,7 @@ USER worker
 # Critical: Use node directly with tsx loader to ensure proper signal handling
 # This makes node PID 1 instead of npm, allowing graceful shutdown
 # SIGTERM will be properly forwarded to the worker process
-CMD ["node", "--loader", "tsx/esm", "src/workers/juditOnboardingWorker.ts"]
+CMD ["node", "--loader", "tsx/esm", "workers/sync-worker.ts"]
 
 # Alternative if --loader doesn't work (fallback):
-# CMD ["npx", "tsx", "--esm", "src/workers/juditOnboardingWorker.ts"]
+# CMD ["npx", "tsx", "--esm", "workers/sync-worker.ts"]
