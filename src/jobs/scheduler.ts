@@ -62,7 +62,7 @@ interface JobConfig<T = unknown> {
 // CONFIGURAÇÃO DOS JOBS
 // ================================================================
 
-const JOBS: JobConfig<any>[] = [
+const JOBS: JobConfig<unknown>[] = [
   // Jobs removidos (Daily JUDIT Check)
 ];
 

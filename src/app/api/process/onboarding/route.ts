@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const user = session.user as any; // Cast to access id
+    const user = session.user as { id?: string }; // Cast to access id
 
     const body = await request.json();
     const { cnj, workspaceId, clientId, incluirDocumentos = true } = body;
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       cnj,
       workspaceId,
       clientId,
-      createdById: user.id,
+      createdById: user.id || '', // Fallback to empty string if undefined
       incluirDocumentos,
       usarCertificado: true
     });

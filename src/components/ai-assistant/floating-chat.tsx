@@ -35,6 +35,7 @@ export function FloatingChat() {
     if (isOpen && !sessionId && user?.id) {
       createChatSession();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, sessionId, user?.id]);
 
   const createChatSession = async () => {

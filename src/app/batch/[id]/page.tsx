@@ -67,7 +67,7 @@ export default function BatchPage() {
     }, POLLING_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [status?.status, batchId, fetchStatus]);
+  }, [status, batchId, fetchStatus]);
 
   // Exportar erros como CSV
   const handleExportErrors = async () => {
