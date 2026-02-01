@@ -41,6 +41,9 @@ COPY --from=builder /app/package.json ./
 # Copy source code (needed for workers which use tsx)
 COPY --from=builder /app/src ./src
 
+# Copy workers directory
+COPY --from=builder /app/workers ./workers
+
 # Copy prisma directory
 COPY --from=builder /app/prisma ./prisma
 
