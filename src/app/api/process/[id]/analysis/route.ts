@@ -13,7 +13,8 @@ import { prisma } from '@/lib/prisma';
 import { AIModelRouter } from '@/lib/ai-model-router';
 import { hasEnoughCredits, debitCredits } from '@/lib/services/creditService';
 import { ICONS } from '@/lib/icons';
-import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+// TODO: Replace with Escavador telemetry
+// import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 import { CreditCategory } from '@/lib/types/database';
 import {
   CreateAnalysisPayloadSchema,
@@ -389,23 +390,8 @@ export async function POST(
 
     console.log(`${ICONS.SUCCESS} Versão ${nextVersion} criada - ID: ${analysisVersion.id}`);
 
-    // Track analysis request telemetry
-    const analysisRequestTime = Date.now() - startTime;
-    await juditAPI.trackCall({
-      workspaceId,
-      operationType: JuditOperationType.ANALYSIS,
-      durationMs: analysisRequestTime,
-      success: true,
-      requestId: analysisVersion.id,
-      metadata: {
-        eventType: 'analysis.requested',
-        level,
-        model: modelUsed,
-        documentCount: documents.length,
-        textLength: fullText.length,
-        analysisType: level === 'FULL' ? 'complete' : 'strategic',
-      },
-    });
+    // TODO: Replace with Escavador telemetry
+    // await juditAPI.trackCall({...});
 
     // Processar em background
     processAnalysisInBackground(

@@ -818,28 +818,9 @@ export class ExcelUploadService {
   /**
    * Registra telemetria da chamada Judit
    */
+    // Telemetry logging removed (legacy Judit table)
   private async logJuditTelemetry(data: JuditTelemetryData, prisma: PrismaClient): Promise<void> {
-    try {
-      await prisma.juditTelemetry.create({
-        data: {
-          workspaceId: data.workspaceId,
-          batchId: data.batchId,
-          process_number: data.processNumber,
-          tribunal: data.tribunal,
-          success: data.success ?? false,
-          response_time_ms: data.responseTimeMs,
-          docs_retrieved: data.docsRetrieved || 0,
-          movements_count: data.movementsCount || 0,
-          parties_count: data.partiesCount || 0,
-          error_code: data.errorCode,
-          error_message: data.errorMessage,
-          retry_count: data.retryCount || 0,
-          rate_limit_hit: data.rateLimitHit || false
-        }
-      });
-    } catch (_error) {
-      logError(_error, '${ICONS.ERROR} Erro ao registrar telemetria Judit:', { component: 'refactored' });
-    }
+     // No-op
   }
 
   // ================================================================

@@ -182,7 +182,7 @@ export class AggregationService {
           createdAt: { gte: startDate, lte: endDate },
         },
       }),
-      prisma.juditAlert.findMany({
+      prisma.providerAlert.findMany({
         where: {
           workspaceId,
           createdAt: { gte: startDate, lte: endDate },
@@ -382,7 +382,7 @@ export class AggregationService {
       const serializedMetadata = alertData.metadata ? JSON.parse(JSON.stringify(alertData.metadata)) : null;
 
       // Check if similar unresolved alert exists
-      const existingAlert = await prisma.juditAlert.findFirst({
+      const existingAlert = await prisma.providerAlert.findFirst({
         where: {
           workspaceId,
           alertType: alertData.alertType,
@@ -391,7 +391,7 @@ export class AggregationService {
       });
 
       if (!existingAlert) {
-        await prisma.juditAlert.create({
+        await prisma.providerAlert.create({
           data: {
             workspaceId,
             severity: alertData.severity,

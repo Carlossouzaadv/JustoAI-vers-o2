@@ -118,7 +118,7 @@ export async function GET(request: Request) {
     // else: show all alerts
 
     // 5. Fetch alerts from database
-    const alerts = await prisma.juditAlert.findMany({
+    const alerts = await prisma.providerAlert.findMany({
       where: whereClause,
       select: {
         id: true,

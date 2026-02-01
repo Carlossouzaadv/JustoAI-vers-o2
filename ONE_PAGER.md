@@ -12,7 +12,7 @@ Advogados brasileiros gastam **20+ horas/semana** traduzindo "juridiquês" e mon
 
 **JustoAI** automatiza relatórios executivos para clientes em **linguagem simples e profissional**.
 
-- **Timeline Unificada:** Centraliza status de todos os processos (JUDIT + manuais)
+- **Timeline Unificada:** Centraliza status de todos os processos (via APIs Oficiais + manuais)
 - **Relatórios Automáticos:** Traduz linguagem jurídica em insights para clientes (semanal/quinzenal/mensal)
 - **Entrega Automática:** Envia relatórios por email na frequência acordada
 - **Resultado:** 20h/semana economizadas, clientes bem informados, advogados focados em estratégia
@@ -33,7 +33,7 @@ Advogados brasileiros gastam **20+ horas/semana** traduzindo "juridiquês" e mon
 ## Como Funciona
 
 ```
-[Timeline Unificada] → [Recolhe dados JUDIT + manuais] → [IA traduz para linguagem cliente] →
+[Conexão Tribunais (Escavador)] → [JustoAI Engine] → [IA traduz para linguagem cliente] →
 [Formata relatório] → [Agenda entrega] → [Envia automático]
                     Sem esforço manual após configuração
 ```
@@ -44,8 +44,8 @@ Advogados brasileiros gastam **20+ horas/semana** traduzindo "juridiquês" e mon
 
 ✅ **Relatórios Executivos Automáticos** (semanal, quinzenal ou mensal)
 ✅ **Linguagem Cliente** (tradução automática de juridiquês para linguagem simples)
-✅ **Timeline Unificada** (status consolidado de todos os processos JUDIT + manuais)
-✅ **Integração JUDIT** (sincronização automática de atualizações dos tribunais)
+✅ **Timeline Unificada** (status consolidado de todos os processos monitorados)
+✅ **Monitoramento Nacional** (integração via API Escavador com tribunais do país)
 ✅ **Entrega Automática** (email agendado na frequência acordada)
 ✅ **Colaboração** (múltiplos advogados, diferentes níveis de acesso)
 ✅ **Escalabilidade** (200 até 500+ processos monitorados conforme plano)
@@ -79,7 +79,7 @@ Advogados brasileiros gastam **20+ horas/semana** traduzindo "juridiquês" e mon
 ## Competitive Advantage
 
 - **Foco em Relatórios Cliente** (especializado em comunicação, ERPs fazem tudo = faz nada bem)
-- **Integração JUDIT única** (difícil replicar, moat defensivo)
+- **Experiência do Cliente** (foco no cliente final do advogado, não apenas na gestão interna)
 - **IA-first** (tradução automática de juridiquês, especializada em português jurídico)
 - **Muito mais barato** que ERPs (Themis, Projuris, Softplan) que cobram R$2K–5K/mês
 - **Foco Brasil** (português, CNJ, LGPD, estrutura de escritórios locais)
@@ -91,9 +91,8 @@ Advogados brasileiros gastam **20+ horas/semana** traduzindo "juridiquês" e mon
 
 ✅ **Plataforma live & escalável** (99.9% uptime, suporta centenas de processos)
 ✅ **Sistema de relatórios automáticos** (agendamento FIFO, entrega confiável)
-✅ **JUDIT integration validada** (sincronização automática, tempo real)
+✅ **Integração com Tribunais validada** (sincronização automática, tempo real via Escavador)
 ✅ **Primeiros clientes economizando tempo** (feedback: "20h/semana liberadas")
-
 ---
 
 ## Roadmap (90 dias)

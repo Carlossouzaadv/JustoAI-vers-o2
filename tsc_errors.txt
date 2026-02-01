@@ -1,0 +1,26 @@
+src/app/api/process/onboarding/route.ts(43,33): error TS2339: Property 'id' does not exist on type '{ name?: string | null | undefined; email?: string | null | undefined; image?: string | null | undefined; }'.
+src/app/api/processes/[id]/route.ts(513,46): error TS2339: Property 'getRecentMovements' does not exist on type 'ProcessApiClient'.
+src/components/dashboard/AlertsTable.tsx(11,40): error TS2307: Cannot find module '@/hooks/useJuditObservability' or its corresponding type declarations.
+src/components/dashboard/HealthStatus.tsx(10,28): error TS2307: Cannot find module '@/hooks/useJuditObservability' or its corresponding type declarations.
+src/jobs/scheduler.ts(8,35): error TS2307: Cannot find module './dailyJuditCheck' or its corresponding type declarations.
+src/lib/excel-upload-service.ts(823,20): error TS2339: Property 'juditTelemetry' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/lgpd-service.ts(244,25): error TS2353: Object literal may only specify known properties, and 'notificationSettings' does not exist in type 'UserInclude<DefaultArgs>'.
+src/lib/lgpd-service.ts(259,44): error TS2339: Property 'chatSessions' does not exist on type '{ id: string; email: string; status: Status; name: string | null; createdAt: Date; updatedAt: Date; supabaseId: string; emailVerified: boolean; plan: Plan | null; ... 14 more ...; subscriptionStatus: string | null; }'.
+src/lib/lgpd-service.ts(269,49): error TS2339: Property 'userNotificationSettings' does not exist on type 'Omit<PrismaClient<PrismaClientOptions, never, DefaultArgs>, "$connect" | "$disconnect" | "$on" | "$transaction" | "$extends">'.
+src/lib/lgpd-service.ts(271,25): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/lib/lgpd-service.ts(280,45): error TS2339: Property 'createdCases' does not exist on type '{ id: string; email: string; status: Status; name: string | null; createdAt: Date; updatedAt: Date; supabaseId: string; emailVerified: boolean; plan: Plan | null; ... 14 more ...; subscriptionStatus: string | null; }'.
+src/lib/process-monitor.ts(306,53): error TS2339: Property 'getRecentMovements' does not exist on type 'ProcessApiClient'.
+src/lib/process-monitor.ts(320,39): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/lib/process-monitor.ts(330,53): error TS7006: Parameter 'movement' implicitly has an 'any' type.
+src/lib/process-monitor.ts(338,36): error TS7006: Parameter 'movement' implicitly has an 'any' type.
+src/lib/process-monitor.ts(355,60): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/lib/process-monitor.ts(363,40): error TS7006: Parameter 'movement' implicitly has an 'any' type.
+src/lib/services/onboardingService.ts(127,13): error TS2353: Object literal may only specify known properties, and 'lastUpdate' does not exist in type '(Without<ProcessoUpdateInput, ProcessoUncheckedUpdateInput> & ProcessoUncheckedUpdateInput) | (Without<...> & ProcessoUpdateInput)'.
+src/lib/services/onboardingService.ts(174,13): error TS2353: Object literal may only specify known properties, and 'lastUpdate' does not exist in type 'Without<CaseUpdateInput, CaseUncheckedUpdateInput> & CaseUncheckedUpdateInput'.
+src/lib/services/worker-stats-service.ts(164,20): error TS2339: Property 'workerJobRecord' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/worker-stats-service.ts(244,20): error TS2339: Property 'workerJobRecord' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/worker-stats-service.ts(315,36): error TS2339: Property 'workerJobRecord' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+src/lib/services/worker-stats-service.ts(319,40): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/lib/services/worker-stats-service.ts(320,37): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/lib/services/worker-stats-service.ts(324,29): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+src/lib/services/worker-stats-service.ts(324,34): error TS7006: Parameter 'r' implicitly has an 'any' type.

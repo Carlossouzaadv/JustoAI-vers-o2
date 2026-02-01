@@ -303,10 +303,20 @@ export class ProcessMonitor {
 
     try {
       // Buscar movimentações recentes
-      const recentMovements = await this.processApi.getRecentMovements(
-        typedProcess.processNumber,
-        typedProcess.lastSync ?? undefined
-      );
+      // Buscar processo completo
+      const searchResult = await this.processApi.searchProcess({
+        processNumber: typedProcess.processNumber,
+        includeMovements: true
+      });
+
+      if (!searchResult.success || !searchResult.data) {
+         throw new Error(searchResult.error || 'Erro ao buscar dados do processo');
+      }
+
+      const allMovements = searchResult.data.movements;
+      const recentMovements = typedProcess.lastSync 
+         ? allMovements.filter((m: any) => new Date(m.date) > typedProcess.lastSync!)
+         : allMovements;
 
       let newMovementsCount = 0;
       let alertsGenerated = 0;

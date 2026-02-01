@@ -18,7 +18,7 @@ import { UploadAnalysisService } from './UploadAnalysisService';
 import { uploadCaseDocument, downloadFile } from '@/lib/services/supabaseStorageService';
 import { mergeTimelines } from '@/lib/services/timelineUnifier';
 import { getTimelineMergeService } from '@/lib/timeline-merge'; // For legacy audit event
-import { performFullProcessRequest } from '@/lib/services/juditOnboardingService';
+import { onboardingService } from '@/lib/services/onboardingService';
 
 const prisma = new PrismaClient(); // Shared Prisma instance
 const CONFIG = {
@@ -270,9 +270,10 @@ export class UploadOrchestrator {
         // Now that we have the previewSnapshot saved, mergeTimelines will work!
         this.triggerTimelineMerge(targetCaseId, document.id);
 
-        // 12. Trigger Official Enrichment (PHASE 2: JUDIT)
+        // 12. Trigger Official Enrichment (PHASE 2: ESCAVADOR)
         // Runs in background, updates via webhook later
-        this.triggerJuditEnrichment(identification.extractedProcessNumber, workspaceId, targetCaseId);
+        // TODO: Get createdById from context - using placeholder for now
+        this.triggerEscavadorEnrichment(identification.extractedProcessNumber, workspaceId, targetCaseId, 'system');
 
         // 12. Return Success
         return {
@@ -504,12 +505,17 @@ export class UploadOrchestrator {
         return 'CIVIL'; // Default fallback
     }
 
-    private async triggerJuditEnrichment(cnj: string | undefined, workspaceId: string, caseId: string) {
+    private async triggerEscavadorEnrichment(cnj: string | undefined, workspaceId: string, caseId: string, createdById: string) {
         if (!cnj) return;
 
         // Don't await this, let it run in background
-        performFullProcessRequest(cnj, 'ONBOARDING', workspaceId, caseId)
-            .then(res => log.info({ msg: `🚀 JUDIT triggered for ${cnj}`, data: res, component: 'Orchestrator' }))
-            .catch(err => logError(err, 'Failed to trigger JUDIT', { component: 'Orchestrator' }));
+        onboardingService.onboardProcesso({
+            cnj,
+            workspaceId,
+            createdById,
+            incluirDocumentos: true
+        })
+            .then(res => log.info({ msg: `🚀 Escavador triggered for ${cnj}`, data: res, component: 'Orchestrator' }))
+            .catch(err => logError(err, 'Failed to trigger Escavador', { component: 'Orchestrator' }));
     }
 }

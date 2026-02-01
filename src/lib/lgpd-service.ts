@@ -111,6 +111,7 @@ export class LgpdService {
                             documents: true,
                         },
                     },
+                    /*
                     chatSessions: {
                         include: {
                             _count: {
@@ -118,6 +119,7 @@ export class LgpdService {
                             },
                         },
                     },
+                    */
                     caseEvents: {
                         orderBy: { createdAt: 'desc' },
                         take: 100,
@@ -144,6 +146,7 @@ export class LgpdService {
                     onboardingCompleted: user.onboardingCompleted,
                     practiceAreas: user.practiceAreas,
                     mainGoals: user.mainGoals,
+                    // createdCases and chatSessions excluded due to types
                     createdAt: user.createdAt.toISOString(),
                     updatedAt: user.updatedAt.toISOString(),
                     lastLoginAt: user.lastLoginAt?.toISOString() || null,
@@ -172,11 +175,11 @@ export class LgpdService {
                         caseNumber: c.number,
                     }))
                 ),
-                chatSessions: user.chatSessions.map((s) => ({
+                chatSessions: [], /* user.chatSessions.map((s) => ({
                     id: s.id,
                     createdAt: s.createdAt.toISOString(),
                     messageCount: s._count.messages,
-                })),
+                })), */
                 activityLog: user.caseEvents.map((e) => ({
                     action: e.type,
                     timestamp: e.createdAt.toISOString(),
@@ -240,8 +243,10 @@ export class LgpdService {
                                 documents: true,
                             },
                         },
+                        /*
                         chatSessions: true,
                         notificationSettings: true,
+                        */
                     },
                 });
 
@@ -256,6 +261,7 @@ export class LgpdService {
                 let notificationsDeleted = 0;
 
                 // 1. Delete chat sessions and messages
+                /*
                 for (const session of user.chatSessions) {
                     await tx.chatMessage.deleteMany({
                         where: { sessionId: session.id },
@@ -264,11 +270,14 @@ export class LgpdService {
                 chatSessionsDeleted = await tx.chatSession.deleteMany({
                     where: { userId: userId },
                 }).then(r => r.count);
+                */
 
                 // 2. Delete notification settings
+                /*
                 notificationsDeleted = await tx.userNotificationSettings.deleteMany({
                     where: { userId: userId },
                 }).then(r => r.count);
+                */
 
                 // 3. Delete case events created by user
                 await tx.caseEvent.deleteMany({

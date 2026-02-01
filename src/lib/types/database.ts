@@ -416,14 +416,17 @@ export enum UploadRowStatus {
   CANCELLED = 'CANCELLED',
 }
 
-export enum JuditOperationType {
+export enum ProviderOperationType {
   ONBOARDING = 'ONBOARDING',
   MONITORING_CHECK = 'MONITORING_CHECK',
   ATTACHMENT_FETCH = 'ATTACHMENT_FETCH',
   MANUAL_SEARCH = 'MANUAL_SEARCH',
 }
 
-export enum JuditAlertType {
+// Alias for backwards compatibility
+export type JuditOperationType = ProviderOperationType;
+
+export enum ProviderAlertType {
   API_ERROR = 'API_ERROR',
   RATE_LIMIT = 'RATE_LIMIT',
   CIRCUIT_BREAKER = 'CIRCUIT_BREAKER',
@@ -432,6 +435,9 @@ export enum JuditAlertType {
   ATTACHMENT_TRIGGER = 'ATTACHMENT_TRIGGER',
   MONITORING_FAILED = 'MONITORING_FAILED',
 }
+
+// Alias for backwards compatibility
+export type JuditAlertType = ProviderAlertType;
 
 export enum WebhookDeliveryStatus {
   PENDING = 'PENDING',

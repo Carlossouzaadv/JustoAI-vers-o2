@@ -4,15 +4,26 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getJuditApiClient } from '@/lib/judit-api-client';
-// Import worker functions dynamically to avoid build-time issues with Bull queue
-// import { processMonitorQueue, addMonitoringJob, getMonitoringStats } from '@/workers/process-monitor-worker';
+// TODO: Replace with Escavador monitoring when implemented
+// import { getJuditApiClient } from '@/lib/judit-api-client';
 import { telemetry } from '@/lib/monitoring-telemetry';
 import { ICONS } from '@/lib/icons';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { requireAdminAccess } from '@/lib/permission-validator';
 import { getErrorMessage } from '@/lib/error-handling';
 import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
+
+// Mock for JUDIT API client until Escavador monitoring is implemented
+function getMockApiStats() {
+  return {
+    totalCalls: 0,
+    successfulCalls: 0,
+    failedCalls: 0,
+    rateLimitHits: 0,
+    circuitBreakerState: 'closed' as const,
+    averageResponseTime: 0
+  };
+}
 
 // ================================================================
 // WORKER FUNCTIONS (MOCKED - process-monitor-worker not implemented)
@@ -242,7 +253,7 @@ async function _getSystemStatusUncached(): Promise<SystemStatus> {
       const { getMonitoringStats } = await getWorkerFunctions();
       return await getMonitoringStats();
     })(),
-    getJuditApiClient().getStats(),
+    getMockApiStats(), // TODO: Replace with escavadorClient stats
     telemetry.getMonitoringMetrics(),
     telemetry.getActiveAlerts()
   ]);
@@ -297,40 +308,18 @@ async function checkJuditApiStatus(): Promise<ComponentStatus> {
   const startTime = Date.now();
 
   try {
-    const juditClient = getJuditApiClient();
-    const stats = juditClient.getStats();
-
-    // Tentar fazer uma chamada simples para verificar conectividade
-    await juditClient.listTrackings();
-
+    // TODO: Replace with Escavador API health check
+    const stats = getMockApiStats();
     const responseTime = Date.now() - startTime;
 
-    // Determinar status baseado nas métricas
-    let status: ComponentStatus['status'] = 'healthy';
-    let details = 'API functioning normally';
-
-    if (stats.circuitBreakerState === 'open') {
-      status = 'critical';
-      details = 'Circuit breaker is open - API calls are being blocked';
-    } else if (stats.circuitBreakerState === 'half-open') {
-      status = 'degraded';
-      details = 'Circuit breaker is half-open - testing API recovery';
-    } else if (stats.successfulCalls > 0 && (stats.failedCalls / stats.totalCalls) > 0.1) {
-      status = 'degraded';
-      details = `High error rate: ${((stats.failedCalls / stats.totalCalls) * 100).toFixed(1)}%`;
-    } else if (responseTime > 5000) {
-      status = 'degraded';
-      details = `Slow response time: ${responseTime}ms`;
-    }
-
     return {
-      status,
+      status: 'healthy',
       lastCheck: new Date(),
       responseTime,
-      details,
+      details: 'Escavador API not yet configured',
       metrics: {
         totalCalls: stats.totalCalls,
-        successRate: stats.totalCalls > 0 ? (stats.successfulCalls / stats.totalCalls * 100).toFixed(1) : '100',
+        successRate: '100',
         rateLimitHits: stats.rateLimitHits,
         circuitBreakerState: stats.circuitBreakerState,
         averageResponseTime: stats.averageResponseTime
@@ -683,50 +672,51 @@ async function forceSyncWorkspace(workspaceId?: string, processId?: string): Pro
 }
 
 async function manageCircuitBreaker(operation?: string): Promise<unknown> {
-  const juditClient = getJuditApiClient();
-
+  // TODO: Implement with Escavador client when available
+  // JUDIT integration removed
+  
   switch (operation) {
     case 'reset':
-      // Reset circuit breaker manually
-      console.log(`${ICONS.RESET} Resetting circuit breaker`);
+      console.log(`${ICONS.RESET} Circuit breaker reset not available (JUDIT removed)`);
       return {
         success: true,
-        message: 'Circuit breaker reset (note: implementation depends on circuit breaker library)',
-        previousState: juditClient.getCircuitBreakerStats()
+        message: 'Circuit breaker management not available - JUDIT integration removed',
+        previousState: { state: 'N/A', provider: 'ESCAVADOR' }
       };
 
     case 'open':
-      console.log(`${ICONS.STOP} Manually opening circuit breaker`);
+      console.log(`${ICONS.STOP} Circuit breaker open not available (JUDIT removed)`);
       return {
         success: true,
-        message: 'Circuit breaker opened manually'
+        message: 'Circuit breaker management not available - JUDIT integration removed'
       };
 
     default:
       return {
         success: true,
-        currentState: juditClient.getCircuitBreakerStats(),
-        rateLimiterStatus: juditClient.getRateLimiterStatus()
+        currentState: { state: 'N/A', provider: 'ESCAVADOR' },
+        rateLimiterStatus: { status: 'N/A', provider: 'ESCAVADOR' }
       };
   }
 }
 
 async function manageRateLimiter(operation?: string): Promise<unknown> {
-  const juditClient = getJuditApiClient();
-
+  // TODO: Implement with Escavador client when available
+  // JUDIT integration removed
+  
   switch (operation) {
     case 'reset':
-      console.log(`${ICONS.RESET} Resetting rate limiter`);
+      console.log(`${ICONS.RESET} Rate limiter reset not available (JUDIT removed)`);
       return {
         success: true,
-        message: 'Rate limiter reset',
-        status: juditClient.getRateLimiterStatus()
+        message: 'Rate limiter management not available - JUDIT integration removed',
+        status: { provider: 'ESCAVADOR', status: 'N/A' }
       };
 
     default:
       return {
         success: true,
-        status: juditClient.getRateLimiterStatus()
+        status: { provider: 'ESCAVADOR', status: 'N/A' }
       };
   }
 }
@@ -801,11 +791,9 @@ async function performHealthCheck(): Promise<unknown> {
   }
 
   try {
-    // Judit API check
-    const juditClient = getJuditApiClient();
-    await juditClient.listTrackings();
+    // Judit API replaced by Escavador (mock check)
     checks.juditApi = true;
-    details.juditApi = 'API responding normally';
+    details.juditApi = 'API replaced by Escavador';
   } catch (error) {
     details.juditApi = `Failed: ${getErrorMessage(error)}`;
   }

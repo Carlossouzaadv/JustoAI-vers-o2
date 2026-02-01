@@ -509,11 +509,22 @@ async function handleSyncProcess(process: MonitoredProcessForSync, force: boolea
     const processApi = createProcessApiClient();
     const startTime = Date.now();
 
-    // Buscar movimentações recentes
-    const recentMovements = await processApi.getRecentMovements(
-      process.processNumber,
-      process.lastSync ?? undefined
-    );
+    // Buscar processo completo para obter movimentações
+    const searchResult = await processApi.searchProcess({
+      processNumber: process.processNumber,
+      includeMovements: true
+    });
+
+    if (!searchResult.success || !searchResult.data) {
+       // Se falhar na busca (ex: erro na API Escavador), lançar erro
+       throw new Error(searchResult.error || 'Erro ao buscar dados do processo');
+    }
+
+    const allMovements = searchResult.data.movements;
+    // Filtrar recentes se houver lastSync
+    const recentMovements = process.lastSync 
+       ? allMovements.filter((m: ProcessMovement) => new Date(m.date) > process.lastSync!)
+       : allMovements;
 
     const duration = Date.now() - startTime;
     let newMovementsCount = 0;

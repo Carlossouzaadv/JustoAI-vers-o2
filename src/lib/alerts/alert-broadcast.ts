@@ -34,7 +34,7 @@ function isAlertCountData(data: unknown): data is { unreadCount: number; critica
 export async function getAlertCounts(workspaceId: string): Promise<{ unreadCount: number; criticalCount: number }> {
   try {
     // Contar alertas não resolvidos
-    const unreadCount = await prisma.juditAlert.count({
+    const unreadCount = await prisma.providerAlert.count({
       where: {
         workspaceId,
         resolved: false
@@ -42,7 +42,7 @@ export async function getAlertCounts(workspaceId: string): Promise<{ unreadCount
     });
 
     // Contar alertas críticos não resolvidos
-    const criticalCount = await prisma.juditAlert.count({
+    const criticalCount = await prisma.providerAlert.count({
       where: {
         workspaceId,
         resolved: false,

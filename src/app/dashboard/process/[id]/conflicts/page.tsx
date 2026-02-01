@@ -44,7 +44,7 @@ interface TimelineEvent {
 
 interface ConflictResolution {
   eventId: string;
-  resolution: 'keep_judit' | 'use_document' | 'merge' | 'keep_both';
+  resolution: 'keep_provider' | 'use_document' | 'merge' | 'keep_both';
   mergedDescription?: string;
 }
 
@@ -284,13 +284,13 @@ export default function TimelineConflictsPage() {
                         <Button
                           variant="outline"
                           className="w-full justify-start h-auto py-3 text-left"
-                          onClick={() => handleResolution(conflict.id, 'keep_judit')}
+                          onClick={() => handleResolution(conflict.id, 'keep_provider')}
                         >
                           <div className="flex items-start gap-3 w-full">
                             <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="font-semibold text-sm">
-                                Manter JUDIT (Oficial)
+                                Manter Escavador (Oficial)
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 Descarta o evento conflitante e mantém a versão oficial

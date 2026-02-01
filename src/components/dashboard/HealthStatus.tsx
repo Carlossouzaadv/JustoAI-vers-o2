@@ -7,7 +7,18 @@
 
 import React from 'react';
 import { Activity, Database, AlertCircle, DollarSign, CheckCircle } from 'lucide-react';
-import { HealthData } from '@/hooks/useJuditObservability';
+// import { HealthData } from '@/hooks/useJuditObservability';
+
+export interface HealthData {
+  status: string;
+  message: string;
+  components: {
+    api: { status: string; errorRate: string; totalCalls: number };
+    queue: { status: string; waiting: number; active: number };
+    costs: { status: string; todayCost: string; operations: number };
+    alerts: { status: string; unresolved: number };
+  };
+}
 
 interface HealthStatusProps {
   data: HealthData;

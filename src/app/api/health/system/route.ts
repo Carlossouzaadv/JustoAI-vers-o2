@@ -246,56 +246,8 @@ async function checkSlack(): Promise<ComponentHealth> {
   }
 }
 
-async function checkJuditApi(): Promise<ComponentHealth> {
-  const startTime = Date.now();
-  try {
-    const apiKey = process.env.JUDIT_API_KEY;
-    const apiUrl = process.env.JUDIT_API_URL || 'https://api.judit.tech';
+// checkJuditApi removed
 
-    if (!apiKey) {
-      // JUDIT is critical but can be temporarily unavailable
-      return {
-        name: 'judit-api',
-        status: 'degraded',
-        responseTimeMs: 0,
-        lastError: 'JUDIT API key not configured',
-        timestamp: new Date().toISOString(),
-      };
-    }
-
-    // Check JUDIT API connectivity
-    const response = await fetch(`${apiUrl}/status`, {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      signal: AbortSignal.timeout(5000),
-    });
-
-    const responseTimeMs = Date.now() - startTime;
-
-    if (response.ok) {
-      return {
-        name: 'judit-api',
-        status: 'healthy',
-        responseTimeMs,
-        timestamp: new Date().toISOString(),
-      };
-    } else {
-      throw new Error(`HTTP ${response.status}`);
-    }
-  } catch (error) {
-    const responseTimeMs = Date.now() - startTime;
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-
-    return {
-      name: 'judit-api',
-      status: error instanceof Error && error.message.includes('timeout') ? 'degraded' : 'unhealthy',
-      responseTimeMs,
-      lastError: errorMsg,
-      timestamp: new Date().toISOString(),
-    };
-  }
-}
 
 // ================================================================
 // MAIN HANDLER

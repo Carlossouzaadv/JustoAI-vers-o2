@@ -233,14 +233,14 @@ export class RateLimitedApiClient {
 // ================================================================
 
 /**
- * Rate limiter configurado para API Judit
+ * Rate limiter configurado para API Escavador (500 req/min)
  */
-export function createJuditRateLimiter(): RateLimitedApiClient {
+export function createEscavadorRateLimiter(): RateLimitedApiClient {
   return new RateLimitedApiClient(
     {
-      maxTokens: 60, // 60 chamadas por minuto
-      refillRate: 60, // 1 token por segundo
-      initialTokens: 60
+      maxTokens: 500, // 500 chamadas por minuto (Escavador)
+      refillRate: 500, // ~8.3 tokens por segundo
+      initialTokens: 500
     },
     {
       maxAttempts: 5,
@@ -249,6 +249,14 @@ export function createJuditRateLimiter(): RateLimitedApiClient {
       jitter: true
     }
   );
+}
+
+/**
+ * Rate limiter genérico para provider APIs
+ * @deprecated Use createEscavadorRateLimiter() instead
+ */
+export function createJuditRateLimiter(): RateLimitedApiClient {
+  return createEscavadorRateLimiter(); // Alias for backwards compatibility
 }
 
 /**

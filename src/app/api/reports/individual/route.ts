@@ -11,7 +11,8 @@ import { ReportGenerator } from '@/lib/report-generator';
 import { addNotificationJob } from '@/lib/queues';
 import { ICONS } from '@/lib/icons';
 import { createHash } from 'crypto';
-import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+// TODO: Replace with Escavador telemetry
+// import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 import { ReportType, AudienceType, OutputFormat, ExecutionStatus } from '@/lib/types/database';
 import type { Prisma } from '@prisma/client';
 
@@ -81,20 +82,8 @@ export async function POST(request: NextRequest) {
       if (cacheResult.hit) {
         console.log(`${ICONS.SUCCESS} Cache hit encontrado - não haverá cobrança de créditos`);
 
-        // Track cache hit
-        await juditAPI.trackCall({
-          workspaceId,
-          operationType: JuditOperationType.REPORT,
-          durationMs: 0,
-          success: true,
-          requestId: cacheResult.reportId,
-          metadata: {
-            eventType: 'report.cache_hit',
-            reportType: type,
-            processCount: processIds.length,
-            cacheHit: true
-          }
-        });
+        // TODO: Replace with Escavador telemetry
+        // await juditAPI.trackCall({...});
 
         return NextResponse.json({
           success: true,
@@ -298,22 +287,8 @@ export async function POST(request: NextRequest) {
           }
         });
 
-        // Track telemetry
-        await juditAPI.trackCall({
-          workspaceId,
-          operationType: JuditOperationType.REPORT,
-          durationMs: reportResult.processingTime,
-          success: true,
-          requestId: reportExecution.id,
-          metadata: {
-            eventType: 'report.generated',
-            reportType: type,
-            processCount: processIds.length,
-            outputFormats: format,
-            cacheHit: reportResult.cacheHit,
-            tokensUsed: reportResult.tokensUsed
-          }
-        });
+        // TODO: Replace with Escavador telemetry
+        // await juditAPI.trackCall({...});
 
         console.log(`${ICONS.SUCCESS} Relatório gerado com sucesso em ${reportResult.processingTime}ms`);
 

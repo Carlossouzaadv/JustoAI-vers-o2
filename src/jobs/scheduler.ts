@@ -5,7 +5,7 @@
 
 import * as cron from 'node-cron';
 import { log, logError } from '@/lib/services/logger';
-import { executeDailyCheck } from './dailyJuditCheck';
+// import { executeDailyCheck } from './dailyJuditCheck';
 import { sendJobSuccess, sendJobFailure } from '@/lib/notification-service';
 
 // ================================================================
@@ -62,68 +62,8 @@ interface JobConfig<T = unknown> {
 // CONFIGURAÇÃO DOS JOBS
 // ================================================================
 
-const JOBS: JobConfig<DailyCheckResult>[] = [
-  {
-    name: 'Daily JUDIT Check',
-    schedule: '0 2 * * *', // 2:00 AM todos os dias
-    enabled: true,
-    task: executeDailyCheck,
-    onSuccess: (result) => {
-      // ✅ Validação segura via type guard (narrowing)
-      if (!isDailyCheckResult(result)) {
-        log.warn({
-          msg: 'Daily JUDIT Check retornou resultado inválido',
-          component: 'scheduler',
-          job: 'Daily JUDIT Check',
-          type: typeof result,
-          keys: typeof result === 'object' && result !== null ? Object.keys(result) : 'N/A',
-        });
-        return;
-      }
-
-      // ✅ Agora é 100% seguro acessar todas as propriedades
-      log.info({
-        msg: 'Daily JUDIT Check concluído',
-        component: 'scheduler',
-        job: 'Daily JUDIT Check',
-        total: result.total,
-        successful: result.successful,
-        withNewMovements: result.withNewMovements,
-        duration_minutes: (result.duration / 60000).toFixed(2),
-      });
-
-      // ✅ Enviar notificação de sucesso
-      sendJobSuccess('Daily JUDIT Check', {
-        'Total': result.total,
-        'Bem-sucedidos': result.successful,
-        'Falhados': result.failed,
-        'Com Novas Movimentações': result.withNewMovements,
-        'Duração (minutos)': (result.duration / 60000).toFixed(2),
-      }).catch((err) => {
-        logError(err, 'Erro ao enviar notificação de sucesso do Daily JUDIT Check', { component: 'scheduler' });
-      });
-    },
-    onError: (error) => {
-      // ✅ error agora é do tipo Error (não unknown)
-      logError(error, 'Daily JUDIT Check falhou', { component: 'scheduler', job: 'Daily JUDIT Check' });
-
-      // ✅ Enviar alerta crítico via email/Slack
-      sendJobFailure('Daily JUDIT Check', error, {
-        'Timestamp': new Date().toISOString(),
-      }).catch((err) => {
-        logError(err, 'Erro ao enviar alerta de falha do Daily JUDIT Check', { component: 'scheduler' });
-      });
-    },
-  },
-
-  // Adicione mais jobs aqui conforme necessário
-  // Exemplo:
-  // {
-  //   name: 'Weekly Report Generator',
-  //   schedule: '0 9 * * 1', // Segunda-feira às 9:00
-  //   enabled: false,
-  //   task: generateWeeklyReport,
-  // },
+const JOBS: JobConfig<any>[] = [
+  // Jobs removidos (Daily JUDIT Check)
 ];
 
 // ================================================================

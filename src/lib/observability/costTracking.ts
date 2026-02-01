@@ -1,23 +1,25 @@
 // ================================================================
 // COST TRACKING SERVICE
-// Rastreamento de custos em tempo real da integração JUDIT
+// Rastreamento de custos em tempo real da integração ESCAVADOR
 // ================================================================
 
 import { PrismaClient } from '@prisma/client'
-import { JuditOperationType, JuditAlertType } from '@/lib/types/database';
+import { ProviderOperationType, ProviderAlertType } from '@/lib/types/database';
 import { costLogger } from './logger';
 import { withAdminCache, AdminCacheKeys, CacheTTL } from '@/lib/cache/admin-redis';
 
 const prisma = new PrismaClient();
 
 // ================================================================
-// CONFIGURATION - Preços da API JUDIT (em BRL)
+// CONFIGURATION - Preços da API ESCAVADOR (em BRL)
 // ================================================================
 
-export const JUDIT_PRICING = {
-  SEARCH_BASE: 0.69, // Custo base de busca (sem anexos)
-  DOCUMENT_COST: 0.25, // Custo por documento baixado
-  MONITORING_COST: 0.69, // Custo mensal por processo monitorado
+export const ESCAVADOR_PRICING = {
+  SEARCH_BASE: 0.10, // Custo base de busca (capa + movimentações)
+  DOCUMENT_COST: 0.10, // Custo por documento público (R$1.40 com certificado)
+  MONITORING_COST_DAILY: 1.42, // Custo mensal monitoramento diário
+  MONITORING_COST_WEEKLY: 0.26, // Custo mensal monitoramento semanal
+  RESUMO_IA: 0.05, // Custo do resumo inteligente
 } as const;
 
 // ================================================================
@@ -26,7 +28,7 @@ export const JUDIT_PRICING = {
 
 interface CostTrackingInput {
   workspaceId?: string;
-  operationType: JuditOperationType;
+  operationType: ProviderOperationType;
   numeroCnj?: string;
   documentsRetrieved?: number;
   movementsCount?: number;
@@ -49,14 +51,14 @@ interface CostSummary {
 }
 
 interface CostBreakdown {
-  operationType: JuditOperationType;
+  operationType: ProviderOperationType;
   count: number;
   totalCost: number;
   avgCost: number;
 }
 
-interface JuditCostGroupByResult {
-  operationType: JuditOperationType;
+interface ProviderCostGroupByResult {
+  operationType: ProviderOperationType;
   _count: {
     id: number;
   };
@@ -70,13 +72,13 @@ interface JuditCostGroupByResult {
 // ================================================================
 
 /**
- * Registra custos de uma operação JUDIT
+ * Registra custos de uma operação ESCAVADOR
  */
-export async function trackJuditCost(input: CostTrackingInput): Promise<void> {
+export async function trackProviderCost(input: CostTrackingInput): Promise<void> {
   try {
     // Calculate costs
-    const searchCost = JUDIT_PRICING.SEARCH_BASE;
-    const attachmentsCost = (input.documentsRetrieved || 0) * JUDIT_PRICING.DOCUMENT_COST;
+    const searchCost = ESCAVADOR_PRICING.SEARCH_BASE;
+    const attachmentsCost = (input.documentsRetrieved || 0) * ESCAVADOR_PRICING.DOCUMENT_COST;
     const totalCost = searchCost + attachmentsCost;
 
     // Save to database
@@ -237,7 +239,7 @@ async function _getCostBreakdownUncached(
   });
 
   return records.map((record): CostBreakdown => ({
-    operationType: record.operationType as JuditOperationType,
+    operationType: record.operationType as ProviderOperationType,
     count: record._count.id,
     totalCost: Number(record._sum.totalCost || 0),
     avgCost: Number(record._sum.totalCost || 0) / record._count.id,
@@ -330,11 +332,11 @@ export async function getDailyCosts(
  * Estima custo de uma operação
  */
 export function estimateCost(
-  _operationType: JuditOperationType,
+  _operationType: ProviderOperationType,
   expectedDocuments: number = 0
 ): { searchCost: number; attachmentsCost: number; totalCost: number } {
-  const searchCost = JUDIT_PRICING.SEARCH_BASE;
-  const attachmentsCost = expectedDocuments * JUDIT_PRICING.DOCUMENT_COST;
+  const searchCost = ESCAVADOR_PRICING.SEARCH_BASE;
+  const attachmentsCost = expectedDocuments * ESCAVADOR_PRICING.DOCUMENT_COST;
   const totalCost = searchCost + attachmentsCost;
 
   return { searchCost, attachmentsCost, totalCost };
@@ -345,7 +347,7 @@ export function estimateCost(
 // ================================================================
 
 // Type for alert types as stored in database (Prisma enum)
-// Matches JuditAlertType from schema.prisma
+// Matches ProviderAlertType from schema.prisma
 export type AlertType =
   | 'API_ERROR'
   | 'RATE_LIMIT'
@@ -358,10 +360,10 @@ export type AlertType =
 export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 /**
- * Type guard to validate AlertType against JuditAlertType
+ * Type guard to validate AlertType against ProviderAlertType
  * Ensures only valid enum values from Prisma schema are used
  */
-function isValidAlertType(value: unknown): value is JuditAlertType {
+function isValidAlertType(value: unknown): value is ProviderAlertType {
   const validTypes: readonly string[] = [
     'API_ERROR',
     'RATE_LIMIT',
@@ -403,7 +405,7 @@ export async function createAlert(input: AlertInput): Promise<void> {
     }
 
     // After validation, alertTypeValue is narrowed to JuditAlertType
-    await prisma.juditAlert.create({
+    await prisma.providerAlert.create({
       data: {
         workspaceId: input.workspaceId,
         alertType: alertTypeValue,
@@ -446,7 +448,7 @@ export async function getUnresolvedAlerts(workspaceId?: string) {
     where.workspaceId = workspaceId;
   }
 
-  return await prisma.juditAlert.findMany({
+  return await prisma.providerAlert.findMany({
     where,
     orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }],
     take: 50,
@@ -457,7 +459,7 @@ export async function getUnresolvedAlerts(workspaceId?: string) {
  * Marca alerta como resolvido
  */
 export async function resolveAlert(alertId: string): Promise<void> {
-  await prisma.juditAlert.update({
+  await prisma.providerAlert.update({
     where: { id: alertId },
     data: {
       resolved: true,

@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { successResponse, errorResponse, validateBody, requireAuth, withErrorHandler } from '@/lib/api-utils';
 import { DeepAnalysisService } from '@/lib/deep-analysis-service';
 import { ICONS } from '@/lib/icons';
-import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+// TODO: Replace with Escavador telemetry
+// import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 import { AnalysisType } from '@/lib/types/database';
 import { getAnalysisData } from '@/lib/services/analysis-parser';
 
@@ -120,20 +121,8 @@ export const POST = withErrorHandler(async (
           cacheAge = Date.now() - cachedResult.createdAt.getTime();
         }
 
-        // Track cache hit telemetry
-        await juditAPI.trackCall({
-          workspaceId,
-          operationType: JuditOperationType.FETCH,
-          durationMs: 50,
-          success: true,
-          requestId: cachedResult.id,
-          metadata: {
-            eventType: 'analysis.cache_hit',
-            analysisId: cachedResult.id,
-            documentCount: attachedDocs.length,
-            cacheAge,
-          },
-        });
+        // TODO: Replace with Escavador telemetry
+        // await juditAPI.trackCall({...});
 
         // Extract analysis data from aiAnalysis STRING (now parsed safely)
         const analysisData = getAnalysisData(cachedResult.aiAnalysis);

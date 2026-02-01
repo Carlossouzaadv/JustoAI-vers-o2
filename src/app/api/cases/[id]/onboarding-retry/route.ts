@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { retryOnboarding } from '@/lib/utils/case-onboarding-helper';
-import { addOnboardingJob } from '@/lib/queue/juditQueue';
+// import { addOnboardingJob } from '@/lib/queue/juditQueue'; // REMOVED
+import { onboardingService } from '@/lib/services/onboardingService';
 import { validateAuthAndGetUser } from '@/lib/auth';
 import { ICONS } from '@/lib/icons';
 
@@ -131,25 +132,36 @@ export async function POST(
       );
     }
 
-    // 2. Enfileirar novo job de JUDIT
+    // 2. Executar Onboarding (agora síncrono/await, substitui fila)
     try {
-      const { jobId } = await addOnboardingJob(caseData.detectedCnj, {
+      // NOTE: This might take time due to Escavador polling.
+      // If we move to background job later, we need a working queue system.
+      // For now, we process "synchronously" (awaiting) to ensure data is fetched.
+      // Users might experience delay, but retry is an explicit action.
+      
+      const result = await onboardingService.onboardProcesso({
+        cnj: caseData.detectedCnj,
         workspaceId: caseData.workspaceId,
-        userId: user.id,
-        caseId,
-        priority: 5,
+        createdById: user.id,
+        targetCaseId: caseId, // Update THIS case
+        forceUpdate: true,    // Force fetching from Escavador
+        incluirDocumentos: true,
+        usarCertificado: true
       });
 
-      console.log(`${ICONS.SUCCESS} [Retry] Job de JUDIT enfileirado (Job ID: ${jobId})`);
+      console.log(`${ICONS.SUCCESS} [Retry] Onboarding reiniciado com sucesso para case ${caseId}`);
 
       return NextResponse.json({
         success: true,
-        message: 'Retry iniciado com sucesso',
-        jobId,
+        message: 'Retry realizado com sucesso. Dados atualizados.',
         cnj: caseData.detectedCnj,
+        details: {
+          movimentacoes: result.movimentacoesCount,
+          autos: result.autosCount
+        }
       });
-    } catch (juditError) {
-      console.error(`${ICONS.ERROR} [Retry] Erro ao enfileirar JUDIT:`, juditError);
+    } catch (onboardingError) {
+      console.error(`${ICONS.ERROR} [Retry] Erro ao executar onboarding:`, onboardingError);
 
       return NextResponse.json(
         {

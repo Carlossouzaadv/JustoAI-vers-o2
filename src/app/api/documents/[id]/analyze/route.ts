@@ -7,7 +7,8 @@ import { requireAuth } from '@/lib/api-utils';
 import { z } from 'zod';
 import { getCredits, debitCredits } from '@/lib/services/creditService';
 import { isInternalDivinityAdmin } from '@/lib/permission-validator';
-import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
+// TODO: Replace with Escavador telemetry
+// import { juditAPI, JuditOperationType } from '@/lib/judit-api-wrapper';
 import { CreditCategory } from '@/lib/types/database';
 
 const prisma = new PrismaClient();
@@ -304,23 +305,8 @@ export async function POST(
       }
     });
 
-    // 9.5. Track telemetry
-    await juditAPI.trackCall({
-      workspaceId: document.case.workspaceId,
-      operationType: JuditOperationType.ANALYSIS,
-      durationMs: Date.now() - startTime,
-      success: true,
-      requestId: analysisVersion.id,
-      metadata: {
-        eventType: 'document.analyzed',
-        documentId: document.id,
-        analysisType: 'PDF_UPLOAD',
-        model: routingInfo?.final_tier || 'gemini-2.5-flash',
-        confidence: analysisVersion.confidence,
-        forceReanalysis,
-        creditsUsed: aiAnalysis && !isDivinity ? 1 : 0,
-      },
-    });
+    // TODO: Replace with Escavador telemetry
+    // await juditAPI.trackCall({...});
 
     // 10. Resposta de sucesso
     return NextResponse.json({

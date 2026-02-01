@@ -105,7 +105,7 @@ export async function GET() {
       }),
 
       // Critical alerts unresolved
-      prisma.juditAlert.count({
+      prisma.providerAlert.count({
         where: {
           severity: 'CRITICAL',
           resolved: false

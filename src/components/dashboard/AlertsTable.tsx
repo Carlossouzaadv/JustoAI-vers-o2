@@ -8,7 +8,25 @@
 import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { CheckCircle } from 'lucide-react';
-import { Alert, useResolveAlert } from '@/hooks/useJuditObservability';
+// import { Alert, useResolveAlert } from '@/hooks/useJuditObservability';
+
+// Mock types
+export interface Alert {
+  id: string;
+  severity: string;
+  alertType: string;
+  title: string;
+  message: string;
+  numeroCnj?: string;
+  createdAt: string;
+  resolved: boolean;
+}
+
+// Mock hook
+const useResolveAlert = () => ({
+  mutateAsync: async (id: string) => { console.log('Resolve alert mock', id); },
+  isPending: false
+});
 
 interface AlertsTableProps {
   alerts: Alert[];

@@ -12,7 +12,7 @@ import { ICONS } from '@/lib/icons';
 // TYPES
 // ================================================================
 
-type JuditAlert = NonNullable<Awaited<ReturnType<typeof prisma.juditAlert.findFirst>>>;
+type JuditAlert = NonNullable<Awaited<ReturnType<typeof prisma.providerAlert.findFirst>>>;
 
 // ================================================================
 // GET HANDLER: Get active (unresolved) alerts
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const workspaceId = userWorkspace.workspaceId;
 
     // Get unresolved alerts
-    const alerts = await prisma.juditAlert.findMany({
+    const alerts = await prisma.providerAlert.findMany({
       where: {
         workspaceId,
         resolved: false,
