@@ -145,19 +145,18 @@ export class ProcessApiClient {
       const cnj = normalizeProcessNumber(params.processNumber);
       
       // 1. Buscar dados do processo
-      // Nota: buscarProcesso retorna unknown, precisamos fazer cast/validação
-      const processData = await escavadorClient.buscarProcesso(cnj) as any;
+      const processData = await escavadorClient.buscarProcesso(cnj) as Record<string, unknown>;
       
       if (!processData) {
         return { success: false, source: 'ESCAVADOR_API', error: 'Processo não encontrado' };
       }
 
       // 2. Buscar movimentações (opcional)
-      let movementsRaw: any[] = [];
+      let movementsRaw: Record<string, unknown>[] = [];
       if (params.includeMovements) {
         try {
           const updates = await escavadorClient.buscarMovimentacoes(cnj);
-          movementsRaw = updates.movimentacoes || [];
+          movementsRaw = (updates.movimentacoes || []) as Record<string, unknown>[];
         } catch (e) {
           console.warn('Erro ao buscar movimentações Escavador:', e);
         }
@@ -182,44 +181,48 @@ export class ProcessApiClient {
     }
   }
 
-  private mapEscavadorResponse(apiData: any, movements: any[]): ProcessData {
+  private mapEscavadorResponse(apiData: Record<string, unknown>, movements: Record<string, unknown>[]): ProcessData {
     // Mapeamento básico baseado na estrutura comum do Escavador
     // Ajustar campos conforme a resposta real da API v2 
+    const assuntoPrincipal = apiData.assunto_principal as Record<string, unknown> | undefined;
+    const partesPoloAtivo = (apiData.partes_polo_ativo || []) as Record<string, unknown>[];
+    const partesPoloPassivo = (apiData.partes_polo_passivo || []) as Record<string, unknown>[];
+    const advogados = (apiData.advogados || []) as Record<string, unknown>[];
     
     return {
-      processNumber: apiData.numero_cnj || apiData.numero || '',
-      court: apiData.sigla_tribunal || apiData.tribunal || '',
-      subject: apiData.assunto_principal?.nome || '',
-      value: apiData.valor_causa ? parseFloat(apiData.valor_causa) : undefined,
-      distributionDate: apiData.data_distribuicao ? new Date(apiData.data_distribuicao) : undefined,
-      status: apiData.situacao || 'ATIVO',
+      processNumber: String(apiData.numero_cnj || apiData.numero || ''),
+      court: String(apiData.sigla_tribunal || apiData.tribunal || ''),
+      subject: String(assuntoPrincipal?.nome || ''),
+      value: apiData.valor_causa ? parseFloat(String(apiData.valor_causa)) : undefined,
+      distributionDate: apiData.data_distribuicao ? new Date(String(apiData.data_distribuicao)) : undefined,
+      status: String(apiData.situacao || 'ATIVO'),
       
       parties: {
-        plaintiffs: (apiData.partes_polo_ativo || []).map((p: any) => ({
-          name: p.nome || '',
-          document: p.cpf_cnpj || '',
-          type: 'PLAINTIFF',
+        plaintiffs: partesPoloAtivo.map((p) => ({
+          name: String(p.nome || ''),
+          document: String(p.cpf_cnpj || ''),
+          type: 'PLAINTIFF' as const,
           address: undefined
         })),
-        defendants: (apiData.partes_polo_passivo || []).map((p: any) => ({
-          name: p.nome || '',
-          document: p.cpf_cnpj || '',
-          type: 'DEFENDANT',
+        defendants: partesPoloPassivo.map((p) => ({
+          name: String(p.nome || ''),
+          document: String(p.cpf_cnpj || ''),
+          type: 'DEFENDANT' as const,
           address: undefined
         })),
-        lawyers: (apiData.advogados || []).map((a: any) => ({
-          name: a.nome || '',
-          oabNumber: a.oab || '',
-          oabState: a.uf || '',
+        lawyers: advogados.map((a) => ({
+          name: String(a.nome || ''),
+          oabNumber: String(a.oab || ''),
+          oabState: String(a.uf || ''),
           represents: ''
         }))
       },
 
       movements: movements.map(m => {
-        const type = m.tipo || 'MOVIMENTACAO';
-        const desc = m.conteudo || m.descricao || '';
+        const type = String(m.tipo || 'MOVIMENTACAO');
+        const desc = String(m.conteudo || m.descricao || '');
         return {
-          date: m.data ? new Date(m.data) : new Date(),
+          date: m.data ? new Date(String(m.data)) : new Date(),
           type: type,
           description: desc,
           category: this.categorizeMovement(type, desc),

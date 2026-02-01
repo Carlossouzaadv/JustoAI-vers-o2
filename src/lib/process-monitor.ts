@@ -315,7 +315,7 @@ export class ProcessMonitor {
 
       const allMovements = searchResult.data.movements;
       const recentMovements = typedProcess.lastSync 
-         ? allMovements.filter((m: any) => new Date(m.date) > typedProcess.lastSync!)
+         ? allMovements.filter((m) => new Date(m.date) > typedProcess.lastSync!)
          : allMovements;
 
       let newMovementsCount = 0;
