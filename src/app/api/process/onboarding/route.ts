@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { onboardingService } from '@/lib/services/onboardingService';
 import { checkProcessLimit } from '@/lib/middleware/checkWorkspaceLimit';
 
@@ -11,11 +10,10 @@ import { checkProcessLimit } from '@/lib/middleware/checkWorkspaceLimit';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const user = session.user as { id?: string }; // Cast to access id
 
     const body = await request.json();
     const { cnj, workspaceId, clientId, incluirDocumentos = true } = body;
