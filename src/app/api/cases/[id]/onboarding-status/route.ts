@@ -67,7 +67,19 @@ export async function GET(
     // Obter informações de erro
     const unassignedReason = await getUnassignedReason(caseId);
 
-    return NextResponse.json(unassignedReason);
+    // Adicionar flags para polling de onboarding async
+    const isProcessing = caseData.status === 'ONBOARDING';
+    const isComplete = caseData.status === 'ACTIVE';
+    const hasError = caseData.status === 'ERROR' || caseData.status === 'UNASSIGNED';
+
+    return NextResponse.json({
+      ...unassignedReason,
+      caseId: caseData.id,
+      status: caseData.status,
+      isProcessing,
+      isComplete,
+      hasError
+    });
   } catch (error) {
     console.error('[OnboardingStatus API] Error:', error);
     return NextResponse.json(

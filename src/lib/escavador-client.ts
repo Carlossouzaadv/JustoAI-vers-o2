@@ -95,7 +95,7 @@ export class EscavadorClient {
     }
     
     if (options?.sendCallback) {
-      body.send_callback = 1;
+      body.enviar_callback = 1;
     }
 
     const response = await this.limiter.schedule(() =>

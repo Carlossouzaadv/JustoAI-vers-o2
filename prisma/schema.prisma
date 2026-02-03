@@ -1577,6 +1577,8 @@ enum CaseStatus {
   ARCHIVED
   CANCELLED
   UNASSIGNED
+  ONBOARDING // Processamento async em andamento
+  ERROR      // Falha no processamento
 }
 
 enum Priority {
