@@ -12,7 +12,7 @@ import { checkProcessLimit } from '@/lib/middleware/checkWorkspaceLimit';
 // 1. Cria Case com status ONBOARDING
 // 2. Solicita atualização no Escavador com callback
 // 3. Retorna 202 Accepted imediatamente
-// 4. Webhook /api/webhook/escavador recebe resultado e finaliza
+// 4. Webhook /api/webhooks/escavador recebe resultado e finaliza
 // ============================================
 
 export async function POST(request: NextRequest) {

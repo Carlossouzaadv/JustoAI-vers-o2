@@ -5,21 +5,36 @@ import { Prisma } from '@prisma/client';
 
 // ============================================
 // WEBHOOK: RECEBE CALLBACKS DO ESCAVADOR V2
-// POST /api/webhook/escavador
+// POST /api/webhooks/escavador
 // ============================================
 
+// Estrutura real do callback conforme documentação Escavador
 interface EscavadorCallback {
   event: string;
   uuid: string;
-  numero_cnj?: string;
-  status?: string;
-  concluido_em?: string;
-  // Campos para diferentes tipos de callback
-  ultima_verificacao?: {
+  // Para callback de atualização de processo (atualizacao_processo_concluida)
+  atualizacao?: {
     id: number;
-    status: 'PENDENTE' | 'SUCESSO' | 'ERRO' | 'NAO_ENCONTRADO';
+    status: 'SUCESSO' | 'ERRO' | 'NAO_ENCONTRADO' | 'PENDENTE';
+    numero_cnj: string;
     criado_em: string;
-    concluido_em: string;
+    concluido_em: string | null;
+    enviar_callback?: string;
+  };
+  // Para callback de monitoramento (nova_movimentacao, processo_encontrado, etc)
+  monitoramento?: {
+    id: number;
+    numero: string;
+    criado_em: string;
+    data_ultima_verificacao: string | null;
+    frequencia: string;
+    status: string;
+  };
+  movimentacao?: {
+    id: number;
+    data: string;
+    tipo: 'ANDAMENTO' | 'PUBLICACAO';
+    conteudo: string;
   };
 }
 
@@ -37,15 +52,35 @@ export async function POST(request: NextRequest) {
     const callback: EscavadorCallback = await request.json();
     console.log('[Webhook Escavador] Callback recebido:', JSON.stringify(callback, null, 2));
 
-    // 2. Extrair CNJ do callback
-    const cnj = callback.numero_cnj;
+    // 2. Extrair CNJ e status conforme o tipo de evento
+    let cnj: string | undefined;
+    let status: string | undefined;
+
+    if (callback.event === 'atualizacao_processo_concluida' && callback.atualizacao) {
+      // Callback de atualização de processo (usado no onboarding)
+      cnj = callback.atualizacao.numero_cnj;
+      status = callback.atualizacao.status;
+      console.log(`[Webhook Escavador] Evento: ${callback.event}, CNJ: ${cnj}, Status: ${status}`);
+    } else if (callback.event === 'nova_movimentacao' && callback.monitoramento) {
+      // Callback de nova movimentação (monitoramento)
+      cnj = callback.monitoramento.numero;
+      console.log(`[Webhook Escavador] Nova movimentação para CNJ: ${cnj}`);
+      // TODO: Processar nova movimentação e notificar usuário
+      return NextResponse.json({ message: 'Movimentação recebida', cnj });
+    } else if (callback.event === 'processo_encontrado' && callback.monitoramento) {
+      cnj = callback.monitoramento.numero;
+      console.log(`[Webhook Escavador] Processo encontrado no monitoramento: ${cnj}`);
+      return NextResponse.json({ message: 'Processo encontrado', cnj });
+    } else if (callback.event === 'processo_nao_encontrado' && callback.monitoramento) {
+      cnj = callback.monitoramento.numero;
+      console.warn(`[Webhook Escavador] Processo NÃO encontrado: ${cnj}`);
+      return NextResponse.json({ message: 'Processo não encontrado', cnj });
+    }
+
     if (!cnj) {
       console.warn('[Webhook Escavador] CNJ não encontrado no callback');
       return NextResponse.json({ error: 'CNJ não encontrado' }, { status: 400 });
     }
-
-    // 3. Verificar status da atualização
-    const status = callback.ultima_verificacao?.status || callback.status;
     
     if (status === 'SUCESSO') {
       // 4. Buscar Case em estado de ONBOARDING para este CNJ

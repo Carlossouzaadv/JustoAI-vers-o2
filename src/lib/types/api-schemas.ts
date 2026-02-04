@@ -42,6 +42,9 @@ export const CaseStatusSchema = z.enum([
   'CLOSED',
   'ARCHIVED',
   'CANCELLED',
+  'ONBOARDING',  // Status durante processamento assíncrono
+  'ERROR',       // Status quando ocorre erro no onboarding
+  'UNASSIGNED',  // Status quando o caso não tem cliente atribuído
 ]);
 
 export type CaseStatus = z.infer<typeof CaseStatusSchema>;

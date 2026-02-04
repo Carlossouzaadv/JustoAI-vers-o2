@@ -198,7 +198,7 @@ export class EscavadorClient {
     const response = await this.limiter.schedule(() =>
       this.client.post(`/processos/numero_cnj/${cnj}/monitoramento`, {
         frequencia,
-        callback_url: process.env.NEXT_PUBLIC_APP_URL + '/api/webhook/escavador'
+        callback_url: process.env.NEXT_PUBLIC_APP_URL + '/api/webhooks/escavador'
       })
     );
 
