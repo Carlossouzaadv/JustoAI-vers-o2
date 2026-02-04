@@ -44,13 +44,31 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('Authorization');
     const expectedToken = process.env.ESCAVADOR_WEBHOOK_SECRET;
     
-    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
-      console.warn('[Webhook Escavador] Token inválido');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Log detalhado para debug
+    console.log('[Webhook Escavador] === CALLBACK RECEBIDO ===');
+    console.log('[Webhook Escavador] Authorization header:', authHeader);
+    console.log('[Webhook Escavador] Expected token:', expectedToken ? `${expectedToken.substring(0, 10)}...` : 'NOT SET');
+    
+    // Validar token - flexível: aceita com ou sem prefixo "Bearer"
+    if (expectedToken) {
+      const tokenWithBearer = `Bearer ${expectedToken}`;
+      const isValidBearerFormat = authHeader === tokenWithBearer;
+      const isValidPlainFormat = authHeader === expectedToken;
+      
+      if (!isValidBearerFormat && !isValidPlainFormat) {
+        console.warn('[Webhook Escavador] Token inválido!');
+        console.warn('[Webhook Escavador] authHeader:', authHeader);
+        console.warn('[Webhook Escavador] expectedWithBearer:', tokenWithBearer);
+        console.warn('[Webhook Escavador] expectedPlain:', expectedToken);
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      console.log('[Webhook Escavador] Token validado com sucesso');
+    } else {
+      console.log('[Webhook Escavador] AVISO: Token não configurado, aceitando request');
     }
 
     const callback: EscavadorCallback = await request.json();
-    console.log('[Webhook Escavador] Callback recebido:', JSON.stringify(callback, null, 2));
+    console.log('[Webhook Escavador] Callback body:', JSON.stringify(callback, null, 2));
 
     // 2. Extrair CNJ e status conforme o tipo de evento
     let cnj: string | undefined;
