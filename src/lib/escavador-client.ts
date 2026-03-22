@@ -224,9 +224,9 @@ export class EscavadorClient {
    */
   async configurarMonitoramento(cnj: string, frequencia: 'DIARIA' | 'SEMANAL'): Promise<MonitoramentoResponse> {
     const response = await this.limiter.schedule(() =>
-      this.client.post(`/processos/numero_cnj/${cnj}/monitoramento`, {
-        frequencia,
-        callback_url: process.env.NEXT_PUBLIC_APP_URL + '/api/webhooks/escavador'
+      this.client.post('/monitoramentos/processos', {
+        numero: cnj,
+        frequencia
       })
     );
 
