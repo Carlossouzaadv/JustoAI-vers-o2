@@ -141,8 +141,10 @@ export function CnjOnboardingDialog({
         onSuccess?.();
         
         // Redirecionar para o processo criado
-        const dataAny = data as any;
-        const caseId = dataAny.caseId || dataAny.case?.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dataAny = data as Record<string, unknown>;
+        const caseObj = dataAny.case as Record<string, unknown> | undefined;
+        const caseId = dataAny.caseId || caseObj?.id;
         
         if (caseId) {
           router.push(`/dashboard/process/${caseId}?tab=analysis`);
