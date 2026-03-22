@@ -492,6 +492,7 @@ export async function syncDocumentosEscavador(caseId: string, workspaceId: strin
 
     const nomeDocumento = typeof a.titulo === 'string' ? a.titulo : 'Documento Importado do Escavador';
     // Mapear p/ enum se possível ou fallback. Em Prisma o tipo é `DocumentType` (enum). Vamos assumir 'OTHER'.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tipo = typeof a.tipo === 'string' ? (a.tipo as any) : 'OTHER';
     const originalName = `${nomeDocumento}.pdf`; // Assume PDF based on API behavior generally
     const size = typeof a.tamanho_bytes === 'number' ? a.tamanho_bytes : 1024; // Dummy size if missing
