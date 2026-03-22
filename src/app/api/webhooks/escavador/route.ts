@@ -101,25 +101,36 @@ export async function POST(request: NextRequest) {
     }
     
     if (status === 'SUCESSO') {
-      // 4. Buscar Case em estado de ONBOARDING para este CNJ
-      const pendingCase = await prisma.case.findFirst({
-        where: {
-          number: cnj,
-          status: 'ONBOARDING'
-        },
-        include: {
-          processo: true
-        }
+      console.log(`[Webhook Escavador] Atualização concluída com sucesso para CNJ ${cnj}`);
+
+      // 4. Verificar se processo já existe e foi atualizado recentemente (IDEMPOTÊNCIA)
+      let processo = await prisma.processo.findUnique({
+        where: { numeroCnj: cnj }
       });
 
-      if (!pendingCase) {
-        console.log(`[Webhook Escavador] Nenhum case em ONBOARDING para CNJ ${cnj}`);
-        return NextResponse.json({ message: 'No pending case found' });
+      if (processo && processo.dadosCompletos) {
+        const dados = processo.dadosCompletos as { fetchedAt?: string };
+        if (dados.fetchedAt) {
+          const fetchedAtDate = new Date(dados.fetchedAt);
+          const now = new Date();
+          const diffMinutes = (now.getTime() - fetchedAtDate.getTime()) / (1000 * 60);
+          
+          if (diffMinutes < 5) {
+             console.log(`[Webhook Escavador] IDEMPOTÊNCIA: Processo atualizado há ${diffMinutes.toFixed(1)} mins. Ignorando callback duplicado.`);
+             
+             // Mesmo assim, precisamos garantir que o caso mude para ACTIVE se estiver ONBOARDING
+             await prisma.case.updateMany({
+               where: { number: cnj, status: 'ONBOARDING' },
+               data: { status: 'ACTIVE', processoId: processo.id }
+             });
+             
+             return NextResponse.json({ message: 'Callback ignorado (recém-atualizado), mas cases atualizados' });
+          }
+        }
       }
 
-      console.log(`[Webhook Escavador] Finalizando onboarding do case ${pendingCase.id}`);
-
       // 5. Buscar dados completos do processo
+      console.log(`[Webhook Escavador] Buscando dados atualizados da API Escavador...`);
       const dadosProcesso = await escavadorClient.buscarProcesso(cnj);
       
       // 6. Buscar movimentações
@@ -135,22 +146,25 @@ export async function POST(request: NextRequest) {
         console.warn(`[Webhook Escavador] Erro ao buscar autos: ${error}`);
       }
 
-      // 8. Buscar resumo IA (opcional)
+      // 8. Buscar resumo IA existente (não passível de callback, então fazemos polling rápido)
       let resumoIA: string | undefined;
       try {
-        await escavadorClient.solicitarResumoIA(cnj);
-        await new Promise(resolve => setTimeout(resolve, 3000));
         const resumoData = await escavadorClient.buscarResumoIA(cnj);
-        resumoIA = resumoData.resumo;
-      } catch (error) {
-        console.warn(`[Webhook Escavador] Resumo IA não disponível: ${error}`);
+        
+        if (resumoData.qualidade_resumo?.resumo_atualizado === false || !resumoData.conteudo) {
+          // Solicita novo em background
+          await escavadorClient.solicitarResumoIA(cnj).catch(console.error);
+        }
+        resumoIA = resumoData.resumo || resumoData.conteudo;
+      } catch (error: any) {
+        if (error.response?.status === 404 || error.status === 404) {
+           await escavadorClient.solicitarResumoIA(cnj).catch(console.error);
+        } else {
+           console.warn(`[Webhook Escavador] Erro ao verificar Resumo IA: ${error}`);
+        }
       }
 
       // 9. Atualizar ou criar Processo
-      let processo = await prisma.processo.findUnique({
-        where: { numeroCnj: cnj }
-      });
-
       if (processo) {
         processo = await prisma.processo.update({
           where: { id: processo.id },
@@ -182,35 +196,48 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // 10. Atualizar Case para ACTIVE
-      await prisma.case.update({
-        where: { id: pendingCase.id },
-        data: {
-          status: 'ACTIVE',
-          processoId: processo.id
+      // 10. Procurar Cases em ONBOARDING para este CNJ
+      const pendingCases = await prisma.case.findMany({
+        where: {
+          number: cnj,
+          status: 'ONBOARDING'
         }
       });
 
-      // 11. Configurar monitoramento
-      try {
-        await escavadorClient.configurarMonitoramento(cnj, 'DIARIA');
-        console.log(`[Webhook Escavador] Monitoramento configurado`);
-      } catch (error) {
-        console.warn(`[Webhook Escavador] Erro ao configurar monitoramento: ${error}`);
+      if (pendingCases.length > 0) {
+        console.log(`[Webhook Escavador] Finalizando onboarding de ${pendingCases.length} cases`);
+        
+        await prisma.case.updateMany({
+          where: { number: cnj, status: 'ONBOARDING' },
+          data: {
+            status: 'ACTIVE',
+            processoId: processo.id
+          }
+        });
+
+        // Configurar monitoramento apenas para o primeiro workspace que pediu
+        try {
+          await escavadorClient.configurarMonitoramento(cnj, 'DIARIA');
+          console.log(`[Webhook Escavador] Monitoramento configurado`);
+        } catch (error) {
+          console.warn(`[Webhook Escavador] Erro ao configurar monitoramento: ${error}`);
+        }
+
+        // Incrementar contador de processos para os workspaces afetados
+        const workspaceIds = Array.from(new Set(pendingCases.map(c => c.workspaceId)));
+        for (const wId of workspaceIds) {
+          await prisma.workspace.update({
+            where: { id: wId },
+            data: { processCount: { increment: 1 } }
+          });
+        }
       }
 
-      // 12. Incrementar contador do workspace
-      await prisma.workspace.update({
-        where: { id: pendingCase.workspaceId },
-        data: { processCount: { increment: 1 } }
-      });
-
-      console.log(`[Webhook Escavador] Onboarding concluído para case ${pendingCase.id}`);
+      console.log(`[Webhook Escavador] Processamento do webhook concluído para ${cnj}`);
       
       return NextResponse.json({ 
         success: true, 
-        caseId: pendingCase.id,
-        status: 'ACTIVE'
+        status: 'PROCESSED'
       });
 
     } else if (status === 'ERRO' || status === 'NAO_ENCONTRADO') {

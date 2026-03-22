@@ -33,8 +33,28 @@ interface MonitoramentoResponse {
 }
 
 interface ResumoIAResponse {
-  resumo: string;
-  status: string;
+  numero_cnj?: string;
+  conteudo?: string;
+  resumo?: string; // Mantendo para retrocompatibilidade
+  atualizado_em?: string;
+  qualidade_resumo?: {
+    usou_audiencias: boolean;
+    usou_movimentacoes: boolean;
+    usou_documentos: boolean;
+    faltaram_documentos: boolean;
+    processo_atualizado: boolean;
+    data_ultima_movimentacao: string;
+    resumo_atualizado: boolean;
+  };
+  status?: string;
+}
+
+interface ResumoIAStatusResponse {
+  id: number;
+  status: 'PENDENTE' | 'PROCESSANDO' | 'SUCESSO' | 'ERRO';
+  criado_em: string;
+  numero_cnj: string;
+  concluido_em: string | null;
 }
 
 export class EscavadorClient {
@@ -142,7 +162,7 @@ export class EscavadorClient {
     );
 
     return {
-      movimentacoes: response.data.data || [],
+      movimentacoes: response.data.items || response.data.data || [], // Tenta items primeiro (correto), fallback pra data
       nextCursor: response.data.links?.next
     };
   }
@@ -174,15 +194,23 @@ export class EscavadorClient {
    */
   async solicitarResumoIA(cnj: string): Promise<{ id: string }> {
     const response = await this.limiter.schedule(() =>
-      this.client.post(`/processos/numero_cnj/${cnj}/resumo-inteligente`)
+      this.client.post(`/processos/numero_cnj/${cnj}/ia/resumo/solicitar-atualizacao`)
     );
 
-    return { id: response.data.id };
+    return { id: response.data.id?.toString() };
   }
 
   async buscarResumoIA(cnj: string): Promise<ResumoIAResponse> {
     const response = await this.limiter.schedule(() =>
-      this.client.get(`/processos/numero_cnj/${cnj}/resumo-inteligente`)
+      this.client.get(`/processos/numero_cnj/${cnj}/ia/resumo`)
+    );
+
+    return response.data;
+  }
+
+  async consultarStatusResumoIA(cnj: string): Promise<ResumoIAStatusResponse> {
+    const response = await this.limiter.schedule(() =>
+      this.client.get(`/processos/numero_cnj/${cnj}/ia/resumo/status`)
     );
 
     return response.data;
@@ -238,9 +266,9 @@ export class EscavadorClient {
 
   // ==================== DOWNLOADS ====================
 
-  async downloadDocumento(documentoId: string): Promise<Buffer> {
+  async downloadDocumento(cnj: string, documentoKey: string): Promise<Buffer> {
     const response = await this.limiter.schedule(() =>
-      this.client.get(`/documentos/${documentoId}/download`, {
+      this.client.get(`/processos/numero_cnj/${cnj}/documentos/${documentoKey}`, {
         responseType: 'arraybuffer'
       })
     );
@@ -272,12 +300,14 @@ export class EscavadorClient {
         }
 
         if (error.response?.status === 404) {
-          console.error('[Escavador] Processo não encontrado');
-          throw new Error('Processo não encontrado no Escavador');
+          // Retornar o erro original do axios para podermos checar error.response.status === 404 no service
+          console.log(`[Escavador] 404 Não encontrado para a rota: ${error.config?.url}`);
+          throw error;
         }
 
-        console.error(`[Escavador] Erro: ${error.message}`);
-        throw new Error(`Escavador erro: ${error.message}`);
+        console.error(`[Escavador] Erro na requisição: ${error.message}`, error.response?.data);
+        throw error; // Lança o AxiosError original para preservar status codes
+
       }
     );
   }

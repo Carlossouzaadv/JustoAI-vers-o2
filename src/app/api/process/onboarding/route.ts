@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { escavadorClient } from '@/lib/escavador-client';
 import { prisma } from '@/lib/prisma';
 import { checkProcessLimit } from '@/lib/middleware/checkWorkspaceLimit';
+import { onboardingService } from '@/lib/services/onboardingService';
 
 // ============================================
 // API ROUTE: PROCESS ONBOARDING VIA ESCAVADOR (ASYNC)
@@ -72,70 +73,33 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Obter ou criar cliente padrão
-    let finalClientId = clientId;
-    if (!finalClientId) {
-      let defaultClient = await prisma.client.findFirst({
-        where: { workspaceId, name: 'Cliente Padrão' }
-      });
-      if (!defaultClient) {
-        defaultClient = await prisma.client.create({
-          data: {
-            workspaceId,
-            name: 'Cliente Padrão',
-            email: 'cliente@padrao.local',
-            type: 'INDIVIDUAL',
-            status: 'ACTIVE'
-          }
-        });
-      }
-      finalClientId = defaultClient.id;
-    }
-
-    // 1. Criar Case com status ONBOARDING
-    const newCase = await prisma.case.create({
-      data: {
-        workspaceId,
-        clientId: finalClientId,
-        createdById: user.id || '',
-        number: cnj,
-        title: `Processo ${cnj}`,
-        status: 'ONBOARDING', // Status especial para processamento async
-        type: 'CIVIL',
-        priority: 'MEDIUM',
-        monitoringFrequency: 'DIARIA',
-        frequencySuggestedBy: 'AI',
-        frequencyReason: 'Processo em onboarding'
-      }
+    // 1. Iniciar Onboarding via Service (que agora possui fluxo 3 fases)
+    const result = await onboardingService.onboardProcesso({
+      cnj,
+      workspaceId,
+      clientId,
+      createdById: user.id || '',
+      incluirDocumentos
     });
 
-    console.log(`[Onboarding Async] Case criado: ${newCase.id} com status ONBOARDING`);
-
-    // 2. Solicitar atualização no Escavador COM CALLBACK
-    try {
-      const atualizacao = await escavadorClient.solicitarAtualizacao(cnj, {
-        buscarAutos: incluirDocumentos,
-        usarCertificado: true,
-        sendCallback: true // Importante: ativa callback para webhook
-      });
-
-      console.log(`[Onboarding Async] Atualização solicitada: ${atualizacao.id}`);
-    } catch (escavadorError) {
-      // Se falhar ao solicitar, marcar case como erro
-      await prisma.case.update({
-        where: { id: newCase.id },
-        data: { status: 'ERROR' }
-      });
-      throw escavadorError;
+    // 2. Retornar status adequado com base na resposta
+    if (result.case.status === 'ACTIVE') {
+      // Fase 1 ou 2 bem sucedida (processo já existia base)
+      return NextResponse.json({
+        success: true,
+        caseId: result.case.id,
+        status: 'ACTIVE',
+        message: 'Processo carregado com sucesso'
+      }, { status: 200 });
+    } else {
+      // Fase 3 via fall-back assíncrono
+      return NextResponse.json({
+        success: true,
+        caseId: result.case.id,
+        status: 'ONBOARDING',
+        message: 'Processamento iniciado. O processo será atualizado automaticamente quando o Escavador concluir.'
+      }, { status: 202 });
     }
-
-    // 3. Retornar 202 Accepted - processamento assíncrono iniciado
-    return NextResponse.json({
-      success: true,
-      caseId: newCase.id,
-      status: 'ONBOARDING',
-      message: 'Processamento iniciado. O processo será atualizado automaticamente quando o Escavador concluir.'
-    }, { status: 202 });
 
   } catch (error) {
     console.error('[API Onboarding] Erro:', error);

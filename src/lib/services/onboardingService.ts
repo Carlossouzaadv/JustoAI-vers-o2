@@ -60,74 +60,93 @@ export class OnboardingService {
     // 1. Verificar se processo já existe
     let processo = await prisma.processo.findUnique({
       where: { numeroCnj: cnj }
-    });
-
-    let dadosProcesso: unknown = null;
+    });    let dadosProcesso: unknown = null;
     let movimentacoes: unknown[] = [];
     let autos: unknown[] = [];
     let resumoIA: string | undefined;
+    let processoExisteNaApi = false;
 
     if (!processo || forceUpdate) {
-      // 2. Solicitar atualização no Escavador
-      console.log(`[Onboarding] Solicitando atualização no Escavador...`);
-      const atualizacao = await escavadorClient.solicitarAtualizacao(cnj, {
-        buscarAutos: incluirDocumentos,
-        usarCertificado
-      });
-
-      // 3. Aguardar conclusão (polling)
-      console.log(`[Onboarding] Aguardando conclusão da atualização...`);
-      // 3. Aguardar conclusão (polling)
-      console.log(`[Onboarding] Aguardando conclusão da atualização...`);
-      const concluido = await this.aguardarAtualizacao(cnj);
-      if (!concluido) {
-        throw new Error('Timeout ao aguardar atualização do processo');
-      }
-
-      // 4. Buscar dados completos
-      console.log(`[Onboarding] Buscando dados completos...`);
-      dadosProcesso = await escavadorClient.buscarProcesso(cnj);
-      
-      // 5. Buscar todas as movimentações (paginadas)
-      console.log(`[Onboarding] Buscando movimentações...`);
-      movimentacoes = await this.buscarTodasMovimentacoes(cnj);
-      console.log(`[Onboarding] ${movimentacoes.length} movimentações encontradas`);
-      
-      // 6. Buscar autos se solicitado
-      if (incluirDocumentos) {
-        console.log(`[Onboarding] Buscando autos/documentos...`);
-        autos = await escavadorClient.buscarAutos(cnj, { usarCertificado });
-        console.log(`[Onboarding] ${autos.length} autos encontrados`);
-      }
-
-      // 7. Solicitar resumo IA (opcional, pode falhar)
+      // FASE 1: Busca Síncrona (Capa imediata)
+      console.log(`[Onboarding] Tentando busca síncrona para CNJ...`);
       try {
-        console.log(`[Onboarding] Solicitando resumo IA...`);
-        await escavadorClient.solicitarResumoIA(cnj);
-        // Aguardar um pouco para processamento
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        const resumoData = await escavadorClient.buscarResumoIA(cnj);
-        resumoIA = resumoData.resumo;
-        console.log(`[Onboarding] Resumo IA obtido`);
-      } catch (error) {
-        console.warn(`[Onboarding] Resumo IA não disponível: ${error}`);
+        dadosProcesso = await escavadorClient.buscarProcesso(cnj);
+        processoExisteNaApi = true;
+        console.log(`[Onboarding] Processo encontrado na base síncrona.`);
+      } catch (error: any) {
+        if (error.response?.status === 404 || error.status === 404) {
+          console.log(`[Onboarding] Processo 404 (novo). Fallback para solicitar-atualizacao.`);
+          processoExisteNaApi = false;
+        } else {
+          throw error;
+        }
+      }
+
+      if (!processoExisteNaApi) {
+        // FASE 3 (Fallback): Processo novo, requer scraping assíncrono
+        console.log(`[Onboarding] Solicitando atualização no Escavador...`);
+        // Aqui não aguardamos polling. Apenas solicitamos e dependemos do callback.
+        await escavadorClient.solicitarAtualizacao(cnj, {
+          buscarAutos: incluirDocumentos,
+          usarCertificado,
+          sendCallback: true
+        });
+
+        // Nós vamos criar o Processo e o Case, mas o Case ficará como ONBOARDING
+        // e o resto da pipeline para por aqui (retorna rápido).
+      } else {
+        // FASE 2: Processo existe. Buscar complementos em paralelo
+        console.log(`[Onboarding] Processo existe. Buscando complementos...`);
+        const [movsResp, iaResp] = await Promise.allSettled([
+          this.buscarTodasMovimentacoes(cnj).then(m => { movimentacoes = m; }),
+          escavadorClient.buscarResumoIA(cnj).then(async (data) => {
+            // Verificar qualidade. Se não atualizado, solicitar novo em background
+            if (data.qualidade_resumo?.resumo_atualizado === false || !data.conteudo) {
+              console.log(`[Onboarding] Resumo IA desatualizado ou vazio. Solicitando novo...`);
+              await escavadorClient.solicitarResumoIA(cnj).catch(e => console.error("Erro solicitar novo resumo:", e));
+            }
+            resumoIA = data.resumo || data.conteudo;
+          }).catch(async (e) => {
+             // 404 na IA = não tem resumo
+             if (e.response?.status === 404 || e.status === 404) {
+                console.log(`[Onboarding] Resumo IA 404. Solicitando pela primeira vez...`);
+                await escavadorClient.solicitarResumoIA(cnj).catch(err => console.error("Erro sol IA:", err));
+             }
+          })
+        ]);
+        
+        // As movimentações já vieram
+        console.log(`[Onboarding] ${movimentacoes.length} movimentações encontradas`);
+
+        // Solicitar autos (só se requerido) - em background
+        // Aqui você pode decidir esperar ou não. Vamos esperar para manter a interface, mas pode ser background.
+        if (incluirDocumentos) {
+          console.log(`[Onboarding] Buscando autos...`);
+          try {
+             autos = await escavadorClient.buscarAutos(cnj, { usarCertificado });
+             console.log(`[Onboarding] ${autos.length} autos encontrados`);
+          } catch (e) {
+             console.warn(`[Onboarding] Erro ao buscar autos ${e}`);
+          }
+        }
       }
 
       // 8. Criar ou Atualizar registro do Processo
+      const dadosCompletos = processoExisteNaApi ? {
+        provider: 'ESCAVADOR',
+        dados: dadosProcesso,
+        movimentacoes,
+        autos,
+        resumoIA,
+        fetchedAt: new Date().toISOString()
+      } : {}; // Vazio, pois ainda não temos os dados
+
       if (processo) {
         processo = await prisma.processo.update({
           where: { id: processo.id },
           data: {
-            dadosCompletos: {
-              provider: 'ESCAVADOR',
-              dados: dadosProcesso,
-              movimentacoes,
-              autos,
-              resumoIA,
-              fetchedAt: new Date().toISOString()
-            } as Prisma.JsonObject,
-            // updatedAt handled automatically or different name
-            // updatedAt: new Date()
+            // Só atualiza os dados completos se os pegamos
+            ...(processoExisteNaApi ? { dadosCompletos: dadosCompletos as Prisma.JsonObject } : {})
           }
         });
         console.log(`[Onboarding] Processo atualizado: ${processo.id}`);
@@ -135,23 +154,15 @@ export class OnboardingService {
         processo = await prisma.processo.create({
         data: {
           numeroCnj: cnj,
-          dadosCompletos: {
-            provider: 'ESCAVADOR',
-            dados: dadosProcesso,
-            movimentacoes,
-            autos,
-            resumoIA,
-            fetchedAt: new Date().toISOString()
-          } as Prisma.JsonObject,
+          dadosCompletos: dadosCompletos as Prisma.JsonObject,
           dataOnboarding: new Date()
         }
       });
       console.log(`[Onboarding] Processo criado: ${processo.id}`);
       }
-
-      console.log(`[Onboarding] Processo criado: ${processo.id}`);
     } else {
       console.log(`[Onboarding] Processo já existe: ${processo.id}`);
+      processoExisteNaApi = true; // Assumimos que existe pois temos o registro
       // Extrair dados existentes
       const dados = processo.dadosCompletos as { movimentacoes?: unknown[], autos?: unknown[], resumoIA?: string } | null;
       movimentacoes = dados?.movimentacoes || [];
@@ -223,7 +234,7 @@ export class OnboardingService {
         createdById,
         number: cnj,
         title: `Processo ${cnj}`,
-        status: 'ACTIVE',
+        status: processoExisteNaApi ? 'ACTIVE' : 'ONBOARDING',
         type: 'CIVIL', // Default, pode ser alterado depois
         priority: 'MEDIUM',
         // Campos de monitoramento com valores padrão da IA
@@ -265,20 +276,28 @@ export class OnboardingService {
     };
   }
 
+  // Remover aguardarAtualizacao antigo se não for mais usado, 
+  // mas vamos deixar pra caso algum outro serviço chame:
   private async aguardarAtualizacao(cnj: string, maxTentativas = 30): Promise<boolean> {
     for (let i = 0; i < maxTentativas; i++) {
-      const status = await escavadorClient.consultarStatusAtualizacao(cnj);
-      
-      if (status.status === 'SUCESSO') return true;
-      if (status.status === 'ERRO') throw new Error('Erro ao processar atualização no Escavador');
+      try {
+        const status = await escavadorClient.consultarStatusAtualizacao(cnj);
+        
+        if (status.status === 'SUCESSO') return true;
+        if (status.status === 'ERRO') return false;
+      } catch (e: any) {
+        if (e.response?.status !== 404) {
+          console.warn("[Onboarding] Erro ao consultar status", e.message);
+        }
+      }
       
       console.log(`[Onboarding] Aguardando... tentativa ${i + 1}/${maxTentativas}`);
-      // Aguardar 10 segundos antes de tentar novamente
       await new Promise(resolve => setTimeout(resolve, 10000));
     }
     
     return false; // Timeout
   }
+
 
   private async buscarTodasMovimentacoes(cnj: string): Promise<unknown[]> {
     const todas: unknown[] = [];
