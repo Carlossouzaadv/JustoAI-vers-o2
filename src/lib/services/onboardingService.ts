@@ -1,6 +1,7 @@
 import { escavadorClient } from '@/lib/escavador-client';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { mergeTimelines } from '@/lib/services/timelineUnifier';
 
 // ============================================
 // ONBOARDING SERVICE - ESCAVADOR
@@ -221,6 +222,28 @@ export class OnboardingService {
 
     if (existingCase) {
       console.log(`[Onboarding] Case já existe/atualizado: ${existingCase.id}`);
+      try {
+        await mergeTimelines(existingCase.id);
+      } catch (err) {
+        console.warn(`[Onboarding] Erro ao unificar timeline do case existente: ${err}`);
+      }
+      
+      if (resumoIA) {
+        try {
+          await syncResumoIA(existingCase.id, workspaceId, resumoIA);
+        } catch (err) {
+          console.warn(`[Onboarding] Erro sync resumo IA: ${err}`);
+        }
+      }
+      if (autos && autos.length > 0) {
+        try {
+          await syncDocumentosEscavador(existingCase.id, workspaceId, existingCase.number, autos);
+          console.log(`[Onboarding] Documentos sincronizados para caso existente: ${existingCase.id}`);
+        } catch (err) {
+          console.warn(`[Onboarding] Erro sync documentos: ${err}`);
+        }
+      }
+
       return {
         processo: {
           id: processo.id,
@@ -278,6 +301,34 @@ export class OnboardingService {
       where: { id: workspaceId },
       data: { processCount: { increment: 1 } }
     });
+
+    // 14. Unificar timeline
+    try {
+      await mergeTimelines(caseData.id);
+      console.log(`[Onboarding] Timeline unificada para o novo caso: ${caseData.id}`);
+    } catch (err) {
+      console.warn(`[Onboarding] Erro ao unificar timeline: ${err}`);
+    }
+
+    // 15. Sincronizar Resumo IA para que apareça na UI
+    if (resumoIA) {
+      try {
+        await syncResumoIA(caseData.id, workspaceId, resumoIA);
+        console.log(`[Onboarding] Resumo IA sincronizado para o novo caso: ${caseData.id}`);
+      } catch (err) {
+        console.warn(`[Onboarding] Erro sync resumo IA: ${err}`);
+      }
+    }
+
+    // 16. Sincronizar Documentos (autos) para que apareçam na UI
+    if (autos && autos.length > 0) {
+      try {
+        await syncDocumentosEscavador(caseData.id, workspaceId, caseData.number, autos);
+        console.log(`[Onboarding] Documentos sincronizados para o novo caso: ${caseData.id}`);
+      } catch (err) {
+        console.warn(`[Onboarding] Erro sync documentos: ${err}`);
+      }
+    }
 
     return {
       processo: {
@@ -359,3 +410,118 @@ export class OnboardingService {
 }
 
 export const onboardingService = new OnboardingService();
+
+// Helper to convert Escavador 'resumoIA' into a standard CaseAnalysisVersion for the frontend
+export async function syncResumoIA(caseId: string, workspaceId: string, resumoIA: string) {
+  if (!resumoIA || typeof resumoIA !== 'string') return null;
+
+  const existing = await prisma.caseAnalysisVersion.findFirst({
+    where: { caseId, modelUsed: 'escavador-ia' }
+  });
+
+  const analysisPayload = {
+    analise_estrategica: {
+      summary: resumoIA,
+      keyPoints: [],
+      legalAssessment: null,
+      riskAssessment: null
+    }
+  };
+
+  if (existing) {
+    return await prisma.caseAnalysisVersion.update({
+      where: { id: existing.id },
+      data: {
+        aiAnalysis: JSON.stringify(analysisPayload),
+        metadata: {
+          ...(typeof existing.metadata === 'object' && existing.metadata ? existing.metadata : {}),
+          updatedAt: new Date().toISOString()
+        }
+      }
+    });
+  }
+
+  const lastVersion = await prisma.caseAnalysisVersion.findFirst({
+    where: { caseId },
+    orderBy: { version: 'desc' }
+  });
+
+  const nextVersion = (lastVersion?.version || 0) + 1;
+
+  return await prisma.caseAnalysisVersion.create({
+    data: {
+      caseId,
+      workspaceId,
+      version: nextVersion,
+      status: 'COMPLETED',
+      analysisType: 'essential',
+      modelUsed: 'escavador-ia',
+      aiAnalysis: JSON.stringify(analysisPayload),
+      confidence: 0.9,
+      processingTime: 0,
+      metadata: {
+        source: 'ESCAVADOR',
+        importedAt: new Date().toISOString()
+      }
+    }
+  });
+}
+
+// Helper to convert Escavador 'autos' into CaseDocument records
+export async function syncDocumentosEscavador(caseId: string, workspaceId: string, cnj: string, autos: unknown[]) {
+  if (!autos || !Array.isArray(autos) || autos.length === 0) return;
+
+  for (const auto of autos) {
+    if (typeof auto !== 'object' || auto === null) continue;
+    const a = auto as Record<string, unknown>;
+    
+    // Only process autos that have a 'chave' (which is needed to download it later)
+    if (typeof a.chave !== 'string' || !a.chave) continue;
+
+    const storageKey = `escavador:${cnj}:${a.chave}`;
+    
+    // Check if this document already exists to avoid duplicates
+    const existing = await prisma.caseDocument.findFirst({
+      where: { 
+        caseId,
+        url: storageKey 
+      }
+    });
+
+    if (existing) continue; // Already added
+
+    const nomeDocumento = typeof a.titulo === 'string' ? a.titulo : 'Documento Importado do Escavador';
+    // Mapear p/ enum se possível ou fallback. Em Prisma o tipo é `DocumentType` (enum). Vamos assumir 'OTHER'.
+    const tipo = typeof a.tipo === 'string' ? (a.tipo as any) : 'OTHER';
+    const originalName = `${nomeDocumento}.pdf`; // Assume PDF based on API behavior generally
+    const size = typeof a.tamanho_bytes === 'number' ? a.tamanho_bytes : 1024; // Dummy size if missing
+    
+    const documentDateValue = a.data;
+    let documentDate: Date | undefined = undefined;
+    if (typeof documentDateValue === 'string') {
+      const d = new Date(documentDateValue);
+      if (!isNaN(d.getTime())) {
+        documentDate = d;
+      }
+    }
+
+    try {
+      await prisma.caseDocument.create({
+        data: {
+          caseId,
+          name: nomeDocumento,
+          originalName,
+          type: tipo,
+          size,
+          mimeType: 'application/pdf', // Best guess for legal processes
+          url: storageKey, // Escavador special prefix goes in URL
+          path: storageKey,
+          documentDate,
+          createdAt: new Date(),
+        }
+      });
+    } catch (e) {
+      console.warn(`[Onboarding] Erro syncDocumentosEscavador ao criar documento ${storageKey}:`, e);
+    }
+  }
+}
