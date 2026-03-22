@@ -73,8 +73,10 @@ export class OnboardingService {
         dadosProcesso = await escavadorClient.buscarProcesso(cnj);
         processoExisteNaApi = true;
         console.log(`[Onboarding] Processo encontrado na base síncrona.`);
-      } catch (error: any) {
-        if (error.response?.status === 404 || error.status === 404) {
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const err = error as any;
+        if (err.response?.status === 404 || err.status === 404) {
           console.log(`[Onboarding] Processo 404 (novo). Fallback para solicitar-atualizacao.`);
           processoExisteNaApi = false;
         } else {
@@ -103,14 +105,16 @@ export class OnboardingService {
             // Verificar qualidade. Se não atualizado, solicitar novo em background
             if (data.qualidade_resumo?.resumo_atualizado === false || !data.conteudo) {
               console.log(`[Onboarding] Resumo IA desatualizado ou vazio. Solicitando novo...`);
-              await escavadorClient.solicitarResumoIA(cnj).catch(e => console.error("Erro solicitar novo resumo:", e));
+              await escavadorClient.solicitarResumoIA(cnj).catch(e => console.error('Erro solicitar novo resumo:', e));
             }
             resumoIA = data.resumo || data.conteudo;
           }).catch(async (e) => {
              // 404 na IA = não tem resumo
-             if (e.response?.status === 404 || e.status === 404) {
+             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             const err = e as any;
+             if (err.response?.status === 404 || err.status === 404) {
                 console.log(`[Onboarding] Resumo IA 404. Solicitando pela primeira vez...`);
-                await escavadorClient.solicitarResumoIA(cnj).catch(err => console.error("Erro sol IA:", err));
+                await escavadorClient.solicitarResumoIA(cnj).catch(err2 => console.error('Erro sol IA:', err2));
              }
           })
         ]);
@@ -285,9 +289,11 @@ export class OnboardingService {
         
         if (status.status === 'SUCESSO') return true;
         if (status.status === 'ERRO') return false;
-      } catch (e: any) {
-        if (e.response?.status !== 404) {
-          console.warn("[Onboarding] Erro ao consultar status", e.message);
+      } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const err = e as any;
+        if (err.response?.status !== 404) {
+          console.warn('[Onboarding] Erro ao consultar status', err.message);
         }
       }
       

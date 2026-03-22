@@ -156,11 +156,13 @@ export async function POST(request: NextRequest) {
           await escavadorClient.solicitarResumoIA(cnj).catch(console.error);
         }
         resumoIA = resumoData.resumo || resumoData.conteudo;
-      } catch (error: any) {
-        if (error.response?.status === 404 || error.status === 404) {
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const err = error as any;
+        if (err.response?.status === 404 || err.status === 404) {
            await escavadorClient.solicitarResumoIA(cnj).catch(console.error);
         } else {
-           console.warn(`[Webhook Escavador] Erro ao verificar Resumo IA: ${error}`);
+           console.warn(`[Webhook Escavador] Erro ao verificar Resumo IA: ${err}`);
         }
       }
 
