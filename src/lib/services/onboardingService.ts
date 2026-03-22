@@ -130,7 +130,22 @@ export class OnboardingService {
              autos = await escavadorClient.buscarAutos(cnj, { usarCertificado });
              console.log(`[Onboarding] ${autos.length} autos encontrados`);
           } catch (e) {
-             console.warn(`[Onboarding] Erro ao buscar autos ${e}`);
+             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             const err = e as any;
+             console.warn(`[Onboarding] Erro ao buscar autos: ${err.message || err}`);
+             
+             // Se der erro 422, significa que os autos não estão cacheados para nossa credencial
+             // Solução: enviar uma solicitação assíncrona em background para que o webhook receba depois
+             if (err.response?.status === 422 || err.status === 422) {
+               console.log(`[Onboarding] Fallback: solicitando autos em background (Atualização Assíncrona)...`);
+               
+               // Não usamos await para não bloquear o retorno de Fase 1/2 ao usuário
+               escavadorClient.solicitarAtualizacao(cnj, {
+                 buscarAutos: true,
+                 usarCertificado,
+                 sendCallback: true
+               }).catch(e2 => console.error('[Onboarding] Erro no fallback assíncrono de autos:', e2));
+             }
           }
         }
       }
