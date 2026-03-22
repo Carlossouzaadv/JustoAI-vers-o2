@@ -493,7 +493,34 @@ export default function ProcessPage() {
                         <Edit className="w-4 h-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={async () => {
+                          if (!window.confirm(`Deseja realmente excluir o processo "${caseItem.title}"? Esta ação não pode ser desfeita.`)) return;
+                          try {
+                            const response = await fetch(getApiUrl(`/api/cases/${caseItem.id}`), {
+                              method: 'DELETE',
+                              credentials: 'include',
+                            });
+                            if (!response.ok) {
+                              const data = await response.json().catch(() => ({}));
+                              throw new Error(data.message || 'Erro ao excluir processo');
+                            }
+                            // Remove from local state
+                            setCases(prev => prev.filter(c => c.id !== caseItem.id));
+                            setSelectedCaseIds(prev => {
+                              const next = new Set(prev);
+                              next.delete(caseItem.id);
+                              return next;
+                            });
+                            setSuccessMessage('Processo excluído com sucesso');
+                            setTimeout(() => setSuccessMessage(null), 3000);
+                          } catch (err) {
+                            const message = err instanceof Error ? err.message : 'Erro ao excluir processo';
+                            alert(message);
+                          }
+                        }}
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Excluir
                       </DropdownMenuItem>
