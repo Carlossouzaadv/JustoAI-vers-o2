@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
+import { requireAuth } from '@/lib/api-utils';
 import { ICONS } from '@/lib/icons';
 import { TimelineSource } from '@/lib/types/database';
 import type { ProcessTimelineEntry } from '@/lib/types/database';
@@ -348,11 +348,9 @@ export async function GET(
     // 1. AUTENTICAÇÃO
     // ============================================================
 
-    const user = await getAuthenticatedUser(request);
+    const { user, error: authError } = await requireAuth(request);
 
-    if (!user) {
-      return unauthorizedResponse('Não autenticado');
-    }
+    if (!user) return authError!;
 
     const caseId = id;
 
