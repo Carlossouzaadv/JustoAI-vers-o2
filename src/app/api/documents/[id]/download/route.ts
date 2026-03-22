@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { getAuthenticatedUser, unauthorizedResponse } from '@/lib/auth-helper';
 import { ICONS } from '@/lib/icons';
 import { readFile } from 'fs/promises';
+import { escavadorClient } from '@/lib/escavador-client';
 
 // ================================================================
 // MAIN HANDLER
@@ -74,25 +75,59 @@ export async function GET(
     }
 
     // ============================================================
-    // 4. LER ARQUIVO DO DISCO
+    // 4. LER ARQUIVO DO DISCO OU ESCAVADOR
     // ============================================================
 
-    if (!document.path) {
-      console.warn(`${ICONS.WARNING} [Document Download] Caminho do arquivo não definido: ${documentId}`);
-      return NextResponse.json(
-        { error: 'Arquivo não disponível' },
-        { status: 404 }
-      );
+    let fileBuffer: Buffer | null = null;
+    let mimeType = document.mimeType || 'application/octet-stream';
+    let fileName = document.originalName || document.name || 'documento';
+
+    const documentUrl = document.url || document.path;
+
+    if (documentUrl?.startsWith('escavador:')) {
+      console.log(`${ICONS.DOWNLOAD} [Document Download] Baixando do Escavador: ${documentUrl}`);
+      try {
+        const parts = documentUrl.split(':');
+        const cnj = parts[1];
+        const chave = parts[2];
+        if (!cnj || !chave) throw new Error('Chave de armazenamento do Escavador inválida');
+        
+        fileBuffer = await escavadorClient.downloadDocumento(cnj, chave);
+        mimeType = 'application/pdf'; // Escavador documents are generally PDFs
+        if (!fileName.toLowerCase().endsWith('.pdf')) {
+          fileName += '.pdf';
+        }
+      } catch (error) {
+        console.error(`${ICONS.ERROR} [Document Download] Erro ao baixar do Escavador:`, error);
+        return NextResponse.json(
+          { error: 'Não foi possível baixar o documento do tribunal' },
+          { status: 502 }
+        );
+      }
+    } else {
+      if (!document.path) {
+        console.warn(`${ICONS.WARNING} [Document Download] Caminho do arquivo não definido: ${documentId}`);
+        return NextResponse.json(
+          { error: 'Arquivo não disponível' },
+          { status: 404 }
+        );
+      }
+
+      try {
+        fileBuffer = await readFile(document.path);
+      } catch (fileError) {
+        console.error(`${ICONS.ERROR} [Document Download] Erro ao ler arquivo:`, fileError);
+        return NextResponse.json(
+          { error: 'Arquivo não encontrado no servidor' },
+          { status: 404 }
+        );
+      }
     }
 
-    let fileBuffer: Buffer;
-    try {
-      fileBuffer = await readFile(document.path);
-    } catch (fileError) {
-      console.error(`${ICONS.ERROR} [Document Download] Erro ao ler arquivo:`, fileError);
+    if (!fileBuffer) {
       return NextResponse.json(
-        { error: 'Arquivo não encontrado no servidor' },
-        { status: 404 }
+        { error: 'Buffer do arquivo vazio' },
+        { status: 500 }
       );
     }
 
@@ -103,10 +138,9 @@ export async function GET(
     const headers = new Headers();
 
     // Definir tipo MIME apropriado
-    headers.set('Content-Type', document.mimeType || 'application/octet-stream');
+    headers.set('Content-Type', mimeType);
 
     // Definir nome do arquivo para download
-    const fileName = document.originalName || document.name || 'documento';
     headers.set('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
 
     // Tamanho do arquivo

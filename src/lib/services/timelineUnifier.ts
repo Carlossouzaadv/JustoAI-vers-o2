@@ -219,17 +219,23 @@ export async function mergeTimelines(
       caseData.processo?.dadosCompletos
     );
 
+    const escavadorMovements = extractMovementsFromEscavador(
+      caseData.processo?.dadosCompletos
+    );
+
+    const apiMovements = [...juditMovements, ...escavadorMovements];
+
     console.log(
-      `${ICONS.INFO} [Timeline Unifier v2] Movimentos JUDIT encontrados: ${juditMovements.length}`
+      `${ICONS.INFO} [Timeline Unifier v2] Movimentos Base (JUDIT/ESCAVADOR) encontrados: ${apiMovements.length}`
     );
 
     // ============================================================
-    // 3. CRIAR/ATUALIZAR EVENTOS JUDIT NO BANCO
+    // 3. CRIAR/ATUALIZAR EVENTOS BASE NO BANCO
     // ============================================================
 
     const juditEventIds: Map<string, string> = new Map(); // hash -> id
 
-    for (const movement of juditMovements) {
+    for (const movement of apiMovements) {
       const normalizedContent = normalizeMovementContent(movement.description);
       const contentHash = generateContentHash(movement.date, normalizedContent);
 
@@ -757,4 +763,49 @@ function generateContentHash(date: Date, normalizedContent: string): string {
   const combined = `${dateStr}|${normalizedContent.substring(0, 200)}`;
 
   return createHash('sha256').update(combined).digest('hex');
+}
+
+/**
+ * Extrai movimentos do formato do Escavador
+ * Usa extração robusta de propriedades
+ */
+function extractMovementsFromEscavador(dadosCompletos: unknown): TimelineMovement[] {
+  const movements: TimelineMovement[] = [];
+
+  if (typeof dadosCompletos !== 'object' || dadosCompletos === null) return movements;
+
+  const obj = dadosCompletos as Record<string, unknown>;
+  const provider = obj.provider;
+
+  if (provider !== 'ESCAVADOR') return movements;
+
+  const movs = obj.movimentacoes;
+  if (Array.isArray(movs)) {
+    for (const mov of movs) {
+      if (typeof mov !== 'object' || mov === null) continue;
+
+      const m = mov as Record<string, unknown>;
+      const dateValue = m.data;
+      const typeValue = m.tipo || 'MOVIMENTACAO';
+      const descValue = m.conteudo || '';
+      const idValue = m.id;
+
+      if (dateValue && descValue) {
+        movements.push({
+          date: new Date(String(dateValue)),
+          type: String(typeValue),
+          description: String(descValue),
+          source: 'SYSTEM_IMPORT' as TimelineSource,
+          sourceId: String(idValue || ''),
+          confidence: 1.0,
+          metadata: {
+            escavadorId: idValue,
+            rawData: m,
+          },
+        });
+      }
+    }
+  }
+
+  return movements;
 }

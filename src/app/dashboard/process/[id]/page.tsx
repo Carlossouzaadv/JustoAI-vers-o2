@@ -473,7 +473,7 @@ export default function ProcessPage() {
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-0">
-                <ProcessTimeline processId={caseId} />
+                <ProcessTimeline processId={caseId} caseId={caseId} />
               </TabsContent>
 
               <TabsContent value="documents" className="mt-0">

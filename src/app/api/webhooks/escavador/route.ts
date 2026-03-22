@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { escavadorClient } from '@/lib/escavador-client';
 import { Prisma } from '@prisma/client';
+import { mergeTimelines } from '@/lib/services/timelineUnifier';
+import { syncResumoIA, syncDocumentosEscavador } from '@/lib/services/onboardingService';
 
 // ============================================
 // WEBHOOK: RECEBE CALLBACKS DO ESCAVADOR V2
@@ -216,6 +218,33 @@ export async function POST(request: NextRequest) {
             processoId: processo.id
           }
         });
+
+        for (const pendingCase of pendingCases) {
+          try {
+            await mergeTimelines(pendingCase.id);
+            console.log(`[Webhook Escavador] Timeline unificada para caso recém-onboardado: ${pendingCase.id}`);
+          } catch (e) {
+            console.warn(`[Webhook Escavador] Erro ao unificar timeline: ${e}`);
+          }
+
+          if (resumoIA) {
+            try {
+              await syncResumoIA(pendingCase.id, pendingCase.workspaceId, resumoIA);
+              console.log(`[Webhook Escavador] Resumo IA sincronizado.`);
+            } catch (e) {
+              console.warn(`[Webhook Escavador] Erro sync resumo IA: ${e}`);
+            }
+          }
+
+          if (autos && autos.length > 0) {
+            try {
+              await syncDocumentosEscavador(pendingCase.id, pendingCase.workspaceId, cnj, autos);
+              console.log(`[Webhook Escavador] Documentos (autos) sincronizados.`);
+            } catch (e) {
+              console.warn(`[Webhook Escavador] Erro sync documentos autos: ${e}`);
+            }
+          }
+        }
 
         // Configurar monitoramento apenas para o primeiro workspace que pediu
         try {

@@ -181,13 +181,87 @@ export class OnboardingService {
       console.log(`[Onboarding] Processo criado: ${processo.id}`);
       }
     } else {
-      console.log(`[Onboarding] Processo já existe: ${processo.id}`);
-      processoExisteNaApi = true; // Assumimos que existe pois temos o registro
-      // Extrair dados existentes
-      const dados = processo.dadosCompletos as { movimentacoes?: unknown[], autos?: unknown[], resumoIA?: string } | null;
-      movimentacoes = dados?.movimentacoes || [];
-      autos = dados?.autos || [];
-      resumoIA = dados?.resumoIA;
+      console.log(`[Onboarding] Processo já existe no DB: ${processo.id}. Verificando dados...`);
+      processoExisteNaApi = true;
+      
+      // Extrair dados existentes do cache
+      const dados = processo.dadosCompletos as { 
+        dados?: unknown, movimentacoes?: unknown[], autos?: unknown[], resumoIA?: string 
+      } | null;
+      
+      const cachedMovimentacoes = dados?.movimentacoes || [];
+      const cachedAutos = dados?.autos || [];
+      const cachedResumoIA = dados?.resumoIA;
+      
+      // Se os dados cacheados estão vazios, re-buscar do Escavador
+      if (cachedMovimentacoes.length === 0 || !cachedResumoIA) {
+        console.log(`[Onboarding] Dados cacheados incompletos (movs: ${cachedMovimentacoes.length}, resumoIA: ${!!cachedResumoIA}). Re-buscando do Escavador...`);
+        
+        try {
+          dadosProcesso = await escavadorClient.buscarProcesso(cnj);
+          console.log(`[Onboarding] Processo re-buscado com sucesso do Escavador.`);
+          
+          // Buscar complementos em paralelo
+          const [movsResp, iaResp] = await Promise.allSettled([
+            this.buscarTodasMovimentacoes(cnj).then(m => { movimentacoes = m; }),
+            escavadorClient.buscarResumoIA(cnj).then(async (data) => {
+              if (data.qualidade_resumo?.resumo_atualizado === false || !data.conteudo) {
+                await escavadorClient.solicitarResumoIA(cnj).catch(e => console.error('Erro solicitar novo resumo:', e));
+              }
+              resumoIA = data.resumo || data.conteudo;
+            }).catch(async (e) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const err = e as any;
+              if (err.response?.status === 404 || err.status === 404) {
+                console.log(`[Onboarding] Resumo IA 404 (re-fetch). Solicitando...`);
+                await escavadorClient.solicitarResumoIA(cnj).catch(err2 => console.error('Erro sol IA:', err2));
+              }
+            })
+          ]);
+          
+          // Buscar autos
+          if (incluirDocumentos) {
+            try {
+              autos = await escavadorClient.buscarAutos(cnj, { usarCertificado });
+              console.log(`[Onboarding] ${autos.length} autos re-buscados`);
+            } catch (e) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const err = e as any;
+              console.warn(`[Onboarding] Erro ao re-buscar autos: ${err.message || err}`);
+            }
+          }
+
+          // Atualizar o Processo com os novos dados
+          const dadosCompletos = {
+            provider: 'ESCAVADOR',
+            dados: dadosProcesso,
+            movimentacoes,
+            autos,
+            resumoIA,
+            fetchedAt: new Date().toISOString()
+          };
+          
+          processo = await prisma.processo.update({
+            where: { id: processo.id },
+            data: { dadosCompletos: dadosCompletos as Prisma.JsonObject }
+          });
+          console.log(`[Onboarding] Processo atualizado com dados frescos.`);
+        } catch (fetchErr) {
+          console.warn(`[Onboarding] Falha ao re-buscar do Escavador, usando cache: ${fetchErr}`);
+          // Fallback: usar dados cacheados
+          movimentacoes = cachedMovimentacoes;
+          autos = cachedAutos;
+          resumoIA = cachedResumoIA;
+          dadosProcesso = dados?.dados || null;
+        }
+      } else {
+        // Cache has data, use it
+        console.log(`[Onboarding] Usando dados cacheados (movs: ${cachedMovimentacoes.length}, autos: ${cachedAutos.length}).`);
+        movimentacoes = cachedMovimentacoes;
+        autos = cachedAutos;
+        resumoIA = cachedResumoIA;
+        dadosProcesso = dados?.dados || null;
+      }
     }
 
     // 9. Verificar se já existe um case para este processo neste workspace (se não for targetCaseId)

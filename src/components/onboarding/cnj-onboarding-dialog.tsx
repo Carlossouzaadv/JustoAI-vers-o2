@@ -141,8 +141,11 @@ export function CnjOnboardingDialog({
         onSuccess?.();
         
         // Redirecionar para o processo criado
-        if (data.case?.id) {
-          router.push(`/dashboard/process/${data.case.id}?tab=analysis`);
+        const dataAny = data as any;
+        const caseId = dataAny.caseId || dataAny.case?.id;
+        
+        if (caseId) {
+          router.push(`/dashboard/process/${caseId}?tab=analysis`);
         } else {
           // Fechar e recarregar lista
           onOpenChange(false);

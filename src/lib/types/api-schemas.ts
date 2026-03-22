@@ -335,16 +335,16 @@ export type CreateCaseResponse = z.infer<typeof CreateCaseResponseSchema>;
  * Update an existing case
  */
 export const UpdateCasePayloadSchema = z.object({
-  clientId: CuidSchema.optional(),
-  title: z.string().min(1).max(200).optional(),
-  description: z.string().max(2000).optional(),
-  type: CaseTypeSchema.optional(),
-  status: CaseStatusSchema.optional(),
-  priority: PriorityLevelSchema.optional(),
-  value: z.number().min(0).optional(),
-  startDate: DateTimeSchema.optional(),
-  expectedEndDate: DateTimeSchema.optional(),
-}).refine(obj => Object.values(obj).some(v => v !== undefined), 'At least one field to update is required');
+  clientId: CuidSchema.optional().nullable(),
+  title: z.string().min(1).max(500).optional().nullable(),
+  description: z.string().max(10000).optional().nullable(),
+  type: CaseTypeSchema.optional().nullable(),
+  status: CaseStatusSchema.optional().nullable(),
+  priority: PriorityLevelSchema.optional().nullable(),
+  value: z.union([z.number(), z.string(), z.null()]).optional().nullable(),
+  startDate: z.string().optional().nullable(),
+  expectedEndDate: z.string().optional().nullable(),
+}).passthrough();
 
 export type UpdateCasePayload = z.infer<typeof UpdateCasePayloadSchema>;
 

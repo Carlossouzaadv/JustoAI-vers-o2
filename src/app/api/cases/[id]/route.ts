@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import {
   successResponse,
   errorResponse,
@@ -170,11 +171,13 @@ export async function PATCH(
 
     const { id: caseId } = paramParseResult.data
 
-    // --- VALIDATION 2: REQUEST BODY ---
+     // --- VALIDATION 2: REQUEST BODY ---
     const rawBody: unknown = await request.json()
+    console.log(`${ICONS.INFO} [API] PATCH body keys:`, Object.keys(rawBody as Record<string, unknown>))
     const bodyParseResult = UpdateCasePayloadSchema.safeParse(rawBody)
 
     if (!bodyParseResult.success) {
+      console.error(`${ICONS.ERROR} [API] PATCH validation error:`, JSON.stringify(bodyParseResult.error.flatten()))
       return NextResponse.json({
         success: false,
         message: 'Dados de atualização inválidos.',
@@ -182,7 +185,37 @@ export async function PATCH(
       }, { status: 400 })
     }
 
-    const updateData: UpdateCasePayload = bodyParseResult.data
+    const validatedData = bodyParseResult.data
+
+    const updateData: Prisma.CaseUpdateInput = {}
+    if (validatedData.title !== undefined && validatedData.title !== null) updateData.title = validatedData.title
+    if (validatedData.description !== undefined) updateData.description = validatedData.description
+    if (validatedData.type !== undefined && validatedData.type !== null) updateData.type = validatedData.type
+    if (validatedData.status !== undefined && validatedData.status !== null) updateData.status = validatedData.status
+    if (validatedData.priority !== undefined && validatedData.priority !== null) updateData.priority = validatedData.priority
+    if (validatedData.clientId !== undefined && validatedData.clientId !== null) {
+      updateData.client = { connect: { id: validatedData.clientId } }
+    }
+    if (validatedData.value !== undefined) {
+      // Parse value robustly (could be string/number/null/Decimal)
+      const rawVal = validatedData.value
+      if (rawVal === null || rawVal === undefined) {
+        updateData.claimValue = null
+      } else {
+        const numVal = typeof rawVal === 'string' ? parseFloat(rawVal) : Number(rawVal)
+        if (!isNaN(numVal)) {
+          updateData.claimValue = numVal
+        }
+      }
+    }
+    if (validatedData.startDate !== undefined) updateData.filingDate = validatedData.startDate ? new Date(validatedData.startDate) : null
+    if (validatedData.expectedEndDate !== undefined) updateData.dueDate = validatedData.expectedEndDate ? new Date(validatedData.expectedEndDate) : null
+
+    // If nothing valid to update, return success without DB hit
+    if (Object.keys(updateData).length === 0) {
+      console.log(`${ICONS.INFO} [API] No valid fields to update for case: ${caseId}`)
+      return successResponse({ id: caseId }, 'Nenhum campo válido para atualizar')
+    }
 
     console.log(`${ICONS.EDIT} [API] Updating case: ${caseId}`)
 
